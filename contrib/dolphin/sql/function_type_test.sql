@@ -257,6 +257,13 @@ insert ignore into test_bit_and_1 select bit_and(`enum_t`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`set_t`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`json`) from test_type_table;
 
+set dolphin.sql_mode ='treat_bxconst_as_binary';
+CREATE TABLE t(a varbinary(10));
+INSERT INTO t VALUES(0xFF00F0F0), (0xF0F0FF00);
+SELECT BIT_AND(a) FROM t;
+drop table t;
+reset dolphin.sql_mode;
+
 select
 inet6_ntoa(`int1`),
 inet6_ntoa(`uint1`),

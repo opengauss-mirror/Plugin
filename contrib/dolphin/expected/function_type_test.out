@@ -320,6 +320,17 @@ LINE 1: insert ignore into test_bit_and_1 select bit_and(`json`) fro...
                                                  ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: bit_and
+set dolphin.sql_mode ='treat_bxconst_as_binary';
+CREATE TABLE t(a varbinary(10));
+INSERT INTO t VALUES(0xFF00F0F0), (0xF0F0FF00);
+SELECT BIT_AND(a) FROM t;
+  bit_and   
+------------
+ \xf000f000
+(1 row)
+
+drop table t;
+reset dolphin.sql_mode;
 select
 inet6_ntoa(`int1`),
 inet6_ntoa(`uint1`),
