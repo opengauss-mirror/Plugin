@@ -56,6 +56,16 @@ select quarter(time'203840');
 select day('10:10:10');
 select day('2002-01-01 11:12:12'::time);
 select dayofmonth('2002-01-01 11:12:12'::time);
+select day('10:00:10');
+select day('2002-00-01');
+select day('2002-01-00');
+create table t_day(c text);
+insert into t_day values(day('2002-00-01'));
+insert ignore into t_day values(day('2002-00-01'));
+insert into t_day values(day('2002-01-00'));
+insert ignore into t_day values(day('2002-01-00'));
+select * from t_day;
+drop table t_day;
 
 reset current_schema;
 drop schema if exists test_dayofweek cascade;

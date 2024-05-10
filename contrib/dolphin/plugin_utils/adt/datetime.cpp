@@ -5701,7 +5701,7 @@ unsigned int calc_days_in_year(int year)
 bool CheckDateRange(const pg_tm *tm, bool not_zero_date, time_flags flags)
 {
     if (not_zero_date) {
-        if (((flags & TIME_NO_ZERO_IN_DATE) || !(flags & TIME_FUZZY_DATE)) &&
+        if (((flags & TIME_NO_ZERO_IN_DATE) || (!(flags & TIME_FUZZY_DATE) && !(flags & TIME_INVALID_DAY))) &&
             (tm->tm_mon == 0 || tm->tm_mday == 0)) {
             return false;
         } else if ((!(flags & TIME_INVALID_DATES) &&

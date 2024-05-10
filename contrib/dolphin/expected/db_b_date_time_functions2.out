@@ -642,14 +642,8 @@ insert into test values('day(20211112235959.9999999)', day(20211112235959.999999
 -- 特异
 insert into test values('day(null)', day(null));
 insert into test values('day(''2021-00-01'')', day('2021-00-01'));
-ERROR:  Incorrect datetime value: "2021-00-01"
-CONTEXT:  referenced column: result
 insert into test values('day(''2021-01-00'')', day('2021-01-00'));
-ERROR:  Incorrect datetime value: "2021-01-00"
-CONTEXT:  referenced column: result
 insert into test values('day(''2021-00-00'')', day('2021-00-00'));
-ERROR:  Incorrect datetime value: "2021-00-00"
-CONTEXT:  referenced column: result
 insert into test values('day(20210001)', day(20210001));
 ERROR:  Incorrect datetime value: "20210001"
 CONTEXT:  referenced column: result
@@ -1135,6 +1129,9 @@ select * from test order by funcname;
  day('0000-12-31 22:59:59.9999995')                   | 31
  day('0000-12-31 23:59:59.9999995')                   | 1
  day('10000-1-1')                                     | 
+ day('2021-00-00')                                    | 0
+ day('2021-00-01')                                    | 1
+ day('2021-01-00')                                    | 0
  day('2021-1-1 00:00:00')                             | 1
  day('2021-1-1 23:59:59.9999995')                     | 2
  day('2021-1-1')                                      | 1
@@ -1339,14 +1336,14 @@ select * from test order by funcname;
  week('0000-12-31 23:59:59.9999995', 0)               | 0
  week('10000-1-1')                                    | 
  week('10000-1-1', 0)                                 | 
- week('2000-1-1')                                     | 52
- week('2000-1-1')                                     | 0
- week('2000-1-1')                                     | 0
- week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 52
+ week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 0
+ week('2000-1-1')                                     | 0
+ week('2000-1-1')                                     | 0
+ week('2000-1-1')                                     | 52
  week('2000-1-1', 0)                                  | 0
  week('2000-1-1', 1)                                  | 0
  week('2000-1-1', 2)                                  | 52
@@ -1428,7 +1425,7 @@ select * from test order by funcname;
  yearweek(null)                                       | 
  yearweek(null, 0)                                    | 
  yearweek(null, null)                                 | 
-(326 rows)
+(329 rows)
 
 drop table test;
 -- cast date as datetime and timestamptz

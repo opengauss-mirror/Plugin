@@ -128,6 +128,7 @@ extern int ParseIudDateTime(char* str, struct pg_tm* tm, fsec_t* fsec);
 extern int ParseIudDateOnly(char* str, struct pg_tm* tm);
 static const time_flags TIME_NO_ZERO_DATE = 32; /* Don't allow 0000-00-00 date */
 static const time_flags TIME_INVALID_DATES = 64; /* Allow 2000-02-31 */
+static const time_flags TIME_INVALID_DAY = 128; /* Allow 2000-00-01 to day*/
 
 extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm *tm, fsec_t &fsec, int &nano,
                                 bool &warnings, bool *null_func_result, int* tzp = NULL, int* invalid_tz = NULL);
