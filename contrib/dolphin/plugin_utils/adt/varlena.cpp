@@ -10439,10 +10439,10 @@ static bytea* binary_type_and(PG_FUNCTION_ARGS)
     if (len1 != len2)
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("Cannot and binary type of different sizes")));
-    char* p1 = VARDATA(arg1);
-    char* p2 = VARDATA(arg2);
+    char* p1 = VARDATA_ANY(arg1);
+    char* p2 = VARDATA_ANY(arg2);
     char* ptr = p1;
-    while (*p1) {
+    for (int i = 0; i < len1; i++) {
         *p1 &= *p2;
         p1++;
         p2++;
@@ -10451,7 +10451,7 @@ static bytea* binary_type_and(PG_FUNCTION_ARGS)
     bytea* result = (bytea*)palloc(VARHDRSZ + len1);
     SET_VARSIZE(result, VARHDRSZ + len1);
     if (len1 > 0) {
-        errno_t ss_rc = memcpy_s(VARDATA(result), len1, ptr, len1);
+        errno_t ss_rc = memcpy_s(VARDATA_ANY(result), len1, ptr, len1);
         securec_check(ss_rc, "\0", "\0");
     }
     return result;
