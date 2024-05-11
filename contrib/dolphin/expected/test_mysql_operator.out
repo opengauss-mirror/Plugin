@@ -2501,9 +2501,9 @@ select !9;
 (1 row)
 
 select !!0;
-ERROR:  Operator '!!' is deprecated when b_compatibility_mode is on. Please use function factorial().
+ERROR:  Operator '!!' is deprecated when dolphin.b_compatibility_mode is on. Please use function factorial().
 select !!9;
-ERROR:  Operator '!!' is deprecated when b_compatibility_mode is on. Please use function factorial().
+ERROR:  Operator '!!' is deprecated when dolphin.b_compatibility_mode is on. Please use function factorial().
 select !!!0;
 ERROR:  operator does not exist: !!! integer
 LINE 1: select !!!0;

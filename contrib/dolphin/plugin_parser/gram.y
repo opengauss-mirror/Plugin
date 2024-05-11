@@ -25927,10 +25927,10 @@ CreatedbStmt:
 						n->collate = $4->collate;
 						$$ = (Node *)n;
 					} else {
-						const char* message = "create schema/database with charset need to set b_compatibility_mode on.";
+						const char* message = "create schema/database with charset need to set dolphin.b_compatibility_mode on.";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
-							errmsg("create schema/database with charset need to set b_compatibility_mode on.")));
+							errmsg("create schema/database with charset need to set dolphin.b_compatibility_mode on.")));
 					}
 				}
 			| CREATE DATABASE IF_P NOT EXISTS database_name CharsetCollate
@@ -25945,10 +25945,10 @@ CreatedbStmt:
 						n->collate = $7->collate;
 						$$ = (Node *)n;
 					} else {
-						const char* message = "create schema/database with charset need to set b_compatibility_mode on.";
+						const char* message = "create schema/database with charset need to set dolphin.b_compatibility_mode on.";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
-							errmsg("create schema/database with charset need to set b_compatibility_mode on.")));
+							errmsg("create schema/database with charset need to set dolphin.b_compatibility_mode on.")));
 					}
 				}
 		;
@@ -26087,10 +26087,10 @@ AlterDatabaseStmt:
 						n->collate = $4->collate;
 						$$ = (Node *)n;
 					} else {
-						const char* message = "alter database with charset need to set b_compatibility_mode on.";
+						const char* message = "alter database with charset need to set dolphin.b_compatibility_mode on.";
 							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("create database with charset need to set b_compatibility_mode on.")));
+								errmsg("create database with charset need to set dolphin.b_compatibility_mode on.")));
 					}
 				}
 		;
@@ -33516,7 +33516,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					if (is_satisfied && strcmp("!", op_str) == 0) {
 						$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, $2, @1);
 					} else if (is_satisfied && strcmp("!!", op_str) == 0) {
-						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!!' is deprecated when b_compatibility_mode is on. Please use function factorial().")));
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!!' is deprecated when dolphin.b_compatibility_mode is on. Please use function factorial().")));
 					} else {
 						$$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1);
 					}
