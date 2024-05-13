@@ -45,6 +45,9 @@ select * from dept where json_value->>'$.deptId' is not null;
 
 select * from dept where json_value->'$.deptId' is not null;
 
+select '[{"f1":[1,2,3]},[{"f2":null}]]'::jsonb -> 1;
+select '{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}'::jsonb -> 'aa';
+select '{"cc":{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}}'::jsonb -> 'aa';
 
 drop schema test_operator cascade;
 reset current_schema;
