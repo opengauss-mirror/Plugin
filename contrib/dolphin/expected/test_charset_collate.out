@@ -4,7 +4,7 @@ set dolphin.b_compatibility_mode = off;
 create database test1;
 create database test2 encoding 'utf8';
 create database test2 charset 'utf8';
-ERROR:  create schema/database with charset need to set b_compatibility_mode on.
+ERROR:  create schema/database with charset need to set dolphin.b_compatibility_mode on.
 drop database if exists test1;
 drop database if exists test2;
 set dolphin.b_compatibility_mode = on;
@@ -53,9 +53,9 @@ create database test1;
 alter database test1 connection limit 200;
 alter database test1;
 alter database test1 charset 'utf8';
-ERROR:  create database with charset need to set b_compatibility_mode on.
+ERROR:  create database with charset need to set dolphin.b_compatibility_mode on.
 alter database test1 collate 'utf8';
-ERROR:  create database with charset need to set b_compatibility_mode on.
+ERROR:  create database with charset need to set dolphin.b_compatibility_mode on.
 drop database if exists test1;
 set dolphin.b_compatibility_mode = on;
 alter database test1 connection limit 200;
