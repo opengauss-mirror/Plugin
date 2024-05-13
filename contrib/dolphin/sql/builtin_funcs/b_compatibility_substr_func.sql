@@ -221,6 +221,11 @@ drop table t_number;
 drop table t_bit;
 drop table t_str;
 
+-- test replace function with param NULL
+select replace('string', 'i', NULL); 
+select replace('string', NULL, 'i');
+select replace(NULL, NULL, 'a');
+
 drop schema substr_func_test cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
