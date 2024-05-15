@@ -567,14 +567,14 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     /**
      * If GUC parameter b_compatibility_mode is true,
      * and the expression is adding a string constant and an interval,
-     * we consider the string constant as datetime,
-     * and make it become adding an interval to datetime.
+     * we consider the string constant as datetime or date,
+     * and make it become adding an interval to text.
      */
     if (ENABLE_B_CMPT_MODE) {
         if (ltypeId == UNKNOWNOID && rtypeId == INTERVALOID) {
-            ltypeId = TIMESTAMPOID;
+            ltypeId = TEXTOID;
         } else if (ltypeId == INTERVALOID && rtypeId == UNKNOWNOID) {
-            rtypeId = TIMESTAMPOID;
+            rtypeId = TEXTOID;
         }
     }
     /**

@@ -281,11 +281,11 @@ create table test_def_interval_pl(
   c datetime default ('2020-01-01 00:00:00' - interval 1 day)
 );
 desc test_def_interval_pl;
- Field |              Type              | Null | Key |                                    Default                                     | Extra 
--------+--------------------------------+------+-----+--------------------------------------------------------------------------------+-------
- a     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::timestamp without time zone + '@ 1 day'::interval day) | 
- b     | timestamp(0) without time zone | YES  |     | ('@ 1 day'::interval day + '2020-01-01 00:00:00'::timestamp without time zone) | 
- c     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::timestamp without time zone - '@ 1 day'::interval day) | 
+ Field |              Type              | Null | Key |                         Default                         | Extra 
+-------+--------------------------------+------+-----+---------------------------------------------------------+-------
+ a     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::text + '@ 1 day'::interval day) | 
+ b     | timestamp(0) without time zone | YES  |     | ('@ 1 day'::interval day + '2020-01-01 00:00:00'::text) | 
+ c     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::text - '@ 1 day'::interval day) | 
 (3 rows)
 
 insert into test_def_interval_pl values(default, default, default);
