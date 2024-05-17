@@ -115,6 +115,7 @@
 
 #define MAX_ERROR_COUNT 65535
 #define MAXFNAMELEN		64
+#define THREE_MONTHS 3
 #define isquote(C) ((C) == '\"')
 #ifndef ENABLE_MULTIPLE_NODES
 DB_CompatibilityAttr g_dbCompatArray[] = {
@@ -1357,7 +1358,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
-%nonassoc	BETWEEN NOT_BETWEEN WEEK_P MICROSECOND_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P
+%nonassoc	BETWEEN NOT_BETWEEN WEEK_P MICROSECOND_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P QUARTER
 %nonassoc	IN_P NOT_IN
 %left		DIV MOD
 %nonassoc	REGEXP RLIKE
@@ -32935,12 +32936,16 @@ opt_single_interval:
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
 			| MONTH_P
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
+			| WEEK_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
 			| DAY_P
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
 			| HOUR_P
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
 			| MINUTE_P
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+			| MICROSECOND_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
 			| YEAR_P '(' Iconst ')'
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
 			| MONTH_P '(' Iconst ')'
@@ -38526,6 +38531,30 @@ AexprConst_without_Sconst: Iconst
 						t->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
 												makeIntConst($3, @3));
 					$$ = makeStringConstCast($5, @5, t);
+				}
+			| INTERVAL SCONST QUARTER
+				{
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @3));
+					char buf[64];
+					double ft = atof($2);
+					snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", lrint(ft) * THREE_MONTHS);
+					$$ = makeStringConstCast(pstrdup(buf), @2, t);
+				}
+			| INTERVAL NumericOnly QUARTER
+				{
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @3));
+					char buf[64];
+					if ($2->type == T_Integer) {
+						snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", ($2->val.ival) * THREE_MONTHS);
+					} else if ($2->type == T_Float) {
+						double ft = atof($2->val.str);
+						snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", lrint(ft) * THREE_MONTHS);
+					}
+					$$ = makeStringConstCast(pstrdup(buf), @2, t);
 				}
 			| TRUE_P
 				{
