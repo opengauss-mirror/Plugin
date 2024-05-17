@@ -527,7 +527,7 @@ select a^b from testforbit_v;
 drop view testforbit_v;
 
 
-create function test (bit(4),bit(4)) returns bit(4)
+create function test (bit(4),bit(4)) returns uint8
     as 'select $1^$2;'
     language sql
     returns null on null input;

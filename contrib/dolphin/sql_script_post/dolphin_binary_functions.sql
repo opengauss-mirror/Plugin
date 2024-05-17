@@ -839,11 +839,37 @@ CREATE CAST (raw AS longblob) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (raw AS tinyblob) WITH FUNCTION to_tinyblob(longblob) AS IMPLICIT;
 CREATE CAST (raw AS mediumblob) WITH FUNCTION to_mediumblob(longblob) AS IMPLICIT;
 
-create operator pg_catalog.^(leftarg = int1, rightarg = int1, procedure = pg_catalog.int1xor);
-create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_catalog.int2xor);
-create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.int4xor);
-create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.int8xor);
-create operator pg_catalog.^(leftarg = bit, rightarg = bit, procedure = pg_catalog.bitxor);
+CREATE FUNCTION pg_catalog.numeric_xor(numeric, numeric) returns int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'numeric_xor';
+CREATE FUNCTION pg_catalog.op_int1xor(int1, int1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int2xor(int2, int2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int2xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int4xor(int4, int4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int4xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int8xor(int8, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_bitxor(bit, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.bitxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_num_xor_bit(numeric, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.numeric_xor($1, $2::numeric)::uint8';
+CREATE FUNCTION pg_catalog.op_bit_xor_num(bit, numeric) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.numeric_xor($1::numeric, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint8_xor_bit(uint8, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.numeric_xor($1::numeric, $2::numeric)::uint8';
+CREATE FUNCTION pg_catalog.op_bit_xor_uint8(bit, uint8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.numeric_xor($1::numeric, $2::numeric)::uint8';
+CREATE FUNCTION pg_catalog.op_date_bit_xor(date, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_int8_xor($1, $2::int8)::uint8';
+CREATE FUNCTION pg_catalog.op_bit_date_xor(bit, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_date_xor($1::int8, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_timestamp_bit_xor(timestamp without time zone, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamp_int8_xor($1, $2::int8)::uint8';
+CREATE FUNCTION pg_catalog.op_bit_timestamp_xor(bit, timestamp without time zone) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_timestamp_xor($1::int8, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_timestamptz_bit_xor(timestampTz, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamptz_int8_xor($1, $2::int8)::uint8';
+CREATE FUNCTION pg_catalog.op_bit_timestamptz_xor(bit, timestampTz) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_timestamptz_xor($1::int8, $2)::uint8';
+create operator pg_catalog.^(leftarg = int1, rightarg = int1, procedure = pg_catalog.op_int1xor);
+create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_catalog.op_int2xor);
+create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.op_int4xor);
+create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.op_int8xor);
+create operator pg_catalog.^(leftarg = bit, rightarg = bit, procedure = pg_catalog.op_bitxor);
+create operator pg_catalog.^(leftarg = numeric, rightarg = bit, procedure = pg_catalog.op_num_xor_bit);
+create operator pg_catalog.^(leftarg = bit, rightarg = numeric, procedure = pg_catalog.op_bit_xor_num);
+create operator pg_catalog.^(leftarg = uint8, rightarg = bit, procedure = pg_catalog.op_uint8_xor_bit);
+create operator pg_catalog.^(leftarg = bit, rightarg = uint8, procedure = pg_catalog.op_bit_xor_uint8);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = bit, procedure = pg_catalog.op_date_bit_xor);
+CREATE OPERATOR pg_catalog.^(leftarg = bit, rightarg = date, procedure = pg_catalog.op_bit_date_xor);
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp without time zone, rightarg = bit, procedure = pg_catalog.op_timestamp_bit_xor);
+CREATE OPERATOR pg_catalog.^(leftarg = bit, rightarg = timestamp without time zone, procedure = pg_catalog.op_bit_timestamp_xor);
+CREATE OPERATOR pg_catalog.^(leftarg = timestampTz, rightarg = bit, procedure = pg_catalog.op_timestamptz_bit_xor);
+CREATE OPERATOR pg_catalog.^(leftarg = bit, rightarg = timestampTz, procedure = pg_catalog.op_bit_timestamptz_xor);
 
 
 create function pg_catalog.blobxor(
@@ -874,13 +900,30 @@ create function pg_catalog.blobxor(
 blob,
 float8
 )RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
-create operator pg_catalog.^(leftarg = blob, rightarg = blob, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = int8, rightarg = blob, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = blob, rightarg = int8, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = float8, rightarg = blob, procedure = pg_catalog.blobxor);
-create operator pg_catalog.^(leftarg = blob, rightarg = float8, procedure = pg_catalog.blobxor);
+CREATE FUNCTION pg_catalog.blob_xor_blob(blob, blob) returns blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.mblob_xor_mblob(mediumblob, mediumblob) returns mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.lblob_xor_lblob(longblob, longblob) returns longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.binary_xor_binary(binary, binary) returns varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.varbinary_xor_varbinary(varbinary, varbinary) returns varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.tinyblob_xor_tinyblob(tinyblob, tinyblob) returns varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blob_xor_blob';
+CREATE FUNCTION pg_catalog.op_blob_int_xor(blob, integer) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int_blob_xor(integer, blob) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int8_blob_xor(int8, blob) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_blob_int8_xor(blob, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_float8_blob_xor(float8, blob) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_blob_float8_xor(blob, float8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.blobxor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = blob, rightarg = blob, procedure = pg_catalog.blob_xor_blob);
+CREATE OPERATOR pg_catalog.^(leftarg = mediumblob, rightarg = mediumblob, procedure = pg_catalog.mblob_xor_mblob);
+CREATE OPERATOR pg_catalog.^(leftarg = longblob, rightarg = longblob, procedure = pg_catalog.lblob_xor_lblob);
+CREATE OPERATOR pg_catalog.^(leftarg = binary, rightarg = binary, procedure = pg_catalog.binary_xor_binary);
+CREATE OPERATOR pg_catalog.^(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_xor_varbinary);
+CREATE OPERATOR pg_catalog.^(leftarg = tinyblob, rightarg = tinyblob, procedure = pg_catalog.tinyblob_xor_tinyblob);
+create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_catalog.op_blob_int_xor);
+create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.op_int_blob_xor);
+create operator pg_catalog.^(leftarg = int8, rightarg = blob, procedure = pg_catalog.op_int8_blob_xor);
+create operator pg_catalog.^(leftarg = blob, rightarg = int8, procedure = pg_catalog.op_blob_int8_xor);
+create operator pg_catalog.^(leftarg = float8, rightarg = blob, procedure = pg_catalog.op_float8_blob_xor);
+create operator pg_catalog.^(leftarg = blob, rightarg = float8, procedure = pg_catalog.op_blob_float8_xor);
 
 
 DROP FUNCTION IF EXISTS pg_catalog.bit_longblob(uint8,longblob) CASCADE;

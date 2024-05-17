@@ -624,3 +624,79 @@ create operator dolphin_catalog.+(leftarg = numeric, rightarg = numeric, procedu
 create operator dolphin_catalog.-(leftarg = numeric, rightarg = numeric, procedure = numeric_sub);
 create operator dolphin_catalog.*(leftarg = numeric, rightarg = numeric, procedure = numeric_mul);
 create operator dolphin_catalog./(leftarg = numeric, rightarg = numeric, procedure = numeric_div);
+
+CREATE FUNCTION pg_catalog.op_datexor(date, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.datexor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = date, rightarg = date, procedure = pg_catalog.op_datexor);
+CREATE FUNCTION pg_catalog.op_timexor(time, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timexor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = time, rightarg = time, procedure = pg_catalog.op_timexor);
+CREATE FUNCTION pg_catalog.op_date_time_xor(date, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_time_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = date, rightarg = time, procedure = pg_catalog.op_date_time_xor);
+CREATE FUNCTION pg_catalog.op_time_date_xor(time, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.time_date_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = time, rightarg = date, procedure = pg_catalog.op_time_date_xor);
+CREATE FUNCTION pg_catalog.op_time_text_xor(time, text) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.time_text_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = time, rightarg = text, procedure = pg_catalog.op_time_text_xor);
+CREATE FUNCTION pg_catalog.op_text_time_xor(text, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.text_time_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = text, rightarg = time, procedure = pg_catalog.op_text_time_xor);
+CREATE FUNCTION pg_catalog.op_date_text_xor(date, text) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_text_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = date, rightarg = text, procedure = pg_catalog.op_date_text_xor);
+CREATE FUNCTION pg_catalog.op_text_date_xor(text, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.text_date_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = text, rightarg = date, procedure = pg_catalog.op_text_date_xor);
+CREATE FUNCTION pg_catalog.op_date_int8_xor(date, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_int8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = date, rightarg = int8, procedure = pg_catalog.op_date_int8_xor);
+CREATE FUNCTION pg_catalog.op_int8_date_xor(int8, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_date_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = int8, rightarg = date, procedure = pg_catalog.op_int8_date_xor);
+CREATE FUNCTION pg_catalog.op_time_int8_xor(time, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.time_int8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = time, rightarg = int8, procedure = pg_catalog.op_time_int8_xor);
+CREATE FUNCTION pg_catalog.op_int8_time_xor(int8, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_time_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = int8, rightarg = time, procedure = pg_catalog.op_int8_time_xor);
+CREATE FUNCTION pg_catalog.op_date_float8_xor(date, float8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_float8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = date, rightarg = float8, procedure = pg_catalog.op_date_float8_xor);
+CREATE FUNCTION pg_catalog.op_float8_date_xor(float8, date) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.float8_date_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = float8, rightarg = date, procedure = pg_catalog.op_float8_date_xor);
+CREATE FUNCTION pg_catalog.op_timestampxor(timestamp, timestamp) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestampxor($1, $2)::uint8';
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp, rightarg = timestamp, procedure = pg_catalog.op_timestampxor);
+CREATE FUNCTION pg_catalog.op_timestamp_int8_xor(timestamp, int8) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamp_int8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestamp, rightarg = int8, procedure = pg_catalog.op_timestamp_int8_xor);
+CREATE FUNCTION pg_catalog.op_int8_timestamp_xor(int8, timestamp) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_timestamp_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = int8, rightarg = timestamp, procedure = pg_catalog.op_int8_timestamp_xor);
+CREATE FUNCTION pg_catalog.op_timestamp_float8_xor(timestamp, float8) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamp_float8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestamp, rightarg = float8, procedure = pg_catalog.op_timestamp_float8_xor);
+CREATE FUNCTION pg_catalog.op_float8_timestamp_xor(float8, timestamp) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.float8_timestamp_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = float8, rightarg = timestamp, procedure = pg_catalog.op_float8_timestamp_xor);
+CREATE FUNCTION pg_catalog.op_timestamp_text_xor(timestamp, text) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamp_text_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestamp, rightarg = text, procedure = pg_catalog.op_timestamp_text_xor);
+CREATE FUNCTION pg_catalog.op_text_timestamp_xor(text, timestamp) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.text_timestamp_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = text, rightarg = timestamp, procedure = pg_catalog.op_text_timestamp_xor);
+CREATE FUNCTION pg_catalog.op_timestamptzxor(timestampTz, timestampTz) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamptzxor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestampTz, rightarg = timestampTz, procedure = pg_catalog.op_timestamptzxor);
+CREATE FUNCTION pg_catalog.op_timestamptz_int8_xor(timestampTz, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamptz_int8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestampTz, rightarg = int8, procedure = pg_catalog.op_timestamptz_int8_xor);
+CREATE FUNCTION pg_catalog.op_int8_timestamptz_xor(int8, timestampTz) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_timestamptz_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = int8, rightarg = timestampTz, procedure = pg_catalog.op_int8_timestamptz_xor);
+CREATE FUNCTION pg_catalog.op_timestamptz_float8_xor(timestampTz, float8) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamptz_float8_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestampTz, rightarg = float8, procedure = pg_catalog.op_timestamptz_float8_xor);
+CREATE FUNCTION pg_catalog.op_float8_timestamptz_xor(float8, timestampTz) 
+RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.float8_timestamptz_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = float8, rightarg = timestampTz, procedure = pg_catalog.op_float8_timestamptz_xor);
+CREATE FUNCTION pg_catalog.op_timestamptz_text_xor(timestampTz, text) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.timestamptz_text_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = timestampTz, rightarg = text, procedure = pg_catalog.op_timestamptz_text_xor);
+CREATE FUNCTION pg_catalog.op_text_timestamptz_xor(text, timestampTz) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.text_timestamptz_xor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = text, rightarg = timestampTz, procedure = pg_catalog.op_text_timestamptz_xor);
+CREATE FUNCTION pg_catalog.op_textxor(text, text) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.textxor($1, $2)::uint8';
+create operator pg_catalog.^(leftarg = text, rightarg = text, procedure = pg_catalog.op_textxor);
+CREATE FUNCTION pg_catalog.op_boolxor(boolean, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1xor($1::int1, $2::int1)::uint8';
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = boolean, procedure = pg_catalog.op_boolxor);
+CREATE FUNCTION pg_catalog.booltofloat8(bool) RETURNS float8 LANGUAGE C STRICT AS  '$libdir/dolphin',  'bool_float8';
+CREATE CAST (bool AS float8) WITH FUNCTION pg_catalog.booltofloat8(bool) AS ASSIGNMENT;
+CREATE FUNCTION pg_catalog.op_bool_float8_xor(boolean, float8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.dpow($1::float8, $2)::uint8';
+create operator pg_catalog.^(leftarg = boolean, rightarg = float8, procedure = pg_catalog.op_bool_float8_xor);
+CREATE FUNCTION pg_catalog.op_float8_bool_xor(float8, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.dpow($1, $2::float8)::uint8';
+create operator pg_catalog.^(leftarg = float8, rightarg = boolean, procedure = pg_catalog.op_float8_bool_xor);

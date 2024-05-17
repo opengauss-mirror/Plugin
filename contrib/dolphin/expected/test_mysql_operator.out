@@ -1085,7 +1085,7 @@ set dolphin.b_compatibility_mode = 1;
 select null^1;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 create table testforbit(a bit,b bit);
@@ -1104,11 +1104,11 @@ insert into testforint2 values(1001,1001);
 insert into testforint2 values(1001,-1010);
 insert into testforint2 values(1001,0110);
 select a^b from testforint2 where (select 0^1);
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 drop table testforint2;
@@ -1117,11 +1117,11 @@ insert into testforint4 values(1001,1001);
 insert into testforint4 values(1001,-1010);
 insert into testforint4 values(1001,0110);
 select a^b from testforint4 where (select 0^1);
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 drop table testforint4;
@@ -1130,11 +1130,11 @@ insert into testforint8 values(1001,1001);
 insert into testforint8 values(1001,-1010);
 insert into testforint8 values(1001,0110);
 select a^b from testforint8 where (select 0^1);
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 drop table testforint8;
@@ -1145,9 +1145,9 @@ insert into testforfloat values(1.27,0.01);
 select a^b from testforfloat;
  ?column? 
 ----------
-        0
-        1
-        1
+ 0
+ 1
+ 1
 (3 rows)
 
 drop table testforfloat;
@@ -1159,10 +1159,10 @@ insert into testforstring values('123a','123a456');
 select a^b from testforstring where (select 0^1);
  ?column? 
 ----------
-        0
-        9
-       11
-        0
+ 0
+ 9
+ 11
+ 0
 (4 rows)
 
 drop table testforstring;
@@ -1173,9 +1173,9 @@ insert into testforboolean values(false,false);
 select a^b from testforboolean where (select 0^1);
  ?column? 
 ----------
-        0
-        1
-        0
+ 0
+ 1
+ 0
 (3 rows)
 
 drop table testforboolean;
@@ -1185,8 +1185,8 @@ insert into testfordate values('2022-08-13','2022-08-14');
 select a^b from testfordate;
  ?column? 
 ----------
-        0
-        3
+ 0
+ 3
 (2 rows)
 
 drop table testfordate;
@@ -1205,11 +1205,11 @@ insert into testforint2 values(1001,1001);
 insert into testforint2 values(1001,-1010);
 insert into testforint2 values(1001,0110);
 select a^b from testforint2;
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 create global temp table testforint4(a int4,b int4);
@@ -1217,11 +1217,11 @@ insert into testforint4 values(1001,1001);
 insert into testforint4 values(1001,-1010);
 insert into testforint4 values(1001,0110);
 select a^b from testforint4;
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 create unlogged table testforint8(a int8,b int8);
@@ -1229,11 +1229,11 @@ insert into testforint8 values(1001,1001);
 insert into testforint8 values(1001,-1010);
 insert into testforint8 values(1001,0110);
 select a^b from testforint8;
- ?column? 
-----------
-        0
-      -25
-      903
+       ?column?       
+----------------------
+ 0
+ 18446744073709551591
+ 903
 (3 rows)
 
 create table testforbit_u(a bit, b bit) with(storage_type=ustore);
@@ -1263,9 +1263,9 @@ insert into testforint2_p1 values(2,123);
 select a^b from testforint2_p1;
  ?column? 
 ----------
-        0
-        1
-      121
+ 0
+ 1
+ 121
 (3 rows)
 
 create table testforint2_p2(a int2,b int2) with (orientation=column) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
@@ -1275,9 +1275,9 @@ insert into testforint2_p2 values(2,123);
 select a^b from testforint2_p2;
  ?column? 
 ----------
-        0
-        1
-      121
+ 0
+ 1
+ 121
 (3 rows)
 
 create table testforint2_p3(a int2,b int2,c date) partition by range(c) interval('1day')(partition p1 values less than('2022-08-01'),partition p2 values less than('2022-08-02'),partition p3 values less than('2022-08-03'));
@@ -1287,9 +1287,9 @@ insert into testforint2_p3 values(2,123,'2022-08-02');
 select a^b from testforint2_p3;
  ?column? 
 ----------
-        0
-        1
-      121
+ 0
+ 1
+ 121
 (3 rows)
 
 create table testforint2_p4(a int2,b int2) partition by list(a)(partition p1 values(-1),partition p2 values(1),partition p3 values(2));
@@ -1299,9 +1299,9 @@ insert into testforint2_p4 values(2,123);
 select a^b from testforint2_p4 order by 1;
  ?column? 
 ----------
-        0
-        1
-      121
+ 0
+ 1
+ 121
 (3 rows)
 
 create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,partition p2,partition p3);
@@ -1311,9 +1311,9 @@ insert into testforint2_p5 values(2,123);
 select a,b,a^b from testforint2_p5 order by 1,2;
  a  |  b  | ?column? 
 ----+-----+----------
- -1 |  -1 |        0
-  1 |   0 |        1
-  2 | 123 |      121
+ -1 |  -1 | 0
+  1 |   0 | 1
+  2 | 123 | 121
 (3 rows)
 
 create view testforbit_v as select * from testforbit;
@@ -1325,14 +1325,14 @@ select a^b from testforbit_v;
 (2 rows)
 
 drop view testforbit_v;
-create function test (bit(4),bit(4)) returns bit(4)
+create function test (bit(4),bit(4)) returns uint8
     as 'select $1^$2;'
     language sql
     returns null on null input;
 select test(b'1001',b'1010');
  test 
 ------
- 0011
+ 3
 (1 row)
 
 drop function test;
@@ -1353,7 +1353,7 @@ drop procedure test;
 select abs(1)^abs(1);
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select abs(1^1);
@@ -1472,10 +1472,10 @@ select a^b from testforbit group by a,b having a>0;
 select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0 order by 1, 2;
  ?column? | ?column? 
 ----------+----------
- 0        |        0
- 0        |      903
- 1        |        0
- 1        |      903
+ 0        | 0
+ 0        | 903
+ 1        | 0
+ 1        | 903
 (4 rows)
 
 select a^b,
@@ -1521,25 +1521,25 @@ select a^b from testforbit where b^1.0^1<=1;
 select char_length('asbjhc')^char_length('askjdhkj');
  ?column? 
 ----------
-       14
+ 14
 (1 row)
 
 select left('1023jasdzlxc',5)^left('1023jasdnzxc',5);
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select substring('as1dz34lcas',3)^substring('zxcbkj1shd',5);
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select replace('123456789','234','asd')^replace('123456789','234','asd');
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 ---drop table

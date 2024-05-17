@@ -3247,7 +3247,6 @@ GRANT SELECT,REFERENCES on all tables in schema performance_schema to public;
 -- bool cast bit/float/double
 DROP FUNCTION IF EXISTS pg_catalog.booltobit(bool, int4) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.booltofloat4(bool) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.booltofloat8(bool) CASCADE;
 
 DROP CAST IF EXISTS (bool AS bit) CASCADE;
 DROP CAST IF EXISTS (bool AS float4) CASCADE;

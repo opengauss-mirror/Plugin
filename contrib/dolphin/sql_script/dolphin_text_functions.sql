@@ -108,13 +108,11 @@ text,
 text
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'textxor';
 
-create operator pg_catalog.^(leftarg = text, rightarg = text, procedure = pg_catalog.textxor);
 
 create function pg_catalog.boolxor (
 boolean,
 boolean
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'boolxor';
-create operator pg_catalog.^(leftarg = boolean, rightarg = boolean, procedure = pg_catalog.boolxor);
 
 CREATE OR REPLACE FUNCTION pg_catalog.ord (text) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'ord_text';
 
@@ -152,10 +150,8 @@ create function pg_catalog.bool_float8_xor(
 boolean,
 float8
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bool_float8_xor';
-create operator pg_catalog.^(leftarg = boolean, rightarg = float8, procedure = pg_catalog.bool_float8_xor);
 
 create function pg_catalog.float8_bool_xor(
 float8,
 boolean
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_bool_xor';
-create operator pg_catalog.^(leftarg = float8, rightarg = boolean, procedure = pg_catalog.float8_bool_xor);

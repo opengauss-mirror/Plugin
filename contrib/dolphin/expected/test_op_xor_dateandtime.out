@@ -4,37 +4,37 @@ set dolphin.b_compatibility_mode = true;
 select '11:11:11'::time ^ '11:11:11'::time;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select '11:11:11'::time ^ '12:59:59'::time;
  ?column? 
 ----------
-    24064
+ 24064
 (1 row)
 
 select '11:11:11'::time ^ '10:01:01'::time;
  ?column? 
 ----------
-    13570
+ 13570
 (1 row)
 
 select '11:11:11'::time ^ '11:01:01'::time;
  ?column? 
 ----------
-     7186
+ 7186
 (1 row)
 
 select '11:11:11'::time ^ '11:11:01'::time;
  ?column? 
 ----------
-     1018
+ 1018
 (1 row)
 
 select '11:11:11'::time ^ '11:11:10'::time;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select '2022-10-01'::date ^ '11:11:11'::time;
@@ -118,43 +118,43 @@ select '11:11:01'::time ^ '2022-10-01'::date;
 select '2022-10-01'::date ^ '2022-10-01'::date;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select '2022-12-01'::date ^ '2022-10-01'::date;
  ?column? 
 ----------
-      344
+ 344
 (1 row)
 
 select '2022-10-02'::date ^ '2022-10-01'::date;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select '2020-10-01'::date ^ '2022-10-01'::date;
  ?column? 
 ----------
-    45664
+ 45664
 (1 row)
 
 select '2022-10-01'::date ^ '2022-12-01'::date;
  ?column? 
 ----------
-      344
+ 344
 (1 row)
 
 select '2022-10-01'::date ^ '2022-10-02'::date;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select '2022-10-01'::date ^ '2020-10-01'::date;
  ?column? 
 ----------
-    45664
+ 45664
 (1 row)
 
 select '2022-10-01'::date ^ '2022-10-01'::text;
@@ -184,25 +184,25 @@ select '2022-10-01' ^ '2022-10-01'::date;
 select '11:11:11'::time ^ '11:11:11';
  ?column? 
 ----------
-   111116
+ 111116
 (1 row)
 
 select '11:11:11'::time ^ '10:59:59';
  ?column? 
 ----------
-   111117
+ 111117
 (1 row)
 
 select '11:11:11' ^ '11:11:11'::time;
  ?column? 
 ----------
-   111116
+ 111116
 (1 row)
 
 select '10:59:59' ^ '11:11:11'::time;
  ?column? 
 ----------
-   111117
+ 111117
 (1 row)
 
 select '2022-10-01'::date ^ 1;
@@ -364,13 +364,13 @@ select 2022.0::numeric ^ '2022-10-01'::date;
 select '11:11:11'::time ^ 1;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select '11:11:11'::time ^ 1::int1;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select '11:11:11'::time ^ 1::uint1;
@@ -382,19 +382,19 @@ select '11:11:11'::time ^ 1::uint1;
 select '11:11:11'::time ^ 1::int2;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select '11:11:11'::time ^ 1::int4;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select '11:11:11'::time ^ 1::int8;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select '11:11:11'::time ^ 1::uint2;
@@ -418,37 +418,37 @@ select '11:11:11'::time ^ 1::uint8;
 select '11:11:11'::time ^ 2022.0;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select '11:11:11'::time ^ 2022.0::float;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select '11:11:11'::time ^ 2022.0::float8;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select '11:11:11'::time ^ 2022.0::numeric;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select 1 ^ '11:11:11'::time;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select 1::int1 ^ '11:11:11'::time;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select 1::uint1 ^ '11:11:11'::time;
@@ -460,19 +460,19 @@ select 1::uint1 ^ '11:11:11'::time;
 select 1::int2 ^ '11:11:11'::time;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select 1::int4 ^ '11:11:11'::time;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select 1::int8 ^ '11:11:11'::time;
  ?column? 
 ----------
-   111110
+ 111110
 (1 row)
 
 select 1::uint2 ^ '11:11:11'::time;
@@ -496,31 +496,31 @@ select 1::uint8 ^ '11:11:11'::time;
 select 2022.0 ^ '11:11:11'::time;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select 2022.0::float ^ '11:11:11'::time;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select 2022.0::float8 ^ '11:11:11'::time;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select 2022.0::numeric ^ '11:11:11'::time;
  ?column? 
 ----------
-   112097
+ 112097
 (1 row)
 
 select '2022-10-01 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select '2022-12-01 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
@@ -532,7 +532,7 @@ select '2022-12-01 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
 select '2022-10-02 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-  3362497
+ 3362497
 (1 row)
 
 select '2020-10-01 11:11:11'::datetime ^ '2022-10-01 11:11:11'::datetime;
@@ -550,7 +550,7 @@ select '2022-10-01 11:11:11'::datetime ^ '2022-12-01 11:11:11'::datetime;
 select '2022-10-01 11:11:11'::datetime ^ '2022-10-02 11:11:11'::datetime;
  ?column? 
 ----------
-  3362496
+ 3362496
 (1 row)
 
 select '2022-10-01 11:11:11'::datetime ^ '2020-10-01 11:11:11'::datetime;
@@ -562,7 +562,7 @@ select '2022-10-01 11:11:11'::datetime ^ '2020-10-01 11:11:11'::datetime;
 select '2022-10-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
@@ -574,7 +574,7 @@ select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
 select '2022-10-02 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
  ?column? 
 ----------
-  3362497
+ 3362497
 (1 row)
 
 select '2020-10-01 11:11:11'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
@@ -592,7 +592,7 @@ select '2022-10-01 11:11:11'::timestamp ^ '2022-12-01 11:11:11'::timestamp;
 select '2022-10-01 11:11:11'::timestamp ^ '2022-10-02 11:11:11'::timestamp;
  ?column? 
 ----------
-  3362496
+ 3362496
 (1 row)
 
 select '2022-10-01 11:11:11'::timestamp ^ '2020-10-01 11:11:11'::timestamp;
@@ -604,7 +604,7 @@ select '2022-10-01 11:11:11'::timestamp ^ '2020-10-01 11:11:11'::timestamp;
 select '2022-10-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
@@ -616,7 +616,7 @@ select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
 select '2022-10-02 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-  3362497
+ 3362497
 (1 row)
 
 select '2020-10-01 11:11:11'::timestamp ^ '2022-10-01 11:11:11'::datetime;
@@ -634,7 +634,7 @@ select '2022-10-01 11:11:11'::timestamp ^ '2022-12-01 11:11:11'::datetime;
 select '2022-10-01 11:11:11'::timestamp ^ '2022-10-02 11:11:11'::datetime;
  ?column? 
 ----------
-  3362496
+ 3362496
 (1 row)
 
 select '2022-10-01 11:11:11'::timestamp ^ '2020-10-01 11:11:11'::datetime;
@@ -958,13 +958,13 @@ select 2022.0::numeric ^ '2022-10-01 11:11:11'::timestamp;
 select '2022-10-01 11:11:11'::datetime ^ '2022-10-01'::date;
  ?column? 
 ----------
-   160263
+ 160263
 (1 row)
 
 select '2022-10-01 11:11:11'::timestamp ^ '2022-10-01'::date;
  ?column? 
 ----------
-   160263
+ 160263
 (1 row)
 
 select '2022-10-01 11:11:11'::datetime ^ '11:11:11'::time;
@@ -982,13 +982,13 @@ select '2022-10-01 11:11:11'::timestamp ^ '11:11:11'::time;
 select '2022-10-01'::datetime ^ '2022-10-02 11:11:11';
  ?column? 
 ----------
-  3226823
+ 3226823
 (1 row)
 
 select '2022-10-01'::timestamp ^ '2022-10-02 11:11:11';
  ?column? 
 ----------
-  3226823
+ 3226823
 (1 row)
 
 select '2022-10-01'::datetime ^ '2022-10-02 11:11:11'::text;
@@ -1006,13 +1006,13 @@ select '2022-10-01'::timestamp ^ '2022-10-02 11:11:11'::text;
 select '2022-10-01'::date ^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-   160263
+ 160263
 (1 row)
 
 select '2022-10-01'::date ^ '2022-10-01 11:11:11'::timestamp;
  ?column? 
 ----------
-   160263
+ 160263
 (1 row)
 
 select '11:11:11'::time ^ '2022-10-01 11:11:11'::datetime;
@@ -1030,13 +1030,13 @@ select '11:11:11'::time ^ '2022-10-01 11:11:11'::timestamp;
 select '2022-10-01 11:11:11'^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select '2022-10-01 11:11:11' ^ '2022-10-01 11:11:11'::timestamp;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select '2022-10-01 11:11:11'::text^ '2022-10-01 11:11:11'::datetime;

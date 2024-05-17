@@ -3291,6 +3291,17 @@ Datum numeric_power_xor(PG_FUNCTION_ARGS)
     Numeric result = DatumGetNumeric(numeric_power(fcinfo));
     PG_RETURN_NUMERIC(result);
 }
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_xor);
+extern "C" DLL_PUBLIC Datum numeric_xor(PG_FUNCTION_ARGS);
+Datum numeric_xor(PG_FUNCTION_ARGS)
+{
+    Numeric num1 = PG_GETARG_NUMERIC(0);
+    Numeric num2 = PG_GETARG_NUMERIC(1);
+    int64 num1_int64 = DatumGetInt64(DirectFunctionCall1(numeric_int8, NumericGetDatum(num1)));
+    int64 num2_int64 = DatumGetInt64(DirectFunctionCall1(numeric_int8, NumericGetDatum(num2)));
+    int64 result_int64 = num1_int64 ^ num2_int64;
+    PG_RETURN_INT64(result_int64);
+}
 #endif
 /* ----------------------------------------------------------------------
  *

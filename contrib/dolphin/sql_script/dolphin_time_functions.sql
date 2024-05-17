@@ -600,169 +600,141 @@ create function pg_catalog.datexor(
 date,
 date
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datexor';
-create operator pg_catalog.^(leftarg = date, rightarg = date, procedure = pg_catalog.datexor);
 
 create function pg_catalog.timexor(
 time,
 time
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timexor';
-create operator pg_catalog.^(leftarg = time, rightarg = time, procedure = pg_catalog.timexor);
 
 create function pg_catalog.date_time_xor(
 date,
 time
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_time_xor';
-create operator pg_catalog.^(leftarg = date, rightarg = time, procedure = pg_catalog.date_time_xor);
 
 create function pg_catalog.time_date_xor(
 time,
 date
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_date_xor';
-create operator pg_catalog.^(leftarg = time, rightarg = date, procedure = pg_catalog.time_date_xor);
 
 create function pg_catalog.time_text_xor(
 time,
 text
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_text_xor';
-create operator pg_catalog.^(leftarg = time, rightarg = text, procedure = pg_catalog.time_text_xor);
 
 create function pg_catalog.text_time_xor(
 text,
 time
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_time_xor';
-create operator pg_catalog.^(leftarg = text, rightarg = time, procedure = pg_catalog.text_time_xor);
 
 create function pg_catalog.date_text_xor(
 date,
 text
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_text_xor';
-create operator pg_catalog.^(leftarg = date, rightarg = text, procedure = pg_catalog.date_text_xor);
 
 create function pg_catalog.text_date_xor(
 text,
 date
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_date_xor';
-create operator pg_catalog.^(leftarg = text, rightarg = date, procedure = pg_catalog.text_date_xor);
 
 create function pg_catalog.date_int8_xor(
 date,
 int8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_int8_xor';
-create operator pg_catalog.^(leftarg = date, rightarg = int8, procedure = pg_catalog.date_int8_xor);
 
 create function pg_catalog.int8_date_xor(
 int8,
 date
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_date_xor';
-create operator pg_catalog.^(leftarg = int8, rightarg = date, procedure = pg_catalog.int8_date_xor);
 
 create function pg_catalog.time_int8_xor(
 time,
 int8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_int8_xor';
-create operator pg_catalog.^(leftarg = time, rightarg = int8, procedure = pg_catalog.time_int8_xor);
 
 create function pg_catalog.int8_time_xor(
 int8,
 time
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_time_xor';
-create operator pg_catalog.^(leftarg = int8, rightarg = time, procedure = pg_catalog.int8_time_xor);
 
 create function pg_catalog.date_float8_xor(
 date,
 float8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_float8_xor';
-create operator pg_catalog.^(leftarg = date, rightarg = float8, procedure = pg_catalog.date_float8_xor);
 
 create function pg_catalog.float8_date_xor(
 float8,
 date
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_date_xor';
-create operator pg_catalog.^(leftarg = float8, rightarg = date, procedure = pg_catalog.float8_date_xor);
 
 create function pg_catalog.timestampxor(
 timestamp,
 timestamp
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestampxor';
-create operator pg_catalog.^(leftarg = timestamp, rightarg = timestamp, procedure = pg_catalog.timestampxor);
 
 create function pg_catalog.timestamp_int8_xor(
 timestamp,
 int8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_int8_xor';
-create operator pg_catalog.^(leftarg = timestamp, rightarg = int8, procedure = pg_catalog.timestamp_int8_xor);
 
 create function pg_catalog.int8_timestamp_xor(
 int8,
 timestamp
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_timestamp_xor';
-create operator pg_catalog.^(leftarg = int8, rightarg = timestamp, procedure = pg_catalog.int8_timestamp_xor);
 
 create function pg_catalog.timestamp_float8_xor(
 timestamp,
 float8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_float8_xor';
-create operator pg_catalog.^(leftarg = timestamp, rightarg = float8, procedure = pg_catalog.timestamp_float8_xor);
 
 create function pg_catalog.float8_timestamp_xor(
 float8,
 timestamp
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_timestamp_xor';
-create operator pg_catalog.^(leftarg = float8, rightarg = timestamp, procedure = pg_catalog.float8_timestamp_xor);
 
 create function pg_catalog.timestamp_text_xor(
 timestamp,
 text
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_text_xor';
-create operator pg_catalog.^(leftarg = timestamp, rightarg = text, procedure = pg_catalog.timestamp_text_xor);
 
 create function pg_catalog.text_timestamp_xor(
 text,
 timestamp
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_timestamp_xor';
-create operator pg_catalog.^(leftarg = text, rightarg = timestamp, procedure = pg_catalog.text_timestamp_xor);
 
 create function pg_catalog.timestamptzxor(
 timestampTz,
 timestampTz
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptzxor';
-create operator pg_catalog.^(leftarg = timestampTz, rightarg = timestampTz, procedure = pg_catalog.timestamptzxor);
 
 create function pg_catalog.timestamptz_int8_xor(
 timestampTz,
 int8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_int8_xor';
-create operator pg_catalog.^(leftarg = timestampTz, rightarg = int8, procedure = pg_catalog.timestamptz_int8_xor);
 
 create function pg_catalog.int8_timestamptz_xor(
 int8,
 timestampTz
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_timestamptz_xor';
-create operator pg_catalog.^(leftarg = int8, rightarg = timestampTz, procedure = pg_catalog.int8_timestamptz_xor);
 
 create function pg_catalog.timestamptz_float8_xor(
 timestampTz,
 float8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_float8_xor';
-create operator pg_catalog.^(leftarg = timestampTz, rightarg = float8, procedure = pg_catalog.timestamptz_float8_xor);
 
 create function pg_catalog.float8_timestamptz_xor(
 float8,
 timestampTz
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_timestamptz_xor';
-create operator pg_catalog.^(leftarg = float8, rightarg = timestampTz, procedure = pg_catalog.float8_timestamptz_xor);
 
 create function pg_catalog.timestamptz_text_xor(
 timestampTz,
 text
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_text_xor';
-create operator pg_catalog.^(leftarg = timestampTz, rightarg = text, procedure = pg_catalog.timestamptz_text_xor);
 
 create function pg_catalog.text_timestamptz_xor(
 text,
 timestampTz
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_timestamptz_xor';
-create operator pg_catalog.^(leftarg = text, rightarg = timestampTz, procedure = pg_catalog.text_timestamptz_xor);
 
 DROP FUNCTION IF EXISTS pg_catalog.sleep(float8) CASCADE;
 CREATE FUNCTION pg_catalog.sleep (float8)

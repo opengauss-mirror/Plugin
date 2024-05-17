@@ -432,3 +432,301 @@ DROP FUNCTION IF EXISTS pg_catalog.date_sub (time, interval);
 DROP FUNCTION IF EXISTS pg_catalog.date_add (time, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
+
+DROP OPERATOR IF EXISTS pg_catalog.^(date, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, date);
+DROP OPERATOR IF EXISTS pg_catalog.^(time, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, time);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, timestampTz);
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, uint8);
+DROP OPERATOR IF EXISTS pg_catalog.^(numeric, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, numeric);
+DROP OPERATOR IF EXISTS pg_catalog.^(int1, int1);
+create operator pg_catalog.^(leftarg = int1, rightarg = int1, procedure = pg_catalog.int1xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int2, int2);
+create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_catalog.int2xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int4, int4);
+create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.int4xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, int8);
+create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.int8xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(uint1, uint1);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint1, rightarg = uint1, procedure = uint1xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint1, uint1) IS 'uint1xor';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint2, uint2);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint2, rightarg = uint2, procedure = uint2xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint2, uint2) IS 'uint2xor';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint4, uint4);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint4, rightarg = uint4, procedure = uint4xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint4, uint4) IS 'uint4xor';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, uint8);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = uint8, procedure = uint8xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint8, uint8) IS 'uint8xor';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint1, int1);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint1, rightarg = int1, procedure = uint1_xor_int1
+);
+COMMENT ON OPERATOR pg_catalog.^(uint1, int1) IS 'uint1_xor_int1';
+DROP OPERATOR IF EXISTS pg_catalog.^(int1, uint1);
+CREATE OPERATOR pg_catalog.^(
+leftarg = int1, rightarg = uint1, procedure = int1_xor_uint1
+);
+COMMENT ON OPERATOR pg_catalog.^(int1, uint1) IS 'int1_xor_uint1';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint2, int2);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint2, rightarg = int2, procedure = uint2_xor_int2,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint2, int2) IS 'uint2_xor_int2';
+DROP OPERATOR IF EXISTS pg_catalog.^(int2, uint2);
+CREATE OPERATOR pg_catalog.^(
+leftarg = int2, rightarg = uint2, procedure = int2_xor_uint2,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int2, uint2) IS 'int2_xor_uint2';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint4, int4);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint4, rightarg = int4, procedure = uint4_xor_int4,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint4, int4) IS 'uint4_xor_int4';
+DROP OPERATOR IF EXISTS pg_catalog.^(int4, uint4);
+CREATE OPERATOR pg_catalog.^(
+leftarg = int4, rightarg = uint4, procedure = int4_xor_uint4,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int4, uint4) IS 'int4_xor_uint4';
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, int8);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = int8, procedure = uint8_xor_int8,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint8, int8) IS 'uint8_xor_int8';
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, uint8);
+CREATE OPERATOR pg_catalog.^(
+leftarg = int8, rightarg = uint8, procedure = int8_xor_uint8,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int8, uint8) IS 'int8_xor_uint8';
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, blob);
+create operator pg_catalog.^(leftarg = blob, rightarg = blob, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(mediumblob, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.^(longblob, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.^(binary, binary);
+DROP OPERATOR IF EXISTS pg_catalog.^(varbinary, varbinary);
+DROP OPERATOR IF EXISTS pg_catalog.^(tinyblob, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, integer);
+create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(integer, blob);
+create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, blob);
+create operator pg_catalog.^(leftarg = int8, rightarg = blob, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, int8);
+create operator pg_catalog.^(leftarg = blob, rightarg = int8, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(float8, blob);
+create operator pg_catalog.^(leftarg = float8, rightarg = blob, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, float8);
+create operator pg_catalog.^(leftarg = blob, rightarg = float8, procedure = pg_catalog.blobxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, boolean);
+create operator pg_catalog.^(leftarg = boolean, rightarg = boolean, procedure = pg_catalog.boolxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, float8);
+create operator pg_catalog.^(leftarg = boolean, rightarg = float8, procedure = pg_catalog.bool_float8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(float8, boolean);
+create operator pg_catalog.^(leftarg = float8, rightarg = boolean, procedure = pg_catalog.float8_bool_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(date, date);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = date, procedure = pg_catalog.datexor);
+DROP OPERATOR IF EXISTS pg_catalog.^(time, time);
+CREATE OPERATOR pg_catalog.^(leftarg = time, rightarg = time, procedure = pg_catalog.timexor);
+DROP OPERATOR IF EXISTS pg_catalog.^(date, time);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = time, procedure = pg_catalog.date_time_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(time, date);
+CREATE OPERATOR pg_catalog.^(leftarg = time, rightarg = date, procedure = pg_catalog.time_date_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(time, text);
+CREATE OPERATOR pg_catalog.^(leftarg = time, rightarg = text, procedure = pg_catalog.time_text_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(text, time);
+CREATE OPERATOR pg_catalog.^(leftarg = text, rightarg = time, procedure = pg_catalog.text_time_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(date, text);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = text, procedure = pg_catalog.date_text_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(text, date);
+CREATE OPERATOR pg_catalog.^(leftarg = text, rightarg = date, procedure = pg_catalog.text_date_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(date, int8);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = int8, procedure = pg_catalog.date_int8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, date);
+CREATE OPERATOR pg_catalog.^(leftarg = int8, rightarg = date, procedure = pg_catalog.int8_date_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(time, int8);
+CREATE OPERATOR pg_catalog.^(leftarg = time, rightarg = int8, procedure = pg_catalog.time_int8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, time);
+CREATE OPERATOR pg_catalog.^(leftarg = int8, rightarg = time, procedure = pg_catalog.int8_time_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(date, float8);
+CREATE OPERATOR pg_catalog.^(leftarg = date, rightarg = float8, procedure = pg_catalog.date_float8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(float8, date);
+CREATE OPERATOR pg_catalog.^(leftarg = float8, rightarg = date, procedure = pg_catalog.float8_date_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, timestamp without time zone);
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp without time zone, rightarg = timestamp without time zone, procedure = pg_catalog.timestampxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, int8);
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp without time zone, rightarg = int8, procedure = pg_catalog.timestamp_int8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, timestamp without time zone);
+CREATE OPERATOR pg_catalog.^(leftarg = int8, rightarg = timestamp without time zone, procedure = pg_catalog.int8_timestamp_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, float8);
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp without time zone, rightarg = float8, procedure = pg_catalog.timestamp_float8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(float8, timestamp without time zone);
+CREATE OPERATOR pg_catalog.^(leftarg = float8, rightarg = timestamp without time zone, procedure = pg_catalog.float8_timestamp_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, text);
+CREATE OPERATOR pg_catalog.^(leftarg = timestamp without time zone, rightarg = text, procedure = pg_catalog.timestamp_text_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(text, timestamp without time zone);
+CREATE OPERATOR pg_catalog.^(leftarg = text, rightarg = timestamp without time zone, procedure = pg_catalog.text_timestamp_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, timestampTz);
+CREATE OPERATOR pg_catalog.^(leftarg = timestampTz, rightarg = timestampTz, procedure = pg_catalog.timestamptzxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, int8);
+CREATE OPERATOR pg_catalog.^(leftarg = timestampTz, rightarg = int8, procedure = pg_catalog.timestamptz_int8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, timestampTz);
+CREATE OPERATOR pg_catalog.^(leftarg = int8, rightarg = timestampTz, procedure = pg_catalog.int8_timestamptz_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, float8);
+CREATE OPERATOR pg_catalog.^(leftarg = timestampTz, rightarg = float8, procedure = pg_catalog.timestamptz_float8_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(float8, timestampTz);
+CREATE OPERATOR pg_catalog.^(leftarg = float8, rightarg = timestampTz, procedure = pg_catalog.float8_timestamptz_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, text);
+CREATE OPERATOR pg_catalog.^(leftarg = timestampTz, rightarg = text, procedure = pg_catalog.timestamptz_text_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(text, timestampTz);
+CREATE OPERATOR pg_catalog.^(leftarg = text, rightarg = timestampTz, procedure = pg_catalog.text_timestamptz_xor);
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, boolean);
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = boolean, procedure = uint8_xor_bool,
+commutator=operator(pg_catalog.^)
+);
+DROP OPERATOR IF EXISTS pg_catalog.^(uint4, boolean);
+CREATE OPERATOR pg_catalog.^(leftarg = uint4, rightarg = boolean, procedure = pg_catalog.uint4_xor_bool, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(uint2, boolean);
+CREATE OPERATOR pg_catalog.^(leftarg = uint2, rightarg = boolean, procedure = pg_catalog.uint2_xor_bool, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(uint1, boolean);
+CREATE OPERATOR pg_catalog.^(leftarg = uint1, rightarg = boolean, procedure = pg_catalog.uint1_xor_bool, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, uint1);
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = uint1, procedure = pg_catalog.bool_xor_uint1, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, uint2);
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = uint2, procedure = pg_catalog.bool_xor_uint2, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, uint4);
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = uint4, procedure = pg_catalog.bool_xor_uint4, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, uint8);
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = uint8, procedure = pg_catalog.bool_xor_uint8, commutator=operator(pg_catalog.^));
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, bit);
+CREATE OPERATOR pg_catalog.^ (leftarg = bit, rightarg = bit, procedure = pg_catalog.bitxor);
+DROP OPERATOR IF EXISTS pg_catalog.^(text, text);
+CREATE OPERATOR pg_catalog.^ (leftarg = text, rightarg = text, procedure = pg_catalog.textxor);
+UPDATE pg_catalog.pg_operator SET oprresult = 'float8'::regtype, oprcode = 'dpow'::regproc
+    WHERE oprname = '^' AND oprleft = 'float8'::regtype AND oprright = 'float8'::regtype;
+UPDATE pg_catalog.pg_operator SET oprresult = 'numeric'::regtype, oprcode = 'numeric_power'::regproc
+    WHERE oprname = '^' AND oprleft = 'numeric'::regtype AND oprright = 'numeric'::regtype;
+
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, int1);
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, int2);
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, int4);
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, int8);
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.^(int4, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.^(int2, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.^(int1, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_int1xor (int1, int1);
+DROP FUNCTION IF EXISTS pg_catalog.op_int2xor (int2, int2);
+DROP FUNCTION IF EXISTS pg_catalog.op_int4xor (int4, int4);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8xor (int8, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint1xor (uint1, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint2xor (uint2, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint4xor (uint4, uint4);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint8xor (uint8, uint8);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint1_xor_int1 (uint1, int1);
+DROP FUNCTION IF EXISTS pg_catalog.op_int1_xor_uint1 (int1, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint2_xor_int2 (uint2, int2);
+DROP FUNCTION IF EXISTS pg_catalog.op_int2_xor_uint2 (int2, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint4_xor_int4 (uint4, int4);
+DROP FUNCTION IF EXISTS pg_catalog.op_int4_xor_uint4 (int4, uint4);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint8_xor_int8 (uint8, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_xor_uint8 (int8, uint8);
+DROP FUNCTION IF EXISTS pg_catalog.blob_xor_blob (blob, blob);
+DROP FUNCTION IF EXISTS pg_catalog.mblob_xor_mblob (mediumblob, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.lblob_xor_lblob (longblob, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.binary_xor_binary (binary, binary);
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_xor_varbinary (varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_xor_tinyblob (tinyblob, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.op_blob_int_xor(blob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.op_int_blob_xor(integer, blob);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_blob_xor(int8, blob);
+DROP FUNCTION IF EXISTS pg_catalog.op_blob_int8_xor(blob, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_float8_blob_xor(float8, blob);
+DROP FUNCTION IF EXISTS pg_catalog.op_blob_float8_xor(blob, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_boolxor(boolean, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_float8_xor(boolean, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_float8_bool_xor(float8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_datexor(date, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_timexor(time, time);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_time_xor(date, time);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_date_xor(time, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_text_xor(time, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_time_xor(text, time);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_text_xor(date, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_date_xor(text, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_int8_xor(date, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_date_xor(int8, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_int8_xor(time, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_time_xor(int8, time);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_float8_xor(date, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_float8_date_xor(float8, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestampxor(timestamp without time zone, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamp_int8_xor(timestamp without time zone, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_timestamp_xor(int8, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamp_float8_xor(timestamp without time zone, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_float8_timestamp_xor(float8, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamp_text_xor(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_timestamp_xor(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamptzxor(timestampTz, timestampTz);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamptz_int8_xor(timestampTz, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_timestamptz_xor(int8, timestampTz);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamptz_float8_xor(timestampTz, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_float8_timestamptz_xor(float8, timestampTz);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamptz_text_xor(timestampTz, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_timestamptz_xor(text, timestampTz);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint8_xor_bool(uint8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint4_xor_bool(uint4, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint2_xor_bool(uint2, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint1_xor_bool(uint1, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_uint1(boolean, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_uint2(boolean, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_uint4(boolean, uint4);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_uint8(boolean, uint8);
+DROP FUNCTION IF EXISTS pg_catalog.op_bitxor (bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_dpow (float8, float8);
+DROP FUNCTION IF EXISTS pg_catalog.op_numeric_power(numeric, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.op_textxor(text, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_int1(boolean, int1);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_int2(boolean, int2);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_int4(boolean, int4);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_xor_int8(boolean, int8);
+DROP FUNCTION IF EXISTS pg_catalog.op_int1_xor_bool(int1, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_int2_xor_bool(int2, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_int4_xor_bool(int4, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_int8_xor_bool(int8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.op_num_xor_bit(numeric, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_xor_num(bit, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.op_uint8_xor_bit(uint8, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_xor_uint8(bit, uint8);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_bit_xor(date, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_date_xor(bit, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamp_bit_xor(timestamp without time zone, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_timestamp_xor(bit, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_timestamptz_bit_xor(timestampTz, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_timestamptz_xor(bit, timestampTz);
+DROP FUNCTION IF EXISTS pg_catalog.numeric_xor(numeric, numeric);

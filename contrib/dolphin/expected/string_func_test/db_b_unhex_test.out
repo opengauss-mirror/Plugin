@@ -115,7 +115,7 @@ set bytea_output = escape;
 SELECT unhex(32) ^ 3;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
