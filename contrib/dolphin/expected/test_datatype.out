@@ -257,18 +257,12 @@ select b'11'::bit(33);
 
 --tinyint(n),smallint(n),mediumint,mediumint(n),int(n),bigint(n)
 create table all_int_test(a tinyint(9999999999), b smallint(9999999999), c mediumint, d mediumint(9999999999), e int(9999999999), f bigint(9999999999));
+ERROR:  value "9999999999" is out of range for type integer
+LINE 1: create table all_int_test(a tinyint(9999999999), b smallint(...
+                                    ^
 \d all_int_test
-Table "b_datatype_test.all_int_test"
- Column |   Type   | Modifiers 
---------+----------+-----------
- a      | tinyint  | 
- b      | smallint | 
- c      | integer  | 
- d      | integer  | 
- e      | integer  | 
- f      | bigint   | 
-
 drop table all_int_test;
+ERROR:  table "all_int_test" does not exist
 CREATE TABLE t0(c0 VARCHAR, c1 VARCHAR);
 INSERT INTO t0 VALUES (0,0);
 UPDATE t0 SET c0=0;

@@ -108,7 +108,7 @@ show create table test;
  test  | SET search_path = test_default;                         +
        | CREATE TABLE test (                                     +
        |     id bigint DEFAULT (-1)::bigint NOT NULL,            +
-       |     name integer DEFAULT (-1) NOT NULL,                 +
+       |     name integer(11) DEFAULT (-1) NOT NULL,             +
        |     col1 real DEFAULT (-1.1)::real,                     +
        |     col2 double precision DEFAULT 2.2::double precision,+
        |     col3 real DEFAULT (-1100)::real                     +

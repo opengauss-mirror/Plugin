@@ -128,7 +128,9 @@ static char* format_type_internal(
     Oid array_base_type;
     bool is_array = false;
     char* buf = NULL;
-
+#ifdef DOLPHIN
+    Oid any_int_modout_oid = InvalidOid;
+#endif
     if (type_oid == InvalidOid && allow_invalid)
         return pstrdup("-");
 
@@ -230,17 +232,52 @@ static char* format_type_internal(
             buf = pstrdup("double precision");
             break;
         case INT1OID:
-            buf = pstrdup("tinyint");
+#ifdef DOLPHIN
+            if (with_typemod)
+                any_int_modout_oid = typeform->typmodout;
+
+            if (with_typemod && any_int_modout_oid != InvalidOid)
+                buf = printTypmod("tinyint", typemod, any_int_modout_oid);
+            else
+#endif
+                buf = pstrdup("tinyint");
             break;
         case INT2OID:
-            buf = pstrdup("smallint");
+
+#ifdef DOLPHIN
+            if (with_typemod)
+                any_int_modout_oid = typeform->typmodout;
+
+            if (with_typemod && any_int_modout_oid != InvalidOid)
+                buf = printTypmod("smallint", typemod, any_int_modout_oid);
+            else
+#endif
+                buf = pstrdup("smallint");
             break;
 
         case INT4OID:
-            buf = pstrdup("integer");
+
+#ifdef DOLPHIN
+            if (with_typemod)
+                any_int_modout_oid = typeform->typmodout;
+
+            if (with_typemod && any_int_modout_oid != InvalidOid)
+                buf = printTypmod("integer", typemod, any_int_modout_oid);
+            else
+#endif
+                buf = pstrdup("integer");
             break;
 
         case INT8OID:
+#ifdef DOLPHIN
+            if (with_typemod)
+                any_int_modout_oid = typeform->typmodout;
+
+            if (with_typemod && any_int_modout_oid != InvalidOid)
+                buf = printTypmod("bigint", typemod, any_int_modout_oid);
+            else
+#endif
+
             buf = pstrdup("bigint");
             break;
 

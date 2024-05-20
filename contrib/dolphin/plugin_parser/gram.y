@@ -32125,9 +32125,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint4");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int4");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| INTEGER unsigned_list
@@ -32140,9 +32142,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint4");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int4");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| TINYINT unsigned_list 
@@ -32155,9 +32159,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint1");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int1");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| SMALLINT unsigned_list
@@ -32170,9 +32176,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint2");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int2");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| MEDIUMINT unsigned_list
@@ -32185,9 +32193,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint4");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int4");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| BIGINT unsigned_list
@@ -32200,9 +32210,11 @@ NumericNoConflict:	INT_P unsigned_list
 					if ($5) {
 						$$ = SystemTypeName("uint8");
 						$$->location = @1;
+						$$->typmods = $3;
 					} else {
 						$$ = SystemTypeName("int8");
 						$$->location = @1;
+						$$->typmods = $3;
 					}
 				}
 			| REAL dolphin_float

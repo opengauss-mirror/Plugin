@@ -730,3 +730,18 @@ DROP FUNCTION IF EXISTS pg_catalog.op_bit_timestamp_xor(bit, timestamp without t
 DROP FUNCTION IF EXISTS pg_catalog.op_timestamptz_bit_xor(timestampTz, bit);
 DROP FUNCTION IF EXISTS pg_catalog.op_bit_timestamptz_xor(bit, timestampTz);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_xor(numeric, numeric);
+
+do $$
+begin
+update pg_catalog.pg_type set typmodin = '-', typmodout = '-' where oid in('int1'::regtype, 'uint1'::regtype, 'int2'::regtype, 'uint2'::regtype, 'int4'::regtype, 'uint4'::regtype, 'int8'::regtype, 'uint8'::regtype);
+end
+$$;
+
+DROP FUNCTION IF EXISTS pg_catalog.int1_typmodin (_cstring) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int1_typmodout (int) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int2_typmodin (_cstring) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int2_typmodout (int) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int4_typmodin (_cstring) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int4_typmodout (int) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int8_typmodin (_cstring) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.int8_typmodout (int) CASCADE;

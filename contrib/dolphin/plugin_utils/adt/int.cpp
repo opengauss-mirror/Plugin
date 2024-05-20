@@ -2465,4 +2465,152 @@ Datum dolphin_uint8not(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~((uint64)arg1));
 }
 
+
+/*
+ * common code for bittypmodin and varbittypmodin
+ */
+static int32 anyint_typmodin(ArrayType* ta, const char* typname)
+{
+    int32 typmod;
+    int32* tl = NULL;
+    int n;
+
+    tl = ArrayGetIntegerTypmods(ta, &n);
+
+    /*
+     * we're not too tense about good error message here because grammar
+     * shouldn't allow wrong number of modifiers for BIT
+     */
+    if (n != 1)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid type modifier")));
+
+
+    if (*tl < 1)
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("length for type %s must be at least 1", typname)));
+
+
+    if (*((uint32*)tl) > MAX_INT_PRECISION) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("length for type %s cannot exceed %u", typname, MAX_INT_PRECISION)));
+    }
+
+    typmod = *tl;
+
+    return typmod;
+}
+
+/*
+ * common code for bittypmodout and varbittypmodout
+ */
+static char* anyint_typmodout(int32 typmod)
+{
+    const size_t buffer_len = 64;
+
+    char* res = (char*)palloc(buffer_len);
+    errno_t rc = 0;
+
+    if (typmod >= 0) {
+        rc = snprintf_s(res, buffer_len, buffer_len - 1, "(%d)", typmod);
+        securec_check_ss(rc, "\0", "\0");
+    } else
+        *res = '\0';
+
+    return res;
+}
+
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(int1_typmodin);
+extern "C" DLL_PUBLIC Datum int1_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int1_typmodout);
+extern "C" DLL_PUBLIC Datum int1_typmodout(PG_FUNCTION_ARGS);
+
+
+Datum int1_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anyint_typmodin(ta, "int1"));
+}
+
+Datum int1_typmodout(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    PG_RETURN_CSTRING(anyint_typmodout(typmod));
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(int2_typmodin);
+extern "C" DLL_PUBLIC Datum int2_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int2_typmodout);
+extern "C" DLL_PUBLIC Datum int2_typmodout(PG_FUNCTION_ARGS);
+
+
+Datum int2_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anyint_typmodin(ta, "int2"));
+}
+
+Datum int2_typmodout(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    PG_RETURN_CSTRING(anyint_typmodout(typmod));
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(int4_typmodin);
+extern "C" DLL_PUBLIC Datum int4_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int4_typmodout);
+extern "C" DLL_PUBLIC Datum int4_typmodout(PG_FUNCTION_ARGS);
+
+
+Datum int4_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anyint_typmodin(ta, "int4"));
+}
+
+Datum int4_typmodout(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    PG_RETURN_CSTRING(anyint_typmodout(typmod));
+}
+
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_typmodin);
+extern "C" DLL_PUBLIC Datum int8_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_typmodout);
+extern "C" DLL_PUBLIC Datum int8_typmodout(PG_FUNCTION_ARGS);
+
+
+Datum int8_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anyint_typmodin(ta, "int8"));
+}
+
+Datum int8_typmodout(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    PG_RETURN_CSTRING(anyint_typmodout(typmod));
+}
+
+
+
+
 #endif
