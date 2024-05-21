@@ -745,3 +745,7 @@ DROP FUNCTION IF EXISTS pg_catalog.int4_typmodin (_cstring) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.int4_typmodout (int) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.int8_typmodin (_cstring) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.int8_typmodout (int) CASCADE;
+
+
+DROP CAST IF EXISTS (text AS bit);
+DROP FUNCTION IF EXISTS pg_catalog.text_to_bit(text);

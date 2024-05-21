@@ -163,6 +163,27 @@ drop table binary_test;
 drop table test_type_table;
 drop table char_test;
 
+-- insert conv to bit col
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table t1 (c1 bit(10));
+insert into t1 values (conv(0, 10, 2));
+insert into t1 values (conv(1, 10, 2));
+insert into t1 values (conv(2, 10, 2));  -- error
+insert into t1 values (conv(3, 10, 2));  -- error
+select * from t1;
+
+-- test convert text to bit
+select cast('123' as bit(24));
+select cast('abcd' as bit(32));
+create table t2 (c1 int, c2 bit(8), c3 bit(20));
+insert into t2 values (1, '0', 'ab');
+insert into t2 values (2, '1', 'A1');
+insert into t2 values (3, '2', 'C4');
+select c1, c2, c3 from t2 order by c1;
+
+drop table t1;
+drop table t2;
+
 drop schema db_test_bit cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
