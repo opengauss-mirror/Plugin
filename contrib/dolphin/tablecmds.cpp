@@ -35,6 +35,7 @@
 #include "access/tableam.h"
 #include "access/ustore/knl_uheap.h"
 #include "access/ustore/knl_uscan.h"
+#include "access/ustore/knl_undorequest.h"
 #include "access/multixact.h"
 #include "catalog/catalog.h"
 #include "catalog/dependency.h"
@@ -20120,24 +20121,29 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
 
             UnlockReleaseBuffer(buf);
         } else {
-            /*
-            * WAL-log the copied page. Unfortunately we don't know what kind of a
-            * page this is, so we have to log the full page including any unused
-            * space.
-            */
-            if (use_wal) {
-                log_newpage(&dst->smgr_rnode.node, forkNum, blkno, page, false, &tde_info);
-            }
 
-            if (RelationisEncryptEnable(rel)) {
-                bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+            if (RelationIsUstoreFormat(rel)) {
+                ExecuteUndoActionsPageForPartition(rel, dst, forkNum, blkno, blkno);
             } else {
-                bufToWrite = page;
+                /*
+                * WAL-log the copied page. Unfortunately we don't know what kind of a
+                * page this is, so we have to log the full page including any unused
+                * space.
+                */
+                if (use_wal) {
+                    log_newpage(&dst->smgr_rnode.node, forkNum, blkno, page, false, &tde_info);
+                }
+
+                if (RelationisEncryptEnable(rel)) {
+                    bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+                } else {
+                    bufToWrite = page;
+                }
+
+                PageSetChecksumInplace((Page)bufToWrite, blkno);
+
+                smgrextend(dst, forkNum, blkno, bufToWrite, true);
             }
-
-            PageSetChecksumInplace((Page)bufToWrite, blkno);
-
-            smgrextend(dst, forkNum, blkno, bufToWrite, true);
         }
     }
 
@@ -20352,25 +20358,29 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
             MarkBufferDirty(buf);
             UnlockReleaseBuffer(buf);
         } else {
-            /*
-            * XLOG stuff
-            * Retry to open smgr in case it is cloesd when we process SI messages
-            */
-            RelationOpenSmgr(dest);
-            if (use_wal) {
-                log_newpage(&dest->rd_smgr->smgr_rnode.node, forkNum, dest_blkno, page, true, &tde_info);
-            }
-
-            if (RelationisEncryptEnable(src)) {
-                bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+            if (RelationIsUstoreFormat(src)) {
+                ExecuteUndoActionsPageForPartition(src, dest->rd_smgr, forkNum, src_blkno, dest_blkno);
             } else {
-                bufToWrite = page;
+                /*
+                * XLOG stuff
+                * Retry to open smgr in case it is cloesd when we process SI messages
+                */
+                RelationOpenSmgr(dest);
+                if (use_wal) {
+                    log_newpage(&dest->rd_smgr->smgr_rnode.node, forkNum, dest_blkno, page, true, &tde_info);
+                }
+
+                if (RelationisEncryptEnable(src)) {
+                    bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+                } else {
+                    bufToWrite = page;
+                }
+
+                /* heap block mix in the block number to checksum. need recalculate */
+                PageSetChecksumInplace((Page)bufToWrite, dest_blkno);
+
+                smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, true);
             }
-
-            /* heap block mix in the block number to checksum. need recalculate */
-            PageSetChecksumInplace((Page)bufToWrite, dest_blkno);
-
-            smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, true);
         }
     }
 
@@ -26949,6 +26959,10 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
     if (RelationIsColStore(partTableRel)) {
         ATExecCStoreMergePartition(partTableRel, cmd);
         return;
+    }
+    /* Ustore tables do not support alter table merge partition operations in transaction blocks. */
+    if (RelationIsUstoreFormat(partTableRel)) {
+        PreventTransactionChain(true, "ALTER TABLE MERGE PARTITION");
     }
 
     /* the source partitions, must be at least 2, to merge into 1 partition  */

@@ -1016,15 +1016,15 @@ select relname from pg_partition where (parentid in (select oid from pg_class wh
 ---------
 (0 rows)
 
-explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+explain (costs off) select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
- Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+ Bitmap Heap Scan on test_part_ustore
    Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
-   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+   ->  BitmapOr
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((980 < c) AND (c < 1000))
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((2180 < c) AND (c < 2200))
 (7 rows)
 
@@ -1099,15 +1099,15 @@ select relname from pg_partition where (parentid in (select oid from pg_class wh
  p1
 (2 rows)
 
-explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+explain (costs off) select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
- Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+ Bitmap Heap Scan on test_part_ustore
    Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
-   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+   ->  BitmapOr
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((980 < c) AND (c < 1000))
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((2180 < c) AND (c < 2200))
 (7 rows)
 
@@ -1182,15 +1182,15 @@ select relname from pg_partition where (parentid in (select oid from pg_class wh
  p2
 (3 rows)
 
-explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+explain (costs off) select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
- Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+ Bitmap Heap Scan on test_part_ustore
    Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
-   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+   ->  BitmapOr
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((980 < c) AND (c < 1000))
-         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+         ->  Bitmap Index Scan on uidx_c1
                Index Cond: ((2180 < c) AND (c < 2200))
 (7 rows)
 
