@@ -12,19 +12,19 @@ create table t1_zerofill (
     i int4 unsigned zerofill,
     j int8 zerofill);
 \d+ t1_zerofill
-                  Table "db_zerofill.t1_zerofill"
- Column | Type  | Modifiers | Storage | Stats target | Description 
---------+-------+-----------+---------+--------------+-------------
- a      | uint4 |           | plain   |              | 
- b      | uint4 |           | plain   |              | 
- c      | uint1 |           | plain   |              | 
- d      | uint2 |           | plain   |              | 
- e      | uint4 |           | plain   |              | 
- f      | uint8 |           | plain   |              | 
- g      | uint1 |           | plain   |              | 
- h      | uint2 |           | plain   |              | 
- i      | uint4 |           | plain   |              | 
- j      | uint8 |           | plain   |              | 
+                   Table "db_zerofill.t1_zerofill"
+ Column |   Type   | Modifiers | Storage | Stats target | Description 
+--------+----------+-----------+---------+--------------+-------------
+ a      | uint4(5) |           | plain   |              | 
+ b      | uint4(5) |           | plain   |              | 
+ c      | uint1(2) |           | plain   |              | 
+ d      | uint2(2) |           | plain   |              | 
+ e      | uint4(2) |           | plain   |              | 
+ f      | uint8(2) |           | plain   |              | 
+ g      | uint1    |           | plain   |              | 
+ h      | uint2    |           | plain   |              | 
+ i      | uint4    |           | plain   |              | 
+ j      | uint8    |           | plain   |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
 

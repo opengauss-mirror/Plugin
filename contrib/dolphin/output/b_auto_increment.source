@@ -439,8 +439,8 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
 ----------------------------------------------------------------------------------------------------------------------------
  SET search_path = public;                                                                                                 +
  CREATE TABLE test_create_autoinc (                                                                                        +
-     "ID" bigint NOT NULL,                                                                                                 +
-     "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                                 +
+     "ID" bigint(12) NOT NULL,                                                                                             +
+     "SEQ" bigint(21) AUTO_INCREMENT NOT NULL,                                                                             +
      "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                               +
      "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                       +
      INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" OPERATOR(dolphin_catalog.+) 1)))+
@@ -494,8 +494,8 @@ SELECT * FROM test_create_autoinc;
                                Table "public.test_create_autoinc"
     Column     |          Type          |                       Modifiers                        
 ---------------+------------------------+--------------------------------------------------------
- ID            | bigint                 | not null
- SEQ           | bigint                 | not null AUTO_INCREMENT
+ ID            | bigint(12)             | not null
+ SEQ           | bigint(21)             | not null AUTO_INCREMENT
  CODE          | character varying(100) | character set UTF8 collate utf8mb4_general_ci not null
  ACTIVITY_TYPE | character varying(50)  | character set UTF8 collate utf8mb4_general_ci not null
 Indexes:
@@ -509,8 +509,8 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
 -------------------------------------------------------------------------------------------------------------------------
  SET search_path = public;                                                                                              +
  CREATE TABLE test_create_autoinc (                                                                                     +
-     "ID" bigint NOT NULL,                                                                                              +
-     "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                              +
+     "ID" bigint(12) NOT NULL,                                                                                          +
+     "SEQ" bigint(21) AUTO_INCREMENT NOT NULL,                                                                          +
      "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                            +
      "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                    +
      INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + (1)::bigint)))             +

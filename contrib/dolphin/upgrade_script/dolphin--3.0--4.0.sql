@@ -733,3 +733,22 @@ begin
         WHERE oprname = '^' AND oprleft = 'numeric'::regtype AND oprright = 'numeric'::regtype;
 end
 $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_typmodin (_cstring) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int1_typmodin';
+CREATE OR REPLACE FUNCTION pg_catalog.int1_typmodout (int) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int1_typmodout';
+CREATE OR REPLACE FUNCTION pg_catalog.int2_typmodin (_cstring) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int2_typmodin';
+CREATE OR REPLACE FUNCTION pg_catalog.int2_typmodout (int) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int2_typmodout';
+CREATE OR REPLACE FUNCTION pg_catalog.int4_typmodin (_cstring) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int4_typmodin';
+CREATE OR REPLACE FUNCTION pg_catalog.int4_typmodout (int) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int4_typmodout';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_typmodin (_cstring) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_typmodin';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_typmodout (int) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_typmodout';
+
+do $$
+begin
+update pg_catalog.pg_type set typmodin = 'int1_typmodin'::regproc, typmodout = 'int1_typmodout'::regproc where oid in('int1'::regtype, 'uint1'::regtype);
+update pg_catalog.pg_type set typmodin = 'int2_typmodin'::regproc, typmodout = 'int2_typmodout'::regproc where oid in('int2'::regtype, 'uint2'::regtype);
+update pg_catalog.pg_type set typmodin = 'int4_typmodin'::regproc, typmodout = 'int4_typmodout'::regproc where oid in('int4'::regtype, 'uint4'::regtype);
+update pg_catalog.pg_type set typmodin = 'int8_typmodin'::regproc, typmodout = 'int8_typmodout'::regproc where oid in('int8'::regtype, 'uint8'::regtype);
+end
+$$;
+

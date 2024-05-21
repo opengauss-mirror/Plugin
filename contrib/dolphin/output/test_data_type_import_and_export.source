@@ -122,124 +122,124 @@ create table binary_type_004(c longblob);
 create table binary_type_005(c binary);
 create table binary_type_006(c varbinary);
 \d value_type_001
-Table "public.value_type_001"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | tinyint | 
+  Table "public.value_type_001"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | tinyint(10) | 
 
 \d value_type_002
-Table "public.value_type_002"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_002"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_003
-Table "public.value_type_003"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_003"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_004
-Table "public.value_type_004"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_004"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_005
- Table "public.value_type_005"
- Column |   Type   | Modifiers 
---------+----------+-----------
- c      | smallint | 
+   Table "public.value_type_005"
+ Column |     Type     | Modifiers 
+--------+--------------+-----------
+ c      | smallint(10) | 
 
 \d value_type_006
-Table "public.value_type_006"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_006"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_007
-Table "public.value_type_007"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_007"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_008
-Table "public.value_type_008"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_008"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_009
 Unlogged table "public.value_type_009"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d value_type_010
-Table "public.value_type_010"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_010"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_011
-Table "public.value_type_011"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_011"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_012
-Table "public.value_type_012"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_012"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_013
-Table "public.value_type_013"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+  Table "public.value_type_013"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d value_type_014
-Table "public.value_type_014"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_014"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_015
-Table "public.value_type_015"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_015"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_016
-Table "public.value_type_016"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_016"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_017
-Table "public.value_type_017"
- Column |  Type  | Modifiers 
---------+--------+-----------
- c      | bigint | 
+  Table "public.value_type_017"
+ Column |    Type    | Modifiers 
+--------+------------+-----------
+ c      | bigint(10) | 
 
 \d value_type_018
-Table "public.value_type_018"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_018"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_019
-Table "public.value_type_019"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_019"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_020
-Table "public.value_type_020"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_020"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_021
    Table "public.value_type_021"
@@ -387,9 +387,9 @@ Table "public.character_type_004"
 
 \d character_type_005
 Table "public.character_type_005"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d character_type_006
 Table "public.character_type_006"
@@ -529,7 +529,7 @@ show create table value_type_001;
 ----------------+-----------------------------------------
  value_type_001 | SET search_path = public;              +
                 | CREATE TABLE value_type_001 (          +
-                |     c tinyint                          +
+                |     c tinyint(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -539,7 +539,7 @@ show create table value_type_002;
 ----------------+-----------------------------------------
  value_type_002 | SET search_path = public;              +
                 | CREATE TABLE value_type_002 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -549,7 +549,7 @@ show create table value_type_003;
 ----------------+-----------------------------------------
  value_type_003 | SET search_path = public;              +
                 | CREATE TABLE value_type_003 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -559,7 +559,7 @@ show create table value_type_004;
 ----------------+-----------------------------------------
  value_type_004 | SET search_path = public;              +
                 | CREATE TABLE value_type_004 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -569,7 +569,7 @@ show create table value_type_005;
 ----------------+---------------------------------------------
  value_type_005 | SET search_path = public;                  +
                 | CREATE TABLE value_type_005 (              +
-                |     c smallint                             +
+                |     c smallint(10)                         +
                 | )                                          +
                 | WITH (orientation=column, compression=low);
 (1 row)
@@ -579,7 +579,7 @@ show create table value_type_006;
 ----------------+-----------------------------------------
  value_type_006 | SET search_path = public;              +
                 | CREATE TABLE value_type_006 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -589,7 +589,7 @@ show create table value_type_007;
 ----------------+-----------------------------------------
  value_type_007 | SET search_path = public;              +
                 | CREATE TABLE value_type_007 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -599,7 +599,7 @@ show create table value_type_008;
 ----------------+-----------------------------------------
  value_type_008 | SET search_path = public;              +
                 | CREATE TABLE value_type_008 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -609,7 +609,7 @@ show create table value_type_009;
 ----------------+-----------------------------------------
  value_type_009 | SET search_path = public;              +
                 | CREATE UNLOGGED TABLE value_type_009 ( +
-                |     c integer                          +
+                |     c integer(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -619,7 +619,7 @@ show create table value_type_010;
 ----------------+-----------------------------------------
  value_type_010 | SET search_path = public;              +
                 | CREATE TABLE value_type_010 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -629,7 +629,7 @@ show create table value_type_011;
 ----------------+-----------------------------------------
  value_type_011 | SET search_path = public;              +
                 | CREATE TABLE value_type_011 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -639,7 +639,7 @@ show create table value_type_012;
 ----------------+-----------------------------------------
  value_type_012 | SET search_path = public;              +
                 | CREATE TABLE value_type_012 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -649,7 +649,7 @@ show create table value_type_013;
 ----------------+-----------------------------------------
  value_type_013 | SET search_path = public;              +
                 | CREATE TABLE value_type_013 (          +
-                |     c integer                          +
+                |     c integer(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -659,7 +659,7 @@ show create table value_type_014;
 ----------------+-----------------------------------------
  value_type_014 | SET search_path = public;              +
                 | CREATE TABLE value_type_014 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -669,7 +669,7 @@ show create table value_type_015;
 ----------------+-----------------------------------------
  value_type_015 | SET search_path = public;              +
                 | CREATE TABLE value_type_015 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -679,7 +679,7 @@ show create table value_type_016;
 ----------------+-----------------------------------------
  value_type_016 | SET search_path = public;              +
                 | CREATE TABLE value_type_016 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -689,7 +689,7 @@ show create table value_type_017;
 ----------------+-----------------------------------------
  value_type_017 | SET search_path = public;              +
                 | CREATE TABLE value_type_017 (          +
-                |     c bigint                           +
+                |     c bigint(10)                       +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -699,7 +699,7 @@ show create table value_type_018;
 ----------------+-----------------------------------------
  value_type_018 | SET search_path = public;              +
                 | CREATE TABLE value_type_018 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -709,7 +709,7 @@ show create table value_type_019;
 ----------------+-----------------------------------------
  value_type_019 | SET search_path = public;              +
                 | CREATE TABLE value_type_019 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -719,7 +719,7 @@ show create table value_type_020;
 ----------------+-----------------------------------------
  value_type_020 | SET search_path = public;              +
                 | CREATE TABLE value_type_020 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -969,7 +969,7 @@ show create table character_type_005;
 --------------------+-----------------------------------------
  character_type_005 | SET search_path = public;              +
                     | CREATE TABLE character_type_005 (      +
-                    |     c integer                          +
+                    |     c integer(10)                      +
                     | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)
@@ -1268,124 +1268,124 @@ drop table binary_type_006;
 0
 \c restore_data_type_db
 \d value_type_001
-Table "public.value_type_001"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | tinyint | 
+  Table "public.value_type_001"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | tinyint(10) | 
 
 \d value_type_002
-Table "public.value_type_002"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_002"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_003
-Table "public.value_type_003"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_003"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_004
-Table "public.value_type_004"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint1 | 
+ Table "public.value_type_004"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint1(10) | 
 
 \d value_type_005
- Table "public.value_type_005"
- Column |   Type   | Modifiers 
---------+----------+-----------
- c      | smallint | 
+   Table "public.value_type_005"
+ Column |     Type     | Modifiers 
+--------+--------------+-----------
+ c      | smallint(10) | 
 
 \d value_type_006
-Table "public.value_type_006"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_006"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_007
-Table "public.value_type_007"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_007"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_008
-Table "public.value_type_008"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint2 | 
+ Table "public.value_type_008"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint2(10) | 
 
 \d value_type_009
 Unlogged table "public.value_type_009"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d value_type_010
-Table "public.value_type_010"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_010"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_011
-Table "public.value_type_011"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_011"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_012
-Table "public.value_type_012"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_012"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_013
-Table "public.value_type_013"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+  Table "public.value_type_013"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d value_type_014
-Table "public.value_type_014"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_014"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_015
-Table "public.value_type_015"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_015"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_016
-Table "public.value_type_016"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint4 | 
+ Table "public.value_type_016"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint4(10) | 
 
 \d value_type_017
-Table "public.value_type_017"
- Column |  Type  | Modifiers 
---------+--------+-----------
- c      | bigint | 
+  Table "public.value_type_017"
+ Column |    Type    | Modifiers 
+--------+------------+-----------
+ c      | bigint(10) | 
 
 \d value_type_018
-Table "public.value_type_018"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_018"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_019
-Table "public.value_type_019"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_019"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_020
-Table "public.value_type_020"
- Column | Type  | Modifiers 
---------+-------+-----------
- c      | uint8 | 
+ Table "public.value_type_020"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | uint8(10) | 
 
 \d value_type_021
    Table "public.value_type_021"
@@ -1533,9 +1533,9 @@ Table "public.character_type_004"
 
 \d character_type_005
 Table "public.character_type_005"
- Column |  Type   | Modifiers 
---------+---------+-----------
- c      | integer | 
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | integer(10) | 
 
 \d character_type_006
 Table "public.character_type_006"
@@ -1675,7 +1675,7 @@ show create table value_type_001;
 ----------------+-----------------------------------------
  value_type_001 | SET search_path = public;              +
                 | CREATE TABLE value_type_001 (          +
-                |     c tinyint                          +
+                |     c tinyint(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1685,7 +1685,7 @@ show create table value_type_002;
 ----------------+-----------------------------------------
  value_type_002 | SET search_path = public;              +
                 | CREATE TABLE value_type_002 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1695,7 +1695,7 @@ show create table value_type_003;
 ----------------+-----------------------------------------
  value_type_003 | SET search_path = public;              +
                 | CREATE TABLE value_type_003 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1705,7 +1705,7 @@ show create table value_type_004;
 ----------------+-----------------------------------------
  value_type_004 | SET search_path = public;              +
                 | CREATE TABLE value_type_004 (          +
-                |     c uint1                            +
+                |     c uint1(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1715,7 +1715,7 @@ show create table value_type_005;
 ----------------+---------------------------------------------
  value_type_005 | SET search_path = public;                  +
                 | CREATE TABLE value_type_005 (              +
-                |     c smallint                             +
+                |     c smallint(10)                         +
                 | )                                          +
                 | WITH (orientation=column, compression=low);
 (1 row)
@@ -1725,7 +1725,7 @@ show create table value_type_006;
 ----------------+-----------------------------------------
  value_type_006 | SET search_path = public;              +
                 | CREATE TABLE value_type_006 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1735,7 +1735,7 @@ show create table value_type_007;
 ----------------+-----------------------------------------
  value_type_007 | SET search_path = public;              +
                 | CREATE TABLE value_type_007 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1745,7 +1745,7 @@ show create table value_type_008;
 ----------------+-----------------------------------------
  value_type_008 | SET search_path = public;              +
                 | CREATE TABLE value_type_008 (          +
-                |     c uint2                            +
+                |     c uint2(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1755,7 +1755,7 @@ show create table value_type_009;
 ----------------+-----------------------------------------
  value_type_009 | SET search_path = public;              +
                 | CREATE UNLOGGED TABLE value_type_009 ( +
-                |     c integer                          +
+                |     c integer(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1765,7 +1765,7 @@ show create table value_type_010;
 ----------------+-----------------------------------------
  value_type_010 | SET search_path = public;              +
                 | CREATE TABLE value_type_010 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1775,7 +1775,7 @@ show create table value_type_011;
 ----------------+-----------------------------------------
  value_type_011 | SET search_path = public;              +
                 | CREATE TABLE value_type_011 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1785,7 +1785,7 @@ show create table value_type_012;
 ----------------+-----------------------------------------
  value_type_012 | SET search_path = public;              +
                 | CREATE TABLE value_type_012 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1795,7 +1795,7 @@ show create table value_type_013;
 ----------------+-----------------------------------------
  value_type_013 | SET search_path = public;              +
                 | CREATE TABLE value_type_013 (          +
-                |     c integer                          +
+                |     c integer(10)                      +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1805,7 +1805,7 @@ show create table value_type_014;
 ----------------+-----------------------------------------
  value_type_014 | SET search_path = public;              +
                 | CREATE TABLE value_type_014 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1815,7 +1815,7 @@ show create table value_type_015;
 ----------------+-----------------------------------------
  value_type_015 | SET search_path = public;              +
                 | CREATE TABLE value_type_015 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1825,7 +1825,7 @@ show create table value_type_016;
 ----------------+-----------------------------------------
  value_type_016 | SET search_path = public;              +
                 | CREATE TABLE value_type_016 (          +
-                |     c uint4                            +
+                |     c uint4(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1835,7 +1835,7 @@ show create table value_type_017;
 ----------------+-----------------------------------------
  value_type_017 | SET search_path = public;              +
                 | CREATE TABLE value_type_017 (          +
-                |     c bigint                           +
+                |     c bigint(10)                       +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1845,7 +1845,7 @@ show create table value_type_018;
 ----------------+-----------------------------------------
  value_type_018 | SET search_path = public;              +
                 | CREATE TABLE value_type_018 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1855,7 +1855,7 @@ show create table value_type_019;
 ----------------+-----------------------------------------
  value_type_019 | SET search_path = public;              +
                 | CREATE TABLE value_type_019 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -1865,7 +1865,7 @@ show create table value_type_020;
 ----------------+-----------------------------------------
  value_type_020 | SET search_path = public;              +
                 | CREATE TABLE value_type_020 (          +
-                |     c uint8                            +
+                |     c uint8(10)                        +
                 | )                                      +
                 | WITH (orientation=row, compression=no);
 (1 row)
@@ -2115,7 +2115,7 @@ show create table character_type_005;
 --------------------+-----------------------------------------
  character_type_005 | SET search_path = public;              +
                     | CREATE TABLE character_type_005 (      +
-                    |     c integer                          +
+                    |     c integer(10)                      +
                     | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)

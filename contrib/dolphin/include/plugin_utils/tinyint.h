@@ -51,4 +51,8 @@ extern "C" DLL_PUBLIC Datum int18lt(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int18le(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int18gt(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int18ge(PG_FUNCTION_ARGS);
+
+
+#define MAX_INT_PRECISION 255
+
 #endif
