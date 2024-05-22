@@ -5,7 +5,6 @@ DROP TYPE IF EXISTS pg_catalog.uint1 CASCADE;
 DROP TYPE IF EXISTS pg_catalog._uint1 CASCADE;
 
 CREATE TYPE pg_catalog.uint1;
-CREATE TYPE pg_catalog._uint1;
 
 DROP FUNCTION IF EXISTS pg_catalog.uint1in(cstring) CASCADE;
 CREATE FUNCTION pg_catalog.uint1in (
@@ -37,7 +36,6 @@ DROP TYPE IF EXISTS pg_catalog.uint2 CASCADE;
 DROP TYPE IF EXISTS pg_catalog._uint2 CASCADE;
 
 CREATE TYPE pg_catalog.uint2;
-CREATE TYPE pg_catalog._uint2;
 
 DROP FUNCTION IF EXISTS pg_catalog.uint2in(cstring) CASCADE;
 CREATE FUNCTION pg_catalog.uint2in (
@@ -70,7 +68,6 @@ DROP TYPE IF EXISTS pg_catalog.uint4 CASCADE;
 DROP TYPE IF EXISTS pg_catalog._uint4 CASCADE;
 
 CREATE TYPE pg_catalog.uint4;
-CREATE TYPE pg_catalog._uint4;
 
 DROP FUNCTION IF EXISTS pg_catalog.uint4in(cstring) CASCADE;
 CREATE FUNCTION pg_catalog.uint4in (
@@ -103,7 +100,6 @@ DROP TYPE IF EXISTS pg_catalog.uint8 CASCADE;
 DROP TYPE IF EXISTS pg_catalog._uint8 CASCADE;
 
 CREATE TYPE pg_catalog.uint8;
-CREATE TYPE pg_catalog._uint8;
 
 DROP FUNCTION IF EXISTS pg_catalog.uint8in(cstring) CASCADE;
 CREATE FUNCTION pg_catalog.uint8in (

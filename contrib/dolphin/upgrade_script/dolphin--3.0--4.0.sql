@@ -288,6 +288,29 @@ CREATE CAST (text AS blob) WITH FUNCTION pg_catalog.text_to_blob(text);
 CREATE CAST (text AS mediumblob) WITH FUNCTION pg_catalog.text_to_mediumblob(text);
 CREATE CAST (text AS longblob) WITH FUNCTION pg_catalog.text_to_longblob(text);
 
+DO $for_upgrade_only$
+DECLARE
+  ans boolean;
+  typ_check boolean;
+  v_isinplaceupgrade boolean;
+BEGIN
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    select case when a.oid<>b.typarray then true else false end as typ_check from pg_type a, pg_type b where (a.typname='_uint1' and b.typname='uint1') into typ_check;
+    show isinplaceupgrade into v_isinplaceupgrade;
+    -- we can do drop type only during upgrade
+    if ans = true and v_isinplaceupgrade = true and typ_check = true then
+        DROP TYPE IF EXISTS pg_catalog._uint1 cascade;
+        DROP TYPE IF EXISTS pg_catalog._uint2 cascade;
+        DROP TYPE IF EXISTS pg_catalog._uint4 cascade;
+        DROP TYPE IF EXISTS pg_catalog._uint8 cascade;
+        update pg_catalog.pg_type set typname = '_uint1' where typname = '_uint1_1';
+        update pg_catalog.pg_type set typname = '_uint2' where typname = '_uint2_1';
+        update pg_catalog.pg_type set typname = '_uint4' where typname = '_uint4_1';
+        update pg_catalog.pg_type set typname = '_uint8' where typname = '_uint8_1';
+    end if;
+END
+$for_upgrade_only$;
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
