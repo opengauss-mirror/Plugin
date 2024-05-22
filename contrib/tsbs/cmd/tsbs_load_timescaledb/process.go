@@ -75,7 +75,7 @@ func insertTags(db *sql.DB, tagRows [][]string, returnResults bool) map[string]i
 	}
 	tx := MustBegin(db)
 	defer tx.Commit()
-	res, err := tx.Query(fmt.Sprintf(`INSERT INTO tags(%s) VALUES %s ON CONFLICT DO NOTHING RETURNING *`, strings.Join(cols, ","), strings.Join(values, ",")))
+	res, err := tx.Query(fmt.Sprintf(`INSERT INTO tags(%s) VALUES %s ON DUPLICATE KEY UPDATE NOTHING`, strings.Join(cols, ","), strings.Join(values, ",")))
 	if err != nil {
 		panic(err)
 	}
