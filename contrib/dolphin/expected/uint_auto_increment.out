@@ -788,195 +788,269 @@ DROP TABLE test_autoinc_with_check;
 -- auto_increment in ustore table PRIMARY KEY
 CREATE TABLE ustore_single_autoinc(col int unsigned auto_increment PRIMARY KEY) WITH (STORAGE_TYPE=USTORE);
 NOTICE:  CREATE TABLE will create implicit sequence "ustore_single_autoinc_col_seq" for serial column "ustore_single_autoinc.col"
-ERROR:  data type uint4 has no default operator class for access method "ubtree"
-HINT:  You must specify an operator class for the index or define a default operator class for the data type.
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "ustore_single_autoinc_pkey" for table "ustore_single_autoinc"
 INSERT INTO ustore_single_autoinc VALUES(NULL);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(NULL);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+              1
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(1 - 1);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(1 - 1);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+              2
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(100);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(100);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+              2
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+            101
 (1 row)
 
 ALTER TABLE ustore_single_autoinc AUTO_INCREMENT = 1000;
-ERROR:  relation "ustore_single_autoinc" does not exist
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+            101
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           1000
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+(5 rows)
+
 INSERT INTO ustore_single_autoinc select col-col from ustore_single_autoinc;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc select col-col from ustore...
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           1001
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+(10 rows)
+
 INSERT INTO ustore_single_autoinc VALUES(500);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(500);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           1001
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(1);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(1);
-                    ^
+ERROR:  duplicate key value violates unique constraint "ustore_single_autoinc_pkey"
+DETAIL:  Key (col)=(1) already exists.
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           1001
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(2100), (NULL), (2000), (DEFAULT), (2200), (NULL);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(2100), (NULL), (200...
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           2101
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
 UPDATE ustore_single_autoinc SET col=NULL WHERE col=2201;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: UPDATE ustore_single_autoinc SET col=NULL WHERE col=2201;
-               ^
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
 UPDATE ustore_single_autoinc SET col=0 WHERE col=2200;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: UPDATE ustore_single_autoinc SET col=0 WHERE col=2200;
-               ^
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 0
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+(17 rows)
+
 UPDATE ustore_single_autoinc SET col=DEFAULT WHERE col=2101;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: UPDATE ustore_single_autoinc SET col=DEFAULT WHERE col=2101;
-               ^
+ERROR:  duplicate key value violates unique constraint "ustore_single_autoinc_pkey"
+DETAIL:  Key (col)=(0) already exists.
 UPDATE ustore_single_autoinc SET col=3000 WHERE col=1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: UPDATE ustore_single_autoinc SET col=3000 WHERE col=1;
-               ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           2101
 (1 row)
 
 INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           3001
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+           3001
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
 SELECT pg_catalog.pg_get_tabledef('ustore_single_autoinc');
-ERROR:  relation "ustore_single_autoinc" does not exist
-LINE 1: SELECT pg_catalog.pg_get_tabledef('ustore_single_autoinc');
-                                          ^
-CONTEXT:  referenced column: pg_get_tabledef
+                       pg_get_tabledef                        
+--------------------------------------------------------------
+ SET search_path = uint_auto_increment;                      +
+ CREATE TABLE ustore_single_autoinc (                        +
+     col uint4 AUTO_INCREMENT NOT NULL,                      +
+     CONSTRAINT ustore_single_autoinc_pkey PRIMARY KEY (col) +
+ ) AUTO_INCREMENT = 3002                                     +
+ WITH (orientation=row, storage_type=ustore, compression=no);
+(1 row)
+
 TRUNCATE TABLE ustore_single_autoinc;
-ERROR:  relation "ustore_single_autoinc" does not exist
 INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
-                    ^
 SELECT LAST_INSERT_ID();
  last_insert_id 
 ----------------
-              3
+              1
 (1 row)
 
 SELECT col FROM ustore_single_autoinc ORDER BY 1;
-ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
-LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
-                        ^
+ col 
+-----
+ 1
+(1 row)
+
 DROP TABLE ustore_single_autoinc;
-ERROR:  table "ustore_single_autoinc" does not exist
 -- auto_increment in local temp table PRIMARY KEY
 CREATE TEMPORARY TABLE ltemp_single_autoinc(col int unsigned auto_increment PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "ltemp_single_autoinc_pkey" for table "ltemp_single_autoinc"
