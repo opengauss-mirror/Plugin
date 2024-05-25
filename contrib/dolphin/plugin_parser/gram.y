@@ -353,6 +353,13 @@ typedef struct TypeAttr {
 #define CAS_NOT_VALID				0x10
 #define CAS_NO_INHERIT				0x20
 
+#define CAS_DISABLE_VALIDATE        0x40
+#define CAS_DISABLE_NO_VALIDATE     0x80
+
+#define CAS_NO_VALIDATE             0x00
+#define CAS_VALIDATE                0x01
+#define CAS_VALIDATE_EMPTY          0x02
+
 /*
  * In the IntoClause structure there is a char value which will eventually be
  * set to RELKIND_RELATION or RELKIND_MATVIEW based on the relkind field in
@@ -995,6 +1002,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <node>	ColConstraint ColConstraintElem ConstraintAttr InformationalConstraintElem
 %type <ival>	key_actions key_delete key_match key_update key_action
 %type <ival>	ConstraintAttributeSpec ConstraintAttributeElem
+%type <ival>	ConstraintAttr_isValidate
 %type <str>		ExistingIndex
 
 %type <list>	constraints_set_list
@@ -1241,7 +1249,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	MOD MODIFIES MAX_ROWS
 	// DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
-	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
+	NOT NOTHING NOTIFY NOTNULL NOVALIDATE NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
@@ -5665,6 +5673,28 @@ alter_table_cmd:
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ValidateConstraint;
 					n->name = $3;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ENABLE [VALIDATE | NOVALIDATE] CONSTRAINT ... */
+			| ENABLE_P ConstraintAttr_isValidate CONSTRAINT name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					if ($2 == CAS_NO_VALIDATE)
+						n->subtype = AT_NOValidateConstraint;
+					else
+						n->subtype = AT_ValidateConstraint; 
+					n->name = $4;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> DISABLE [VALIDATE | NOVALIDATE] CONSTRAINT ... */
+			| DISABLE_P ConstraintAttr_isValidate CONSTRAINT name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					if ($2 == CAS_VALIDATE)
+						n->subtype = AT_DISABLE_ValidateConstraint;
+					else
+						n->subtype = AT_DISABLE_NOValidateConstraint; 
+					n->name = $4;
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> DROP CONSTRAINT IF EXISTS <name> [RESTRICT|CASCADE] */
@@ -10648,9 +10678,10 @@ ColConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = $3;
 					n->inforConstraint = (InformationalConstraint *) $4;
+					n->initially_valid = true;
 					$$ = (Node *)n;
 				}
-			| opt_unique_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
+			| opt_unique_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P ConstraintAttr_isValidate InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
@@ -10659,7 +10690,39 @@ ColConstraintElem:
 					n->options = $2;
 					n->indexname = NULL;
 					n->indexspace = $3;
-					n->inforConstraint = (InformationalConstraint *) $5;
+
+					int cas_type = 0;
+					if ($5 == CAS_NO_VALIDATE)
+						cas_type = CAS_NOT_VALID;
+					processCASbits(cas_type, @5, "UNIQUE",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									NULL, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = false;
+					n->inforConstraint = (InformationalConstraint *) $6;
+					$$ = (Node *)n;
+				}
+			| opt_unique_key opt_definition OptConsTableSpaceWithEmpty DISABLE_P ConstraintAttr_isValidate InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_UNIQUE;
+					n->location = @1;
+					n->keys = NULL;
+					n->options = $2;
+					n->indexname = NULL;
+					n->indexspace = $3;
+					
+					int cas_type = 0;
+					if ($5 == CAS_VALIDATE)
+						cas_type = CAS_DISABLE_VALIDATE;
+					else
+						cas_type = CAS_DISABLE_NO_VALIDATE;
+					processCASbits(cas_type, @5, "UNIQUE",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									NULL, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = true;
+					n->inforConstraint = (InformationalConstraint *) $6;
 					$$ = (Node *)n;
 				}
 			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty InformationalConstraintElem
@@ -10672,9 +10735,10 @@ ColConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = $3;
 					n->inforConstraint = (InformationalConstraint *) $4;
+					n->initially_valid = true;
 					$$ = (Node *)n;
 				}
-			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
+			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P ConstraintAttr_isValidate InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_PRIMARY;
@@ -10683,7 +10747,39 @@ ColConstraintElem:
 					n->options = $2;
 					n->indexname = NULL;
 					n->indexspace = $3;
-					n->inforConstraint = (InformationalConstraint *) $5;
+					
+					int cas_type = 0;
+					if ($5 == CAS_NO_VALIDATE)
+						cas_type = CAS_NOT_VALID;
+					processCASbits(cas_type, @5, "PRIMARY KEY",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									NULL, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = false;
+					n->inforConstraint = (InformationalConstraint *) $6;
+					$$ = (Node *)n;
+				}
+			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty DISABLE_P ConstraintAttr_isValidate InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_PRIMARY;
+					n->location = @1;
+					n->keys = NULL;
+					n->options = $2;
+					n->indexname = NULL;
+					n->indexspace = $3;
+					
+					int cas_type = 0;
+					if ($5 == CAS_VALIDATE)
+						cas_type = CAS_DISABLE_VALIDATE;
+					else
+						cas_type = CAS_DISABLE_NO_VALIDATE;
+					processCASbits(cas_type, @5, "PRIMARY KEY",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									NULL, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = true;
+					n->inforConstraint = (InformationalConstraint *) $6;
 					$$ = (Node *)n;
 				}
 			| CHECK '(' a_expr ')' opt_no_inherit
@@ -10696,7 +10792,7 @@ ColConstraintElem:
 					n->cooked_expr = NULL;
 					$$ = (Node *)n;
 				}
-			| CHECK '(' a_expr ')' opt_no_inherit ENABLE_P
+			| CHECK '(' a_expr ')' opt_no_inherit ENABLE_P ConstraintAttr_isValidate
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_CHECK;
@@ -10704,6 +10800,37 @@ ColConstraintElem:
 					n->is_no_inherit = $5;
 					n->raw_expr = $3;
 					n->cooked_expr = NULL;
+					
+					int cas_type = 0;
+					if ($7 == CAS_NO_VALIDATE)
+						cas_type = CAS_NOT_VALID;
+					processCASbits(cas_type, @7, "CHECK",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									&n->is_no_inherit, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = false;
+					$$ = (Node *)n;
+				}
+			| CHECK '(' a_expr ')' opt_no_inherit DISABLE_P ConstraintAttr_isValidate
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_CHECK;
+					n->location = @1;
+					n->is_no_inherit = $5;
+					n->raw_expr = $3;
+					n->cooked_expr = NULL;
+					
+					int cas_type = 0;
+					if ($7 == CAS_VALIDATE)
+						cas_type = CAS_DISABLE_VALIDATE;
+					else
+						cas_type = CAS_DISABLE_NO_VALIDATE;
+
+					processCASbits(cas_type, @7, "CHECK",
+									&n->deferrable, &n->initdeferred, &n->skip_validation,
+									&n->is_no_inherit, yyscanner);
+					n->initially_valid = !n->skip_validation;
+					n->isdisable = true;
 					$$ = (Node *)n;
 				}
 			| DEFAULT b_expr
@@ -11045,6 +11172,8 @@ ConstraintElem:
 								   &n->is_no_inherit, yyscanner);
 					n->constraintOptions = $6;
 					n->initially_valid = !n->skip_validation;
+					if ($5 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					$$ = (Node *)n;
 				}
 			| UNIQUE unique_name access_method_clause_without_keyword '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
@@ -11061,6 +11190,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = $9;
 					n->constraintOptions = $10;
+					n->initially_valid = true;
 					processCASbits($11, @11, "UNIQUE",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11082,6 +11212,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = NULL;
 					n->constraintOptions = $9;
+					n->initially_valid = true;
 					processCASbits($10, @10, "UNIQUE",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11102,6 +11233,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = $9;
 					n->constraintOptions = $10;
+					n->initially_valid = true;
 					processCASbits($11, @11, "UNIQUE",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11122,6 +11254,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = NULL;
 					n->constraintOptions = $9;
+					n->initially_valid = true;
 					processCASbits($10, @10, "UNIQUE",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11143,9 +11276,12 @@ ConstraintElem:
 					n->indexspace = $7;
 					n->constraintOptions = $8;
 					processCASbits($9, @9, "UNIQUE",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
+					if ($9 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11162,10 +11298,12 @@ ConstraintElem:
 					n->indexspace = NULL;
 					n->constraintOptions = $7;
 					processCASbits($8, @8, "UNIQUE",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $9; /* informational constraint info */
-					
+					n->initially_valid = !n->skip_validation;
+					if ($8 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11300,9 +11438,12 @@ ConstraintElem:
 					n->indexname = $2;
 					n->indexspace = NULL;
 					processCASbits($3, @3, "UNIQUE",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $4; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
+					if ($3 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					n->constraintOptions = $5;
 					$$ = (Node *)n;
 				}
@@ -11319,6 +11460,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = $10;
 					n->constraintOptions = $11;
+					n->initially_valid = true;
 					processCASbits($12, @12, "PRIMARY KEY",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11359,6 +11501,7 @@ ConstraintElem:
 					n->indexname = NULL;
 					n->indexspace = NULL;
 					n->constraintOptions = $10;
+					n->initially_valid = true;
 					processCASbits($11, @11, "PRIMARY KEY",
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
@@ -11399,9 +11542,12 @@ ConstraintElem:
 					n->indexspace = $8;
 					n->constraintOptions = $9;
 					processCASbits($10, @10, "PRIMARY KEY",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $11; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
+					if ($10 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11437,9 +11583,12 @@ ConstraintElem:
 					n->indexspace = NULL;
 					n->constraintOptions = $8;
 					processCASbits($9, @9, "PRIMARY KEY",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
+					if ($9 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11473,9 +11622,12 @@ ConstraintElem:
 					n->indexname = $3;
 					n->indexspace = NULL;
 					processCASbits($4, @4, "PRIMARY KEY",
-								   &n->deferrable, &n->initdeferred, NULL,
+								   &n->deferrable, &n->initdeferred, &n->skip_validation,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint*) $5; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
+					if ($4 & (CAS_DISABLE_VALIDATE | CAS_DISABLE_NO_VALIDATE))
+						n->isdisable = true;
 					n->constraintOptions = $6;
 					$$ = (Node *)n;
 				}
@@ -11502,6 +11654,7 @@ ConstraintElem:
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
 					n->constraintOptions = $11;
+					n->initially_valid   = true;
 					$$ = (Node *)n;
 				}
 			| FOREIGN KEY name '(' columnList ')' REFERENCES dolphin_qualified_name
@@ -11555,6 +11708,7 @@ ConstraintElem:
 								   NULL, NULL, NULL, NULL,
 								   yyscanner);
 					n->constraintOptions = $8;
+					n->initially_valid   = true;
 					$$ = (Node *)n;
 				}
 		;
@@ -13519,12 +13673,6 @@ AlterExtensionContentsStmt:
 				}
 			| ALTER EXTENSION name add_drop EVENT_TRIGGER name
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					AlterExtensionContentsStmt *n = makeNode(AlterExtensionContentsStmt);
 					n->extname = $3;
 					n->action = $4;
@@ -15294,6 +15442,22 @@ OptConstrFromTable:
 ConstraintAttributeSpec:
 			/*EMPTY*/
 				{ $$ = 0; }
+			| ENABLE_P ConstraintAttr_isValidate
+				{
+					if($2 == CAS_VALIDATE)
+						$$ = 0;
+					else if ($2 == CAS_NO_VALIDATE)
+						$$ = CAS_NOT_VALID;
+					else
+						$$ = 0;
+				}
+			| DISABLE_P ConstraintAttr_isValidate
+				{
+					if($2 == CAS_VALIDATE)
+						$$ = CAS_DISABLE_VALIDATE;
+					else
+						$$ = CAS_DISABLE_NO_VALIDATE;
+				}
 			| ConstraintAttributeSpec ConstraintAttributeElem
 				{
 					/*
@@ -15335,17 +15499,16 @@ ConstraintAttributeElem:
 			| NO INHERIT					{ $$ = CAS_NO_INHERIT; }
 		;
 
+ConstraintAttr_isValidate:
+			VALIDATE					{ $$ = CAS_VALIDATE; }
+			| NOVALIDATE				{ $$ = CAS_NO_VALIDATE; }
+			| /*EMPTY*/					{ $$ = CAS_VALIDATE_EMPTY; }
+		;
 
 CreateEventTrigStmt:
 			CREATE EVENT_TRIGGER name ON ColLabel
 			EXECUTE PROCEDURE func_name '(' ')'
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					CreateEventTrigStmt *n = makeNode(CreateEventTrigStmt);
 					n->trigname = $3;
 					n->eventname = $5;
@@ -15357,12 +15520,6 @@ CreateEventTrigStmt:
 			WHEN event_trigger_when_list
 			EXECUTE PROCEDURE func_name '(' ')'
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					CreateEventTrigStmt *n = makeNode(CreateEventTrigStmt);
 					n->trigname = $3;
 					n->eventname = $5;
@@ -15394,12 +15551,6 @@ event_trigger_value_list:
 AlterEventTrigStmt:
 			ALTER EVENT_TRIGGER name enable_trigger
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					AlterEventTrigStmt *n = makeNode(AlterEventTrigStmt);
 					n->trigname = $3;
 					n->tgenabled = $4;
@@ -16152,13 +16303,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->arguments = NIL;
 					n->behavior = $6;
 					n->concurrent = false;
-					n->purge = $7;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->removeType==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}					
+					n->purge = $7;				
 					if (n->removeType != OBJECT_TABLE && n->purge) {
         				const char* message = "PURGE clause only allowed in \"DROP TABLE\" statement";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -16180,12 +16325,6 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->behavior = $4;
 					n->concurrent = false;
 					n->purge = $5;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->removeType==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}	
 					if (n->removeType != OBJECT_TABLE && n->purge) {
         				const char* message = "PURGE clause only allowed in \"DROP TABLE\" statement";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -16511,12 +16650,6 @@ CommentStmt:
 					n->objname = $4;
 					n->objargs = NIL;
 					n->comment = $6;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->objtype==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}	
 					$$ = (Node *) n;
 				}
 			| COMMENT ON dolphin_comment_type dolphin_any_name IS comment_text
@@ -16526,12 +16659,6 @@ CommentStmt:
 					n->objname = $4;
 					n->objargs = NIL;
 					n->comment = $6;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->objtype==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					$$ = (Node *) n;
 				}
 			| COMMENT ON AGGREGATE func_name aggr_args IS comment_text
@@ -16743,13 +16870,7 @@ SecLabelStmt:
 					n->objtype = $5;
 					n->objname = $6;
 					n->objargs = NIL;
-					n->label = $8;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->objtype==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}	
+					n->label = $8;	
 					$$ = (Node *) n;
 				}
 			| SECURITY LABEL opt_provider ON dolphin_security_label_type dolphin_any_name
@@ -16761,12 +16882,6 @@ SecLabelStmt:
 					n->objname = $6;
 					n->objargs = NIL;
 					n->label = $8;
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT && n->objtype==OBJECT_EVENT_TRIGGER)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}	
 					$$ = (Node *) n;
 				}
 			| SECURITY LABEL opt_provider ON AGGREGATE func_name aggr_args
@@ -23342,12 +23457,6 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 				}
 			| ALTER EVENT_TRIGGER name RENAME TO name
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_EVENT_TRIGGER;
 					n->object = list_make1(makeString($3));
@@ -23356,12 +23465,6 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 				}
 			| ALTER EVENT_TRIGGER name OWNER TO RoleId
 				{
-					if(u_sess->attr.attr_sql.sql_compatibility != PG_FORMAT)
-					{
-						ereport(errstate, 
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("EVENT TRIGGER is only supported in PG compatibility database")));
-					}
 					AlterOwnerStmt *n = makeNode(AlterOwnerStmt);
 					n->objectType = OBJECT_EVENT_TRIGGER;
 					n->object = list_make1(makeString($3));

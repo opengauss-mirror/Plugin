@@ -72,7 +72,8 @@ enum {
     PLPGSQL_NSTYPE_PROC,
     PLPGSQL_NSTYPE_UNKNOWN,
     PLPGSQL_NSTYPE_COMPOSITE,
-    PLPGSQL_NSTYPE_GOTO_LABEL
+    PLPGSQL_NSTYPE_GOTO_LABEL,
+    PLPGSQL_NSTYPE_CURSORROW
 };
 
 /* ----------
@@ -93,7 +94,8 @@ enum {
     PLPGSQL_DTYPE_TABLE,
     PLPGSQL_DTYPE_ASSIGNLIST,
     PLPGSQL_DTYPE_COMPOSITE, /* composite type */
-    PLPGSQL_DTYPE_RECORD_TYPE /* record type */
+    PLPGSQL_DTYPE_RECORD_TYPE, /* record type */
+    PLPGSQL_DTYPE_CURSORROW
 };
 
 /* ----------
@@ -147,7 +149,8 @@ enum {
     PLPGSQL_TTYPE_ROW,    /* composite types */
     PLPGSQL_TTYPE_REC,    /* RECORD pseudotype */
     PLPGSQL_TTYPE_RECORD, /* RECORD pseudotype complitable A db */
-    PLPGSQL_TTYPE_PSEUDO  /* other pseudotypes */
+    PLPGSQL_TTYPE_PSEUDO,  /* other pseudotypes */
+    PLPGSQL_TTYPE_CURSORROW
 };
 
 /* ----------
@@ -470,6 +473,7 @@ typedef struct { /* openGauss data type */
     Oid cursorCompositeOid = InvalidOid;
     Oid tableofOid;
     TypeDependExtend* dependExtend;
+    PLpgSQL_expr* cursorExpr;
 } PLpgSQL_type;
 
 typedef struct {
@@ -584,8 +588,8 @@ typedef struct { /* Record variable (non-fixed structure) */
     int lineno;
     bool isImplicit;
     bool addNamespace;
+    bool notnull;
     char* varname;
-
     HeapTuple tup;
     TupleDesc tupdesc;
     bool freetup;
@@ -593,6 +597,7 @@ typedef struct { /* Record variable (non-fixed structure) */
     List* pkg_name = NULL;
     PLpgSQL_package* pkg = NULL;
     PLpgSQL_expr* default_val = NULL;
+    PLpgSQL_expr* expr = NULL;
 } PLpgSQL_rec;
 
 typedef struct { /* Field in record */
