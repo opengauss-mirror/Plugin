@@ -11560,4 +11560,39 @@ Datum text_to_blob(PG_FUNCTION_ARGS)
     return DirectFunctionCall3(dolphin_binaryin, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid),
                                 Int32GetDatum(len));
 }
+
+/**
+ * convert text to bit.
+*/
+PG_FUNCTION_INFO_V1_PUBLIC(text_to_bit);
+extern "C" DLL_PUBLIC Datum text_to_bit(PG_FUNCTION_ARGS);
+Datum text_to_bit(PG_FUNCTION_ARGS)
+{
+    text* input = PG_GETARG_TEXT_P(0);
+    int reslen, len, bitlen;
+    VarBit* result;
+    bits8* r;
+    char* sp;
+
+    len = VARSIZE_ANY_EXHDR(input);
+    bitlen = len * BITS_PER_BYTE;
+    sp = VARDATA_ANY(input);
+
+    if (bitlen > VARBITMAXLEN)
+        ereport(ERROR,
+            (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                errmsg("bit string length exceeds the maximum allowed (%d)", VARBITMAXLEN)));
+
+    reslen = VARBITTOTALLEN(bitlen);
+    result = (VarBit*)palloc0(reslen);
+    SET_VARSIZE(result, reslen);
+    VARBITLEN(result) = bitlen;
+
+    r = VARBITS(result);
+    for (; len > 0; len--) {
+        *(r++) = (bits8) *(sp++);
+    }
+
+    PG_RETURN_VARBIT_P(result);
+}
 #endif

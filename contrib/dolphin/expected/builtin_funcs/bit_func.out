@@ -193,6 +193,51 @@ select bit_length(char10), bit_length(char48), bit_length(char97) from char_test
 drop table binary_test;
 drop table test_type_table;
 drop table char_test;
+-- insert conv to bit col
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table t1 (c1 bit(10));
+insert into t1 values (conv(0, 10, 2));
+insert into t1 values (conv(1, 10, 2));
+insert into t1 values (conv(2, 10, 2));  -- error
+ERROR:  bit string length 16 does not match type bit(10)
+CONTEXT:  referenced column: c1
+insert into t1 values (conv(3, 10, 2));  -- error
+ERROR:  bit string length 16 does not match type bit(10)
+CONTEXT:  referenced column: c1
+select * from t1;
+     c1     
+------------
+ 0000110000
+ 0000110001
+(2 rows)
+
+-- test convert text to bit
+select cast('123' as bit(24));
+           bit            
+--------------------------
+ 001100010011001000110011
+(1 row)
+
+select cast('abcd' as bit(32));
+               bit                
+----------------------------------
+ 01100001011000100110001101100100
+(1 row)
+
+create table t2 (c1 int, c2 bit(8), c3 bit(20));
+insert into t2 values (1, '0', 'ab');
+insert into t2 values (2, '1', 'A1');
+insert into t2 values (3, '2', 'C4');
+select c1, c2, c3 from t2 order by c1;
+ c1 |    c2    |          c3          
+----+----------+----------------------
+  1 | 00110000 | 00000110000101100010
+  2 | 00110001 | 00000100000100110001
+  3 | 00110010 | 00000100001100110100
+(3 rows)
+
+drop table t1;
+drop table t2;
 drop schema db_test_bit cascade;
 reset bytea_output;
 reset dolphin.sql_mode;

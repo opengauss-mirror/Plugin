@@ -775,3 +775,7 @@ update pg_catalog.pg_type set typmodin = 'int8_typmodin'::regproc, typmodout = '
 end
 $$;
 
+
+
+CREATE FUNCTION pg_catalog.text_to_bit(text) RETURNS bit LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'text_to_bit';
+CREATE CAST(text AS bit) WITH FUNCTION pg_catalog.text_to_bit(text) AS ASSIGNMENT;
