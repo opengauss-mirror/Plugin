@@ -6418,6 +6418,14 @@ Datum date_add_time_interval(PG_FUNCTION_ARGS)
 static int64 getPartFromTm(pg_tm* tm, fsec_t fsec, int part)
 {
     int64 result = 0;
+    if (fsec > TIME_MAX_FRAC) {
+        tm->tm_sec = 0;
+        tm->tm_min++;
+    }
+    if (tm->tm_min > TIME_MAX_MINUTE) {
+        tm->tm_min = 0;
+        tm->tm_hour++;
+    }
     switch (part) {
         case HOUR:
             result = tm->tm_hour;
