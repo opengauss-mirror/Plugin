@@ -107,7 +107,33 @@ typedef struct tsdb_session_context {
 	
 	Size tsdb_dsm_control_mapped_size;
 	void *tsdb_dsm_control_impl_private;
+	int	tsdb_NamedLWLockTrancheRequestsAllocated;
+	bool tsdb_lock_named_request_allowed;
+	BackgroundWorkerArray *tsdb_BackgroundWorkerData;
 
+	bool tsdb_ts_guc_disable_optimizations;
+	bool tsdb_ts_guc_optimize_non_hypertables;
+	bool tsdb_ts_guc_restoring;
+	bool tsdb_ts_guc_constraint_aware_append;
+	bool tsdb_ts_guc_enable_ordered_append;
+	bool tsdb_ts_guc_enable_chunk_append;
+	bool tsdb_ts_guc_enable_parallel_chunk_append;
+	bool tsdb_ts_guc_enable_runtime_exclusion;
+	bool tsdb_ts_guc_enable_constraint_exclusion;
+	bool tsdb_ts_guc_enable_cagg_reorder_groupby;
+	bool tsdb_ts_guc_enable_transparent_decompression;
+	int tsdb_ts_guc_max_open_chunks_per_insert;
+	int tsdb_ts_guc_max_cached_chunks_per_hypertable;
+	int tsdb_ts_guc_telemetry_level;
+
+	char *tsdb_ts_last_tune_time;
+	char *tsdb_ts_last_tune_version;
+	char *tsdb_ts_telemetry_cloud;
+
+	#ifdef TS_DEBUG
+	bool tsdb_ts_shutdown_bgw;
+	char *tsdb_ts_current_timestamp_mock;
+	#endif
 } tsdb_session_context; 
 
 

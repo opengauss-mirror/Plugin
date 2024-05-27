@@ -1071,7 +1071,7 @@ chunk_scan_ctx_init(ChunkScanCtx *ctx, Hyperspace *hs, Point *p)
 		.num_partitions = 0,
 		.ssize = 0,
 		.dsize = 0,
-		.max_dsize = 100,
+		.max_dsize = 0,
 		.ffactor = 0,
 		.keysize = sizeof(int32),
 		.entrysize = sizeof(ChunkScanEntry),

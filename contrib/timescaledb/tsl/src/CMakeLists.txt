@@ -111,7 +111,6 @@ set(SOURCES
   ${PROJECT_SOURCE_DIR}/src/telemetry/telemetry.cpp
   ${PROJECT_SOURCE_DIR}/src/telemetry/telemetry_metadata.cpp
   ${PROJECT_SOURCE_DIR}/src/telemetry/uuid.cpp
-  
 )
 
 # Add test source code in Debug builds

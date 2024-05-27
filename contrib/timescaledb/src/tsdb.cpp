@@ -2418,7 +2418,8 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
 
 		psc->tsdb_loaded = false;
 		psc->tsdb_loader_present = true;
-		
+		psc->tsdb_NamedLWLockTrancheRequestsAllocated = 0;
+		psc->tsdb_lock_named_request_allowed = true;
 		return psc;
 	}
 	
@@ -2476,6 +2477,33 @@ void init_session_vars(void)
 
 	psc->tsdb_dsm_control_mapped_size = 0;
 	psc->tsdb_dsm_control_impl_private = NULL;
+
+	psc->tsdb_NamedLWLockTrancheRequestsAllocated = 0;
+	psc->tsdb_lock_named_request_allowed = true;
+
+	psc->tsdb_ts_guc_disable_optimizations = false;
+	psc->tsdb_ts_guc_optimize_non_hypertables = false;
+	psc->tsdb_ts_guc_restoring = false;
+	psc->tsdb_ts_guc_constraint_aware_append = true;
+	psc->tsdb_ts_guc_enable_ordered_append = true;
+	psc->tsdb_ts_guc_enable_chunk_append = true;
+	psc->tsdb_ts_guc_enable_parallel_chunk_append = true;
+	psc->tsdb_ts_guc_enable_runtime_exclusion = true;
+	psc->tsdb_ts_guc_enable_constraint_exclusion = true;
+	psc->tsdb_ts_guc_enable_cagg_reorder_groupby = true;
+	psc->tsdb_ts_guc_enable_transparent_decompression = true;
+	psc->tsdb_ts_guc_max_open_chunks_per_insert = 10;
+	psc->tsdb_ts_guc_max_cached_chunks_per_hypertable = 10;
+	psc->tsdb_ts_guc_telemetry_level = TELEMETRY_DEFAULT;
+
+	psc->tsdb_ts_last_tune_time = NULL;
+	psc->tsdb_ts_last_tune_version = NULL;
+	psc->tsdb_ts_telemetry_cloud = NULL;
+
+	#ifdef TS_DEBUG
+	ts_shutdown_bgw = false;
+	ts_current_timestamp_mock = "";
+	#endif
 	
 	_constraint_aware_append_init();
 

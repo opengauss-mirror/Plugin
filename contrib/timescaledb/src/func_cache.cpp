@@ -201,97 +201,7 @@ static FuncInfo funcinfo[] = {
 		.arg_types = { INTERVALOID, TIMESTAMPTZOID, TIMESTAMPTZOID },
 		.group_estimate = time_bucket_group_estimate,
 		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 2,
-		.arg_types = { INTERVALOID, DATEOID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 3,
-		.arg_types = { INTERVALOID, DATEOID, DATEOID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 2,
-		.arg_types = { INT2OID, INT2OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 3,
-		.arg_types = { INT2OID, INT2OID, INT2OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 2,
-		.arg_types = { INT4OID, INT4OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 3,
-		.arg_types = { INT4OID, INT4OID, INT4OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 2,
-		.arg_types = { INT8OID, INT8OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = true,
-		.is_bucketing_func = true,
-		.funcname = "time_bucket",
-		.nargs = 3,
-		.arg_types = { INT8OID, INT8OID, INT8OID },
-		.group_estimate = time_bucket_group_estimate,
-		.sort_transform = time_bucket_sort_transform,
-	},
-	{
-		.is_timescaledb_func = false,
-		.is_bucketing_func = true,
-		.funcname = "date_trunc",
-		.nargs = 2,
-		.arg_types = { TEXTOID, TIMESTAMPOID },
-		.group_estimate = date_trunc_group_estimate,
-		.sort_transform = date_trunc_sort_transform,
-	},
-	{
-		.is_timescaledb_func = false,
-		.is_bucketing_func = true,
-		.funcname = "date_trunc",
-		.nargs = 2,
-		.arg_types = { TEXTOID, TIMESTAMPTZOID },
-		.group_estimate = date_trunc_group_estimate,
-		.sort_transform = date_trunc_sort_transform,
-	},
+	}
 };
 
 #define _MAX_CACHE_FUNCTIONS (sizeof(funcinfo) / sizeof(funcinfo[0]))
@@ -307,7 +217,7 @@ proc_get_oid(HeapTuple tuple)
 	return form->oid;
 #endif
 }
-
+static HTAB *func_hash_try;
 
 static void
 initialize_func_info()
@@ -316,7 +226,7 @@ initialize_func_info()
 		.num_partitions = 0,
 		.ssize = 0,
 		.dsize = 0,
-		.max_dsize = 100,
+		.max_dsize = 0,
 		.ffactor = 0,
 		.keysize = sizeof(Oid),
 		.entrysize = sizeof(FuncEntry),
@@ -334,8 +244,8 @@ initialize_func_info()
 	Relation rel;
 	int i;
 
-	func_hash = hash_create("func_cache", _MAX_CACHE_FUNCTIONS, &hashctl, HASH_ELEM | HASH_BLOBS);
-
+	func_hash_try = hash_create("func_cache", _MAX_CACHE_FUNCTIONS, &hashctl, HASH_ELEM | HASH_BLOBS);
+	func_hash = func_hash_try;
 	rel = table_open(ProcedureRelationId, AccessShareLock);
 
 	for (i = 0; i < _MAX_CACHE_FUNCTIONS; i++)
@@ -360,7 +270,15 @@ initialize_func_info()
 
 		funcid = proc_get_oid(tuple);
 
-		fentry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_ENTER, &hash_found);
+		if (NULL != func_hash)
+		{
+			fentry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_ENTER, &hash_found);
+		}
+		else
+		{
+			fentry =(FuncEntry*) hash_search(func_hash_try, &funcid, HASH_ENTER, &hash_found);
+		}
+	
 		Assert(!hash_found);
 		fentry->funcid = funcid;
 		fentry->funcinfo = finfo;
@@ -375,10 +293,13 @@ ts_func_cache_get(Oid funcid)
 {
 	FuncEntry *entry;
 
-	if (NULL == func_hash)
+	if (NULL == func_hash && NULL== func_hash_try)
 		initialize_func_info();
-
+	
+	if (NULL != func_hash)
 	entry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_FIND, NULL);
+
+	else entry =(FuncEntry*) hash_search(func_hash_try, &funcid, HASH_FIND, NULL);
 
 	return (NULL == entry) ? NULL : entry->funcinfo;
 }

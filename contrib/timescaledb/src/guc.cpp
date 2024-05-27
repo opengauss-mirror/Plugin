@@ -25,31 +25,6 @@ ts_telemetry_on()
 }
 
 
-
-bool ts_guc_disable_optimizations = false;
-bool ts_guc_optimize_non_hypertables = false;
-bool ts_guc_restoring = false;
-bool ts_guc_constraint_aware_append = true;
-bool ts_guc_enable_ordered_append = true;
-bool ts_guc_enable_chunk_append = true;
-bool ts_guc_enable_parallel_chunk_append = true;
-bool ts_guc_enable_runtime_exclusion = true;
-bool ts_guc_enable_constraint_exclusion = true;
-bool ts_guc_enable_cagg_reorder_groupby = true;
-TSDLLEXPORT bool ts_guc_enable_transparent_decompression = true;
-int ts_guc_max_open_chunks_per_insert = 10;
-int ts_guc_max_cached_chunks_per_hypertable = 10;
-int ts_guc_telemetry_level = TELEMETRY_DEFAULT;
-
-char *ts_last_tune_time = NULL;
-char *ts_last_tune_version = NULL;
-char *ts_telemetry_cloud = NULL;
-
-#ifdef TS_DEBUG
-bool ts_shutdown_bgw = false;
-char *ts_current_timestamp_mock = "";
-#endif
-
 static void
 assign_max_cached_chunks_per_hypertable_hook(int newval, void *extra)
 {

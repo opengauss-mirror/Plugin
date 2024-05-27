@@ -25,7 +25,7 @@
 #include "access/reloptions.h"
 #include "tsdb_shm.h"
 #include "event_trigger.h"
-
+#include <libpq/pqsignal.h>
 
 static const struct
 {
@@ -633,9 +633,9 @@ extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
 
 #define CHECK_STACK_DEPTH() \
 	do { \
-		if (errordata_stack_depth < 0) \
+		if (t_thrd.log_cxt.errordata_stack_depth < 0) \
 		{ \
-			errordata_stack_depth = -1; \
+			t_thrd.log_cxt.errordata_stack_depth = -1; \
 			ereport(ERROR, (errmsg_internal("errstart was not called"))); \
 		} \
 	} while (0)

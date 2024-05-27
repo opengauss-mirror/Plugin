@@ -56,18 +56,6 @@ make_interval(PG_FUNCTION_ARGS)
 	PG_RETURN_INTERVAL_P(result);
 } 
 
-static pqsigfunc pg_signal_array[PG_SIGNAL_COUNT];
-pqsigfunc
-pqsignal(int signum, pqsigfunc handler)
-{
-	pqsigfunc	prevfunc;
-
-	if (signum >= PG_SIGNAL_COUNT || signum < 0)
-		return SIG_ERR;
-	prevfunc = pg_signal_array[signum];
-	pg_signal_array[signum] = handler;
-	return prevfunc;
-} 
 
 void
 RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,

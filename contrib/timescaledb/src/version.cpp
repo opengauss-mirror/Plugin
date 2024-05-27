@@ -13,7 +13,6 @@
 
 #include "fmgr.h"
 #include "compat.h"
-#include "gitcommit.h"
 #include "version.h"
 #include "config.h"
 

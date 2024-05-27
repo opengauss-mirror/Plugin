@@ -56,27 +56,9 @@
 
 
 
-static MultiXactId *OldestVisibleMXactId;
 
 static SlruCtlData MultiXactOffsetCtlData;
 
-static bool am_autovacuum_worker = false;
-
-static IndexList *ILHead = NULL;
-
-static bool all_timeouts_initialized = false;
-
-static volatile sig_atomic_t got_deadlock_timeout;
-
-static int	on_proc_exit_index,
-			on_shmem_exit_index,
-			before_shmem_exit_index;
-			
-static bool am_autovacuum_launcher = false;
-
-static Vfd *VfdCache;
-static int	nfile = 0;
-static List *pendingReindexedIndexes = NIL;
 
 
 
@@ -165,36 +147,6 @@ static List *pendingReindexedIndexes = NIL;
 
 #define DATATYPE_PAIR(left, right, type1, type2)                                                   \
 	((left == type1 && right == type2) || (left == type2 && right == type1))
-static HTAB *custom_scan_methods = NULL; 
-static int	NamedLWLockTrancheRequestsAllocated = 0;
-static bool lock_named_request_allowed = true;
-
-
-
-static EventTriggerCacheStateType EventTriggerCacheState = ETCS_NEEDS_REBUILD;
-static HTAB *EventTriggerCache;
-static MemoryContext EventTriggerCacheContext;
-static MultiXactStateData *MultiXactState;
-static ErrorData errordata[ERRORDATA_STACK_SIZE];
-
-static MemoryContext vac_context = NULL;
-static int	errordata_stack_depth = -1; 
-static volatile OldSnapshotControlData *oldSnapshotControl;
-static BufferAccessStrategy vac_strategy;
-static TransactionId OldestXmin;
-static TransactionId FreezeLimit;
-static MultiXactId MultiXactCutoff;
-
-
-
-static const char BinarySignature[12] = "PGCOPY\n\377\r\n\0";
-static struct config_generic **guc_variables;
-static int	num_guc_variables;
-static const char *const map_old_guc_names[] = {
-	"sort_mem", "work_mem",
-	"vacuum_mem", "maintenance_work_mem",
-	NULL
-};
 
 static const unit_conversion memory_unit_conversion_table[] =
 {
@@ -244,11 +196,6 @@ static const unit_conversion time_unit_conversion_table[] =
 
 	{""}						/* end of table marker */
 }; 
-static HTAB *ri_compare_cache = NULL;
-static HTAB *ri_constraint_cache = NULL;
-static int	ri_constraint_cache_valid_count = 0;
-static HTAB *ri_query_cache = NULL;
-static dlist_head ri_constraint_cache_valid_list;
 
 
 #define ARRAY_ALGORITHM_DEFINITION                                                                 \
@@ -291,25 +238,9 @@ static dlist_head ri_constraint_cache_valid_list;
 		.compressed_data_storage = TOAST_STORAGE_EXTERNAL,                                         \
 	}
 
-static bool PqCommReadingMsg;	/* in the middle of reading a message */
-static int	PqRecvPointer;		/* Next index to read a byte from PqRecvBuffer */
-static int	PqRecvLength;		/* End of data available in PqRecvBuffer */
-static char PqRecvBuffer[PQ_RECV_BUFFER_SIZE];
-
-static int	size_guc_variables;
-static Snapshot HistoricSnapshot = NULL;
-
 static dlist_head dsm_segment_list = DLIST_STATIC_INIT(dsm_segment_list);
 
 
-static AfterTriggersData afterTriggers;
-
-
-static pqsigfunc pg_signal_array[PG_SIGNAL_COUNT];
-static BackgroundWorkerArray *BackgroundWorkerData; 
-static const Pg_magic_struct magic_data = PG_MODULE_MAGIC_DATA;
-static int	numAllocatedDescs = 0;
-static int	maxAllocatedDescs = 0;
 
 
 #define RelationAllowsEarlyPruning(rel) \
@@ -435,7 +366,6 @@ static void DisplayXidCache(void);
 
 
 
-static const FSMAddress FSM_ROOT_ADDRESS = {FSM_ROOT_LEVEL, 0};
 static const uint8 number_of_ones_for_visible[256] = {
 	0, 1, 0, 1, 1, 2, 1, 2, 0, 1, 0, 1, 1, 2, 1, 2,
 	1, 2, 1, 2, 2, 3, 2, 3, 1, 2, 1, 2, 2, 3, 2, 3,
