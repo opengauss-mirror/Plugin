@@ -1181,3 +1181,371 @@ static void ereport_op_str(const char *op, agtype *lhs, agtype *rhs)
     ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg(msgfmt, lstr, op, rstr)));
 }
+
+PG_FUNCTION_INFO_V1(agtype_contains);
+extern "C" Datum  agtype_contains(PG_FUNCTION_ARGS);
+/*
+ * @> operator for agtype. Returns true if the right agtype path/value entries
+ * contained at the top level within the left agtype value
+ */
+Datum agtype_contains(PG_FUNCTION_ARGS)
+{
+    agtype_iterator *constraint_it = NULL;
+    agtype_iterator *property_it = NULL;
+    agtype *properties = NULL;
+    agtype *constraints = NULL;
+
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    properties = AG_GET_ARG_AGTYPE_P(0);
+    constraints = AG_GET_ARG_AGTYPE_P(1);
+
+    if (AGT_ROOT_IS_SCALAR(properties)
+            && AGTE_IS_AGTYPE(properties->root.children[0]))
+    {
+        properties =
+            agtype_value_to_agtype(extract_entity_properties(properties,
+                                                             false));
+    }
+
+    if (AGT_ROOT_IS_SCALAR(constraints)
+            && AGTE_IS_AGTYPE(constraints->root.children[0]))
+    {
+        constraints =
+            agtype_value_to_agtype(extract_entity_properties(constraints,
+                                                             false));
+    }
+
+    if (AGT_ROOT_IS_OBJECT(properties) != AGT_ROOT_IS_OBJECT(constraints))
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    property_it = agtype_iterator_init(&properties->root);
+    constraint_it = agtype_iterator_init(&constraints->root);
+
+    PG_RETURN_BOOL(agtype_deep_contains(&property_it, &constraint_it));
+}
+
+
+PG_FUNCTION_INFO_V1(agtype_contained_by);
+extern "C" Datum  agtype_contained_by(PG_FUNCTION_ARGS);
+/*
+ * <@ operator for agtype. Returns true if the left agtype path/value entries
+ * contained at the top level within the right agtype value
+ */
+Datum agtype_contained_by(PG_FUNCTION_ARGS)
+{
+    agtype_iterator *constraint_it, *property_it;
+    agtype *properties, *constraints;
+
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    properties = AG_GET_ARG_AGTYPE_P(0);
+    constraints = AG_GET_ARG_AGTYPE_P(1);
+
+    if (AGT_ROOT_IS_SCALAR(properties)
+            && AGTE_IS_AGTYPE(properties->root.children[0]))
+    {
+        properties =
+            agtype_value_to_agtype(extract_entity_properties(properties,
+                                                             false));
+    }
+
+    if (AGT_ROOT_IS_SCALAR(constraints)
+            && AGTE_IS_AGTYPE(constraints->root.children[0]))
+    {
+        constraints =
+            agtype_value_to_agtype(extract_entity_properties(constraints,
+                                                             false));
+    }
+
+    constraint_it = agtype_iterator_init(&constraints->root);
+    property_it = agtype_iterator_init(&properties->root);
+
+    PG_RETURN_BOOL(agtype_deep_contains(&constraint_it, &property_it));
+}
+
+
+PG_FUNCTION_INFO_V1(agtype_exists_agtype);
+extern "C" Datum  agtype_exists_agtype(PG_FUNCTION_ARGS);
+/*
+ * ? operator for agtype. Returns true if the string exists as top-level keys
+ */
+Datum agtype_exists_agtype(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    agtype *key = AG_GET_ARG_AGTYPE_P(1);
+    agtype_value *aval;
+    agtype_value *v = NULL;
+
+    if (AGT_ROOT_IS_SCALAR(agt))
+    {
+        agt = agtype_value_to_agtype(extract_entity_properties(agt, false));
+    }
+
+    if (AGT_ROOT_IS_SCALAR(key))
+    {
+        aval = get_ith_agtype_value_from_container(&key->root, 0);
+    }
+    else
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (AGT_ROOT_IS_OBJECT(agt) &&
+        aval->type == AGTV_STRING)
+    {
+        v = find_agtype_value_from_container(&agt->root,
+                                             AGT_FOBJECT,
+                                             aval);
+    }
+    else if (AGT_ROOT_IS_ARRAY(agt) &&
+             aval->type != AGTV_NULL)
+    {
+        v = find_agtype_value_from_container(&agt->root,
+                                             AGT_FARRAY,
+                                             aval);
+    }
+
+    PG_RETURN_BOOL(v != NULL);
+}
+
+PG_FUNCTION_INFO_V1(agtype_exists_any_agtype);
+extern "C" Datum  agtype_exists_any_agtype(PG_FUNCTION_ARGS);
+/*
+ * ?| operator for agtype. Returns true if any of the array strings exist as
+ * top-level keys
+ */
+Datum agtype_exists_any_agtype(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    agtype *keys = AG_GET_ARG_AGTYPE_P(1);
+    agtype_value elem;
+    agtype_iterator *it = NULL;
+
+    if (AGT_ROOT_IS_SCALAR(agt))
+    {
+        agt = agtype_value_to_agtype(extract_entity_properties(agt, true));
+    }
+
+    if (!AGT_ROOT_IS_SCALAR(keys) && !AGT_ROOT_IS_OBJECT(keys))
+    {
+        while ((it = get_next_list_element(it, &keys->root, &elem)))
+        {
+            if (IS_A_AGTYPE_SCALAR(&elem))
+            {
+                if (AGT_ROOT_IS_OBJECT(agt) &&
+                    (&elem)->type == AGTV_STRING &&
+                    find_agtype_value_from_container(&agt->root,
+                                                         AGT_FOBJECT,
+                                                         &elem))
+                {
+                    PG_RETURN_BOOL(true);
+                }
+                else if (AGT_ROOT_IS_ARRAY(agt) &&
+                         (&elem)->type != AGTV_NULL &&
+                         find_agtype_value_from_container(&agt->root,
+                                                           AGT_FARRAY,
+                                                           &elem))
+                {
+                    PG_RETURN_BOOL(true);
+                }
+            }
+            else
+            {
+                PG_RETURN_BOOL(false);
+            }
+        }
+    }
+    else
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("invalid agtype value for right operand")));
+    }
+
+    PG_RETURN_BOOL(false);
+}
+
+PG_FUNCTION_INFO_V1(agtype_exists_all_agtype);
+extern "C" Datum  agtype_exists_all_agtype(PG_FUNCTION_ARGS);
+/*
+ * ?& operator for agtype. Returns true if all of the array strings exist as
+ * top-level keys
+ */
+Datum agtype_exists_all_agtype(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    agtype *keys = AG_GET_ARG_AGTYPE_P(1);
+    agtype_value elem;
+    agtype_iterator *it = NULL;
+
+    if (AGT_ROOT_IS_SCALAR(agt))
+    {
+        agt = agtype_value_to_agtype(extract_entity_properties(agt, true));
+    }
+
+    if (!AGT_ROOT_IS_SCALAR(keys) && !AGT_ROOT_IS_OBJECT(keys))
+    {
+        while ((it = get_next_list_element(it, &keys->root, &elem)))
+        {
+            if (IS_A_AGTYPE_SCALAR(&elem))
+            {
+                if ((&elem)->type == AGTV_NULL)
+                {
+                    continue;
+                }
+                else if (AGT_ROOT_IS_OBJECT(agt) &&
+                         (&elem)->type == AGTV_STRING &&
+                         find_agtype_value_from_container(&agt->root,
+                                                          AGT_FOBJECT,
+                                                          &elem))
+                {
+                    continue;
+                }
+                else if (AGT_ROOT_IS_ARRAY(agt) &&
+                         find_agtype_value_from_container(&agt->root,
+                                                          AGT_FARRAY,
+                                                          &elem))
+                {
+                    continue;
+                }
+                else
+                {
+                    PG_RETURN_BOOL(false);
+                }
+            }
+            else
+            {
+                PG_RETURN_BOOL(false);
+            }
+        }
+    }
+    else
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("invalid agtype value for right operand")));
+    }
+
+    PG_RETURN_BOOL(true);
+}
+
+PG_FUNCTION_INFO_V1(agtype_exists);
+extern "C" Datum  agtype_exists(PG_FUNCTION_ARGS);
+/*
+ * ? operator for agtype. Returns true if the string exists as top-level keys
+ */
+Datum agtype_exists(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    text *key = PG_GETARG_TEXT_PP(1);
+    agtype_value aval;
+    agtype_value *v = NULL;
+
+    /*
+     * We only match Object keys (which are naturally always Strings), or
+     * string elements in arrays.  In particular, we do not match non-string
+     * scalar elements.  Existence of a key/element is only considered at the
+     * top level.  No recursion occurs.
+     */
+    aval.type = AGTV_STRING;
+    aval.val.string.val = VARDATA_ANY(key);
+    aval.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    v = find_agtype_value_from_container(&agt->root,
+                                         AGT_FOBJECT | AGT_FARRAY,
+                                         &aval);
+
+    PG_RETURN_BOOL(v != NULL);
+}
+
+PG_FUNCTION_INFO_V1(agtype_exists_any);
+extern "C" Datum  agtype_exists_any(PG_FUNCTION_ARGS);
+/*
+ * ?| operator for agtype. Returns true if any of the array strings exist as
+ * top-level keys
+ */
+Datum agtype_exists_any(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    ArrayType *keys = PG_GETARG_ARRAYTYPE_P(1);
+    int i;
+    Datum *key_datums;
+    bool *key_nulls;
+    int elem_count;
+
+    deconstruct_array(keys, TEXTOID, -1, false, 'i', &key_datums, &key_nulls,
+                      &elem_count);
+
+    for (i = 0; i < elem_count; i++)
+    {
+        agtype_value strVal;
+
+        if (key_nulls[i])
+        {
+            continue;
+        }
+
+        strVal.type = AGTV_STRING;
+        strVal.val.string.val = VARDATA(key_datums[i]);
+        strVal.val.string.len = VARSIZE(key_datums[i]) - VARHDRSZ;
+
+        if (find_agtype_value_from_container(&agt->root,
+                                        AGT_FOBJECT | AGT_FARRAY,
+                                        &strVal) != NULL)
+        {
+            PG_RETURN_BOOL(true);
+        }
+    }
+
+    PG_RETURN_BOOL(false);
+}
+
+PG_FUNCTION_INFO_V1(agtype_exists_all);
+extern "C" Datum  agtype_exists_all(PG_FUNCTION_ARGS);
+/*
+ * ?& operator for agtype. Returns true if all of the array strings exist as
+ * top-level keys
+ */
+Datum agtype_exists_all(PG_FUNCTION_ARGS)
+{
+    agtype *agt = AG_GET_ARG_AGTYPE_P(0);
+    ArrayType  *keys = PG_GETARG_ARRAYTYPE_P(1);
+    int i;
+    Datum *key_datums;
+    bool *key_nulls;
+    int elem_count;
+
+    deconstruct_array(keys, TEXTOID, -1, false, 'i', &key_datums, &key_nulls,
+                      &elem_count);
+
+    for (i = 0; i < elem_count; i++)
+    {
+        agtype_value strVal;
+
+        if (key_nulls[i])
+        {
+            continue;
+        }
+
+        strVal.type = AGTV_STRING;
+        strVal.val.string.val = VARDATA(key_datums[i]);
+        strVal.val.string.len = VARSIZE(key_datums[i]) - VARHDRSZ;
+
+        if (find_agtype_value_from_container(&agt->root,
+                                        AGT_FOBJECT | AGT_FARRAY,
+                                        &strVal) == NULL)
+        {
+            PG_RETURN_BOOL(false);
+        }
+    }
+
+    PG_RETURN_BOOL(true);
+}
+

@@ -54,4 +54,6 @@ void read_cypher_delete_item(struct ExtensibleNode *node);
 
 void read_cypher_merge_information(struct ExtensibleNode *node);
 
+// vle data structures
+void read_cypher_vle_target_nodes(struct ExtensibleNode *node);
 #endif

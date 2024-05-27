@@ -27,6 +27,23 @@
 #include "utils/load/ag_load_edges.h"
 #include "utils/load/age_load.h"
 
+static void setVertex(char** vertex, char* oriname);
+static void setVertex(char** vertex, char* oriname){
+    char *start_lab = strchr(oriname, (int)'(');
+    char *end_lab = strchr(oriname, (int)')');
+    char dest[100];
+    memcpy(dest, start_lab + 1, end_lab - start_lab-1);
+    dest[end_lab - start_lab-1] = '\0'; 
+    char *temp = (char *)malloc(100);
+    memset(temp,0,100);
+    strcpy(temp,dest);
+    int length = strlen(temp);
+    
+    for (int i = 0; i < length; i++) {
+        temp[i] = tolower(temp[i]);
+    }
+    *vertex = temp;
+}
 
 void edge_field_cb(void *field, size_t field_len, void *data)
 {
@@ -85,31 +102,94 @@ void edge_row_cb(int delim __attribute__((unused)), void *data)
         cr->header_row_length = cr->curr_row_length;
         cr->header_len = (size_t* )malloc(sizeof(size_t *) * cr->cur_field);
         cr->header = (char**)malloc((sizeof (char*) * cr->cur_field));
+        if(cr->with_neo4j_like_header){
+            cr->col_type = (agtype_value_type *)malloc((sizeof (agtype_value_type*) * cr->cur_field));
+        }
 
         for ( i = 0; i<cr->cur_field; i++)
         {
             cr->header_len[i] = cr->fields_len[i];
-            cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
-        }
+            if(cr->with_neo4j_like_header){
+                char *start = NULL;
+                char dest[100];
+                char type[100];
+
+                // creationDate:LONG|:START_ID(Person)|:END_ID(Organisation)|workFrom:LONG
+                char *startid =  strstr(cr->fields[i], "START_ID"); 
+                if(startid) {
+                    cr->start_col = i;
+                    cr->header[i] = "start_id";
+                    setVertex(&cr->start_vertex,cr->fields[i]);
+                } 
+                char *endid =  strstr(cr->fields[i], "END_ID"); 
+                if(endid) {
+                    setVertex(&cr->end_vertex,cr->fields[i]);
+                    cr->header[i] = "end_id";
+                    cr->end_col = i;
+                } 
+                if(startid || endid){
+                    cr->col_type[i] = AGTV_NUMERIC;
+                    continue;
+                }
+            
+
+                start = strchr(cr->fields[i], (int)':');         // 找到字符':'的位置
+                memcpy(dest, cr->fields[i], start - cr->fields[i]);
+                dest[start - cr->fields[i]] = '\0';        // 将字符串dest的最后一个字符']'改成'\0'，如果最后一个字符不是'\0'的话，那么在该字符串的最后一位是乱码的
+                cr->header[i] = strndup(dest, strlen(dest));
+
+                memcpy(type, start + 1, cr->fields[i]+strlen(cr->fields[i])-start);// 将字符串s中'['之后的所有内容都copy出来包括字符']'，这是为了之后的分割字符串使用的
+                type[ cr->fields[i]+strlen(cr->fields[i])-start-1] = '\0';
+
+                if(strcmp(type, "LONG") == 0){
+                    cr->col_type[i] = AGTV_NUMERIC;
+                }else  if(strcmp(type, "STRING") == 0){
+                    cr->col_type[i] = AGTV_STRING;
+                }else  if(strcmp(type, "BOOL") == 0){
+                    cr->col_type[i] = AGTV_BOOL;
+                }else{
+                    cr->col_type[i] = AGTV_STRING;
+                }
+            }else{
+                cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
+            }
+        } 
     }
     else
     {
         object_graph_id = make_graphid(cr->object_id, (int64)cr->row);
 
-        start_id_int = strtol(cr->fields[0], NULL, 10);
-        start_vertex_type_id = get_label_id(cr->fields[1], cr->graph_id);
-        end_id_int = strtol(cr->fields[2], NULL, 10);
-        end_vertex_type_id = get_label_id(cr->fields[3], cr->graph_id);
+        if(cr->with_neo4j_like_header){
+            start_id_int = strtol(cr->fields[cr->start_col], NULL, 10);
+            start_vertex_type_id = get_label_id(cr->start_vertex, cr->graph_id);
+            end_id_int = strtol(cr->fields[cr->end_col], NULL, 10);
+            end_vertex_type_id = get_label_id(cr->end_vertex, cr->graph_id);
+
+            if(cr->adjust_id){
+                start_id_int =start_id_int +1;
+                end_id_int = end_id_int +1;
+            }
+           
+        }else{
+            start_id_int = strtol(cr->fields[0], NULL, 10);
+            start_vertex_type_id = get_label_id(cr->fields[1], cr->graph_id);
+            end_id_int = strtol(cr->fields[2], NULL, 10);
+            end_vertex_type_id = get_label_id(cr->fields[3], cr->graph_id);
+        }
+        
 
         start_vertex_graph_id = make_graphid(start_vertex_type_id, start_id_int);
         end_vertex_graph_id = make_graphid(end_vertex_type_id, end_id_int);
 
-        props = create_agtype_from_list_i(cr->header, cr->fields,
-                                          n_fields, 3);
+        props = create_agtype_from_list_i(cr->header, cr->fields,cr->col_type,
+                                          n_fields, cr->start_col,cr->end_col);
 
         insert_edge_simple(cr->graph_id, cr->object_name,
                            object_graph_id, start_vertex_graph_id,
                            end_vertex_graph_id, props);
+        if(cr->free_context){
+            MemoryContextReset(CurrentMemoryContext);
+        }  
 
     }
 
@@ -148,7 +228,7 @@ int create_edges_from_csv_file(char *file_path,
                                char *graph_name,
                                Oid graph_id,
                                char *object_name,
-                               int object_id )
+                               int object_id,bool with_header,bool adjust_id,bool free_context )
 {
 
     FILE *fp;
@@ -163,6 +243,7 @@ int create_edges_from_csv_file(char *file_path,
         ereport(ERROR,
                 (errmsg("Failed to initialize csv parser\n")));
     }
+
 
     csv_set_space_func(&p, is_space);
     csv_set_term_func(&p, is_term);
@@ -185,6 +266,13 @@ int create_edges_from_csv_file(char *file_path,
     cr.graph_id = graph_id;
     cr.object_name = object_name;
     cr.object_id = object_id;
+
+    if(with_header){
+        cr.with_neo4j_like_header = true;
+        p.delim_char = CSV_SHUXIAN;
+    }
+    cr.adjust_id = adjust_id;
+    cr.free_context = free_context;
 
     while ((bytes_read=fread(buf, 1, 1024, fp)) > 0)
     {

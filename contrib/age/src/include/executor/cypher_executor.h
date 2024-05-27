@@ -28,6 +28,7 @@
 #define SET_SCAN_STATE_NAME "Cypher Set"
 #define CREATE_SCAN_STATE_NAME "Cypher Create"
 #define MERGE_SCAN_STATE_NAME "Cypher Merge"
+#define VLE_SCAN_STATE_NAME "Cypher VLE"
 
 
 Node *create_cypher_create_plan_state(ExtensiblePlan *cscan);
@@ -41,4 +42,8 @@ extern const ExtensibleExecMethods cypher_delete_exec_methods;
 
 Node *create_cypher_merge_plan_state(ExtensiblePlan *cscan);
 extern const ExtensibleExecMethods cypher_merge_exec_methods;
+
+Node *create_cypher_vle_plan_state(ExtensiblePlan *cscan);
+extern const ExtensibleExecMethods cypher_vle_exec_methods;
+
 #endif

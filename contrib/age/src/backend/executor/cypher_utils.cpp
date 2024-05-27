@@ -71,11 +71,23 @@ ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name, c
     InitResultRelInfo(resultRelInfo, label_relation,
                       list_length(estate->es_range_table),
                       estate->es_instrument);
-
+    // open the parse state
+    ExecOpenIndices(resultRelInfo, false);
     free_parsestate(pstate);
 
     return resultRelInfo;
 }
+
+// close the result_rel_info and close all the indices
+void destroy_entity_result_rel_info(ResultRelInfo *result_rel_info)
+{
+    // close the indices
+    ExecCloseIndices(result_rel_info);
+
+    // close the rel
+    heap_close(result_rel_info->ri_RelationDesc, RowExclusiveLock);
+}
+
 
 TupleTableSlot *populate_vertex_tts(
     TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *properties)
@@ -213,6 +225,9 @@ HeapTuple insert_entity_tuple(ResultRelInfo *resultRelInfo,
                 GetCurrentCommandId(true), 0, NULL);
 
     // Insert index entries for the tuple
+    if (resultRelInfo->ri_NumIndices > 0)
+        ExecInsertIndexTuples(elemTupleSlot, &(tuple->t_self), estate,
+                                NULL, NULL, InvalidBktId, NULL, NULL);
 
     return tuple;
 }

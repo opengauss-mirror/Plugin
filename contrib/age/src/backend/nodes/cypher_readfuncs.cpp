@@ -195,6 +195,23 @@ void read_cypher_create_target_nodes(struct ExtensibleNode *node)
 }
 
 /*
+ * Deserialize a string representing the cypher_vle_target_nodes
+ * data structure.
+ */
+void read_cypher_vle_target_nodes(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_vle_target_nodes);
+    READ_INT_FIELD(minimum_output_depth);
+    READ_INT_FIELD(maximum_output_depth);
+    READ_ENUM_FIELD(cypher_rel_direction, cypher_rel_dir);
+    READ_STRING_FIELD(label_name);
+    READ_OID_FIELD(graph_oid);
+    token = pg_strtok(&length);
+    (void) token;
+    local_node->edge_property_constraint =  (Node *)nodeRead_AG(NULL, 0);
+}
+
+/*
  * Deserialize a string representing the cypher_create_path
  * data structure.
  */

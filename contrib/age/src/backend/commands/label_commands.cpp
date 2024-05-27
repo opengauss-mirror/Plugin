@@ -52,6 +52,8 @@
 #include "utils/ag_cache.h"
 #include "utils/agtype.h"
 #include "utils/graphid.h"
+#include "catalog/index.h"
+#include "utils/ag_func.h"
 
 /*
  * Relation name doesn't have to be label name but the same name is used so

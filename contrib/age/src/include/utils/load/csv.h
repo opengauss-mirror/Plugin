@@ -57,6 +57,7 @@ extern "C" {
 #define CSV_LF     0x0a
 #define CSV_COMMA  0x2c
 #define CSV_QUOTE  0x22
+#define CSV_SHUXIAN  0x7C
 
 struct csv_parser {
     int pstate;         /* Parser state */

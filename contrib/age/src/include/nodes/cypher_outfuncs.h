@@ -83,4 +83,6 @@ void out_cypher_delete_item(StringInfo str, const ExtensibleNode *node);
 // merge private data structures
 void out_cypher_merge_information(StringInfo str, const ExtensibleNode *node);
 
+// vle private data structures
+void out_cypher_vle_target_nodes(StringInfo str, const ExtensibleNode *node);
 #endif

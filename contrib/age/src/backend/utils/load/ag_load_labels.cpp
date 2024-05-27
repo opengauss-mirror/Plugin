@@ -111,16 +111,60 @@ void vertex_row_cb(int delim __attribute__((unused)), void *data)
         cr->header_row_length = cr->curr_row_length;
         cr->header_len = (size_t* )malloc(sizeof(size_t *) * cr->cur_field);
         cr->header = (char **)malloc((sizeof (char*) * cr->cur_field));
+        if(cr -> with_neo4j_like_header)
+        {
+            cr->col_type = (agtype_value_type *)malloc((sizeof (agtype_value_type*) * cr->cur_field));
+            cr->id_col = -1;
+        }
 
         for (i = 0; i<cr->cur_field; i++)
         {
             cr->header_len[i] = cr->fields_len[i];
-            cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
-        }
+            if(cr -> with_neo4j_like_header){
+                char *start = NULL;
+                char *end = NULL;
+                char dest[100];
+                char type[100];
+                start = strchr(cr->fields[i], (int)':');
+                memcpy(dest, cr->fields[i], start - cr->fields[i]);
+                dest[start - cr->fields[i]] = '\0'; 
+                
+                memcpy(type, start + 1, cr->fields[i]+strlen(cr->fields[i])-start);
+                type[ cr->fields[i]+strlen(cr->fields[i])-start-1] = '\0';
+                cr->header[i] = strndup(dest, strlen(dest));
+                if( strcmp(cr->header[i], "id") == 0  ){
+                   cr->id_col = i;
+                   cr->col_type[i] = AGTV_NUMERIC;
+                   continue;
+                }
+                if(strcmp(type, "LONG") == 0){
+                    cr->col_type[i] = AGTV_NUMERIC;
+                }else  if(strcmp(type, "STRING") == 0){
+                    cr->col_type[i] = AGTV_STRING;
+                }else  if(strcmp(type, "BOOL") == 0){
+                    cr->col_type[i] = AGTV_BOOL;
+                }else{
+                    cr->col_type[i] = AGTV_STRING;
+                }
+            }else
+            {
+                cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
+            }
+        } 
+
+
     } else {
         if (cr->id_field_exists)
         {
-            label_id_int = strtol(cr->fields[0], NULL, 10);
+            if(cr->id_col>=0){
+                label_id_int = strtol(cr->fields[cr->id_col], NULL, 10);
+                if(cr->adjust_id){
+                    label_id_int =label_id_int +1;
+                }
+            }else{
+                label_id_int = strtol(cr->fields[0], NULL, 10);
+            }
+            
         }
         else
         {
@@ -129,10 +173,14 @@ void vertex_row_cb(int delim __attribute__((unused)), void *data)
 
         object_graph_id = make_graphid(cr->object_id, label_id_int);
 
-        props = create_agtype_from_list(cr->header, cr->fields,
+        props = create_agtype_from_list(cr->header, cr->fields,cr->col_type,
                                         n_fields, label_id_int);
         insert_vertex_simple(cr->graph_id, cr->object_name,
                              object_graph_id, props);
+        if(cr->free_context){
+            MemoryContextReset(CurrentMemoryContext);
+        }                     
+        
     }
 
 
@@ -169,7 +217,7 @@ int create_labels_from_csv_file(char *file_path,
                                 Oid graph_id,
                                 char *object_name,
                                 int object_id,
-                                bool id_field_exists)
+                                bool id_field_exists,bool with_header,bool adjust_id,bool free_context)
 {
 
     FILE *fp;
@@ -208,6 +256,12 @@ int create_labels_from_csv_file(char *file_path,
     cr.object_name = object_name;
     cr.object_id = object_id;
     cr.id_field_exists = id_field_exists;
+    if(with_header){
+        cr.with_neo4j_like_header = true;
+        p.delim_char = CSV_SHUXIAN;
+    }
+    cr.adjust_id = adjust_id;
+    cr.free_context = free_context; 
 
 
 

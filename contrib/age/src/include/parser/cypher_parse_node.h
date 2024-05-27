@@ -23,8 +23,14 @@
 #include "nodes/primnodes.h"
 #include "parser/parse_node.h"
 
-#define AGE_DEFAULT_ALIAS_PREFIX "_age_default_alias_"
-#define AGE_DEFAULT_VARNAME_PREFIX "_age_varname_"
+/*
+ * Every internal alias or variable name should be prefixed
+ * with AGE_DEFAULT_PREFIX. Grammer restricts variables
+ * prefixed with _age_default_ in user query to be used.
+ */
+#define AGE_DEFAULT_PREFIX "_age_default_"
+#define AGE_DEFAULT_ALIAS_PREFIX AGE_DEFAULT_PREFIX"alias_"
+#define AGE_DEFAULT_VARNAME_PREFIX AGE_DEFAULT_PREFIX"varname_"
 
 typedef struct cypher_parsestate
 {
@@ -35,6 +41,9 @@ typedef struct cypher_parsestate
     int default_alias_num;
     List *entities;
     List *property_constraint_quals;
+    Node *p_vle_initial_vid;	/* initial vid for VLE */
+    ParseNamespaceItem* p_vle_initial_nsitem;
+    List	   *p_future_vertices;		/* vertices to be resolved */
     /*
      * To flag when an aggregate has been found in an expression during an
      * expression transform. This is used during the return_item list transform
@@ -44,6 +53,7 @@ typedef struct cypher_parsestate
      */
     bool exprHasAgg;
     bool p_opt_match;
+
 } cypher_parsestate;
 
 typedef struct errpos_ecb_state

@@ -70,7 +70,7 @@ static agtype* create_empty_agtype(void)
     return agtype_value_to_agtype(result.res);
 }
 
-agtype* create_agtype_from_list(char **header, char **fields,
+agtype* create_agtype_from_list(char **header, char **fields,agtype_value_type* col_type,
                                 size_t fields_len, int64 vertex_id)
 {
     agtype_in_state result;
@@ -83,7 +83,7 @@ agtype* create_agtype_from_list(char **header, char **fields,
 
     result.res = push_agtype_value(&result.parse_state,
                                    WAGT_KEY,
-                                   string_to_agtype_value("__id__"));
+                                   string_to_agtype_value("id"));
     result.res = push_agtype_value(&result.parse_state,
                                    WAGT_VALUE,
                                    integer_to_agtype_value(vertex_id));
@@ -93,9 +93,40 @@ agtype* create_agtype_from_list(char **header, char **fields,
         result.res = push_agtype_value(&result.parse_state,
                                        WAGT_KEY,
                                        string_to_agtype_value(header[i]));
+
+                                       
+        agtype_value* agvalue;
+        int64 vl;
+        if(col_type){  
+            switch (col_type[i])
+            {
+            case AGTV_STRING:
+                agvalue = string_to_agtype_value(fields[i]);
+                break;
+            case AGTV_NUMERIC:
+                vl = strtol(fields[i], NULL, 10);
+                agvalue = integer_to_agtype_value(vl);
+                break;
+            case AGTV_BOOL:
+                if (pg_strcasecmp(fields[i], "true") == 0)
+                    agvalue = boolean_to_agtype_value(true);
+                else if (pg_strcasecmp(fields[i], "false") == 0)
+                    agvalue = boolean_to_agtype_value(false);
+                else{
+                    agvalue = boolean_to_agtype_value(false);
+                }
+                break;
+            default:
+                agvalue = string_to_agtype_value(fields[i]);
+                break;
+            }
+        }else{
+             agvalue = string_to_agtype_value(fields[i]);
+        }                               
+        
         result.res = push_agtype_value(&result.parse_state,
                                        WAGT_VALUE,
-                                       string_to_agtype_value(fields[i]));
+                                       agvalue);
     }
 
     result.res = push_agtype_value(&result.parse_state,
@@ -104,34 +135,92 @@ agtype* create_agtype_from_list(char **header, char **fields,
     return agtype_value_to_agtype(result.res);
 }
 
-agtype* create_agtype_from_list_i(char **header, char **fields,
-                                  size_t fields_len, size_t start_index)
+agtype* create_agtype_from_list_i(char **header, char **fields,agtype_value_type* col_type,
+                                  size_t fields_len, size_t start_index,size_t end_index)
 {
 
     agtype_in_state result;
     size_t i;
+    if(col_type){
+        if (2== fields_len)
+        {
+            return create_empty_agtype();
+        }
 
-    if (start_index + 1 == fields_len)
-    {
-        return create_empty_agtype();
-    }
-    memset(&result, 0, sizeof(agtype_in_state));
+        memset(&result, 0, sizeof(agtype_in_state));
 
-    result.res = push_agtype_value(&result.parse_state,
-                                   WAGT_BEGIN_OBJECT, NULL);
-
-    for (i = start_index; i<fields_len; i++)
-    {
         result.res = push_agtype_value(&result.parse_state,
-                                       WAGT_KEY,
-                                       string_to_agtype_value(header[i]));
-        result.res = push_agtype_value(&result.parse_state,
-                                       WAGT_VALUE,
-                                       string_to_agtype_value(fields[i]));
-    }
+                                    WAGT_BEGIN_OBJECT, NULL);
 
-    result.res = push_agtype_value(&result.parse_state,
+        for (i = 0; i<fields_len; i++)
+        {
+            if(i==start_index || i ==end_index){
+                continue;
+            }
+            result.res = push_agtype_value(&result.parse_state,
+                                        WAGT_KEY,
+                                        string_to_agtype_value(header[i]));
+            agtype_value* agvalue;
+            int64 vl;
+            if(col_type){  
+                switch (col_type[i])
+                {
+                    case AGTV_STRING:
+                        agvalue = string_to_agtype_value(fields[i]);
+                        break;
+                    case AGTV_NUMERIC:
+                        vl =  strtol(fields[i], NULL, 10);
+                        agvalue = integer_to_agtype_value(vl);
+                        break;
+                    case AGTV_BOOL:
+                        if (pg_strcasecmp(fields[i], "true") == 0)
+                            agvalue = boolean_to_agtype_value(true);
+                        else if (pg_strcasecmp(fields[i], "false") == 0)
+                            agvalue = boolean_to_agtype_value(false);
+                        else{
+                            agvalue = boolean_to_agtype_value(false);
+                        }
+                        break;
+                    default:
+                        agvalue = string_to_agtype_value(fields[i]);
+                        break;
+                }
+            }else{
+                agvalue = string_to_agtype_value(fields[i]);
+            }                               
+            
+            result.res = push_agtype_value(&result.parse_state,
+                                        WAGT_VALUE,
+                                        agvalue);
+
+        }
+        result.res = push_agtype_value(&result.parse_state,
                                    WAGT_END_OBJECT, NULL);
+    }else{
+        start_index = 3;
+        if (start_index + 1 == fields_len)
+        {
+            return create_empty_agtype();
+        }
+        memset(&result, 0, sizeof(agtype_in_state));
+
+        result.res = push_agtype_value(&result.parse_state,
+                                    WAGT_BEGIN_OBJECT, NULL);
+
+        for (i = start_index; i<fields_len; i++)
+        {
+            result.res = push_agtype_value(&result.parse_state,
+                                        WAGT_KEY,
+                                        string_to_agtype_value(header[i]));
+            result.res = push_agtype_value(&result.parse_state,
+                                        WAGT_VALUE,
+                                        string_to_agtype_value(fields[i]));
+        }
+
+        result.res = push_agtype_value(&result.parse_state,
+                                    WAGT_END_OBJECT, NULL);
+    }
+
 
     return agtype_value_to_agtype(result.res);
 }
@@ -289,4 +378,132 @@ Datum load_edges_from_file(PG_FUNCTION_ARGS)
                                graph_id, label_name_str, label_id);
     PG_RETURN_VOID();
 
+}
+
+PG_FUNCTION_INFO_V1(load_labels_from_file_with_analysefile);
+extern "C" Datum  load_labels_from_file_with_analysefile(PG_FUNCTION_ARGS);
+Datum load_labels_from_file_with_analysefile(PG_FUNCTION_ARGS)
+{
+
+    Name graph_name;
+    Name label_name;
+    text* file_path;
+    char* graph_name_str;
+    char* label_name_str;
+    char* file_path_str;
+    Oid graph_id;
+    int32 label_id;
+    bool id_field_exists;
+    bool with_header = true;
+    bool adjust_id = false;/** if true  the csv id will add 1*/
+    bool free_context = true;
+
+    MemoryContext oldcontext;
+    MemoryContext  f_context = AllocSetContextCreate(fcinfo->flinfo->fn_mcxt,
+        "SQL function data",
+        ALLOCSET_DEFAULT_MINSIZE,
+        ALLOCSET_DEFAULT_INITSIZE,
+        ALLOCSET_DEFAULT_MAXSIZE);
+
+    oldcontext =  MemoryContextSwitchTo(f_context);
+
+    if (PG_ARGISNULL(0))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("graph name must not be NULL")));
+    }
+
+    if (PG_ARGISNULL(1))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("label name must not be NULL")));
+    }
+
+    if (PG_ARGISNULL(2))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("file path must not be NULL")));
+    }
+
+    graph_name = PG_GETARG_NAME(0);
+    label_name = PG_GETARG_NAME(1);
+    file_path = PG_GETARG_TEXT_P(2);
+    id_field_exists = true; // PG_GETARG_BOOL(3);
+
+
+    graph_name_str = NameStr(*graph_name);
+    label_name_str = NameStr(*label_name);
+    file_path_str = text_to_cstring(file_path);
+
+    graph_id = get_graph_oid(graph_name_str);
+    label_id = get_label_id(label_name_str, graph_id);
+
+    create_labels_from_csv_file(file_path_str, graph_name_str,
+                                graph_id, label_name_str,
+                                label_id, id_field_exists,with_header,adjust_id,free_context);
+    MemoryContextSwitchTo(oldcontext);
+    PG_RETURN_VOID();
+
+}
+
+PG_FUNCTION_INFO_V1(load_edges_from_file_with_analysefile);
+extern "C" Datum  load_edges_from_file_with_analysefile(PG_FUNCTION_ARGS);
+Datum load_edges_from_file_with_analysefile(PG_FUNCTION_ARGS)
+{
+
+    Name graph_name;
+    Name label_name;
+    text* file_path;
+    char* graph_name_str;
+    char* label_name_str;
+    char* file_path_str;
+    Oid graph_id;
+    int32 label_id;
+    bool with_header = true;
+    bool adjust_id = false;/** if true  the csv id will add 1*/
+    bool free_context = true;
+
+    MemoryContext oldcontext;
+
+
+    MemoryContext  f_context = AllocSetContextCreate(fcinfo->flinfo->fn_mcxt,
+        "SQL function data",
+        ALLOCSET_DEFAULT_MINSIZE,
+        ALLOCSET_DEFAULT_INITSIZE,
+        ALLOCSET_DEFAULT_MAXSIZE);
+
+    oldcontext =  MemoryContextSwitchTo(f_context);
+    if (PG_ARGISNULL(0))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("graph name must not be NULL")));
+    }
+
+    if (PG_ARGISNULL(1))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("label name must not be NULL")));
+    }
+
+    if (PG_ARGISNULL(2))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("file path must not be NULL")));
+    }
+
+    graph_name = PG_GETARG_NAME(0);
+    label_name = PG_GETARG_NAME(1);
+    file_path = PG_GETARG_TEXT_P(2);
+
+    graph_name_str = NameStr(*graph_name);
+    label_name_str = NameStr(*label_name);
+    file_path_str = text_to_cstring(file_path);
+
+    graph_id = get_graph_oid(graph_name_str);
+    label_id = get_label_id(label_name_str, graph_id);
+
+    create_edges_from_csv_file(file_path_str, graph_name_str,
+                               graph_id, label_name_str, label_id,with_header,adjust_id,free_context);
+    MemoryContextSwitchTo(oldcontext);
+    PG_RETURN_VOID();
 }

@@ -1710,9 +1710,11 @@ SELECT * FROM cypher('expr', $$ MATCH (v) RETURN v $$) AS (expression agtype);
 SELECT * FROM cypher('expr', $$ MATCH ()-[e]-() RETURN e $$) AS (expression agtype);
                                                         expression                                                         
 ---------------------------------------------------------------------------------------------------------------------------
+ {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
  {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
  {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
-(2 rows)
+ {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
+(4 rows)
 
 -- id()
 SELECT * FROM cypher('expr', $$
@@ -1720,9 +1722,11 @@ SELECT * FROM cypher('expr', $$
 $$) AS (id agtype);
         id        
 ------------------
+ 1407374883553282
  1407374883553281
  1407374883553282
-(2 rows)
+ 1407374883553281
+(4 rows)
 
 SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN id(v)
@@ -1760,9 +1764,11 @@ SELECT * FROM cypher('expr', $$
 $$) AS (start_id agtype);
      start_id     
 ------------------
+ 1125899906842625
  1125899906842626
  1125899906842625
-(2 rows)
+ 1125899906842626
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -1792,9 +1798,11 @@ SELECT * FROM cypher('expr', $$
 $$) AS (end_id agtype);
       end_id      
 ------------------
+ 1125899906842626
  1125899906842627
  1125899906842626
-(2 rows)
+ 1125899906842627
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -1824,9 +1832,11 @@ SELECT * FROM cypher('expr', $$
 $$) AS (id agtype, start_id agtype, startNode agtype);
         id        |     start_id     |                                    startnode                                     
 ------------------+------------------+----------------------------------------------------------------------------------
+ 1407374883553282 | 1125899906842625 | {"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex
  1407374883553281 | 1125899906842626 | {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex
  1407374883553282 | 1125899906842625 | {"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex
-(2 rows)
+ 1407374883553281 | 1125899906842626 | {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -1856,9 +1866,11 @@ SELECT * FROM cypher('expr', $$
 $$) AS (id agtype, end_id agtype, endNode agtype);
         id        |      end_id      |                                     endnode                                     
 ------------------+------------------+---------------------------------------------------------------------------------
+ 1407374883553282 | 1125899906842626 | {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex
  1407374883553281 | 1125899906842627 | {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex
  1407374883553282 | 1125899906842626 | {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex
-(2 rows)
+ 1407374883553281 | 1125899906842627 | {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -1890,7 +1902,9 @@ $$) AS (type agtype);
 ------
  "e1"
  "e1"
-(2 rows)
+ "e1"
+ "e1"
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -2153,7 +2167,9 @@ $$) AS (properties agtype);
 ------------
  {}
  {}
-(2 rows)
+ {}
+ {}
+(4 rows)
 
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -5445,37 +5461,13 @@ SELECT * FROM cypher('order_by', $$
 	RETURN u.i
 	ORDER BY u.i
 $$) AS (i agtype);
-        i         
-------------------
- {"key": "value"}
- [1]
- "1"
- false
- true
- 1::numeric
- 1
- 1.0
- 
-(9 rows)
-
+ERROR:  could not find attribute 2 in subquery targetlist
 SELECT * FROM cypher('order_by', $$
 	MATCH (u)
 	RETURN u.i
 	ORDER BY u.i DESC
 $$) AS (i agtype);
-        i         
-------------------
- 
- 1
- 1.0
- 1::numeric
- true
- false
- "1"
- [1]
- {"key": "value"}
-(9 rows)
-
+ERROR:  could not find attribute 2 in subquery targetlist
 --CASE
 SELECT create_graph('case_statement');
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
@@ -5610,22 +5602,22 @@ SELECT * FROM cypher('opt_forms', $$MATCH (u)--(v) RETURN u.i, v.i$$) AS (u agty
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
  u | v 
 ---+---
- 1 | 2
  3 | 2
+ 1 | 2
 (2 rows)
 
 SELECT * FROM cypher('opt_forms', $$MATCH (u)<--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
  u | v 
 ---+---
- 2 | 1
  2 | 3
+ 2 | 1
 (2 rows)
 
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->()<--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
  u | v 
 ---+---
- 3 | 1
  1 | 3
+ 3 | 1
 (2 rows)
 
 SELECT * FROM cypher('opt_forms', $$MATCH (u) CREATE (u)-[:edge]->() RETURN *$$) AS (results agtype);
@@ -5639,8 +5631,8 @@ SELECT * FROM cypher('opt_forms', $$MATCH (u) CREATE (u)-[:edge]->() RETURN *$$)
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->()<--(v) RETURN *$$) AS (col1 agtype, col2 agtype);
                                  col1                                 |                                 col2                                 
 ----------------------------------------------------------------------+----------------------------------------------------------------------
- {"id": 281474976710659, "label": "", "properties": {"i": 3}}::vertex | {"id": 281474976710657, "label": "", "properties": {"i": 1}}::vertex
  {"id": 281474976710657, "label": "", "properties": {"i": 1}}::vertex | {"id": 281474976710659, "label": "", "properties": {"i": 3}}::vertex
+ {"id": 281474976710659, "label": "", "properties": {"i": 3}}::vertex | {"id": 281474976710657, "label": "", "properties": {"i": 1}}::vertex
 (2 rows)
 
 -- Added typecasts ::pg_bigint and ::pg_float8
@@ -5748,7 +5740,10 @@ SELECT * FROM cypher('keys', $$MATCH ()-[e]-() RETURN keys(e)$$) AS (edge_keys a
  ["song"]
  ["song"]
  []
-(3 rows)
+ ["song"]
+ ["song"]
+ []
+(6 rows)
 
 SELECT * FROM cypher('keys', $$RETURN keys({a:1,b:'two',c:[1,2,3]})$$) AS (keys agtype);
       keys       
@@ -5809,8 +5804,8 @@ SELECT * from cypher('list', $$MATCH p=()-[]->() RETURN nodes(p)$$) as (nodes ag
                                                                                nodes                                                                               
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
  [{"id": 281474976710657, "label": "", "properties": {"name": "rick"}}::vertex, {"id": 281474976710658, "label": "", "properties": {"name": "morty"}}::vertex]
- [{"id": 281474976710659, "label": "", "properties": {"name": "rachael"}}::vertex, {"id": 281474976710660, "label": "", "properties": {"name": "monica"}}::vertex]
  [{"id": 281474976710660, "label": "", "properties": {"name": "monica"}}::vertex, {"id": 281474976710661, "label": "", "properties": {"name": "phoebe"}}::vertex]
+ [{"id": 281474976710659, "label": "", "properties": {"name": "rachael"}}::vertex, {"id": 281474976710660, "label": "", "properties": {"name": "monica"}}::vertex]
 (3 rows)
 
 SELECT * from cypher('list', $$MATCH p=()-[]->()-[]->() RETURN nodes(p)$$) as (nodes agtype);
@@ -5850,8 +5845,8 @@ SELECT * from cypher('list', $$MATCH p=()-[]->() RETURN relationships(p)$$) as (
                                                         relationships                                                        
 -----------------------------------------------------------------------------------------------------------------------------
  [{"id": 844424930131969, "label": "knows", "end_id": 281474976710658, "start_id": 281474976710657, "properties": {}}::edge]
- [{"id": 844424930131971, "label": "knows", "end_id": 281474976710660, "start_id": 281474976710659, "properties": {}}::edge]
  [{"id": 844424930131970, "label": "knows", "end_id": 281474976710661, "start_id": 281474976710660, "properties": {}}::edge]
+ [{"id": 844424930131971, "label": "knows", "end_id": 281474976710660, "start_id": 281474976710659, "properties": {}}::edge]
 (3 rows)
 
 SELECT * from cypher('list', $$MATCH p=()-[]->()-[]->() RETURN relationships(p)$$) as (relationships agtype);

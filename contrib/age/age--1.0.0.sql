@@ -154,7 +154,20 @@ CREATE FUNCTION ag_catalog.load_edges_from_file(graph_name name,
     RETURNS void
     LANGUAGE c
     AS 'MODULE_PATHNAME';
+CREATE FUNCTION ag_catalog.load_labels_from_file_with_analysefile(graph_name name,
+                                            label_name name,
+                                            file_path text,
+                                            id_field_exists bool default true)
+    RETURNS void
+    LANGUAGE c
+    AS 'MODULE_PATHNAME';
 
+CREATE FUNCTION ag_catalog.load_edges_from_file_with_analysefile(graph_name name,
+                                                label_name name,
+                                                file_path text)
+    RETURNS void
+    LANGUAGE c
+    AS 'MODULE_PATHNAME';
 
 --
 -- graphid type
@@ -220,7 +233,9 @@ CREATE OPERATOR = (
   COMMUTATOR = =,
   NEGATOR = <>,
   RESTRICT = eqsel,
-  JOIN = eqjoinsel
+  JOIN = eqjoinsel,
+  HASHES,
+  MERGES
 );
 
 CREATE FUNCTION ag_catalog.graphid_ne(graphid, graphid)
@@ -1319,6 +1334,19 @@ CREATE OPERATOR ^(
   LEFTARG = agtype,
   RIGHTARG = agtype
 );
+
+CREATE FUNCTION ag_catalog.graphid_hash_cmp(graphid)
+RETURNS INTEGER
+LANGUAGE c
+STABLE
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR CLASS graphid_ops_hash
+  DEFAULT
+  FOR TYPE graphid
+  USING hash AS
+  OPERATOR 1 =,
+  FUNCTION 1 ag_catalog.graphid_hash_cmp(graphid);
 
 --
 -- agtype - comparison operators (=, <>, <, >, <=, >=)
@@ -2914,7 +2942,7 @@ CREATE CAST (agtype AS int[])
 CREATE FUNCTION ag_catalog.agtype_access_operator(VARIADIC agtype[])
 RETURNS agtype
 LANGUAGE c
-STABLE
+IMMUTABLE
 RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
@@ -2983,6 +3011,10 @@ LANGUAGE c
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog._cypher_merge_clause(internal)
+RETURNS void
+LANGUAGE c
+AS 'MODULE_PATHNAME';
+CREATE FUNCTION ag_catalog._cypher_vle_clause(internal)
 RETURNS void
 LANGUAGE c
 AS 'MODULE_PATHNAME';
@@ -3094,6 +3126,13 @@ RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tointeger(variadic "any")
+RETURNS agtype
+LANGUAGE c
+STABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_date_part(format agtype,timelong agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
@@ -3561,6 +3600,17 @@ STABLE
 CALLED ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
+-- This is an overloaded function definition to allow for the VLE local context
+-- caching mechanism to coexist with the previous VLE version.
+CREATE FUNCTION ag_catalog.age_vle(IN agtype, IN agtype, IN agtype, IN agtype,
+                                   IN agtype, IN agtype, IN agtype, IN agtype,
+                                   OUT edges agtype)
+RETURNS SETOF agtype
+LANGUAGE C
+STABLE
+CALLED ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
 -- function to build an edge for a VLE match
 CREATE FUNCTION ag_catalog.age_build_vle_match_edge(agtype, agtype)
 RETURNS agtype
@@ -3569,11 +3619,18 @@ STABLE
 AS 'MODULE_PATHNAME';
 
 -- function to match a terminal vle edge
-CREATE FUNCTION ag_catalog.age_match_vle_terminal_edge(agtype, agtype, agtype)
+CREATE FUNCTION ag_catalog.age_match_vle_terminal_edge(variadic "any")
 RETURNS boolean
 LANGUAGE C
 STABLE
 CALLED ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_match_vle_terminal_edge_arr(variadic "any")
+RETURNS boolean
+LANGUAGE C
+STABLE
+RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
 -- function to create an AGTV_PATH from a VLE_path_container
@@ -3592,7 +3649,15 @@ STABLE
 RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
-CREATE FUNCTION ag_catalog.age_match_vle_edge_to_id_qual(agtype, agtype, agtype)
+-- function to create an AGTV_ARRAY of edges from a VLE_path_container
+CREATE FUNCTION ag_catalog.age_materialize_vle_edges_arr(agtype)
+RETURNS agtype
+LANGUAGE C
+STABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_match_vle_edge_to_id_qual(variadic "any")
 RETURNS boolean
 LANGUAGE C
 STABLE
@@ -3605,6 +3670,18 @@ RETURNS boolean
 LANGUAGE C
 STABLE
 RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_vertex_stats(agtype, agtype)
+RETURNS agtype
+LANGUAGE c
+STABLE
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_delete_global_graphs(agtype)
+RETURNS boolean
+LANGUAGE c
+STABLE
 AS 'MODULE_PATHNAME';
 
 -- list functions
@@ -3649,4 +3726,191 @@ AS 'MODULE_PATHNAME';
 --
 -- End
 --
+
+--
+-- Key Existence Operators ? ?| ?&
+--
+CREATE FUNCTION ag_catalog.agtype_exists(agtype, text)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ? (
+  LEFTARG = agtype,
+  RIGHTARG = text,
+  PROCEDURE = ag_catalog.agtype_exists,
+  COMMUTATOR = '?',
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_exists_agtype(agtype, agtype)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ? (
+  LEFTARG = agtype,
+  RIGHTARG = agtype,
+  PROCEDURE = ag_catalog.agtype_exists_agtype,
+  COMMUTATOR = '?',
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_exists_any(agtype, text[])
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ?| (
+  LEFTARG = agtype,
+  RIGHTARG = text[],
+  PROCEDURE = ag_catalog.agtype_exists_any,
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_exists_any_agtype(agtype, agtype)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ?| (
+  LEFTARG = agtype,
+  RIGHTARG = agtype,
+  PROCEDURE = ag_catalog.agtype_exists_any_agtype,
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_exists_all(agtype, text[])
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ?& (
+  LEFTARG = agtype,
+  RIGHTARG = text[],
+  PROCEDURE = ag_catalog.agtype_exists_all,
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_exists_all_agtype(agtype, agtype)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR ?& (
+  LEFTARG = agtype,
+  RIGHTARG = agtype,
+  PROCEDURE = ag_catalog.agtype_exists_all_agtype,
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+--
+-- Contains operators @> <@
+--
+CREATE FUNCTION ag_catalog.agtype_contains(agtype, agtype)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR @> (
+  LEFTARG = agtype,
+  RIGHTARG = agtype,
+  PROCEDURE = ag_catalog.agtype_contains,
+  COMMUTATOR = '<@',
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+
+CREATE FUNCTION ag_catalog.agtype_contained_by(agtype, agtype)
+    RETURNS boolean
+    LANGUAGE c
+    IMMUTABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE OPERATOR <@ (
+  LEFTARG = agtype,
+  RIGHTARG = agtype,
+  PROCEDURE = ag_catalog.agtype_contained_by,
+  COMMUTATOR = '@>',
+  RESTRICT = contsel,
+  JOIN = contjoinsel
+);
+--
+-- agtype GIN support
+--
+CREATE FUNCTION ag_catalog.gin_compare_agtype(text, text)
+    RETURNS int
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE
+STRICT;
+
+CREATE FUNCTION gin_extract_agtype(agtype, internal)
+    RETURNS internal
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE
+STRICT;
+
+CREATE FUNCTION ag_catalog.gin_extract_agtype_query(agtype, internal, int2,
+                                                    internal, internal)
+    RETURNS internal
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE
+STRICT;
+
+CREATE FUNCTION ag_catalog.gin_consistent_agtype(internal, int2, agtype, int4,
+                                                 internal, internal)
+    RETURNS bool
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE
+STRICT;
+
+CREATE FUNCTION ag_catalog.gin_triconsistent_agtype(internal, int2, agtype, int4,
+                                                    internal, internal, internal)
+    RETURNS bool
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE
+STRICT;
+
+CREATE OPERATOR CLASS ag_catalog.gin_agtype_ops
+DEFAULT FOR TYPE agtype USING gin AS
+  OPERATOR 7 @>(agtype, agtype),
+  OPERATOR 8 <@(agtype, agtype),
+  OPERATOR 9 ?(agtype, agtype),
+  OPERATOR 10 ?|(agtype, agtype),
+  OPERATOR 11 ?&(agtype, agtype),
+  FUNCTION 1 ag_catalog.gin_compare_agtype(text,text),
+  FUNCTION 2 ag_catalog.gin_extract_agtype(agtype, internal),
+  FUNCTION 3 ag_catalog.gin_extract_agtype_query(agtype, internal, int2,
+                                                 internal, internal),
+  FUNCTION 4 ag_catalog.gin_consistent_agtype(internal, int2, agtype, int4,
+                                              internal, internal),
+  FUNCTION 6 ag_catalog.gin_triconsistent_agtype(internal, int2, agtype, int4,
+                                                 internal, internal, internal),
+STORAGE text;
 

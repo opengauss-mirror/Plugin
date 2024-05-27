@@ -66,4 +66,9 @@ ListGraphId *append_graphid(ListGraphId *container, graphid id);
 /* free a ListGraphId container */
 void free_ListGraphId(ListGraphId *container);
 
+/* return a reference to the head entry of a list */
+GraphIdNode *get_list_head(ListGraphId *list);
+/* get the size of the passed list */
+int64 get_list_size(ListGraphId *list);
+
 #endif

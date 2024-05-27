@@ -38,6 +38,8 @@ const ExtensiblePlanMethods cypher_delete_plan_methods = {
     "Cypher Delete", create_cypher_delete_plan_state};
 const ExtensiblePlanMethods cypher_merge_plan_methods = {
     "Cypher Merge", create_cypher_merge_plan_state};
+const ExtensiblePlanMethods cypher_vle_plan_methods = {
+    "Cypher VLE", create_cypher_vle_plan_state};
 
 Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
                               ExtensiblePath *best_path, List *tlist,
@@ -234,6 +236,45 @@ Plan *plan_cypher_merge_path(PlannerInfo *root,
 
     cs->extensible_relids = NULL;
     cs->methods = (ExtensiblePlanMethods *)&cypher_merge_plan_methods;
+
+    return (Plan *)cs;
+}
+
+Plan *plan_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
+                              ExtensiblePath *best_path, List *tlist,
+                              List *clauses, List *custom_plans)
+{
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
+
+    cs = makeNode(ExtensiblePlan);
+
+    cs->scan.plan.startup_cost = best_path->path.startup_cost;
+    cs->scan.plan.total_cost = best_path->path.total_cost;
+
+    cs->scan.plan.plan_rows = best_path->path.rows;
+    cs->scan.plan.plan_width = 0;
+
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
+    cs->scan.plan.targetlist = tlist;
+    cs->scan.plan.qual = NIL;
+    cs->scan.plan.lefttree = NULL;
+    cs->scan.plan.righttree = NULL;
+    cs->scan.plan.initPlan = NIL;
+
+    cs->scan.plan.extParam = subplan->extParam;
+    cs->scan.plan.allParam = subplan->allParam;
+
+    cs->scan.scanrelid = 0;
+
+    cs->flags = best_path->flags;
+
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    cs->extensible_private = best_path->extensible_private;
+    cs->extensible_plan_tlist = subplan->targetlist;
+    cs->extensible_relids = NULL;
+    cs->methods = (ExtensiblePlanMethods *)&cypher_vle_plan_methods;
 
     return (Plan *)cs;
 }
