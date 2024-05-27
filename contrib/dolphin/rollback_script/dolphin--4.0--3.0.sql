@@ -275,6 +275,11 @@ DROP FUNCTION IF EXISTS pg_catalog.text_to_blob(text);
 DROP FUNCTION IF EXISTS pg_catalog.text_to_mediumblob(text);
 DROP FUNCTION IF EXISTS pg_catalog.text_to_longblob(text);
 
+DROP OPERATOR CLASS IF EXISTS pg_catalog.uint1_ops USING ubtree;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.uint2_ops USING ubtree;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.uint4_ops USING ubtree;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.uint8_ops USING ubtree;
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
