@@ -1618,9 +1618,26 @@ select * from ignore_t1;
 (7 rows)
 
 drop table ignore_t1, ignore_t2;
+reset dolphin.sql_mode;
+create table ignore_t1 (id int not null primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "ignore_t1_pkey" for table "ignore_t1"
+insert into ignore_t1 values (1);
+insert /*+ ignore_error */ into ignore_t1 values (null);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert /*+ ignore_error */ into ignore_t1 values (null) ON DUPLICATE KEY UPDATE id = 2;
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert /*+ ignore_error */ into ignore_t1 values (2) ON DUPLICATE KEY UPDATE id = NULL;
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+delete from ignore_t1 where id = 0;
+update /*+ ignore_error */ ignore_t1 set id = NULL where id = 1;
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
-NOTICE:  drop cascades to 33 other objects
+NOTICE:  drop cascades to 34 other objects
 DETAIL:  drop cascades to table t_from
 drop cascades to table t_timestamp
 drop cascades to table t_timetz
@@ -1654,4 +1671,5 @@ drop cascades to table t_text
 drop cascades to table t_binaryn
 drop cascades to table t_not_null_key_partition
 drop cascades to table ignore_range_range
+drop cascades to table ignore_t1
 reset current_schema;

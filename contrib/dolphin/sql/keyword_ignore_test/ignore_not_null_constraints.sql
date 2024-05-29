@@ -604,6 +604,17 @@ select * from ignore_t1;
 
 drop table ignore_t1, ignore_t2;
 
+reset dolphin.sql_mode;
+
+create table ignore_t1 (id int not null primary key);
+insert into ignore_t1 values (1);
+insert /*+ ignore_error */ into ignore_t1 values (null);
+insert /*+ ignore_error */ into ignore_t1 values (null) ON DUPLICATE KEY UPDATE id = 2;
+insert /*+ ignore_error */ into ignore_t1 values (2) ON DUPLICATE KEY UPDATE id = NULL;
+
+delete from ignore_t1 where id = 0;
+update /*+ ignore_error */ ignore_t1 set id = NULL where id = 1;
+
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 reset current_schema;
