@@ -6,7 +6,6 @@
 #include <postgres.h>
 #include <fmgr.h>
 #include <access/htup.h>
-#include <catalog/namespace.h>
 #include <catalog/pg_type.h>
 #include <libpq/pqformat.h>
 #include <lib/stringinfo.h>
