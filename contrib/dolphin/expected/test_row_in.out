@@ -226,7 +226,6 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
@@ -234,7 +233,6 @@ CONTEXT:  SQL function "int1_binary_eq" statement 1
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
@@ -437,13 +435,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -640,13 +638,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -837,13 +835,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1028,13 +1026,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1213,13 +1211,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1392,13 +1390,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1565,13 +1563,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -2048,13 +2046,13 @@ WARNING:  invalid input syntax for type double precision: "62.345*67-89"
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int1_binary_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `varbinary` from all_types_table limit 1))) in (row(1, row((select `varbinary` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -2182,14 +2180,14 @@ select row(1, row((select `bit1` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2197,7 +2195,6 @@ WARNING:  invalid input syntax for type numeric: "62.345*67-89"
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "boolean_binary_eq" statement 1
  ?column? 
 ----------
  f
@@ -2235,7 +2232,7 @@ select row(1, row((select `bit1` from all_types_table limit 1),(select `longblob
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -2326,14 +2323,14 @@ select row(1, row((select `bit64` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2341,7 +2338,6 @@ WARNING:  invalid input syntax for type numeric: "62.345*67-89"
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `binary` from all_types_table limit 1))) in (row(1, row((select `binary` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "boolean_binary_eq" statement 1
  ?column? 
 ----------
  f
@@ -2379,7 +2375,7 @@ select row(1, row((select `bit64` from all_types_table limit 1),(select `longblo
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
