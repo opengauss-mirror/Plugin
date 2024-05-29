@@ -37,6 +37,9 @@ insert into t_count values(2,3);
 select count(distinct a,b) from t_count;
 select count(distinct a) from t_count;
 select count(distinct b) from t_count;
+select count(all *) from t_count;
+select max(all *) from t_count;
+select a,count(a)over (partition by t.b) from t_count t order by 1,2;
 drop table t_count;
 
 drop table if exists smp_test;
