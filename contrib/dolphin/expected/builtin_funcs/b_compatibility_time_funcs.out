@@ -600,6 +600,73 @@ CONTEXT:  referenced column: hour
     0
 (1 row)
 
+select hour('23:59:59.999999');
+ hour 
+------
+   23
+(1 row)
+
+select hour('23:59:59.9999999');
+ hour 
+------
+   24
+(1 row)
+
+select hour('23:59:59.9999995');
+ hour 
+------
+   24
+(1 row)
+
+select hour('23:59:59.9999994');
+ hour 
+------
+   23
+(1 row)
+
+create table test_hour(hour int);
+insert into test_hour select hour('-838:59:59');
+insert into test_hour select hour('838:59:59');
+insert into test_hour select hour('-840:59:59');
+ERROR:  Truncated incorrect time value: "-840:59:59"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('840:59:59');
+ERROR:  Truncated incorrect time value: "840:59:59"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('');
+ERROR:  invalid input syntax for type time: ""
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('abc');
+ERROR:  Truncated incorrect time value: "abc"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('1234abc');
+ERROR:  Truncated incorrect time value: "1234abc"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('23:59:59.999999');
+insert into test_hour select hour('23:59:59.9999999');
+insert into test_hour select hour('23:59:59.9999995');
+insert into test_hour select hour('23:59:59.9999994');
+insert ignore into test_hour select hour('-838:59:59');
+insert ignore into test_hour select hour('838:59:59');
+insert ignore into test_hour select hour('-840:59:59');
+ERROR:  Truncated incorrect time value: "-840:59:59"
+CONTEXT:  referenced column: hour
+insert ignore into test_hour select hour('840:59:59');
+ERROR:  Truncated incorrect time value: "840:59:59"
+CONTEXT:  referenced column: hour
+insert ignore into test_hour select hour('');
+ERROR:  invalid input syntax for type time: ""
+CONTEXT:  referenced column: hour
+insert ignore into test_hour select hour('abc');
+ERROR:  Truncated incorrect time value: "abc"
+CONTEXT:  referenced column: hour
+insert ignore into test_hour select hour('1234abc');
+ERROR:  Truncated incorrect time value: "1234abc"
+CONTEXT:  referenced column: hour
+insert ignore into test_hour select hour('23:59:59.999999');
+insert ignore into test_hour select hour('23:59:59.9999999');
+insert ignore into test_hour select hour('23:59:59.9999995');
+insert ignore into test_hour select hour('23:59:59.9999994');
 set dolphin.sql_mode = '';
 select hour('-838:59:59');
  hour 
@@ -653,6 +720,80 @@ CONTEXT:  referenced column: hour
     0
 (1 row)
 
+select hour('23:59:59.999999');
+ hour 
+------
+   23
+(1 row)
+
+select hour('23:59:59.9999999');
+ hour 
+------
+   24
+(1 row)
+
+select hour('23:59:59.9999995');
+ hour 
+------
+   24
+(1 row)
+
+select hour('23:59:59.9999994');
+ hour 
+------
+   23
+(1 row)
+
+insert into test_hour select hour('-838:59:59');
+insert into test_hour select hour('838:59:59');
+insert into test_hour select hour('-840:59:59');
+WARNING:  Truncated incorrect time value: "-840:59:59"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('840:59:59');
+WARNING:  Truncated incorrect time value: "840:59:59"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('');
+WARNING:  invalid input syntax for type time: ""
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('abc');
+WARNING:  Truncated incorrect time value: "abc"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('1234abc');
+WARNING:  Truncated incorrect time value: "1234abc"
+CONTEXT:  referenced column: hour
+insert into test_hour select hour('23:59:59.999999');
+insert into test_hour select hour('23:59:59.9999999');
+insert into test_hour select hour('23:59:59.9999995');
+insert into test_hour select hour('23:59:59.9999994');
+select * from test_hour;
+ hour 
+------
+  838
+  838
+   23
+   24
+   24
+   23
+  838
+  838
+   23
+   24
+   24
+   23
+  838
+  838
+  838
+  838
+     
+    0
+    0
+   23
+   24
+   24
+   23
+(23 rows)
+
+drop table test_hour;
 set dolphin.b_compatibility_mode = true;
 -- date_bool&time_bool
 select date_bool('0000-00-00');
