@@ -221,6 +221,13 @@
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
 #endif
+#ifdef ENABLE_HTAP
+#include "catalog/gs_imcs.h"
+#include "access/imcs/imcs_ctlg.h"
+#include "storage/htap/htap_modify.h"
+#include "postmaster/postmaster.h"
+#include "access/imcs/imcu_cache_mgr.h"
+#endif
 
 extern void vacuum_set_xid_limits(Relation rel, int64 freeze_min_age, int64 freeze_table_age, TransactionId* oldestXmin,
     TransactionId* freezeLimit, TransactionId* freezeTableLimit, MultiXactId* multiXactFrzLimit);
@@ -843,6 +850,13 @@ static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel,
 static List* ATGetNonUniqueKeyList(Relation rel);
 static char* ATGetPKName(Relation rel);
 static void CheckTableOptions(AlterTableOptions *tableOptions, AlterTableCmd *cmd);
+#endif
+#ifdef ENABLE_HTAP
+static void ATEnableImcsOnRel(Relation rel, AlterTableCmd *cmd, List** column_list, int* length);
+static void ATRemoveImcsOnRel(Relation rel);
+static void ATInitPartitionImcstore(Relation rel, AlterTableCmd *cmd);
+static void ATInitPartitionImcstoreOnStandby(Relation rel, AlterTableCmd *cmd);
+static void ATPrepPartitionInMemory(Relation rel);
 #endif
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
 {
@@ -2620,10 +2634,6 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
                 ereport(LOG, (errmodule(MOD_TIMESERIES), errmsg("use implicit distribution column method.")));
             }
         } else if (pg_strcasecmp(storeChar, TABLE_ACCESS_METHOD_USTORE) == 0) {
-            if (stmt->relation->relpersistence == RELPERSISTENCE_GLOBAL_TEMP) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("UStore tables do not support global temp table")));
-            }
             auto compression = StdRdOptionsGetStringData(std_opt, compression, COMPRESSION_NO);
             auto orientation = StdRdOptionsGetStringData(std_opt, orientation, ORIENTATION_ROW);
             if ((pg_strcasecmp(COMPRESSION_NO, compression) != 0 &&
@@ -4433,6 +4443,9 @@ void ExecuteTruncate(TruncateStmt* stmt)
     SubTransactionId mySubid;
     ListCell* cell = NULL;
     bool isDfsTruncate = false;
+#ifdef ENABLE_HTAP
+    std::unordered_map<Oid, RelFileNode>* oid_del_info = nullptr;
+#endif
 #ifdef PGXC
     char* FirstExecNode = NULL;
     bool isFirstNode = false;
@@ -4824,6 +4837,15 @@ void ExecuteTruncate(TruncateStmt* stmt)
 #else
         if (!RELATION_IS_PARTITIONED(rel)) {
 #endif
+            heap_relid = RelationGetRelid(rel);
+
+#ifdef ENABLE_HTAP
+            if (RELATION_HAS_IMCS(rel)) {
+                HTAPTruncateTable(heap_relid, &oid_del_info);
+                TruncateImcstore(rel, oid_del_info);
+            }
+#endif
+
             RelationSetNewRelfilenode(rel, u_sess->utils_cxt.RecentXmin,
                                       RelationIsColStore(rel) ? InvalidMultiXactId : minmulti,
                                       isDfsTruncate);
@@ -4831,7 +4853,6 @@ void ExecuteTruncate(TruncateStmt* stmt)
             if (rel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED)
                 heap_create_init_fork(rel);
 
-            heap_relid = RelationGetRelid(rel);
             toast_relid = rel->rd_rel->reltoastrelid;
 
             /*
@@ -4878,6 +4899,17 @@ void ExecuteTruncate(TruncateStmt* stmt)
                     ListCell* subPartCell = NULL;
                     foreach (subPartCell, subPartTupleList) {
                         HeapTuple tup = (HeapTuple)lfirst(subPartCell);
+#ifdef ENABLE_HTAP
+                        Oid sub_part_oid = HeapTupleGetOid(tup);
+                        Partition sp = partitionOpen(rel, sub_part_oid, AccessExclusiveLock);
+                        Relation sub_part_rel = partitionGetRelation(rel, sp);
+                        if (RELATION_HAS_IMCS(sub_part_rel)) {
+                            HTAPTruncateTable(RelationGetRelid(sub_part_rel), &oid_del_info);
+                            TruncateImcstore(sub_part_rel, oid_del_info);
+                        }
+                        releaseDummyRelation(&sub_part_rel);
+                        partitionClose(rel, sp, NoLock);
+#endif
                         TruncateOnePart(partRel, tup);
                     }
                     freePartList(subPartTupleList);
@@ -4886,6 +4918,18 @@ void ExecuteTruncate(TruncateStmt* stmt)
                     partitionClose(rel, p, AccessExclusiveLock);
                 } else {
                     HeapTuple tup = (HeapTuple)lfirst(partCell);
+#ifdef ENABLE_HTAP
+                    Oid part_oid = HeapTupleGetOid(tup);
+                    Partition p = partitionOpen(rel, part_oid, AccessExclusiveLock);
+                    Relation part_rel = partitionGetRelation(rel, p);
+
+                     if (RELATION_HAS_IMCS(part_rel)) {
+                        HTAPTruncateTable(RelationGetRelid(part_rel), &oid_del_info);
+                        TruncateImcstore(part_rel, oid_del_info);
+                     }
+                     releaseDummyRelation(&part_rel);
+                     partitionClose(rel, p, AccessExclusiveLock);
+#endif
                     TruncateOnePart(rel, tup);
                 }
             }
@@ -8812,6 +8856,21 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             pass = AT_PASS_ALTER_TYPE;
             ATAlterCheckModifiyColumnRepeatedly(cmd, tab->subcmds[pass]);
             break;
+#ifdef ENABLE_HTAP
+        case AT_IMCSTORED:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_ADD_CONSTR;
+            break;
+        case AT_UNIMCSTORED:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_DROP;
+            break;
+        case AT_MODIFY_PARTITION_IMCSTORED:
+            ATSimplePermissions(rel, ATT_TABLE);
+            ATPrepPartitionInMemory(rel);
+            pass = AT_PASS_ADD_PARTITION;
+            break;
+#endif
 #ifdef PGXC
         case AT_DistributeBy:
         case AT_SubCluster:
@@ -9278,6 +9337,20 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         CacheInvalidateRelcacheByRelid(rel_id);
     }
 
+#ifdef ENABLE_HTAP
+    switch (cmd->subtype) {
+        case AT_IMCSTORED:
+        case AT_UNIMCSTORED:
+        case AT_MODIFY_PARTITION_IMCSTORED:
+            break;
+        default: {
+           if (RELATION_HAS_IMCS(rel)) {
+                ATRemoveImcsOnRel(rel);
+           }
+        }
+    }
+#endif
+
     switch (cmd->subtype) {
         case AT_AddColumn:       /* ADD COLUMN */
         case AT_AddColumnToView: /* add column via CREATE OR REPLACE
@@ -9637,7 +9710,53 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_ConvertCharset: /* CONVERT TO CHARACTER SET */
             sqlcmd_alter_exec_convert_charset(tab, rel, (CharsetCollateOptions*)cmd->def, lockmode);
             break;
+#ifdef ENABLE_HTAP
+        case AT_IMCSTORED:
+            {
+                if (!CheckImcsSupportForRelType(rel)) {
+                    return;
+                }
 
+                List* colList = NULL;
+                int nameLength = 0;
+                ATEnableImcsOnRel(rel, cmd, &colList, &nameLength);
+                Oid rel_id = RelationGetRelid(rel);
+                if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+                    PGXCNodeHandle** connections = NULL;
+                    int conn_count = 0;
+                    connections = GetStandbyConnections(&conn_count);
+                    SendImcstoredRequest(connections, conn_count, rel_id, colList, nameLength);
+                } else {
+                    if (RELATION_IS_PARTITIONED(rel)) {
+                        CreateImcDeltaTableForPartitions(rel_id, rel);
+                    } else {
+                        CreateImcDeltaTable(rel_id);
+                    }
+                    InitImcstore(rel_id, rel, RELATION_IS_PARTITIONED(rel));
+                }
+
+            }break;
+        case AT_UNIMCSTORED:
+            {
+                if (!CheckImcsSupportForRelType(rel)) {
+                    return;
+                }
+
+                ATRemoveImcsOnRel(rel);
+            }break;
+        case AT_MODIFY_PARTITION_IMCSTORED:
+            {
+                if (!CheckImcsSupportForRelType(rel)) {
+                    return;
+                }
+
+                if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+                    ATInitPartitionImcstoreOnStandby(rel, cmd);
+                } else {
+                    ATInitPartitionImcstore(rel, cmd);
+                }
+            }break;
+#endif
 #ifdef PGXC
         case AT_DistributeBy:
             AtExecDistributeBy(rel, (DistributeBy*)cmd->def);
@@ -11135,9 +11254,14 @@ static void ATPrepAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
     if (rel->rd_rel->reloftype && !recursing)
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("cannot add column to typed table")));
 
-    ColumnDef* colDef = (ColumnDef*)cmd->def;
-
+    ColumnDef *colDef = (ColumnDef *) cmd->def;
+#ifdef ENABLE_HTAP
+    Oid type_oid = InvalidOid;
+    int32 typmod = -1;
+    typenameTypeIdAndMod(NULL, colDef->typname, &type_oid, &typmod);
+#endif
     if (RelationIsColStore(rel)) {
+
         int32 typmod = 0;
         HeapTuple typeTuple = typenameType(NULL, colDef->typname, &typmod);
         Oid typeOid = HeapTupleGetOid(typeTuple);
@@ -11163,11 +11287,20 @@ static void ATPrepAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
         // check the supported data type and error report if needed.
         if (!IsTypeSupportedByTsStore(colDef->kvtype, typeOid)) {
             ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                    errmsg("type \"%s\" is not supported in timeseries store",
-                    format_type_with_typemod(typeOid, typmod))));
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("type \"%s\" is not supported in timeseries store",
+                                   format_type_with_typemod(typeOid, typmod))));
         }
+#ifdef ENABLE_HTAP
+    } else if (RELATION_HAS_IMCS(rel) && !IsTypeSupportedByCStore(type_oid)) {
+        ereport(ERROR,
+                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("data type \"%s\" is not supported in HTAP",
+                                 format_type_with_typemod(type_oid, typmod))));
     }
+#else
+    }
+#endif
 
     if (rel->rd_rel->relkind == RELKIND_COMPOSITE_TYPE)
         ATTypedTableRecursion(wqueue, rel, cmd, lockmode);
@@ -14586,16 +14719,6 @@ static ObjectAddress ATExecAddConstraint(List** wqueue, AlteredTableInfo* tab, R
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("column store unsupport constraint \"%s\"", GetConstraintType(newConstraint->contype))));
 
-    if (rel->rd_tam_ops == TableAmUstore && newConstraint->deferrable == true) {
-        ereport(ERROR,
-            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmodule(MOD_COMMAND),
-                errmsg("Ustore table does not support to set deferrable."),
-                errdetail("N/A"),
-                errcause("feature not supported"),
-                erraction("check constraints of columns")));
-    }
-
     /*
      * Currently, we only expect to see CONSTR_CHECK and CONSTR_FOREIGN nodes
      * arriving here (see the preprocessing done in parse_utilcmd.c).  Use a
@@ -16602,6 +16725,13 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("type \"%s\" is not supported in column store",
                     format_type_with_typemod(targettype, targettypmod))));
+#ifdef ENABLE_HTAP            
+    } else if (RELATION_HAS_IMCS(rel) && !IsTypeSupportedByCStore(targettype)) {
+        ereport(ERROR,
+                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("data type \"%s\" is not supported in HTAP",
+                                 format_type_with_typemod(targettype, targettypmod))));
+#endif                   
     }
 
     aclresult = pg_type_aclcheck(targettype, GetUserId(), ACL_USAGE);
@@ -20293,7 +20423,10 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
         } else {
 
             if (RelationIsUstoreFormat(rel)) {
-                ExecuteUndoActionsPageForPartition(rel, dst, forkNum, blkno, blkno);
+                if (ExecuteUndoActionsPageForPartition(rel, dst, forkNum, blkno, blkno)) {
+                    *dstptr = dst = smgropen(newFileNode, backendId);
+                    src = rel->rd_smgr;
+                }
             } else {
                 /*
                 * WAL-log the copied page. Unfortunately we don't know what kind of a
@@ -20529,7 +20662,9 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
             UnlockReleaseBuffer(buf);
         } else {
             if (RelationIsUstoreFormat(src)) {
-                ExecuteUndoActionsPageForPartition(src, dest->rd_smgr, forkNum, src_blkno, dest_blkno);
+                if (ExecuteUndoActionsPageForPartition(src, dest->rd_smgr, forkNum, src_blkno, dest_blkno)) {
+                    RelationOpenSmgr(dest);
+                }
             } else {
                 /*
                 * XLOG stuff
@@ -28222,6 +28357,495 @@ void ATMatviewGroup(List* stmts, Oid mvid, LOCKMODE lockmode)
     heap_close(matview, NoLock);
     return;
 }
+
+#ifdef ENABLE_HTAP
+static Oid ATCreateImcsTableOnRel(Relation rel, List* column_list, int column_count)
+{
+    Oid imcs_oid = InvalidOid;
+    CreateImcsStmt* imcs_stmt = NULL;
+
+    /* init CreateImcsStmt Node */
+    imcs_stmt = makeNode(CreateImcsStmt);
+    imcs_stmt->table_has_imcs = false;
+    imcs_stmt->relation = NULL;
+    imcs_stmt->inhRelations = NIL;
+    imcs_stmt->relkind = RELKIND_IMCS;
+    imcs_stmt->isPartitioned = false;
+    imcs_stmt->isalter = true;
+    imcs_stmt->rel_id = RelationGetRelid(rel);
+    imcs_stmt->node = NULL;
+    imcs_stmt->imcstored_columns = column_list;
+    imcs_stmt->imcstored_col_nums = column_count;
+
+    Oid parent_oid = imcs_stmt->rel_id;
+    imcs_oid = CreateImcsTableOnRel(imcs_stmt, imcs_stmt->isPartitioned, parent_oid, imcs_stmt->rel_id, rel);
+
+    return imcs_oid;
+}
+
+static Oid ATCreateImcsTableOnPartOid(Oid rel_oid, Oid part_oid, Oid parent_oid, Relation part_rel, List* column_list, int column_count)
+{
+    Oid imcs_oid = InvalidOid;
+    CreateImcsStmt* imcs_stmt = NULL;
+
+    /* init CreateImcsStmt Node */
+    imcs_stmt = makeNode(CreateImcsStmt);
+    imcs_stmt->table_has_imcs = false;
+    imcs_stmt->relation = NULL;
+    imcs_stmt->inhRelations = NIL;
+    imcs_stmt->relkind = RELKIND_IMCS;
+    imcs_stmt->isPartitioned = true;
+    imcs_stmt->isalter = true;
+    imcs_stmt->rel_id = part_oid;
+    imcs_stmt->node = NULL;
+    imcs_stmt->imcstored_columns = column_list;
+    imcs_stmt->imcstored_col_nums = column_count;
+
+    imcs_oid = CreateImcsTableOnRel(imcs_stmt, imcs_stmt->isPartitioned,
+                                             parent_oid, part_oid, part_rel);
+
+    return imcs_oid;
+}
+
+void ATCreateImcsTableOnPartitions(Relation rel, Oid rel_oid, List* column_list, int column_count, int2vector* imcskey)
+{
+    Oid part_oid;
+    ListCell* cell = NULL;
+    List* part_oid_list = relationGetPartitionOidList(rel);
+    foreach(cell, part_oid_list) {
+        part_oid = lfirst_oid(cell);
+        Partition part = partitionOpen(rel, part_oid, AccessExclusiveLock);
+        Relation part_rel = partitionGetRelation(rel, part);
+        /* has been cleared before every populate */
+        ATCreateImcsTableOnPartOid(rel_oid, part_oid, rel_oid, part_rel, column_list, column_count);
+        releaseDummyRelation(&part_rel);
+        partitionClose(rel, part, NoLock);
+
+        if (RelationIsSubPartitioned(rel)) {
+            Oid subpart_oid;
+            ListCell* subcell = NULL;
+            List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+            foreach(subcell, subpart_oid_list) {
+                subpart_oid = lfirst_oid(subcell);
+                Partition subpart = partitionOpen(rel, subpart_oid, AccessExclusiveLock);
+                Relation subpart_rel = partitionGetRelation(rel, subpart);
+                ATCreateImcsTableOnPartOid(rel_oid, subpart_oid, part_oid, subpart_rel, column_list, column_count);
+                releaseDummyRelation(&subpart_rel);
+                partitionClose(rel, subpart, NoLock);
+            }
+            if (subpart_oid_list != NULL) {
+                releasePartitionOidList(&subpart_oid_list);
+            }
+        }
+    }
+
+    if (part_oid_list != NULL) {
+        releasePartitionOidList(&part_oid_list);
+    }
+}
+
+static void ATCheckTypeSupportForImcs(const Oid typeOid, const int32 typeMod)
+{
+    /* check column type for htap */
+    if (!IsTypeSupportedByCStore(typeOid)) {
+        ereport(ERROR,
+                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("data type \"%s\" is not supported in HTAP",
+                                 format_type_with_typemod(typeOid, typeMod))));
+    }
+}
+
+/* ALTER TABLE name IMCSTORED for rel or partitioned table ... */
+static void ATEnableImcsOnRel(Relation rel, AlterTableCmd *cmd, List** column_list, int *nameLength)
+{
+    *column_list = (List*)cmd->def;
+    ListCell *colcell = NULL;
+    int column_count = 0;
+    Oid rel_oid = RelationGetRelid(rel);
+
+    foreach(colcell, *column_list) {
+        column_count++;
+    }
+
+    if (search_table_from_gs_imcs(rel_oid) != InvalidOid) {
+        IMCU_CACHE->m_reinit_imcs_set.insert(rel_oid);
+        ClearBeforeReinitImcs(rel);
+    }
+
+    if (column_count == 0) {    //ALL columns ARE IMCSTORED
+        int i;
+        int j;
+        TupleDesc rel_desc = rel->rd_att;
+        FormData_pg_attribute *rel_atts = rel_desc->attrs;
+        int rel_attnum_all = rel_desc->natts;
+        int rel_attnum = rel_desc->natts;
+        for (i = 0; i < rel_attnum_all; i++) {
+            /* ALL columns add IMCSTORED */
+            if (rel_atts[i].attisdropped) {
+                rel_attnum--;
+                continue;
+            }
+            /* check column type for htap */
+            ATCheckTypeSupportForImcs(rel_atts[i].atttypid, rel_atts[i].atttypmod);
+            *column_list = lappend(*column_list, makeString(NameStr(rel_atts[i].attname)));
+            *nameLength += (strlen(NameStr(rel_atts[i].attname)) + 1);
+            column_count++;
+        }
+        int2vector* imcskey = buildint2vector(NULL, column_count);
+        for (i = 1, j = 1; i <= rel_attnum_all; i++) {
+            /* add ALL columns IMCSTOREDTED */
+            if (rel_atts[i - 1].attisdropped) {
+                continue;
+            }
+            imcskey->values[j - 1] = rel_atts[i - 1].attnum;
+            j++;
+        }
+        /* create a new IMCS table for rel */
+        ATCreateImcsTableOnRel(rel, *column_list, column_count);
+        if (RELATION_IS_PARTITIONED(rel)) {
+            ATCreateImcsTableOnPartitions(rel, rel_oid, *column_list, column_count, imcskey);
+        }
+    } else { /* column_count > 0 , specify column names */
+        int j;
+        int2vector* imcskey = buildint2vector(NULL, column_count);
+        j = 0;
+        foreach(colcell, *column_list) {
+            char *col_name = strVal(lfirst(colcell));
+            AttrNumber attnum = get_attnum(rel_oid, col_name);
+            /* check column type for htap */
+            ATCheckTypeSupportForImcs(get_atttype(rel_oid, attnum), get_atttypmod(rel_oid, attnum));
+            imcskey->values[j] = attnum;
+            j++;
+            *nameLength += (strlen(col_name) + 1);
+        }
+        /* create a new IMCS table for rel */
+        ATCreateImcsTableOnRel(rel, *column_list, column_count);
+        if (RELATION_IS_PARTITIONED(rel)) {
+            ATCreateImcsTableOnPartitions(rel, rel_oid, *column_list, column_count, imcskey);
+        }
+    }
+    return;
+}
+
+static void ATRemoveImcsOnRel(Relation rel)
+{
+    /* delete IMCS table for rel and partitions or subpartitions */
+    Oid rel_oid = RelationGetRelid(rel);
+    if (search_table_from_gs_imcs(rel_oid) != InvalidOid) {
+        if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+            /* notify standby node to remove imcstore */
+            PGXCNodeHandle** connections = NULL;
+            int conn_count = 0;
+            connections = GetStandbyConnections(&conn_count);
+            SendUnImcstoredRequest(connections, conn_count, rel_oid);
+
+            /* cleanup imcs_info in primary node */
+            CleanImcsHashTbl(rel_oid);
+            /* delete from gs_imcs */
+            Relation rel = InvalidOid;
+            rel = heap_open(rel_oid, AccessExclusiveLock);
+            delete_gs_imcs_table_on_rel(rel, nullptr);
+            heap_close(rel, AccessExclusiveLock);
+        } else {
+            DeleteImcsTableOnRel(rel_oid);
+        }
+    }
+    return;
+}
+
+/* ALTER TABLE name MODIFY PARTITION part_name IMCSTORED */
+static void ATInitPartitionImcstore(Relation rel, AlterTableCmd *cmd)
+{
+    PartitionImcstoredState *im_state = (PartitionImcstoredState*)cmd->def;
+    char* partitionName = (char*)cmd->name;
+    Oid part_oid = InvalidOid;
+    Oid rel_id = RelationGetRelid(rel);
+    List* column_list = NULL;
+    int column_count = 0;
+    Oid imcs_oid = InvalidOid;
+
+    part_oid = PartitionNameGetPartitionOid(rel_id,
+                                            partitionName,
+                                            PART_OBJ_TYPE_TABLE_PARTITION,
+                                            AccessExclusiveLock, /* partition lock */
+                                            false,
+                                            false,
+                                            NULL,
+                                            NULL,
+                                            NoLock);
+
+    switch(im_state->imcstored_type) {
+        case PARTITION_IMCSTORED:
+        {
+            if (RELATION_HAS_IMCS(rel)) {
+                int2vector *imcs_keys = GetImcsKeys(rel_id);
+                for (int i = 0; i < imcs_keys->dim1; i++) {
+                    AttrNumber attnum = imcs_keys->values[i];
+                    char* attname = get_attname(rel_id, attnum);
+                    column_list = lappend(column_list, makeString(attname));
+                    column_count++;
+                }
+            } else {
+                TupleDesc rel_desc = rel->rd_att;
+                FormData_pg_attribute *rel_atts = rel_desc->attrs;
+                int rel_attnum_all = rel_desc->natts;
+                int rel_attnum = rel_desc->natts;
+                for (int i = 0; i < rel_attnum_all; i++) {
+                    if (rel_atts[i].attisdropped) {
+                        rel_attnum--;
+                        continue;
+                    }
+                    column_list = lappend(column_list, makeString(NameStr(rel_atts[i].attname)));
+                    column_count++;
+                }
+                /* create imcs for rel itself */
+                ATCreateImcsTableOnRel(rel, column_list, column_count);
+            }
+            /* create imcs for this partition */
+            Partition part = partitionOpen(rel, part_oid, AccessExclusiveLock);
+            Relation part_rel = partitionGetRelation(rel, part);
+            if (!RELATION_HAS_IMCS(part_rel)) {
+                ATCreateImcsTableOnPartOid(rel_id, part_oid, rel_id, part_rel, column_list, column_count);
+                /* for this part oid only */
+                if (!RelationIsSubPartitioned(rel)) {
+                    InitImcstore(part_oid, part_rel, false);
+                }
+            }
+            releaseDummyRelation(&part_rel);
+            partitionClose(rel, part, NoLock);
+
+            /* create imcs for ALL subpartitions of this part_oid */
+            if (RelationIsSubPartitioned(rel)) {
+                ListCell* cell = NULL;
+                List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+                foreach(cell, subpart_oid_list) {
+                    Oid subpart_oid = lfirst_oid(cell);
+                    Partition subpart = partitionOpen(rel, subpart_oid, AccessExclusiveLock);
+                    Relation subpart_rel = partitionGetRelation(rel, subpart);
+                    if (!RELATION_HAS_IMCS(subpart_rel)) {
+                        ATCreateImcsTableOnPartOid(rel_id, subpart_oid, part_oid, subpart_rel, column_list, column_count);
+                        InitImcstore(subpart_oid, subpart_rel, false);
+                        /* create delta table for all subpartitions */
+                        CreatePartitionImcDeltaTable(rel_id, subpart_oid);
+                    }
+                    releaseDummyRelation(&subpart_rel);
+                    partitionClose(rel, subpart, NoLock);
+                }
+                if (subpart_oid_list != NULL) {
+                    releasePartitionOidList(&subpart_oid_list);
+                }
+            }
+
+            /* create delta table for this partition only, no subpartitions */
+            if (!RelationIsSubPartitioned(rel)) {
+                CreatePartitionImcDeltaTable(rel_id, part_oid);
+            }
+
+        }break;
+        case PARTITION_UNIMCSTORED:
+        {
+            if (RelationIsSubPartitioned(rel)) {
+                ListCell* cell = NULL;
+                List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+                foreach(cell, subpart_oid_list) {
+                    Oid subpart_oid = lfirst_oid(cell);
+                    imcs_oid = search_table_from_gs_imcs(subpart_oid);
+                    if (OidIsValid(imcs_oid)) {
+                        Partition part = partitionOpen(rel, subpart_oid, AccessExclusiveLock);
+                        Relation part_rel = partitionGetRelation(rel, part);
+                        RemoveImcstore(part_rel, nullptr, false);
+                        /* drop delta table */
+                        DropImcDeltaTable(subpart_oid, nullptr);
+                        releaseDummyRelation(&part_rel);
+                        partitionClose(rel, part, NoLock);
+                    }
+                }
+            } else {
+                Partition part = partitionOpen(rel, part_oid, AccessExclusiveLock);
+                Relation part_rel = partitionGetRelation(rel, part);
+                RemoveImcstore(part_rel, nullptr, false);
+                /* drop delta table */
+                DropImcDeltaTable(part_oid, nullptr);
+                releaseDummyRelation(&part_rel);
+                partitionClose(rel, part, NoLock);
+            }
+
+            /* delete imcs for all subpartitions of this partition */
+            List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+            ListCell* subcell = NULL;
+            foreach(subcell, subpart_oid_list) {
+                Oid subpart_oid = lfirst_oid(subcell);
+                /* search imcs_oid */
+                imcs_oid = search_table_from_gs_imcs(subpart_oid);
+                if (OidIsValid(imcs_oid)) {
+                    /* remove mapping info from gs_imcs and pg_class tables */
+                    gs_imcs_delete_tuple(imcs_oid, nullptr);
+                }
+            }
+            if (subpart_oid_list != NULL) {
+                releasePartitionOidList(&subpart_oid_list);
+            }
+
+            /* delete imcs for this partition */
+            imcs_oid = search_table_from_gs_imcs(part_oid);
+            if (OidIsValid(imcs_oid)) {
+                /* remove mapping info from gs_imcs and pg_class tables */
+                gs_imcs_delete_tuple(imcs_oid, nullptr);
+            }
+
+            /*if it is the last one，delete base imcs rel */
+            Oid* found_oid = (Oid*)palloc0(sizeof(Oid));
+            *found_oid = InvalidOid;
+            bool is_last_one = search_parent_oid_from_gs_imcs_for_partition(rel_id, found_oid);
+            if (is_last_one && OidIsValid(*found_oid)) {
+                /* remove mapping info from gs_imcs and pg_class tables */
+                gs_imcs_delete_tuple(*found_oid, nullptr);
+            }
+        }break;
+        default:
+            break;
+    }
+    return;
+}
+
+/* ALTER TABLE name MODIFY PARTITION part_name IMCSTORED */
+static void ATInitPartitionImcstoreOnStandby(Relation rel, AlterTableCmd *cmd)
+{
+    PartitionImcstoredState *im_state = (PartitionImcstoredState*)cmd->def;
+    char* partitionName = (char*)cmd->name;
+    Oid part_oid = InvalidOid;
+    Oid rel_id = RelationGetRelid(rel);
+    List* column_list = NULL;
+    int column_count = 0;
+    Oid imcs_oid = InvalidOid;
+
+    part_oid = PartitionNameGetPartitionOid(rel_id,
+                                            partitionName,
+                                            PART_OBJ_TYPE_TABLE_PARTITION,
+                                            AccessExclusiveLock, /* partition lock */
+                                            false,
+                                            false,
+                                            NULL,
+                                            NULL,
+                                            NoLock);
+    PGXCNodeHandle** connections = NULL;
+    int conn_count = 0;
+    connections = GetStandbyConnections(&conn_count);
+
+    switch(im_state->imcstored_type) {
+        case PARTITION_IMCSTORED:
+        {
+            int name_length = 0;
+            if (RELATION_HAS_IMCS(rel)) {
+                int2vector *imcs_keys = GetImcsKeys(rel_id);
+                for (int i = 0; i < imcs_keys->dim1; i++) {
+                    AttrNumber attnum = imcs_keys->values[i];
+                    char* attname = get_attname(rel_id, attnum);
+                    column_list = lappend(column_list, makeString(attname));
+                    name_length += (strlen(attname) + 1);
+                    column_count++;
+                }
+            } else {
+                TupleDesc rel_desc = rel->rd_att;
+                FormData_pg_attribute *rel_atts = rel_desc->attrs;
+                int rel_attnum_all = rel_desc->natts;
+                int rel_attnum = rel_desc->natts;
+                for (int i = 0; i < rel_attnum_all; i++) {
+                    if (rel_atts[i].attisdropped) {
+                        rel_attnum--;
+                        continue;
+                    }
+                    column_list = lappend(column_list, makeString(NameStr(rel_atts[i].attname)));
+                    name_length += (strlen(NameStr(rel_atts[i].attname)) + 1);
+                    column_count++;
+                }
+                /* create imcs for rel itself */
+                ATCreateImcsTableOnRel(rel, column_list, column_count);
+            }
+
+            /* create imcs for this partition */
+            Partition part = partitionOpen(rel, part_oid, AccessExclusiveLock);
+            Relation part_rel = partitionGetRelation(rel, part);
+            if (!RELATION_HAS_IMCS(part_rel)) {
+                ATCreateImcsTableOnPartOid(rel_id, part_oid, rel_id, part_rel, column_list, column_count);
+            }
+            releaseDummyRelation(&part_rel);
+            partitionClose(rel, part, NoLock);
+
+            /* create imcs for ALL subpartitions of this part_oid */
+            if (RelationIsSubPartitioned(rel)) {
+                ListCell* cell = NULL;
+                List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+                foreach(cell, subpart_oid_list) {
+                    Oid subpart_oid = lfirst_oid(cell);
+                    Partition subpart = partitionOpen(rel, subpart_oid, AccessExclusiveLock);
+                    Relation subpart_rel = partitionGetRelation(rel, subpart);
+                    if (!RELATION_HAS_IMCS(subpart_rel)) {
+                        ATCreateImcsTableOnPartOid(rel_id, subpart_oid, part_oid, subpart_rel, column_list, column_count);
+                    }
+                    releaseDummyRelation(&subpart_rel);
+                    partitionClose(rel, subpart, NoLock);
+                }
+                if (subpart_oid_list != NULL) {
+                    releasePartitionOidList(&subpart_oid_list);
+                }
+            }
+            /* notify standby node to init imcstore */
+            SendPartitionedImcstoredRequest(connections, conn_count, rel_id, part_oid, InvalidOid, column_list, name_length);
+        }break;
+        case PARTITION_UNIMCSTORED:
+        {
+            /* notify standby node to remove imcstore */
+            SendPartitionedUnImcstoredRequest(connections, conn_count, rel_id, part_oid, InvalidOid);
+            /* delete imcs for all subpartitions of this partition */
+            List* subpart_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+            ListCell* subcell = NULL;
+            foreach(subcell, subpart_oid_list) {
+                Oid subpart_oid = lfirst_oid(subcell);
+                /* search imcs_oid */
+                imcs_oid = search_table_from_gs_imcs(subpart_oid);
+                if (OidIsValid(imcs_oid)) {
+                    /* remove mapping info from gs_imcs and pg_class tables */
+                    gs_imcs_delete_tuple(imcs_oid, nullptr);
+                }
+            }
+            if (subpart_oid_list != NULL) {
+                releasePartitionOidList(&subpart_oid_list);
+            }
+
+            /* delete imcs for this partition */
+            imcs_oid = search_table_from_gs_imcs(part_oid);
+            if (OidIsValid(imcs_oid)) {
+                /* remove mapping info from gs_imcs and pg_class tables */
+                gs_imcs_delete_tuple(imcs_oid, nullptr);
+            }
+
+            /*if it is the last one，delete base imcs rel */
+            Oid* found_oid = (Oid*)palloc0(sizeof(Oid));
+            *found_oid = InvalidOid;
+            bool is_last_one = search_parent_oid_from_gs_imcs_for_partition(rel_id, found_oid);
+            if (is_last_one && OidIsValid(*found_oid)) {
+                /* remove mapping info from gs_imcs and pg_class tables */
+                gs_imcs_delete_tuple(*found_oid, nullptr);
+            }
+        }break;
+        default:
+            break;
+    }
+
+    return;
+}
+
+void ATPrepPartitionInMemory(Relation rel)
+{
+    if (!RELATION_IS_PARTITIONED(rel)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                    errmsg("Can not imctsore against NON-PARTITIONED table")));
+    }
+    return;
+}
+#endif
 
 // Description : Get constraint tuple list of table
 static List* getConstraintList(Oid relOid, char conType)

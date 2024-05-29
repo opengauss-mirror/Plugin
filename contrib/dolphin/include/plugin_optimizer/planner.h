@@ -156,7 +156,12 @@ extern List* make_pathkeys_for_window(PlannerInfo* root, WindowClause* wc, List*
 
 extern List* get_distributekey_from_tlist(
     PlannerInfo* root, List* tlist, List* groupcls, double rows, double* result_multiple, void* skew_info = NULL);
+#ifdef ENABLE_HTAP
+extern Plan* try_vectorize_plan(Plan* top_plan, Query* parse, bool from_subplan, PlannerInfo* subroot = NULL,
+                                bool is_vec = false);
+#else
 extern Plan* try_vectorize_plan(Plan* top_plan, Query* parse, bool from_subplan, PlannerInfo* subroot = NULL);
+#endif
 extern bool is_vector_scan(Plan* plan);
 extern bool CheckColumnsSuportedByBatchMode(List* targetList, List *qual);
 

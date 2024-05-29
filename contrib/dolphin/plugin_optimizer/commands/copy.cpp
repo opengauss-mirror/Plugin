@@ -121,6 +121,9 @@
 #include "access/ustore/knl_uheap.h"
 #include "access/ustore/knl_whitebox_test.h"
 #include "plugin_commands/mysqlmode.h"
+#ifdef ENABLE_HTAP
+#include "storage/htap/htap_modify.h"
+#endif
 
 #define ISOCTAL(c) (((c) >= '0') && ((c) <= '7'))
 #define OCTVALUE(c) ((c) - '0')
@@ -5101,7 +5104,12 @@ uint64 CopyFrom(CopyState cstate)
                         targetRel = cstate->rel;
                         (void)tableam_tuple_insert(targetRel, tuple, mycid, 0, NULL);
                     }
-
+#ifdef ENABLE_HTAP
+                    if (RELATION_HAS_IMCS(targetRel)) {
+                        (void)ExecStoreTuple(tuple, myslot, InvalidBuffer, false);
+                        HTAPExecInsertRow(RelationGetRelid(targetRel), &((HeapTuple)tuple)->t_self, myslot);
+                    }
+#endif
                     if (rel_isblockchain) {
                         has_hash = hist_table_record_insert(targetRel, (HeapTuple)tuple, &res_hash);
                     }
@@ -5593,6 +5601,19 @@ void CopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int hi_o
         (Tuple*)bufferedTuples, nBufferedTuples, mycid, hi_options, bistate, &args);
     MemoryContextSwitchTo(oldcontext);
 
+
+#ifdef ENABLE_HTAP
+    //Loop for HTAPHook
+    if (RELATION_HAS_IMCS(rel)) {
+        if (resultRelInfo->ri_NumIndices <= 0) {
+            for (i = 0; i < nBufferedTuples; i++) {
+                (void)ExecStoreTuple(bufferedTuples[i], myslot, InvalidBuffer, false);
+                HTAPExecInsertRow(RelationGetRelid(rel), &((HeapTuple)bufferedTuples[i])->t_self, myslot);
+            }
+        }
+    }
+#endif
+
     /*
      * If there are any indexes, update them for all the inserted tuples, and
      * run AFTER ROW INSERT triggers.
@@ -5602,6 +5623,11 @@ void CopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int hi_o
             List* recheckIndexes = NIL;
 
             (void)ExecStoreTuple(bufferedTuples[i], myslot, InvalidBuffer, false);
+#ifdef ENABLE_HTAP
+            if (RELATION_HAS_IMCS(rel)) {
+                HTAPExecInsertRow(RelationGetRelid(rel), &((HeapTuple)bufferedTuples[i])->t_self, myslot);
+            }
+#endif
             recheckIndexes = ExecInsertIndexTuples(myslot,
                 &(((HeapTuple)bufferedTuples[i])->t_self),
                 estate,
@@ -5668,6 +5694,21 @@ void UHeapCopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int
             NULL);
     MemoryContextSwitchTo(oldcontext);
 
+#ifdef ENABLE_HTAP
+    //Loop for HTAPHook
+    if (RELATION_HAS_IMCS(rel)) {
+        if (resultRelInfo->ri_NumIndices <= 0) {
+            for (i = 0; i < nBufferedTuples; i++) {
+                (void)ExecStoreTuple(bufferedTuples[i], myslot, InvalidBuffer, false);
+                if (myslot->tts_tupslotTableAm != TAM_USTORE) {
+                    HTAPExecInsertRow(RelationGetRelid(rel), &((HeapTuple)bufferedTuples[i])->t_self, myslot);
+                } else {
+                    HTAPExecInsertRow(RelationGetRelid(rel), &((UHeapTuple)bufferedTuples[i])->ctid, myslot);
+                }
+            }
+        }
+    }
+#endif
     /*
      * If there are any indexes, update them for all the inserted tuples, and
      * run AFTER ROW INSERT triggers.
@@ -5683,8 +5724,18 @@ void UHeapCopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int
              * tuple which is extracted from the tuple of the slot. Make sure it is set.
              */
             if (!TTS_TABLEAM_IS_USTORE(myslot)) {
+#ifdef ENABLE_HTAP
+                if (RELATION_HAS_IMCS(rel)) {
+                    HTAPExecInsertRow(RelationGetRelid(rel), &((HeapTuple)bufferedTuples[i])->t_self, myslot);
+                }
+#endif
                 ((HeapTuple)myslot->tts_tuple)->t_tableOid = RelationGetRelid(rel);
             } else {
+#ifdef ENABLE_HTAP
+                if (RELATION_HAS_IMCS(rel)) {
+                    HTAPExecInsertRow(RelationGetRelid(rel), &((UHeapTuple)bufferedTuples[i])->ctid, myslot);
+                }
+#endif
                 ((UHeapTuple)myslot->tts_tuple)->table_oid = RelationGetRelid(rel);
             }
 

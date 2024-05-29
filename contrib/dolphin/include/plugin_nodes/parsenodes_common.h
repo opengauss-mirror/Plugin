@@ -366,6 +366,30 @@ typedef struct IndexElem {
     SortByNulls nulls_ordering; /* FIRST/LAST/default */
 } IndexElem;
 
+/*
+ * ImcsElem - imcs parameters
+ *
+ * For a plain imcs attribute, 'name' is the name of the table column to
+ * imcs, and 'expr' is NULL.  For an index expression, 'name' is NULL and
+ * 'expr' is the expression tree.
+ */
+typedef struct ImcsElem {
+    NodeTag type;
+    char *colname;       /* name for imcs column; NULL = default */
+    bool is_imcstored; /* check if it is a imcstored column */
+} ImcsElem;
+
+typedef struct PartitionImcstoredState {
+    NodeTag type;
+    int2 imcstored_type;
+} PartitionImcstoredState;
+
+typedef enum PartitionInMemoryType {
+    PARTITION_INVALID,
+    PARTITION_IMCSTORED,
+    PARTITION_UNIMCSTORED
+} PartitionInMemoryType;
+
 struct StartWithClause;
 /*
  * WithClause -
@@ -926,7 +950,10 @@ typedef enum AlterTableType {
     AT_ModifyColumn,
     AT_SetCharsetCollate,
     AT_ConvertCharset,
-    AT_ResetPartitionno
+    AT_ResetPartitionno,
+    AT_IMCSTORED,
+    AT_UNIMCSTORED,
+    AT_MODIFY_PARTITION_IMCSTORED
 #ifdef DOLPHIN
     ,
     AT_DropIndex,
@@ -1167,6 +1194,7 @@ typedef struct PartitionDefState {
     char* tablespacename; /* table space to use, or NULL */
     List* subPartitionDefState;
     int4 partitionno; /* the partition no of current partition */
+    PartitionImcstoredState *imcstored_state;
 } PartitionDefState;
 
 /*
@@ -1186,6 +1214,7 @@ typedef struct RangePartitionStartEndDefState {
     List *endValue;       /* the end value of a start/end clause */
     List *everyValue;     /* the interval value of a start/end clause */
     char *tableSpaceName; /* table space to use, or NULL */
+    PartitionImcstoredState *imcstored_state;
 } RangePartitionStartEndDefState;
 
 typedef struct ListPartitionDefState : PartitionDefState {

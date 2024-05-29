@@ -42,6 +42,11 @@ typedef struct {
     List* partitionKey; /* partitionkey for partiitoned table */
     List* subPartitionKey; /* subpartitionkey for subpartiitoned table */
     IndexStmt* pkey;    /* PRIMARY KEY index, if any */
+#ifdef ENABLE_HTAP
+    List* imcsconstraints;          /* imcs IMCSTORED columns create constraints */
+    CreateImcsStmt *imcs_stmt; /* IMCS stmt, if any */
+    bool table_has_imcs;       /* table imcstored state */
+#endif
 #ifdef PGXC
     List* fallback_dist_col;    /* suggested column to distribute on */
     DistributeBy* distributeby; /* original distribute by column of CREATE TABLE */
@@ -105,6 +110,9 @@ extern Oid transform_default_collation(const char* collate, int charset, Oid def
 #else
 extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
     bool is_attr = false);
+#endif
+#ifdef ENABLE_HTAP
+extern void CreateImcsTableForPartitionTable(CreateImcsStmt *imcs_stmt);
 #endif
 extern Oid check_collation_by_charset(const char* collate, int charset, bool ignore_check = true);
 
