@@ -98,6 +98,10 @@
 #include "client_logic/client_logic_enums.h"
 #include "storage/checksum_impl.h"
 #include "catalog/gs_collation.h"
+#ifdef ENABLE_HTAP
+#include "catalog/gs_imcs.h"
+#include "access/imcs/imcs_ctlg.h"
+#endif
 
 /* State shared by transformCreateSchemaStmt and its subroutines */
 typedef struct {
@@ -207,6 +211,10 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
 static void TransformColumnDefinitionOptions(CreateStmtContext* cxt, ColumnDef* column);
 static void TransformColumnDefinitionConstraints(
     CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool is_modify);
+#ifdef ENABLE_HTAP
+static void CreateSubpartitionImcsTablePartOid(CreateImcsStmt *imcs_stmt, Oid rel_id, Oid part_oid,
+                                        List* sub_partition_def_state_list, PartitionImcstoredState* inherit_ac_state);
+#endif
 #define REDIS_SCHEMA "data_redis"
 
 /*
@@ -423,6 +431,22 @@ static bool is_create_as_col_store(CreateStmt* stmt)
     return storeTypeStr && (pg_strcasecmp(storeTypeStr, ORIENTATION_COLUMN) == 0 ||
         pg_strcasecmp(storeTypeStr, ORIENTATION_ORC) == 0);
 }
+
+#ifdef ENABLE_HTAP
+/* IMCS */
+static void CheckTypeSupportForImcs(TypeName* typname)
+{
+    Oid type_oid = InvalidOid;
+    int32 typmod = -1;
+    typenameTypeIdAndMod(NULL, typname, &type_oid, &typmod);
+    if (!IsTypeSupportedByCStore(type_oid)) {
+        ereport(ERROR,
+                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("data type \"%s\" is not supported in HTAP",
+                                 format_type_with_typemod(type_oid, typmod))));
+    }
+}
+#endif
 
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
@@ -6512,6 +6536,290 @@ void checkSubPartitionName(List* partitionList)
     }
     list_free_ext(partitionNameList);
 }
+
+#ifdef ENABLE_HTAP
+static void CreatePartitionImcsTablePartOidInternal(CreateImcsStmt *imcs_stmt, Oid rel_id, Oid part_oid, Oid parent_oid,
+                                                                List* sub_partition_def_state_list, PartitionImcstoredState *part_im_state, bool subpart_recursive, PartitionImcstoredState * recursive_im_state)
+{
+    int2 part_inmemory_type = PARTITION_INVALID;
+    Oid imcsmeta_oid = InvalidOid;
+
+    bool table_has_imcs = imcs_stmt->table_has_imcs;
+    int imcstored_col_nums = imcs_stmt->imcstored_col_nums;
+
+    if (part_im_state) {
+        part_inmemory_type = part_im_state->imcstored_type;
+    }
+    /* inherit from rel table IMCS or partition when not setting */
+    /* check partition setting for subpartition */
+    if (subpart_recursive && recursive_im_state && part_inmemory_type == PARTITION_INVALID) {
+        part_inmemory_type = recursive_im_state->imcstored_type;
+    }
+    /* check table setting for partition and subpartition */
+    if (part_inmemory_type == PARTITION_INVALID) {
+        if (table_has_imcs || (imcstored_col_nums > 0)) {
+            part_inmemory_type = PARTITION_IMCSTORED;
+        }
+    }
+    /* create IMCS TABLE for partition oid */
+    if (part_inmemory_type == PARTITION_IMCSTORED) {
+        imcs_stmt->rel_id = part_oid;    //partition oid
+        Relation parent_rel = heap_openrv(imcs_stmt->relation, AccessShareLock);
+        Partition partition = partitionOpen(parent_rel, part_oid, AccessExclusiveLock);
+        Relation part_rel = partitionGetRelation(parent_rel, partition);    //partition rel
+        imcsmeta_oid = CreateImcsTableOnRel(imcs_stmt, imcs_stmt->isPartitioned,
+                                                     parent_oid, part_oid, part_rel);
+        releaseDummyRelation(&part_rel);
+        partitionClose(parent_rel, partition, NoLock);
+        heap_close(parent_rel, NoLock);
+    }
+
+    /* create subpartition imcs */
+    if (!subpart_recursive && sub_partition_def_state_list) {
+        PartitionImcstoredState * inherit_ac_state = makeNode(PartitionImcstoredState);
+        inherit_ac_state->imcstored_type = part_inmemory_type;
+        CreateSubpartitionImcsTablePartOid(imcs_stmt, rel_id, part_oid, sub_partition_def_state_list, inherit_ac_state);
+        /*TODO: free inherit_ac_state */
+    }
+    return;
+}
+
+void CreateSubpartitionImcsTablePartOid(CreateImcsStmt *imcs_stmt, Oid rel_id, Oid subpart_oid, Oid parent_oid,
+                                                            List* sub_partition_def_state_list, PartitionImcstoredState* inherit_ac_state)
+{
+    ListCell* cell = NULL;
+    Oid subpart_oid_found = InvalidOid;
+
+    foreach(cell, sub_partition_def_state_list) {
+        Node* partdef = (Node*)lfirst(cell);
+        switch (partdef->type) {
+            case T_RangePartitionDefState: {
+                RangePartitionDefState* state = (RangePartitionDefState*)partdef;
+                subpart_oid_found = SubPartitionNameGetSubPartitionOid(rel_id,
+                                                                       state->partitionName, NoLock, NoLock, true, false, NULL,
+                                                                       NULL, NoLock, &parent_oid);
+
+                if (subpart_oid_found != subpart_oid) {
+                    continue;
+                }
+                /* create subpartition imcs */
+                List* subPartitionDefState = NIL;
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, subpart_oid, parent_oid,
+                                                                    subPartitionDefState, state->imcstored_state, true, inherit_ac_state);
+                break;
+            }
+            case T_RangePartitionStartEndDefState: {
+                RangePartitionStartEndDefState* state = (RangePartitionStartEndDefState*)partdef;
+                subpart_oid_found = SubPartitionNameGetSubPartitionOid(rel_id,
+                                                                       state->partitionName, NoLock, NoLock, true, false, NULL,
+                                                                       NULL, NoLock, &parent_oid);
+
+                if (subpart_oid_found != subpart_oid) {
+                    continue;
+                }
+                /* create subpartition imcs */
+                List* subPartitionDefState = NIL;
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, subpart_oid, parent_oid,
+                                                                    subPartitionDefState, state->imcstored_state, true, inherit_ac_state);
+                break;
+            }
+            case T_ListPartitionDefState: {
+                ListPartitionDefState* state = (ListPartitionDefState*)partdef;
+                subpart_oid_found = SubPartitionNameGetSubPartitionOid(rel_id,
+                                                                       state->partitionName, NoLock, NoLock, true, false, NULL,
+                                                                       NULL, NoLock, &parent_oid);
+
+                if (subpart_oid_found != subpart_oid) {
+                    continue;
+                }
+                /* create subpartition imcs */
+                List* subPartitionDefState = NIL;
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, subpart_oid, parent_oid,
+                                                                    subPartitionDefState, state->imcstored_state, true, inherit_ac_state);
+                break;
+            }
+            case T_HashPartitionDefState: {
+                HashPartitionDefState* state = (HashPartitionDefState*)partdef;
+                subpart_oid_found = SubPartitionNameGetSubPartitionOid(rel_id,
+                                                                       state->partitionName, NoLock, NoLock, true, false, NULL,
+                                                                       NULL, NoLock, &parent_oid);
+
+                if (subpart_oid_found != subpart_oid) {
+                    continue;
+                }
+                /* create subpartition imcs */
+                List* subPartitionDefState = NIL;
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, subpart_oid, parent_oid,
+                                                                    subPartitionDefState, state->imcstored_state, true, inherit_ac_state);
+                break;
+            }
+
+            default:
+                Assert(false); /* never happen */
+        }
+    } //foreach
+}
+
+static void CreateSubpartitionImcsTablePartOid(CreateImcsStmt *imcs_stmt, Oid rel_id, Oid part_oid,
+                                                          List* sub_partition_def_state_list, PartitionImcstoredState* inherit_ac_state)
+{
+    List* subpartition_oid_list = NIL;         /* partition oid list */
+    ListCell* cell = NULL;
+    Relation rel = NULL;
+
+    if (sub_partition_def_state_list == NIL) {
+        return;
+    }
+
+    /* rel is ready now, DefineRelation has been done */
+    rel = heap_openrv(imcs_stmt->relation, AccessShareLock);
+    Assert(RELATION_IS_PARTITIONED(rel));
+    subpartition_oid_list = PartOidGetSubPartitionOidList(rel, part_oid);  //subpartition oid list
+    heap_close(rel, NoLock);
+
+    foreach(cell, subpartition_oid_list) {
+        Oid subpart_oid = DatumGetObjectId(lfirst(cell));
+        CreateSubpartitionImcsTablePartOid(imcs_stmt, rel_id, subpart_oid, part_oid,
+                                                               sub_partition_def_state_list, inherit_ac_state);
+    }
+
+    if (subpartition_oid_list != NULL) {
+        releasePartitionOidList(&subpartition_oid_list);
+    }
+    return;
+}
+
+void CreatePartitionImcsTableForPartOid(CreateImcsStmt *imcs_stmt, Oid rel_id, Oid part_oid)
+{
+    PartitionState *part_state = NULL;
+    ListCell* cell = NULL;
+    Oid part_oid_found = InvalidOid;
+    Oid parent_oid = rel_id;
+
+    part_state = imcs_stmt->partTableState;
+    foreach(cell, part_state->partitionList) {
+        Node* partdef = (Node*)lfirst(cell);
+        switch (partdef->type) {
+            case T_RangePartitionDefState: {
+                RangePartitionDefState* state = (RangePartitionDefState*)partdef;
+                part_oid_found =  PartitionNameGetPartitionOid(rel_id,
+                                                               state->partitionName,
+                                                               PART_OBJ_TYPE_TABLE_PARTITION,
+                                                               AccessExclusiveLock, /* partition lock */
+                                                               false,
+                                                               false,
+                                                               NULL,
+                                                               NULL,
+                                                               NoLock);
+
+                if (part_oid_found != part_oid) {
+                    continue;
+                }
+                /* create */
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, part_oid, parent_oid,
+                                                                    state->subPartitionDefState, state->imcstored_state, false, NULL);
+                break;
+            }
+            case T_RangePartitionStartEndDefState: {
+                RangePartitionStartEndDefState* state = (RangePartitionStartEndDefState*)partdef;
+                part_oid_found =  PartitionNameGetPartitionOid(rel_id,
+                                                               state->partitionName,
+                                                               PART_OBJ_TYPE_TABLE_PARTITION,
+                                                               AccessExclusiveLock, /* partition lock */
+                                                               false,
+                                                               false,
+                                                               NULL,
+                                                               NULL,
+                                                               NoLock);
+
+                if (part_oid_found != part_oid) {
+                    continue;
+                }
+                /* create */
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, part_oid, parent_oid, NIL,
+                                                                    state->imcstored_state, false, NULL);
+                break;
+            }
+            case T_ListPartitionDefState: {
+                ListPartitionDefState* state = (ListPartitionDefState*)partdef;
+                part_oid_found =  PartitionNameGetPartitionOid(rel_id,
+                                                               state->partitionName,
+                                                               PART_OBJ_TYPE_TABLE_PARTITION,
+                                                               AccessExclusiveLock, /* partition lock */
+                                                               false,
+                                                               false,
+                                                               NULL,
+                                                               NULL,
+                                                               NoLock);
+
+                if (part_oid_found != part_oid) {
+                    continue;
+                }
+                /* create */
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, part_oid, parent_oid,
+                                                                    state->subPartitionDefState, state->imcstored_state, false, NULL);
+                break;
+            }
+            case T_HashPartitionDefState: {
+                HashPartitionDefState* state = (HashPartitionDefState*)partdef;
+                part_oid_found =  PartitionNameGetPartitionOid(rel_id,
+                                                               state->partitionName,
+                                                               PART_OBJ_TYPE_TABLE_PARTITION,
+                                                               AccessExclusiveLock, /* partition lock */
+                                                               false,
+                                                               false,
+                                                               NULL,
+                                                               NULL,
+                                                               NoLock);
+
+                if (part_oid_found != part_oid) {
+                    continue;
+                }
+                /* create */
+                CreatePartitionImcsTablePartOidInternal(imcs_stmt, rel_id, part_oid, parent_oid,
+                                                                    state->subPartitionDefState, state->imcstored_state, false, NULL);
+                break;
+            }
+
+            default:
+                Assert(false); /* never happen */
+        }
+    } //foreach
+}
+
+void CreateImcsTableForPartitionTable(CreateImcsStmt *imcs_stmt)
+{
+    List* partition_oid_list = NIL;         /* partition oid list */
+    ListCell* cell = NULL;
+    bool is_partition = false;
+    Relation rel = NULL;
+    Oid rel_id = InvalidOid;
+
+    is_partition = imcs_stmt->isPartitioned;
+    if (!is_partition) {
+        return;
+    }
+
+    /* rel is ready now, DefineRelation has been done */
+    rel = heap_openrv(imcs_stmt->relation, AccessShareLock);
+    rel_id = RelationGetRelid(rel);
+    Assert(RELATION_IS_PARTITIONED(rel));
+    partition_oid_list = relationGetPartitionOidList(rel);  //partition oid list
+    heap_close(rel, NoLock);
+
+    Assert(PointerIsValid(imcs_stmt->partTableState));
+
+    foreach(cell, partition_oid_list) {
+        Oid part_oid = DatumGetObjectId(lfirst(cell));
+        CreatePartitionImcsTableForPartOid(imcs_stmt, rel_id, part_oid);
+    }
+
+    if (partition_oid_list != NULL) {
+        releasePartitionOidList(&partition_oid_list);
+    }
+    return;
+}
+#endif
 
 static void CheckDistributionSyntax(CreateStmt* stmt)
 {

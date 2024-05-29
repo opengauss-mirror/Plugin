@@ -974,7 +974,7 @@ typedef struct CreateForeignTableStmt {
     ForeignPartState* part_state;
 } CreateForeignTableStmt;
 
-#ifdef ENABLE_MOT
+#if defined(ENABLE_MOT)
 typedef struct AlterForeingTableCmd {
     NodeTag type;
     AlterTableType subtype;
@@ -1247,7 +1247,7 @@ typedef struct AlterOpFamilyStmt {
 } AlterOpFamilyStmt;
 
 
-#ifdef ENABLE_MOT
+#if defined(ENABLE_MOT) || defined(ENABLE_HTAP)
 typedef struct DropForeignStmt {
     NodeTag type;
     char relkind;
@@ -1394,6 +1394,42 @@ typedef struct IndexStmt {
     bool isvalidated;                      /* is the constraint validated */
     bool isdisable;                        /* is the constraint disable */
 } IndexStmt;
+
+#ifdef ENABLE_HTAP
+/* ----------------------
+ *		Create IMCS Statement  copy from IndexStmt
+ *
+ * This represents creation of an index and/or an associated constraint.
+ * If isconstraint is true, we should create a pg_constraint entry along
+ * with the index.  But if indexOid isn't InvalidOid, we are not creating an
+ * index, just a UNIQUE/PKEY constraint using an existing index.  isconstraint
+ * must always be true in this case, and the fields describing the index
+ * properties are empty.
+ * ----------------------
+ */
+typedef struct CreateImcsStmt {
+    NodeTag type;
+    RangeVar *relation;          /* relation to create */
+    List *imcstored_columns;   /* columns IMCSTORED (list of ImcsElem )*/
+    List *unimcstored_columns; /* columns UNIMCSTORED (list of ImcsElem )*/
+    List *inhRelations;          /* relations to inherit from (list of
+                                     * inhRelation) */
+    List *reloptions;            /* reloptions from WITH clause */
+    char *tablespacename;        /* table space to use, or NULL */
+    int8 row_compress;           /* row compression flag */
+    char relkind;                /* type of object */
+    char *accessMethod;          /* name of access method (eg. btree) */
+    bool isPartitioned;
+    bool isalter;                   /* true if altering existing table */
+    Oid rel_id;                     /* rel_id for alter table */
+    Node *node;                     /* record a CreateStmt */
+    bool table_has_imcs;            /* table constraint with imcs */
+    int imcstored_col_nums;       /* the number of columns set imcstored */
+    int unimcstored_col_nums;     /* the number of columns set unimcstored */
+    PartitionState *partTableState; /* the PartitionState */
+    bool baseTableNotcreated = false;
+} CreateImcsStmt;
+#endif
 
 typedef struct AlterFunctionStmt {
     NodeTag type;
@@ -2222,7 +2258,7 @@ typedef struct ConstraintsSetStmt {
     bool deferred;
 } ConstraintsSetStmt;
 
-#ifdef ENABLE_MOT
+#if defined(ENABLE_MOT) || defined(ENABLE_HTAP)
 typedef struct ReindexForeignStmt {
     NodeTag type;
     char relkind;
