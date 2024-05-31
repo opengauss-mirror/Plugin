@@ -214,7 +214,7 @@ recheck:
     if (func != NULL) {
         /* We have a compiled function, but is it still valid? */
 #ifdef DOLPHIN
-        recompile_due_to_strict = (SQL_MODE_ATUO_RECOMPILE_FUNCTION() && SQL_MODE_STRICT() &&
+        recompile_due_to_strict = (SQL_MODE_AUTO_RECOMPILE_FUNCTION() && SQL_MODE_STRICT() &&
             proc_struct->pronamespace != PG_CATALOG_NAMESPACE);
 #endif
         if (func->fn_xmin == HeapTupleGetRawXmin(proc_tup) &&
