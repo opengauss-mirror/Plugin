@@ -639,6 +639,11 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             } else if (ltypeId == UNKNOWNOID && rtypeId == ANYENUMOID){
                 ltypeId = TEXTOID;
             }
+            if (ltypeId == UNKNOWNOID && rtypeId == DATEOID) {
+                ltypeId = TEXTOID;
+            } else if (ltypeId == DATEOID && rtypeId == UNKNOWNOID){
+                rtypeId = TEXTOID;
+            }
         }
     }
 #endif

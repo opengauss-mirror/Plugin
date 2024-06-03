@@ -1,0 +1,349 @@
+create schema time_type_compare;
+set current_schema = time_type_compare;
+create table t_date(a date);
+insert into t_date values('2023-02-05');
+select '2023-02-05 19:10:50' = a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 = a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <> a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 <> a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' != a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 != a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' > a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 > a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' < a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 < a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' >= a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 >= a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <= a from t_date;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 <= a from t_date;
+ ?column? 
+----------
+ t
+(1 row)
+
+create table t_time(a time);
+insert into t_time values('19:10:50');
+select '2023-02-05 19:10:50' = a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 = a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <> a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 <> a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' != a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 != a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' > a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 > a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' < a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 < a from t_time;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' >= a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 >= a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <= a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 <= a from t_time;
+ ?column? 
+----------
+ t
+(1 row)
+
+create table t_datetime(a datetime);
+insert into t_datetime values('2023-02-05 19:10:50');
+select '2023-02-05 19:10:50' = a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 = a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <> a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 <> a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' != a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 != a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' > a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 > a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' < a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 < a from t_datetime;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' >= a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 >= a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <= a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 <= a from t_datetime;
+ ?column? 
+----------
+ t
+(1 row)
+
+create table t_timestamp(a timestamp);
+insert into t_timestamp values('2023-02-05 19:10:50');
+select '2023-02-05 19:10:50' = a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 = a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <> a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 <> a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' != a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 != a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' > a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 > a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' < a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 20230205191050 < a from t_timestamp;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '2023-02-05 19:10:50' >= a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 >= a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '2023-02-05 19:10:50' <= a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 20230205191050 <= a from t_timestamp;
+ ?column? 
+----------
+ t
+(1 row)
+
+drop table t_date, t_time, t_datetime, t_timestamp;
+reset current_schema;
+drop schema time_type_compare;
