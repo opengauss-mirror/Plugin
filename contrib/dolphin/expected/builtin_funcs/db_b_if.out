@@ -81,9 +81,9 @@ select if (true, date '2022-01-30', 1::int4) as a, if (false, date '2022-01-30',
 
 -- numeric to float
 select if (true, 2.2::numeric(10, 2), 1.1::float8) as a, if (false, 2.2::numeric(10, 2), 1.1::float8) as b;
-  a   |  b  
-------+-----
- 2.20 | 1.1
+  a  |  b  
+-----+-----
+ 2.2 | 1.1
 (1 row)
 
 -- numeric to integer
@@ -192,6 +192,13 @@ ERROR:  CASE types boolean and number cannot be matched
 LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
                          ^
 CONTEXT:  referenced column: a
+-- int to connproc
+select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conversion limit 1;
+ pg_typeof 
+-----------
+ regproc
+(1 row)
+
 drop schema db_b_if cascade;
 NOTICE:  drop cascades to view test_view
 reset current_schema;
