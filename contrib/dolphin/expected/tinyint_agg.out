@@ -126,6 +126,30 @@ select count(distinct b) from t_count;
      3
 (1 row)
 
+select count(all *) from t_count;
+ count 
+-------
+     9
+(1 row)
+
+select max(all *) from t_count;
+ERROR:  syntax error at or near "*"
+LINE 1: select max(all *) from t_count;
+                       ^
+select a,count(a)over (partition by t.b) from t_count t order by 1,2;
+ a | count 
+---+-------
+ 1 |     3
+ 1 |     3
+ 1 |     3
+ 2 |     3
+ 2 |     3
+ 2 |     3
+ 2 |     3
+ 2 |     3
+ 2 |     3
+(9 rows)
+
 drop table t_count;
 drop table if exists smp_test;
 NOTICE:  table "smp_test" does not exist, skipping
