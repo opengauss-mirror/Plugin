@@ -2311,7 +2311,21 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
                     }
                 }
             }
-            /* Both types is same categories, we choose a priority higher*/
+#ifdef DOLPHIN
+            /* To same categories, we choose a priority higher*/
+            else if (!pispreferred && can_coerce_type(1, &preferType, &nextType, COERCION_IMPLICIT)) {
+                if (!can_coerce_type(1, &nextType, &preferType, COERCION_IMPLICIT) ||
+                    (TYPCATEGORY_NUMERIC == nextCategory && GetPriority(preferType) < GetPriority(nextType))) {
+                    /*
+                     * take new type if can coerce to it implicitly but not the
+                     * other way; but if we have a preferred type, stay on it.
+                     */
+                    preferType = nextType;
+                    preferCategory = nextCategory;
+                }
+            }
+#else
+            /* To same categories, we choose a priority higher*/
             else if (GetPriority(preferType) < GetPriority(nextType)) {
                 /* take new type if can coerce to it implicitly but not the
                  * other way; but if we have a preferred type, stay on it.
@@ -2319,6 +2333,7 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
                 preferType = nextType;
                 preferCategory = nextCategory;
             }
+#endif
         }
     }
     return preferType;

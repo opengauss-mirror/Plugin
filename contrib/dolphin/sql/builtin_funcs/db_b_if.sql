@@ -77,5 +77,8 @@ select if (true, 1.1::float8, true) as a, if (false, 1.1::float8, true) as b;
 -- numeric to boolean
 select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
 
+-- int to connproc
+select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conversion limit 1;
+
 drop schema db_b_if cascade;
 reset current_schema;
