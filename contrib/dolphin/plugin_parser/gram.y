@@ -28931,7 +28931,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 				$7->withClause = $1;
 				$7->isReplace = false;
 				$7->hintState = create_hintstate($3);
-				$7->hasIgnore = $4;
+				$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
 				$$ = (Node *) $7;
 			}
             | REPLACE hint_string replace_empty insert_target insert_rest returning_clause
@@ -29038,7 +29038,8 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->returningList = $9;
 						$7->isReplace = false;
 						$7->withClause = $1;
-						$7->hasIgnore = $4;
+						$7->hintState = create_hintstate($3);
+						$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
 #ifdef ENABLE_MULTIPLE_NODES						
 						if (t_thrd.proc->workingVersionNum >= UPSERT_ROW_STORE_VERSION_NUM) {
 							UpsertClause *uc = makeNode(UpsertClause);
@@ -29072,7 +29073,6 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						if ($8 != NULL)
 							m->mergeWhenClauses = list_concat(list_make1($8), m->mergeWhenClauses);
 
-						m->hintState = create_hintstate($3);
 						GetSessionContext()->upSertAliasName = NULL;
 						GetSessionContext()->isUpsert = false;
 						$$ = (Node *)m;
@@ -29084,7 +29084,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
-						$7->hasIgnore = $4;
+						$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
 						GetSessionContext()->upSertAliasName = NULL;
 						GetSessionContext()->isUpsert = false;
 						$$ = (Node *) $7;
@@ -29540,7 +29540,7 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
 					n->returningList = $12;
 					n->withClause = $1;
 					n->hintState = create_hintstate($3);
-					n->hasIgnore = $4;
+					n->hasIgnore = $4 || (n->hintState != NULL && n->hintState->sql_ignore_hint);
 					$$ = (Node *)n;
 				}
 		;
