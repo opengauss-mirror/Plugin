@@ -40,4 +40,7 @@ Plan *plan_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
                              ExtensiblePath *best_path, List *tlist,
                              List *clauses, List *custom_plans);
 
+Plan *plan_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
+                             ExtensiblePath *best_path, List *tlist,
+                             List *clauses, List *custom_plans);
 #endif

@@ -70,7 +70,9 @@ typedef enum ag_node_tag
     // delete data structures
     cypher_delete_information_t,
     cypher_delete_item_t,
-    cypher_merge_information_t
+    cypher_merge_information_t,
+    // vle
+    cypher_vle_target_nodes_t
 } ag_node_tag;
 
 void register_ag_nodes(void);

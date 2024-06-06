@@ -28,6 +28,7 @@ OBJS = src/backend/age.o \
        src/backend/executor/cypher_create.o \
        src/backend/executor/cypher_merge.o \
        src/backend/executor/cypher_set.o \
+       src/backend/executor/execGraphVle.o \
        src/backend/executor/cypher_utils.o \
        src/backend/nodes/ag_nodes.o \
        src/backend/nodes/cypher_copyfuncs.o \
@@ -53,9 +54,11 @@ OBJS = src/backend/age.o \
        src/backend/parser/ag_parse_expr.o \
        src/backend/utils/adt/agtype.o \
        src/backend/utils/adt/agtype_ext.o \
+       src/backend/utils/adt/agtype_gin.o \
        src/backend/utils/adt/agtype_ops.o \
        src/backend/utils/adt/agtype_parser.o \
        src/backend/utils/adt/agtype_util.o \
+       src/backend/utils/adt/agtype_raw.o \
        src/backend/utils/adt/ag_extend_func.o \
        src/backend/utils/adt/age_global_graph.o \
        src/backend/utils/adt/cypher_funcs.o \

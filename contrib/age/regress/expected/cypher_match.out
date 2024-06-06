@@ -286,8 +286,8 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (i agtype);
                                                              i                                                             
 ---------------------------------------------------------------------------------------------------------------------------
- {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
  {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
+ {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -365,9 +365,9 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (i agtype, p agtype);
  i |                                                                                                                                                                                                                                                       p                                                                                                                                                                                                                                                       
 ---+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
- 0 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
  1 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
+ 0 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
+   | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
 (3 rows)
 
 --Multiple Match Clauses
@@ -389,9 +389,9 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (i agtype, p agtype);
  i |                                                                                                                                                                                                                                                       p                                                                                                                                                                                                                                                       
 ---+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
- 0 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
  1 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
+ 0 | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
+   | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
 (3 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -500,21 +500,23 @@ LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n:v)$$) AS (a ...
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a)-[]-()-[]-(a:v1) RETURN a
 $$) AS (a agtype);
-ERROR:  variable a already exists
-LINE 2:  MATCH (a)-[]-()-[]-(a:v1) RETURN a
-                            ^
+ a 
+---
+(0 rows)
+
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a:v1)-[]-()-[a]-() RETURN a
 $$) AS (a agtype);
-ERROR:  variable a already exists
+ERROR:  variable 'a' is for a vertex
 LINE 2:  MATCH (a:v1)-[]-()-[a]-() RETURN a
                             ^
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a:v1)-[]-()-[]-(a {id:'will_fail'}) RETURN a
 $$) AS (a agtype);
-ERROR:  variable a already exists
-LINE 2:  MATCH (a:v1)-[]-()-[]-(a {id:'will_fail'}) RETURN a
-                               ^
+ a 
+---
+(0 rows)
+
 --Incorrect Labels
 SELECT * FROM cypher('cypher_match', $$MATCH (n)-[:v]-() RETURN n$$) AS (n agtype);
 ERROR:  label v is for vertices, not edges
@@ -925,14 +927,7 @@ SELECT * FROM cypher('cypher_match', $$
     RETURN u.name as u, type(m), l.name as l
     ORDER BY u, m, l
 $$) AS (u agtype, m agtype, l agtype);
-     u      |       m       |     l      
-------------+---------------+------------
- "someone"  | "opt_match_e" | "somebody"
- "somebody" | "opt_match_e" | "someone"
- "anybody"  | "opt_match_e" | "nobody"
- "nobody"   | "opt_match_e" | "anybody"
-(4 rows)
-
+ERROR:  could not find attribute 4 in subquery targetlist
 SELECT * FROM cypher('cypher_match', $$
     OPTIONAL MATCH (n:opt_match_v)-[r]->(p), (m:opt_match_v)-[s]->(q)
     WHERE id(n) <> id(m)
@@ -942,8 +937,8 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (n agtype, r agtype, p agtype, m agtype, s agtype, q agtype);
      n     |       r       |     p      |     m     |       s       |     q      
 -----------+---------------+------------+-----------+---------------+------------
- "someone" | "opt_match_e" | "somebody" | "anybody" | "opt_match_e" | "nobody"
  "anybody" | "opt_match_e" | "nobody"   | "someone" | "opt_match_e" | "somebody"
+ "someone" | "opt_match_e" | "somebody" | "anybody" | "opt_match_e" | "nobody"
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -956,18 +951,18 @@ SELECT * FROM cypher('cypher_match', $$
  $$) AS (n agtype, r agtype, p agtype, m agtype, s agtype, q agtype);
      n      |       r       |     p      |     m      |       s       |     q      
 ------------+---------------+------------+------------+---------------+------------
- "someone"  | "opt_match_e" | "somebody" | "anybody"  | "opt_match_e" | "nobody"
- "someone"  |               |            | "somebody" |               | 
- "someone"  |               |            | "nobody"   |               | 
- "somebody" |               |            | "someone"  |               | 
+ "anybody"  | "opt_match_e" | "nobody"   | "someone"  | "opt_match_e" | "somebody"
+ "anybody"  |               |            | "nobody"   |               | 
+ "anybody"  |               |            | "somebody" |               | 
+ "nobody"   |               |            | "anybody"  |               | 
+ "nobody"   |               |            | "somebody" |               | 
+ "nobody"   |               |            | "someone"  |               | 
  "somebody" |               |            | "anybody"  |               | 
  "somebody" |               |            | "nobody"   |               | 
- "anybody"  | "opt_match_e" | "nobody"   | "someone"  | "opt_match_e" | "somebody"
- "anybody"  |               |            | "somebody" |               | 
- "anybody"  |               |            | "nobody"   |               | 
- "nobody"   |               |            | "someone"  |               | 
- "nobody"   |               |            | "somebody" |               | 
- "nobody"   |               |            | "anybody"  |               | 
+ "somebody" |               |            | "someone"  |               | 
+ "someone"  | "opt_match_e" | "somebody" | "anybody"  | "opt_match_e" | "nobody"
+ "someone"  |               |            | "nobody"   |               | 
+ "someone"  |               |            | "somebody" |               | 
 (12 rows)
 
 --

@@ -41,6 +41,7 @@ typedef struct GRAPH_global_context GRAPH_global_context;
 GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
                                                    Oid graph_oid);
 GRAPH_global_context *find_GRAPH_global_context(Oid graph_oid);
+bool is_ggctx_invalid(GRAPH_global_context *ggctx);
 /* GRAPH retrieval functions */
 ListGraphId *get_graph_vertices(GRAPH_global_context *ggctx);
 vertex_entry *get_vertex_entry(GRAPH_global_context *ggctx,
@@ -48,7 +49,9 @@ vertex_entry *get_vertex_entry(GRAPH_global_context *ggctx,
 edge_entry *get_edge_entry(GRAPH_global_context *ggctx, graphid edge_id);
 /* vertex entry accessor functions*/
 graphid get_vertex_entry_id(vertex_entry *ve);
-ListGraphId *get_vertex_entry_edges(vertex_entry *ve);
+ListGraphId *get_vertex_entry_edges_in(vertex_entry *ve);
+ListGraphId *get_vertex_entry_edges_out(vertex_entry *ve);
+ListGraphId *get_vertex_entry_edges_self(vertex_entry *ve);
 Oid get_vertex_entry_label_table_oid(vertex_entry *ve);
 Datum get_vertex_entry_properties(vertex_entry *ve);
 /* edge entry accessor functions */

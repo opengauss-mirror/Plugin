@@ -32,6 +32,7 @@
 #include "nodes/cypher_nodes.h"
 #include "parser/ag_scanner.h"
 #include "parser/cypher_gram.h"
+#include "parser/cypher_parse_node.h"
 
 // override the default action for locations
 #define YYLLOC_DEFAULT(current, rhs, n) \
@@ -178,9 +179,13 @@
 
 %{
 //
+// internal alias check
+static bool has_internal_default_prefix(char *str);
+
 // unique name generation
-#define UNIQUE_NAME_NULL_PREFIX "_unique_null_prefix"
+#define UNIQUE_NAME_NULL_PREFIX AGE_DEFAULT_PREFIX"unique_null_prefix"
 static char *create_unique_name(char *prefix_name);
+static unsigned long get_a_unique_number(void);
 
 // logical operators
 static Node *make_or_expr(Node *lexpr, Node *rexpr, int location);
@@ -207,6 +212,13 @@ static Node *make_typecast_expr(Node *expr, char *typecast, int location);
 
 // functions
 static Node *make_function_expr(List *func_name, List *exprs, int location);
+
+// VLE
+static cypher_relationship *build_VLE_relation(List *left_arg,
+                                               cypher_relationship *cr,
+                                               Node *right_arg,
+                                               int left_arg_location,
+                                               int cr_location);
 %}
 
 %%
@@ -998,152 +1010,13 @@ simple_path:
             /* if this is a VLE relation node */
             if (cr->varlen != NULL)
             {
-                ColumnRef *cref = NULL;
-                A_Indices *ai = NULL;
-                List *args = NIL;
-                List *eargs = NIL;
-                List *fname = NIL;
-                cypher_node *cnl = NULL;
-                cypher_node *cnr = NULL;
-                Node *node = NULL;
-                int length = 0;
-                int location = 0;
+               /* build the VLE relation */
+                cr = build_VLE_relation($1, cr, $3, @1, @2);
 
-                /* get the location */
-                location = cr->location;
-
-                /* get the left and right cypher_nodes */
-                cnl = (cypher_node*)llast($1);
-                cnr = (cypher_node*)$3;
-
-                /* get the length of the left path */
-                length = list_length($1);
-
-                /*
-                 * If the left name is NULL and the left path is greater than 1
-                 * If the left name is NULL and the left label is not NULL
-                 * If the left name is NULL and the left props is not NULL
-                 * If the left name is NULL and the right name is not NULL
-                 * If the left name is NULL and the right label is not NULL
-                 * If the left name is NULL and the right props is not NULL
-                 * we need to create a variable name for the left node.
-                 */
-                if ((cnl->name == NULL && length > 1) ||
-                    (cnl->name == NULL && cnl->label != NULL) ||
-                    (cnl->name == NULL && cnl->props != NULL) ||
-                    (cnl->name == NULL && cnr->name != NULL) ||
-                    (cnl->name == NULL && cnr->label != NULL) ||
-                    (cnl->name == NULL && cnr->props != NULL))
-                {
-                    cnl->name = create_unique_name("_vle_function_start_var");
-                }
-                /* add in the start vertex as a ColumnRef if necessary */
-                if (cnl->name != NULL)
-                {
-                    cref = makeNode(ColumnRef);
-                    cref->fields = list_make2(makeString(cnl->name),
-                                              makeString("id"));
-                    cref->location = @1;
-                    args = lappend(args, cref);
-                }
-                /*
-                 * If there aren't any variables in the VLE path, we can use
-                 * the FROM_ALL algorithm.
-                 */
-                else
-                {
-                    args = lappend(args, make_null_const(-1));
-                }
-
-                /*
-                 * Create a variable name for the end vertex if we have a label
-                 * name or props but we don't have a variable name.
-                 *
-                 * For example: ()-[*]-(:label) or ()-[*]-({name: "John"})
-                 *
-                 * We need this so the addition of match_vle_terminal_edge is
-                 * done in the transform phase.
-                 */
-                if (cnr->name == NULL &&
-                    (cnr->label != NULL || cnr->props != NULL))
-                {
-                    cnr->name = create_unique_name("_vle_function_end_var");
-                }
-                /*
-                 * We need a NULL for the target vertex in the VLE match to
-                 * force the dfs_find_a_path_from algorithm. However, for now,
-                 * the default will be to only do that when a target isn't
-                 * supplied.
-                 *
-                 * TODO: We will likely want to force it to use
-                 * dfs_find_a_path_from.
-                 */
-                if (cnl->name == NULL && cnr->name != NULL)
-                {
-                    cref = makeNode(ColumnRef);
-                    cref->fields = list_make2(makeString(cnr->name),
-                                              makeString("id"));
-                    cref->location = @1;
-                    args = lappend(args, cref);
-                }
-                else
-                {
-                    args = lappend(args, make_null_const(-1));
-                }
-
-                /* build the required edge arguments */
-                if (cr->label == NULL)
-                {
-                    eargs = lappend(eargs, make_null_const(location));
-                }
-                else
-                {
-                    eargs = lappend(eargs, make_string_const(cr->label,
-                                                             location));
-                }
-                if (cr->props == NULL)
-                {
-                    eargs = lappend(eargs, make_null_const(location));
-                }
-                else
-                {
-                    eargs = lappend(eargs, cr->props);
-                }
-                /* build the edge function name (schema.funcname) */
-                fname = list_make2(makeString("ag_catalog"),
-                                   makeString("age_build_vle_match_edge"));
-                /* build the edge function node */
-                node = make_function_expr(fname, eargs, location);
-                /* add in the edge*/
-                args = lappend(args, node);
-
-                /* add in the lidx and uidx range as Const */
-                ai = (A_Indices*)cr->varlen;
-                if (ai == NULL || ai->lidx == NULL)
-                {
-                    args = lappend(args, make_null_const(location));
-                }
-                else
-                {
-                    args = lappend(args, ai->lidx);
-                }
-                if (ai == NULL || ai->uidx == NULL)
-                {
-                    args = lappend(args, make_null_const(location));
-                }
-                else
-                {
-                    args = lappend(args, ai->uidx);
-                }
-                /* add in the direction as Const */
-                args = lappend(args, make_int_const(cr->dir, @2));
-
-                /* build the VLE function node */
-                cr->varlen = make_function_expr(list_make1(makeString("vle")),
-                                                args, @2);
                 /* return the VLE relation in the path */
                 $$ = lappend(lappend($1, cr), $3);
             }
+            /* otherwise, it is a regular relationship node */
             else
             {
                 $$ = lappend(lappend($1, $2), $3);
@@ -1473,6 +1346,22 @@ expr:
                              errmsg("function already qualified"),
                              ag_scanner_errposition(@1, (void **)scanner)));
             }
+            /* allow a function to be used as a parent of an indirection */
+            else if (IsA($1, FuncCall) && IsA($3, ColumnRef))
+            {
+                ColumnRef *cr = (ColumnRef*)$3;
+                List *fields = cr->fields;
+                Value *string = (Value *)linitial(fields);
+
+                $$ = append_indirection($1, (Node*)string);
+            }
+            else if (IsA($1, FuncCall) && IsA($3, A_Indirection))
+            {
+                ereport(ERROR,
+                            (errcode(ERRCODE_SYNTAX_ERROR),
+                             errmsg("not supported A_Indirection indirection"),
+                             ag_scanner_errposition(@1, (void **)scanner)));
+            }
             /*
              * All other types of expression indirections are currently not
              * supported
@@ -1791,8 +1680,16 @@ property_key_name:
 
 var_name:
     symbolic_name
+    {
+        if (has_internal_default_prefix($1))
+        {
+            ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                    errmsg("%s is only for internal use", AGE_DEFAULT_PREFIX),
+                    ag_scanner_errposition(@1, (void **)scanner)));   
+        }
+    }
     ;
-
 var_name_opt:
     /* empty */
         {
@@ -2136,6 +2033,10 @@ static char *create_unique_name(char *prefix_name)
     char *name = NULL;
     char *prefix = NULL;
     uint nlen = 0;
+    unsigned long unique_number = 0;
+
+    /* get a unique number */
+    unique_number = get_a_unique_number();
 
     /* STATIC VARIABLE unique_counter for name uniqueness */
     static unsigned long unique_counter = 0;
@@ -2152,13 +2053,13 @@ static char *create_unique_name(char *prefix_name)
     }
 
     /* get the length of the combinded string */
-    nlen = snprintf(NULL, 0, "%s_%lu", prefix, unique_counter);
+    nlen = snprintf(NULL, 0, "%s_%lu", prefix, unique_number);
 
     /* allocate the space */
     name = (char *)palloc0(nlen + 1);
 
     /* create the name */
-    snprintf(name, nlen + 1, "%s_%lu", prefix, unique_counter);
+    snprintf(name, nlen + 1, "%s_%lu", prefix, unique_number);
 
     /* if we created the prefix, we need to free it */
     if (prefix_name == NULL || strlen(prefix_name) <= 0)
@@ -2166,8 +2067,177 @@ static char *create_unique_name(char *prefix_name)
         pfree(prefix);
     }
 
-    /* increment the counter */
-    unique_counter++;
-
     return name;
+}
+
+/* function to check if given string has internal alias as prefix */
+static bool has_internal_default_prefix(char *str)
+{
+    return strncmp(AGE_DEFAULT_PREFIX, str, strlen(AGE_DEFAULT_PREFIX)) == 0;
+}
+
+/* function to return a unique unsigned long number */
+static unsigned long get_a_unique_number(void)
+{
+    /* STATIC VARIABLE unique_counter for number uniqueness */
+    static unsigned long unique_counter = 0;
+
+    return unique_counter++;
+}
+
+static cypher_relationship *build_VLE_relation(List *left_arg,
+                                               cypher_relationship *cr,
+                                               Node *right_arg,
+                                               int left_arg_location,
+                                               int cr_location)
+{
+    ColumnRef *cref = NULL;
+    A_Indices *ai = NULL;
+    List *args = NIL;
+    List *eargs = NIL;
+    List *fname = NIL;
+    cypher_node *cnl = NULL;
+    cypher_node *cnr = NULL;
+    Node *node = NULL;
+    int length = 0;
+    unsigned long unique_number = 0;
+    int location = 0;
+
+    /* get a unique number to identify this VLE node */
+    unique_number = get_a_unique_number();
+
+    /* get the location */
+    location = cr->location;
+
+    /* get the left and right cypher_nodes */
+    cnl = (cypher_node*)llast(left_arg);
+    cnr = (cypher_node*)right_arg;
+
+    /* get the length of the left path */
+    length = list_length(left_arg);
+
+    /*
+     * If the left name is NULL and the left path is greater than 1
+     * If the left name is NULL and the left label is not NULL
+     * If the left name is NULL and the left props is not NULL
+     * If the left name is NULL and the right name is not NULL
+     * If the left name is NULL and the right label is not NULL
+     * If the left name is NULL and the right props is not NULL
+     * we need to create a variable name for the left node.
+     */
+    if ((cnl->name == NULL && length > 1) ||
+        (cnl->name == NULL && cnl->label != NULL) ||
+        (cnl->name == NULL && cnl->props != NULL) ||
+        (cnl->name == NULL && cnr->name != NULL) ||
+        (cnl->name == NULL && cnr->label != NULL) ||
+        (cnl->name == NULL && cnr->props != NULL))
+    {
+        cnl->name = create_unique_name(AGE_DEFAULT_PREFIX"vle_function_start_var");
+    }
+
+    /* add in the start vertex as a ColumnRef if necessary */
+    if (cnl->name != NULL)
+    {
+        cref = makeNode(ColumnRef);
+        cref->fields = list_make2(makeString(cnl->name), makeString("id"));
+        cref->location = left_arg_location;
+        args = lappend(args, cref);
+    }
+    /*
+     * If there aren't any variables in the VLE path, we can use
+     * the FROM_ALL algorithm.
+     */
+    else
+    {
+        args = lappend(args, make_null_const(-1));
+    }
+
+    /*
+     * Create a variable name for the end vertex if we have a label
+     * name or props but we don't have a variable name.
+     *
+     * For example: ()-[*]-(:label) or ()-[*]-({name: "John"})
+     *
+     * We need this so the addition of match_vle_terminal_edge is
+     * done in the transform phase.
+     */
+    if (cnr->name == NULL &&
+        (cnr->label != NULL || cnr->props != NULL))
+    {
+        cnr->name = create_unique_name(AGE_DEFAULT_PREFIX"vle_function_end_var");
+    }
+    /*
+     * We need a NULL for the target vertex in the VLE match to
+     * force the dfs_find_a_path_from algorithm. However, for now,
+     * the default will be to only do that when a target isn't
+     * supplied.
+     *
+     * TODO: We will likely want to force it to use
+     * dfs_find_a_path_from.
+     */
+    if (cnl->name == NULL && cnr->name != NULL)
+    {
+        cref = makeNode(ColumnRef);
+        cref->fields = list_make2(makeString(cnr->name), makeString("id"));
+        cref->location = left_arg_location;
+        args = lappend(args, cref);
+    }
+    else
+    {
+        args = lappend(args, make_null_const(-1));
+    }
+
+    /* build the required edge arguments */
+    if (cr->label == NULL)
+    {
+        eargs = lappend(eargs, make_null_const(location));
+    }
+    else
+    {
+        eargs = lappend(eargs, make_string_const(cr->label, location));
+    }
+    if (cr->props == NULL)
+    {
+        eargs = lappend(eargs, make_null_const(location));
+    }
+    else
+    {
+        eargs = lappend(eargs, cr->props);
+    }
+    /* build the edge function name (schema.funcname) */
+    fname = list_make2(makeString("ag_catalog"),
+                       makeString("age_build_vle_match_edge"));
+    /* build the edge function node */
+    node = make_function_expr(fname, eargs, location);
+    /* add in the edge*/
+    args = lappend(args, node);
+    /* add in the lidx and uidx range as Const */
+    ai = (A_Indices*)cr->varlen;
+    if (ai == NULL || ai->lidx == NULL)
+    {
+        args = lappend(args, make_null_const(location));
+    }
+    else
+    {
+        args = lappend(args, ai->lidx);
+    }
+    if (ai == NULL || ai->uidx == NULL)
+    {
+        args = lappend(args, make_null_const(location));
+    }
+    else
+    {
+        args = lappend(args, ai->uidx);
+    }
+    /* add in the direction as Const */
+    args = lappend(args, make_int_const(cr->dir, cr_location));
+
+    /* add in the unique number used to identify this VLE node */
+    args = lappend(args, make_int_const(unique_number, -1));
+
+    /* build the VLE function node */
+    cr->varlen = make_function_expr(list_make1(makeString("vle")), args,
+                                    cr_location);
+    /* return the VLE relation node */
+    return cr;
 }

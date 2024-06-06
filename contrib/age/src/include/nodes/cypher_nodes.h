@@ -82,6 +82,11 @@ typedef struct cypher_create
     List *pattern; // a list of cypher_paths
 } cypher_create;
 
+typedef struct cypher_vle
+{
+    ExtensibleNode extensible;
+} cypher_vle;
+
 typedef struct cypher_set
 {
     ExtensibleNode extensible;
@@ -148,6 +153,7 @@ typedef struct cypher_node
     char *label;
     Node *props; // map or parameter
     int location;
+    char * parsed_label;
 } cypher_node;
 
 typedef enum
@@ -167,6 +173,7 @@ typedef struct cypher_relationship
     Node *varlen; // variable length relationships (A_Indices)
     cypher_rel_dir dir;
     int location;
+    char * parsed_label;
 } cypher_relationship;
 
 /*
@@ -239,6 +246,17 @@ typedef struct cypher_create_path
     AttrNumber path_attr_num;
     char *var_name;
 } cypher_create_path;
+
+typedef struct cypher_vle_target_nodes
+{
+    ExtensibleNode extensible;
+	int minimum_output_depth;
+	int maximum_output_depth;
+	cypher_rel_dir  cypher_rel_direction;
+	char* label_name;
+    Oid graph_oid;
+    Node* edge_property_constraint;
+} cypher_vle_target_nodes;
 
 #define CYPHER_CLAUSE_FLAG_NONE 0x0000
 #define CYPHER_CLAUSE_FLAG_TERMINAL 0x0001

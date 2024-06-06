@@ -66,6 +66,10 @@ int64 get_stack_size(ListGraphId *stack)
 /* return a reference to the head entry in the stack */
 GraphIdNode *peek_stack_head(ListGraphId *stack)
 {
+    if (stack == NULL)
+    {
+        return NULL;
+    }
     return stack->head;
 }
 
@@ -73,6 +77,18 @@ GraphIdNode *peek_stack_head(ListGraphId *stack)
 GraphIdNode *peek_stack_tail(ListGraphId *stack)
 {
     return stack->tail;
+}
+
+/* return a reference to the head entry of a list */
+GraphIdNode *get_list_head(ListGraphId *list)
+{
+    return list->head;
+}
+
+/* get the size of the passed list */
+int64 get_list_size(ListGraphId *list)
+{
+    return list->size;
 }
 
 /*

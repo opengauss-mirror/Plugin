@@ -40,6 +40,8 @@
 #define AG_EDGE_COLNAME_START_ID "start_id"
 #define AG_EDGE_COLNAME_END_ID "end_id"
 #define AG_EDGE_COLNAME_PROPERTIES "properties"
+#define EDGE_VLE_UNION_START_ID		"_start_id"
+#define EDGE_VLE_UNION_END_ID		"_end_id"
 
 #define AG_EDGE_ACCESS_FUNCTION_ID "age_id"
 #define AG_EDGE_ACCESS_FUNCTION_START_ID "age_start_id"

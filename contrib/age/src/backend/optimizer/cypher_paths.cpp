@@ -37,7 +37,8 @@ typedef enum cypher_clause_kind
     CYPHER_CLAUSE_CREATE,
     CYPHER_CLAUSE_SET,
     CYPHER_CLAUSE_DELETE,
-    CYPHER_CLAUSE_MERGE
+    CYPHER_CLAUSE_MERGE,
+    CYPHER_CLAUSE_VLE
 } cypher_clause_kind;
 
 static set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
@@ -52,6 +53,8 @@ static void handle_cypher_set_clause(PlannerInfo *root, RelOptInfo *rel,
 static void handle_cypher_delete_clause(PlannerInfo *root, RelOptInfo *rel,
                                         Index rti, RangeTblEntry *rte);
 static void handle_cypher_merge_clause(PlannerInfo *root, RelOptInfo *rel,
+                                        Index rti, RangeTblEntry *rte);
+static void handle_cypher_vle_clause(PlannerInfo *root, RelOptInfo *rel,
                                         Index rti, RangeTblEntry *rte);
 
 void set_rel_pathlist_init(void)
@@ -84,6 +87,9 @@ static void set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, Index rti,
         break;
     case CYPHER_CLAUSE_MERGE:
         handle_cypher_merge_clause(root, rel, rti, rte);
+        break;
+    case CYPHER_CLAUSE_VLE:
+        handle_cypher_vle_clause(root, rel, rti, rte);
         break;
     case CYPHER_CLAUSE_NONE:
         break;
@@ -127,6 +133,8 @@ static cypher_clause_kind get_cypher_clause_kind(RangeTblEntry *rte)
         return CYPHER_CLAUSE_DELETE;
     if (is_oid_ag_func(fe->funcid, MERGE_CLAUSE_FUNCTION_NAME))
         return CYPHER_CLAUSE_MERGE;
+    if (is_oid_ag_func(fe->funcid, VLE_CLAUSE_FUNCTION_NAME))
+        return CYPHER_CLAUSE_VLE;
     else
         return CYPHER_CLAUSE_NONE;
 }
@@ -231,5 +239,74 @@ static void handle_cypher_merge_clause(PlannerInfo *root, RelOptInfo *rel,
     // Discard any pre-existing paths
     rel->pathlist = NIL;
 
+    add_path(root, rel, (Path *)cp);
+}
+
+/*
+ * Check that the specified List is valid (so far as we can tell).
+ */
+static void check_list_invariants(const List *list)
+{
+    if (list == NIL) {
+        return;
+    }
+
+    Assert(list->length > 0);
+    Assert(list->head != NULL);
+    Assert(list->tail != NULL);
+
+    Assert(list->type == T_List || list->type == T_IntList || list->type == T_OidList);
+
+    if (list->length == 1) {
+        Assert(list->head == list->tail);
+    }
+    if (list->length == 2) {
+        Assert(list->head->next == list->tail);
+    }
+    Assert(list->tail->next == NULL);
+}
+static List *
+list_delete_last(List *list)
+{
+	check_list_invariants(list);
+
+	if (list == NIL)
+		return NIL;				/* would an error be better? */
+
+	/* list_truncate won't free list if it goes to empty, but this should */
+	if (list_length(list) <= 1)
+	{
+		list_free(list);
+		return NIL;
+	}
+
+	return list_truncate(list, list_length(list) - 1);
+}
+static void handle_cypher_vle_clause(PlannerInfo *root, RelOptInfo *rel,
+                                        Index rti, RangeTblEntry *rte)
+{
+    TargetEntry *te;
+    FuncExpr *fe;
+    List *custom_private;
+    ExtensiblePath *cp;
+
+    // Add the pattern to the CustomPath
+    te = (TargetEntry *)llast(rte->subquery->targetList);
+    fe = (FuncExpr *)te->expr;
+    // remove last target
+    list_delete_last(rte->subquery->targetList);
+    list_delete_last( rel-> subplan->targetlist);
+  
+    // pass the const that holds the data structure to the path.
+    custom_private = fe->args;
+
+    cp = create_cypher_vle_path(root, rel, custom_private);
+
+    // Discard any pre-existing paths
+    rel->pathlist = NIL;
+    // the path must been chosen
+    rel->cheapest_parameterized_paths =list_make1((Path *)cp);
+    rel->cheapest_startup_path =  (Path *)cp;
+    rel->cheapest_total_path= list_make1((Path *)cp);
     add_path(root, rel, (Path *)cp);
 }

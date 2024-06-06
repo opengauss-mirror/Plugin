@@ -83,7 +83,14 @@ typedef struct {
     int object_id;
     char *start_vertex;
     char *end_vertex;
-
+    uint16 start_vertex_type_id;
+    uint16 end_vertex_type_id;
+    size_t start_col;
+    size_t end_col;
+    agtype_value_type* col_type;
+    bool with_neo4j_like_header;
+    bool adjust_id;
+    bool free_context;
 } csv_edge_reader;
 
 
@@ -91,7 +98,7 @@ void edge_field_cb(void *field, size_t field_len, void *data);
 void edge_row_cb(int delim __attribute__((unused)), void *data);
 
 int create_edges_from_csv_file(char *file_path, char *graph_name, Oid graph_id,
-                                char *object_name, int object_id );
+                                char *object_name, int object_id ,bool with_header = false,bool adjust_id = false,bool free_context = true);
 
 #endif //AG_LOAD_EDGES_H
 

@@ -96,12 +96,56 @@ typedef struct cypher_merge_custom_scan_state
     bool found_a_path;
 } cypher_merge_custom_scan_state;
 
+typedef struct cypher_vle_custom_scan_state
+{
+    ExtensiblePlanState css;
+
+    ExtensiblePlan *cs;
+
+	TupleTableSlot *slot;
+
+    Oid graph_oid;
+    char * label_name;
+
+	/* For Subplan tuples */
+	PlanState  *subplan;
+	TupleTableSlot *subplan_tuple;
+	bool		need_new_sp_tuple;
+
+	/* target edges. */
+	ResultRelInfo *target_rel_infos;
+	TupleTableSlot *current_scan_tuple;
+	int			num_target_rel_info;
+
+	/* Results */
+	graphid		first_start_id;
+	graphid		last_end_id;
+	ArrayBuildState *edge_ids;
+	ArrayBuildState *edges;
+	ArrayBuildState *vertices;
+
+	/* About VLE Path. */
+	int			minimum_output_depth;
+	int			maximum_output_depth;
+	cypher_rel_dir		cypher_rel_direction;
+
+	/* Scanning depth infos */
+	List	   *table_scan_desc_list;	/* List for saving scan descriptions. */
+	bool		use_vertex_output;
+    ExprState *prop_expr_state;  
+    Node* edge_property_constraint_expr; 
+    agtype * edge_property_constraint;
+
+} cypher_vle_custom_scan_state;
+
 TupleTableSlot *populate_vertex_tts(TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *properties);
 TupleTableSlot *populate_edge_tts(
     TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *startid,
     agtype_value *endid, agtype_value *properties);
 
 ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name, char *label_name);
+
+void destroy_entity_result_rel_info(ResultRelInfo *result_rel_info);
 
 bool entity_exists(EState *estate, Oid graph_oid, graphid id);
 HeapTuple insert_entity_tuple(ResultRelInfo *resultRelInfo,

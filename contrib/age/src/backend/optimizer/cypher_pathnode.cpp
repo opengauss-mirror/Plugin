@@ -26,6 +26,7 @@
 
 #include "optimizer/cypher_createplan.h"
 #include "optimizer/cypher_pathnode.h"
+#include "optimizer/pathnode.h"
 
 const ExtensiblePathMethods cypher_create_path_methods = {
     CREATE_PATH_NAME, plan_cypher_create_path};
@@ -35,6 +36,8 @@ const ExtensiblePathMethods cypher_delete_path_methods = {
     DELETE_PATH_NAME, plan_cypher_delete_path};
 const ExtensiblePathMethods cypher_merge_path_methods = {
     MERGE_PATH_NAME, plan_cypher_merge_path};
+const ExtensiblePathMethods cypher_vle_path_methods = {
+    VLE_PATH_NAME, plan_cypher_vle_path};
 
 ExtensiblePath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
                                           List *custom_private)
@@ -174,6 +177,43 @@ ExtensiblePath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
     cp->extensible_private = custom_private;
     // Tells Postgres how to turn this path to the correct CustomScan
     cp->methods = &cypher_merge_path_methods;
+
+    return cp;
+}
+
+ExtensiblePath *create_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
+                                         List *custom_private)
+{
+    ExtensiblePath *cp;
+
+    cp = makeNode(ExtensiblePath);
+
+    cp->path.pathtype = T_ExtensiblePlan;
+
+    cp->path.parent = rel;
+
+    cp->path.param_info = get_baserel_parampathinfo(root, rel, rel->lateral_relids);
+
+    cp->path.pathtarget = rel->reltarget;
+
+    // set a default for optimizer
+    rel->rows = 10;
+    cp->path.rows = 1000;
+    cp->path.startup_cost = 0;
+    cp->path.total_cost = 0;
+
+    // No output ordering for basic SET
+    cp->path.pathkeys = NULL;
+
+    // Disable all custom flags for now
+    cp->flags = 0;
+
+    // Make the original paths the children of the new path
+    cp->extensible_paths = rel->pathlist;
+    // Store the metadata Delete will need in the execution phase.
+    cp->extensible_private = custom_private;
+    // Tells Postgres how to turn this path to the correct CustomScan
+    cp->methods = &cypher_vle_path_methods;
 
     return cp;
 }

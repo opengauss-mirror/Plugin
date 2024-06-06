@@ -543,7 +543,17 @@ agtype_value *get_agtype_value(char *funcname, agtype *agt_arg,
                                enum agtype_value_type type, bool error);
 bool is_agtype_null(agtype *agt_arg);
 agtype_value *string_to_agtype_value(char *s);
+agtype_value *boolean_to_agtype_value(bool bol);
 agtype_value *integer_to_agtype_value(int64 int_value);
+
+agtype_value *extract_entity_properties(agtype *object, bool error_on_scalar);
+agtype_iterator *get_next_list_element(agtype_iterator *it,
+                                       agtype_container *agtc,
+                                       agtype_value *elem);
+agtype_value *execute_map_access_operator(agtype *map,
+                                                 agtype_value* map_value,
+                                                 agtype *key);                                       
+bool agtype_extract_scalar(agtype_container *agtc, agtype_value *res);
 void add_agtype(Datum val, bool is_null, agtype_in_state *result, Oid val_type,
                 bool key_scalar);
 // OID of agtype and _agtype

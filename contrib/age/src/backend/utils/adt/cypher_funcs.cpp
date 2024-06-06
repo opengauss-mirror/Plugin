@@ -62,3 +62,10 @@ Datum _cypher_merge_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
+
+PG_FUNCTION_INFO_V1(_cypher_vle_clause);
+extern "C" Datum  _cypher_vle_clause(PG_FUNCTION_ARGS);
+Datum _cypher_vle_clause(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_NULL();
+}

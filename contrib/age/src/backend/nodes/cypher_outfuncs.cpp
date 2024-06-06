@@ -301,6 +301,18 @@ void out_cypher_create_target_nodes(StringInfo str, const ExtensibleNode *node)
     WRITE_OID_FIELD(graph_oid);
 }
 
+// serialization function for the out_cypher_vle_target_nodes ExtensibleNode.
+void out_cypher_vle_target_nodes(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_vle_target_nodes);
+    WRITE_INT32_FIELD(minimum_output_depth);
+    WRITE_INT32_FIELD(maximum_output_depth);
+    WRITE_ENUM_FIELD(cypher_rel_direction, cypher_rel_dir);
+    WRITE_STRING_FIELD(label_name);
+    WRITE_OID_FIELD(graph_oid);
+    WRITE_NODE_FIELD(edge_property_constraint);
+}
+
 // serialization function for the cypher_create_path ExtensibleNode.
 void out_cypher_create_path(StringInfo str, const ExtensibleNode *node)
 {

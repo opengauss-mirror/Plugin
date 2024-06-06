@@ -81,6 +81,10 @@ void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNo
 
     extended_newnode->paths = (List *)copyObject(extended_from->paths);
 }
+void copy_cypher_vle_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+   ereport(NOTICE, (errmsg("cypher_vle_target_nodes do not need copy")));
+}
 
 // copy function for cypher_create_path
 void copy_cypher_create_path(ExtensibleNode *newnode, const ExtensibleNode *from)

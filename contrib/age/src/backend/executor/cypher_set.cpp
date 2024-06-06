@@ -156,7 +156,7 @@ static HeapTuple update_entity_tuple(ResultRelInfo *resultRelInfo,
         // Insert index entries for the tuple
         if (resultRelInfo->ri_NumIndices > 0)
             ExecInsertIndexTuples(elemTupleSlot, &(tuple->t_self), estate,
-                                  NULL, NULL, resultRelInfo->ri_NumIndices, NULL, NULL);
+                                  NULL, NULL, InvalidBktId, NULL, NULL);
     }
 
     if (!errFlag)
@@ -492,7 +492,8 @@ static void process_update_list(ExtensiblePlanState *node)
             /* close the ScanDescription */
             heap_endscan(scan_desc);
         }
-
+        /* close relation */
+        ExecCloseIndices(resultRelInfo);
         /* close relation */
         heap_close(resultRelInfo->ri_RelationDesc, RowExclusiveLock);
 
