@@ -513,13 +513,13 @@ inline bool IsCmpOp(char* opername)
 
 inline bool IsNumber(Oid typeoid)
 {
-    return IsFloatType(typeoid) || IsUnsignedIntType(typeoid) || IsIntType(typeoid) || IsNumericType(typeoid);
+    return IsFloatType(typeoid) || IsDolphinUnsignedIntType(typeoid) || IsIntType(typeoid) || IsNumericType(typeoid);
 }
 
 inline bool IsString(Oid typeoid)
 {
     return ((typeoid == BPCHAROID) || (typeoid == VARCHAROID) || (typeoid == NVARCHAR2OID) ||
-            (typeoid == CLOBOID) || (typeoid == TEXTOID) || (typeoid == UNKNOWNOID));
+            (typeoid == CLOBOID) || (typeoid == TEXTOID) || (typeoid == UNKNOWNOID) || (typeoid == BINARYOID) || (typeoid == VARBINARYOID));
 }
 
 #endif
