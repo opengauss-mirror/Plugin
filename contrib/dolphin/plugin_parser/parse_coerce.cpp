@@ -1613,18 +1613,8 @@ static Node* build_coercion_expression(Node* node, CoercionPathType pathtype, Oi
         }
 
         if (nargs == 3) {
-#ifdef DOLPHIN
-            if (type_is_enum(targetTypeId)) {
-                cons = makeConst(ANYELEMENTOID, -1, InvalidOid, -2, 0, false, true);
-            } else {
-                /* Pass it a boolean isExplicit parameter, too */
-                cons = makeConst(BOOLOID, -1, InvalidOid, sizeof(bool), BoolGetDatum(isExplicit), false, true);
-            }
-#else
             /* Pass it a boolean isExplicit parameter, too */
             cons = makeConst(BOOLOID, -1, InvalidOid, sizeof(bool), BoolGetDatum(isExplicit), false, true);
-#endif
-
             args = lappend(args, cons);
         }
 
