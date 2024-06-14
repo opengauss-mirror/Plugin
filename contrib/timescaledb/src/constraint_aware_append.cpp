@@ -58,7 +58,7 @@ excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, Li
 		.encodednum =0,
 		.reltarget = 0,   
     	.distribute_keys = 0, 
-    	.pathlist = 0,        
+    	.pathlist = 0,      
     	.ppilist = 0,         
     	.cheapest_gather_path = {},
    		.cheapest_startup_path = {},

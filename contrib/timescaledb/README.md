@@ -34,11 +34,11 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 ## **2.1.** 源码安装
 
 
-从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行离线安装脚本 ./run_to_build.sh
+从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行离线安装脚本 ./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF 
 
 ```
 cd contrib/timescaledb
-sudo ./run_to_build.sh
+./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF 
 ```
 
 进入`./build`文件夹中，执行`make && make install`
@@ -69,8 +69,10 @@ Note: TimescaleDB collects anonymous reports to better understand and assist our
 For more information and how to disable, please see our docs https://docs.timescaledb.com/using-timescaledb/telemetry.
 CREATE EXTENSION
 ```
+## **2.2.** 流水线build.sh安装
+将timescaledb源码 放到openGauss-server的源码 contrib 目录下，运行build.sh脚本，timescaledb会被自动编译安装
 
-## **2.2.** 创建超表 
+## **2.3.** 创建超表 
 
 ```sql
 -- Do not forget to create timescaledb extension
