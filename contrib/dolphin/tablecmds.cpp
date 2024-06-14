@@ -2642,10 +2642,6 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
                 ereport(ERROR,
                         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("UStore tables do not support compression.")));
             }
-            if (g_instance.attr.attr_storage.recovery_parse_workers > 1) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("UStore tables do not support extreme rto.")));
-            }
             ForbidToSetOptionsForRowTbl(stmt->options);
             ForbidToSetOptionsForUstoreTbl(stmt->options);
         } else {

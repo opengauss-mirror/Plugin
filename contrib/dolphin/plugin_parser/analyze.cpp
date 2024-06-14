@@ -158,7 +158,6 @@ static void set_subquery_is_under_insert(ParseState* subParseState);
 static void set_ancestor_ps_contain_foreigntbl(ParseState* subParseState);
 static bool include_groupingset(Node* groupClause);
 static void transformGroupConstToColumn(ParseState* pstate, Node* groupClause, List* targetList);
-static bool checkAllowedTableCombination(ParseState* pstate);
 #ifdef ENABLE_MULTIPLE_NODES
 static void checkUpsertTargetlist(Relation targetTable, List* updateTlist);
 static bool ContainSubLinkWalker(Node* node, void* context);
@@ -1393,13 +1392,6 @@ static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt)
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("Un-support feature"),
                 errdetail("Timeseries stored relation doesn't support DELETE returning")));
-    }
-
-    if (!checkAllowedTableCombination(pstate)) {
-        ereport(ERROR,
-            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("Un-supported feature"),
-                errdetail("UStore relations cannot be used with other storage types in DELETE statement")));
     }
 
     /* done building the range table and jointree */
@@ -6422,41 +6414,4 @@ static void transformGroupConstToColumn(ParseState* pstate, Node* groupClause, L
         GroupingSet* grouping_set = (GroupingSet*)groupClause;
         transformGroupConstToColumn(pstate, (Node*)grouping_set->content, targetList);
     }
-}
-
-static bool checkAllowedTableCombination(ParseState* pstate)
-{
-    RangeTblEntry* rte = NULL;
-    ListCell* lc = NULL;
-    bool has_ustore = false;
-    bool has_else = false;
-
-    // Check range table list for the presence of
-    // relations with different storages
-    foreach(lc, pstate->p_rtable) {
-        rte = (RangeTblEntry*)lfirst(lc);
-        if (rte && rte->rtekind == RTE_RELATION) {
-            if (rte->is_ustore) {
-                has_ustore = true;
-            } else {
-                has_else = true;
-            }
-        }
-    }
-
-    // Check target table for the type of storage
-    foreach(lc, pstate->p_target_rangetblentry) {
-        rte = (RangeTblEntry*)lfirst(lc);
-        if (rte && rte->rtekind == RTE_RELATION) {
-            if (rte->is_ustore) {
-                has_ustore = true;
-            } else {
-                has_else = true;
-            }
-        }
-    }
-
-    Assert(has_ustore || has_else);
-
-    return !(has_ustore && has_else);
 }
