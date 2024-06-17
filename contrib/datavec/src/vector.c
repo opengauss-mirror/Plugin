@@ -636,6 +636,7 @@ cosine_distance(PG_FUNCTION_ARGS)
 	double		distance = 0.0;
 	double		norma = 0.0;
 	double		normb = 0.0;
+	double		similarity = 0.0;
 
 	CheckDims(a, b);
 
@@ -648,7 +649,15 @@ cosine_distance(PG_FUNCTION_ARGS)
 	}
 
 	/* Use sqrt(a * b) over sqrt(a) * sqrt(b) */
-	PG_RETURN_FLOAT8(1 - (distance / sqrt(norma * normb)));
+	similarity = distance / sqrt(norma * normb);
+
+	/* Keep in range */
+	if (similarity > 1)
+		similarity = 1.0;
+	else if (similarity < -1)
+		similarity = -1.0;
+
+	PG_RETURN_FLOAT8(1.0 - similarity);
 }
 
 /*
