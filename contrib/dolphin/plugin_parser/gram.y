@@ -19470,6 +19470,7 @@ opt_asc_desc: ASC							{ $$ = SORTBY_ASC; }
 			| /*EMPTY*/						{ $$ = SORTBY_DEFAULT; }
 		;
 
+/* SORTBY_NULLS_DEFAULT will be set to SORTBY_NULLS_FIRST in transformIndexStmt */
 opt_nulls_order: NULLS_FIRST				{ $$ = SORTBY_NULLS_FIRST; }
 			| NULLS_LAST					{ $$ = SORTBY_NULLS_LAST; }
 			| /*EMPTY*/						{ $$ = SORTBY_NULLS_DEFAULT; }

@@ -528,7 +528,7 @@ EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(daut
 ------------------------------------------------------------------------------------------------------------------------------
  Sort
    Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
-   Sort Key: "document_Row".did
+   Sort Key: "document_Row".did NULLS FIRST
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
@@ -639,7 +639,7 @@ EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row ORDER BY did;
 ------------------------------------------------------------------------------------------------------------------------------
  Sort
    Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
-   Sort Key: "document_Row".did
+   Sort Key: "document_Row".did NULLS FIRST
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
@@ -655,7 +655,7 @@ EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(daut
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  Sort
    Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
-   Sort Key: "document_Row".did
+   Sort Key: "document_Row".did NULLS FIRST
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid

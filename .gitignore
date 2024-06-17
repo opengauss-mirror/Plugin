@@ -2,3 +2,5 @@
 .idea
 .gitee
 contrib/dolphin/include/plugin_config.h
+contrib/dolphin/cmake-build-debug
+contrib/dolphin/cmake_build

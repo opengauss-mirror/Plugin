@@ -3707,7 +3707,11 @@ static char *pg_get_indexdef_worker(Oid indexrelid, int colno, const Oid *exclud
                     if (!(opt & INDOPTION_NULLS_FIRST))
                         appendStringInfo(&buf, " NULLS LAST");
                 } else {
+#ifdef DOLPHIN
+                    if ((opt & INDOPTION_NULLS_FIRST) && !ENABLE_B_CMPT_MODE)
+#else
                     if (opt & INDOPTION_NULLS_FIRST)
+#endif
                         appendStringInfo(&buf, " NULLS FIRST");
                 }
             }
