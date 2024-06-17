@@ -32,6 +32,12 @@ SELECT FROM_BASE64(NULL);
  
 (1 row)
 
+SELECT FROM_BASE64('#');
+ from_base64 
+-------------
+ 
+(1 row)
+
 --测试bit类型、bool类型、numeric类型、date类型作为输入
 SELECT FROM_BASE64(b'01011001010101110100101001101010');
  from_base64 
