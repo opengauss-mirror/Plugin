@@ -168,6 +168,7 @@ static int128 TransformAutoIncStart(CreateStmt* stmt);
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
 static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints);
+static void TransfromSortByNulls(IndexStmt* index);
 #endif
 
 /*
@@ -409,6 +410,30 @@ static void ConvertAnonymousEnum(TypeName* type)
 
     ReleaseSysCacheList(items);
     heap_close(enumRel, AccessShareLock);
+}
+
+void TransfromSortByNulls(IndexStmt *stmt)
+{
+    if (!ENABLE_B_CMPT_MODE) {
+        return;
+    }
+    HeapTuple tuple = SearchSysCache1(AMNAME, PointerGetDatum(stmt->accessMethod));
+    if (!HeapTupleIsValid(tuple)) {
+        return;
+    }
+    Form_pg_am accessMethodForm = (Form_pg_am)GETSTRUCT(tuple);
+    bool amcanorder = accessMethodForm->amcanorder;
+    ReleaseSysCache(tuple);
+    if (!amcanorder) {
+        return;
+    }
+    ListCell *lc = NULL;
+    foreach (lc, stmt->indexParams) {
+        IndexElem *elem = (IndexElem *)lfirst(lc);
+        if (elem->nulls_ordering == SORTBY_NULLS_DEFAULT) {
+            elem->nulls_ordering = SORTBY_NULLS_FIRST;
+        }
+    }
 }
 #endif
 
@@ -4766,6 +4791,10 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
                             errmsg("Hash index does not support when segment = on.")));    
         }
     }
+
+#ifdef DOLPHIN
+    TransfromSortByNulls(stmt);
+#endif
 
     /* no to join list, yes to namespaces */
     addRTEtoQuery(pstate, rte, false, true, true);
