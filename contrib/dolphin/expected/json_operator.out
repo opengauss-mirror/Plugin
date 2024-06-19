@@ -207,10 +207,19 @@ select '{"cc":{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}}'::jsonb -> 'aa';
 (1 row)
 
 
+create table t(jsondate json);
+insert into t values( '{"goodsId": "19934345435346", "categoryId": "C456", "modelType": "MT01", "demandOutOrderId": "D789", "chargeModeCode": ""}');
+select jsondate->>'$.chargeModeCode'from t;
+ ?column? 
+----------
+ 
+(1 row)
+
+
 drop schema test_operator cascade;
-NOTICE:  drop cascades to 3 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test1
 drop cascades to table test2
 drop cascades to table dept
+drop cascades to table t
 reset current_schema;
-

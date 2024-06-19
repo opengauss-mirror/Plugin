@@ -836,10 +836,17 @@ static void delchar_oper(char *inStr, char *outStr, int &a, int &b)
         if (*tep == '\\') {
             b++;
         }
+        if (*tep == '\"') {
+            tep++;
+            a++;
+        }
+        if (*tep == '\0') {
+            *tmp = *tep;
+            tmp++;
+            break;
+        }
         *tmp = *tep;
         tmp++;
-        if (*tep == '\0')
-            break;
         tep++;
     }
 }

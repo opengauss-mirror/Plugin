@@ -49,6 +49,9 @@ select '[{"f1":[1,2,3]},[{"f2":null}]]'::jsonb -> 1;
 select '{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}'::jsonb -> 'aa';
 select '{"cc":{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}}'::jsonb -> 'aa';
 
+create table t(jsondate json);
+insert into t values( '{"goodsId": "19934345435346", "categoryId": "C456", "modelType": "MT01", "demandOutOrderId": "D789", "chargeModeCode": ""}');
+select jsondate->>'$.chargeModeCode'from t;
+
 drop schema test_operator cascade;
 reset current_schema;
-
