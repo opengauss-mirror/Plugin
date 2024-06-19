@@ -189,8 +189,8 @@ static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt);
  * transformation, while utility-type statements are simply hung off
  * a dummy CMD_UTILITY Query node.
  */
-Query* parse_analyze(
-    Node* parseTree, const char* sourceText, Oid* paramTypes, int numParams, bool isFirstNode, bool isCreateView)
+Query* parse_analyze(Node* parseTree, const char* sourceText, Oid* paramTypes, int numParams, bool isFirstNode,
+    bool isCreateView,ParseState* parent_pstate)
 {
     ParseState* pstate = make_parsestate(NULL);
     Query* query = NULL;
