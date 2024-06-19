@@ -1,0 +1,114 @@
+create schema date_add_time_interval;
+set current_schema = date_add_time_interval;
+set dolphin.cmpt_version = '5.7';
+select date_add(time'838:59:59', interval -1 day);
+ date_add  
+-----------
+ 814:59:59
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 day);
+ date_sub  
+-----------
+ 814:59:59
+(1 row)
+
+select date_add(time'838:59:59', interval 1 day);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_add
+ date_add 
+----------
+ 
+(1 row)
+
+select date_sub(time'838:59:59', interval -1 day);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_sub
+ date_sub 
+----------
+ 
+(1 row)
+
+select date_add(time'838:59:59', interval -1 month);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_add
+ date_add 
+----------
+ 
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 month);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_sub
+ date_sub 
+----------
+ 
+(1 row)
+
+select date_add(time'838:59:59', interval -1 year);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_add
+ date_add 
+----------
+ 
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 year);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: date_sub
+ date_sub 
+----------
+ 
+(1 row)
+
+set dolphin.cmpt_version = '8.0';
+select date_add(time'838:59:59', interval -1 day);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 day);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'838:59:59', interval 1 day);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'838:59:59', interval -1 day);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'838:59:59', interval -1 month);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 month);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'838:59:59', interval -1 year);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'838:59:59', interval 1 year);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+reset current_schema;
+drop schema date_add_time_interval;

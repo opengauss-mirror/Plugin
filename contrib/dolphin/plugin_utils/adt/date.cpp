@@ -6384,35 +6384,43 @@ Datum date_add_time_interval(PG_FUNCTION_ARGS)
     int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
     TimeADT time = PG_GETARG_TIMEADT(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
-    if (span->month != 0 || span->day != 0) {
-        // convert time to datetime, then call adddate_datetime_interval_t(datetime, interval)
-        bool isRetNull = false;
-        Datum timetxt = DirectCall1(&isRetNull, time_text, InvalidOid, time);
-        Datum curdt = DirectCall0(&isRetNull, curdate, InvalidOid);
-        Datum curdatetime = DirectCall1(&isRetNull, date_timestamp, InvalidOid, curdt);
-        Datum curdatetimetxt = DirectCall1(&isRetNull, timestamp_text, InvalidOid, curdatetime);
-        Datum datetime = DirectCall2(&isRetNull, addtime_text, InvalidOid, curdatetimetxt, timetxt);
-
-        Datum result = DirectCall2(&isRetNull, adddate_datetime_interval_t, InvalidOid, datetime, PG_GETARG_DATUM(1));
-        if (isRetNull) {
+    int cmpt_version = GetSessionContext()->cmpt_version;
+    if (cmpt_version == MYSQL_VERSION_5_7) {
+        if (span->month != 0) {
+            ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
             PG_RETURN_NULL();
-        } else {
-            return result;
         }
-    } else {
-        TimeADT time2 = span->time;
-#ifdef HAVE_INT64_TIMESTAMP
-        time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC);
-#else
-        time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE);
-#endif
-        time += time2;
-        if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
-            return DirectFunctionCall1(time_text, time);
+    } else if (cmpt_version == MYSQL_VERSION_8_0) {
+        if (span->month != 0 || span->day != 0) {
+            // convert time to datetime, then call adddate_datetime_interval_t(datetime, interval)
+            bool isRetNull = false;
+            Datum timetxt = DirectCall1(&isRetNull, time_text, InvalidOid, time);
+            Datum curdt = DirectCall0(&isRetNull, curdate, InvalidOid);
+            Datum curdatetime = DirectCall1(&isRetNull, date_timestamp, InvalidOid, curdt);
+            Datum curdatetimetxt = DirectCall1(&isRetNull, timestamp_text, InvalidOid, curdatetime);
+            Datum datetime = DirectCall2(&isRetNull, addtime_text, InvalidOid, curdatetimetxt, timetxt);
+
+            Datum result = DirectCall2(&isRetNull, adddate_datetime_interval_t, InvalidOid, datetime, PG_GETARG_DATUM(1));
+            if (isRetNull) {
+                PG_RETURN_NULL();
+            } else {
+                return result;
+            }
         }
-        ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
-        PG_RETURN_NULL();
     }
+
+    TimeADT time2 = span->time;
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC);
+#else
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE);
+#endif
+    time += time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        return DirectFunctionCall1(time_text, time);
+    }
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
+    PG_RETURN_NULL();
 }
 
 static int64 getPartFromTm(pg_tm* tm, fsec_t fsec, int part)

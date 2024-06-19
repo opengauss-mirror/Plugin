@@ -62,7 +62,7 @@ create view res_view as select
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+-------------------------
+-[ RECORD 1 ]-----------------+------------------------
 int1 + interval 1 day         | 2000-01-12
 uint1 + interval 1 day        | 2000-01-12
 int2 + interval 1 day         | 2001-11-12
@@ -141,7 +141,7 @@ interval 1 day + `text` as 'interval 1 day + text'
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+-------------------------
+-[ RECORD 1 ]-----------------+------------------------
 interval 1 day + int1         | 2000-01-12
 interval 1 day + uint1        | 2000-01-12
 interval 1 day + int2         | 2001-11-12
@@ -220,7 +220,7 @@ create view res_view as select
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+-------------------------
+-[ RECORD 1 ]-----------------+------------------------
 int1 - interval 1 day         | 2000-01-10
 uint1 - interval 1 day        | 2000-01-10
 int2 - interval 1 day         | 2001-11-10

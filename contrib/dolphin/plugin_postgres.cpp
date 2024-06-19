@@ -190,6 +190,11 @@ static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
     PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
 static void SpiMultiSelectException();
 extern DestReceiver* dophin_default_printtup_create_DR(CommandDest dest);
+
+static const struct config_enum_entry cmpt_version_options[] = {
+    {"5.7", MYSQL_VERSION_5_7, false},
+    {"8.0", MYSQL_VERSION_8_0, false},
+    {NULL, 0, false}};
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -1295,6 +1300,15 @@ void init_session_vars(void)
                                NULL,
                                NULL,
                                NULL);
+    DefineCustomEnumVariable("dolphin.cmpt_version",
+                             gettext_noop("This variable indicates the version compatible with MySQL"),
+                             NULL,
+                             &GetSessionContext()->cmpt_version,
+                             MYSQL_VERSION_5_7,
+                             cmpt_version_options,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 #endif
 
 }
