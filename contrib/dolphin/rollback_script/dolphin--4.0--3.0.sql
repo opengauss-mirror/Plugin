@@ -754,3 +754,24 @@ DROP FUNCTION IF EXISTS pg_catalog.int8_typmodout (int) CASCADE;
 
 DROP CAST IF EXISTS (text AS bit);
 DROP FUNCTION IF EXISTS pg_catalog.text_to_bit(text);
+
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(int8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(int8) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'inetntoa';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(binary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(tinyblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(nvarchar2) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';

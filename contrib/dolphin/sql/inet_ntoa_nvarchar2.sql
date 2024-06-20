@@ -134,6 +134,43 @@ inet_ntoa(`set_t`),
 inet_ntoa(`json`)
 from test_type_table;
 
+select
+pg_typeof(inet_ntoa(`int1`)),
+pg_typeof(inet_ntoa(`uint1`)),
+pg_typeof(inet_ntoa(`int2`)),
+pg_typeof(inet_ntoa(`uint2`)),
+pg_typeof(inet_ntoa(`int4`)),
+pg_typeof(inet_ntoa(`uint4`)),
+pg_typeof(inet_ntoa(`int8`)),
+pg_typeof(inet_ntoa(`uint8`)),
+pg_typeof(inet_ntoa(`float4`)),
+pg_typeof(inet_ntoa(`float8`)),
+pg_typeof(inet_ntoa(`numeric`)),
+pg_typeof(inet_ntoa(`bit1`)),
+pg_typeof(inet_ntoa(`bit64`)),
+pg_typeof(inet_ntoa(`boolean`)),
+pg_typeof(inet_ntoa(`date`)),
+pg_typeof(inet_ntoa(`time`)),
+pg_typeof(inet_ntoa(`time(4)`)),
+pg_typeof(inet_ntoa(`datetime`)),
+pg_typeof(inet_ntoa(`datetime(4)`)),
+pg_typeof(inet_ntoa(`timestamp`)),
+pg_typeof(inet_ntoa(`timestamp(4)`)),
+pg_typeof(inet_ntoa(`year`)),
+pg_typeof(inet_ntoa(`char`)),
+pg_typeof(inet_ntoa(`varchar`)),
+pg_typeof(inet_ntoa(`binary`)),
+pg_typeof(inet_ntoa(`varbinary`)),
+pg_typeof(inet_ntoa(`tinyblob`)),
+pg_typeof(inet_ntoa(`blob`)),
+pg_typeof(inet_ntoa(`mediumblob`)),
+pg_typeof(inet_ntoa(`longblob`)),
+pg_typeof(inet_ntoa(`text`)),
+pg_typeof(inet_ntoa(`enum_t`)),
+pg_typeof(inet_ntoa(`set_t`)),
+pg_typeof(inet_ntoa(`json`))
+from test_type_table;
+
 drop table test_type_table;
 drop table t_text0001;
 reset current_schema;
