@@ -1038,7 +1038,11 @@ select `bigstring` ^ `bigstring` from test_type_table;
 (1 row)
 
 select `bit1` ^ `bit64` from test_type_table;
-ERROR:  cannot XOR bit strings of different sizes
+ ?column? 
+----------
+ 6
+(1 row)
+
 select `int1` ^ `bit64` from test_type_table;
  ?column? 
 ----------
@@ -1216,7 +1220,11 @@ WARNING:  invalid input syntax for type numeric: "123a"
 (1 row)
 
 select `bit64` ^ `bit1` from test_type_table;
-ERROR:  cannot XOR bit strings of different sizes
+ ?column? 
+----------
+ 6
+(1 row)
+
 select `bit64` ^ `int1` from test_type_table;
  ?column? 
 ----------
@@ -1562,7 +1570,11 @@ select `bigstring` ^ `bigstring` from test_type_table;
 (1 row)
 
 select `bit1` ^ `bit64` from test_type_table;
-ERROR:  cannot XOR bit strings of different sizes
+ ?column? 
+----------
+ 6
+(1 row)
+
 select `int1` ^ `bit64` from test_type_table;
  ?column? 
 ----------
@@ -1740,7 +1752,11 @@ WARNING:  invalid input syntax for type numeric: "123a"
 (1 row)
 
 select `bit64` ^ `bit1` from test_type_table;
-ERROR:  cannot XOR bit strings of different sizes
+ ?column? 
+----------
+ 6
+(1 row)
+
 select `bit64` ^ `int1` from test_type_table;
  ?column? 
 ----------
@@ -2038,6 +2054,35 @@ select * from test_type_table_3;
  1
 (1 row)
 
+-- bit ^ bit (different length)
+set dolphin.sql_mode='sql_mode_strict,pad_char_to_full_length,auto_recompile_function';
+create table bit_t(`bit1` bit(1), `bit18` bit(18), `bit45` bit(45), `bit64` bit(64));
+insert into bit_t values(1, 244520, 4564685412, 1565646212555);
+select `bit1` ^ `bit18`, `bit1` ^ `bit45`, `bit1` ^ `bit64` from bit_t;
+ ?column? |  ?column?  |   ?column?    
+----------+------------+---------------
+ 244521   | 4564685413 | 1565646212554
+(1 row)
+
+select `bit18` ^ `bit1`, `bit18` ^ `bit45`, `bit18` ^ `bit64` from bit_t;
+ ?column? |  ?column?  |   ?column?    
+----------+------------+---------------
+ 244521   | 4564461900 | 1565646321379
+(1 row)
+
+select `bit45` ^ `bit1`, `bit45` ^ `bit18`, `bit45` ^ `bit64` from bit_t;
+  ?column?  |  ?column?  |   ?column?    
+------------+------------+---------------
+ 4564685413 | 4564461900 | 1570210766767
+(1 row)
+
+select `bit64` ^ `bit1`, `bit64` ^ `bit18`, `bit64` ^ `bit45` from bit_t;
+   ?column?    |   ?column?    |   ?column?    
+---------------+---------------+---------------
+ 1565646212554 | 1565646321379 | 1570210766767
+(1 row)
+
+drop table bit_t;
 reset dolphin.sql_mode;
 drop table if exists test_type_table cascade;
 drop table if exists test_type_table_2 cascade;

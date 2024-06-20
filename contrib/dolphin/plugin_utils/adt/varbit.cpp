@@ -1399,14 +1399,23 @@ Datum bitxor(PG_FUNCTION_ARGS)
 
     bitlen1 = VARBITLEN(arg1);
     bitlen2 = VARBITLEN(arg2);
-    if (bitlen1 != bitlen2)
+    if (bitlen1 != bitlen2) {
+#ifdef DOLPHIN
+        if (bitlen1 > bitlen2) {
+            arg2 = DatumGetVarBitP(DirectFunctionCall2Coll(bit, InvalidOid, VarBitPGetDatum(arg2), Int32GetDatum(bitlen1)));
+        } else {
+            arg1 = DatumGetVarBitP(DirectFunctionCall2Coll(bit, InvalidOid, VarBitPGetDatum(arg1), Int32GetDatum(bitlen2)));
+        }
+#else   
         ereport(
             ERROR, (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("cannot XOR bit strings of different sizes")));
+#endif
+    }
 
     len = VARSIZE(arg1);
     result = (VarBit*)palloc(len);
     SET_VARSIZE(result, len);
-    VARBITLEN(result) = bitlen1;
+    VARBITLEN(result) = VARBITLEN(arg1);
 
     p1 = VARBITS(arg1);
     p2 = VARBITS(arg2);
