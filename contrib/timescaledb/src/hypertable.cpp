@@ -1515,7 +1515,7 @@ insert_blocker_trigger_add(Oid relid)
 	 * the hypertable. This call will error out if a trigger with the same
 	 * name already exists. (This is the desired behavior.)
 	 */
-	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false);
+	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, true);
 
 	if (!OidIsValid(objaddr.objectId))
 		elog(ERROR, "could not create insert blocker trigger");
