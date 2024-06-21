@@ -554,6 +554,7 @@ set_attoptions(Relation ht_rel, Oid chunk_oid)
 			cmd->subtype = AT_SetOptions;
 			cmd->name = attributeName;
 			cmd->def = (Node *) untransformRelOptions(options);
+			cmd->additional_property = AT_CMD_WithoutPercent;
 			AlterTableInternal(chunk_oid, list_make1(cmd), false);
 		}
 
