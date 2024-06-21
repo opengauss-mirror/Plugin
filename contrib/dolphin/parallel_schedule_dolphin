@@ -151,7 +151,7 @@ test: operator_compatibility_test/numeric_operator_test_normal operator_compatib
 
 test: operator_compatibility_test/json_operator_test operator_compatibility_test/json_cmp_operator_test operator_associativity operator_compatibility_test/multi_type_or_test operator_compatibility_test/multi_type_xor_test operator_compatibility_test/pipes_as_concat_test operator_compatibility_test/not_test
 
-test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai
+test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl
 
 # lock tables
 test: lock_tables lock_tables_1

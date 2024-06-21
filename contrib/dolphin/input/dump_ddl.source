@@ -1,0 +1,53 @@
+create schema before_rename;
+set search_path to before_rename;
+create sequence seq;
+create type ctype as (f1 int, f2 text);
+create table test(id int default nextval('seq') primary key, ctype ctype);
+create table test2(id int AUTO_INCREMENT primary key, ctype ctype);
+create index on test(id);
+CREATE AGGREGATE genaggr(int4) (sfunc = int4pl, stype = int4);
+create function plus1(int) returns int as 'select $1+1' language sql;
+CREATE materialized VIEW test_materialized_view AS SELECT * from test;
+CREATE VIEW test_view AS SELECT * from test;
+create procedure test_procedure() as begin select 1;end;
+/
+CREATE FOREIGN DATA WRAPPER addr_fdw;
+CREATE SERVER addr_fserv FOREIGN DATA WRAPPER addr_fdw;
+create domain dom1 as text check(value > 'comment');
+CREATE POLICY p1 ON test USING (FALSE);
+CREATE TEXT SEARCH DICTIONARY ispell (Template =ispell, DictFile=ispell_sample, AffFile=ispell_sample);
+CREATE RULE rule_1 AS ON INSERT TO test DO NOTHING;
+create function tg_pfield_ad() returns trigger as '
+    begin
+        return old;
+    end;
+' language plpgsql;
+create trigger tg_pfield_ad after delete  on test for each row execute procedure tg_pfield_ad();
+create function same(ctype, ctype) returns boolean language sql
+as 'select $1.f1 is not distinct from $2.f1 and $1.f2 is not distinct from $2.f2';
+create operator =(procedure = same, leftarg  = ctype, rightarg = ctype);
+CREATE TYPE casttesttype;
+CREATE FUNCTION casttesttype_in(cstring)
+    RETURNS casttesttype
+AS 'textin'
+    LANGUAGE internal STRICT;
+CREATE FUNCTION casttesttype_out(casttesttype)
+    RETURNS cstring
+AS 'textout'
+    LANGUAGE internal STRICT;
+
+CREATE TYPE casttesttype (
+                             internallength = variable,
+                             input = casttesttype_in,
+                             output = casttesttype_out,
+                             alignment = int4
+                         );
+CREATE CAST (TEXT AS casttesttype) WITHOUT FUNCTION AS IMPLICIT;
+\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ -n before_rename -f before_rename.sql >/dev/null 2>&1; echo $?
+alter schema before_rename rename to after_rename;
+\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ -n after_rename -f after_rename.sql >/dev/null 2>&1; echo $?
+\! cat after_rename.sql | grep -i before_rename
+\! sed -i 's/after_rename/before_rename/g' after_rename.sql
+\! diff before_rename.sql after_rename.sql
+drop schema after_rename cascade;
+reset search_path;
