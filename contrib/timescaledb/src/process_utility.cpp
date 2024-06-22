@@ -832,11 +832,11 @@ process_drop_table_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 
 /* Block drop compressed chunks directly and drop corresponding compressed chunks if
  * cascade is on. */
-static void
+static bool
 process_drop_chunk(ProcessUtilityArgs *args, DropStmt *stmt)
 {
 	ListCell *lc;
-
+	bool handle = false;
 	foreach (lc, stmt->objects)
 	{
 		List *object =(List *) lfirst(lc);
@@ -868,8 +868,16 @@ process_drop_chunk(ProcessUtilityArgs *args, DropStmt *stmt)
 				if (compressed_chunk != NULL)
 					ts_chunk_drop(compressed_chunk, stmt->behavior, DEBUG1);
 			}
+			#ifdef OG30
+			else
+			{
+				ts_chunk_drop(chunk, stmt->behavior, DEBUG1);
+				handle = true;
+			}
+			#endif
 		}
 	}
+	return handle;
 }
 
 /*
@@ -1121,7 +1129,8 @@ process_drop_start(ProcessUtilityArgs *args)
 		case OBJECT_TABLE:
 			#ifdef OG30
 				handled = process_drop_hypertable(args, stmt);
-				process_drop_chunk(args, stmt);
+				if (!handled) /* If hypertable is dropped, don't need to drop the related chunks*/
+					handled = process_drop_chunk(args, stmt);
 			#else
 				process_drop_hypertable(args, stmt);
 				process_drop_chunk(args, stmt);
