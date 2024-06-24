@@ -275,12 +275,7 @@ static Plan* mark_distinct_stream(
 static List* get_optimal_distribute_key(PlannerInfo* root, List* groupClause, Plan* plan, double* multiple);
 static bool vector_engine_walker_internal(Plan* result_plan, bool check_rescan, VectorPlanContext* planContext);
 static bool vector_engine_expression_walker(Node* node, DenseRank_context* context);
-#ifdef ENABLE_HTAP
-static bool vector_engine_walker(Plan* result_plan, bool check_rescan, bool forceVectorEngine);
-#else
 static bool vector_engine_walker(Plan* result_plan, bool check_rescan);
-#endif
-
 static Plan* fallback_plan(Plan* result_plan);
 static Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVectorEngine);
 static Plan* build_vector_plan(Plan* plan);
@@ -335,7 +330,7 @@ static void get_count_distinct_param(PlannerInfo* root, Plan** result_plan, List
     List** duplicate_tlist, List** newtlist);
 static List* get_count_distinct_newtlist(PlannerInfo* root, List* tlist, Node* distinct_node, List** orig_tlist,
     List** duplicate_tlist, Oid* distinct_eq_op);
-void make_dummy_targetlist(Plan* plan);
+static void make_dummy_targetlist(Plan* plan);
 static void passdown_itst_keys_to_subroot(PlannerInfo* root, ItstDisKey* diskeys);
 static List* add_itst_node_to_list(List* result_list, List* target_list, Expr* node, bool is_matching_key);
 static void copy_path_costsize(Path* dest, Path* src);
@@ -734,11 +729,7 @@ PlannedStmt* standard_planner(Query* parse, int cursorOptions, ParamListInfo bou
 
     if ((IS_STREAM_PLAN || (IS_PGXC_DATANODE && (!IS_STREAM || IS_STREAM_DATANODE))) && root->query_level == 1) {
         /* remote query and windowagg do not support vectorize rescan, so fallback to row plan */
-#ifdef ENABLE_HTAP
-        top_plan = try_vectorize_plan(top_plan, parse, cursorOptions & CURSOR_OPT_HOLD, NULL, root->use_vec_cheapest_path);
-#else
         top_plan = try_vectorize_plan(top_plan, parse, cursorOptions & CURSOR_OPT_HOLD);
-#endif
     }
 
     top_plan = set_plan_references(root, top_plan);
@@ -3553,11 +3544,8 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     if (!planner_targets->scanjoin_contains_srfs) {
                         PathTarget* target = (PathTarget*)llast(planner_targets->scanjoin_targets);
                         result_plan->targetlist = build_plan_tlist(root, target);
-#ifdef ENABLE_HTAP
-                        if (IsA(result_plan, PartIterator) || IsA(result_plan, VecPartIterator)) {
-#else
+
                         if (IsA(result_plan, PartIterator)) {
-#endif
                             /*
                             * If is a PartIterator + Scan, push the PartIterator's
                             * tlist to Scan.
@@ -3574,11 +3562,8 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                      * the desired tlist.
                      */
                     result_plan->targetlist = sub_tlist;
-#ifdef ENABLE_HTAP
-                    if (IsA(result_plan, PartIterator) || IsA(result_plan, VecPartIterator)) {
-#else
+
                     if (IsA(result_plan, PartIterator)) {
-#endif
                         /*
                          * If is a PartIterator + Scan, push the PartIterator's
                          * tlist to Scan.
@@ -3591,12 +3576,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                      * target list of the query according to the new targetlist
                      * set above. For now do this only for SELECT statements.
                      */
-#ifdef ENABLE_HTAP
-                    if ((IsA(result_plan, RemoteQuery) || IsA(result_plan, VecRemoteQuery))
-#else
-                    if (IsA(result_plan, RemoteQuery)
-#endif
-                    && parse->commandType == CMD_SELECT && !permit_gather(root)) {
+                    if (IsA(result_plan, RemoteQuery) && parse->commandType == CMD_SELECT && !permit_gather(root)) {
                         pgxc_rqplan_adjust_tlist(
                             root, (RemoteQuery*)result_plan, ((RemoteQuery*)result_plan)->is_simple ? false : true);
                         if (((RemoteQuery*)result_plan)->is_simple)
@@ -4470,11 +4450,8 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
              */
             if (window_tlist != NULL)
                 result_plan->targetlist = (List*)copyObject(window_tlist);
-#ifdef ENABLE_HTAP
-            if (IsA(result_plan, PartIterator) || IsA(result_plan, VecPartIterator)) {
-#else
+
             if (IsA(result_plan, PartIterator)) {
-#endif
                 /*
                  * If is a PartIterator + Scan, push the PartIterator's
                  * tlist to Scan.
@@ -4894,11 +4871,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
          * we can deduct that we have already add sort in the data node, so we only need
          * add a mergesort to remote query if there are multiple dn involved.
          */
-        if ((IsA(result_plan, RemoteQuery) || IsA(result_plan, Stream)
-#ifdef ENABLE_HTAP
-            || IsA(result_plan, VecRemoteQuery) || IsA(result_plan, VecStream)
-#endif
-            ) &&
+        if ((IsA(result_plan, RemoteQuery) || IsA(result_plan, Stream))&&
             !is_replicated_plan(result_plan->lefttree) && !single_node &&
             root->sort_pathkeys != NIL && pathkeys_contained_in(root->sort_pathkeys, current_pathkeys)) {
             Sort* sortPlan = make_sort_from_pathkeys(root, result_plan, current_pathkeys, limit_tuples);
@@ -4911,19 +4884,11 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
             streamSort->sortToStore = false;
             streamSort->sortCollations = sortPlan->collations;
 
-#ifdef ENABLE_HTAP
-           if (IsA(result_plan, RemoteQuery) || IsA(result_plan, VecRemoteQuery)) {
+            if (IsA(result_plan, RemoteQuery)) {
                 ((RemoteQuery*)result_plan)->sort = streamSort;
-           } else if (IsA(result_plan, Stream)|| IsA(result_plan, VecStream)) {
+            } else if (IsA(result_plan, Stream)) {
                 ((Stream*)result_plan)->sort = streamSort;
-           }
-#else
-           if (IsA(result_plan, RemoteQuery)) {
-                ((RemoteQuery*)result_plan)->sort = streamSort;
-           } else if (IsA(result_plan, Stream)) {
-                ((Stream*)result_plan)->sort = streamSort;
-           }
-#endif
+            }
         }
     }
 
@@ -9144,9 +9109,6 @@ static bool has_column_store_relation(Plan* top_plan)
     switch (nodeTag(top_plan)) {
         /* Node which vec_output is true */
         case T_CStoreScan:
-#ifdef ENABLE_HTAP
-        case T_ImcsScan:
-#endif
         case T_CStoreIndexScan:
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
@@ -9269,9 +9231,6 @@ bool is_vector_scan(Plan* plan)
     }
     switch (nodeTag(plan)) {
         case T_CStoreScan:
-#ifdef ENABLE_HTAP
-        case T_ImcsScan:
-#endif
         case T_CStoreIndexScan:
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
@@ -9437,72 +9396,6 @@ bool vector_engine_unsupport_expression_walker(Node* node, VectorPlanContext* pl
     return expression_tree_walker(node, (bool (*)())vector_engine_unsupport_expression_walker, (void*)planContext);
 }
 
-#ifdef ENABLE_HTAP
-/*
- * @Description: Try to generate vectorized plan
- *
- * The GUC 'try_vector_engine_strategy' is off, the function only processes the plan with
- * column store relation. Otherwish, the function will force vectorize the plan,
- * deal with these 8 scans: SeqScan, IndexScan, IndexOnlyScan, BitmapHeapScan, TidScan, FunctionScan,
- * ValuesScan, ForeignScan.
- *
- * @param[IN] top_plan:  current plan node
- * @param[IN] parse:  query tree
- * @param[IN] from_subplan:  if node from subplan
- * @param[IN] subroot: plan root of current subquery plan tree
- * @param[IN] is_vec: whether the path of top_plan is a vec path
- * @return: Plan*, vectorized plan, fallbacked plan, or leave unchanged
- */
-Plan* try_vectorize_plan(Plan* top_plan, Query* parse, bool from_subplan, PlannerInfo* subroot, bool is_vec)
-{
-    /*
-     * If has the three conditions, just leave unchanged:
-     * 1.The GUC 'try_vector_engine_strategy' is off, and it has no column store relation;
-     */
-    if (u_sess->attr.attr_sql.vectorEngineStrategy == OFF_VECTOR_ENGINE &&
-        !has_column_store_relation(top_plan)) {
-        return top_plan;
-    }
-
-    bool force_vector_engine = u_sess->attr.attr_sql.vectorEngineStrategy != OFF_VECTOR_ENGINE;
-    force_vector_engine = force_vector_engine || is_vec;
-
-    /*
-     * Fallback to original non-vectorized plan, if either the GUC 'enable_vector_engine'
-     * is turned off or the plan cannot go through vector_engine_walker.
-     */
-    if (!u_sess->attr.attr_sql.enable_vector_engine ||
-        (subroot != NULL && subroot->is_under_recursive_tree) ||
-        vector_engine_walker(top_plan, from_subplan, force_vector_engine) ||
-        (ENABLE_PRED_PUSH_ALL(NULL) || (subroot != NULL && SUBQUERY_PREDPUSH(subroot)))) {
-        /*
-         * Distributed Recursive CTE Support
-         *
-         * In case of a SubPlan node appears under a recursive CTE's recursive plan
-         * branch, we don't try vectorization plan, instead we do fallback to just
-         * add vec2row on top of CStore operators
-         *
-         * In the future if we support native-recursive execution e.g. says VecRecursiveUnion,
-         * then we need revisit this part to lift this restriction
-         *
-         *
-         * We go through fallback_plan to transfer plan to row engine.
-         * If it's already for row engine, it leaves unchanged
-         */
-        top_plan = fallback_plan(top_plan);
-    } else {
-        top_plan = vectorize_plan(top_plan, from_subplan, force_vector_engine);
-
-        if (from_subplan && !IsVecOutput(top_plan))
-            top_plan = fallback_plan(top_plan);
-    }
-
-    if (IsVecOutput(top_plan))
-        top_plan = (Plan*)make_vectorow(top_plan);
-
-    return top_plan;
-}
-#else
 /*
  * @Description: Try to generate vectorized plan
  *
@@ -9564,7 +9457,6 @@ Plan* try_vectorize_plan(Plan* top_plan, Query* parse, bool from_subplan, Planne
 
     return top_plan;
 }
-#endif
 
 /*
  * @Description: Walk through the expression tree to see if it's supported in Vector Engine
@@ -10283,46 +10175,6 @@ static bool vector_engine_walker_internal(Plan* result_plan, bool check_rescan, 
     return false;
 }
 
-#ifdef ENABLE_HTAP
-/*
- * @Description: Walk through the plan tree to see if it's supported in Vector Engine
- *
- * @param[IN] result_plan:  current plan node
- * @param[IN] check_rescan:  if need check rescan
- * @return: bool, true means unsupported, false means supported
- */
-static bool vector_engine_walker(Plan* result_plan, bool check_rescan, bool forceVectorEngine)
-{
-    VectorPlanContext planContext;
-    planContext.containRowTable = false;
-    planContext.currentExprIsFilter = false;
-    planContext.rowCost = 0.0;
-    planContext.vecCost = 0.0;
-    planContext.forceVectorEngine = forceVectorEngine;
-
-    bool res = vector_engine_walker_internal(result_plan, check_rescan, &planContext);
-
-    if (!res && u_sess->attr.attr_sql.vectorEngineStrategy == OPT_VECTOR_ENGINE && planContext.containRowTable) {
-        /* add vectorow cost for using vector engine */
-        Cost vecToRowCost = 0.2;
-        Cost vecToRowCosts = vecToRowCost * result_plan->plan_rows;
-        planContext.vecCost += vecToRowCosts;
-        /* vector cost multiply 1.2 to ensure that performance not degree */
-        planContext.vecCost *= 1.2;
-        ereport(DEBUG2, (errmodule(MOD_OPT_PLANNER),
-            errmsg("[ROWTOVEC OPTIMAL] total cost: row: %f, vector: %f, choose %s",
-            planContext.rowCost, planContext.vecCost,
-            (planContext.vecCost >= planContext.rowCost ? "row" : "vector"))));
-        /* while using vector engine cost is larger than using row engine, do not transform to vector plan */
-        if (planContext.vecCost >= planContext.rowCost) {
-            res = true;
-        }
-    }
-
-    return res;
-}
-#endif
-
 /*
  * @Description: Walk through the plan tree to see if it's supported in Vector Engine
  *
@@ -10383,9 +10235,6 @@ static Plan* fallback_plan(Plan* result_plan)
     switch (nodeTag(result_plan)) {
         /* Add Row Adapter */
         case T_CStoreScan:
-#ifdef ENABLE_HTAP
-        case T_ImcsScan:
-#endif
         case T_CStoreIndexScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexCtidScan:
@@ -10524,9 +10373,6 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
          * For Scan node, just leave it.
          */
         case T_CStoreScan:
-#ifdef ENABLE_HTAP
-        case T_ImcsScan:
-#endif
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexScan:
@@ -10631,11 +10477,8 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
             if (IsVecOutput(result_plan->lefttree) && IsVecOutput(result_plan->righttree)) {
                 return build_vector_plan(result_plan);
             }
-#ifdef ENABLE_HTAP
-            if (forceVectorEngine) {
-#else
+
             if (u_sess->attr.attr_sql.enable_force_vector_engine) {
-#endif
                 if (!IsVecOutput(result_plan->lefttree))
                     result_plan->lefttree = (Plan*)make_rowtovec(result_plan->lefttree);
                 if (!IsVecOutput(result_plan->righttree))
@@ -10690,20 +10533,12 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
                 plan = vectorize_plan(plan, ignore_remotequery, forceVectorEngine);
                 lfirst(lc) = plan;
                 if (!IsVecOutput(plan)) {
-#ifdef ENABLE_HTAP
-                    if (forceVectorEngine)
-#else
                     if (u_sess->attr.attr_sql.enable_force_vector_engine)
-#endif
                         lfirst(lc) = (Plan*)make_rowtovec(plan);
                     isVec = false;
                 }
             }
-#ifdef ENABLE_HTAP
-            if (isVec == true || forceVectorEngine) {
-#else
             if (isVec == true || u_sess->attr.attr_sql.enable_force_vector_engine) {
-#endif
                 return build_vector_plan(result_plan);
             } else {
                 foreach (lc, append->appendplans) {
@@ -10799,9 +10634,6 @@ static Plan* build_vector_plan(Plan* plan)
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexScan:
-#ifdef ENABLE_HTAP
-        case T_ImcsScan:
-#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */
@@ -13362,7 +13194,7 @@ static void set_root_matching_key(PlannerInfo* root, List* targetlist)
  *
  * @in plan:  current plan
  */
-void make_dummy_targetlist(Plan* plan)
+static void make_dummy_targetlist(Plan* plan)
 {
     /*
      * vector engine doesn't support empty targetlist
@@ -13570,27 +13402,17 @@ static bool dfs_node_exists(Plan* plan)
         ListCell* lc = NULL;
         switch (nodeTag(plan)) {
             case T_Append:
-#ifdef ENABLE_HTAP
-            case T_VecAppend:
-#endif
                 // VecAppend is the same as Append, so plan is casted to Append here.
                 plans = ((Append*)plan)->appendplans;
                 break;
             case T_ModifyTable:
-            case T_VecModifyTable:
                 // VecModifyTable is the same as ModifyTable, so plan is casted to ModifyTable here.
                 plans = ((ModifyTable*)plan)->plans;
                 break;
             case T_SubqueryScan:
-#ifdef ENABLE_HTAP
-            case T_VecSubqueryScan:
-#endif
                 plans = lappend(plans, ((SubqueryScan*)plan)->subplan);
                 break;
             case T_MergeAppend:
-#ifdef ENABLE_HTAP
-            case T_VecMergeAppend:
-#endif
                 plans = ((MergeAppend*)plan)->mergeplans;
                 break;
             default:
@@ -14231,21 +14053,12 @@ static void walk_set_plan(Plan* plan, PlannerInfo* root)
     List* plans = NIL;
     switch (nodeTag(plan)) {
         case T_Append:
-#ifdef ENABLE_HTAP
-        case T_VecAppend:
-#endif
             plans = ((Append*)plan)->appendplans;
             break;
         case T_ModifyTable:
-#ifdef ENABLE_HTAP
-        case T_VecModifyTable:
-#endif
             plans = ((ModifyTable*)plan)->plans;
             break;
         case T_SubqueryScan:
-#ifdef ENABLE_HTAP
-        case T_VecSubqueryScan:
-#endif
             if (((SubqueryScan*)plan)->subplan == NULL)
                 return;
             plans = lappend(plans, ((SubqueryScan*)plan)->subplan);
@@ -14255,9 +14068,6 @@ static void walk_set_plan(Plan* plan, PlannerInfo* root)
             root = rel->subroot;
             break;
         case T_MergeAppend:
-#ifdef ENABLE_HTAP
-        case T_VecMergeAppend:
-#endif
             plans = ((MergeAppend*)plan)->mergeplans;
             break;
         default:
@@ -14279,28 +14089,16 @@ static void walk_set_plan(Plan* plan, PlannerInfo* root)
     }
     switch (nodeTag(plan)) {
         case T_Append:
-#ifdef ENABLE_HTAP
-        case T_VecAppend:
-#endif
             ((Append*)plan)->appendplans = new_plans;
             break;
         case T_ModifyTable:
-#ifdef ENABLE_HTAP
-        case T_VecModifyTable:
-#endif
             ((ModifyTable*)plan)->plans = new_plans;
             break;
         case T_SubqueryScan:
-#ifdef ENABLE_HTAP
-        case T_VecSubqueryScan:
-#endif
             ((SubqueryScan*)plan)->subplan = (Plan*)linitial(new_plans);
             rel->subplan = ((SubqueryScan*)plan)->subplan;
             break;
         case T_MergeAppend:
-#ifdef ENABLE_HTAP
-        case T_VecMergeAppend:
-#endif
             ((MergeAppend*)plan)->mergeplans = new_plans;
             break;
         default:
