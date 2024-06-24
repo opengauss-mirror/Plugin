@@ -18,6 +18,8 @@
 
 #ifdef DOLPHIN
 #define SYSTEM_SCHEMA_NAME(schemaname) ((schemaname) == NULL || strcmp((schemaname), "pg_catalog") == 0)
+extern bool IsCmpOp(char* opername);
+extern bool IsNumber(Oid typeoid);
 #endif
 
 extern Node* transformExpr(ParseState* pstate, Node* expr, ParseExprKind exprKind);

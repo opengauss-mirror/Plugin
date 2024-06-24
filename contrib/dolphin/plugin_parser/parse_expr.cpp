@@ -176,6 +176,27 @@ void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
         }
     }
 }
+
+void CoerceConstToTargetType(ParseState** pstate, Node** lexpr, Node** rexpr, A_Expr* a, char* opername)
+{
+    Oid leftType = exprType(*lexpr);
+    int32 leftTypmod = exprTypmod(*lexpr);
+    Oid rightType = exprType(*rexpr);
+    int32 rightTypmod = exprTypmod(*rexpr);
+    if (a->lexpr && a->rexpr) {
+        if (IsA(a->lexpr, ColumnRef) && IsA(a->rexpr, A_Const) && IsNumber(rightType)) {
+            if ((leftType == DATEOID || leftType == TIMEOID) && IsCmpOp(opername)) {
+                *rexpr = coerce_to_target_type(
+                    *pstate, *rexpr, rightType, leftType, leftTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+            }
+        } else if (IsA(a->rexpr, ColumnRef) && IsA(a->lexpr, A_Const) && IsNumber(leftType)) {
+            if ((rightType == DATEOID || rightType == TIMEOID) && IsCmpOp(opername)) {
+                *lexpr = coerce_to_target_type(
+                    *pstate, *lexpr, leftType, rightType, rightTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+            }
+        }
+    }
+}
 #endif
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
@@ -1525,6 +1546,7 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
         if (strcmp(strVal(linitial(a->name)), "=") == 0) {
             DealWithBoolType(&pstate, &lexpr, &rexpr);
         }
+        CoerceConstToTargetType(&pstate, &lexpr, &rexpr, a, strVal(linitial(a->name)));
 #endif
         result = (Node*)make_op(pstate, a->name, lexpr, rexpr, last_srf, a->location);
     }
