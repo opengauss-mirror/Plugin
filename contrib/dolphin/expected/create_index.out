@@ -163,6 +163,61 @@ select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
   
 (4 rows)
 
+drop table t5;
+create table t5(a int);
+create index t5_a_idx on t5(a desc);
+insert into t5 values(1),(2),(3),(null);
+\d t5
+   Table "create_index.t5"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+Indexes:
+    "t5_a_idx" btree (a DESC) TABLESPACE pg_default
+
+set dolphin.b_compatibility_mode to off;
+\d t5
+   Table "create_index.t5"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+Indexes:
+    "t5_a_idx" btree (a DESC NULLS LAST) TABLESPACE pg_default
+
+reset dolphin.b_compatibility_mode;
+analyze t5;
+-- use index
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+                QUERY PLAN                
+------------------------------------------
+ Index Scan Backward using t5_a_idx on t5
+(1 row)
+
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+ a 
+---
+  
+ 1
+ 2
+ 3
+(4 rows)
+
+-- index Backward
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+           QUERY PLAN            
+---------------------------------
+ Index Scan using t5_a_idx on t5
+(1 row)
+
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+ a 
+---
+ 3
+ 2
+ 1
+  
+(4 rows)
+
 reset enable_opfusion;
 reset enable_indexonlyscan;
 drop table temptest;

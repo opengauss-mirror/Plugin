@@ -1,0 +1,200 @@
+create schema null_in_partition;
+set search_path to null_in_partition;
+create table t_range (c1 int, c2 int) partition by range(c1) (partition p1 values less than (10), partition p2 values less than(maxvalue));
+insert into t_range values(null),(5),(100);
+create index t_range_c1_idx on t_range (c1) local;
+select * from t_range partition(p1); --expected 2
+ c1 | c2 
+----+----
+    |   
+  5 |   
+(2 rows)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range order by c1; -- INDEX
+                          QUERY PLAN                          
+--------------------------------------------------------------
+ Partition Iterator
+   Iterations: 2
+   ->  Partitioned Index Scan using t_range_c1_idx on t_range
+         Selected Partitions:  1..2
+(4 rows)
+
+select /*+ indexscan(t_range) */* from t_range order by c1;
+ c1  | c2 
+-----+----
+     |   
+   5 |   
+ 100 |   
+(3 rows)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range order by c1 desc; -- INDEX
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Partition Iterator Scan Backward
+   Iterations: 2
+   ->  Partitioned Index Scan Backward using t_range_c1_idx on t_range
+         Selected Partitions:  1..2
+(4 rows)
+
+select /*+ indexscan(t_range) */* from t_range order by c1 desc;
+ c1  | c2 
+-----+----
+ 100 |   
+   5 |   
+     |   
+(3 rows)
+
+create table t_range_desc (c1 int, c2 int) partition by range(c1) (partition p1 values less than (10), partition p2 values less than(maxvalue));
+insert into t_range_desc values(null),(5),(100);
+select * from t_range_desc partition(p1); --expected 2
+ c1 | c2 
+----+----
+    |   
+  5 |   
+(2 rows)
+
+create index t_range_desc_c1_idx on t_range (c1 desc) local;
+explain (costs off) select /*+ indexscan(t_range) */* from t_range_desc order by c1; -- NO INDEX
+WARNING:  Error hint: IndexScan(t_range), relation name "t_range" is not found.
+                    QUERY PLAN                    
+--------------------------------------------------
+ Sort
+   Sort Key: c1 NULLS FIRST
+   ->  Partition Iterator
+         Iterations: 2
+         ->  Partitioned Seq Scan on t_range_desc
+               Selected Partitions:  1..2
+(6 rows)
+
+select /*+ indexscan(t_range) */* from t_range_desc order by c1;
+ c1  | c2 
+-----+----
+     |   
+   5 |   
+ 100 |   
+(3 rows)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range_desc order by c1 desc; -- NO INDEX
+WARNING:  Error hint: IndexScan(t_range), relation name "t_range" is not found.
+                    QUERY PLAN                    
+--------------------------------------------------
+ Sort
+   Sort Key: c1 DESC NULLS LAST
+   ->  Partition Iterator
+         Iterations: 2
+         ->  Partitioned Seq Scan on t_range_desc
+               Selected Partitions:  1..2
+(6 rows)
+
+select /*+ indexscan(t_range) */* from t_range_desc order by c1 desc;
+ c1  | c2 
+-----+----
+ 100 |   
+   5 |   
+     |   
+(3 rows)
+
+drop schema null_in_partition cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t_range
+drop cascades to table t_range_desc
+create schema null_in_partition;
+set dolphin.nulls_minimal_policy to off;
+WARNING:  If the value is changed, the created index may be unavailable, and the partitions specified to null values are inconsistent. Please be cautious when performing this operation
+create table t_range (c1 int, c2 int) partition by range(c1) (partition p1 values less than (10), partition p2 values less than(maxvalue));
+insert into t_range values(null),(5),(100);
+create index t_range_ci_idx on t_range (c1) local;
+select * from t_range partition(p1); --expected 1
+ c1 | c2 
+----+----
+  5 |   
+(1 row)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range order by c1; -- INDEX
+                          QUERY PLAN                          
+--------------------------------------------------------------
+ Partition Iterator
+   Iterations: 2
+   ->  Partitioned Index Scan using t_range_ci_idx on t_range
+         Selected Partitions:  1..2
+(4 rows)
+
+select /*+ indexscan(t_range) */* from t_range order by c1;
+ c1  | c2 
+-----+----
+   5 |   
+ 100 |   
+     |   
+(3 rows)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range order by c1 desc; -- INDEX
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Partition Iterator Scan Backward
+   Iterations: 2
+   ->  Partitioned Index Scan Backward using t_range_ci_idx on t_range
+         Selected Partitions:  1..2
+(4 rows)
+
+select /*+ indexscan(t_range) */* from t_range order by c1 desc;
+ c1  | c2 
+-----+----
+     |   
+ 100 |   
+   5 |   
+(3 rows)
+
+create table t_range_desc (c1 int, c2 int) partition by range(c1) (partition p1 values less than (10), partition p2 values less than(maxvalue));
+insert into t_range_desc values(null),(5),(100);
+select * from t_range_desc partition(p1); --expected 1
+ c1 | c2 
+----+----
+  5 |   
+(1 row)
+
+create index t_range_desc_c1_idx on t_range (c1 desc) local;
+explain (costs off) select /*+ indexscan(t_range) */* from t_range_desc order by c1; -- NO INDEX
+WARNING:  Error hint: IndexScan(t_range), relation name "t_range" is not found.
+                    QUERY PLAN                    
+--------------------------------------------------
+ Sort
+   Sort Key: c1
+   ->  Partition Iterator
+         Iterations: 2
+         ->  Partitioned Seq Scan on t_range_desc
+               Selected Partitions:  1..2
+(6 rows)
+
+select /*+ indexscan(t_range) */* from t_range_desc order by c1;
+ c1  | c2 
+-----+----
+   5 |   
+ 100 |   
+     |   
+(3 rows)
+
+explain (costs off) select /*+ indexscan(t_range) */* from t_range_desc order by c1 desc; -- NO INDEX
+WARNING:  Error hint: IndexScan(t_range), relation name "t_range" is not found.
+                    QUERY PLAN                    
+--------------------------------------------------
+ Sort
+   Sort Key: c1 DESC
+   ->  Partition Iterator
+         Iterations: 2
+         ->  Partitioned Seq Scan on t_range_desc
+               Selected Partitions:  1..2
+(6 rows)
+
+select /*+ indexscan(t_range) */* from t_range_desc order by c1 desc;
+ c1  | c2 
+-----+----
+     |   
+ 100 |   
+   5 |   
+(3 rows)
+
+drop schema null_in_partition cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t_range
+drop cascades to table t_range_desc
+reset search_path;

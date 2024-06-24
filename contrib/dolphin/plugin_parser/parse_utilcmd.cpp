@@ -425,7 +425,7 @@ static void ConvertAnonymousEnum(TypeName* type)
 
 void TransfromSortByNulls(IndexStmt *stmt)
 {
-    if (!ENABLE_B_CMPT_MODE) {
+    if (!ENABLE_B_CMPT_MODE || !ENABLE_NULLS_MINIMAL_POLICY_MODE) {
         return;
     }
     HeapTuple tuple = SearchSysCache1(AMNAME, PointerGetDatum(stmt->accessMethod));
@@ -441,9 +441,12 @@ void TransfromSortByNulls(IndexStmt *stmt)
     ListCell *lc = NULL;
     foreach (lc, stmt->indexParams) {
         IndexElem *elem = (IndexElem *)lfirst(lc);
-        if (elem->nulls_ordering == SORTBY_NULLS_DEFAULT) {
-            elem->nulls_ordering = SORTBY_NULLS_FIRST;
-        }
+        SortByDir sortBy = elem->ordering;
+        if (sortBy == SORTBY_DESC && elem->nulls_ordering == SORTBY_NULLS_DEFAULT) {
+		    elem->nulls_ordering = SORTBY_NULLS_LAST;
+	    } else if ((sortBy == SORTBY_ASC || sortBy == SORTBY_DEFAULT) && elem->nulls_ordering == SORTBY_NULLS_DEFAULT) {
+		    elem->nulls_ordering = SORTBY_NULLS_FIRST;
+	    }
     }
 }
 #endif

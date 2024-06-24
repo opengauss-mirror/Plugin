@@ -2769,7 +2769,7 @@ List* addTargetToSortList(
              * in B CMPT, index is created as nulls first default
              * remove null/last first may prevent some queries from using indexes
              */
-            && !ENABLE_B_CMPT_MODE
+            && (!ENABLE_B_CMPT_MODE || !ENABLE_NULLS_MINIMAL_POLICY_MODE)
 #endif
             ) {
             sortby->sortby_nulls = SORTBY_NULLS_DEFAULT;

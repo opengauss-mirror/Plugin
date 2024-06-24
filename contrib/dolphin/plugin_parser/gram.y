@@ -41811,7 +41811,7 @@ static inline void ChangeBpcharCastType(TypeName* typname)
 
 static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule)
 {
-	if (!ENABLE_B_CMPT_MODE) {
+	if (!ENABLE_B_CMPT_MODE || !ENABLE_NULLS_MINIMAL_POLICY_MODE) {
 		return nullRule;
 	}
 	if (sortBy == SORTBY_DESC && nullRule == SORTBY_NULLS_DEFAULT) {

@@ -6,6 +6,7 @@
 #include "plugin_utils/fmgr.h"
 
 #define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
+#define ENABLE_NULLS_MINIMAL_POLICY_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enable_nulls_minimal_policy)
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL
@@ -107,6 +108,7 @@ typedef enum DataKind {
 
 typedef struct BSqlPluginContext {
     bool enableBCmptMode;
+    bool enable_nulls_minimal_policy;
     char* sqlModeString;
     unsigned int sqlModeFlags;
     List* lockNameList;

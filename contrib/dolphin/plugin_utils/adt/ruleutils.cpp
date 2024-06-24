@@ -3701,18 +3701,38 @@ static char *pg_get_indexdef_worker(Oid indexrelid, int colno, const Oid *exclud
             /* Add options if relevant */
             if (amrec->amcanorder) {
                 /* if it supports sort ordering, report DESC and NULLS opts */
+#ifdef DOLPHIN
+                bool nulls_policy = ENABLE_B_CMPT_MODE && ENABLE_NULLS_MINIMAL_POLICY_MODE;
+#endif
                 if (opt & INDOPTION_DESC) {
                     appendStringInfo(&buf, " DESC");
-                    /* NULLS FIRST is the default in this case */
-                    if (!(opt & INDOPTION_NULLS_FIRST))
-                        appendStringInfo(&buf, " NULLS LAST");
-                } else {
 #ifdef DOLPHIN
-                    if ((opt & INDOPTION_NULLS_FIRST) && !ENABLE_B_CMPT_MODE)
-#else
-                    if (opt & INDOPTION_NULLS_FIRST)
+                    /* NULLS FIRST is the default in this case */
+                    if (!(opt & INDOPTION_NULLS_FIRST)) {
+                        if (!nulls_policy) {
+                            appendStringInfo(&buf, " NULLS LAST");
+                        }
+                    }
+                    else {
+                        if (nulls_policy && !idxrec->indisprimary) {
+                            appendStringInfo(&buf, " NULLS FIRST");
+                        }
+                    }
 #endif
-                        appendStringInfo(&buf, " NULLS FIRST");
+                } else {
+                    if (opt & INDOPTION_NULLS_FIRST) {
+#ifdef DOLPHIN
+                        if (!nulls_policy) {
+                            appendStringInfo(&buf, " NULLS FIRST");
+                        }
+                    }
+                    else {
+                        if (nulls_policy && !idxrec->indisprimary) {
+                            appendStringInfo(&buf, " NULLS LAST");
+                        }
+                    }
+#endif
+
                 }
             }
 
