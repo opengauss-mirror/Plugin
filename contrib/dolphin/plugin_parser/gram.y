@@ -709,7 +709,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <str>	unique_name
 
 %type <node>	alter_table_cmd alter_table_option alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
-				modify_column_cmd reset_partition_cmd modify_partition_cmd
+				modify_column_cmd reset_partition_cmd
 				replica_identity add_column_first_after event_from_clause 
 %type <list>	alter_table_cmds alter_table_option_list alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
@@ -1171,9 +1171,6 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 
 %type <ival> 	ws_level_flag_desc ws_level_flag_reverse ws_level_flags opt_ws_levels ws_level_list ws_level_list_item ws_level_number ws_level_range ws_level_list_or_range
 
-/* IMCS */
-%type <node>    imcstored_clause
-%type <node>    imcstored_part_clause
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -1234,7 +1231,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
-	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMCSTORED IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
+	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPLACE INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
@@ -1285,7 +1282,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
-	UNBOUNDED UNCOMMITTED UNDEFINED UNENCRYPTED UNIMCSTORED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
+	UNBOUNDED UNCOMMITTED UNDEFINED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
 	UNTIL UNUSABLE UPDATE USE USEEOF USER USING UTC_DATE UTC_TIME UTC_TIMESTAMP
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
@@ -4975,7 +4972,6 @@ alter_partition_cmds:
 			| move_partition_cmd                           { $$ = list_make1($1); }
 			| exchange_partition_cmd                       { $$ = list_make1($1); }
 			| reset_partition_cmd                          { $$ = list_make1($1); }
-			| modify_partition_cmd                         { $$ = list_make1($1); }
 			| exchange_partition_cmd_for_bdatabase             { $$ = list_make1($1); }
 		;
 
@@ -5278,18 +5274,6 @@ alter_partition_cmd:
 				n->missing_ok = FALSE;
 				$$ = (Node *) n;
 
-			}
-		;
-
-modify_partition_cmd:
-		/* ALTER TABLE table_name MODIFY PARTITION imcstored_part_clause */
-		MODIFY_PARTITION name imcstored_part_clause
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_MODIFY_PARTITION_IMCSTORED;
-				n->name = $2;
-				n->def = (Node*)$3;
-				$$ = (Node *)n;
 			}
 		;
 
@@ -6081,11 +6065,6 @@ alter_table_cmd:
 					n->def = (Node *)$1;
 					$$ = (Node *) n;
 				}
-				| imcstored_clause
-				{
-					$$ = $1;
-				}
-
 /* PGXC_BEGIN */
 			/* ALTER TABLE <name> DISTRIBUTE BY ... */
 			| OptDistributeByInternal
@@ -9511,33 +9490,30 @@ subpartition_definition_list:
 		;
 
 subpartition_item:
-		SUBPARTITION name VALUES '(' listValueList ')' imcstored_part_clause opt_part_options
+		SUBPARTITION name VALUES '(' listValueList ')' opt_part_options
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $5;
- 				n->imcstored_state = (PartitionImcstoredState*)$7;
- 				n->tablespacename = $8;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
-		| SUBPARTITION name imcstored_part_clause opt_part_options
+		| SUBPARTITION name opt_part_options
 			{
 				HashPartitionDefState *n = makeNode(HashPartitionDefState);
 				n->partitionName = $2;
- 				n->imcstored_state = (PartitionImcstoredState*)$3;
- 				n->tablespacename = $4;
+				n->tablespacename = $3;
 
 				$$ = (Node*)n;
 			}
 		| SUBPARTITION name VALUES LESS THAN
-		maxValueList_with_opt_parens imcstored_part_clause opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $6;
-				n->imcstored_state = (PartitionImcstoredState*)$7;
-				n->tablespacename = $8;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
@@ -9666,24 +9642,22 @@ opt_values_in:
 	;
 
 list_partition_item:
-		PARTITION name opt_values_in '(' listValueList ')' imcstored_part_clause opt_part_options
+		PARTITION name opt_values_in '(' listValueList ')' opt_part_options
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $5;
-				n->imcstored_state = (PartitionImcstoredState*)$7;
-				n->tablespacename = $8;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name opt_values_in '(' listValueList ')' imcstored_part_clause opt_part_options '(' subpartition_definition_list ')'
+		| PARTITION name opt_values_in '(' listValueList ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $5;
-				n->imcstored_state = (PartitionImcstoredState*)$7;
-				n->tablespacename = $8;
-				n->subPartitionDefState = $10;
+				n->tablespacename = $7;
+				n->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->subPartitionDefState;
@@ -9700,22 +9674,20 @@ list_partition_item:
 		;
 
 hash_partition_item:
-		PARTITION name imcstored_part_clause opt_part_options
+		PARTITION name opt_part_options
 			{
 				HashPartitionDefState *n = makeNode(HashPartitionDefState);
 				n->partitionName = $2;
- 				n->imcstored_state = (PartitionImcstoredState *)$3;
- 				n->tablespacename = $4;
+				n->tablespacename = $3;
 
 				$$ = (Node*)n;
 			}
-		| PARTITION name imcstored_part_clause opt_part_options '(' subpartition_definition_list ')'
+		| PARTITION name opt_part_options '(' subpartition_definition_list ')'
 			{
 				HashPartitionDefState *n = makeNode(HashPartitionDefState);
 				n->partitionName = $2;
- 				n->imcstored_state = (PartitionImcstoredState *)$3;
- 				n->tablespacename = $4;
- 				n->subPartitionDefState = $6;
+				n->tablespacename = $3;
+				n->subPartitionDefState = $5;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->subPartitionDefState;
@@ -9733,25 +9705,23 @@ hash_partition_item:
 
 range_less_than_item:
 		PARTITION name VALUES LESS THAN
-		maxValueList_with_opt_parens imcstored_part_clause opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $6;
-				n->imcstored_state = (PartitionImcstoredState*)$7;
-				n->tablespacename = $8;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
 		| PARTITION name VALUES LESS THAN
-		maxValueList_with_opt_parens imcstored_part_clause opt_part_options '(' subpartition_definition_list ')'
+		maxValueList_with_opt_parens opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $6;
-				n->imcstored_state = (PartitionImcstoredState*)$7;
-				n->tablespacename = $8;
-				n->subPartitionDefState = $10;
+				n->tablespacename = $7;
+				n->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->subPartitionDefState;
@@ -9780,39 +9750,36 @@ range_start_end_list:
 		;
 	
 range_start_end_item:
-		PARTITION name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list imcstored_part_clause opt_part_options
+		PARTITION name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = $4;
 				n->endValue = $6;
 				n->everyValue = $7;
-				n->imcstored_state = (PartitionImcstoredState *)$8;
-				n->tableSpaceName = $9;
+				n->tableSpaceName = $8;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name END_P maxValueList_with_opt_parens imcstored_part_clause opt_part_options
+		| PARTITION name END_P maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = NIL;
 				n->endValue = $4;
 				n->everyValue = NIL;
-				n->imcstored_state = (PartitionImcstoredState *)$5;
-				n->tableSpaceName = $6;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name START maxValueList_with_opt_parens imcstored_part_clause opt_part_options
+		| PARTITION name START maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = $4;
 				n->endValue = NIL;
 				n->everyValue = NIL;
-				n->imcstored_state = (PartitionImcstoredState *)$5;
-				n->tableSpaceName = $6;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
@@ -37646,54 +37613,6 @@ connect_by_root_expr:   a_expr normal_ident '.' normal_ident
 
 /*****************************************************************************
  *
- *	ALTER TALBE FOR IMCS
- *
- *****************************************************************************/
-imcstored_clause:
-			IMCSTORED
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_IMCSTORED;
-					$$ = (Node *) n;
-				}
-			| IMCSTORED '(' name_list ')'
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_IMCSTORED;
-					n->def = (Node *)$3;
-					$$ = (Node *) n;
-				}
-			| UNIMCSTORED
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_UNIMCSTORED;
-					$$ = (Node *) n;
-				}
-		;
-
-imcstored_part_clause:
-			IMCSTORED
-			{
-				PartitionImcstoredState *n = makeNode(PartitionImcstoredState);
-				n->imcstored_type = PARTITION_IMCSTORED;
-				$$ = (Node *)n;
-			}
-			| UNIMCSTORED
-			{
-				PartitionImcstoredState *n = makeNode(PartitionImcstoredState);
-				n->imcstored_type = PARTITION_UNIMCSTORED;
-				$$ = (Node *)n;
-			}
-			|	/* EMPTY */
-			{
-				PartitionImcstoredState *n = makeNode(PartitionImcstoredState);
-				n->imcstored_type = PARTITION_INVALID;
-				$$ = (Node *)n;
-			}
-		;
-
-/*****************************************************************************
- *
  *	Names and constants
  *
  *****************************************************************************/
@@ -39796,7 +39715,6 @@ reserved_keyword:
 			| GRANT
 			| GROUP_P
 			| HAVING
-			| IMCSTORED
 			| IN_P
 			| INTERSECT
 			| INTO
@@ -39827,7 +39745,6 @@ reserved_keyword:
 			| TO
 			| TRAILING
 			| TRUE_P
-			| UNIMCSTORED
 			| UNION
 			| UNIQUE
 			| USING
