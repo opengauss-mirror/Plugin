@@ -161,6 +161,7 @@ extern void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is
 extern bool IsVariableinBlackList(const char* name);
 extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
 static bool CheckSqlMode(char** newval, void** extra, GucSource source);
+static bool CheckNullsMinimalPolicy(bool* newval, void** extra, GucSource source);
 static void AssignSqlMode(const char* newval, void* extra);
 static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
 static void assign_b_db_timestamp(double newval, void* extra);
@@ -216,6 +217,7 @@ static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
 static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
+static bool NullsMinimalPolicy();
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -337,6 +339,7 @@ void init_plugin_object()
         u_sess->proc_cxt.MyProcPort->protocol_config->fn_printtup_create_DR = dophin_default_printtup_create_DR;
     }
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
+    u_sess->hook_cxt.nullsMinimalPolicyHook = (void*)NullsMinimalPolicy;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -520,6 +523,21 @@ static void SpiMultiSelectException()
         }
     }
 }
+
+
+static bool CheckNullsMinimalPolicy(bool* newval, void** extra, GucSource source)
+{
+    /* dont warning if value is from PGC_S_DEFAULT or from PGC_S_FILE */
+    if (source != PGC_S_DEFAULT && source != PGC_S_FILE) {
+        if (*newval != ENABLE_NULLS_MINIMAL_POLICY_MODE) {
+            ereport(WARNING,
+                (errmsg("If the value is changed, the created index may be unavailable, and the partitions specified to null "
+                "values are inconsistent. Please be cautious when performing this operation")));
+        }
+    }
+    return true;
+}
+
 /*
  * check_behavior_compat_options: GUC check_hook for behavior compat options
  */
@@ -990,6 +1008,15 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+
+    DefineCustomBoolVariable("dolphin.nulls_minimal_policy",
+                             "Enable mysql nulls sort behavior.",
+                             NULL,
+                             &GetSessionContext()->enable_nulls_minimal_policy,
+                             true,
+                             PGC_USERSET,
+                             0,
+                             CheckNullsMinimalPolicy, NULL, NULL);
 
     DefineCustomStringVariable("dolphin.sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
@@ -1675,4 +1702,9 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
 static bool ReplaceNullOrNot()
 {
     return !(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT);
+}
+
+static bool NullsMinimalPolicy()
+{
+    return ENABLE_B_CMPT_MODE && ENABLE_NULLS_MINIMAL_POLICY_MODE;
 }
