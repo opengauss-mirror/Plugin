@@ -445,7 +445,12 @@ ts_get_partition_hash(PG_FUNCTION_ARGS)
 	}
 
 	if (pfc->tce->hash_proc == InvalidOid)
-		elog(ERROR, "could not find hash function for type %u", pfc->argtype);
+	{
+		Oid argtype = resolve_function_argtype(fcinfo);
+		TypeCacheEntry *tce = lookup_type_cache(argtype, TYPECACHE_HASH_FLAGS);
+		pfc->tce = tce;
+		fcinfo->flinfo->fn_extra = pfc;
+	}
 
 #if PG12_LT
 	collation = InvalidOid;
