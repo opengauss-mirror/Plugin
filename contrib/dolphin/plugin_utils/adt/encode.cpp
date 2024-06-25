@@ -805,11 +805,13 @@ static text* b64_encode_internal(const char* data, int dataLength)
 
 static bytea* b64_decode_internal(const char* data, int dataLength)
 {
-    int resultLength, res;
+    int resultLength, res = 0;
     resultLength = b64_dec_len(data, dataLength);
 
     bytea* result = (bytea*)palloc(VARHDRSZ + resultLength);
-    res = b64_decode(data, dataLength, VARDATA(result), false);
+    if (resultLength > 0) {
+        res = b64_decode(data, dataLength, VARDATA(result), false);
+    }
     SET_VARSIZE(result, VARHDRSZ + res);
     return result;
 }
