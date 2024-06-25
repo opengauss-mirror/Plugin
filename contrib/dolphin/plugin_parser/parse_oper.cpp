@@ -505,13 +505,13 @@ static bool IsDolphinUnsignedIntType(Oid typeoid)
     }
 }
 
-inline bool IsCmpOp(char* opername)
+bool IsCmpOp(char* opername)
 {
     return strcmp("=", opername) == 0 || strcmp("<>", opername) == 0 || strcmp("!=", opername) == 0 || strcmp("<", opername) == 0 ||
            strcmp("<=", opername) == 0 || strcmp(">", opername) == 0 || strcmp(">=", opername) == 0;
 }
 
-inline bool IsNumber(Oid typeoid)
+bool IsNumber(Oid typeoid)
 {
     return IsFloatType(typeoid) || IsDolphinUnsignedIntType(typeoid) || IsIntType(typeoid) || IsNumericType(typeoid);
 }
