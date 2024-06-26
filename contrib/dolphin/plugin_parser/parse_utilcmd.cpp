@@ -4695,7 +4695,7 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
         if (pg_strcasecmp(stmt->accessMethod, DEFAULT_INDEX_TYPE) != 0 &&
             pg_strcasecmp(stmt->accessMethod, DEFAULT_USTORE_INDEX_TYPE) != 0) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
-                    errmsg("Global partition index only support btree.")));
+                    errmsg("Global partition index only support btree and ubtree.")));
         }
         if (isColStore) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
@@ -4765,6 +4765,27 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
             pg_strcasecmp(stmt->accessMethod, DEFAULT_HASH_INDEX_TYPE) == 0) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
                             errmsg("Hash index does not support when segment = on.")));    
+        }
+    }
+
+    if (RelationIsRowFormat(rel) && (pg_strcasecmp(stmt->accessMethod, DEFAULT_INDEX_TYPE) == 0 ||
+        (pg_strcasecmp(stmt->accessMethod, DEFAULT_USTORE_INDEX_TYPE) == 0))) {
+        const char *accessMethod;
+        if (!RelationIsUstoreFormat(rel)) {
+            accessMethod = DEFAULT_INDEX_TYPE;
+        } else {
+            accessMethod = DEFAULT_USTORE_INDEX_TYPE;
+        }
+
+        if (pg_strcasecmp(stmt->accessMethod, accessMethod) != 0) {
+            ereport(NOTICE, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+                errmsg("Index type %s is converted to index type %s.", stmt->accessMethod, accessMethod),
+                errcause("The index type does not match."), erraction("N/A")));  
+        }
+        if (RelationIsUstoreFormat(rel)) {
+            stmt->accessMethod = DEFAULT_USTORE_INDEX_TYPE;
+        } else {
+            stmt->accessMethod = DEFAULT_INDEX_TYPE;
         }
     }
 

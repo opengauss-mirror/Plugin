@@ -529,6 +529,8 @@ static void CheckUserHostIsValid();
 
 static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
+static Node* MakeNoArgFunctionCall(List* funcName, int location);
+static char* IdentResolveToChar(DolphinIdent *ident, core_yyscan_t yyscanner);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
 static DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted);
@@ -821,6 +823,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
 				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
+				from_list_for_no_table_function
 				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
@@ -929,7 +932,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el siblings_clause
                                 columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
-				ExclusionWhereClause fulltext_match_params
+				ExclusionWhereClause fulltext_match_params func_table_with_table
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
 %type <node>	func_arg_expr
@@ -944,6 +947,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <sortby>	sortby
 %type <ielem>	index_elem table_index_elem constraint_elem fulltext_index_elem
 %type <node>	table_ref single_table joined_table_ref_list joined_table_ref_list_parens
+%type <node>	table_ref_for_no_table_function
 %type <jexpr>	joined_table
 %type <range>	relation_expr relation_expr_for_delete relation_expr_common
 %type <range>	relation_expr_opt_alias delete_relation_expr_opt_alias relation_expr_opt_alias_for_delete
@@ -1256,6 +1260,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
 	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PIPELINED
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
 /* PGXC_END */
@@ -1328,7 +1333,8 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
-			FORCE_INDEX USE_INDEX IGNORE_INDEX 
+			FORCE_INDEX USE_INDEX IGNORE_INDEX
+			CURSOR_EXPR
 			LOCK_TABLES
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 			STORAGE_DISK STORAGE_MEMORY
@@ -19889,6 +19895,10 @@ index_functional_expr_key:	col_name_keyword_nonambiguous '(' Iconst ')'
 					}
 				| func_application_special  { $$ = $1; }
 				| func_expr_common_subexpr  { $$ = $1; }
+				| CURRENT_SCHEMA
+					{
+						$$ = MakeNoArgFunctionCall(SystemFuncName("current_schema"), @1);
+					}
 		;
 
 opt_include_without_empty:		INCLUDE '(' index_including_params ')'			{ $$ = $3; }
@@ -22290,6 +22300,10 @@ createfunc_opt_item:
 				{
 					$$ = makeDefElem("window", (Node *)makeInteger(TRUE));
 				}
+			| PIPELINED
+				{
+					$$ = makeDefElem("pipelined", (Node *)makeInteger(TRUE));
+				}
 			| common_func_opt_item
 				{
 					$$ = $1;
@@ -22301,6 +22315,10 @@ createproc_opt_item:
 			common_func_opt_item
 				{
 					$$ = $1;
+				}
+			| PIPELINED
+				{
+					$$ = makeDefElem("pipelined", (Node *)makeInteger(TRUE));
 				}
 		;
 
@@ -29350,7 +29368,7 @@ DeleteStmt: opt_with_clause DELETE_P hint_string FROM relation_expr_opt_alias_li
 				}
 		/* this is only used in multi-relation DELETE for compatibility B database. */
 		| opt_with_clause DELETE_P hint_string relation_expr_opt_alias_list
-			FROM from_list where_or_current_clause
+			FROM from_list_for_no_table_function where_or_current_clause
 				{
 					DeleteStmt *n = makeNode(DeleteStmt);
 					n->relations = $4;
@@ -29462,7 +29480,7 @@ opt_nowait_or_skip:
  *
  *****************************************************************************/
 
-UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
+UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list_for_no_table_function
 			SET set_clause_list
 			from_clause
 			where_or_current_clause
@@ -30954,6 +30972,39 @@ from_clause:
 			| /*EMPTY*/								%prec EMPTY_FROM_CLAUSE
 				{ $$ = NIL; }
 		;
+from_list_for_no_table_function:
+			table_ref_for_no_table_function								{ $$ = list_make1($1); }
+			| from_list_for_no_table_function ',' table_ref_for_no_table_function				{ $$ = lappend($1, $3); }
+
+
+func_table_with_table:
+	TABLE '(' func_expr_windowless ')'			{ $$ = $3; }
+	/* function call without parameters */
+	| TABLE '(' DOLPHINIDENT ')'                               	{
+		List* funcNames = list_make1(makeString(IdentResolveToChar($3, yyscanner)));
+		$$ = MakeNoArgFunctionCall(funcNames, @3);
+	}
+	| TABLE '(' unreserved_keyword ')'			{
+		$$ = MakeNoArgFunctionCall(list_make1(makeString(pstrdup($3))), @3);
+	}
+	| TABLE '(' type_func_name_keyword ')'			{
+		$$ = MakeNoArgFunctionCall(list_make1(makeString(pstrdup($3))), @3);
+	}
+	| TABLE '(' DolphinColId dolphin_indirection ')'			{
+		int len = list_length($4);
+		if (len == 1) {
+			/* schema_name.func_name */
+			$$ = MakeNoArgFunctionCall(check_func_name(lcons(makeString(GetDolphinSchemaName($3->str, $3->is_quoted)),
+									GetNameListFromDolphinString($4)), yyscanner), @3);
+		} else {
+			/* category_name.schema_name.func_name */
+			DolphinString* element = (DolphinString*)lsecond($4);
+			element->str = GetDolphinSchemaName(element->str, element->is_quoted);
+			$$ = MakeNoArgFunctionCall(check_func_name(lcons(makeString(downcase_str($3->str, $3->is_quoted)),
+									GetNameListFromDolphinString($4)), yyscanner), @3);
+		}
+	};
+
 
 from_list:
 			table_ref								{ $$ = list_make1($1); }
@@ -31018,6 +31069,54 @@ joined_table_ref_list_parens:
 						$$ = (Node*) n;
 				}
 		;
+
+table_ref:
+	table_ref_for_no_table_function
+		{
+			$$ = $1;
+		}
+	| func_table_with_table		%prec UMINUS
+		{
+			RangeFunction *n = makeNode(RangeFunction);
+			n->funccallnode = $1;
+			n->coldeflist = NIL;
+			$$ = (Node *) n;
+		}
+	| func_table_with_table alias_clause
+		{
+			RangeFunction *n = makeNode(RangeFunction);
+			n->funccallnode = $1;
+			n->alias = $2;
+			n->coldeflist = NIL;
+			$$ = (Node *) n;
+		}
+	| func_table_with_table AS '(' TableFuncElementList ')'
+		{
+			RangeFunction *n = makeNode(RangeFunction);
+			n->funccallnode = $1;
+			n->coldeflist = $4;
+			$$ = (Node *) n;
+		}
+	| func_table_with_table AS ColId '(' TableFuncElementList ')'
+		{
+			RangeFunction *n = makeNode(RangeFunction);
+			Alias *a = makeNode(Alias);
+			n->funccallnode = $1;
+			a->aliasname = $3;
+			n->alias = a;
+			n->coldeflist = $5;
+			$$ = (Node *) n;
+		}
+	| func_table_with_table ColId '(' TableFuncElementList ')'
+		{
+			RangeFunction *n = makeNode(RangeFunction);
+			Alias *a = makeNode(Alias);
+			n->funccallnode = $1;
+			a->aliasname = $2;
+			n->alias = a;
+			n->coldeflist = $4;
+			$$ = (Node *) n;
+		}
 
 single_table:	relation_expr		%prec UMINUS
 				{
@@ -31225,7 +31324,7 @@ single_table:	relation_expr		%prec UMINUS
 				}
 		;
 
-table_ref:		single_table
+table_ref_for_no_table_function:		single_table
 				{
 					$$ = $1;
 				}
@@ -31896,6 +31995,9 @@ opt_repeatable_clause:
 
 
 func_table: func_expr_windowless					{ $$ = $1; }
+		| CURRENT_SCHEMA					{
+			$$ = MakeNoArgFunctionCall(SystemFuncName("current_schema"), @1);
+		}
 		;
 
 
@@ -34925,6 +35027,10 @@ func_expr:	func_application within_group_clause over_clause
 				}
 			| func_expr_common_subexpr
 				{ $$ = $1; }
+			| CURRENT_SCHEMA
+				{
+					$$ = MakeNoArgFunctionCall(SystemFuncName("current_schema"), @1);
+				}
 		;
 
 func_application:	dolphin_func_name '(' func_arg_list opt_sort_clause ')'
@@ -35444,6 +35550,25 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| CURSOR_EXPR SelectStmt ')'
+			    {
+					int cursor_start;
+					int cursor_end;
+					CursorExpression *n = makeNode(CursorExpression);
+					n->portalname = NULL;
+					n->options = CURSOR_OPT_FAST_PLAN;
+					n->location = @1;
+					cursor_start = @2;
+					cursor_end = @3;
+					StringInfoData buf;
+					initStringInfo(&buf);
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					char* raw_parse_query_string = yyextra->core_yy_extra.scanbuf;
+					appendBinaryStringInfo(&buf, raw_parse_query_string + cursor_start, cursor_end - cursor_start);
+					n->raw_query_str = pstrdup(buf.data);
+					FreeStringInfo(&buf);
+					$$ = (Node *)n;
+				}
 			| LOCALTIME
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -35700,20 +35825,6 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_database");
-					n->args = NIL;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| CURRENT_SCHEMA
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("current_schema");
 					n->args = NIL;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -37443,15 +37554,7 @@ target_el:	a_expr AS DolphinColLabel
 			| a_expr DOLPHINIDENT
 				{
 					$$ = makeNode(ResTarget);
-					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
-						&& (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
-					{
-						$$->name = pg_strtolower(pstrdup($2->str));
-					}
-					else
-					{
-						$$->name = $2->str;
-					}
+					$$->name = IdentResolveToChar($2, yyscanner);
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
@@ -39172,6 +39275,7 @@ alias_name_unreserved_keyword_without_key:
 			| PER_P
 			| PERCENT
 			| PERM
+			| PIPELINED
 			| PLAN
 			| PLANS
 			| POLICY
@@ -41220,6 +41324,16 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	/* get the all args informations, only "in" parameters if p_argmodes is null */
 	narg = get_func_arg_info(proctup, &p_argtypes, &p_argnames, &p_argmodes);
 	bool hasVariadic = HasVariadic(narg, p_argmodes);
+	bool is_null;
+	char prokind = SysCacheGetAttr(PROCOID, proctup, Anum_pg_proc_prokind, &is_null);
+	bool is_pipelined = !is_null && PROC_IS_PIPELINED(DatumGetChar(prokind));
+	if (is_pipelined) {
+			const char* message = "call pipelined function is not allowed";
+			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(errstate,
+				(errcode(ERRCODE_UNDEFINED_FUNCTION),
+				errmsg("call pipelined function \"%s\" is not allowed", name)));
+	}
 
 #ifndef ENABLE_MULTIPLE_NODES
 	if (!hasVariadic && !has_overload_func && !enable_out_param_override())
@@ -42948,6 +43062,34 @@ static Node *checkNullNode(Node *n)
 	return n;
 }
 
+static Node* MakeNoArgFunctionCall(List* funcNames, int location)
+{
+	FuncCall *n = makeNode(FuncCall);
+	n->funcname = funcNames;
+	n->args = NIL;
+	n->agg_order = NIL;
+	n->agg_star = FALSE;
+	n->agg_distinct = FALSE;
+	n->func_variadic = FALSE;
+	n->over = NULL;
+	n->location = location;
+	n->call_func = false;
+	return (Node *)n;
+}
+
+static char* IdentResolveToChar(char *ident, core_yyscan_t yyscanner)
+{
+	if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes
+	    && (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+	{
+		return pg_strtolower(pstrdup(ident));
+	}
+	else
+	{
+		return ident;
+	}
+}
+
 /* return a function option list that is filtered. */
 static List* handleCreateDolphinFuncOptions(List* input_options)
 {
@@ -43051,7 +43193,18 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	return nullRule;
 }
 
-
+static char* IdentResolveToChar(DolphinIdent* ident, core_yyscan_t yyscanner)
+{
+	if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes
+	    && (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+	{
+		return pg_strtolower(pstrdup(ident->str));
+	}
+	else
+	{
+		return ident->str;
+	}
+}
 /*
  * Must undefine this stuff before including scan.c, since it has different
  * definitions for these macros.

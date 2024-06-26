@@ -17,6 +17,7 @@
 #include "utils/plpgsql.h"
 
 #include "access/xact.h"
+#include "access/tupconvert.h"
 #include "catalog/dependency.h"
 #include "catalog/gs_package.h"
 #include "catalog/gs_dependencies_fn.h"
@@ -396,6 +397,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %type <stmt>	stmt_commit stmt_rollback stmt_savepoint
 %type <stmt>	stmt_case stmt_foreach_a
 %type <stmt>	stmt_signal stmt_resignal
+%type <stmt>	stmt_pipe_row
 
 %type <list>	proc_exceptions declare_stmts
 %type <exception_block> exception_sect
@@ -573,6 +575,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %token <keyword>	K_OUT
 %token <keyword>    K_PACKAGE
 %token <keyword>	K_PERFORM
+%token <keyword>	K_PIPE
 %token <keyword>	K_PG_EXCEPTION_CONTEXT
 %token <keyword>	K_PG_EXCEPTION_DETAIL
 %token <keyword>	K_PG_EXCEPTION_HINT
@@ -593,6 +596,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %token <keyword>	K_RETURNED_SQLSTATE
 %token <keyword>	K_REVERSE
 %token <keyword>	K_ROLLBACK
+%token <keyword>	K_ROW
 %token <keyword>	K_ROWTYPE
 %token <keyword>	K_ROW_COUNT
 %token <keyword>	K_SAVE
@@ -1554,14 +1558,20 @@ decl_statement	: decl_varname_list decl_const decl_datatype decl_collate decl_no
 
                 |       K_TYPE decl_varname as_is K_VARRAY '(' ICONST ')'  K_OF varray_var ';'
                     {
-                        ereport(errstate,
-                            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                                errmodule(MOD_PLSQL),
-                                errmsg("array type nested by array is not supported yet."),
-                                errdetail("Define array type \"%s\" of array is not supported yet.", $2->name),
-                                errcause("feature not supported"),
-                                erraction("check define of array type")));
-                        u_sess->plsql_cxt.have_error = true;
+                        IsInPublicNamespace($2->name);
+                        PLpgSQL_var *check_var = (PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$9];
+                        /* get and check nest tableof's depth */
+                        int depth = get_nest_tableof_layer(check_var, $2->name, errstate);
+                        PLpgSQL_type *nest_type = plpgsql_build_nested_datatype();
+                        nest_type->tableOfIndexType = INT4OID;
+                        nest_type->collectionType = PLPGSQL_COLLECTION_ARRAY;
+                        PLpgSQL_var* var = (PLpgSQL_var*)plpgsql_build_varrayType($2->name, $2->lineno, nest_type, true);
+                        /* nested table type */
+                        var->nest_table = (PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$9];
+                        var->nest_layers = depth;
+                        var->isIndexByTblOf = false;
+                        pfree_ext($2->name);
+                        pfree($2);
                     }
 
                 |       K_TYPE decl_varname as_is K_VARRAY '(' ICONST ')'  K_OF table_var ';'
@@ -1598,6 +1608,8 @@ decl_statement	: decl_varname_list decl_const decl_datatype decl_collate decl_no
                             IsInPublicNamespace(varname->name);
 
                             PLpgSQL_type *var_type = ((PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$3])->datatype;
+                            PLpgSQL_var *varray_type = (PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$3];
+
                             PLpgSQL_var *newp;
                             PLpgSQL_type *new_var_type;
 
@@ -1616,6 +1628,10 @@ decl_statement	: decl_varname_list decl_const decl_datatype decl_collate decl_no
                                     (errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
                                         errmsg("build variable failed")));
                                 u_sess->plsql_cxt.have_error = true;
+                            }
+                            if (varray_type->nest_table != NULL) {
+                                newp->nest_table = plpgsql_build_nested_variable(varray_type->nest_table, $2, varname->name, varname->lineno);
+                                newp->nest_layers = varray_type->nest_layers;
                             }
                             pfree_ext(varname->name);
                         }
@@ -2820,6 +2836,8 @@ label_stmt		: stmt_assign
                 | stmt_close
                         { $$ = $1; }
                 | stmt_null
+                        { $$ = $1; }
+                | stmt_pipe_row
                         { $$ = $1; }
                 ;
 
@@ -4696,7 +4714,77 @@ stmt_return		: K_RETURN
                         }
                     }
                 ;
-
+                
+stmt_pipe_row		: K_PIPE K_ROW '('
+                    {
+			if (!u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->is_pipelined) {
+				const char* message = "PIPE statement cannot be used in non-pipelined functions";
+				InsertErrorMessage(message, plpgsql_yylloc);
+				ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
+					errmsg("%s", message), errdetail("N/A"),
+					errcause("A PIPE statement was used in non-pipelined function"),
+					erraction("Use the PIPE statement only in pipelined functions"),
+					parser_errposition(@1)));
+			}
+                    	PLpgSQL_stmt_pipe_row* newp = (PLpgSQL_stmt_pipe_row *)palloc0(sizeof(PLpgSQL_stmt_pipe_row));
+		        newp->cmd_type = PLPGSQL_STMT_PIPE_ROW;
+                    	newp->lineno = plpgsql_location_to_lineno(@1);
+                    	newp->expr = NULL;
+                    	newp->sqlString = plpgsql_get_curline_query();
+                    	newp->retvarno = -1;
+                    	if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->pipelined_resistuple) {
+				int token = yylex();
+				bool supportedType = true;
+				TupleDesc tupdesc = NULL;
+				if (token == T_DATUM) {
+					newp->retvarno = yylval.wdatum.dno;
+					PLpgSQL_datum *returnVar = yylval.wdatum.datum;
+					auto dtype = returnVar->dtype;
+					supportedType = dtype == PLPGSQL_DTYPE_ROW ||
+						dtype == PLPGSQL_DTYPE_RECORD ||
+						dtype == PLPGSQL_DTYPE_CURSORROW ||
+						dtype == PLPGSQL_DTYPE_REC;
+					switch (dtype) {
+						case PLPGSQL_DTYPE_REC:
+						case PLPGSQL_DTYPE_CURSORROW:
+							tupdesc = ((PLpgSQL_rec *) returnVar)->tupdesc;
+							break;
+						case PLPGSQL_DTYPE_RECORD:
+						case PLPGSQL_DTYPE_ROW:
+							tupdesc = ((PLpgSQL_row *) returnVar)->rowtupdesc;
+							break;
+						default:
+							break;
+					}
+					if (tupdesc != NULL) {
+						Oid retyType = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_rettype;
+						int32 typmod;
+						Oid realRetType = searchsubtypebytypeId(retyType, &typmod);
+						TupleDesc expected = lookup_rowtype_tupdesc_copy(realRetType, typmod);
+						const char* msg = "expression is of wrong type";
+						convert_tuples_by_position(tupdesc, expected, gettext_noop(msg));
+					}
+				} else if (token == K_NULL) {
+					newp->retvarno = -1;
+				} else {
+					supportedType = false;
+				}
+				if (!supportedType) {
+					yyerror("unknown pipe row type");
+				}
+				if (yylex() != ')') {
+					yyerror("syntax error");
+				}
+			 } else {
+				newp->expr = read_sql_expression(')', ")");		
+			}
+			int token = yylex();
+			if (token != ';') {
+				yyerror("syntax error");
+			}
+			$$ = (PLpgSQL_stmt *)newp;
+                    }
+                ;
 stmt_raise		: K_RAISE
                     {
                         PLpgSQL_stmt_raise		*newp;
@@ -6562,6 +6650,7 @@ unreserved_keyword	:
                 | K_PG_EXCEPTION_CONTEXT
                 | K_PG_EXCEPTION_DETAIL
                 | K_PG_EXCEPTION_HINT
+                | K_PIPE
                 | K_PRIOR
                 | K_QUERY
                 | K_RECORD
@@ -6571,6 +6660,7 @@ unreserved_keyword	:
                 | K_RETURNED_SQLSTATE
                 | K_REVERSE
                 | K_ROLLBACK
+                | K_ROW
                 | K_ROW_COUNT
                 | K_ROWTYPE
                 | K_SAVE
@@ -10826,6 +10916,20 @@ make_return_stmt(int location)
                      errhint("Use RETURN NEXT or RETURN QUERY."),
                      parser_errposition(yylloc)));
         }
+    }
+    else if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->is_pipelined) {
+	if (yylex() != ';') {
+	    const char* message = "pipe error";
+	    InsertErrorMessage(message, plpgsql_yylloc);
+	    ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
+                                errmsg("RETURN statement in a pipelinedd function cannot contains an expression"), errdetail("%s", message),
+                                errcause("A RETURN statement in a pipelined function contains an expression, \
+                                which is not allowed. \
+                                Pipelined functions must return values to the caller by using the PIPE statement."),
+                                erraction("Remove the expression from the RETURN statement \
+                                and use a PIPE statement to return values. \
+                                Alternatively, convert the function into a non-pipelined function")));
+	}
     }
 
     // adapting A db, where return value is independent from OUT parameters 

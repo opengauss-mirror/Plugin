@@ -116,7 +116,7 @@ static int2vector* GetDefaultArgPos(List* defargpos);
 static void CheckInternalParamsReturnType(Oid declaredRetOid, Oid languageOid,
     List* asClause, oidvector* parameterTypes, bool* isStrict);
 static bool IsTypeMatch(Oid oid1, Oid oid2);
-
+static void pipelined_function_sanity_check(const CreateFunctionStmt *stmt, bool isPipelined);
 static void CreateFunctionComment(Oid funcOid, List* options, bool lock = false)
 {
     ListCell *cell = NULL;
@@ -148,7 +148,7 @@ static void CreateFunctionComment(Oid funcOid, List* options, bool lock = false)
  */
 void compute_return_type(
     TypeName* returnType, Oid languageOid, Oid* prorettype_p, bool* returnsSet_p, bool fenced, int startLineNumber,
-    TypeDependExtend* type_depend_extend, bool is_refresh_head)
+    TypeDependExtend* type_depend_extend, bool is_refresh_head, bool isPipelined)
 {
     Oid rettype = InvalidOid;
     Type typtup = NULL;
@@ -195,7 +195,7 @@ void compute_return_type(
         }
 
         /* if table of type, find its array type */
-        if (((Form_pg_type)GETSTRUCT(typtup))->typtype == TYPTYPE_TABLEOF) {
+        if (!isPipelined && ((Form_pg_type)GETSTRUCT(typtup))->typtype == TYPTYPE_TABLEOF) {
             rettype = ((Form_pg_type)GETSTRUCT(typtup))->typelem;
             if (!OidIsValid(rettype)) {
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
@@ -604,7 +604,7 @@ void examine_parameter_list(List* parameters, Oid languageOid, const char* query
 static bool compute_common_attribute(DefElem* defel, DefElem** volatility_item, DefElem** strict_item,
     DefElem** security_item, DefElem** leakproof_item, List** set_items, DefElem** cost_item, DefElem** rows_item,
     DefElem** fencedItem, DefElem** shippable_item, DefElem** package_item, DefElem** determ_item, 
-    DefElem** sql_item,  DefElem** language_item)
+    DefElem** sql_item,  DefElem** language_item, DefElem** pipelined_item)
 {
     if (strcmp(defel->defname, "volatility") == 0) {
         if (*volatility_item)
@@ -653,6 +653,11 @@ static bool compute_common_attribute(DefElem* defel, DefElem** volatility_item, 
             goto duplicate_error;
 
         *package_item = defel;
+    }  else if (strcmp(defel->defname, "pipelined") == 0) {
+        if (*pipelined_item)
+            goto duplicate_error;
+
+        *pipelined_item = defel;
 #ifdef DOLPHIN
     } else if (strcmp(defel->defname, "deterministic") == 0) {
 
@@ -735,7 +740,7 @@ static bool compute_b_attribute(DefElem* defel)
  */
 static List* compute_attributes_sql_style(const List* options, List** as, char** language, bool* windowfunc_p,
     char* volatility_p, bool* strict_p, bool* security_definer, bool* leakproof_p, ArrayType** proconfig,
-    float4* procost, float4* prorows, bool* fenced, bool* shippable, bool* package)
+    float4* procost, float4* prorows, bool* fenced, bool* shippable, bool* package, bool* is_pipelined)
 {
     ListCell* option = NULL;
     DefElem* as_item = NULL;
@@ -751,6 +756,7 @@ static List* compute_attributes_sql_style(const List* options, List** as, char**
     DefElem* fencedItem = NULL;
     DefElem* shippable_item = NULL;
     DefElem* package_item = NULL;
+    DefElem* pipelined_item = NULL;
     List* bCompatibilities = NIL;
 #ifdef DOLPHIN
     DefElem* determ_item = NULL;
@@ -784,7 +790,8 @@ static List* compute_attributes_sql_style(const List* options, List** as, char**
                        &package_item,
                        &determ_item,
                        &sql_item,
-                       &language_item)) {
+                       &language_item,
+                       &pipelined_item)) {
             /* recognized common option */
             continue;
         } else if (compute_b_attribute(defel)) {
@@ -832,6 +839,17 @@ static List* compute_attributes_sql_style(const List* options, List** as, char**
         if (*procost <= 0)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("COST must be positive")));
     }
+
+    if (pipelined_item) {
+        if (unlikely(t_thrd.proc->workingVersionNum < PIPELINED_FUNCTION_VERSION_NUM)) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("Unsupported feature: pipelined during the upgrade")));
+        }
+        *is_pipelined = true;
+    }
+
+    *is_pipelined = pipelined_item != NULL;
+
     if (rows_item != NULL) {
         *prorows = defGetNumeric(rows_item);
         if (*prorows <= 0)
@@ -1055,6 +1073,7 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
     bool isStrict = false;
     bool security = false;
     bool isLeakProof = false;
+    bool isPipelined = false;
     char volatility;
     ArrayType* proconfig = NULL;
     float4 procost;
@@ -1170,7 +1189,11 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
     /* override attributes from explicit list */
     List *functionOptions = compute_attributes_sql_style((const List *)stmt->options, &as_clause, &language,
                                                          &isWindowFunc, &volatility, &isStrict, &security, &isLeakProof,
-                                                         &proconfig, &procost, &prorows, &fenced, &shippable, &package);
+                                                         &proconfig, &procost, &prorows, &fenced, &shippable, &package,
+                                                         &isPipelined);
+
+    pipelined_function_sanity_check(stmt, isPipelined);
+
 #ifdef DOLPHIN
     if(proIsProcedure || stmt->isOraStyle) {
         if (strcmp(language,"sql") == 0 )
@@ -1266,7 +1289,7 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
             /* explicit RETURNS clause */
             InstanceTypeNameDependExtend(&ret_type_depend_ext);
             compute_return_type(stmt->returnType, languageOid, &prorettype, &returnsSet, fenced, stmt->startLineNumber,
-            ret_type_depend_ext, false);
+            ret_type_depend_ext, false, isPipelined);
         } else if (OidIsValid(requiredResultType)) {
             /* default RETURNS clause from OUT parameters */
             InstanceTypeNameDependExtend(&ret_type_depend_ext);
@@ -1370,7 +1393,8 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
         stmt->isPrivate,
         param_type_depend_ext,
         ret_type_depend_ext,
-        stmt);
+        stmt,
+        isPipelined);
 
     CreateFunctionComment(address.objectId, functionOptions);
     pfree_ext(param_type_depend_ext);
@@ -1383,6 +1407,28 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
         u_sess->plsql_cxt.has_error = false;
     }
     return address;
+}
+
+void pipelined_function_sanity_check(const CreateFunctionStmt *stmt, bool isPipelined)
+{
+    if (isPipelined) {
+        if (!DB_IS_CMPT(A_FORMAT)) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("Pipelined is not yet supported in non A compatibility database.")));
+        }
+        if (stmt->isProcedure) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("Pipelined is not yet supported in non-function.")));
+        }
+        /**
+         * check return value: must be collection of type or table type
+         * check in other place
+         */
+        if (stmt->returnType->setof) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("Setof is not yet supported in pipelined function.")));
+        }
+    }
 }
 
 static void CheckInternalParamsReturnType(Oid declaredRetOid, Oid languageOid,
@@ -2517,6 +2563,7 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
     DefElem* fencedItem = NULL;
     DefElem* shippable_item = NULL;
     DefElem* package_item = NULL;
+    DefElem* pipelined_item = NULL;
     ObjectAddress address;
     bool isNull = false;
 #ifdef DOLPHIN
@@ -2609,7 +2656,8 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
                 &package_item,
                 &determ_item,
                 &sql_item,
-                &language_item )) {
+                &language_item,
+                &pipelined_item)) {
             continue;
         } else if (compute_b_attribute(defel)) {
             /* recognized b compatibility options */
@@ -2619,6 +2667,14 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
                 (errcode(ERRCODE_WITH_CHECK_OPTION_VIOLATION), errmsg("option \"%s\" not recognized", defel->defname)));
         }
     }
+
+    Datum prokind = SysCacheGetAttr(PROCOID, tup, Anum_pg_proc_prokind, &isNull);
+    bool isPipelined = !isNull && PROC_IS_PIPELINED(DatumGetChar(prokind));
+    if (!isPipelined && pipelined_item) {
+        ereport(ERROR,
+                (errcode(ERRCODE_WITH_CHECK_OPTION_VIOLATION), errmsg("Do not support PIPELINED for ALTER FUNCTION.")));
+    }
+
 #ifdef DOLPHIN
     if (determ_item != NULL)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Do not support deterministic for ALTER FUNCTION.")));

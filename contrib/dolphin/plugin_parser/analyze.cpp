@@ -192,7 +192,7 @@ static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt);
 Query* parse_analyze(Node* parseTree, const char* sourceText, Oid* paramTypes, int numParams, bool isFirstNode,
     bool isCreateView,ParseState* parent_pstate)
 {
-    ParseState* pstate = make_parsestate(NULL);
+    ParseState* pstate = make_parsestate(parent_pstate);
     Query* query = NULL;
 
     /* required as of 8.4 */
@@ -213,7 +213,10 @@ Query* parse_analyze(Node* parseTree, const char* sourceText, Oid* paramTypes, i
         (*post_parse_analyze_hook)(pstate, query);
     }
 
-    pfree_ext(pstate->p_ref_hook_state);
+    // should free at parent if parent_pstate is not null
+    if (parent_pstate == NULL) {
+        pfree_ext(pstate->p_ref_hook_state);
+    }
     pstate->rightRefState = nullptr;
     free_parsestate(pstate);
 

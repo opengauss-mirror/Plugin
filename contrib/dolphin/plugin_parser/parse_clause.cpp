@@ -51,6 +51,7 @@
 #include "utils/rel.h"
 #include "utils/rel_gs.h"
 #include "utils/syscache.h"
+#include "catalog/pg_proc.h"
 
 /* clause types for findTargetlistEntrySQL92 */
 #define ORDER_CLAUSE 0
@@ -690,6 +691,15 @@ static RangeTblEntry* transformRangeFunction(ParseState* pstate, RangeFunction* 
                             parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
     }
 
+    /* rewrite result type in pipelined function */
+    if (IsA(funcexpr, FuncExpr)) {
+        FuncExpr *funcExpr = (FuncExpr *)(funcexpr);
+        if (PROC_IS_PIPELINED(get_func_prokind(funcExpr->funcid))) {
+            funcExpr->funcresulttype = get_element_type(funcExpr->funcresulttype);
+            funcExpr->funcresulttype_orig = InvalidOid;
+        }
+    }
+    
     pstate->p_lateral_active = false;
 
     /*
