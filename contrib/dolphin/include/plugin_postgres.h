@@ -170,6 +170,7 @@ typedef struct BSqlPluginContext {
     bool isDoCopy;
     char* performance_schema;
     bool isInTransformSet;
+    int cmpt_version;
 #endif
 } bSqlPluginContext;
 
@@ -229,6 +230,11 @@ static const struct optimizer_switch_entry optimizer_switch_options[OPT_OPTIMIZE
 #define B_KWMASK_CREATE 0x01
 #define B_KWMASK_TRIGGER (0x01<<1)
 #define B_KWMASK_CREATE_TRIGGER  (0x01 | (0x01<<1))
+
+typedef enum {
+    MYSQL_VERSION_5_7,
+    MYSQL_VERSION_8_0
+} CMPT_MYSQL_VERSION;
 #endif
 
 typedef enum {
