@@ -583,7 +583,9 @@ Node* scanRTEForColumn(ParseState* pstate, RangeTblEntry* rte, char* colname, in
     int attnum = 0;
     Var* var = NULL;
     ListCell* c = NULL;
-
+    if (rte->eref == NULL)
+        return result;
+    
     /*
      * Scan the user column names (or aliases) for a match. Complain if
      * multiple matches.
@@ -1677,16 +1679,19 @@ RangeTblEntry* addRangeTableEntryForSubquery(
         query_alias = makeAlias(block_name, NIL);
     }
 
-    refname = query_alias->aliasname;
+    refname = query_alias ? query_alias->aliasname : (char *)"unknown";
     rte->rtekind = RTE_SUBQUERY;
     rte->relid = InvalidOid;
     rte->subquery = subquery;
     rte->alias = query_alias;
     rte->sublink_pull_up = sublinkPullUp;
     rte->orientation = REL_ORIENT_UNKNOWN;
-    eref = (Alias*)copyObject(query_alias);
-    numaliases = list_length(eref->colnames);
-
+    if (query_alias != NULL) {
+        eref = (Alias *)copyObject(query_alias);
+        numaliases = list_length(eref->colnames);
+    } else {
+        eref = NULL;
+    }
     /* fill in any unspecified alias columns */
     varattno = 0;
     foreach (tlistitem, subquery->targetList) {
@@ -1697,7 +1702,7 @@ RangeTblEntry* addRangeTableEntryForSubquery(
         }
         varattno++;
         AssertEreport(varattno == te->resno, MOD_OPT, "");
-        if (varattno > numaliases) {
+        if (varattno > numaliases && alias != NULL) {
             char* attrname = NULL;
 
             if (te->resname != NULL &&
@@ -2248,6 +2253,8 @@ void expandRTE(RangeTblEntry* rte, int rtindex, int sublevels_up, int location, 
             expandRelation(rte->relid, rte->eref, rtindex, sublevels_up, location, include_dropped, colnames, colvars);
             break;
         case RTE_SUBQUERY: {
+            if (rte->eref == NULL)
+                break;
             /* Subquery RTE */
             /* for start with pseudo table, we mark its targetlist resjunk */
             if (rte->alias != NULL && rte->alias->aliasname != NULL &&

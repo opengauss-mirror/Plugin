@@ -1,3 +1,4 @@
+
 /* -------------------------------------------------------------------------
  *
  * kwlist.h
@@ -794,6 +795,7 @@ PG_KEYWORD("role", ROLE, UNRESERVED_KEYWORD)
 PG_KEYWORD("roles", ROLES, UNRESERVED_KEYWORD)
 PG_KEYWORD("rollback", ROLLBACK, UNRESERVED_KEYWORD)
 PG_KEYWORD("rollup", ROLLUP, UNRESERVED_KEYWORD)
+PG_KEYWORD("rotate", ROTATE, UNRESERVED_KEYWORD)
 PG_KEYWORD("rotation", ROTATION, UNRESERVED_KEYWORD)
 #ifdef DOLPHIN
 PG_KEYWORD("routine", ROUTINE, UNRESERVED_KEYWORD)
