@@ -61,6 +61,7 @@
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 #endif
+#include "tcop/tcopprot.h"
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
@@ -109,6 +110,7 @@ static Node *transformStartWithWhereClauseColumnRef(ParseState *pstate, ColumnRe
 static Node* tryTransformFunc(ParseState* pstate, List* fields, int location);
 static void SubCheckOutParam(List* exprtargs, Oid funcid);
 static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey);
+static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression);
 
 #ifdef DOLPHIN
 /* MySQL field type, all types can classify into these type */
@@ -685,6 +687,10 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
             result = (Node*)expr;
             break;
         }
+
+        case T_CursorExpression:
+            result = transformCursorExpression(pstate, (CursorExpression*)expr);
+            break;
 
         default:
             /* should not reach here */
@@ -1322,6 +1328,10 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
         }
     }
 
+    if (pstate->transform_outer_columnref_as_param_hook != NULL) {
+        node = (*pstate->transform_outer_columnref_as_param_hook)(pstate, cref, node);
+    }
+
     /*
      * Throw error if no translation found.
      */
@@ -1434,6 +1444,7 @@ static Node* tryTransformFunc(ParseState* pstate, List* fields, int location)
     fn->funcname = fields;
     fn->args = NIL;
     fn->agg_order = NIL;
+    fn->agg_filter = NULL;
     fn->agg_star = FALSE;
     fn->agg_distinct = FALSE;
     fn->func_variadic = FALSE;
@@ -4691,6 +4702,7 @@ static Node* transformPredictByFunction(ParseState* pstate, PredictByFunction* p
     }
 
     n->agg_order        = NULL;
+    n->agg_filter       = NULL;
     n->agg_star         = FALSE;
     n->agg_distinct     = FALSE;
     n->func_variadic    = FALSE;
@@ -5594,6 +5606,98 @@ static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey)
 
     return (Node*)pkey;
 }
+
+static Node* transformCursorOuterVarAsParam(ParseState* pstate, ColumnRef* cref, Node* node)
+{
+    ParseState* pstate_temp = pstate;
+    if(node == NULL || !IsA(node, Var)) {
+        return node;
+    }
+    Var* var = (Var*)node;
+    if (var->varlevelsup == 0) {
+        return node;
+    }
+
+    if (var->varlevelsup > 1) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+             errmsg("only spport access cursor and it's parent var in cursor expression.")));
+    }
+
+    pstate_temp = pstate_temp->parentParseState;
+    List* para_var = pstate_temp->cursor_expression_para_var;
+    pstate_temp->cursor_expression_para_var = lappend(para_var, (void*)(Var*)copyObject(node));
+
+    Param* param = NULL;
+    param = makeNode(Param);
+    param->paramkind = PARAM_EXEC;
+    param->paramid = list_length(pstate_temp->cursor_expression_para_var) - 1;
+    param->paramtype = var->vartype;
+    param->paramtypmod = var->vartypmod;
+    param->paramcollid = var->varcollid;
+    param->location = cref->location;
+    return (Node*)param;
+    
+}
+
+static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression)
+{
+    CursorExpression* newm = makeNode(CursorExpression);
+    char* queryString;
+    List* raw_parsetree_list = NIL;
+    PlannedStmt* plan_tree;
+    ListCell* raw_parsetree_cell = NULL;
+    List* stmt_list = NIL;
+    ParseState* parse_state_temp = NULL;
+
+    ParseState* parse_state_parent = pstate;
+
+    /* set is_outer_parse_state to parse subquery */
+    parse_state_parent->transform_outer_columnref_as_param_hook = transformCursorOuterVarAsParam;
+    parse_state_temp = parse_state_parent;
+    while (parse_state_temp != NULL) {
+        parse_state_parent->is_outer_parse_state = true;
+        parse_state_temp = parse_state_temp->parentParseState;
+    }
+
+    queryString = pstrdup(cursor_expression->raw_query_str);
+    raw_parsetree_list = pg_parse_query(queryString);
+    foreach (raw_parsetree_cell, raw_parsetree_list) {
+        Node* parsetree = (Node*)lfirst(raw_parsetree_cell);
+        List* querytree_list = pg_analyze_and_rewrite(parsetree, queryString, NULL, 0, parse_state_parent);
+        stmt_list = list_concat(stmt_list, querytree_list);
+    }
+
+    Query* query = castNode(Query, linitial(stmt_list));
+
+    plan_tree = pg_plan_query(query, 0, NULL);
+
+    int nParamExec = 0;
+    parse_state_temp = parse_state_parent;
+    while (parse_state_temp != NULL) {
+        nParamExec += list_length(parse_state_temp->cursor_expression_para_var);
+        parse_state_temp = parse_state_temp->parentParseState;
+    }
+    
+    plan_tree->nParamExec = nParamExec;
+    newm->plan = (Node*)plan_tree;
+    newm->options = cursor_expression->options;
+    newm->raw_query_str = queryString;
+    newm->param = (List*)copyObject(parse_state_parent->cursor_expression_para_var);
+
+    list_free_ext(stmt_list);
+    list_free_ext(raw_parsetree_list);
+
+    /* restore parent state */
+    parse_state_parent->transform_outer_columnref_as_param_hook = NULL;
+    parse_state_temp = parse_state_parent;
+    while (parse_state_temp != NULL) {
+        parse_state_parent->is_outer_parse_state = false;
+        parse_state_temp = parse_state_temp->parentParseState;
+    }
+    return (Node*)newm;
+}
+
 
 /*
  * Produce a string identifying an expression by kind.

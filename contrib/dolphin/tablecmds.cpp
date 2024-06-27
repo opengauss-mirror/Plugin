@@ -1271,7 +1271,7 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
                     errdetail("Valid string are \"column\", \"row\".")));
 #endif   /* ENABLE_MULTIPLE_NODES */
         }
-        if (pg_strcasecmp(def->defname, "storage_type") == 0) {
+        if (def->defnamespace == NULL && pg_strcasecmp(def->defname, "storage_type") == 0) {
             if (pg_strcasecmp(defGetString(def), TABLE_ACCESS_METHOD_USTORE) == 0) {
                 isUstore = true;
                 tableCreateSupport.is_storage_type_ustore = true;
@@ -14826,6 +14826,14 @@ static ObjectAddress ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation r
      * Validity checks (permission checks wait till we have the column
      * numbers)
      */
+    if (RelationIsRowFormat(rel) && (RelationIsUstoreFormat(pkrel) != RelationIsUstoreFormat(rel))) {
+        ereport(LOG,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                errmsg("The storage type referenced foreign table \"%s\" is different from the table \"%s\"", 
+                    RelationGetRelationName(pkrel), RelationGetRelationName(rel)),
+                errcause("Different storage type may cause unknown risks."),
+                erraction("Suggest specify referenced table of the same storage type.")));
+    }
     if (pkrel->rd_rel->relkind != RELKIND_RELATION)
         ereport(ERROR,
             (errcode(ERRCODE_WRONG_OBJECT_TYPE),
@@ -27671,10 +27679,10 @@ static void ExecUndoActionsPageForRelation(Relation rel)
     if (srcHeapBlocks == 0) {
         RelationCloseSmgr(rel);
         return;
-    }
+    } 
 
     for (BlockNumber blkno = 0; blkno < srcHeapBlocks; blkno ++) {
-        ExecuteUndoActionsPageForPartition(rel, rel->rd_smgr, MAIN_FORKNUM, blkno,
+        ExecuteUndoActionsPageForPartition(rel, rel->rd_smgr, MAIN_FORKNUM, blkno, 
             blkno, ROLLBACK_OP_FOR_EXCHANGE_PARTITION);
     }
 
