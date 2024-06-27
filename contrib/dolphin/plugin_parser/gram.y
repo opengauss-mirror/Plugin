@@ -31312,7 +31312,7 @@ table_ref:		single_table
 						$$ = (Node *) n;
 					}
 				}
-			| select_with_parens alias_clause
+			| select_with_parens dolphin_alias_clause
 				{
 					RangeSubselect *n = makeNode(RangeSubselect);
 					n->subquery = $1;
