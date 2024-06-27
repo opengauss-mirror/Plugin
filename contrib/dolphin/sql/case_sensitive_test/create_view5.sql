@@ -48,7 +48,7 @@ CREATE VIEW tt1 AS
     VALUES
        ('abc'::varchar(3), '0123456789', 42, 'abcd'::varchar(4)),
        ('0123456789', 'abc'::varchar(3), 42.12, 'abc'::varchar(4))
-  ) vv(a,b,c,d);
+  ) as vv(a,b,c,d);
 \d+ tt1
 SELECT * FROM tt1;
 SELECT a::varchar(3) FROM tt1;
