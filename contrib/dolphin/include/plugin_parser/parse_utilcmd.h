@@ -111,6 +111,7 @@ extern Oid check_collation_by_charset(const char* collate, int charset, bool ign
 #ifdef DOLPHIN
 extern char* transformIndexOptions(List* list);
 extern void TransformIndexName(IndexStmt* index, Oid nsp_oid, char* rel_name);
+extern bool CStoreSupportATCmd(AlterTableType cmdtype);
 #endif
 
 #endif /* PARSE_UTILCMD_H */

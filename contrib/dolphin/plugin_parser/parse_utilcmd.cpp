@@ -156,7 +156,11 @@ static void checkConditionForTransformIndex(
 static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtContext* cxt, bool mustGlobal = false);
 static void transformFKConstraints(CreateStmtContext* cxt, bool skipValidation, bool isAddConstraint);
 static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintList);
+#ifdef DOLPHIN
+static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column, AlterTableCmd* cmd);
+#else
 static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column);
+#endif
 static void setSchemaName(char* context_schema, char** stmt_schema_name);
 static void TransformTempAutoIncrement(ColumnDef* column, CreateStmt* stmt);
 static int128 TransformAutoIncStart(CreateStmt* stmt);
@@ -1452,8 +1456,11 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
      * no need to check before because the type has not created yet.
      */
     if (!is_set && column->typname)
+#ifdef DOLPHIN
+        transformColumnType(cxt, column, NULL);
+#else
         transformColumnType(cxt, column);
-
+#endif
     /* Special actions for SERIAL pseudo-types */
     column->is_serial = is_serial;
     if (is_serial) {
@@ -1482,7 +1489,11 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
                     typenameTypeIdAndMod(NULL, clientLogicColumnRef->dest_typname, &clientLogicColumnRef->dest_typname->typeOid, &clientLogicColumnRef->dest_typname->typemod);
                     column->typname =   makeTypeNameFromOid(clientLogicColumnRef->dest_typname->typeOid, clientLogicColumnRef->orig_typname->typeOid);
                 }
+#ifdef DOLPHIN
+            transformColumnType(cxt, column, NULL);
+#else
             transformColumnType(cxt, column);
+#endif
         }
     }
  
@@ -5892,7 +5903,11 @@ static void CheckColumnTableOfType(Type ctype)
 /*
  * Special handling of type definition for a column
  */
+#ifdef DOLPHIN
+static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column, AlterTableCmd* cmd)
+#else
 static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
+#endif
 {
     /*
      * All we really need to do here is verify that the type is valid,
@@ -5904,8 +5919,10 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             if (!OidIsValid(column->collOid)) {
                 column->collOid = DEFAULT_COLLATION_OID;
                 column->collClause->collname = list_make1(makeString("default"));
-                ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set",
-                    column->colname)));
+                if (!(cmd != NULL && RelationIsCUFormat(cxt->rel) && !CStoreSupportATCmd(cmd->subtype))) {
+                    ereport(WARNING, 
+                           (errmsg("Invalid collation for column %s detected. default value set", column->colname)));
+                }
             }
     }
     if (column->typname->names != NULL) {
@@ -9105,7 +9122,11 @@ static void TransformModifyColumnDatatype(CreateStmtContext* cxt, AlterTableCmd*
      * no need to check before because the type has not created yet.
      */
     if (!new_set && def->typname) {
+#ifdef DOLPHIN
+        transformColumnType(cxt, def, cmd);
+#else
         transformColumnType(cxt, def);
+#endif
     }
 }
  
