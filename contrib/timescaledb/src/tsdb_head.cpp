@@ -5,7 +5,7 @@
 
 BackgroundWorker *MyBgworkerEntry;
 
-bool row_security;  
+bool row_security =true;
 PGDLLIMPORT int NamedLWLockTrancheRequests;
 
 
