@@ -62,7 +62,7 @@ create view res_view as select
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+------------------------
+-[ RECORD 1 ]-----------------+---------------------------
 int1 + interval 1 day         | 2000-01-12
 uint1 + interval 1 day        | 2000-01-12
 int2 + interval 1 day         | 2001-11-12
@@ -75,12 +75,12 @@ float4 + interval 1 day       | 2000-01-12
 float8 + interval 1 day       | 0111-11-12 11:11:11.1
 numeric + interval 1 day      | 2000-01-12
 date + interval 1 day         | 2023-02-06
---? time + interval 1 day         | .* 19:10:50
---? time(4) + interval 1 day      | .* 19:10:50.3456
+time + interval 1 day         | 43:10:50
+time(4) + interval 1 day      | 43:10:50.3456
 datetime + interval 1 day     | 2023-02-06 19:10:50
 datetime(4) + interval 1 day  | 2023-02-06 19:10:50.456
-timestamp + interval 1 day    | 2023-02-06 19:10:50
-timestamp(4) + interval 1 day | 2023-02-06 19:10:50.456
+timestamp + interval 1 day    | 2023-02-06 19:10:50-08
+timestamp(4) + interval 1 day | 2023-02-06 19:10:50.456-08
 year + interval 1 day         | 2023
 char + interval 1 day         | 2023-02-06
 varchar + interval 1 day      | 2023-02-06
@@ -88,30 +88,30 @@ text + interval 1 day         | 2023-02-06
 
 \x
 desc res_view;
-             Field             | Type | Null | Key | Default | Extra 
--------------------------------+------+------+-----+---------+-------
- int1 + interval 1 day         | text | YES  |     | NULL    | 
- uint1 + interval 1 day        | text | YES  |     | NULL    | 
- int2 + interval 1 day         | text | YES  |     | NULL    | 
- uint2 + interval 1 day        | text | YES  |     | NULL    | 
- int4 + interval 1 day         | text | YES  |     | NULL    | 
- uint4 + interval 1 day        | text | YES  |     | NULL    | 
- int8 + interval 1 day         | text | YES  |     | NULL    | 
- uint8 + interval 1 day        | text | YES  |     | NULL    | 
- float4 + interval 1 day       | text | YES  |     | NULL    | 
- float8 + interval 1 day       | text | YES  |     | NULL    | 
- numeric + interval 1 day      | text | YES  |     | NULL    | 
- date + interval 1 day         | text | YES  |     | NULL    | 
- time + interval 1 day         | text | YES  |     | NULL    | 
- time(4) + interval 1 day      | text | YES  |     | NULL    | 
- datetime + interval 1 day     | text | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text | YES  |     | NULL    | 
- timestamp + interval 1 day    | text | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text | YES  |     | NULL    | 
- year + interval 1 day         | year | YES  |     | NULL    | 
- char + interval 1 day         | text | YES  |     | NULL    | 
- varchar + interval 1 day      | text | YES  |     | NULL    | 
- text + interval 1 day         | text | YES  |     | NULL    | 
+             Field             |            Type             | Null | Key | Default | Extra 
+-------------------------------+-----------------------------+------+-----+---------+-------
+ int1 + interval 1 day         | text                        | YES  |     | NULL    | 
+ uint1 + interval 1 day        | text                        | YES  |     | NULL    | 
+ int2 + interval 1 day         | text                        | YES  |     | NULL    | 
+ uint2 + interval 1 day        | text                        | YES  |     | NULL    | 
+ int4 + interval 1 day         | text                        | YES  |     | NULL    | 
+ uint4 + interval 1 day        | text                        | YES  |     | NULL    | 
+ int8 + interval 1 day         | text                        | YES  |     | NULL    | 
+ uint8 + interval 1 day        | text                        | YES  |     | NULL    | 
+ float4 + interval 1 day       | text                        | YES  |     | NULL    | 
+ float8 + interval 1 day       | text                        | YES  |     | NULL    | 
+ numeric + interval 1 day      | text                        | YES  |     | NULL    | 
+ date + interval 1 day         | text                        | YES  |     | NULL    | 
+ time + interval 1 day         | text                        | YES  |     | NULL    | 
+ time(4) + interval 1 day      | text                        | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone    | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone    | YES  |     | NULL    | 
+ year + interval 1 day         | year                        | YES  |     | NULL    | 
+ char + interval 1 day         | text                        | YES  |     | NULL    | 
+ varchar + interval 1 day      | text                        | YES  |     | NULL    | 
+ text + interval 1 day         | text                        | YES  |     | NULL    | 
 (22 rows)
 
 drop view if exists res_view;
@@ -141,7 +141,7 @@ interval 1 day + `text` as 'interval 1 day + text'
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+------------------------
+-[ RECORD 1 ]-----------------+---------------------------
 interval 1 day + int1         | 2000-01-12
 interval 1 day + uint1        | 2000-01-12
 interval 1 day + int2         | 2001-11-12
@@ -154,12 +154,12 @@ interval 1 day + float4       | 2000-01-12
 interval 1 day + float8       | 0111-11-12 11:11:11.1
 interval 1 day + numeric      | 2000-01-12
 interval 1 day + date         | 2023-02-06
---? interval 1 day + time         | .* 19:10:50
---? interval 1 day + time(4)      | .* 19:10:50.3456
+interval 1 day + time         | 43:10:50
+interval 1 day + time(4)      | 43:10:50.3456
 interval 1 day + datetime     | 2023-02-06 19:10:50
 interval 1 day + datetime(4)  | 2023-02-06 19:10:50.456
-interval 1 day + timestamp    | 2023-02-06 19:10:50
-interval 1 day + timestamp(4) | 2023-02-06 19:10:50.456
+interval 1 day + timestamp    | 2023-02-06 19:10:50-08
+interval 1 day + timestamp(4) | 2023-02-06 19:10:50.456-08
 interval 1 day + year         | 2023
 interval 1 day + char         | 2023-02-06
 interval 1 day + varchar      | 2023-02-06
@@ -167,30 +167,30 @@ interval 1 day + text         | 2023-02-06
 
 \x
 desc res_view;
-             Field             | Type | Null | Key | Default | Extra 
--------------------------------+------+------+-----+---------+-------
- interval 1 day + int1         | text | YES  |     | NULL    | 
- interval 1 day + uint1        | text | YES  |     | NULL    | 
- interval 1 day + int2         | text | YES  |     | NULL    | 
- interval 1 day + uint2        | text | YES  |     | NULL    | 
- interval 1 day + int4         | text | YES  |     | NULL    | 
- interval 1 day + uint4        | text | YES  |     | NULL    | 
- interval 1 day + int8         | text | YES  |     | NULL    | 
- interval 1 day + uint8        | text | YES  |     | NULL    | 
- interval 1 day + float4       | text | YES  |     | NULL    | 
- interval 1 day + float8       | text | YES  |     | NULL    | 
- interval 1 day + numeric      | text | YES  |     | NULL    | 
- interval 1 day + date         | text | YES  |     | NULL    | 
- interval 1 day + time         | text | YES  |     | NULL    | 
- interval 1 day + time(4)      | text | YES  |     | NULL    | 
- interval 1 day + datetime     | text | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text | YES  |     | NULL    | 
- interval 1 day + timestamp    | text | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text | YES  |     | NULL    | 
- interval 1 day + year         | year | YES  |     | NULL    | 
- interval 1 day + char         | text | YES  |     | NULL    | 
- interval 1 day + varchar      | text | YES  |     | NULL    | 
- interval 1 day + text         | text | YES  |     | NULL    | 
+             Field             |            Type             | Null | Key | Default | Extra 
+-------------------------------+-----------------------------+------+-----+---------+-------
+ interval 1 day + int1         | text                        | YES  |     | NULL    | 
+ interval 1 day + uint1        | text                        | YES  |     | NULL    | 
+ interval 1 day + int2         | text                        | YES  |     | NULL    | 
+ interval 1 day + uint2        | text                        | YES  |     | NULL    | 
+ interval 1 day + int4         | text                        | YES  |     | NULL    | 
+ interval 1 day + uint4        | text                        | YES  |     | NULL    | 
+ interval 1 day + int8         | text                        | YES  |     | NULL    | 
+ interval 1 day + uint8        | text                        | YES  |     | NULL    | 
+ interval 1 day + float4       | text                        | YES  |     | NULL    | 
+ interval 1 day + float8       | text                        | YES  |     | NULL    | 
+ interval 1 day + numeric      | text                        | YES  |     | NULL    | 
+ interval 1 day + date         | text                        | YES  |     | NULL    | 
+ interval 1 day + time         | text                        | YES  |     | NULL    | 
+ interval 1 day + time(4)      | text                        | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone    | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone    | YES  |     | NULL    | 
+ interval 1 day + year         | year                        | YES  |     | NULL    | 
+ interval 1 day + char         | text                        | YES  |     | NULL    | 
+ interval 1 day + varchar      | text                        | YES  |     | NULL    | 
+ interval 1 day + text         | text                        | YES  |     | NULL    | 
 (22 rows)
 
 drop view if exists res_view;
@@ -220,7 +220,7 @@ create view res_view as select
 from test_type_table;
 \x
 select * from res_view;
--[ RECORD 1 ]-----------------+------------------------
+-[ RECORD 1 ]-----------------+---------------------------
 int1 - interval 1 day         | 2000-01-10
 uint1 - interval 1 day        | 2000-01-10
 int2 - interval 1 day         | 2001-11-10
@@ -233,12 +233,12 @@ float4 - interval 1 day       | 2000-01-10
 float8 - interval 1 day       | 0111-11-10 11:11:11.1
 numeric - interval 1 day      | 2000-01-10
 date - interval 1 day         | 2023-02-04
---? time - interval 1 day         | .* 19:10:50
---? time(4) - interval 1 day      | .* 19:10:50.3456
+time - interval 1 day         | -04:49:10
+time(4) - interval 1 day      | -04:49:09.6544
 datetime - interval 1 day     | 2023-02-04 19:10:50
 datetime(4) - interval 1 day  | 2023-02-04 19:10:50.456
-timestamp - interval 1 day    | 2023-02-04 19:10:50
-timestamp(4) - interval 1 day | 2023-02-04 19:10:50.456
+timestamp - interval 1 day    | 2023-02-04 19:10:50-08
+timestamp(4) - interval 1 day | 2023-02-04 19:10:50.456-08
 year - interval 1 day         | 2022
 char - interval 1 day         | 2023-02-04
 varchar - interval 1 day      | 2023-02-04
@@ -246,30 +246,30 @@ text - interval 1 day         | 2023-02-04
 
 \x
 desc res_view;
-             Field             | Type | Null | Key | Default | Extra 
--------------------------------+------+------+-----+---------+-------
- int1 - interval 1 day         | text | YES  |     | NULL    | 
- uint1 - interval 1 day        | text | YES  |     | NULL    | 
- int2 - interval 1 day         | text | YES  |     | NULL    | 
- uint2 - interval 1 day        | text | YES  |     | NULL    | 
- int4 - interval 1 day         | text | YES  |     | NULL    | 
- uint4 - interval 1 day        | text | YES  |     | NULL    | 
- int8 - interval 1 day         | text | YES  |     | NULL    | 
- uint8 - interval 1 day        | text | YES  |     | NULL    | 
- float4 - interval 1 day       | text | YES  |     | NULL    | 
- float8 - interval 1 day       | text | YES  |     | NULL    | 
- numeric - interval 1 day      | text | YES  |     | NULL    | 
- date - interval 1 day         | text | YES  |     | NULL    | 
- time - interval 1 day         | text | YES  |     | NULL    | 
- time(4) - interval 1 day      | text | YES  |     | NULL    | 
- datetime - interval 1 day     | text | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text | YES  |     | NULL    | 
- timestamp - interval 1 day    | text | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text | YES  |     | NULL    | 
- year - interval 1 day         | year | YES  |     | NULL    | 
- char - interval 1 day         | text | YES  |     | NULL    | 
- varchar - interval 1 day      | text | YES  |     | NULL    | 
- text - interval 1 day         | text | YES  |     | NULL    | 
+             Field             |            Type             | Null | Key | Default | Extra 
+-------------------------------+-----------------------------+------+-----+---------+-------
+ int1 - interval 1 day         | text                        | YES  |     | NULL    | 
+ uint1 - interval 1 day        | text                        | YES  |     | NULL    | 
+ int2 - interval 1 day         | text                        | YES  |     | NULL    | 
+ uint2 - interval 1 day        | text                        | YES  |     | NULL    | 
+ int4 - interval 1 day         | text                        | YES  |     | NULL    | 
+ uint4 - interval 1 day        | text                        | YES  |     | NULL    | 
+ int8 - interval 1 day         | text                        | YES  |     | NULL    | 
+ uint8 - interval 1 day        | text                        | YES  |     | NULL    | 
+ float4 - interval 1 day       | text                        | YES  |     | NULL    | 
+ float8 - interval 1 day       | text                        | YES  |     | NULL    | 
+ numeric - interval 1 day      | text                        | YES  |     | NULL    | 
+ date - interval 1 day         | text                        | YES  |     | NULL    | 
+ time - interval 1 day         | text                        | YES  |     | NULL    | 
+ time(4) - interval 1 day      | text                        | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone    | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone    | YES  |     | NULL    | 
+ year - interval 1 day         | year                        | YES  |     | NULL    | 
+ char - interval 1 day         | text                        | YES  |     | NULL    | 
+ varchar - interval 1 day      | text                        | YES  |     | NULL    | 
+ text - interval 1 day         | text                        | YES  |     | NULL    | 
 (22 rows)
 
 -- test whether support default
@@ -417,13 +417,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -540,13 +540,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -663,13 +663,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime - interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp - interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year - interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -731,13 +731,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) + interval 1 day
 WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: char + interval 1 day
@@ -773,9 +773,9 @@ numeric + interval 1 day      |
 date                          | 0000-00-00
 date + interval 1 day         | 
 time                          | 00:00:00
---? time + interval 1 day         | .* 00:00:00
+time + interval 1 day         | 24:00:00
 time(4)                       | 00:00:00
---? time(4) + interval 1 day      | .* 00:00:00
+time(4) + interval 1 day      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime + interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -826,13 +826,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -894,13 +894,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime(4)
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp(4)
 WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: interval 1 day + char
@@ -936,9 +936,9 @@ interval 1 day + numeric      |
 date                          | 0000-00-00
 interval 1 day + date         | 
 time                          | 00:00:00
---? interval 1 day + time         | .* 00:00:00
+interval 1 day + time         | 24:00:00
 time(4)                       | 00:00:00
---? nterval 1 day + time(4)      | .* 00:00:00
+interval 1 day + time(4)      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 interval 1 day + datetime     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -989,13 +989,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1057,13 +1057,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) - interval 1 day
 ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: year - interval 1 day
@@ -1127,13 +1127,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) + interval 1 day
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: char + interval 1 day
@@ -1169,9 +1169,9 @@ numeric + interval 1 day      |
 date                          | 0000-00-00
 date + interval 1 day         | 
 time                          | 00:00:00
---? time + interval 1 day         | .* 00:00:00
+time + interval 1 day         | 24:00:00
 time(4)                       | 00:00:00
---? time(4) + interval 1 day      | .* 00:00:00
+time(4) + interval 1 day      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime + interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -1222,13 +1222,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1290,13 +1290,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime(4)
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp(4)
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: interval 1 day + char
@@ -1332,9 +1332,9 @@ interval 1 day + numeric      |
 date                          | 0000-00-00
 interval 1 day + date         | 
 time                          | 00:00:00
---? interval 1 day + time         | .* 00:00:00
+interval 1 day + time         | 24:00:00
 time(4)                       | 00:00:00
---? interval 1 day + time(4)      | .* 00:00:00
+interval 1 day + time(4)      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 interval 1 day + datetime     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -1385,13 +1385,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1453,13 +1453,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) - interval 1 day
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: char - interval 1 day
@@ -1495,9 +1495,9 @@ numeric - interval 1 day      |
 date                          | 0000-00-00
 date - interval 1 day         | 
 time                          | 00:00:00
---? time - interval 1 day         | .* 00:00:00
+time - interval 1 day         | -24:00:00
 time(4)                       | 00:00:00
---? time(4) - interval 1 day      | .* 00:00:00
+time(4) - interval 1 day      | -24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime - interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -1548,13 +1548,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime - interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp - interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year - interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1674,13 +1674,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1797,13 +1797,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -1920,13 +1920,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime - interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp - interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year - interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2262,13 +2262,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2385,13 +2385,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2508,13 +2508,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime - interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp - interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year - interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2576,13 +2576,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) + interval 1 day
 WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: char + interval 1 day
@@ -2618,9 +2618,9 @@ numeric + interval 1 day      |
 date                          | 0000-00-00
 date + interval 1 day         | 
 time                          | 00:00:00
---? time + interval 1 day         | .* 00:00:00
+time + interval 1 day         | 24:00:00
 time(4)                       | 00:00:00
---? time(4) + interval 1 day      | .* 00:00:00
+time(4) + interval 1 day      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime + interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -2671,13 +2671,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2739,13 +2739,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime(4)
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp(4)
 WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: interval 1 day + char
@@ -2781,9 +2781,9 @@ interval 1 day + numeric      |
 date                          | 0000-00-00
 interval 1 day + date         | 
 time                          | 00:00:00
---? interval 1 day + time         | .* 00:00:00
+interval 1 day + time         | 24:00:00
 time(4)                       | 00:00:00
---? interval 1 day + time(4)      | .* 00:00:00
+interval 1 day + time(4)      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 interval 1 day + datetime     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -2834,13 +2834,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -2902,13 +2902,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) - interval 1 day
 ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: year - interval 1 day
@@ -2972,13 +2972,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) + interval 1 day
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: char + interval 1 day
@@ -3014,9 +3014,9 @@ numeric + interval 1 day      |
 date                          | 0000-00-00
 date + interval 1 day         | 
 time                          | 00:00:00
---? time + interval 1 day         | .* 00:00:00
+time + interval 1 day         | 24:00:00
 time(4)                       | 00:00:00
---? time(4) + interval 1 day      | .* 00:00:00
+time(4) + interval 1 day      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime + interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -3067,13 +3067,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime + interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime + interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) + interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) + interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp + interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp + interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) + interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) + interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year + interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -3135,13 +3135,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + datetime(4)
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp(4)
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: interval 1 day + char
@@ -3177,9 +3177,9 @@ interval 1 day + numeric      |
 date                          | 0000-00-00
 interval 1 day + date         | 
 time                          | 00:00:00
---? interval 1 day + time         | .* 00:00:00
+interval 1 day + time         | 24:00:00
 time(4)                       | 00:00:00
---? interval 1 day + time(4)      | .* 00:00:00
+interval 1 day + time(4)      | 24:00:00
 datetime                      | 0000-00-00 00:00:00
 interval 1 day + datetime     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -3230,13 +3230,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime     | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- interval 1 day + datetime(4)  | text                           | YES  |     | NULL    | 
+ interval 1 day + datetime(4)  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp    | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- interval 1 day + timestamp(4) | text                           | YES  |     | NULL    | 
+ interval 1 day + timestamp(4) | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  interval 1 day + year         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
@@ -3298,13 +3298,13 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: datetime(4) - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
-WARNING:  Incorrect datetime value: "0"
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp(4) - interval 1 day
 WARNING:  Incorrect datetime value: "a"
 CONTEXT:  referenced column: char - interval 1 day
@@ -3340,9 +3340,9 @@ numeric - interval 1 day      |
 date                          | 0000-00-00
 date - interval 1 day         | 
 time                          | 00:00:00
---? time - interval 1 day         | .* 00:00:00
+time - interval 1 day         | -24:00:00
 time(4)                       | 00:00:00
---? time(4) - interval 1 day      | .* 00:00:00
+time(4) - interval 1 day      | -24:00:00
 datetime                      | 0000-00-00 00:00:00
 datetime - interval 1 day     | 
 datetime(4)                   | 0000-00-00 00:00:00
@@ -3393,13 +3393,13 @@ desc res_tab;
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                           | YES  |     | NULL    | 
  datetime                      | timestamp(0) without time zone | YES  |     | NULL    | 
- datetime - interval 1 day     | text                           | YES  |     | NULL    | 
+ datetime - interval 1 day     | timestamp without time zone    | YES  |     | NULL    | 
  datetime(4)                   | timestamp(4) without time zone | YES  |     | NULL    | 
- datetime(4) - interval 1 day  | text                           | YES  |     | NULL    | 
+ datetime(4) - interval 1 day  | timestamp without time zone    | YES  |     | NULL    | 
  timestamp                     | timestamp(0) with time zone    | YES  |     | NULL    | 
- timestamp - interval 1 day    | text                           | YES  |     | NULL    | 
+ timestamp - interval 1 day    | timestamp with time zone       | YES  |     | NULL    | 
  timestamp(4)                  | timestamp(4) with time zone    | YES  |     | NULL    | 
- timestamp(4) - interval 1 day | text                           | YES  |     | NULL    | 
+ timestamp(4) - interval 1 day | timestamp with time zone       | YES  |     | NULL    | 
  year                          | year                           | YES  |     | NULL    | 
  year - interval 1 day         | year                           | YES  |     | NULL    | 
  char                          | character(100)                 | YES  |     | NULL    | 
