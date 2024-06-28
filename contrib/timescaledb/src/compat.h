@@ -377,11 +377,15 @@
 #endif
 
 /* ExecBuildProjectionInfo */
-#if PG96
-#define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
+#ifdef OG30
+#define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc) \
+	ExecBuildProjectionInfo(tl, exprContext, slot, parent, inputdesc)
+/* ExecBuildProjectionInfo */
+#elif PG96
+#define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc) \
 	ExecBuildProjectionInfo((List *) ExecInitExpr((Expr *) tl, NULL), exprContext, slot, parent, inputdesc)
 #else
-#define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
+#define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc) \
 	ExecBuildProjectionInfo(tl, exprContext, slot, parent, inputdesc)
 #endif
 
