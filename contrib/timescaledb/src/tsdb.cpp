@@ -2519,5 +2519,6 @@ void init_session_vars(void)
 		_planner_init();
 		_chunk_append_init();
 		_process_utility_init();
+		_event_trigger_init();
 	}
 }
