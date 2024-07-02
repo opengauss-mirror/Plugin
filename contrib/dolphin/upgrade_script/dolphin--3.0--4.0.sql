@@ -202,8 +202,8 @@ BEGIN
 END
 $for_og_502$;
 
-CREATE OR REPLACE FUNCTION pg_catalog.convert_text_datetime(text) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_text_datetime';
-CREATE OR REPLACE FUNCTION pg_catalog.convert_text_timestamptz(text) RETURNS timestamptz LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_text_timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_text_datetime(text) RETURNS timestamp without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'convert_text_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_text_timestamptz(text) RETURNS timestamptz LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'convert_text_timestamptz';
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_eq(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=convert_text_datetime($2)';
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ne(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>convert_text_datetime($2)';

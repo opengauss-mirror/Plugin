@@ -814,25 +814,20 @@ referenced column: t15=t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
 referenced column: t15=t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15=t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15=t24
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t15=t27
+CONTEXT:  referenced column: t15=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t15=t28
+CONTEXT:  referenced column: t15=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t15=t29
+CONTEXT:  referenced column: t15=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t15=t30
+CONTEXT:  referenced column: t15=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t15=t31
+CONTEXT:  referenced column: t15=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
 referenced column: t15=t32
@@ -1019,32 +1014,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
 referenced column: t18=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t23
+CONTEXT:  referenced column: t18=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t24
+CONTEXT:  referenced column: t18=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t25
+CONTEXT:  referenced column: t18=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t26
+CONTEXT:  referenced column: t18=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t27
+CONTEXT:  referenced column: t18=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t28
+CONTEXT:  referenced column: t18=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t29
+CONTEXT:  referenced column: t18=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t30
+CONTEXT:  referenced column: t18=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t18=t31
+CONTEXT:  referenced column: t18=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
 referenced column: t18=t32
@@ -1135,32 +1121,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
 referenced column: t19=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t23
+CONTEXT:  referenced column: t19=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t24
+CONTEXT:  referenced column: t19=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t25
+CONTEXT:  referenced column: t19=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t26
+CONTEXT:  referenced column: t19=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t27
+CONTEXT:  referenced column: t19=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t28
+CONTEXT:  referenced column: t19=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t29
+CONTEXT:  referenced column: t19=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t30
+CONTEXT:  referenced column: t19=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-referenced column: t19=t31
+CONTEXT:  referenced column: t19=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
 referenced column: t19=t32
@@ -1251,32 +1228,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
 referenced column: t20=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t23
+CONTEXT:  referenced column: t20=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t24
+CONTEXT:  referenced column: t20=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t25
+CONTEXT:  referenced column: t20=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t26
+CONTEXT:  referenced column: t20=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t27
+CONTEXT:  referenced column: t20=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t28
+CONTEXT:  referenced column: t20=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t29
+CONTEXT:  referenced column: t20=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t30
+CONTEXT:  referenced column: t20=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t20=t31
+CONTEXT:  referenced column: t20=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
 referenced column: t20=t32
@@ -1367,32 +1335,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
 referenced column: t21=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t23
+CONTEXT:  referenced column: t21=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t24
+CONTEXT:  referenced column: t21=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t25
+CONTEXT:  referenced column: t21=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t26
+CONTEXT:  referenced column: t21=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t27
+CONTEXT:  referenced column: t21=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t28
+CONTEXT:  referenced column: t21=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t29
+CONTEXT:  referenced column: t21=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t30
+CONTEXT:  referenced column: t21=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-referenced column: t21=t31
+CONTEXT:  referenced column: t21=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
 referenced column: t21=t32
@@ -1496,17 +1455,13 @@ CONTEXT:  referenced column: t23=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t23=t18
+CONTEXT:  referenced column: t23=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t23=t19
+CONTEXT:  referenced column: t23=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t23=t20
+CONTEXT:  referenced column: t23=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t23=t21
+CONTEXT:  referenced column: t23=t21
  t23=t1 | t23=t2 | t23=t3 | t23=t4 | t23=t5 | t23=t6 | t23=t7 | t23=t8 | t23=t9 | t23=t10 | t23=t11 | t23=t12 | t23=t13 | t23=t14 | t23=t15 | t23=t16 | t23=t17 | t23=t18 | t23=t19 | t23=t20 | t23=t21 | t23=t22 | t23=t23 | t23=t24 | t23=t25 | t23=t26 | t23=t27 | t23=t28 | t23=t29 | t23=t30 | t23=t31 | t23=t32 | t23=t33 | t23=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f
@@ -1555,17 +1510,13 @@ CONTEXT:  referenced column: t24=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t24=t18
+CONTEXT:  referenced column: t24=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t24=t19
+CONTEXT:  referenced column: t24=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t24=t20
+CONTEXT:  referenced column: t24=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t24=t21
+CONTEXT:  referenced column: t24=t21
  t24=t1 | t24=t2 | t24=t3 | t24=t4 | t24=t5 | t24=t6 | t24=t7 | t24=t8 | t24=t9 | t24=t10 | t24=t11 | t24=t12 | t24=t13 | t24=t14 | t24=t15 | t24=t16 | t24=t17 | t24=t18 | t24=t19 | t24=t20 | t24=t21 | t24=t22 | t24=t23 | t24=t24 | t24=t25 | t24=t26 | t24=t27 | t24=t28 | t24=t29 | t24=t30 | t24=t31 | t24=t32 | t24=t33 | t24=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f
@@ -1636,17 +1587,13 @@ CONTEXT:  referenced column: t25=t13
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25=t14
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t25=t18
+CONTEXT:  referenced column: t25=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t25=t19
+CONTEXT:  referenced column: t25=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t25=t20
+CONTEXT:  referenced column: t25=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t25=t21
+CONTEXT:  referenced column: t25=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_eq" statement 1
 referenced column: t25=t22
@@ -1720,17 +1667,13 @@ CONTEXT:  referenced column: t26=t13
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t26=t14
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t26=t18
+CONTEXT:  referenced column: t26=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t26=t19
+CONTEXT:  referenced column: t26=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t26=t20
+CONTEXT:  referenced column: t26=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t26=t21
+CONTEXT:  referenced column: t26=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_eq" statement 1
 referenced column: t26=t22
@@ -1776,20 +1719,15 @@ t27.a = t33.a as 't27=t33',
 t27.a = t34.a as 't27=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t27=t15
+CONTEXT:  referenced column: t27=t15
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t27=t18
+CONTEXT:  referenced column: t27=t18
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t27=t19
+CONTEXT:  referenced column: t27=t19
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t27=t20
+CONTEXT:  referenced column: t27=t20
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t27=t21
+CONTEXT:  referenced column: t27=t21
  t27=t1 | t27=t2 | t27=t3 | t27=t4 | t27=t5 | t27=t6 | t27=t7 | t27=t8 | t27=t9 | t27=t10 | t27=t11 | t27=t12 | t27=t13 | t27=t14 | t27=t15 | t27=t16 | t27=t17 | t27=t18 | t27=t19 | t27=t20 | t27=t21 | t27=t22 | t27=t23 | t27=t24 | t27=t25 | t27=t26 | t27=t27 | t27=t28 | t27=t29 | t27=t30 | t27=t31 | t27=t32 | t27=t33 | t27=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | f
@@ -1832,20 +1770,15 @@ t28.a = t33.a as 't28=t33',
 t28.a = t34.a as 't28=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t28=t15
+CONTEXT:  referenced column: t28=t15
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t28=t18
+CONTEXT:  referenced column: t28=t18
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t28=t19
+CONTEXT:  referenced column: t28=t19
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t28=t20
+CONTEXT:  referenced column: t28=t20
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t28=t21
+CONTEXT:  referenced column: t28=t21
  t28=t1 | t28=t2 | t28=t3 | t28=t4 | t28=t5 | t28=t6 | t28=t7 | t28=t8 | t28=t9 | t28=t10 | t28=t11 | t28=t12 | t28=t13 | t28=t14 | t28=t15 | t28=t16 | t28=t17 | t28=t18 | t28=t19 | t28=t20 | t28=t21 | t28=t22 | t28=t23 | t28=t24 | t28=t25 | t28=t26 | t28=t27 | t28=t28 | t28=t29 | t28=t30 | t28=t31 | t28=t32 | t28=t33 | t28=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | f
@@ -1888,20 +1821,15 @@ t29.a = t33.a as 't29=t33',
 t29.a = t34.a as 't29=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t29=t15
+CONTEXT:  referenced column: t29=t15
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t29=t18
+CONTEXT:  referenced column: t29=t18
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t29=t19
+CONTEXT:  referenced column: t29=t19
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t29=t20
+CONTEXT:  referenced column: t29=t20
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t29=t21
+CONTEXT:  referenced column: t29=t21
  t29=t1 | t29=t2 | t29=t3 | t29=t4 | t29=t5 | t29=t6 | t29=t7 | t29=t8 | t29=t9 | t29=t10 | t29=t11 | t29=t12 | t29=t13 | t29=t14 | t29=t15 | t29=t16 | t29=t17 | t29=t18 | t29=t19 | t29=t20 | t29=t21 | t29=t22 | t29=t23 | t29=t24 | t29=t25 | t29=t26 | t29=t27 | t29=t28 | t29=t29 | t29=t30 | t29=t31 | t29=t32 | t29=t33 | t29=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | f
@@ -1944,20 +1872,15 @@ t30.a = t33.a as 't30=t33',
 t30.a = t34.a as 't30=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t30=t15
+CONTEXT:  referenced column: t30=t15
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t30=t18
+CONTEXT:  referenced column: t30=t18
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t30=t19
+CONTEXT:  referenced column: t30=t19
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t30=t20
+CONTEXT:  referenced column: t30=t20
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t30=t21
+CONTEXT:  referenced column: t30=t21
  t30=t1 | t30=t2 | t30=t3 | t30=t4 | t30=t5 | t30=t6 | t30=t7 | t30=t8 | t30=t9 | t30=t10 | t30=t11 | t30=t12 | t30=t13 | t30=t14 | t30=t15 | t30=t16 | t30=t17 | t30=t18 | t30=t19 | t30=t20 | t30=t21 | t30=t22 | t30=t23 | t30=t24 | t30=t25 | t30=t26 | t30=t27 | t30=t28 | t30=t29 | t30=t30 | t30=t31 | t30=t32 | t30=t33 | t30=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | f
@@ -2028,24 +1951,19 @@ CONTEXT:  referenced column: t31=t13
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31=t14
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t31=t15
+CONTEXT:  referenced column: t31=t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31=t16
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t31=t18
+CONTEXT:  referenced column: t31=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t31=t19
+CONTEXT:  referenced column: t31=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t31=t20
+CONTEXT:  referenced column: t31=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t31=t21
+CONTEXT:  referenced column: t31=t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31=t22
  t31=t1 | t31=t2 | t31=t3 | t31=t4 | t31=t5 | t31=t6 | t31=t7 | t31=t8 | t31=t9 | t31=t10 | t31=t11 | t31=t12 | t31=t13 | t31=t14 | t31=t15 | t31=t16 | t31=t17 | t31=t18 | t31=t19 | t31=t20 | t31=t21 | t31=t22 | t31=t23 | t31=t24 | t31=t25 | t31=t26 | t31=t27 | t31=t28 | t31=t29 | t31=t30 | t31=t31 | t31=t32 | t31=t33 | t31=t34 
@@ -2131,20 +2049,15 @@ t33.a = t33.a as 't33=t33',
 t33.a = t34.a as 't33=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t33=t15
+CONTEXT:  referenced column: t33=t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t33=t18
+CONTEXT:  referenced column: t33=t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-referenced column: t33=t19
+CONTEXT:  referenced column: t33=t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t33=t20
+CONTEXT:  referenced column: t33=t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-referenced column: t33=t21
+CONTEXT:  referenced column: t33=t21
  t33=t1 | t33=t2 | t33=t3 | t33=t4 | t33=t5 | t33=t6 | t33=t7 | t33=t8 | t33=t9 | t33=t10 | t33=t11 | t33=t12 | t33=t13 | t33=t14 | t33=t15 | t33=t16 | t33=t17 | t33=t18 | t33=t19 | t33=t20 | t33=t21 | t33=t22 | t33=t23 | t33=t24 | t33=t25 | t33=t26 | t33=t27 | t33=t28 | t33=t29 | t33=t30 | t33=t31 | t33=t32 | t33=t33 | t33=t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  t      | t      | t      | t      | t      | t      | t      | t      | t      | f       | f       | t       | f       | t       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | f
@@ -2895,27 +2808,22 @@ referenced column: t15<t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t15<t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15<t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15<t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t15<t25
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t15<t27
+CONTEXT:  referenced column: t15<t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t15<t28
+CONTEXT:  referenced column: t15<t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t15<t29
+CONTEXT:  referenced column: t15<t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t15<t30
+CONTEXT:  referenced column: t15<t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t15<t31
+CONTEXT:  referenced column: t15<t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t15<t32
@@ -3088,32 +2996,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_lt" statement 1
 referenced column: t18<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t23
+CONTEXT:  referenced column: t18<t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t24
+CONTEXT:  referenced column: t18<t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t25
+CONTEXT:  referenced column: t18<t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t26
+CONTEXT:  referenced column: t18<t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t27
+CONTEXT:  referenced column: t18<t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t28
+CONTEXT:  referenced column: t18<t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t29
+CONTEXT:  referenced column: t18<t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t30
+CONTEXT:  referenced column: t18<t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t18<t31
+CONTEXT:  referenced column: t18<t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_lt" statement 1
 referenced column: t18<t32
@@ -3204,32 +3103,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_lt" statement 1
 referenced column: t19<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t23
+CONTEXT:  referenced column: t19<t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t24
+CONTEXT:  referenced column: t19<t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t25
+CONTEXT:  referenced column: t19<t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t26
+CONTEXT:  referenced column: t19<t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t27
+CONTEXT:  referenced column: t19<t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t28
+CONTEXT:  referenced column: t19<t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t29
+CONTEXT:  referenced column: t19<t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t30
+CONTEXT:  referenced column: t19<t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_lt" statement 1
-referenced column: t19<t31
+CONTEXT:  referenced column: t19<t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_lt" statement 1
 referenced column: t19<t32
@@ -3320,32 +3210,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_lt" statement 1
 referenced column: t20<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t23
+CONTEXT:  referenced column: t20<t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t24
+CONTEXT:  referenced column: t20<t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t25
+CONTEXT:  referenced column: t20<t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t26
+CONTEXT:  referenced column: t20<t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t27
+CONTEXT:  referenced column: t20<t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t28
+CONTEXT:  referenced column: t20<t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t29
+CONTEXT:  referenced column: t20<t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t30
+CONTEXT:  referenced column: t20<t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t20<t31
+CONTEXT:  referenced column: t20<t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t20<t32
@@ -3436,32 +3317,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_lt" statement 1
 referenced column: t21<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t23
+CONTEXT:  referenced column: t21<t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t24
+CONTEXT:  referenced column: t21<t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t25
+CONTEXT:  referenced column: t21<t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t26
+CONTEXT:  referenced column: t21<t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t27
+CONTEXT:  referenced column: t21<t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t28
+CONTEXT:  referenced column: t21<t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t29
+CONTEXT:  referenced column: t21<t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t30
+CONTEXT:  referenced column: t21<t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_lt" statement 1
-referenced column: t21<t31
+CONTEXT:  referenced column: t21<t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t21<t32
@@ -3565,17 +3437,13 @@ CONTEXT:  referenced column: t23<t16
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t23<t18
+CONTEXT:  referenced column: t23<t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t23<t19
+CONTEXT:  referenced column: t23<t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t23<t20
+CONTEXT:  referenced column: t23<t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t23<t21
+CONTEXT:  referenced column: t23<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t23<t25
  t23<t1 | t23<t2 | t23<t3 | t23<t4 | t23<t5 | t23<t6 | t23<t7 | t23<t8 | t23<t9 | t23<t10 | t23<t11 | t23<t12 | t23<t13 | t23<t14 | t23<t15 | t23<t16 | t23<t17 | t23<t18 | t23<t19 | t23<t20 | t23<t21 | t23<t22 | t23<t23 | t23<t24 | t23<t25 | t23<t26 | t23<t27 | t23<t28 | t23<t29 | t23<t30 | t23<t31 | t23<t32 | t23<t33 | t23<t34 
@@ -3626,17 +3494,13 @@ CONTEXT:  referenced column: t24<t16
 WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24<t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t24<t18
+CONTEXT:  referenced column: t24<t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t24<t19
+CONTEXT:  referenced column: t24<t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t24<t20
+CONTEXT:  referenced column: t24<t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t24<t21
+CONTEXT:  referenced column: t24<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t24<t25
  t24<t1 | t24<t2 | t24<t3 | t24<t4 | t24<t5 | t24<t6 | t24<t7 | t24<t8 | t24<t9 | t24<t10 | t24<t11 | t24<t12 | t24<t13 | t24<t14 | t24<t15 | t24<t16 | t24<t17 | t24<t18 | t24<t19 | t24<t20 | t24<t21 | t24<t22 | t24<t23 | t24<t24 | t24<t25 | t24<t26 | t24<t27 | t24<t28 | t24<t29 | t24<t30 | t24<t31 | t24<t32 | t24<t33 | t24<t34 
@@ -3719,17 +3583,13 @@ CONTEXT:  referenced column: float8lt
 SQL function "binary_time_lt" statement 1
 referenced column: t25<t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t25<t18
+CONTEXT:  referenced column: t25<t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t25<t19
+CONTEXT:  referenced column: t25<t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t25<t20
+CONTEXT:  referenced column: t25<t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t25<t21
+CONTEXT:  referenced column: t25<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_lt" statement 1
 referenced column: t25<t22
@@ -3819,17 +3679,13 @@ CONTEXT:  referenced column: float8lt
 SQL function "binary_time_lt" statement 1
 referenced column: t26<t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t26<t18
+CONTEXT:  referenced column: t26<t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t26<t19
+CONTEXT:  referenced column: t26<t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t26<t20
+CONTEXT:  referenced column: t26<t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t26<t21
+CONTEXT:  referenced column: t26<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_lt" statement 1
 referenced column: t26<t22
@@ -4065,24 +3921,19 @@ CONTEXT:  referenced column: t31<t12
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31<t13
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t31<t15
+CONTEXT:  referenced column: t31<t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31<t16
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31<t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t31<t18
+CONTEXT:  referenced column: t31<t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t31<t19
+CONTEXT:  referenced column: t31<t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t31<t20
+CONTEXT:  referenced column: t31<t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t31<t21
+CONTEXT:  referenced column: t31<t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31<t22
  t31<t1 | t31<t2 | t31<t3 | t31<t4 | t31<t5 | t31<t6 | t31<t7 | t31<t8 | t31<t9 | t31<t10 | t31<t11 | t31<t12 | t31<t13 | t31<t14 | t31<t15 | t31<t16 | t31<t17 | t31<t18 | t31<t19 | t31<t20 | t31<t21 | t31<t22 | t31<t23 | t31<t24 | t31<t25 | t31<t26 | t31<t27 | t31<t28 | t31<t29 | t31<t30 | t31<t31 | t31<t32 | t31<t33 | t31<t34 
@@ -4168,20 +4019,15 @@ t33.a < t33.a as 't33<t33',
 t33.a < t34.a as 't33<t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t33<t15
+CONTEXT:  referenced column: t33<t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t33<t18
+CONTEXT:  referenced column: t33<t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_lt" statement 1
-referenced column: t33<t19
+CONTEXT:  referenced column: t33<t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t33<t20
+CONTEXT:  referenced column: t33<t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_lt" statement 1
-referenced column: t33<t21
+CONTEXT:  referenced column: t33<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t33<t25
  t33<t1 | t33<t2 | t33<t3 | t33<t4 | t33<t5 | t33<t6 | t33<t7 | t33<t8 | t33<t9 | t33<t10 | t33<t11 | t33<t12 | t33<t13 | t33<t14 | t33<t15 | t33<t16 | t33<t17 | t33<t18 | t33<t19 | t33<t20 | t33<t21 | t33<t22 | t33<t23 | t33<t24 | t33<t25 | t33<t26 | t33<t27 | t33<t28 | t33<t29 | t33<t30 | t33<t31 | t33<t32 | t33<t33 | t33<t34 
@@ -4318,17 +4164,13 @@ CONTEXT:  referenced column: t2<>t16
 WARNING:  invalid input syntax for type double precision: "19:10:50.3456"
 CONTEXT:  referenced column: t2<>t17
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t2<>t18
+CONTEXT:  referenced column: t2<>t18
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t2<>t19
+CONTEXT:  referenced column: t2<>t19
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t2<>t20
+CONTEXT:  referenced column: t2<>t20
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t2<>t21
+CONTEXT:  referenced column: t2<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t2<>t25
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -4440,17 +4282,13 @@ CONTEXT:  referenced column: t4<>t16
 WARNING:  invalid input syntax for type double precision: "19:10:50.3456"
 CONTEXT:  referenced column: t4<>t17
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t4<>t18
+CONTEXT:  referenced column: t4<>t18
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t4<>t19
+CONTEXT:  referenced column: t4<>t19
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t4<>t20
+CONTEXT:  referenced column: t4<>t20
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t4<>t21
+CONTEXT:  referenced column: t4<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t4<>t25
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -4546,17 +4384,13 @@ t6.a <> t33.a as 't6<>t33',
 t6.a <> t34.a as 't6<>t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t6<>t18
+CONTEXT:  referenced column: t6<>t18
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t6<>t19
+CONTEXT:  referenced column: t6<>t19
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t6<>t20
+CONTEXT:  referenced column: t6<>t20
 WARNING:  invalid input syntax for type timestamp: "1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t6<>t21
+CONTEXT:  referenced column: t6<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t6<>t25
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -4994,27 +4828,22 @@ referenced column: t15<>t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ne" statement 1
 referenced column: t15<>t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15<>t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15<>t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t15<>t25
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t15<>t27
+CONTEXT:  referenced column: t15<>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t15<>t28
+CONTEXT:  referenced column: t15<>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t15<>t29
+CONTEXT:  referenced column: t15<>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t15<>t30
+CONTEXT:  referenced column: t15<>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t15<>t31
+CONTEXT:  referenced column: t15<>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ne" statement 1
 referenced column: t15<>t32
@@ -5205,32 +5034,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ne" statement 1
 referenced column: t18<>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t23
+CONTEXT:  referenced column: t18<>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t24
+CONTEXT:  referenced column: t18<>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t25
+CONTEXT:  referenced column: t18<>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t26
+CONTEXT:  referenced column: t18<>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t27
+CONTEXT:  referenced column: t18<>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t28
+CONTEXT:  referenced column: t18<>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t29
+CONTEXT:  referenced column: t18<>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t30
+CONTEXT:  referenced column: t18<>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t18<>t31
+CONTEXT:  referenced column: t18<>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ne" statement 1
 referenced column: t18<>t32
@@ -5321,32 +5141,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ne" statement 1
 referenced column: t19<>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t23
+CONTEXT:  referenced column: t19<>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t24
+CONTEXT:  referenced column: t19<>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t25
+CONTEXT:  referenced column: t19<>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t26
+CONTEXT:  referenced column: t19<>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t27
+CONTEXT:  referenced column: t19<>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t28
+CONTEXT:  referenced column: t19<>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t29
+CONTEXT:  referenced column: t19<>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t30
+CONTEXT:  referenced column: t19<>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ne" statement 1
-referenced column: t19<>t31
+CONTEXT:  referenced column: t19<>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ne" statement 1
 referenced column: t19<>t32
@@ -5437,32 +5248,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ne" statement 1
 referenced column: t20<>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t23
+CONTEXT:  referenced column: t20<>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t24
+CONTEXT:  referenced column: t20<>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t25
+CONTEXT:  referenced column: t20<>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t26
+CONTEXT:  referenced column: t20<>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t27
+CONTEXT:  referenced column: t20<>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t28
+CONTEXT:  referenced column: t20<>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t29
+CONTEXT:  referenced column: t20<>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t30
+CONTEXT:  referenced column: t20<>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t20<>t31
+CONTEXT:  referenced column: t20<>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ne" statement 1
 referenced column: t20<>t32
@@ -5553,32 +5355,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ne" statement 1
 referenced column: t21<>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t23
+CONTEXT:  referenced column: t21<>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t24
+CONTEXT:  referenced column: t21<>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t25
+CONTEXT:  referenced column: t21<>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t26
+CONTEXT:  referenced column: t21<>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t27
+CONTEXT:  referenced column: t21<>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t28
+CONTEXT:  referenced column: t21<>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t29
+CONTEXT:  referenced column: t21<>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t30
+CONTEXT:  referenced column: t21<>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ne" statement 1
-referenced column: t21<>t31
+CONTEXT:  referenced column: t21<>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ne" statement 1
 referenced column: t21<>t32
@@ -5675,7 +5468,7 @@ t23.a <> t32.a as 't23<>t32',
 t23.a <> t33.a as 't23<>t33',
 t23.a <> t34.a as 't23<>t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<>t15
 WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
 CONTEXT:  referenced column: t23<>t16
@@ -5686,17 +5479,13 @@ CONTEXT:  referenced column: t23<>t17
 WARNING:  invalid input syntax for type double precision: "19:10:50.3456"
 CONTEXT:  referenced column: t23<>t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t23<>t18
+CONTEXT:  referenced column: t23<>t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t23<>t19
+CONTEXT:  referenced column: t23<>t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t23<>t20
+CONTEXT:  referenced column: t23<>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t23<>t21
+CONTEXT:  referenced column: t23<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t23<>t25
  t23<>t1 | t23<>t2 | t23<>t3 | t23<>t4 | t23<>t5 | t23<>t6 | t23<>t7 | t23<>t8 | t23<>t9 | t23<>t10 | t23<>t11 | t23<>t12 | t23<>t13 | t23<>t14 | t23<>t15 | t23<>t16 | t23<>t17 | t23<>t18 | t23<>t19 | t23<>t20 | t23<>t21 | t23<>t22 | t23<>t23 | t23<>t24 | t23<>t25 | t23<>t26 | t23<>t27 | t23<>t28 | t23<>t29 | t23<>t30 | t23<>t31 | t23<>t32 | t23<>t33 | t23<>t34 
@@ -5740,7 +5529,7 @@ t24.a <> t32.a as 't24<>t32',
 t24.a <> t33.a as 't24<>t33',
 t24.a <> t34.a as 't24<>t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24<>t15
 WARNING:  value "-1.1" is out of range for type smallint unsigned
 CONTEXT:  referenced column: t24<>t16
@@ -5751,17 +5540,13 @@ CONTEXT:  referenced column: t24<>t17
 WARNING:  invalid input syntax for type double precision: "19:10:50.3456"
 CONTEXT:  referenced column: t24<>t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t24<>t18
+CONTEXT:  referenced column: t24<>t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t24<>t19
+CONTEXT:  referenced column: t24<>t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t24<>t20
+CONTEXT:  referenced column: t24<>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t24<>t21
+CONTEXT:  referenced column: t24<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t24<>t25
  t24<>t1 | t24<>t2 | t24<>t3 | t24<>t4 | t24<>t5 | t24<>t6 | t24<>t7 | t24<>t8 | t24<>t9 | t24<>t10 | t24<>t11 | t24<>t12 | t24<>t13 | t24<>t14 | t24<>t15 | t24<>t16 | t24<>t17 | t24<>t18 | t24<>t19 | t24<>t20 | t24<>t21 | t24<>t22 | t24<>t23 | t24<>t24 | t24<>t25 | t24<>t26 | t24<>t27 | t24<>t28 | t24<>t29 | t24<>t30 | t24<>t31 | t24<>t32 | t24<>t33 | t24<>t34 
@@ -5840,17 +5625,13 @@ CONTEXT:  referenced column: t25<>t16
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<>t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t25<>t18
+CONTEXT:  referenced column: t25<>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t25<>t19
+CONTEXT:  referenced column: t25<>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t25<>t20
+CONTEXT:  referenced column: t25<>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t25<>t21
+CONTEXT:  referenced column: t25<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ne" statement 1
 referenced column: t25<>t22
@@ -5928,17 +5709,13 @@ CONTEXT:  referenced column: t26<>t13
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t26<>t14
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t26<>t18
+CONTEXT:  referenced column: t26<>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t26<>t19
+CONTEXT:  referenced column: t26<>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t26<>t20
+CONTEXT:  referenced column: t26<>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t26<>t21
+CONTEXT:  referenced column: t26<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ne" statement 1
 referenced column: t26<>t22
@@ -6174,8 +5951,7 @@ CONTEXT:  referenced column: t31<>t12
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31<>t13
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t31<>t15
+CONTEXT:  referenced column: t31<>t15
 WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: t31<>t16
@@ -6187,17 +5963,13 @@ CONTEXT:  referenced column: t31<>t17
 WARNING:  invalid input syntax for type double precision: "19:10:50.3456"
 CONTEXT:  referenced column: t31<>t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t31<>t18
+CONTEXT:  referenced column: t31<>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t31<>t19
+CONTEXT:  referenced column: t31<>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t31<>t20
+CONTEXT:  referenced column: t31<>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t31<>t21
+CONTEXT:  referenced column: t31<>t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31<>t22
  t31<>t1 | t31<>t2 | t31<>t3 | t31<>t4 | t31<>t5 | t31<>t6 | t31<>t7 | t31<>t8 | t31<>t9 | t31<>t10 | t31<>t11 | t31<>t12 | t31<>t13 | t31<>t14 | t31<>t15 | t31<>t16 | t31<>t17 | t31<>t18 | t31<>t19 | t31<>t20 | t31<>t21 | t31<>t22 | t31<>t23 | t31<>t24 | t31<>t25 | t31<>t26 | t31<>t27 | t31<>t28 | t31<>t29 | t31<>t30 | t31<>t31 | t31<>t32 | t31<>t33 | t31<>t34 
@@ -6283,20 +6055,15 @@ t33.a <> t33.a as 't33<>t33',
 t33.a <> t34.a as 't33<>t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t33<>t15
+CONTEXT:  referenced column: t33<>t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t33<>t18
+CONTEXT:  referenced column: t33<>t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_ne" statement 1
-referenced column: t33<>t19
+CONTEXT:  referenced column: t33<>t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t33<>t20
+CONTEXT:  referenced column: t33<>t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ne" statement 1
-referenced column: t33<>t21
+CONTEXT:  referenced column: t33<>t21
  t33<>t1 | t33<>t2 | t33<>t3 | t33<>t4 | t33<>t5 | t33<>t6 | t33<>t7 | t33<>t8 | t33<>t9 | t33<>t10 | t33<>t11 | t33<>t12 | t33<>t13 | t33<>t14 | t33<>t15 | t33<>t16 | t33<>t17 | t33<>t18 | t33<>t19 | t33<>t20 | t33<>t21 | t33<>t22 | t33<>t23 | t33<>t24 | t33<>t25 | t33<>t26 | t33<>t27 | t33<>t28 | t33<>t29 | t33<>t30 | t33<>t31 | t33<>t32 | t33<>t33 | t33<>t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
  f       | f       | f       | f       | f       | f       | f       | f       | f       | t        | t        | f        | t        | f        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | f        | f        | t
@@ -7047,27 +6814,22 @@ referenced column: t15<=t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t15<=t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15<=t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15<=t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t15<=t25
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t15<=t27
+CONTEXT:  referenced column: t15<=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t15<=t28
+CONTEXT:  referenced column: t15<=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t15<=t29
+CONTEXT:  referenced column: t15<=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t15<=t30
+CONTEXT:  referenced column: t15<=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t15<=t31
+CONTEXT:  referenced column: t15<=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t15<=t32
@@ -7240,32 +7002,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_le" statement 1
 referenced column: t18<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t23
+CONTEXT:  referenced column: t18<=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t24
+CONTEXT:  referenced column: t18<=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t25
+CONTEXT:  referenced column: t18<=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t26
+CONTEXT:  referenced column: t18<=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t27
+CONTEXT:  referenced column: t18<=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t28
+CONTEXT:  referenced column: t18<=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t29
+CONTEXT:  referenced column: t18<=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t30
+CONTEXT:  referenced column: t18<=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t18<=t31
+CONTEXT:  referenced column: t18<=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_le" statement 1
 referenced column: t18<=t32
@@ -7356,32 +7109,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_le" statement 1
 referenced column: t19<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t23
+CONTEXT:  referenced column: t19<=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t24
+CONTEXT:  referenced column: t19<=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t25
+CONTEXT:  referenced column: t19<=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t26
+CONTEXT:  referenced column: t19<=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t27
+CONTEXT:  referenced column: t19<=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t28
+CONTEXT:  referenced column: t19<=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t29
+CONTEXT:  referenced column: t19<=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t30
+CONTEXT:  referenced column: t19<=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_le" statement 1
-referenced column: t19<=t31
+CONTEXT:  referenced column: t19<=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_le" statement 1
 referenced column: t19<=t32
@@ -7472,32 +7216,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_le" statement 1
 referenced column: t20<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t23
+CONTEXT:  referenced column: t20<=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t24
+CONTEXT:  referenced column: t20<=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t25
+CONTEXT:  referenced column: t20<=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t26
+CONTEXT:  referenced column: t20<=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t27
+CONTEXT:  referenced column: t20<=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t28
+CONTEXT:  referenced column: t20<=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t29
+CONTEXT:  referenced column: t20<=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t30
+CONTEXT:  referenced column: t20<=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t20<=t31
+CONTEXT:  referenced column: t20<=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t20<=t32
@@ -7588,32 +7323,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_le" statement 1
 referenced column: t21<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t23
+CONTEXT:  referenced column: t21<=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t24
+CONTEXT:  referenced column: t21<=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t25
+CONTEXT:  referenced column: t21<=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t26
+CONTEXT:  referenced column: t21<=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t27
+CONTEXT:  referenced column: t21<=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t28
+CONTEXT:  referenced column: t21<=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t29
+CONTEXT:  referenced column: t21<=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t30
+CONTEXT:  referenced column: t21<=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_le" statement 1
-referenced column: t21<=t31
+CONTEXT:  referenced column: t21<=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t21<=t32
@@ -7717,17 +7443,13 @@ CONTEXT:  referenced column: t23<=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t23<=t18
+CONTEXT:  referenced column: t23<=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t23<=t19
+CONTEXT:  referenced column: t23<=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t23<=t20
+CONTEXT:  referenced column: t23<=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t23<=t21
+CONTEXT:  referenced column: t23<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t23<=t25
  t23<=t1 | t23<=t2 | t23<=t3 | t23<=t4 | t23<=t5 | t23<=t6 | t23<=t7 | t23<=t8 | t23<=t9 | t23<=t10 | t23<=t11 | t23<=t12 | t23<=t13 | t23<=t14 | t23<=t15 | t23<=t16 | t23<=t17 | t23<=t18 | t23<=t19 | t23<=t20 | t23<=t21 | t23<=t22 | t23<=t23 | t23<=t24 | t23<=t25 | t23<=t26 | t23<=t27 | t23<=t28 | t23<=t29 | t23<=t30 | t23<=t31 | t23<=t32 | t23<=t33 | t23<=t34 
@@ -7778,17 +7500,13 @@ CONTEXT:  referenced column: t24<=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24<=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t24<=t18
+CONTEXT:  referenced column: t24<=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t24<=t19
+CONTEXT:  referenced column: t24<=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t24<=t20
+CONTEXT:  referenced column: t24<=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t24<=t21
+CONTEXT:  referenced column: t24<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t24<=t25
  t24<=t1 | t24<=t2 | t24<=t3 | t24<=t4 | t24<=t5 | t24<=t6 | t24<=t7 | t24<=t8 | t24<=t9 | t24<=t10 | t24<=t11 | t24<=t12 | t24<=t13 | t24<=t14 | t24<=t15 | t24<=t16 | t24<=t17 | t24<=t18 | t24<=t19 | t24<=t20 | t24<=t21 | t24<=t22 | t24<=t23 | t24<=t24 | t24<=t25 | t24<=t26 | t24<=t27 | t24<=t28 | t24<=t29 | t24<=t30 | t24<=t31 | t24<=t32 | t24<=t33 | t24<=t34 
@@ -7871,17 +7589,13 @@ CONTEXT:  referenced column: float8le
 SQL function "binary_time_le" statement 1
 referenced column: t25<=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t25<=t18
+CONTEXT:  referenced column: t25<=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t25<=t19
+CONTEXT:  referenced column: t25<=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t25<=t20
+CONTEXT:  referenced column: t25<=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t25<=t21
+CONTEXT:  referenced column: t25<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_le" statement 1
 referenced column: t25<=t22
@@ -7971,17 +7685,13 @@ CONTEXT:  referenced column: float8le
 SQL function "binary_time_le" statement 1
 referenced column: t26<=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t26<=t18
+CONTEXT:  referenced column: t26<=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t26<=t19
+CONTEXT:  referenced column: t26<=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t26<=t20
+CONTEXT:  referenced column: t26<=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t26<=t21
+CONTEXT:  referenced column: t26<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_le" statement 1
 referenced column: t26<=t22
@@ -8217,24 +7927,19 @@ CONTEXT:  referenced column: t31<=t12
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31<=t13
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t31<=t15
+CONTEXT:  referenced column: t31<=t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31<=t16
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31<=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t31<=t18
+CONTEXT:  referenced column: t31<=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t31<=t19
+CONTEXT:  referenced column: t31<=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t31<=t20
+CONTEXT:  referenced column: t31<=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t31<=t21
+CONTEXT:  referenced column: t31<=t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31<=t22
  t31<=t1 | t31<=t2 | t31<=t3 | t31<=t4 | t31<=t5 | t31<=t6 | t31<=t7 | t31<=t8 | t31<=t9 | t31<=t10 | t31<=t11 | t31<=t12 | t31<=t13 | t31<=t14 | t31<=t15 | t31<=t16 | t31<=t17 | t31<=t18 | t31<=t19 | t31<=t20 | t31<=t21 | t31<=t22 | t31<=t23 | t31<=t24 | t31<=t25 | t31<=t26 | t31<=t27 | t31<=t28 | t31<=t29 | t31<=t30 | t31<=t31 | t31<=t32 | t31<=t33 | t31<=t34 
@@ -8320,20 +8025,15 @@ t33.a <= t33.a as 't33<=t33',
 t33.a <= t34.a as 't33<=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t33<=t15
+CONTEXT:  referenced column: t33<=t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t33<=t18
+CONTEXT:  referenced column: t33<=t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_le" statement 1
-referenced column: t33<=t19
+CONTEXT:  referenced column: t33<=t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t33<=t20
+CONTEXT:  referenced column: t33<=t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_le" statement 1
-referenced column: t33<=t21
+CONTEXT:  referenced column: t33<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t33<=t25
  t33<=t1 | t33<=t2 | t33<=t3 | t33<=t4 | t33<=t5 | t33<=t6 | t33<=t7 | t33<=t8 | t33<=t9 | t33<=t10 | t33<=t11 | t33<=t12 | t33<=t13 | t33<=t14 | t33<=t15 | t33<=t16 | t33<=t17 | t33<=t18 | t33<=t19 | t33<=t20 | t33<=t21 | t33<=t22 | t33<=t23 | t33<=t24 | t33<=t25 | t33<=t26 | t33<=t27 | t33<=t28 | t33<=t29 | t33<=t30 | t33<=t31 | t33<=t32 | t33<=t33 | t33<=t34 
@@ -9086,27 +8786,22 @@ referenced column: t15>t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t15>t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15>t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15>t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t15>t25
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t15>t27
+CONTEXT:  referenced column: t15>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t15>t28
+CONTEXT:  referenced column: t15>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t15>t29
+CONTEXT:  referenced column: t15>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t15>t30
+CONTEXT:  referenced column: t15>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t15>t31
+CONTEXT:  referenced column: t15>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t15>t32
@@ -9279,32 +8974,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_gt" statement 1
 referenced column: t18>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t23
+CONTEXT:  referenced column: t18>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t24
+CONTEXT:  referenced column: t18>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t25
+CONTEXT:  referenced column: t18>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t26
+CONTEXT:  referenced column: t18>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t27
+CONTEXT:  referenced column: t18>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t28
+CONTEXT:  referenced column: t18>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t29
+CONTEXT:  referenced column: t18>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t30
+CONTEXT:  referenced column: t18>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t18>t31
+CONTEXT:  referenced column: t18>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_gt" statement 1
 referenced column: t18>t32
@@ -9395,32 +9081,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_gt" statement 1
 referenced column: t19>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t23
+CONTEXT:  referenced column: t19>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t24
+CONTEXT:  referenced column: t19>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t25
+CONTEXT:  referenced column: t19>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t26
+CONTEXT:  referenced column: t19>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t27
+CONTEXT:  referenced column: t19>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t28
+CONTEXT:  referenced column: t19>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t29
+CONTEXT:  referenced column: t19>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t30
+CONTEXT:  referenced column: t19>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_gt" statement 1
-referenced column: t19>t31
+CONTEXT:  referenced column: t19>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_gt" statement 1
 referenced column: t19>t32
@@ -9511,32 +9188,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_gt" statement 1
 referenced column: t20>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t23
+CONTEXT:  referenced column: t20>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t24
+CONTEXT:  referenced column: t20>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t25
+CONTEXT:  referenced column: t20>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t26
+CONTEXT:  referenced column: t20>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t27
+CONTEXT:  referenced column: t20>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t28
+CONTEXT:  referenced column: t20>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t29
+CONTEXT:  referenced column: t20>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t30
+CONTEXT:  referenced column: t20>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t20>t31
+CONTEXT:  referenced column: t20>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t20>t32
@@ -9627,32 +9295,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_gt" statement 1
 referenced column: t21>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t23
+CONTEXT:  referenced column: t21>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t24
+CONTEXT:  referenced column: t21>t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t25
+CONTEXT:  referenced column: t21>t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t26
+CONTEXT:  referenced column: t21>t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t27
+CONTEXT:  referenced column: t21>t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t28
+CONTEXT:  referenced column: t21>t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t29
+CONTEXT:  referenced column: t21>t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t30
+CONTEXT:  referenced column: t21>t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_gt" statement 1
-referenced column: t21>t31
+CONTEXT:  referenced column: t21>t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t21>t32
@@ -9756,17 +9415,13 @@ CONTEXT:  referenced column: t23>t16
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23>t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t23>t18
+CONTEXT:  referenced column: t23>t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t23>t19
+CONTEXT:  referenced column: t23>t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t23>t20
+CONTEXT:  referenced column: t23>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t23>t21
+CONTEXT:  referenced column: t23>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t23>t25
  t23>t1 | t23>t2 | t23>t3 | t23>t4 | t23>t5 | t23>t6 | t23>t7 | t23>t8 | t23>t9 | t23>t10 | t23>t11 | t23>t12 | t23>t13 | t23>t14 | t23>t15 | t23>t16 | t23>t17 | t23>t18 | t23>t19 | t23>t20 | t23>t21 | t23>t22 | t23>t23 | t23>t24 | t23>t25 | t23>t26 | t23>t27 | t23>t28 | t23>t29 | t23>t30 | t23>t31 | t23>t32 | t23>t33 | t23>t34 
@@ -9817,17 +9472,13 @@ CONTEXT:  referenced column: t24>t16
 WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24>t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t24>t18
+CONTEXT:  referenced column: t24>t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t24>t19
+CONTEXT:  referenced column: t24>t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t24>t20
+CONTEXT:  referenced column: t24>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t24>t21
+CONTEXT:  referenced column: t24>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t24>t25
  t24>t1 | t24>t2 | t24>t3 | t24>t4 | t24>t5 | t24>t6 | t24>t7 | t24>t8 | t24>t9 | t24>t10 | t24>t11 | t24>t12 | t24>t13 | t24>t14 | t24>t15 | t24>t16 | t24>t17 | t24>t18 | t24>t19 | t24>t20 | t24>t21 | t24>t22 | t24>t23 | t24>t24 | t24>t25 | t24>t26 | t24>t27 | t24>t28 | t24>t29 | t24>t30 | t24>t31 | t24>t32 | t24>t33 | t24>t34 
@@ -9910,17 +9561,13 @@ CONTEXT:  referenced column: float8gt
 SQL function "binary_time_gt" statement 1
 referenced column: t25>t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t25>t18
+CONTEXT:  referenced column: t25>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t25>t19
+CONTEXT:  referenced column: t25>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t25>t20
+CONTEXT:  referenced column: t25>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t25>t21
+CONTEXT:  referenced column: t25>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_gt" statement 1
 referenced column: t25>t22
@@ -10010,17 +9657,13 @@ CONTEXT:  referenced column: float8gt
 SQL function "binary_time_gt" statement 1
 referenced column: t26>t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t26>t18
+CONTEXT:  referenced column: t26>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t26>t19
+CONTEXT:  referenced column: t26>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t26>t20
+CONTEXT:  referenced column: t26>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t26>t21
+CONTEXT:  referenced column: t26>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_gt" statement 1
 referenced column: t26>t22
@@ -10256,24 +9899,19 @@ CONTEXT:  referenced column: t31>t12
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31>t13
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t31>t15
+CONTEXT:  referenced column: t31>t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31>t16
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31>t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t31>t18
+CONTEXT:  referenced column: t31>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t31>t19
+CONTEXT:  referenced column: t31>t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t31>t20
+CONTEXT:  referenced column: t31>t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t31>t21
+CONTEXT:  referenced column: t31>t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31>t22
  t31>t1 | t31>t2 | t31>t3 | t31>t4 | t31>t5 | t31>t6 | t31>t7 | t31>t8 | t31>t9 | t31>t10 | t31>t11 | t31>t12 | t31>t13 | t31>t14 | t31>t15 | t31>t16 | t31>t17 | t31>t18 | t31>t19 | t31>t20 | t31>t21 | t31>t22 | t31>t23 | t31>t24 | t31>t25 | t31>t26 | t31>t27 | t31>t28 | t31>t29 | t31>t30 | t31>t31 | t31>t32 | t31>t33 | t31>t34 
@@ -10359,20 +9997,15 @@ t33.a > t33.a as 't33>t33',
 t33.a > t34.a as 't33>t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t33>t15
+CONTEXT:  referenced column: t33>t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t33>t18
+CONTEXT:  referenced column: t33>t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_gt" statement 1
-referenced column: t33>t19
+CONTEXT:  referenced column: t33>t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t33>t20
+CONTEXT:  referenced column: t33>t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_gt" statement 1
-referenced column: t33>t21
+CONTEXT:  referenced column: t33>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t33>t25
  t33>t1 | t33>t2 | t33>t3 | t33>t4 | t33>t5 | t33>t6 | t33>t7 | t33>t8 | t33>t9 | t33>t10 | t33>t11 | t33>t12 | t33>t13 | t33>t14 | t33>t15 | t33>t16 | t33>t17 | t33>t18 | t33>t19 | t33>t20 | t33>t21 | t33>t22 | t33>t23 | t33>t24 | t33>t25 | t33>t26 | t33>t27 | t33>t28 | t33>t29 | t33>t30 | t33>t31 | t33>t32 | t33>t33 | t33>t34 
@@ -11125,27 +10758,22 @@ referenced column: t15>=t12
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t15>=t13
-WARNING:  value "-1.1                                                                                                " is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15>=t23
-WARNING:  value "-1.1" is out of range for type smallint unsigned
+WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t15>=t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t15>=t25
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t15>=t27
+CONTEXT:  referenced column: t15>=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t15>=t28
+CONTEXT:  referenced column: t15>=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t15>=t29
+CONTEXT:  referenced column: t15>=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t15>=t30
+CONTEXT:  referenced column: t15>=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t15>=t31
+CONTEXT:  referenced column: t15>=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t15>=t32
@@ -11318,32 +10946,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ge" statement 1
 referenced column: t18>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t23
+CONTEXT:  referenced column: t18>=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t24
+CONTEXT:  referenced column: t18>=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t25
+CONTEXT:  referenced column: t18>=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t26
+CONTEXT:  referenced column: t18>=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t27
+CONTEXT:  referenced column: t18>=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t28
+CONTEXT:  referenced column: t18>=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t29
+CONTEXT:  referenced column: t18>=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t30
+CONTEXT:  referenced column: t18>=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t18>=t31
+CONTEXT:  referenced column: t18>=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ge" statement 1
 referenced column: t18>=t32
@@ -11434,32 +11053,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ge" statement 1
 referenced column: t19>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t23
+CONTEXT:  referenced column: t19>=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t24
+CONTEXT:  referenced column: t19>=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t25
+CONTEXT:  referenced column: t19>=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t26
+CONTEXT:  referenced column: t19>=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t27
+CONTEXT:  referenced column: t19>=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t28
+CONTEXT:  referenced column: t19>=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t29
+CONTEXT:  referenced column: t19>=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t30
+CONTEXT:  referenced column: t19>=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "datetime_text_ge" statement 1
-referenced column: t19>=t31
+CONTEXT:  referenced column: t19>=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ge" statement 1
 referenced column: t19>=t32
@@ -11550,32 +11160,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ge" statement 1
 referenced column: t20>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t23
+CONTEXT:  referenced column: t20>=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t24
+CONTEXT:  referenced column: t20>=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t25
+CONTEXT:  referenced column: t20>=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t26
+CONTEXT:  referenced column: t20>=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t27
+CONTEXT:  referenced column: t20>=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t28
+CONTEXT:  referenced column: t20>=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t29
+CONTEXT:  referenced column: t20>=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t30
+CONTEXT:  referenced column: t20>=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t20>=t31
+CONTEXT:  referenced column: t20>=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t20>=t32
@@ -11666,32 +11267,23 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ge" statement 1
 referenced column: t21>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t23
+CONTEXT:  referenced column: t21>=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t24
+CONTEXT:  referenced column: t21>=t24
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t25
+CONTEXT:  referenced column: t21>=t25
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t26
+CONTEXT:  referenced column: t21>=t26
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t27
+CONTEXT:  referenced column: t21>=t27
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t28
+CONTEXT:  referenced column: t21>=t28
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t29
+CONTEXT:  referenced column: t21>=t29
 WARNING:  invalid input syntax for type timestamp: "+1.1"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t30
+CONTEXT:  referenced column: t21>=t30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "timestamp_text_ge" statement 1
-referenced column: t21>=t31
+CONTEXT:  referenced column: t21>=t31
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t21>=t32
@@ -11795,17 +11387,13 @@ CONTEXT:  referenced column: t23>=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23>=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t23>=t18
+CONTEXT:  referenced column: t23>=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t23>=t19
+CONTEXT:  referenced column: t23>=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t23>=t20
+CONTEXT:  referenced column: t23>=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t23>=t21
+CONTEXT:  referenced column: t23>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t23>=t25
  t23>=t1 | t23>=t2 | t23>=t3 | t23>=t4 | t23>=t5 | t23>=t6 | t23>=t7 | t23>=t8 | t23>=t9 | t23>=t10 | t23>=t11 | t23>=t12 | t23>=t13 | t23>=t14 | t23>=t15 | t23>=t16 | t23>=t17 | t23>=t18 | t23>=t19 | t23>=t20 | t23>=t21 | t23>=t22 | t23>=t23 | t23>=t24 | t23>=t25 | t23>=t26 | t23>=t27 | t23>=t28 | t23>=t29 | t23>=t30 | t23>=t31 | t23>=t32 | t23>=t33 | t23>=t34 
@@ -11856,17 +11444,13 @@ CONTEXT:  referenced column: t24>=t16
 WARNING:  invalid input syntax for type timestamp: "-1.1"
 CONTEXT:  referenced column: t24>=t17
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t24>=t18
+CONTEXT:  referenced column: t24>=t18
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t24>=t19
+CONTEXT:  referenced column: t24>=t19
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t24>=t20
+CONTEXT:  referenced column: t24>=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t24>=t21
+CONTEXT:  referenced column: t24>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t24>=t25
  t24>=t1 | t24>=t2 | t24>=t3 | t24>=t4 | t24>=t5 | t24>=t6 | t24>=t7 | t24>=t8 | t24>=t9 | t24>=t10 | t24>=t11 | t24>=t12 | t24>=t13 | t24>=t14 | t24>=t15 | t24>=t16 | t24>=t17 | t24>=t18 | t24>=t19 | t24>=t20 | t24>=t21 | t24>=t22 | t24>=t23 | t24>=t24 | t24>=t25 | t24>=t26 | t24>=t27 | t24>=t28 | t24>=t29 | t24>=t30 | t24>=t31 | t24>=t32 | t24>=t33 | t24>=t34 
@@ -11949,17 +11533,13 @@ CONTEXT:  referenced column: float8ge
 SQL function "binary_time_ge" statement 1
 referenced column: t25>=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t25>=t18
+CONTEXT:  referenced column: t25>=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t25>=t19
+CONTEXT:  referenced column: t25>=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t25>=t20
+CONTEXT:  referenced column: t25>=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t25>=t21
+CONTEXT:  referenced column: t25>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ge" statement 1
 referenced column: t25>=t22
@@ -12049,17 +11629,13 @@ CONTEXT:  referenced column: float8ge
 SQL function "binary_time_ge" statement 1
 referenced column: t26>=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t26>=t18
+CONTEXT:  referenced column: t26>=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t26>=t19
+CONTEXT:  referenced column: t26>=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t26>=t20
+CONTEXT:  referenced column: t26>=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t26>=t21
+CONTEXT:  referenced column: t26>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ge" statement 1
 referenced column: t26>=t22
@@ -12295,24 +11871,19 @@ CONTEXT:  referenced column: t31>=t12
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t31>=t13
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t31>=t15
+CONTEXT:  referenced column: t31>=t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31>=t16
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t31>=t17
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t31>=t18
+CONTEXT:  referenced column: t31>=t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t31>=t19
+CONTEXT:  referenced column: t31>=t19
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t31>=t20
+CONTEXT:  referenced column: t31>=t20
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t31>=t21
+CONTEXT:  referenced column: t31>=t21
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: t31>=t22
  t31>=t1 | t31>=t2 | t31>=t3 | t31>=t4 | t31>=t5 | t31>=t6 | t31>=t7 | t31>=t8 | t31>=t9 | t31>=t10 | t31>=t11 | t31>=t12 | t31>=t13 | t31>=t14 | t31>=t15 | t31>=t16 | t31>=t17 | t31>=t18 | t31>=t19 | t31>=t20 | t31>=t21 | t31>=t22 | t31>=t23 | t31>=t24 | t31>=t25 | t31>=t26 | t31>=t27 | t31>=t28 | t31>=t29 | t31>=t30 | t31>=t31 | t31>=t32 | t31>=t33 | t31>=t34 
@@ -12398,20 +11969,15 @@ t33.a >= t33.a as 't33>=t33',
 t33.a >= t34.a as 't33>=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t33>=t15
+CONTEXT:  referenced column: t33>=t15
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t33>=t18
+CONTEXT:  referenced column: t33>=t18
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_datetime_ge" statement 1
-referenced column: t33>=t19
+CONTEXT:  referenced column: t33>=t19
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t33>=t20
+CONTEXT:  referenced column: t33>=t20
 WARNING:  invalid input syntax for type timestamp: "a"
-CONTEXT:  SQL function "text_timestamp_ge" statement 1
-referenced column: t33>=t21
+CONTEXT:  referenced column: t33>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t33>=t25
  t33>=t1 | t33>=t2 | t33>=t3 | t33>=t4 | t33>=t5 | t33>=t6 | t33>=t7 | t33>=t8 | t33>=t9 | t33>=t10 | t33>=t11 | t33>=t12 | t33>=t13 | t33>=t14 | t33>=t15 | t33>=t16 | t33>=t17 | t33>=t18 | t33>=t19 | t33>=t20 | t33>=t21 | t33>=t22 | t33>=t23 | t33>=t24 | t33>=t25 | t33>=t26 | t33>=t27 | t33>=t28 | t33>=t29 | t33>=t30 | t33>=t31 | t33>=t32 | t33>=t33 | t33>=t34 
