@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set dolphin.b_compatibility_mode to on;
 select 2 between 2 and 23;
  b_between_and 
 ---------------
@@ -775,8 +776,253 @@ select 102 between date'0000-01-01' and timestamp'0000-01-03 00:00:00';
  t
 (1 row)
 
+-- use index when DATEOID/TIMESTAMPOID/TIMESTAMPTZOID with string
+create table test(time time, timetz time with time zone, date date, datetime datetime, timestamp timestamp);
+insert into test values('12:00:00','12:00:00','2024-12-12','2024-12-12','2024-12-12');
+create index on test(time);
+create index on test(timetz);
+create index on test(date);
+create index on test(datetime);
+create index on test(timestamp);
+/* index */
+set enable_seqscan to off;
+explain (costs off) select * from test where time between '12:00:00' and '12:00:00';
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_time_idx on test
+   Index Cond: (("time" >= '12:00:00'::time without time zone) AND ("time" <= '12:00:00'::time without time zone))
+(3 rows)
+
+explain (costs off) select * from test where timetz between '12:00:00' and '12:00:00';
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_timetz_idx on test
+   Index Cond: ((timetz >= '12:00:00-07'::time with time zone) AND (timetz <= '12:00:00-07'::time with time zone))
+(3 rows)
+
+explain (costs off) select * from test where date between '2024-12-12' and '2024-12-12';
+                                                                    QUERY PLAN                                                                     
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_date_idx on test
+   Index Cond: (("date" >= '2024-12-12 00:00:00'::timestamp without time zone) AND ("date" <= '2024-12-12 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where datetime between '2024-12-12' and '2024-12-12';
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_datetime_idx on test
+   Index Cond: ((datetime >= '2024-12-12 00:00:00'::timestamp without time zone) AND (datetime <= '2024-12-12 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where timestamp between '2024-12-12' and '2024-12-12';
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_timestamp_idx on test
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-12 00:00:00-08'::timestamp with time zone))
+(3 rows)
+
+explain (costs off) select * from test where time between '12:00:00'::text and '12:00:00'::text; -- N
+WARNING:  invalid input syntax for type timestamp: "12:00:00"
+WARNING:  invalid input syntax for type timestamp: "12:00:00"
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (("time" >= '0000-00-00 00:00:00'::timestamp without time zone) AND ("time" <= '0000-00-00 00:00:00'::timestamp without time zone))
+(2 rows)
+
+explain (costs off) select * from test where timetz between '12:00:00'::text and '12:00:00'::text; -- N
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (((timetz_out(timetz))::text >= '12:00:00'::text) AND ((timetz_out(timetz))::text <= '12:00:00'::text))
+(2 rows)
+
+explain (costs off) select * from test where date between '2024-12-12'::text and '2024-12-13'::text;
+                                                                    QUERY PLAN                                                                     
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_date_idx on test
+   Index Cond: (("date" >= '2024-12-12 00:00:00'::timestamp without time zone) AND ("date" <= '2024-12-13 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where datetime between '2024-12-12'::text and '2024-12-13'::text;
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_datetime_idx on test
+   Index Cond: ((datetime >= '2024-12-12 00:00:00'::timestamp without time zone) AND (datetime <= '2024-12-13 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where timestamp between '2024-12-12'::text and '2024-12-13'::text;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_timestamp_idx on test
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+(3 rows)
+
+explain (costs off) select * from test where time between '12:00:00'::char(100) and '12:00:00'::char(100); -- N
+WARNING:  invalid input syntax for type timestamp: "12:00:00"
+WARNING:  invalid input syntax for type timestamp: "12:00:00"
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (("time" >= '0000-00-00 00:00:00'::timestamp without time zone) AND ("time" <= '0000-00-00 00:00:00'::timestamp without time zone))
+(2 rows)
+
+explain (costs off) select * from test where date between '2024-12-12'::char(100) and '2024-12-13'::char(100); -- N
+                                                                    QUERY PLAN                                                                     
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_date_idx on test
+   Index Cond: (("date" >= '2024-12-12 00:00:00'::timestamp without time zone) AND ("date" <= '2024-12-13 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where datetime between '2024-12-12'::char(100) and '2024-12-13'::char(100);
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_datetime_idx on test
+   Index Cond: ((datetime >= '2024-12-12 00:00:00'::timestamp without time zone) AND (datetime <= '2024-12-13 00:00:00'::timestamp without time zone))
+(3 rows)
+
+explain (costs off) select * from test where timestamp between '2024-12-12'::char(100) and '2024-12-13'::char(100);
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using test_timestamp_idx on test
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+(3 rows)
+
+/* all no index. */
+explain (costs off) select * from test where time between '12:00:00'::blob and '12:00:00'::blob; -- failed
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (blob_ge(((time_out("time"))::text)::blob, '\x31323a30303a3030'::blob) AND blob_le(((time_out("time"))::text)::blob, '\x31323a30303a3030'::blob))
+(2 rows)
+
+explain (costs off) select * from test where timetz between '12:00:00'::blob and '12:00:00'::blob; -- N
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (blob_ge(((timetz_out(timetz))::text)::blob, '\x31323a30303a3030'::blob) AND blob_le(((timetz_out(timetz))::text)::blob, '\x31323a30303a3030'::blob))
+(2 rows)
+
+explain (costs off) select * from test where date between '2024-12-12'::blob and '2024-12-13'::blob; -- N
+                                                           QUERY PLAN                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (blob_ge(("date")::blob, '\x323032342d31322d3132'::blob) AND blob_le(("date")::blob, '\x323032342d31322d3133'::blob))
+(2 rows)
+
+explain (costs off) select * from test where datetime between '2024-12-12'::blob and '2024-12-13'::blob;
+WARNING:  invalid input syntax for type double precision: "2024-12-12"
+WARNING:  invalid input syntax for type double precision: "2024-12-13"
+                                        QUERY PLAN                                         
+-------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: ((datetime >= 2024::double precision) AND (datetime <= 2024::double precision))
+(2 rows)
+
+explain (costs off) select * from test where timestamp between '2024-12-12'::blob and '2024-12-13'::blob;
+WARNING:  invalid input syntax for type double precision: "2024-12-12"
+WARNING:  invalid input syntax for type double precision: "2024-12-13"
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (("timestamp" >= 2024::double precision) AND ("timestamp" <= 2024::double precision))
+(2 rows)
+
+/*  all no index. */
+explain (costs off) select * from test where time between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (((time_out("time"))::text >= '\x31323a30303a3030'::varbinary(100)) AND ((time_out("time"))::text <= '\x31323a30303a3030'::varbinary(100)))
+(2 rows)
+
+explain (costs off) select * from test where timetz between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (((timetz_out(timetz))::text >= '\x31323a30303a3030'::varbinary(100)) AND ((timetz_out(timetz))::text <= '\x31323a30303a3030'::varbinary(100)))
+(2 rows)
+
+explain (costs off) select * from test where date between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100); -- N
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: ((("date")::text >= '\x323032342d31322d3132'::varbinary(100)) AND (("date")::text <= '\x323032342d31322d3133'::varbinary(100)))
+(2 rows)
+
+explain (costs off) select * from test where datetime between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100);
+WARNING:  invalid input syntax for type double precision: "2024-12-12"
+WARNING:  invalid input syntax for type double precision: "2024-12-13"
+                                        QUERY PLAN                                         
+-------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: ((datetime >= 2024::double precision) AND (datetime <= 2024::double precision))
+(2 rows)
+
+explain (costs off) select * from test where timestamp between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100);
+WARNING:  invalid input syntax for type double precision: "2024-12-12"
+WARNING:  invalid input syntax for type double precision: "2024-12-13"
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (("timestamp" >= 2024::double precision) AND ("timestamp" <= 2024::double precision))
+(2 rows)
+
+select * from test where time between '12:00:00' and '12:00:00'; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
+select * from test where time between '11:00:00' and '12:00:00'; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
+select * from test where timetz between '12:00:00' and '12:00:00'; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
+select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /* exptected 0 */
+ time | timetz | date | datetime | timestamp 
+------+--------+------+----------+-----------
+(0 rows)
+
+select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
+select * from test where date between datetime and timestamp; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
+select * from test where datetime between date and timestamp; /* exptected 1 */
+   time   |   timetz    |    date    |      datetime       |       timestamp        
+----------+-------------+------------+---------------------+------------------------
+ 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+(1 row)
+
 drop schema db_between cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t_between_and_0007
 drop cascades to table t_b1
+drop cascades to table test
 reset current_schema;

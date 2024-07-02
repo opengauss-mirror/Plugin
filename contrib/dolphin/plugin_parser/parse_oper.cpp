@@ -20,6 +20,7 @@
 #ifdef DOLPHIN
 #include "catalog/pg_enum.h"
 #include "executor/executor.h"
+#include "plugin_parser/parser.h"
 #endif
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
@@ -154,6 +155,19 @@ Oid LookupOperName(ParseState* pstate, List* opername, Oid oprleft, Oid oprright
 
     return InvalidOid;
 }
+
+#ifdef DOLPHIN
+/*
+ * we have defined these types of comparison functions with time format
+ * for example: timestamp_blob_eq etc
+ * remove type from here if an implicit conversion type from type_id to text is defined
+ */
+static inline bool comparison_with_date_defined(Oid type_id)
+{
+    return type_id == BINARYOID || type_id == VARBINARYOID || type_id == TINYBLOBOID || type_id == BLOBOID ||
+           type_id == MEDIUMBLOBOID || type_id == LONGBLOBOID || type_id == ANYENUMOID || type_id == JSONOID;
+}
+#endif
 
 /*
  * LookupOperNameTypeNames
@@ -490,6 +504,12 @@ bool IsBlobClassType(Oid typeoid)
     return typeoid == BLOBOID || typeoid == TINYBLOBOID || typeoid == MEDIUMBLOBOID || typeoid == LONGBLOBOID;
 }
 
+bool IsCmpOp(char* opername)
+{
+    return strcmp("=", opername) == 0 || strcmp("<>", opername) == 0 || strcmp("!=", opername) == 0 || strcmp("<", opername) == 0 ||
+           strcmp("<=", opername) == 0 || strcmp(">", opername) == 0 || strcmp(">=", opername) == 0;
+}
+
 static bool IsDolphinUnsignedIntType(Oid typeoid)
 {
     if (typeoid == BITOID) {
@@ -577,6 +597,21 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
                 ltypeId = TEXTOID;
             } else if (ltypeId == TIMEOID && rtypeId == UNKNOWNOID) {
                 rtypeId = TEXTOID;
+            }
+        }
+       if (IsCmpOp(opername)) {
+            /*
+             * suspend: date = '2022-11-11 10:00:00' returns true
+             * removed if date_text_eq were created
+             * */
+            if (IsDolphinStringType(ltypeId) && rtypeId == DATEOID) {
+                if (!comparison_with_date_defined(ltypeId)) {
+                    ltypeId = TIMESTAMPOID;
+                }
+            } else if (ltypeId == DATEOID && IsDolphinStringType(rtypeId)){
+                if (!comparison_with_date_defined(rtypeId)) {
+                    rtypeId = TIMESTAMPOID;
+                }
             }
         }
     }

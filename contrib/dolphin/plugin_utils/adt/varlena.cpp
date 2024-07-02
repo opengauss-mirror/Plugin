@@ -93,7 +93,6 @@
 #define BINARY_LEN(len) ((len - 2) / 2)
 
 static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS);
-static bool is_type_with_date(Oid type);
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
@@ -9707,7 +9706,7 @@ static bool is_temporal_type(Oid type)
     }
 }
 
-static bool is_type_with_date(Oid type)
+bool is_type_with_date(Oid type)
 {
     switch (type) {
         case DATEOID:
@@ -9717,6 +9716,11 @@ static bool is_type_with_date(Oid type)
         default:
             return false;
     }
+}
+
+bool is_type_with_time(Oid type)
+{
+    return type == TIMEOID || type == TIMETZOID;
 }
 
 static TimestampTz nontemporal_to_timestamptz(Oid type, Datum param)
@@ -9884,7 +9888,7 @@ static CmpType handle_types_map(bool& cmp_as_ts_strings, bool& cmp_as_times, boo
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
             if (is_type_with_date(fcinfo->argTypes[i])) {
                 args_date_cnt++;
-            } else if (fcinfo->argTypes[i] == TIMEOID || fcinfo->argTypes[i] == TIMETZOID) {
+            } else if (is_type_with_time(fcinfo->argTypes[i])) {
                 args_time_cnt++;
             }
         }

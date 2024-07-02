@@ -1,5 +1,6 @@
 create schema create_index;
 set current_schema to 'create_index';
+
 create table t1(a int);
 
 --error
@@ -14,13 +15,14 @@ CREATE UNIQUE INDEX idx_t3 ON t1(a) USING BTREE;
 drop table t1;
 
 --create index with conflict name
+set dolphin.b_compatibility_mode to on;
+
 CREATE TABLE temptest(col int);
 CREATE INDEX i_temptest ON temptest(col);
 CREATE INDEX i_temptest1 ON temptest(col);
 CREATE INDEX i_temptest2 ON temptest(col);
 
 --tmp table, should not report warning, different schema
-set dolphin.b_compatibility_mode to on;
 CREATE TEMP TABLE temptest1(tcol int, index i_temptest1(tcol));
 CREATE TEMP TABLE temptest(tcol int);
 CREATE INDEX i_temptest ON temptest(tcol);
@@ -107,3 +109,4 @@ drop table t2;
 
 drop schema create_index cascade;
 reset current_schema;
+
