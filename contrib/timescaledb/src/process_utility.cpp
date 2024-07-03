@@ -987,6 +987,7 @@ process_drop_hypertable_index(ProcessUtilityArgs *args, DropStmt *stmt)
 		{
 			if (list_length(stmt->objects) != 1)
 				elog(ERROR, "cannot drop a hypertable index along with other objects");
+			ts_chunk_index_delete_by_name(get_namespace_name(get_rel_namespace(relid)), relation->relname, true);
 		}
 	}
 
