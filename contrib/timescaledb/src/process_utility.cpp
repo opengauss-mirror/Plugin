@@ -1159,7 +1159,7 @@ reindex_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 
 	switch (stmt->kind)
 	{
-		case REINDEX_OBJECT_TABLE:
+		case OBJECT_TABLE:
 			stmt->relation->relname = NameStr(chunk->fd.table_name);
 			stmt->relation->schemaname = NameStr(chunk->fd.schema_name);
 			ReindexTable(stmt->relation,
@@ -1171,7 +1171,7 @@ reindex_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 #endif
 			);
 			break;
-		case REINDEX_OBJECT_INDEX:
+		case OBJECT_INDEX:
 			/* Not supported, a.t.m. See note in process_reindex(). */
 			break;
 		default:
@@ -1205,7 +1205,7 @@ process_reindex(ProcessUtilityArgs *args)
 
 	switch (stmt->kind)
 	{
-		case REINDEX_OBJECT_TABLE:
+		case OBJECT_TABLE:
 			ht = ts_hypertable_cache_get_entry(hcache, relid, CACHE_FLAG_MISSING_OK);
 
 			if (NULL != ht)
@@ -1219,7 +1219,7 @@ process_reindex(ProcessUtilityArgs *args)
 				process_add_hypertable(args, ht);
 			}
 			break;
-		case REINDEX_OBJECT_INDEX:
+		case OBJECT_INDEX:
 			ht = ts_hypertable_cache_get_entry(hcache,
 											   IndexGetRelation(relid, true),
 											   CACHE_FLAG_MISSING_OK);
