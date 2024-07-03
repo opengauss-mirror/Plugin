@@ -815,6 +815,16 @@ show create table test_type_table_3;
 insert into test_type_table_3 default values;
 select * from test_type_table_3;
 
+-- bit ^ bit (different length)
+set dolphin.sql_mode='sql_mode_strict,pad_char_to_full_length,auto_recompile_function';
+create table bit_t(`bit1` bit(1), `bit18` bit(18), `bit45` bit(45), `bit64` bit(64));
+insert into bit_t values(1, 244520, 4564685412, 1565646212555);
+select `bit1` ^ `bit18`, `bit1` ^ `bit45`, `bit1` ^ `bit64` from bit_t;
+select `bit18` ^ `bit1`, `bit18` ^ `bit45`, `bit18` ^ `bit64` from bit_t;
+select `bit45` ^ `bit1`, `bit45` ^ `bit18`, `bit45` ^ `bit64` from bit_t;
+select `bit64` ^ `bit1`, `bit64` ^ `bit18`, `bit64` ^ `bit45` from bit_t;
+drop table bit_t;
+
 reset dolphin.sql_mode;
 drop table if exists test_type_table cascade;
 drop table if exists test_type_table_2 cascade;
