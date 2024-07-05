@@ -1979,52 +1979,85 @@ CREATE SCHEMA  timescaledb_information;
 -- Convenience view to list all hypertables and their space usage
 
 CREATE OR REPLACE VIEW timescaledb_information.hypertable AS
-WITH ht_size as (
-  
-  SELECT ht.id, ht.schema_name AS table_schema,
-    ht.table_name,
-    t.tableowner AS table_owner,
-    ht.num_dimensions,
-    (SELECT count(1)
-     FROM _timescaledb_catalog.chunk ch
-     WHERE ch.hypertable_id=ht.id
-    ) AS num_chunks,
-    bsize.table_bytes,
-    bsize.index_bytes,
-    bsize.toast_bytes,
-    bsize.total_bytes
-  FROM  _timescaledb_catalog.hypertable ht
-    LEFT OUTER JOIN pg_tables t ON ht.table_name=t.tablename AND ht.schema_name=t.schemaname
-    --tsdb 暂时注释
-    LEFT OUTER JOIN @extschema@.hypertable_relation_size(
-       NULL 
-    )
-    bsize ON true
-    -- LEFT OUTER JOIN LATERAL @extschema@.hypertable_relation_size(
-    --   CASE WHEN has_schema_privilege(ht.schema_name,'USAGE') THEN format('%I.%I',ht.schema_name,ht.table_name) ELSE NULL END
-    -- )
-    -- bsize ON true
+WITH ht_size AS (
+  SELECT ht.id,
+         ht.schema_name AS table_schema,
+         ht.table_name,
+         t.tableowner AS table_owner,
+         ht.num_dimensions,
+         (
+           SELECT count(1)
+           FROM _timescaledb_catalog.chunk ch
+           WHERE ch.hypertable_id = ht.id
+         ) AS num_chunks,
+         COALESCE(
+           (
+             SELECT b.table_bytes
+             FROM @extschema@.hypertable_relation_size(
+               CASE 
+                 WHEN has_schema_privilege(ht.schema_name, 'USAGE') 
+                 THEN format('%I.%I', ht.schema_name, ht.table_name) 
+                 ELSE NULL 
+               END
+             ) AS b
+           ), 0) AS table_bytes,
+         COALESCE(
+           (
+             SELECT b.index_bytes
+             FROM @extschema@.hypertable_relation_size(
+               CASE 
+                 WHEN has_schema_privilege(ht.schema_name, 'USAGE') 
+                 THEN format('%I.%I', ht.schema_name, ht.table_name) 
+                 ELSE NULL 
+               END
+             ) AS b
+           ), 0) AS index_bytes,
+         COALESCE(
+           (
+             SELECT b.toast_bytes
+             FROM @extschema@.hypertable_relation_size(
+               CASE 
+                 WHEN has_schema_privilege(ht.schema_name, 'USAGE') 
+                 THEN format('%I.%I', ht.schema_name, ht.table_name) 
+                 ELSE NULL 
+               END
+             ) AS b
+           ), 0) AS toast_bytes,
+         COALESCE(
+           (
+             SELECT b.total_bytes
+             FROM @extschema@.hypertable_relation_size(
+               CASE 
+                 WHEN has_schema_privilege(ht.schema_name, 'USAGE') 
+                 THEN format('%I.%I', ht.schema_name, ht.table_name) 
+                 ELSE NULL 
+               END
+             ) AS b
+           ), 0) AS total_bytes
+  FROM _timescaledb_catalog.hypertable ht
+  LEFT OUTER JOIN pg_tables t 
+  ON ht.table_name = t.tablename AND ht.schema_name = t.schemaname
 ),
-compht_size as
-(
-  select srcht.id,
-  sum(map.compressed_heap_size) as heap_bytes,
-  sum(map.compressed_index_size) as index_bytes,
-  sum(map.compressed_toast_size) as toast_bytes,
-  sum(map.compressed_heap_size) + sum(map.compressed_toast_size) + sum(map.compressed_index_size) as total_bytes
- FROM _timescaledb_catalog.chunk srcch, _timescaledb_catalog.compression_chunk_size map,
-      _timescaledb_catalog.hypertable srcht
- where map.chunk_id = srcch.id and srcht.id = srcch.hypertable_id
- group by srcht.id
+compht_size AS (
+  SELECT srcht.id,
+         sum(map.compressed_heap_size) AS heap_bytes,
+         sum(map.compressed_index_size) AS index_bytes,
+         sum(map.compressed_toast_size) AS toast_bytes,
+         sum(map.compressed_heap_size + map.compressed_toast_size + map.compressed_index_size) AS total_bytes
+  FROM _timescaledb_catalog.chunk srcch
+  JOIN _timescaledb_catalog.compression_chunk_size map ON map.chunk_id = srcch.id
+  JOIN _timescaledb_catalog.hypertable srcht ON srcht.id = srcch.hypertable_id
+  GROUP BY srcht.id
 )
-select hts.table_schema, hts.table_name, hts.table_owner, 
+SELECT hts.table_schema, hts.table_name, hts.table_owner, 
        hts.num_dimensions, hts.num_chunks,
-       pg_size_pretty( COALESCE(hts.table_bytes + compht_size.heap_bytes, hts.table_bytes)) as table_size,
-       pg_size_pretty( COALESCE(hts.index_bytes + compht_size.index_bytes , hts.index_bytes, compht_size.index_bytes)) as index_size,
-       pg_size_pretty( COALESCE(hts.toast_bytes + compht_size.toast_bytes, hts.toast_bytes, compht_size.toast_bytes)) as toast_size,
-       pg_size_pretty( COALESCE(hts.total_bytes + compht_size.total_bytes, hts.total_bytes)) as total_size
-FROM ht_size hts LEFT OUTER JOIN compht_size 
-ON hts.id = compht_size.id;
+       pg_size_pretty(COALESCE(hts.table_bytes + compht_size.heap_bytes, hts.table_bytes)) AS table_size,
+       pg_size_pretty(COALESCE(hts.index_bytes + compht_size.index_bytes, hts.index_bytes, compht_size.index_bytes)) AS index_size,
+       pg_size_pretty(COALESCE(hts.toast_bytes + compht_size.toast_bytes, hts.toast_bytes, compht_size.toast_bytes)) AS toast_size,
+       pg_size_pretty(COALESCE(hts.total_bytes + compht_size.total_bytes, hts.total_bytes)) AS total_size
+FROM ht_size hts
+LEFT JOIN compht_size ON hts.id = compht_size.id;
+
 
 CREATE OR REPLACE VIEW timescaledb_information.license AS
   SELECT _timescaledb_internal.license_edition() as edition,
