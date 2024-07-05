@@ -1847,6 +1847,24 @@ CONTEXT:  referenced column: timestamptz
 select timestamptz '2022-7-21 60:01:01';
 ERROR:  date/time field value out of range: "2022-7-21 60:01:01"
 CONTEXT:  referenced column: timestamptz
+select date(time '12:30:00');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select date(time '32:30:00');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select date(smalldatetime '2022-01-01 12:30');
+    date    
+------------
+ 2022-01-01
+(1 row)
+
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test
 reset current_schema;

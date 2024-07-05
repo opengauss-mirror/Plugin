@@ -94,3 +94,5 @@ DROP FUNCTION IF EXISTS pg_catalog.subdate (time, int8);
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_days';
 DROP FUNCTION IF EXISTS pg_catalog.adddate (time, int8);
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_days';
+DROP FUNCTION IF EXISTS pg_catalog.b_db_date(time);
+DROP FUNCTION IF EXISTS pg_catalog.b_db_date(timestamp without time zone);
