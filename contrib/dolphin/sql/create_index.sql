@@ -1,6 +1,5 @@
 create schema create_index;
 set current_schema to 'create_index';
-
 create table t1(a int);
 
 --error
@@ -21,6 +20,7 @@ CREATE INDEX i_temptest1 ON temptest(col);
 CREATE INDEX i_temptest2 ON temptest(col);
 
 --tmp table, should not report warning, different schema
+set dolphin.b_compatibility_mode to on;
 CREATE TEMP TABLE temptest1(tcol int, index i_temptest1(tcol));
 CREATE TEMP TABLE temptest(tcol int);
 CREATE INDEX i_temptest ON temptest(tcol);
@@ -73,7 +73,7 @@ insert into t5 values(1),(2),(3),(null);
 \d t5
 set dolphin.b_compatibility_mode to off;
 \d t5
-reset dolphin.b_compatibility_mode;
+set dolphin.b_compatibility_mode to on;
 analyze t5;
 -- use index
 explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
@@ -89,7 +89,7 @@ insert into t5 values(1),(2),(3),(null);
 \d t5
 set dolphin.b_compatibility_mode to off;
 \d t5
-reset dolphin.b_compatibility_mode;
+set dolphin.b_compatibility_mode to on;
 analyze t5;
 -- use index
 explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
@@ -100,7 +100,7 @@ select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
 
 reset enable_opfusion;
 reset enable_indexonlyscan;
-
+reset dolphin.b_compatibility_mode;
 drop table temptest;
 drop table t1;
 drop table t2;

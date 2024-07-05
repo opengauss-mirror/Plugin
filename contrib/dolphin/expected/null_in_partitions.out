@@ -1,5 +1,6 @@
 create schema null_in_partition;
 set search_path to null_in_partition;
+set dolphin.b_compatibility_mode to on;
 create table t_range (c1 int, c2 int) partition by range(c1) (partition p1 values less than (10), partition p2 values less than(maxvalue));
 insert into t_range values(null),(5),(100);
 create index t_range_c1_idx on t_range (c1) local;

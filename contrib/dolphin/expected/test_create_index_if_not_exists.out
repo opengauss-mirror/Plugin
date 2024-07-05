@@ -532,19 +532,19 @@ explain (costs off) select a from t1 force index("inx_t1") where a > 2 order by 
 (3 rows)
 
 explain (costs off) select a from t1 use index(primary) where a > 2 order by a;
-        QUERY PLAN         
----------------------------
+       QUERY PLAN        
+-------------------------
  Sort
-   Sort Key: a NULLS FIRST
+   Sort Key: a
    ->  Seq Scan on t1
          Filter: (a > 2)
 (4 rows)
 
 explain (costs off) select a from t1 use index("inx_t1") where a > 2 order by a;
-        QUERY PLAN         
----------------------------
+       QUERY PLAN        
+-------------------------
  Sort
-   Sort Key: a NULLS FIRST
+   Sort Key: a
    ->  Seq Scan on t1
          Filter: (a > 2)
 (4 rows)
