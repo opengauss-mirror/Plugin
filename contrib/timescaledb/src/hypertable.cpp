@@ -1272,10 +1272,7 @@ table_is_logged(Oid table_relid)
 static bool
 table_has_replica_identity(Relation rel)
 {
-#ifdef OG30
-return false;
-#endif
-	return rel->rd_rel->relreplident != REPLICA_IDENTITY_DEFAULT;
+	return rel->relreplident != REPLICA_IDENTITY_DEFAULT;
 }
 
 static bool inline table_has_rules(Relation rel) { return rel->rd_rules != NULL; }
