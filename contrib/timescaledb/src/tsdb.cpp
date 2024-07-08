@@ -2422,7 +2422,6 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
 		psc->tsdb_lock_named_request_allowed = true;
 		return psc;
 	}
-	
 	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) 
 	{
 		init_session_vars();
@@ -2433,9 +2432,9 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
 void init_session_vars(void) 
 {
 	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index]!=NULL)
-		return
+		return;
 	
-	RepallocSessionVarsArrayIfNecessary(); 
+	RepallocSessionVarsArrayIfNecessary();
 	tsdb_session_context* psc = (tsdb_session_context*)MemoryContextAllocZero(u_sess->self_mem_cxt, sizeof(tsdb_session_context));
 	u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] = psc;  
 	psc->tsdb_pinned_caches = NIL;

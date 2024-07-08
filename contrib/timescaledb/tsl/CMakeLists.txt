@@ -7,3 +7,9 @@ set(Third_party_library $ENV{BINARYLIBS}/kernel/dependency/libobs/comm/include)
 add_definitions(-DPGXC)
 add_definitions(-DUSE_SPQ)
 include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR} ${Third_party_library})
+
+install(CODE "
+  file(REMOVE \"$ENV{GAUSSHOME}/share/postgresql/extension/timescaledb--1.7.4.sql\")
+  file(COPY \"../og-timescaledb1.7.4.sql\" DESTINATION \"$ENV{GAUSSHOME}/share/postgresql/extension\")
+  file(RENAME \"$ENV{GAUSSHOME}/share/postgresql/extension/og-timescaledb1.7.4.sql\" \"$ENV{GAUSSHOME}/share/postgresql/extension/timescaledb--1.7.4.sql\")
+")
