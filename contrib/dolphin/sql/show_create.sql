@@ -182,7 +182,7 @@ CREATE VIEW tt1 AS
     VALUES
        ('abc'::varchar(3), '0123456789', 42, 'abcd'::varchar(4)),
        ('0123456789', 'abc'::varchar(3), 42.12, 'abc'::varchar(4))
-  ) vv(a,b,c,d);
+  ) as vv(a,b,c,d);
 show create view tt1;
 show create table tt1;
 drop view tt1;
