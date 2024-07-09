@@ -554,22 +554,26 @@ CREATE OR REPLACE FUNCTION pg_catalog.op_time_add_intr (time, interval) RETURNS 
 CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_time (interval, time) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_time_sub_intr (time, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(timestamp without time zone, interval) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_add_datetime_interval';
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(timestamptz, interval) RETURNS timestamptz LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_add_timestamp_interval';
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(timestamp without time zone, interval) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_add($1, -$2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(timestamptz, interval) RETURNS timestamptz AS $$ SELECT pg_catalog.date_add($1, -$2) $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.op_num_add_intr (numeric, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_text_add_intr (text, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_date_add_intr (date, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_add_intr (timestamp without time zone, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_add_intr (timestamptz, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_add_intr (timestamp without time zone, interval) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_add_intr (timestamptz, interval) RETURNS timestamptz AS $$ SELECT pg_catalog.date_add($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_num (interval, numeric) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_text (interval, text) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_date (interval, date) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_dttm (interval, timestamp without time zone) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_tmsp (interval, timestamptz) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_dttm (interval, timestamp without time zone) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_tmsp (interval, timestamptz) RETURNS timestamptz AS $$ SELECT pg_catalog.date_add($2, $1) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_num_sub_intr (numeric, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_text_sub_intr (text, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_date_sub_intr (date, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_sub_intr (timestamp without time zone, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_sub_intr (timestamptz, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_sub_intr (timestamp without time zone, interval) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_sub_intr (timestamptz, interval) RETURNS timestamptz AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 
 CREATE OPERATOR pg_catalog.+ (leftarg = numeric, rightarg = interval, procedure = op_num_add_intr, commutator = operator(pg_catalog.+));
 CREATE OPERATOR pg_catalog.+ (leftarg = text, rightarg = interval, procedure = op_text_add_intr, commutator = operator(pg_catalog.+));
@@ -581,27 +585,27 @@ DO $$
 BEGIN
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_date_add_intr'::regproc
             where oprname = '+' and oprleft = 'date'::regtype and oprright = 'interval'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_dttm_add_intr'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamp without time zone'::regtype, oprcode = 'op_dttm_add_intr'::regproc
             where oprname = '+' and oprleft = 'timestamp without time zone'::regtype and oprright = 'interval'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_tmsp_add_intr'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'op_tmsp_add_intr'::regproc
             where oprname = '+' and oprleft = 'timestamptz'::regtype and oprright = 'interval'::regtype;
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_time_add_intr'::regproc
             where oprname = '+' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;
     
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_intr_add_date'::regproc
             where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'date'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_intr_add_dttm'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamp without time zone'::regtype, oprcode = 'op_intr_add_dttm'::regproc
             where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'timestamp without time zone'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_intr_add_tmsp'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'op_intr_add_tmsp'::regproc
             where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'timestamptz'::regtype;
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_intr_add_time'::regproc
             where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'time'::regtype;
         
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_date_sub_intr'::regproc
             where oprname = '-' and oprleft = 'date'::regtype and oprright = 'interval'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_dttm_sub_intr'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamp without time zone'::regtype, oprcode = 'op_dttm_sub_intr'::regproc
             where oprname = '-' and oprleft = 'timestamp without time zone'::regtype and oprright = 'interval'::regtype;
-        update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_tmsp_sub_intr'::regproc
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'op_tmsp_sub_intr'::regproc
             where oprname = '-' and oprleft = 'timestamptz'::regtype and oprright = 'interval'::regtype;
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_time_sub_intr'::regproc
             where oprname = '-' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;

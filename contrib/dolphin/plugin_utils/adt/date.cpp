@@ -311,6 +311,12 @@ PG_FUNCTION_INFO_V1_PUBLIC(microsecond_bit);
 extern "C" DLL_PUBLIC Datum microsecond_bit(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum addtime_text(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_add_datetime_interval);
+extern "C" DLL_PUBLIC Datum date_add_datetime_interval(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_add_timestamp_interval);
+extern "C" DLL_PUBLIC Datum date_add_timestamp_interval(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -6420,6 +6426,40 @@ Datum date_add_time_interval(PG_FUNCTION_ARGS)
         return DirectFunctionCall1(time_text, time);
     }
     ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * date_add(datetime, INTERVAL expr UNIT)
+*/
+Datum date_add_datetime_interval(PG_FUNCTION_ARGS)
+{
+    int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
+    Timestamp datetime = PG_GETARG_TIMESTAMP(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    Timestamp result;
+    if (datetime_add_interval(datetime, span, &result)) {
+        PG_RETURN_TIMESTAMP(result);
+    }
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * date_add(timestamp, INTERVAL expr UNIT)
+*/
+Datum date_add_timestamp_interval(PG_FUNCTION_ARGS)
+{
+    int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
+    TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    Timestamp datetime = DatumGetTimestamp(DirectFunctionCall1Coll(timestamptz_timestamp, InvalidOid,
+                                                                   timestamp, fcinfo->can_ignore));
+    Timestamp result;
+    if (datetime_add_interval(datetime, span, &result)) {
+        return DirectFunctionCall1Coll(timestamp_timestamptz, InvalidOid, result, fcinfo->can_ignore);
+    }
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
 }
 
