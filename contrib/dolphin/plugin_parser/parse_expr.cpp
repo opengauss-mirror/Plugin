@@ -59,6 +59,7 @@
 #include "utils/varbit.h"
 #include "plugin_parser/parse_utilcmd.h"
 #ifdef DOLPHIN
+#include "plugin_utils/varlena.h"
 #include "plugin_commands/mysqlmode.h"
 #endif
 #include "tcop/tcopprot.h"
@@ -2281,6 +2282,10 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs, con
     bool all_type_is_same = true;
     Oid type_oid = exprType((Node*)list_nth(targs, 0));
     ListCell* args = NULL;
+
+    bool has_date_or_time = false;
+    bool other_all_cmd_string = true;
+
     foreach (args, targs) {
         Node* arg = (Node*)lfirst(args);
         Oid cur_arg_typ = exprType(arg);
@@ -2295,11 +2300,18 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs, con
             all_type_is_same = false;
             /* continue check, make sure all_type_is_common value is correct */
         }
+
+        has_date_or_time = has_date_or_time || is_type_with_date(cur_arg_typ) || is_type_with_time(cur_arg_typ);
+        bool tmp_flag; /* ingored */
+        other_all_cmd_string = other_all_cmd_string && map_oid_to_cmp_type(cur_arg_typ, &tmp_flag) == CMP_STRING_TYPE;
     }
 
     /* return NULL means we will use b_between_and function */
     if (all_type_is_common && !all_type_is_same) {
-        return NULL;
+        /* date with all string can fallback to original openGauss logical */
+        if (!(has_date_or_time && other_all_cmd_string)) {
+            return NULL;
+        }
     }
 
     /*

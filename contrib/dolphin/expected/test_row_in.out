@@ -2594,14 +2594,14 @@ select row(1, row((select `date` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `date` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `date` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89"
+WARNING:  time zone displacement out of range: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2621,8 +2621,7 @@ select row(1, row((select `date` from all_types_table limit 1),(select `varbinar
 
 select row(1, row((select `date` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2630,8 +2629,7 @@ SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2639,8 +2637,7 @@ SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2648,8 +2645,7 @@ SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2657,7 +2653,6 @@ SQL function "timestamp_longblob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
  ?column? 
 ----------
  f
@@ -2999,8 +2994,7 @@ CONTEXT:  SQL function "datetime_text_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_tinyblob_eq" statement 1
+CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3008,8 +3002,7 @@ SQL function "datetime_tinyblob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_blob_eq" statement 1
+CONTEXT:  SQL function "datetime_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3017,8 +3010,7 @@ SQL function "datetime_blob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_mediumblob_eq" statement 1
+CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3026,8 +3018,7 @@ SQL function "datetime_mediumblob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_longblob_eq" statement 1
+CONTEXT:  SQL function "datetime_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3127,8 +3118,7 @@ CONTEXT:  SQL function "datetime_text_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_tinyblob_eq" statement 1
+CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3136,8 +3126,7 @@ SQL function "datetime_tinyblob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_blob_eq" statement 1
+CONTEXT:  SQL function "datetime_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3145,8 +3134,7 @@ SQL function "datetime_blob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_mediumblob_eq" statement 1
+CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3154,8 +3142,7 @@ SQL function "datetime_mediumblob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_text_eq" statement 1
-SQL function "datetime_longblob_eq" statement 1
+CONTEXT:  SQL function "datetime_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3249,8 +3236,7 @@ CONTEXT:  SQL function "timestamp_text_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3258,8 +3244,7 @@ SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3267,8 +3252,7 @@ SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3276,8 +3260,7 @@ SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3365,8 +3348,7 @@ CONTEXT:  SQL function "timestamp_text_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3374,8 +3356,7 @@ SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3383,8 +3364,7 @@ SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3392,8 +3372,7 @@ SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_text_eq" statement 1
-SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f

@@ -47,24 +47,19 @@ SELECT
     `tinyblob` <=> `set_t` AS `tinyblob_<=>_set_t`,
     `tinyblob` <=> `json` AS `tinyblob_<=>_json` FROM test_multi_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "tinyblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
 referenced column: tinyblob_<=>_date
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "tinyblob_datetime_eq" statement 1
+CONTEXT:  SQL function "tinyblob_datetime_eq" statement 1
 referenced column: tinyblob_<=>_datetime
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "tinyblob_datetime_eq" statement 1
+CONTEXT:  SQL function "tinyblob_datetime_eq" statement 1
 referenced column: tinyblob_<=>_datetime(4)
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "tinyblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
 referenced column: tinyblob_<=>_timestamp
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "tinyblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
 referenced column: tinyblob_<=>_timestamp(4)
 -[ RECORD 1 ]-------------+--
 tinyblob_<=>_int1         | f
@@ -138,24 +133,19 @@ SELECT
     `blob` <=> `set_t` AS `blob_<=>_set_t`,
     `blob` <=> `json` AS `blob_<=>_json` FROM test_multi_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "blob_timestamp_eq" statement 1
+CONTEXT:  SQL function "blob_timestamp_eq" statement 1
 referenced column: blob_<=>_date
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "blob_datetime_eq" statement 1
+CONTEXT:  SQL function "blob_datetime_eq" statement 1
 referenced column: blob_<=>_datetime
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "blob_datetime_eq" statement 1
+CONTEXT:  SQL function "blob_datetime_eq" statement 1
 referenced column: blob_<=>_datetime(4)
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "blob_timestamp_eq" statement 1
+CONTEXT:  SQL function "blob_timestamp_eq" statement 1
 referenced column: blob_<=>_timestamp
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "blob_timestamp_eq" statement 1
+CONTEXT:  SQL function "blob_timestamp_eq" statement 1
 referenced column: blob_<=>_timestamp(4)
 -[ RECORD 1 ]---------+--
 blob_<=>_int1         | f
@@ -229,24 +219,19 @@ SELECT
     `mediumblob` <=> `set_t` AS `mediumblob_<=>_set_t`,
     `mediumblob` <=> `json` AS `mediumblob_<=>_json` FROM test_multi_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "mediumblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
 referenced column: mediumblob_<=>_date
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "mediumblob_datetime_eq" statement 1
+CONTEXT:  SQL function "mediumblob_datetime_eq" statement 1
 referenced column: mediumblob_<=>_datetime
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "mediumblob_datetime_eq" statement 1
+CONTEXT:  SQL function "mediumblob_datetime_eq" statement 1
 referenced column: mediumblob_<=>_datetime(4)
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "mediumblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
 referenced column: mediumblob_<=>_timestamp
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "mediumblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
 referenced column: mediumblob_<=>_timestamp(4)
 -[ RECORD 1 ]---------------+--
 mediumblob_<=>_int1         | f
@@ -320,24 +305,19 @@ SELECT
     `longblob` <=> `set_t` AS `longblob_<=>_set_t`,
     `longblob` <=> `json` AS `longblob_<=>_json` FROM test_multi_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "longblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
 referenced column: longblob_<=>_date
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "longblob_datetime_eq" statement 1
+CONTEXT:  SQL function "longblob_datetime_eq" statement 1
 referenced column: longblob_<=>_datetime
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_datetime_eq" statement 1
-SQL function "longblob_datetime_eq" statement 1
+CONTEXT:  SQL function "longblob_datetime_eq" statement 1
 referenced column: longblob_<=>_datetime(4)
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "longblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
 referenced column: longblob_<=>_timestamp
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "text_timestamp_eq" statement 1
-SQL function "longblob_timestamp_eq" statement 1
+CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
 referenced column: longblob_<=>_timestamp(4)
 -[ RECORD 1 ]-------------+--
 longblob_<=>_int1         | f

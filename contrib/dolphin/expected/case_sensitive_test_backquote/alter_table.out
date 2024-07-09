@@ -363,10 +363,10 @@ ERROR:  relation "NV_Child_2010" does not exist
 alter table `NV_Child_2011` add check (`d` between '2011-01-01'::date and '2011-12-31'::date) not valid;
 ERROR:  relation "NV_Child_2011" does not exist
 explain (costs off) select * from `NV_Parent` where `d` between '2011-08-01' and '2011-08-31';
-                                         QUERY PLAN                                         
---------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
  Seq Scan on "NV_Parent"
-   Filter: b_between_and(d, '2011-08-01' COLLATE "default", '2011-08-31' COLLATE "default")
+   Filter: ((d >= '2011-08-01 00:00:00'::timestamp without time zone) AND (d <= '2011-08-31 00:00:00'::timestamp without time zone))
 (2 rows)
 
 create table `NV_Child_2009` (check (`d` between '2009-01-01'::date and '2009-12-31'::date)) Inherits (`NV_Parent`);
