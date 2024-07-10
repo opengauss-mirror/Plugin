@@ -9857,7 +9857,7 @@ bool is_type_with_date(Oid type)
     }
 }
 
-inline bool is_type_with_time(Oid type)
+bool is_type_with_time(Oid type)
 {
     return type == TIMEOID || type == TIMETZOID;
 }

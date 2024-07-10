@@ -16,8 +16,7 @@ override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC -Wl,-z,now -fstack-p
 TARGET_NAME=gs_assessment
 EXTRA_CLEAN=$(TARGET_NAME)
 # make clean if change EXEC_OBJS
-EXEC_OBJS = main.cpp OpenGaussConnection.cpp Scan.cpp Report.cpp \
-	$(top_builddir)/src/lib/pgcommon/libpgcommon.a
+EXEC_OBJS = main.cpp OpenGaussConnection.cpp Scan.cpp Report.cpp $(top_builddir)/src/lib/pgcommon/fe_memutils.cpp
 INCLUDE_PATH =-I. -I$(top_builddir)/src/bin/psql
 
 include $(top_builddir)/src/Makefile.global
