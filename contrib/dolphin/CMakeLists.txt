@@ -123,6 +123,7 @@ set(dolphin_outer_DEF_OPTIONS ${MACRO_OPTIONS})
 set(dolphin_outer_COMPILE_OPTIONS ${OPTIMIZE_OPTIONS} ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${LIB_DOLPHIN_OPTIONS} ${CHECK_OPTIONS})
 set(dolphin_outer_LINK_OPTIONS ${LIB_LINK_OPTIONS})
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR} dolphin_outer_SRC)
+list(APPEND dolphin_outer_SRC ${CMAKE_CURRENT_SOURCE_DIR}/plugin_utils/fmgrtab.cpp)
 set(dolphin_outer_INC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROJECT_SRC_DIR}/include
