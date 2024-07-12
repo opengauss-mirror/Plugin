@@ -19,12 +19,20 @@ insert into test_tint(a) values(-355);
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
+WARNING:  invalid input syntax for tinyint: "a888"
+LINE 1: insert into test_tint(a) values('a888');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_tint(a) values('888aa');
-WARNING:  value "888aa" is out of range for type tinyint. truncated automatically
+WARNING:  value "888aa" is out of range for type tinyint
 LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('-88aa');
+WARNING:  invalid input syntax for tinyint: "-88aa"
+LINE 1: insert into test_tint(a) values('-88aa');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(123423.55);
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -66,12 +74,20 @@ insert into test_sint(a) values(-3553434343434343432434);
 WARNING:  smallint out of range
 CONTEXT:  referenced column: a
 insert into test_sint(a) values('a888');
+WARNING:  invalid input syntax for smallint: "a888"
+LINE 1: insert into test_sint(a) values('a888');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_sint(a) values('88123423433834343423434aa');
 WARNING:  value "88123423433834343423434aa" is out of range for type smallint
 LINE 1: insert into test_sint(a) values('88123423433834343423434aa')...
                                         ^
 CONTEXT:  referenced column: a
 insert into test_sint(a) values('-88aa');
+WARNING:  invalid input syntax for smallint: "-88aa"
+LINE 1: insert into test_sint(a) values('-88aa');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(1234233434343434343434343434343.55);
 WARNING:  smallint out of range
 CONTEXT:  referenced column: a
@@ -113,12 +129,20 @@ insert into test_int(a) values(-3553434343434343432434);
 WARNING:  integer out of range
 CONTEXT:  referenced column: a
 insert into test_int(a) values('a888');
+WARNING:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_int(a) values('a888');
+                                       ^
+CONTEXT:  referenced column: a
 insert into test_int(a) values('88123423433834343423434aa');
 WARNING:  value "88123423433834343423434aa" is out of range for type integer
 LINE 1: insert into test_int(a) values('88123423433834343423434aa');
                                        ^
 CONTEXT:  referenced column: a
 insert into test_int(a) values('-88aa');
+WARNING:  invalid input syntax for integer: "-88aa"
+LINE 1: insert into test_int(a) values('-88aa');
+                                       ^
+CONTEXT:  referenced column: a
 insert into test_int(a) values(1234233434343434343434343434343.55);
 WARNING:  integer out of range
 CONTEXT:  referenced column: a
@@ -392,11 +416,13 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_varchar7;
-WARNING:  value "-123499" is out of range for type tinyint. truncated automatically
+WARNING:  invalid input syntax for tinyint: "adsfsda"
 CONTEXT:  referenced column: a
-WARNING:  value "13434.7" is out of range for type tinyint. truncated automatically
+WARNING:  value "-123499" is out of range for type tinyint
 CONTEXT:  referenced column: a
-WARNING:  value "13434.8" is out of range for type tinyint. truncated automatically
+WARNING:  value "13434.7" is out of range for type tinyint
+CONTEXT:  referenced column: a
+WARNING:  value "13434.8" is out of range for type tinyint
 CONTEXT:  referenced column: a
 select * from test_tint1;
   a   
@@ -409,6 +435,10 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_char;
+WARNING:  invalid input syntax for tinyint: "a"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for tinyint: "-"
+CONTEXT:  referenced column: a
 select * from test_tint1;
  a 
 ---
@@ -533,6 +563,8 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_varchar7;
+WARNING:  invalid input syntax for smallint: "adsfsda"
+CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type smallint
 CONTEXT:  referenced column: a
 select * from test_sint1;
@@ -546,6 +578,10 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_char;
+WARNING:  invalid input syntax for smallint: "a"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for smallint: "-"
+CONTEXT:  referenced column: a
 select * from test_sint1;
  a 
 ---
@@ -656,6 +692,8 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_varchar7;
+WARNING:  invalid input syntax for integer: "adsfsda"
+CONTEXT:  referenced column: a
 select * from test_int1;
     a    
 ---------
@@ -667,6 +705,10 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_char;
+WARNING:  invalid input syntax for integer: "a"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for integer: "-"
+CONTEXT:  referenced column: a
 select * from test_int1;
  a 
 ---
@@ -1440,17 +1482,17 @@ insert into test_tint_strict(a) values(-355);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('a888');
-ERROR:  invalid input syntax for integer: "a888"
+ERROR:  invalid input syntax for tinyint: "a888"
 LINE 1: insert into test_tint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('888aa');
-ERROR:  invalid input syntax for integer: "888aa"
+ERROR:  value "888aa" is out of range for type tinyint
 LINE 1: insert into test_tint_strict(a) values('888aa');
                                                ^
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('-88aa');
-ERROR:  invalid input syntax for integer: "-88aa"
+ERROR:  invalid input syntax for tinyint: "-88aa"
 LINE 1: insert into test_tint_strict(a) values('-88aa');
                                                ^
 CONTEXT:  referenced column: a
@@ -1487,7 +1529,7 @@ insert into test_sint_strict(a) values(-3553434343434343432434);
 ERROR:  smallint out of range
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('a888');
-ERROR:  invalid input syntax for integer: "a888"
+ERROR:  invalid input syntax for smallint: "a888"
 LINE 1: insert into test_sint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
@@ -1497,7 +1539,7 @@ LINE 1: insert into test_sint_strict(a) values('88123423433834343423...
                                                ^
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('-88aa');
-ERROR:  invalid input syntax for integer: "-88aa"
+ERROR:  invalid input syntax for smallint: "-88aa"
 LINE 1: insert into test_sint_strict(a) values('-88aa');
                                                ^
 CONTEXT:  referenced column: a
@@ -2243,13 +2285,13 @@ DETAIL:  Failing row contains (null, null).
 --test some bug fix
 create table test_space_to_int1(a tinyint);
 insert into test_space_to_int1 values('34 55');
-ERROR:  invalid input syntax for integer: "34 55"
+ERROR:  invalid input syntax for tinyint: "34 55"
 LINE 1: insert into test_space_to_int1 values('34 55');
                                               ^
 CONTEXT:  referenced column: a
 create table test_space_to_int2(a smallint);
 insert into test_space_to_int2 values('34 55');
-ERROR:  invalid input syntax for integer: "34 55"
+ERROR:  invalid input syntax for smallint: "34 55"
 LINE 1: insert into test_space_to_int2 values('34 55');
                                               ^
 CONTEXT:  referenced column: a
@@ -2267,8 +2309,20 @@ LINE 1: insert into test_space_to_int8 values('34 55');
 CONTEXT:  referenced column: a
 set dolphin.sql_mode = '';
 insert into test_space_to_int1 values('34 55');
+WARNING:  invalid input syntax for tinyint: "34 55"
+LINE 1: insert into test_space_to_int1 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
 insert into test_space_to_int2 values('34 55');
+WARNING:  invalid input syntax for smallint: "34 55"
+LINE 1: insert into test_space_to_int2 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
 insert into test_space_to_int4 values('34 55');
+WARNING:  invalid input syntax for integer: "34 55"
+LINE 1: insert into test_space_to_int4 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
 insert into test_space_to_int8 values('34 55');
 WARNING:  invalid input syntax for type bigint: "34 55"
 LINE 1: insert into test_space_to_int8 values('34 55');

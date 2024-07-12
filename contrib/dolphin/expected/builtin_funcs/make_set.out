@@ -32,7 +32,7 @@ select make_set(0, 'a', 'b', 'c');
 (1 row)
 
 select make_set('', 'a', 'b', 'c');
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: select make_set('', 'a', 'b', 'c');
                         ^
 CONTEXT:  referenced column: make_set

@@ -2063,7 +2063,7 @@ LINE 1: SELECT isnull(''::int4);
 (1 row)
 
 SELECT isnull(''::int8);
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: SELECT isnull(''::int8);
                       ^
  ?column? 
@@ -4347,7 +4347,7 @@ LINE 1: SELECT isnull(''::int4);
 (1 row)
 
 SELECT isnull(''::int8);
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: SELECT isnull(''::int8);
                       ^
  ?column? 

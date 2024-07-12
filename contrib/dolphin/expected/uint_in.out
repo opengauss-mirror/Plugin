@@ -5,7 +5,7 @@ create table t2(a uint2);
 create table t3(a uint4);
 create table t4(a uint8);
 insert into t1 values('');
-ERROR:  invalid input syntax for integer: ""
+ERROR:  invalid input syntax for tinyint unsigned: ""
 LINE 1: insert into t1 values('');
                               ^
 CONTEXT:  referenced column: a
@@ -15,7 +15,7 @@ select * from t1;
  a 
 ---
  1
- 1
+ 2
 (2 rows)
 
 insert into t2 values('');

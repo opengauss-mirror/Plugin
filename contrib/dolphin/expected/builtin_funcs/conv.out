@@ -421,8 +421,16 @@ select conv(10,1,27),conv('zzzz',0,5),conv('xy57',37,8),conv(10,-1,27),conv('xy5
 (1 row)
 
 select conv(10,1/2,23),conv(10,1.333,23),conv('xy57',pi(),8),conv(10,'Asc',27),conv(321,'',8),conv(321,'张三',8);
+WARNING:  invalid input syntax for integer: "Asc"
+LINE 1: ...23),conv(10,1.333,23),conv('xy57',pi(),8),conv(10,'Asc',27),...
+                                                             ^
+CONTEXT:  referenced column: conv
 WARNING:  invalid input syntax for integer: ""
 LINE 1: ...3),conv('xy57',pi(),8),conv(10,'Asc',27),conv(321,'',8),conv...
+                                                             ^
+CONTEXT:  referenced column: conv
+WARNING:  invalid input syntax for integer: "张三"
+LINE 1: ...pi(),8),conv(10,'Asc',27),conv(321,'',8),conv(321,'张三',8);
                                                              ^
 CONTEXT:  referenced column: conv
  conv | conv | conv | conv | conv | conv 
@@ -431,9 +439,17 @@ CONTEXT:  referenced column: conv
 (1 row)
 
 select conv(10,27,1/2),conv(10,16,'AscY'),conv(321,7,''),conv(321,10,'张三');
+WARNING:  invalid input syntax for integer: "AscY"
+LINE 1: select conv(10,27,1/2),conv(10,16,'AscY'),conv(321,7,''),con...
+                                          ^
+CONTEXT:  referenced column: conv
 WARNING:  invalid input syntax for integer: ""
 LINE 1: ...ect conv(10,27,1/2),conv(10,16,'AscY'),conv(321,7,''),conv(3...
                                                              ^
+CONTEXT:  referenced column: conv
+WARNING:  invalid input syntax for integer: "张三"
+LINE 1: ...,1/2),conv(10,16,'AscY'),conv(321,7,''),conv(321,10,'张三');
+                                                               ^
 CONTEXT:  referenced column: conv
  conv | conv | conv | conv 
 ------+------+------+------

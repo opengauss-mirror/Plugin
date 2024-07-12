@@ -21,13 +21,17 @@ insert into test_tint(a) values(-355);
 WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
+WARNING:  invalid input syntax for tinyint unsigned: "a888"
+LINE 1: insert into test_tint(a) values('a888');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_tint(a) values('888aa');
-WARNING:  value "888aa" is out of range for type tinyint unsigned. truncated automatically
+WARNING:  value "888aa" is out of range for type tinyint unsigned
 LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('-88aa');
-WARNING:  value "-88aa" is out of range for type tinyint unsigned. truncated automatically
+WARNING:  value "-88aa" is out of range for type tinyint unsigned
 LINE 1: insert into test_tint(a) values('-88aa');
                                         ^
 CONTEXT:  referenced column: a
@@ -81,7 +85,15 @@ LINE 1: insert into test_sint(a) values('a888');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_sint(a) values('88123423433834343423434aa');
+WARNING:  value "88123423433834343423434aa" is out of range for type smallint unsigned
+LINE 1: insert into test_sint(a) values('88123423433834343423434aa')...
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_sint(a) values('-88aa');
+WARNING:  value "-88aa" is out of range for type smallint unsigned
+LINE 1: insert into test_sint(a) values('-88aa');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(1234233434343434343434343434343.55);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
@@ -132,7 +144,15 @@ LINE 1: insert into test_int(a) values('a888');
                                        ^
 CONTEXT:  referenced column: a
 insert into test_int(a) values('88123423433834343423434aa');
+WARNING:  value "88123423433834343423434aa" is out of range for type int unsigned
+LINE 1: insert into test_int(a) values('88123423433834343423434aa');
+                                       ^
+CONTEXT:  referenced column: a
 insert into test_int(a) values('-88aa');
+WARNING:  value "-88aa" is out of range for type int unsigned
+LINE 1: insert into test_int(a) values('-88aa');
+                                       ^
+CONTEXT:  referenced column: a
 insert into test_int(a) values(1234233434343434343434343434343.55);
 WARNING:  unsigned int out of range
 CONTEXT:  referenced column: a
@@ -217,7 +237,7 @@ select * from test_bint;
  0
  0
  18446744073709551615
- 88
+ 0
  18446744073709551615
  13
  0
@@ -357,7 +377,7 @@ select * from test_tint1;
  0
  0
  255
- 88
+ 0
  255
  13
  0
@@ -482,7 +502,7 @@ select * from test_sint1;
  0
  0
  65535
- 88
+ 0
  65535
  13
  0
@@ -599,7 +619,7 @@ select * from test_int1;
  0
  0
  4294967295
- 88
+ 0
  4294967295
  13
  0
@@ -837,7 +857,7 @@ select * from test_char1;
  0
  0
  1
- 8
+ 0
  1
  1
  0
@@ -943,7 +963,7 @@ select * from test_varchar7_1;
  0
  0
  1844674
- 88
+ 0
  1844674
  13
  0
@@ -1408,17 +1428,17 @@ insert into test_tint_strict(a) values(-355);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('a888');
-ERROR:  invalid input syntax for integer: "a888"
+ERROR:  invalid input syntax for tinyint unsigned: "a888"
 LINE 1: insert into test_tint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('888aa');
-ERROR:  invalid input syntax for integer: "888aa"
+ERROR:  value "888aa" is out of range for type tinyint unsigned
 LINE 1: insert into test_tint_strict(a) values('888aa');
                                                ^
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('-88aa');
-ERROR:  invalid input syntax for integer: "-88aa"
+ERROR:  value "-88aa" is out of range for type tinyint unsigned
 LINE 1: insert into test_tint_strict(a) values('-88aa');
                                                ^
 CONTEXT:  referenced column: a
@@ -1467,7 +1487,7 @@ LINE 1: insert into test_sint_strict(a) values('88123423433834343423...
                                                ^
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('-88aa');
-ERROR:  invalid input syntax for smallint unsigned: "-88aa"
+ERROR:  value "-88aa" is out of range for type smallint unsigned
 LINE 1: insert into test_sint_strict(a) values('-88aa');
                                                ^
 CONTEXT:  referenced column: a
@@ -1516,7 +1536,7 @@ LINE 1: insert into test_int_strict(a) values('881234234338343434234...
                                               ^
 CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('-88aa');
-ERROR:  invalid input syntax for int unsigned: "-88aa"
+ERROR:  value "-88aa" is out of range for type int unsigned
 LINE 1: insert into test_int_strict(a) values('-88aa');
                                               ^
 CONTEXT:  referenced column: a

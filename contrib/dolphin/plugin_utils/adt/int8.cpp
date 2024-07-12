@@ -107,167 +107,18 @@ void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr, bool checkD
 /* ----------------------------------------------------------
  * Formatting and conversion routines.
  * --------------------------------------------------------- */
-
-/*
- * scanint8 --- try to parse a string into an int8.
- *
- * If errorOK is false, ereport a useful error message if the string is bad.
- * If errorOK is true, just return "false" for bad input.
- *
- * Param can_ignore is true when using ignore hint, which will ignore errors of
- * overflowing or invalid input.
- */
-bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
-{
-    return Scanint8Internal(str, errorOK, result, SQL_MODE_STRICT(), can_ignore);
-}
-
-bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore)
-{
-    const char* ptr = str;
-    int64 tmp = 0;
-    bool neg = false;
-
-    /*
-     * Do our own scan, rather than relying on sscanf which might be broken
-     * for long long.
-     *
-     * As INT64_MIN can't be stored as a positive 64 bit integer, accumulate
-     * value as a negative number.
-     */
-
-#ifdef DOLPHIN
-    if (*str == 0) {
-        ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
-            (errmodule(MOD_FUNCTION),
-                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input syntax for bigint: \"%s\"", str)));
-        *result = 0;
-        return true;
-    }
-#endif
-
-    /* skip leading spaces */
-    while (*ptr && isspace((unsigned char)*ptr)) {
-        ptr++;
-    }
-
-    /* handle sign */
-    if (*ptr == '-') {
-        ptr++;
-        neg = true;
-    } else if (*ptr == '+')
-        ptr++;
-
-    /* require at least one digit */
-    if (unlikely(!isdigit((unsigned char)*ptr))) {
-        if (errorOK)
-            return false;
-        else if (can_ignore || !sqlModeStrict) {
-            ereport(WARNING,
-                (errmodule(MOD_FUNCTION),
-                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-            *result = tmp;
-            return true;
-        }
-        else if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
-            ereport(ERROR,
-                (errmodule(MOD_FUNCTION),
-                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-    }
-
-    /* process digits */
-    while (*ptr && isdigit((unsigned char)*ptr)) {
-        int8 digit = (*ptr++ - '0');
-
-        if (unlikely(pg_mul_s64_overflow(tmp, 10, &tmp)) || unlikely(pg_sub_s64_overflow(tmp, digit, &tmp))) {
-            if (errorOK) {
-                return false;
-            } else if (!can_ignore && sqlModeStrict) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
-            } else {
-                ereport(WARNING,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
-                *result = neg ? PG_INT64_MIN : PG_INT64_MAX;
-                return true;
-            }
-        }
-    }
-
-    /* allow trailing whitespace and dot, but not other trailing chars */
-#ifdef DOLPHIN
-    char digitAfterDot = '\0';
-    /* for errorOK scenarios, donot check decimal part so ptr doesnt pornt to the end if the value has decimal part. */
-    const bool checkDecimal = !errorOK;
-    CheckSpaceAndDotInternal(digitAfterDot, &ptr, checkDecimal);
-#else
-    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
-        ptr++;
-    }
-#endif
-
-    if (unlikely(*ptr != '\0')) {
-        if (errorOK) {
-            return false;
-        } else if (!can_ignore && sqlModeStrict) {
-            /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
-                Other wise whitespace will be convert to 0 */
-            ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-        } else {
-            ereport(WARNING,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-        }
-    }
-
-    if (!neg) {
-        /* could fail if input is most negative number */
-        if (unlikely(tmp == PG_INT64_MIN)) {
-            if (errorOK) {
-                return false;
-            } else if (!can_ignore && sqlModeStrict) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
-            } else {
-                ereport(WARNING,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
-                tmp = -(tmp + 1);
-            }
-        } else {
-            tmp = -tmp;
-        }
-    }
-
-#ifdef DOLPHIN
-    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
-        if (!neg && tmp < PG_INT64_MAX)
-            tmp++;
-        if (neg && tmp > PG_INT64_MIN)
-            tmp--;
-    }
-#endif
-
-    *result = tmp;
-    return true;
-}
-
 /* int8in()
  */
 Datum int8in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
     int64 result;
-
-    (void)Scanint8Internal(str, false, &result, SQL_MODE_STRICT(), fcinfo->can_ignore);
+#ifdef DOLPHIN
+    result = PgStrToIntInternal<false>(str, fcinfo->can_ignore || !SQL_MODE_STRICT(),
+        PG_INT64_MAX, PG_INT64_MIN, "bigint");
+#else
+    (void)scanint8(str, false, &result, fcinfo->can_ignore);
+#endif
     PG_RETURN_INT64(result);
 }
 
