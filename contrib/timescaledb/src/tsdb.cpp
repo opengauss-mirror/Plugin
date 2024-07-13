@@ -1100,7 +1100,7 @@ check_enable_rls(Oid relid, Oid checkAsUser, bool noError)
         amowner ? errhint("To disable the policy for the table's owner, use ALTER TABLE NO FORCE ROW LEVEL SECURITY.") : 0));
 
 	  /* RLS should be fully enabled for this relation. */
-  return RLS_ENABLED;
+  return RLS_NONE;
 }
 
 void
