@@ -1295,7 +1295,10 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
         DefElem* def = makeDefElem("compression", (Node*)makeString(COMPRESSION_LOW));
         res = lappend(options, def);
     }
-
+    if (isCStore && assignedStorageType) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
+                        errmsg("There is a conflict caused by storage_type and orientation")));
+    }
     bool noSupportTable = segment || isCStore || isTsStore || relkind != RELKIND_RELATION ||
                           stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED ||
                           stmt->relation->relpersistence == RELPERSISTENCE_TEMP ||
@@ -2952,7 +2955,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
 
     if (!IsInitdb && (relkind == RELKIND_RELATION) && !IsSystemNamespace(namespaceId) &&
         !IsCStoreNamespace(namespaceId) && (pg_strcasecmp(storeChar, ORIENTATION_ROW) == 0) &&
-        (stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT) && !u_sess->attr.attr_storage.enable_recyclebin) {
+        (stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT)) {
         bool isSegmentType = (storage_type == SEGMENT_PAGE);
         if (!isSegmentType && (u_sess->attr.attr_storage.enable_segment || bucketinfo != NULL)) {
             storage_type = SEGMENT_PAGE;
@@ -2961,12 +2964,6 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
             reloptions = transformRelOptions((Datum)0, stmt->options, NULL, validnsps, true, false);
         }
     } else if (storage_type == SEGMENT_PAGE) {
-        if (u_sess->attr.attr_storage.enable_recyclebin) {
-            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
-                errmsg("The table %s do not support segment-page storage", stmt->relation->relname),
-                errdetail("Segment-page storage doest not support recyclebin"),
-                errhint("set enable_recyclebin = off before using segmnet-page storage.")));
-        }
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("The table %s do not support segment storage", stmt->relation->relname)));
@@ -8264,6 +8261,40 @@ LOCKMODE AlterTableGetLockLevel(List* cmds)
                     cmd_lockmode = AccessExclusiveLock;
                 } else {
                     cmd_lockmode = ShareUpdateExclusiveLock;
+                }
+            } else {
+                switch (cmd->subtype) {
+                    /*
+                     * These subcommands affect write operations only.
+                     */
+                    case AT_EnableTrig:
+                    case AT_EnableAlwaysTrig:
+                    case AT_EnableReplicaTrig:
+                    case AT_EnableTrigAll:
+                    case AT_EnableTrigUser:
+                    case AT_DisableTrig:
+                    case AT_DisableTrigAll:
+                    case AT_DisableTrigUser:
+                        cmd_lockmode = ShareRowExclusiveLock;
+                        break;
+                    case AT_AddConstraint:
+                    case AT_ProcessedConstraint:  /* becomes AT_AddConstraint */
+                    case AT_AddConstraintRecurse: /* becomes AT_AddConstraint */
+                    case AT_ReAddConstraint:      /* becomes AT_AddConstraint */
+                        if (IsA(cmd->def, Constraint)) {
+                            Constraint *con = (Constraint *) cmd->def;
+                            if (con->contype == CONSTR_FOREIGN) {
+                                /*
+                                 * We add triggers to both tables when we add a
+                                 * Foreign Key, so the lock level must be at least
+                                 * as strong as CREATE TRIGGER.
+                                 */
+                                cmd_lockmode = ShareRowExclusiveLock;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             /* update with the higher lock mode */
@@ -14811,16 +14842,13 @@ static ObjectAddress ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation r
     ObjectAddress address;
 
     /*
-     * Grab an exclusive lock on the pk table, so that someone doesn't delete
-     * rows out from under us. (Although a lesser lock would do for that
-     * purpose, we'll need exclusive lock anyway to add triggers to the pk
-     * table; trying to start with a lesser lock will just create a risk of
-     * deadlock.)
+     * Grab ShareRowExclusiveLock on the pk table, so that someone doesn't
+	 * delete rows out from under us.
      */
     if (OidIsValid(fkconstraint->old_pktable_oid))
-        pkrel = heap_open(fkconstraint->old_pktable_oid, AccessExclusiveLock);
+        pkrel = heap_open(fkconstraint->old_pktable_oid, ShareRowExclusiveLock);
     else
-        pkrel = heap_openrv(fkconstraint->pktable, AccessExclusiveLock);
+        pkrel = heap_openrv(fkconstraint->pktable, ShareRowExclusiveLock);
 
     /*
      * Validity checks (permission checks wait till we have the column
@@ -17305,6 +17333,12 @@ bool InvalidateDependView(Oid viewOid, char objType)
                 continue;
             }
             char relkind = get_rel_relkind(dep_view_oid);
+            if (relkind == objType && dep_view_oid == viewOid) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_OBJECT_DEFINITION),
+                        errmsg(
+                            "infinite recursion detected in rules for relation: \"%s\"", get_rel_name(viewOid))));
+            }
             if (relkind != RELKIND_VIEW && relkind != RELKIND_MATVIEW) {
                 continue;
             }

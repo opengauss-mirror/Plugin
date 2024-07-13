@@ -496,6 +496,8 @@ static int64 SequenceStrGetInt64(const char *str);
 static int GetLoadType(int load_type_f, int load_type_s);
 static Node *MakeSqlLoadNode(char *colname);
 static void checkDeleteRelationError();
+static TypeName *ParseFloatByExtentedPrecision(int ival, int location, core_yyscan_t yyscanner);
+static void CheckTypmodScale(List* arglist, int location, core_yyscan_t yyscanner);
 static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner, bool is_byprecision = true);
 static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner);
 
@@ -646,6 +648,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 		AlterExtensionStmt AlterExtensionContentsStmt AlterForeignTableStmt
 		AlterCompositeTypeStmt AlterUserStmt AlterUserMappingStmt AlterUserSetStmt
 		AlterSystemStmt
+		AlterTriggerStmt
 		AlterRoleStmt AlterRoleSetStmt AlterRlsPolicyStmt
 		AlterDefaultPrivilegesStmt DefACLAction AlterSessionStmt
 		AnalyzeStmt AnalyzePartitionStmt AnalyzeTableStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
@@ -1576,6 +1579,7 @@ stmt :
 			| AlterSubscriptionStmt
 			| AlterTableStmt
 			| AlterSystemStmt
+			| AlterTriggerStmt
 			| AlterCompositeTypeStmt
 			| AlterRoleSetStmt
 			| AlterRoleStmt
@@ -2452,6 +2456,18 @@ altersys_option:
 			|				{/* empty */}
 			;
 
+AlterTriggerStmt:
+			ALTER TRIGGER name enable_trigger
+				{
+					if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+						ereport(ERROR,(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("ALTER TRIGGER ... ENABLE/DISABLE is supported only in A_FORMAT database.")));
+					AlterTriggerStmt *n = makeNode(AlterTriggerStmt);
+					n->trigname = $3;
+					n->tgenabled = $4;
+					$$ = (Node *)n;
+				}
+			;
 /*****************************************************************************
  *
  * Kill a session or cancel all queries from a session
@@ -42049,6 +42065,42 @@ static void parameter_check_execute_direct(const char* query)
 		ereport(errstate,
 			(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				errmsg("must be system admin or monitor admin to use EXECUTE DIRECT")));
+	}
+}
+
+static TypeName *ParseFloatByExtentedPrecision(int ival, int location, core_yyscan_t yyscanner)
+{
+	TypeName *typnam = NULL;
+	
+	/* Float binary precision must be between 1 and 126 */
+	if (ival <= 126) {
+		typnam = SystemTypeName("numeric");
+		typnam->typmods = list_make2(makeIntConst(ival, location), makeIntConst(-32768, -1));
+	} else {
+		const char* message = "precision for type float must be less than 127 bits";
+		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				errmsg("precision for type float must be less than 127 bits"),
+				parser_errposition(location)));
+	}
+	return typnam;
+}
+
+static void CheckTypmodScale(List* arglist, int location, core_yyscan_t yyscanner)
+{
+	if (t_thrd.proc->workingVersionNum >= FLOAT_VERSION_NUMBER &&
+		u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && list_length(arglist) == 2) {
+		Node *arg = (Node*)lsecond(arglist);
+		A_Const *n = IsA(arg, A_Const) ? (A_Const *)arg : NULL;
+		if (n != NULL && (n->val.val.ival > NUMERIC_MAX_SCALE || n->val.val.ival < NUMERIC_MIN_SCALE)) {
+			const char* message = "NUMERIC scale must be between -84 and 1000";
+			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+					errmsg("NUMERIC scale must be between -84 and 1000"),
+					parser_errposition(location)));
+		}
 	}
 }
 
