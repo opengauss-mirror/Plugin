@@ -2,14 +2,48 @@ create schema db_show_5;
 set current_schema to 'db_show_5';
 CREATE SCHEMA tst_schema5;
 --orientation=row, normal primary key
+-- uppercase USTORE 
 CREATE TABLE db_show_5.t1
 (
 id int primary key,
 name varchar(20),
 phone text
-) WITH(ORIENTATION=ROW, STORAGE_TYPE=USTORE);
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='USTORE');
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+-- lowercase ustore
+CREATE TABLE db_show_5.t11
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='ustore');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t11_pkey" for table "t11"
+-- mixed case uStore
+CREATE TABLE db_show_5.t111
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='uStore');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t111_pkey" for table "t111"
+set enable_default_ustore_table=on;
+CREATE TABLE db_show_5.t1111
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1111_pkey" for table "t1111"
+CREATE TABLE db_show_5.t1112
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='aStore');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1112_pkey" for table "t1112"
+set enable_default_ustore_table=off;
 --orientation=column, serial primary key
+--default astore
 CREATE TABLE db_show_5.t2
 (
 id serial primary key,
@@ -18,6 +52,33 @@ phone text
 ) WITH(ORIENTATION=COLUMN);
 NOTICE:  CREATE TABLE will create implicit sequence "t2_id_seq" for serial column "t2.id"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+-- lowercase astore
+CREATE TABLE db_show_5.t21
+(
+id serial primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='astore');
+NOTICE:  CREATE TABLE will create implicit sequence "t21_id_seq" for serial column "t21.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t21_pkey" for table "t21"
+-- uppercase USTORE
+CREATE TABLE db_show_5.t22
+(
+id serial primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='ASTORE');
+NOTICE:  CREATE TABLE will create implicit sequence "t22_id_seq" for serial column "t22.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t22_pkey" for table "t22"
+-- mixed case aStore
+CREATE TABLE db_show_5.t23
+(
+id serial primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE='aStore');
+NOTICE:  CREATE TABLE will create implicit sequence "t23_id_seq" for serial column "t23.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t23_pkey" for table "t23"
 --create table in tst_schema5
 CREATE TABLE tst_schema5.tst_t1
 (
@@ -48,7 +109,14 @@ SHOW TABLE STATUS;
 --?.*
 --?.*
 --?.*
-(2 rows)
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(9 rows)
 
 SHOW TABLE STATUS FROM tst_schema5;
 --?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
@@ -115,8 +183,34 @@ RESET ROLE;
 REVOKE SELECT ON ALL TABLES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 REVOKE SELECT ON ALL SEQUENCES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 DROP USER tst_shows_u5;
+SHOW TABLE STATUS FROM db_show_5 WHERE Engine='USTORE';
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+SHOW TABLE STATUS FROM db_show_5 WHERE Engine='ASTORE';
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(5 rows)
+
 drop schema db_show_5 cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to table t1
+drop cascades to table t11
+drop cascades to table t111
+drop cascades to table t1111
+drop cascades to table t1112
 drop cascades to table t2
+drop cascades to table t21
+drop cascades to table t22
+drop cascades to table t23
 reset current_schema;

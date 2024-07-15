@@ -892,8 +892,9 @@ static Node* makeEngineColumn()
     w1->result = (Expr*)makeNullAConst(-1);
 
     Node* ustroe = plpsMakeFunc("instr",
-                    list_make2(plpsMakeTypeCast(plpsMakeColumnRef(PG_CLASS_NAME, "reloptions"), "text", -1), 
-                            plpsMakeStringConst("ustore")));
+                    list_make2(plpsMakeFunc("lower", list_make1(
+                            plpsMakeTypeCast(plpsMakeColumnRef(PG_CLASS_NAME, "reloptions"), "text", -1)
+                        )), plpsMakeStringConst("ustore")));
 
     CaseWhen* w2 = makeNode(CaseWhen);
     w2->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, ">", ustroe, plpsMakeIntConst(0), -1);
@@ -1052,7 +1053,7 @@ static Node* makeShowTableStatusJoinTable()
  * (
  *     SELECT pg_class.relname AS "name",
  *         CASE WHEN pg_class.relkind='v' THEN NULL 
- *         WHEN POSITION('ustore' IN pg_class.reloptions::TEXT) > 0 THEN 'USTORE' ELSE 'ASTORE' END AS "engine",
+ *         WHEN POSITION('ustore' IN lower(pg_class.reloptions::TEXT)) > 0 THEN 'USTORE' ELSE 'ASTORE' END AS "engine",
  *         NULL AS "version",
  *         CASE WHEN pg_class.relkind='v' THEN NULL 
  *         WHEN POSITION('column' IN pg_class.reloptions::TEXT) > 0 THEN 'COLUMN' ELSE 'ROW' END AS "row_format",
