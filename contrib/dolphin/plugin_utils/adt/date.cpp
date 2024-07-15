@@ -4579,6 +4579,10 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
         }
         str++;
     }
+
+    if (GetSessionContext()->cmpt_version == MYSQL_VERSION_8_0 && warnings && length == strlen(str)) {
+        *null_func_result = true;
+    }
     return true;
 }
 
