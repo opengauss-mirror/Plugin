@@ -41,6 +41,7 @@
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_target.h"
 #include "plugin_parser/parse_cte.h"
+#include "plugin_postgres.h"
 #include "pgxc/pgxc.h"
 #include "rewrite/rewriteManip.h"
 #include "storage/tcap.h"
@@ -2762,7 +2763,15 @@ List* addTargetToSortList(
          * so we only optimize the single table query.
          */ 
         if (sortby->sortby_nulls != SORTBY_NULLS_DEFAULT && is_single_table_query(pstate) &&
-            has_not_null_constraint(pstate, tle)) {
+            has_not_null_constraint(pstate, tle)
+#ifdef DOLPHIN
+            /**
+             * in B CMPT, index is created as nulls first default
+             * remove null/last first may prevent some queries from using indexes
+             */
+            && (!ENABLE_B_CMPT_MODE || !ENABLE_NULLS_MINIMAL_POLICY_MODE)
+#endif
+            ) {
             sortby->sortby_nulls = SORTBY_NULLS_DEFAULT;
         }
 

@@ -65,6 +65,43 @@ alter table doesnotexist add index i_temptest1(tcol);
 --rename, still error
 alter index t2_id_idx1 rename to t2_id_idx2;
 
+-- test index
+set dolphin.b_compatibility_mode to on;
+set enable_opfusion to off;
+set enable_indexonlyscan to off;
+create table t5(a int);
+create index t5_a_idx on t5(a);
+insert into t5 values(1),(2),(3),(null);
+\d t5
+set dolphin.b_compatibility_mode to off;
+\d t5
+set dolphin.b_compatibility_mode to on;
+analyze t5;
+-- use index
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+-- index Backward
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+
+drop table t5;
+create table t5(a int);
+create index t5_a_idx on t5(a desc);
+insert into t5 values(1),(2),(3),(null);
+\d t5
+set dolphin.b_compatibility_mode to off;
+\d t5
+set dolphin.b_compatibility_mode to on;
+analyze t5;
+-- use index
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a;
+-- index Backward
+explain (costs off) select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+select /*+ indexscan(t5 t5_a_idx) */* from t5 order by a desc;
+
+reset enable_opfusion;
+reset enable_indexonlyscan;
 reset dolphin.b_compatibility_mode;
 drop table temptest;
 drop table t1;
@@ -72,3 +109,4 @@ drop table t2;
 
 drop schema create_index cascade;
 reset current_schema;
+

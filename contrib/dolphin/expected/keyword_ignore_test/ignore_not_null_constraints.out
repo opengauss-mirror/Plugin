@@ -1,6 +1,7 @@
 -- test for insert/update ignore.
 create schema sql_ignore_not_null_test;
 set current_schema to 'sql_ignore_not_null_test';
+set dolphin.b_compatibility_mode to on;
 drop table if exists t_ignore;
 NOTICE:  table "t_ignore" does not exist, skipping
 create table t_ignore(col1 int, col2 int not null, col3 varchar not null);
@@ -1136,7 +1137,8 @@ explain(costs off) insert ignore into  t_not_null_key_partition values (null);
 (3 rows)
 
 insert ignore into  t_not_null_key_partition values (null);
-WARNING:  inserted partition key does not map to any table partition
+WARNING:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 select * from t_not_null_key_partition;
  num | ca_city  
 -----+----------

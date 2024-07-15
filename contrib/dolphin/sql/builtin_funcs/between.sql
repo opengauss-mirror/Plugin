@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set dolphin.b_compatibility_mode to on;
 select 2 between 2 and 23;
 select 2.1 between 2.1 and 12.3;
 select true between false and true;
@@ -175,5 +176,56 @@ select 10 between to_days('0000-01-01') and timestamp'0000-01-04 12:30:00';
 select 102 between '0000-01-01' and date'0000-01-03';
 select 102 between time'00:01:01' and date'0000-01-03';
 select 102 between date'0000-01-01' and timestamp'0000-01-03 00:00:00';
+-- use index when DATEOID/TIMESTAMPOID/TIMESTAMPTZOID with string
+create table test(time time, timetz time with time zone, date date, datetime datetime, timestamp timestamp);
+insert into test values('12:00:00','12:00:00','2024-12-12','2024-12-12','2024-12-12');
+create index on test(time);
+create index on test(timetz);
+create index on test(date);
+create index on test(datetime);
+create index on test(timestamp);
+
+/* index */
+set enable_seqscan to off;
+explain (costs off) select * from test where time between '12:00:00' and '12:00:00';
+explain (costs off) select * from test where timetz between '12:00:00' and '12:00:00';
+explain (costs off) select * from test where date between '2024-12-12' and '2024-12-12';
+explain (costs off) select * from test where datetime between '2024-12-12' and '2024-12-12';
+explain (costs off) select * from test where timestamp between '2024-12-12' and '2024-12-12';
+
+explain (costs off) select * from test where time between '12:00:00'::text and '12:00:00'::text; -- N
+explain (costs off) select * from test where timetz between '12:00:00'::text and '12:00:00'::text; -- N
+explain (costs off) select * from test where date between '2024-12-12'::text and '2024-12-13'::text;
+explain (costs off) select * from test where datetime between '2024-12-12'::text and '2024-12-13'::text;
+explain (costs off) select * from test where timestamp between '2024-12-12'::text and '2024-12-13'::text;
+
+explain (costs off) select * from test where time between '12:00:00'::char(100) and '12:00:00'::char(100); -- N
+explain (costs off) select * from test where date between '2024-12-12'::char(100) and '2024-12-13'::char(100); -- N
+explain (costs off) select * from test where datetime between '2024-12-12'::char(100) and '2024-12-13'::char(100);
+explain (costs off) select * from test where timestamp between '2024-12-12'::char(100) and '2024-12-13'::char(100);
+
+/* all no index. */
+explain (costs off) select * from test where time between '12:00:00'::blob and '12:00:00'::blob; -- failed
+explain (costs off) select * from test where timetz between '12:00:00'::blob and '12:00:00'::blob; -- N
+explain (costs off) select * from test where date between '2024-12-12'::blob and '2024-12-13'::blob; -- N
+explain (costs off) select * from test where datetime between '2024-12-12'::blob and '2024-12-13'::blob;
+explain (costs off) select * from test where timestamp between '2024-12-12'::blob and '2024-12-13'::blob;
+
+
+/*  all no index. */
+explain (costs off) select * from test where time between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
+explain (costs off) select * from test where timetz between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
+explain (costs off) select * from test where date between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100); -- N
+explain (costs off) select * from test where datetime between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100);
+explain (costs off) select * from test where timestamp between '2024-12-12'::VARBINARY(100) and '2024-12-13'::VARBINARY(100);
+
+select * from test where time between '12:00:00' and '12:00:00'; /* exptected 1 */
+select * from test where time between '11:00:00' and '12:00:00'; /* exptected 1 */
+select * from test where timetz between '12:00:00' and '12:00:00'; /* exptected 1 */
+select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /* exptected 0 */
+select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /* exptected 1 */
+select * from test where date between datetime and timestamp; /* exptected 1 */
+select * from test where datetime between date and timestamp; /* exptected 1 */
+
 drop schema db_between cascade;
 reset current_schema;
