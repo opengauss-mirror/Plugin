@@ -28,13 +28,25 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 - TimescaleDB插件依赖于public schema，因此不支持使用drop schema的方式删除public schema
 - TimescaleDB创建的超表需要使用drop table CASCADE;进行删除,会同时删除其附加表；
 
+
+### 1.3.2. 软件依赖要求
+
+
+以下表格列举了编译TimescaleDB的特有软件要求，其它软件依赖请参考[openGauss](https://gitee.com/opengauss/openGauss-server#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%92%8C%E8%BD%AF%E4%BB%B6%E4%BE%9D%E8%B5%96%E8%A6%81%E6%B1%82)。
+
+
+软件依赖要求如下：
+软件    | 推荐版本
+--------|-----------
+cmake   | 3.4及以上版本
+
 # **2.** TimescaleDB安装方法
 
 
 ## **2.1.** 源码安装
 
 
-从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行离线安装脚本 ./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF 
+从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行 `./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF`
 
 ```
 cd contrib/timescaledb
@@ -43,7 +55,6 @@ cd contrib/timescaledb
 
 进入`./build`文件夹中，执行`make && make install`
 
-在执行make install之后，需要主文件夹下的`og-timescaledb1.7.4.sql`的内容替换到openGauss-server安装路径下的`share/postgresql/extension/timescaledb--1.7.4.sql`文件中。
 
 在对应数据库配置文件（比如data/postgresql.conf）中的最后一行写入`shared_preload_libraries = '$libdir/timescaledb'`
 
