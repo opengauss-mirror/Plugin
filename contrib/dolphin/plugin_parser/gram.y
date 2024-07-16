@@ -29187,6 +29187,8 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = $1;
 					$$->isRewritten = false;
+                    if (((SelectStmt*)$1)->valuesLists == NULL)
+                      $$->is_dist_insertselect = true;
 				}
 			| '(' insert_column_list ')' SelectStmt
 				{
@@ -29194,6 +29196,8 @@ insert_rest:
 					$$->cols = $2;
 					$$->selectStmt = $4;
 					$$->isRewritten = false;
+					if (((SelectStmt*)$4)->valuesLists == NULL)
+                        $$->is_dist_insertselect = true;
 				}
 			| '(' ')' SelectStmt
 				{
@@ -29201,6 +29205,8 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = $3;
 					$$->isRewritten = false;
+					if (((SelectStmt*)$3)->valuesLists == NULL)
+                        $$->is_dist_insertselect = true;
 				}
 			| DEFAULT VALUES
 				{
@@ -29208,6 +29214,7 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = NULL;
 					$$->isRewritten = false;
+					$$->is_dist_insertselect = false;
 				}
 			| insert_empty_values
 				{
@@ -29219,6 +29226,7 @@ insert_rest:
 							$$->selectStmt = $1;
 						}
 						$$->isRewritten = false;
+						$$->is_dist_insertselect = false;
 				}
 			| '(' ')' insert_empty_values
 				{
@@ -29230,6 +29238,7 @@ insert_rest:
 						$$->selectStmt = $3;
 					}
 					$$->isRewritten = false;
+					$$->is_dist_insertselect = false;
 				}
 		;
 
