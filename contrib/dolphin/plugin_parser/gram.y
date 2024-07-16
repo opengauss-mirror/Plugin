@@ -1196,7 +1196,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET OR_OR_SYM
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET FCONST_F FCONST_D OR_OR_SYM
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1215,7 +1215,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
-	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
+	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_DOUBLE_INF BINARY_DOUBLE_NAN BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHANNEL CHAR_P
@@ -1235,7 +1235,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERROR_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1248,7 +1248,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
-	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
+	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INFINITE_P INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPLACE INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
 	INTERSECT INTERVAL INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
@@ -1264,7 +1264,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
 	MOD MODIFIES MAX_ROWS
 	// DB4AI
-	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
+	NAME_P NAMES NAN_P NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOVALIDATE NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
@@ -15440,6 +15440,8 @@ TriggerFuncArg:
 					$$ = makeString(pstrdup(buf));
 				}
 			| FCONST								{ $$ = makeString($1); }
+			| FCONST_F								{ $$ = makeString($1); }
+			| FCONST_D								{ $$ = makeString($1); }
 			| SCONST								{ $$ = makeString($1); }
 			| ColLabel								{ $$ = makeString($1); }
 		;
@@ -34178,6 +34180,34 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->nulltesttype = IS_NOT_NULL;
 					$$ = (Node *)n;
 				}
+			| a_expr IS NAN_P
+			    {
+					NanTest *n = makeNode(NanTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->nantesttype = IS_NAN;
+					$$ = (Node *)n;
+				}
+			| a_expr IS NOT NAN_P
+			    {
+					NanTest *n = makeNode(NanTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->nantesttype = IS_NOT_NAN;
+					$$ = (Node *)n;
+				}
+			| a_expr IS INFINITE_P
+			    {
+					InfiniteTest *n = makeNode(InfiniteTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->infinitetesttype = IS_INFINITE;
+					$$ = (Node *)n;
+				}
+			| a_expr IS NOT INFINITE_P
+			    {
+					InfiniteTest *n = makeNode(InfiniteTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->infinitetesttype = IS_NOT_INFINITE;
+					$$ = (Node *)n;
+				}
 			| row OVERLAPS row
 				{
 					/* Create and populate a FuncCall node to support the OVERLAPS operator. */
@@ -34686,6 +34716,16 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					rexpr_func->args = lappend(rexpr_func->args, makeStringConst($6, @6));
 					A_Expr *match_against = makeSimpleA_Expr(AEXPR_OP, "@@", (Node *)lexpr_func, (Node *)rexpr_func, -1);
 					$$ = (Node *)match_against;
+				}
+			| FCONST_F
+				{
+					Node *num = makeFloatConst($1, @1);
+					$$ = makeTypeCast(num, SystemTypeName("float4"), @1);	
+				}
+			| FCONST_D
+				{
+					Node *num = makeFloatConst($1, @1);
+					$$ = makeTypeCast(num, SystemTypeName("float8"), @1);	
 				}
 		;
 
@@ -35292,6 +35332,32 @@ func_application_special:	dolphin_func_name '(' ')'
 					n->location = @1;
 					n->call_func = false;
 					$$ = (Node *)n;
+				}
+			| dolphin_func_name '(' func_arg_list DEFAULT func_arg_expr ON CONVERSION_P ERROR_P opt_sort_clause ')'
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						ereport(ERROR,
+						       (errcode(ERRCODE_SYNTAX_ERROR),
+							   errmsg("The syntax or function is not supported. \"%s\"", $4)));
+					}
+					if (IsA($5, ColumnRef)) {
+						ereport(ERROR,
+							   (errcode(ERRCODE_SYNTAX_ERROR),
+							   errmsg("Default param can't be ColumnRef")));
+					}
+
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = $1;
+					n->args = lappend($3, $5);
+					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
+					n->agg_order = $9;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *) n;
 				}
 			| dolphin_func_name '(' VARIADIC func_arg_expr opt_sort_clause ')'
 				{
@@ -39364,6 +39430,7 @@ alias_name_unreserved_keyword_without_key:
 			| ENGINES
 			| ENFORCED
 			| EOL
+			| ERROR_P
 			| ERRORS
 			| ESCAPE
 			| ESCAPING
@@ -39413,6 +39480,7 @@ alias_name_unreserved_keyword_without_key:
 			| INCREMENTAL
 			| INDEXES
 			| INFILE
+			| INFINITE_P
 			| INHERITS
 			| INHERIT
 			| INITIAL_P
@@ -39474,6 +39542,7 @@ alias_name_unreserved_keyword_without_key:
 			| MOVEMENT
 			| MYSQL_ERRNO
 			| NAMES
+			| NAN_P
 			| NEXT
 			| NGRAM
 			| NO
@@ -39861,6 +39930,8 @@ col_name_keyword:
 alias_name_col_name_alias_nonambiguous_keyword:
 	AUTHID
 	| BINARY_DOUBLE %prec IDENT
+	| BINARY_DOUBLE_INF
+	| BINARY_DOUBLE_NAN
 	| BINARY_INTEGER %prec IDENT
 	| BIT %prec IDENT
 	| BOOLEAN_P %prec IDENT
