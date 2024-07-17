@@ -173,6 +173,7 @@ typedef struct BSqlPluginContext {
     char* performance_schema;
     bool isInTransformSet;
     int cmpt_version;
+    int bit_output;
 #endif
 } bSqlPluginContext;
 

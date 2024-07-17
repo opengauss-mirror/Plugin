@@ -108,8 +108,27 @@ extern Datum bitsetbit(PG_FUNCTION_ARGS);
 extern Datum bitgetbit(PG_FUNCTION_ARGS);
 
 #ifdef DOLPHIN
+char* bit_to_str(VarBit *bits, bool is_escape_zero = false);
 int GetLeadingZeroLen(VarBit* arg);
 Datum dolphin_bitposition(PG_FUNCTION_ARGS);
+
+typedef enum {
+    BIT_OUTPUT_BIN,
+    BIT_OUTPUT_DEC,
+    BIT_OUTPUT_HEX
+} BitOutputType;
+
+#define HEX_CHARS "0123456789ABCDEF"
+
+#define ZERO_BITS_PER_BYTE "00000000"
+#define ZERO_BITS_PER_BYTE_LENGTH 8
+
+/*size of \000 */
+#define ESCAPE_ZERO_SZIE 4
+
+extern bool is_req_from_jdbc();
+extern bool is_req_from_gsql();
+
 #endif
 
 #endif

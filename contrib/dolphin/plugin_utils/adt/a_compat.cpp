@@ -28,7 +28,7 @@
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
 #ifdef DOLPHIN
-extern char* bit_to_str(VarBit *bits);
+extern char* bit_to_str(VarBit *bits, bool is_escape_zero = false);
 
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_leading);
 extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
