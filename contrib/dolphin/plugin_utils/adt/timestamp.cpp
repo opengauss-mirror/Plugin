@@ -46,6 +46,10 @@
 #include "plugin_utils/my_locale.h"
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_utils/varbit.h"
+#include "nodes/makefuncs.h"
+#include "plugin_parser/parser.h"
+#include "plugin_parser/parse_show.h"
+#include "plugin_optimizer/clauses.h"
 #endif
 
 #ifdef PGXC
@@ -12350,6 +12354,385 @@ Datum binary_timestamptz(PG_FUNCTION_ARGS)
     }
 
     return result;
+}
+
+static Node* eval_const_node(Node* node, bool can_ignore)
+{
+    PlannerInfo* pi = makeNode(PlannerInfo);
+    PlannerGlobal* pg = makeNode(PlannerGlobal);
+    Query* q = makeNode(Query);
+    q->hasIgnore = can_ignore;
+    pi->parse = q;
+    pi->glob = pg;
+
+    Node* constNode = eval_const_expressions(pi, node);
+
+    pfree(q);
+    pfree(pg);
+    pfree(pi);
+    return constNode;
+}
+
+Datum get_coerce_node_datum(Datum val, Oid sourceType, Oid targetType, CoercionContext ccontext, CoercionForm cform, bool can_ignore)
+{
+    if (sourceType == targetType) {
+        return val;
+    }
+    if (can_coerce_type(1, &sourceType, &targetType, COERCION_IMPLICIT)) {
+        Node* node = (Node*)makeConst(sourceType, -1, -1, -1, val, false, false, NULL);
+        Node* newNode = coerce_type(NULL, node, sourceType, targetType, -1, ccontext, cform, -1);
+        Node* constNode = eval_const_node(newNode, can_ignore);
+        
+        Datum datumVal = NULL;
+        if (IsA(constNode, Const)) {
+            datumVal = ((Const *)constNode)->constvalue;
+        } else if (IsA(constNode, FuncExpr)) {
+            datumVal = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, val, can_ignore);
+        } else {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("cannot convert type %s to %s", format_type_be(sourceType), format_type_be(targetType))));
+        }
+        return datumVal;
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid parameter")));
+    }
+}
+
+
+static double ApplyPrecision(double val, int precision)
+{
+    if (precision > MAX_INTERVAL_PRECISION || precision < 0) {
+        precision = MAX_INTERVAL_PRECISION;
+    }
+
+    if (precision == 0) {
+        return round(val);
+    } else {
+        return round(val * pow_of_10[precision]) / pow_of_10[precision];
+    }
+}
+
+static bool get_interval_info(char *str_value, bool *is_negative, uint32 count, uint64 *values, bool transform_msec)
+{
+    int64 len = strlen(str_value);
+    char *str = str_value;
+    char *end = str + len;
+
+    while (*str == ' ') {
+        ++str;
+    }
+    if (*str == '-') {
+        *is_negative = true;
+        ++str;
+    }
+
+    while (str < end && !isdigit(*str)) {
+        ++str;
+    }
+
+    int32 msec_length = 0;
+    for (uint32 i = 0; i < count; i++) {
+        int64 value = 0;
+        char *start = str;
+        for (; str != end && isdigit(*str); str++) {
+            value = value * 10LL +  (int64)(*str - '0');
+        }
+        msec_length = (int32)(MAX_INTERVAL_PRECISION - (str - start));
+        values[i] = (uint64)value;
+        while (str != end && !isdigit(*str)) {
+            str++;
+        }
+        if (str == end && i != count - 1) {
+            uint32 j = count - 1;
+            for (; j >= count - i - 1; --j) {
+                values[j] = values[j - (count - i - 1)];
+            }
+            int k = (int)j;
+            for (; k >= 0; --k) {
+                values[k] = 0;
+            }
+            break;
+        }
+    }
+
+    if (transform_msec && msec_length > 0) {
+        values[count - 1] *= (uint64)(long)pow_of_10[msec_length];
+    }
+
+    return str == end;
+}
+
+static bool handle_interval_year_month(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 2, array, false)) {
+        return false;
+    }
+    itv->month = (array[0] * MONTHS_PER_YEAR + array[1]) * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_day_hour(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 2, array, false)) {
+        return false;
+    }
+    itv->day = array[0] * (isNeg ? -1 : 1);
+    itv->time = array[1] * SECONDS_PER_HOUR * USECS_PER_SEC * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_day_minute(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 3, array, false)) {
+        return false;
+    }
+    itv->day = array[0] * (isNeg ? -1 : 1);
+    itv->time = (array[1] * SECONDS_PER_HOUR + array[2] * SECONDS_PER_MINUTE) * USECS_PER_SEC * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_day_second(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 4, array, false)) {
+        return false;
+    }
+    itv->day = array[0] * (isNeg ? -1 : 1);
+    itv->time = (array[1] * SECONDS_PER_HOUR + array[2] * SECONDS_PER_MINUTE + array[3]) * USECS_PER_SEC * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_day_microsecond(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 5, array, true)) {
+        return false;
+    }
+    itv->day = array[0] * (isNeg ? -1 : 1);
+    itv->time = ((array[1] * SECONDS_PER_HOUR + array[2] * SECONDS_PER_MINUTE + array[3]) * USECS_PER_SEC + array[4]) * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_hour_minute(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 2, array, false)) {
+        return false;
+    }
+    itv->time = (array[0] * SECONDS_PER_HOUR + array[1] * SECONDS_PER_MINUTE) * USECS_PER_SEC * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_hour_second(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 3, array, false)) {
+        return false;
+    }
+    itv->time = (array[0] * SECONDS_PER_HOUR + array[1] * SECONDS_PER_MINUTE + array[2]) * USECS_PER_SEC * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_hour_microsecond(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 4, array, true)) {
+        return false;
+    }
+    itv->time = ((array[0] * SECONDS_PER_HOUR + array[1] * SECONDS_PER_MINUTE + array[2]) * USECS_PER_SEC + array[3]) * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_minute_second(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 2, array, false)) {
+        return false;
+    }
+    itv->time = (array[0] * SECONDS_PER_MINUTE + array[1]) * USECS_PER_SEC* (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_minute_microsecond(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 3, array, true)) {
+        return false;
+    }
+    itv->time = ((array[0] * SECONDS_PER_MINUTE + array[1]) * USECS_PER_SEC + array[2]) * (isNeg ? -1 : 1);
+    return true;
+}
+
+static bool handle_interval_second_microsecond(char *str_value, Interval *itv, uint64 *array)
+{
+    bool isNeg = false;
+    if (!get_interval_info(str_value, &isNeg, 2, array, true)) {
+        return false;
+    }
+    itv->time = (array[0] * USECS_PER_SEC + array[1]) * (isNeg ? -1 : 1);
+    return true;
+}
+
+bool MakeInterval(Datum val, Oid valType, Interval *itv, int int_type, int precision, bool can_ignore)
+{
+    uint64 array[5] = {0};
+    uint64 *array_p = array;
+    int64 value = 0;
+    Datum datumVal;
+    char *str_value = NULL;
+
+    itv->time = 0;
+    itv->day = 0;
+    itv->month = 0;
+
+    switch (int_type) {
+        case INTERVAL_MASK(YEAR):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->month = value * MONTHS_PER_YEAR;
+            break;
+        case INTERVAL_MASK(QUARTER):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->month = value * MONTHS_PER_QUARTER;
+            break;
+        case INTERVAL_MASK(MONTH):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->month = value;
+            break;
+        case INTERVAL_MASK(WEEK):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->day = value * DAYS_PER_WEEK;
+            break;
+        case INTERVAL_MASK(DAY):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->day = value;
+            break;
+        case INTERVAL_MASK(HOUR):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->time = value * SECONDS_PER_HOUR * USECS_PER_SEC;
+            break;
+        case INTERVAL_MASK(MINUTE):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            value = DatumGetInt32(datumVal);
+            itv->time = value * SECONDS_PER_MINUTE * USECS_PER_SEC;
+            break;
+        case INTERVAL_MASK(SECOND):
+            datumVal = get_coerce_node_datum(val, valType, FLOAT8OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            itv->time = ApplyPrecision(DatumGetFloat8(datumVal), precision) * USECS_PER_SEC;
+            break;
+        case INTERVAL_MASK(MICROSECOND):
+            datumVal = get_coerce_node_datum(val, valType, INT4OID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            itv->time = DatumGetInt32(datumVal);
+            break;
+        case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_year_month(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_day_hour(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_day_minute(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_day_second(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_day_microsecond(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_hour_minute(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_hour_second(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_hour_microsecond(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_minute_second(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_minute_microsecond(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        case INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            datumVal = get_coerce_node_datum(val, valType, TEXTOID, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, can_ignore);
+            str_value = text_to_cstring(DatumGetTextP(datumVal));
+            if (!handle_interval_second_microsecond(str_value, itv, array_p)) {
+                return false;
+            }
+            break;
+        default:
+            break;
+    }
+
+    interval_result_adjust(itv);
+    return true;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(any2interval);
+extern "C" DLL_PUBLIC Datum any2interval(PG_FUNCTION_ARGS);
+Datum any2interval(PG_FUNCTION_ARGS)
+{
+    Datum datumVal = PG_GETARG_DATUM(0);
+    int typmod = PG_GETARG_INT32(1);
+    int precision = PG_GETARG_INT32(2);
+    Oid datumValType = fcinfo->argTypes[0];
+    Interval *itv = (Interval*)palloc0(sizeof(Interval));
+
+    if (MakeInterval(datumVal, datumValType, itv, typmod, precision, fcinfo->can_ignore)) {
+        PG_RETURN_INTERVAL_P(itv);
+    } 
+    
+    PG_RETURN_NULL();
 }
 #endif
 

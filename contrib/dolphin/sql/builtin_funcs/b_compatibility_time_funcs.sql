@@ -193,9 +193,9 @@ insert into func_test(functionName, result) values ('subdate(''2022-1-1 6:05:05'
 insert into func_test(functionName, result) values ('subdate(20220101010101.555, 1)',subdate(20220101010101.555, 1));
 insert into func_test(functionName, result) values ('subdate(20220101, 1)',subdate(20220101, 1));
     -- 时分秒相关INTREVAL
-insert into func_test(functionName, result) values ('subdate(''2022-1-1 6:05:05'', INTERVAL ''6'' SECOND)',subdate('2022-1-1 6:05:05', INTERVAL '-6' SECOND)); -- 负interval
+insert into func_test(functionName, result) values ('subdate(''2022-1-1 6:05:05'', INTERVAL ''-6'' SECOND)',subdate('2022-1-1 6:05:05', INTERVAL '-6' SECOND)); -- 负interval
 insert into func_test(functionName, result) values ('subdate(''2022-6-1 6:05:05.5555555'', INTERVAL 6.444444 SECOND)',subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)); -- 正interval 且 datetime微妙位>interval微妙位
-insert into func_test(functionName, result) values ('subdate(''2022-6-1 6:05:05.444444'', INTERVAL ''6.555555'' HOUR TO SECOND)',subdate('2022-6-1 6:05:05.444444', INTERVAL '1:1:6.555555' HOUR TO SECOND)); -- datetime微妙位>interval微妙位
+insert into func_test(functionName, result) values ('subdate(''2022-6-1 6:05:05.444444'', INTERVAL ''1:1:6.555555'' HOUR TO SECOND)',subdate('2022-6-1 6:05:05.444444', INTERVAL '1:1:6.555555' HOUR TO SECOND)); -- datetime微妙位>interval微妙位
 insert into func_test(functionName, result) values ('subdate(''0001-1-1 00:00:01.555555'', INTERVAL ''1.555556'' SECOND)',subdate('0001-1-1 00:00:01.555555', INTERVAL '1.555556' SECOND)); -- 返回结果年份=0
 insert into func_test(functionName, result) values ('subdate(''0001-1-1 00:00:01'', INTERVAL 1 SECOND)', subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)); -- 返回结果年份>0
 insert into func_test(functionName, result) values ('subdate(''2020-2-28 23:59:59'', INTERVAL ''-1:1'' MINUTE TO SECOND)',subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND)); -- 闰年计算
@@ -225,7 +225,7 @@ insert into func_test(functionName, result) values ('subdate(time''22:11:11'', I
 insert into func_test(functionName, result) values ('subdate(time''22:11:11'', INTERVAL ''-1'' MONTH)',subdate(time'22:11:11', INTERVAL '-1' MONTH)); -- interval 包含 month
 insert into func_test(functionName, result) values ('subdate(time''100:59:59'', INTERVAL ''1 20:50:50.888888'' DAY To SECOND)',subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY TO SECOND)); -- 正interval 不包含 year与month
 insert into func_test(functionName, result) values ('subdate(time''100:59:59'', INTERVAL ''-1 20:50:50.888888'' HOUR To SECOND)',subdate(time'100:59:59', INTERVAL '-20:50:50.888888' HOUR TO SECOND)); -- 负interval
-insert into func_test(functionName, result) values ('subdate(time(6)''100:59:59.555'', 2',subdate(time(6)'100:59:59.555', 2)); -- time包含小数
+insert into func_test(functionName, result) values ('subdate(time(6)''100:59:59.555'', 2)',subdate(time(6)'100:59:59.555', 2)); -- time包含小数
 insert into func_test(functionName, result) values ('subdate(time''815:0:0'', -1)',subdate(time'815:0:0', -1)); -- 越界838:59:59
 insert into func_test(functionName, result) values ('subdate(time''-838:59:59'', INTERVAL ''1'' SECOND)',subdate(time'-838:59:59', INTERVAL '1' SECOND)); -- 越界-838:59:59
 -- 浮点数格式的interval值

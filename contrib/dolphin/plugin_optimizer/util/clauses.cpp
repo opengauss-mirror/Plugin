@@ -36,7 +36,7 @@
 #include "nodes/supportnodes.h"
 #include "optimizer/clauses.h"
 #include "optimizer/cost.h"
-#include "optimizer/planmain.h"
+#include "plugin_optimizer/planmain.h"
 #include "optimizer/planner.h"
 #include "optimizer/pgxcplan.h"
 #include "optimizer/prep.h"

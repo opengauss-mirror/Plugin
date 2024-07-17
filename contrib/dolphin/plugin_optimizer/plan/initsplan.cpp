@@ -973,6 +973,21 @@ static List* deconstruct_recurse(PlannerInfo* root, Node* jtnode,
         } else {
             sjinfo = NULL;
             ojscope = NULL;
+#ifdef DOLPHIN
+            if (j->is_straight_join) {
+                sjinfo = makeNode(SpecialJoinInfo);
+                sjinfo->jointype = JOIN_INNER;
+                sjinfo->is_straight_join = true;
+                sjinfo->min_lefthand = NULL;
+                sjinfo->min_righthand = NULL;
+                sjinfo->syn_lefthand = NULL;
+                sjinfo->syn_righthand = NULL;
+                sjinfo->lhs_strict = false;
+                sjinfo->delay_upper_joins = false;
+                sjinfo->join_quals = NIL;
+                sjinfo->varratio_cached = false;
+            }
+#endif
         }
 
         /*

@@ -66,6 +66,7 @@
 #endif
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
+#include "rewrite/rewriteSupport.h"
 #endif
 
 #define MAXSTRLEN ((1 << 11) - 1)
@@ -1028,6 +1029,309 @@ static void CheckViewColumnExists(Oid view_oid, int2 attnum, Form_pg_attribute n
     ReleaseSysCache(tuple);
 }
 
+#ifdef DOLPHIN
+static bool CheckTargetEntryAttr(Oid rel_oid, Oid rewrite_oid, Var *var, RangeTblEntry *rte, char *viewAttname, bool checkViewColType)
+{
+    int2 oldAttNum = var->varattno;
+    int len = list_length(rte->eref->colnames);
+    if (var->varattno > len) {
+        return false;
+    }
+    void *c = list_nth(rte->eref->colnames, oldAttNum - 1);
+    if (c == NULL) {
+        return false;
+    }
+    char *attname = strVal(c);
+
+    HeapTuple attTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(rte->relid), CStringGetDatum(attname));
+    if (!HeapTupleIsValid(attTuple)) {
+        return false;
+    }
+
+    HeapTuple viewAttTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(rel_oid), CStringGetDatum(viewAttname));
+    if (!HeapTupleIsValid(viewAttTuple)) {
+        ReleaseSysCache(attTuple);
+        return false;
+    }
+
+    Form_pg_attribute attForm = (Form_pg_attribute)GETSTRUCT(attTuple);
+    Form_pg_attribute viewAttForm = (Form_pg_attribute)GETSTRUCT(viewAttTuple);
+    // update view attribute for column type may be changed
+    if (checkViewColType && attForm->atttypid != viewAttForm->atttypid) {
+        Relation attributeRel = heap_open(AttributeRelationId, RowExclusiveLock);
+
+        Datum values[Natts_pg_attribute] = { 0 };
+        bool nulls[Natts_pg_attribute] = { 0 };
+        bool replaces[Natts_pg_attribute] = { 0 };
+
+        values[Anum_pg_attribute_atttypid - 1] = ObjectIdGetDatum(attForm->atttypid);
+        values[Anum_pg_attribute_attlen - 1] = Int16GetDatum(attForm->attlen);
+        values[Anum_pg_attribute_atttypmod - 1] = Int32GetDatum(attForm->atttypmod);
+        values[Anum_pg_attribute_attbyval - 1] = BoolGetDatum(attForm->attbyval);
+        values[Anum_pg_attribute_attstorage - 1] = CharGetDatum(attForm->attstorage);
+        values[Anum_pg_attribute_attcollation - 1] = ObjectIdGetDatum(attForm->attcollation);
+        replaces[Anum_pg_attribute_atttypid - 1] = true;
+        replaces[Anum_pg_attribute_attlen - 1] = true;
+        replaces[Anum_pg_attribute_atttypmod - 1] = true;
+        replaces[Anum_pg_attribute_attbyval - 1] = true;
+        replaces[Anum_pg_attribute_attstorage - 1] = true;
+        replaces[Anum_pg_attribute_attcollation - 1] = true;
+
+        HeapTuple new_attr_tuple = heap_modify_tuple(viewAttTuple, RelationGetDescr(attributeRel), values, nulls, replaces);
+        simple_heap_update(attributeRel, &new_attr_tuple->t_self, new_attr_tuple);
+        CatalogUpdateIndexes(attributeRel, new_attr_tuple);
+        CommandCounterIncrement();
+        heap_freetuple_ext(new_attr_tuple);
+        heap_close(attributeRel, RowExclusiveLock);
+    }
+
+    var->vartype = attForm->atttypid;
+    var->vartypmod = attForm->atttypmod;
+    var->varcollid = attForm->attcollation;
+    if (rte->rtekind == RTE_JOIN || rte->joinaliasvars != NIL && list_length(rte->joinaliasvars) < var->varattno) {
+        Var* aliasvar = (Var*)list_nth(rte->joinaliasvars, var->varattno - 1);
+        aliasvar->varattno = attForm->attnum;
+        aliasvar->varoattno = attForm->attnum;
+        aliasvar->vartype = attForm->atttypid;
+        aliasvar->vartypmod = attForm->atttypmod;
+        aliasvar->varcollid = attForm->attcollation;
+    } else {
+        var->varattno = attForm->attnum;
+        var->varoattno = attForm->attnum;
+    }
+
+    // update view attribute dependent
+    HeapTuple dependTup = NULL;
+    Relation dependRel = heap_open(DependRelationId, RowExclusiveLock);
+    const int keyNum = 2;
+    ScanKeyData key[keyNum];
+    SysScanDesc scan = NULL;
+    ScanKeyInit(&key[0], Anum_pg_depend_classid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(RewriteRelationId));
+    ScanKeyInit(&key[1], Anum_pg_depend_objid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rewrite_oid));
+
+    scan = systable_beginscan(dependRel, DependDependerIndexId, true, NULL, 2, key);
+    while (HeapTupleIsValid(dependTup = systable_getnext(scan))) {
+        Form_pg_depend dep_form = (Form_pg_depend)GETSTRUCT(dependTup);
+        if (dep_form->refobjid == rte->relid && dep_form->refobjsubid == oldAttNum) { 
+            Datum values[Natts_pg_depend] = { 0 };
+            bool nulls[Natts_pg_depend] = { 0 };
+            bool replaces[Natts_pg_depend] = { 0 };
+
+            values[Anum_pg_depend_refobjsubid - 1] = Int32GetDatum(attForm->attnum);
+            replaces[Anum_pg_depend_refobjsubid - 1] = true;
+
+            HeapTuple new_dep_tuple = heap_modify_tuple(dependTup, RelationGetDescr(dependRel), values, nulls, replaces);
+            simple_heap_update(dependRel, &new_dep_tuple->t_self, new_dep_tuple);
+            CatalogUpdateIndexes(dependRel, new_dep_tuple);
+            CommandCounterIncrement();
+
+            heap_freetuple_ext(new_dep_tuple);
+        }
+    }
+    systable_endscan(scan);
+    heap_close(dependRel, RowExclusiveLock);
+    ReleaseSysCache(attTuple);
+    ReleaseSysCache(viewAttTuple);
+    
+    return true;
+}
+
+static bool CheckTargetEntry(Oid rel_oid, Oid rewrite_oid, Var *var, TargetEntry *tle, Query *query, bool checkViewColType)
+{
+    int len = list_length(query->rtable);
+    if (var->varno > len) {
+        return false;
+    }
+    RangeTblEntry *rte = rt_fetch(var->varno, query->rtable);
+    if (rte == NULL) {
+        return false;
+    }
+    if (rte->rtekind == RTE_RELATION) {
+        if (!CheckTargetEntryAttr(rel_oid, rewrite_oid, var, rte, tle->resname, checkViewColType)) {
+            return false;
+        }
+    } else if (rte->rtekind == RTE_JOIN && rte->joinaliasvars != NIL) {
+        ListCell *lc;
+        foreach(lc, rte->joinaliasvars) {
+            Var *joinVar = (Var *)lfirst(lc);
+            if (joinVar->varno > len) {
+                return false;
+            }
+            RangeTblEntry *joinRte = rt_fetch(joinVar->varno, query->rtable);
+            if (!CheckTargetEntryAttr(rel_oid, rewrite_oid, joinVar, joinRte, tle->resname, checkViewColType)) {
+                return false;
+            }
+        }
+    } else {
+        return false;
+    }
+    return true;
+}
+
+static bool CheckTargetEntryArgs(List *args, Oid rel_oid, Oid rewrite_oid, TargetEntry *tle, Query *query)
+{
+    ListCell *argLc;
+    foreach(argLc, args) {
+        if (IsA(lfirst(argLc), Var)) {
+            Var *var = (Var *)lfirst(argLc);
+            if (!CheckTargetEntry(rel_oid, rewrite_oid, var, tle, query, false)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool CheckRTable(Query *query, Oid rel_oid, Oid rewrite_oid)
+{
+    ListCell *lc = NULL;
+    foreach(lc, query->rtable) {
+        RangeTblEntry *rte = (RangeTblEntry *)lfirst(lc);
+        if (rte == NULL) {
+           return false;
+        }
+        if (rte->relid == rel_oid || rte->rtekind != RTE_RELATION) {
+            continue;
+        }
+        if (rte->relname == NULL || rte->relnamespace == NULL) {
+           return false;
+        }
+        Oid namespace_oid = get_namespace_oid(rte->relnamespace, true); 
+        if (!OidIsValid(namespace_oid)) {
+           return false;
+        }
+        Oid newRelOid = get_relname_relid(rte->relname, namespace_oid);
+        if (!OidIsValid(newRelOid)) {
+           return false;
+        }
+        Oid oldRefId = rte->relid;
+        if (oldRefId == newRelOid) {
+            continue;
+        }
+
+        rte->relid = newRelOid;
+        HeapTuple dependTup = NULL;
+        Relation dependRel = heap_open(DependRelationId, RowExclusiveLock);
+        const int keyNum = 2;
+        ScanKeyData key[keyNum];
+        SysScanDesc scan = NULL;
+        ScanKeyInit(&key[0], Anum_pg_depend_classid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(RewriteRelationId));
+        ScanKeyInit(&key[1], Anum_pg_depend_objid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rewrite_oid));
+
+        scan = systable_beginscan(dependRel, DependDependerIndexId, true, NULL, 2, key);
+        while (HeapTupleIsValid(dependTup = systable_getnext(scan))) {
+            Form_pg_depend dep_form = (Form_pg_depend)GETSTRUCT(dependTup);
+            if (dep_form->refobjid == oldRefId) {
+                Datum values[Natts_pg_depend] = { 0 };
+                bool nulls[Natts_pg_depend] = { 0 };
+                bool replaces[Natts_pg_depend] = { 0 };
+
+                values[Anum_pg_depend_refobjid - 1] = ObjectIdGetDatum(newRelOid);
+                replaces[Anum_pg_depend_refobjid - 1] = true;
+
+                HeapTuple new_dep_tuple = heap_modify_tuple(dependTup, RelationGetDescr(dependRel), values, nulls, replaces);
+                simple_heap_update(dependRel, &new_dep_tuple->t_self, new_dep_tuple);
+                CatalogUpdateIndexes(dependRel, new_dep_tuple);
+                CommandCounterIncrement();
+
+                heap_freetuple_ext(new_dep_tuple);
+            }
+        }
+        systable_endscan(scan);
+        heap_close(dependRel, RowExclusiveLock);
+    }
+    return true;
+}
+
+static bool CheckTargetEntryList(Query *query, Oid rel_oid, Oid rewrite_oid)
+{
+    ListCell *targetLc = NULL;
+    List *targetList = query->targetList;
+    foreach(targetLc, targetList) {
+        TargetEntry* tle = (TargetEntry*)lfirst(targetLc);
+        if (IsA(tle->expr, Var)) {
+            Var *var = (Var *)tle->expr;
+            if (!CheckTargetEntry(rel_oid, rewrite_oid, var, tle, query, true)) {
+                return false;
+            }
+        } else if (IsA(tle->expr, OpExpr)) {
+            OpExpr *oe = (OpExpr *)tle->expr;
+            if (!CheckTargetEntryArgs(oe->args, rel_oid, rewrite_oid, tle, query)) {
+                return false;
+            }
+        } else if (IsA(tle->expr, FuncExpr)) {
+            FuncExpr *fe = (FuncExpr *)tle->expr;
+            if (!CheckTargetEntryArgs(fe->args, rel_oid, rewrite_oid, tle, query)) {
+                return false;
+            }
+        } else if (IsA(tle->expr, Const)) {
+            continue;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool CheckViewRelation(Oid rel_oid, Oid rewrite_oid)
+{
+    ScanKeyData key;
+    SysScanDesc rewrite_scan = NULL;
+    ScanKeyInit(&key, ObjectIdAttributeNumber, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rewrite_oid));
+
+    Relation rewrite_rel = heap_open(RewriteRelationId, RowExclusiveLock);
+    TupleDesc rewrite_tupdesc = RelationGetDescr(rewrite_rel);
+    rewrite_scan = systable_beginscan(rewrite_rel, RewriteOidIndexId, true, NULL, 1, &key);
+    HeapTuple rewrite_tup = systable_getnext(rewrite_scan);
+
+    bool isnull = false;
+    Datum rule_datum = heap_getattr(rewrite_tup, Anum_pg_rewrite_ev_action, rewrite_tupdesc, &isnull);
+    if (isnull) {
+        systable_endscan(rewrite_scan);
+        heap_close(rewrite_rel, RowExclusiveLock);
+        return false;
+    }
+    char* rule_str = TextDatumGetCString(rule_datum);
+    List *actions = (List*)stringToNode(rule_str);
+    Query *query = (Query*)linitial(actions);
+
+    if (!CheckRTable(query, rel_oid, rewrite_oid)) {
+        systable_endscan(rewrite_scan);
+        heap_close(rewrite_rel, RowExclusiveLock);
+        return false;
+    }
+
+    if (!CheckTargetEntryList(query, rel_oid, rewrite_oid)) {
+        systable_endscan(rewrite_scan);
+        heap_close(rewrite_rel, RowExclusiveLock);
+        return false;
+    }
+
+    // update pg_rewirte ev_action
+    Datum values[Natts_pg_rewrite] = { 0 };
+    bool nulls[Natts_pg_rewrite] = { 0 };
+    bool replaces[Natts_pg_rewrite] = { 0 };
+    char* actiontree = nodeToString((Node*)actions);
+    values[Anum_pg_rewrite_ev_action - 1] = CStringGetTextDatum(actiontree);
+    replaces[Anum_pg_rewrite_ev_action - 1] = true;
+
+    HeapTuple new_write_tuple = heap_modify_tuple(rewrite_tup, rewrite_tupdesc, values, nulls, replaces);
+    simple_heap_update(rewrite_rel, &new_write_tuple->t_self, new_write_tuple);
+    CatalogUpdateIndexes(rewrite_rel, new_write_tuple);
+    // notify to update new view rule
+    SetRelationRuleStatus(rel_oid, true, true);
+    CommandCounterIncrement();
+    heap_freetuple_ext(new_write_tuple);
+
+    pfree_ext(rule_str);
+    pfree_ext(actiontree);
+    systable_endscan(rewrite_scan);
+    heap_close(rewrite_rel, RowExclusiveLock);
+
+    return true;
+}
+#endif
+
 static bool CheckRelationColumnExists(Oid rel_oid, int2 attnum, Form_pg_attribute attrtuple)
 {
     HeapTuple tuple;
@@ -1144,6 +1448,11 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
     if (!OidIsValid(rw_objid)) {
         elog(ERROR, "cannot find the internal dependent pg_rewrite entry.");
     }
+#ifdef DOLPHIN
+    if (!CheckViewRelation(view_oid, rw_objid)) {
+        return ValidateDependInvalid;
+    }
+#endif
     // 3. find all columns of parent views and tables which this view depends on directly,
     //    and check their validity recursively.
     List *query_str = NIL;
@@ -1168,7 +1477,7 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
         char relkind = get_rel_relkind(dep_objid);
         char* attName = NULL;
         if (relkind == RELKIND_RELATION) {
-            // the column exists, and its type may have changed or it mat have been deleted and recreated
+            // the column exists, and its type may have changed or it may have been deleted and recreated
             isValid &= CheckRelationColumnExists(dep_objid, dep_objsubid, newtuple);
             if (newtuple->attnum > 0) {
                 // change pg_depend
@@ -1186,7 +1495,9 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
                 // change pg_rewrite targetEntry
                 CheckPgRewriteWithDroppedColumn(dep_objid, rw_objid, newtuple, dep_objsubid, &attName, &query_str);
                 // change pg_attribute
-                CheckPgAttribute(view_oid, attName, newtuple);
+                if (attName != NULL) {
+                    CheckPgAttribute(view_oid, attName, newtuple);
+                }
             }
         } else if (relkind == RELKIND_VIEW || relkind == RELKIND_MATVIEW) {
             char type = relkind == RELKIND_VIEW ? OBJECT_TYPE_VIEW : OBJECT_TYPE_MATVIEW;
@@ -1205,7 +1516,9 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
                 // change pg_rewrite targetEntry
                 CheckPgRewriteWithDroppedColumn(dep_objid, rw_objid, newtuple, dep_objsubid, &attName, &query_str);
                 // change pg_attribute
-                CheckPgAttribute(view_oid, attName, newtuple);
+                if (attName != NULL) {
+                    CheckPgAttribute(view_oid, attName, newtuple);
+                }
             }
             circularDependency |= (result == ValidateDependCircularDepend);
         }
@@ -1411,7 +1724,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
             (errcode(ERRCODE_UNDEFINED_OBJECT),
                 errmsg("The view %s is invalid, please make it valid before operation.",
                        RelationGetRelationName(rel)),
-                    errhint("Please re-add missing table fields.")));
+                    errhint("Please recreate table or re-add missing table fields.")));
     }
     
     if (!u_sess->attr.attr_common.XactReadOnly && rel->rd_id == UserStatusRelationId) {
@@ -2745,7 +3058,19 @@ char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum, bool allowDr
      * built (which can easily happen for rules).
      */
     if (rte->rtekind == RTE_RELATION) {
+#ifdef DOLPHIN
+        char* rteRelname = get_rel_name(rte->relid);
+
+        if (rteRelname == NULL) {
+            if (attnum > 0 && attnum <= list_length(rte->eref->colnames)) {
+                return pstrdup(strVal(list_nth(rte->eref->colnames, attnum - 1)));
+            }
+        } else {
+#endif
         return get_relid_attribute_name(rte->relid, attnum, allowDropped);
+#ifdef DOLPHIN
+        }
+#endif
     }
 
     /*

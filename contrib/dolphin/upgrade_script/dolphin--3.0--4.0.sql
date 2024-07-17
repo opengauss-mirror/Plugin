@@ -611,6 +611,10 @@ BEGIN
             where oprname = '-' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;
 END
 $$;
+
+create or replace function pg_catalog.any2interval(anyelement, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
+create or replace function pg_catalog.any2interval(anyelement, integer, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
+
 CREATE OR REPLACE FUNCTION pg_catalog.op_int1xor(int1, int1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1xor($1, $2)::uint8';
 CREATE OR REPLACE FUNCTION pg_catalog.op_int2xor(int2, int2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int2xor($1, $2)::uint8';
 CREATE OR REPLACE FUNCTION pg_catalog.op_int4xor(int4, int4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int4xor($1, $2)::uint8';
