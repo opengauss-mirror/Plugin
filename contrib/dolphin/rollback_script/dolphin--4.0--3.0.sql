@@ -442,6 +442,9 @@ DROP FUNCTION IF EXISTS pg_catalog.date_add (timestamp without time zone, interv
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
 
+DROP FUNCTION IF EXISTS pg_catalog.any2interval(anyelement, integer);
+DROP FUNCTION IF EXISTS pg_catalog.any2interval(anyelement, integer, integer);
+
 DROP OPERATOR IF EXISTS pg_catalog.^(date, bit);
 DROP OPERATOR IF EXISTS pg_catalog.^(bit, date);
 DROP OPERATOR IF EXISTS pg_catalog.^(time, bit);

@@ -109,6 +109,9 @@ do {                                                                            
 #define MAXNUM_SEC 60
 #define DAYS_PER_COMMON_YEAR 365
 #define DAYS_PER_LEAP_YEAR 366
+#define QUARTER 28
+#define SECONDS_PER_HOUR 3600
+#define SECONDS_PER_MINUTE 60
 #endif
 
 /* compatible with b format datetime and timestamp */

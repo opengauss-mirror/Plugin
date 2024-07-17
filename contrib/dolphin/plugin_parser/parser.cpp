@@ -1018,6 +1018,126 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+        case (INTERVAL):
+            READ_TWO_TOKEN();
+            switch (yyextra->lookahead_token[1]) {
+                case SCONST:
+                    switch (yyextra->lookahead_token[0]) {
+                        case YEAR_P:
+                        case QUARTER_P:
+                        case MONTH_P:
+                        case DAY_P:
+                        case HOUR_P:
+                        case MINUTE_P:
+                        case SECOND_P:
+                        case MICROSECOND_P:
+                        case WEEK_P:
+                        case YEAR_MONTH_P:
+                        case DAY_HOUR_P:
+                        case DAY_MINUTE_P:
+                        case DAY_SECOND_P:
+                        case DAY_MICROSECOND_P:
+                        case HOUR_MINUTE_P:
+                        case HOUR_SECOND_P:
+                        case HOUR_MICROSECOND_P:
+                        case MINUTE_SECOND_P:
+                        case MINUTE_MICROSECOND_P:
+                        case SECOND_MICROSECOND_P:
+                            break;
+                        default:
+                            // replace token INTERVAL to INTERVAL_S
+                            cur_token = INTERVAL_S;
+                            break;
+                    }
+                    break;
+                case YEAR_P:
+                    cur_token = INTERVAL_TYPE_YEAR;
+                    // combine token INTERVAL and unit
+                    yyextra->lookahead_num = 1;
+                    break;
+                case QUARTER_P:
+                    cur_token = INTERVAL_TYPE_QUARTER;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case MONTH_P:
+                    cur_token = INTERVAL_TYPE_MONTH;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case DAY_P:
+                    cur_token = INTERVAL_TYPE_DAY;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case HOUR_P:
+                    cur_token = INTERVAL_TYPE_HOUR;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case MINUTE_P:
+                    cur_token = INTERVAL_TYPE_MINUTE;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case SECOND_P:
+                    cur_token = INTERVAL_TYPE_SECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case MICROSECOND_P:
+                    cur_token = INTERVAL_TYPE_MICROSECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case WEEK_P:
+                    cur_token = INTERVAL_TYPE_WEEK;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case YEAR_MONTH_P:
+                    cur_token = INTERVAL_TYPE_YEAR_MONTH;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case DAY_HOUR_P:
+                    cur_token = INTERVAL_TYPE_DAY_HOUR;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case DAY_MINUTE_P:
+                    cur_token = INTERVAL_TYPE_DAY_MINUTE;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case DAY_SECOND_P:
+                    cur_token = INTERVAL_TYPE_DAY_SECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case DAY_MICROSECOND_P:
+                    cur_token = INTERVAL_TYPE_DAY_MICROSECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case HOUR_MINUTE_P:
+                    cur_token = INTERVAL_TYPE_HOUR_MINUTE;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case HOUR_SECOND_P:
+                    cur_token = INTERVAL_TYPE_HOUR_SECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case HOUR_MICROSECOND_P:
+                    cur_token = INTERVAL_TYPE_HOUR_MICROSECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case MINUTE_SECOND_P:
+                    cur_token = INTERVAL_TYPE_MINUTE_SECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case MINUTE_MICROSECOND_P:
+                    cur_token = INTERVAL_TYPE_MINUTE_MICROSECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                case SECOND_MICROSECOND_P:
+                    cur_token = INTERVAL_TYPE_SECOND_MICROSECOND;
+                    yyextra->lookahead_num = 1;
+                    break;
+                default:
+                    break;
+            }
+            /* back up the output info to cur_token */
+            lvalp->core_yystype = cur_yylval;
+            *llocp = cur_yylloc;
+            break;
 #endif
         default:
             break;
@@ -1133,7 +1253,8 @@ char** get_next_snippet(
 const struct ignore_keyword_opt_data ignore_keywords[] = {
     {"interval", INTERVAL},
     {"binary_double_infinity", BINARY_DOUBLE_INF},
-    {"binary_double_nan", BINARY_DOUBLE_NAN}
+    {"binary_double_nan", BINARY_DOUBLE_NAN},
+    {"straight_join", STRAIGHT_JOIN}
 };
 #define INGORE_KEYWORDS_LEN (sizeof(ignore_keywords) / sizeof(struct ignore_keyword_opt_data))
 

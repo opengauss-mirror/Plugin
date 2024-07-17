@@ -1743,6 +1743,7 @@ static SelectStmt *CreateStartWithCTEInnerBranch(ParseState* pstate,
         case CONNECT_BY_MIXED_LEVEL:  {
             join->jointype = JOIN_INNER;
             join->isNatural = FALSE;
+            join->is_straight_join = false;
             join->larg = (Node *)work_table;
             join->rarg = origin_table;
             join->usingClause = NIL;

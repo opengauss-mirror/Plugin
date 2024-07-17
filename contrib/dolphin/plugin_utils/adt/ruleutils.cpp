@@ -108,6 +108,8 @@
 
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_parser/parse_relation.h"
+#include "catalog/pg_object.h"
 #endif
 
 /* ----------
@@ -279,7 +281,11 @@ static void pop_child_plan(deparse_namespace* dpns, deparse_namespace* save_dpns
 static void push_ancestor_plan(deparse_namespace* dpns, ListCell* ancestor_cell, deparse_namespace* save_dpns);
 static void pop_ancestor_plan(deparse_namespace* dpns, deparse_namespace* save_dpns);
 static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags);
-static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn);
+static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn
+#ifdef DOLPHIN
+    , bool isInvalidView = false
+#endif
+);
 static void get_values_def(List* values_lists, deparse_context* context);
 static void get_with_clause(Query* query, deparse_context* context);
 static void get_select_query_def(Query* query, deparse_context* context, TupleDesc resultDesc);
@@ -324,8 +330,16 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
 static void get_const_collation(Const* constval, deparse_context* context);
 static void simple_quote_literal(StringInfo buf, const char* val);
 static void get_sublink_expr(SubLink* sublink, deparse_context* context);
-static void get_from_clause(Query* query, const char* prefix, deparse_context* context, List* fromlist = NIL);
-static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* context);
+static void get_from_clause(Query* query, const char* prefix, deparse_context* context, List* fromlist = NIL
+#ifdef DOLPHIN
+    , bool isNeedError = true
+#endif
+);
+static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* context
+#ifdef DOLPHIN
+    , bool isNeedError = true
+#endif
+);
 static void get_from_clause_partition(RangeTblEntry* rte, StringInfo buf, deparse_context* context);
 static void get_from_clause_subpartition(RangeTblEntry* rte, StringInfo buf, deparse_context* context);
 static void get_from_clause_bucket(RangeTblEntry* rte, StringInfo buf, deparse_context* context);
@@ -337,8 +351,16 @@ static void GetTimecapsuleDef(const TimeCapsuleClause* timeCapsule, deparse_cont
 void get_opclass_name(Oid opclass, Oid actual_datatype, StringInfo buf);
 static Node* processIndirection(Node* node, deparse_context* context, bool printit);
 static void printSubscripts(ArrayRef* aref, deparse_context* context);
-static char* get_relation_name(Oid relid);
-static char* generate_relation_name(Oid relid, List* namespaces);
+static char* get_relation_name(Oid relid
+#ifdef DOLPHIN
+, bool isNeedError = true
+#endif
+);
+static char* generate_relation_name(Oid relid, List* namespaces
+#ifdef DOLPHIN
+, bool isNeedError = true
+#endif
+);
 static char* generate_function_name(
     Oid funcid, int nargs, List* argnames, Oid* argtypes, bool was_variadic, bool* use_variadic_p);
 static char* generate_operator_name(Oid operid, Oid arg1, Oid arg2);
@@ -575,6 +597,9 @@ char* pg_get_viewdef_worker(Oid viewoid, int prettyFlags, int wrapColumn)
      */
     initStringInfo(&buf);
 
+#ifdef DOLPHIN
+    if (GetPgObjectValid(viewoid, OBJECT_TYPE_VIEW)) {
+#endif
     /*
      * Connect to SPI manager
      */
@@ -630,7 +655,16 @@ char* pg_get_viewdef_worker(Oid viewoid, int prettyFlags, int wrapColumn)
     SPI_STACK_LOG("finish", NULL, NULL);
     if (SPI_finish() != SPI_OK_FINISH)
         ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));
-
+#ifdef DOLPHIN
+    } else {
+        ruletup = SearchSysCache2(RULERELNAME, ObjectIdGetDatum(viewoid), PointerGetDatum(ViewSelectRuleName));
+        Relation rewrite_rel = heap_open(RewriteRelationId, AccessShareLock);
+        rulettc = RelationGetDescr(rewrite_rel);
+        make_viewdef(&buf, ruletup, rulettc, prettyFlags, wrapColumn, true);
+        ReleaseSysCache(ruletup);
+        heap_close(rewrite_rel, AccessShareLock);
+    }
+#endif
     return buf.data;
 }
 
@@ -1187,7 +1221,7 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
     if (partstrategy == PART_STRATEGY_INTERVAL) {
         resetStringInfo(query);
         appendStringInfo(query,
-            "SELECT p.interval[1] AS interval FROM pg_partition p "
+            "SELECT p.`interval`[1] AS `interval` FROM pg_partition p "
             "WHERE p.parentid = %u AND p.parttype = '%c' AND p.partstrategy = '%c'",
             tableoid, PART_OBJ_TYPE_PARTED_TABLE, PART_STRATEGY_INTERVAL);
         (void)SPI_execute(query->data, true, INT_MAX);
@@ -5940,12 +5974,60 @@ static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
     heap_close(ev_relation, AccessShareLock);
 }
 
+static void get_view_def(Query* query, StringInfo buf, List* parentnamespace, TupleDesc resultDesc, int prettyFlags,
+    int wrapColumn, int startIndent
+#ifdef PGXC
+    ,
+    bool finalise_aggs, bool sortgroup_colno, void* parserArg
+#endif /* PGXC */
+    ,
+    bool qrw_phase, bool viewdef, bool is_fqs)
+{
+    deparse_context context;
+    deparse_namespace dpns;
+
+    /* Guard against excessively long or deeply-nested queries */
+    CHECK_FOR_INTERRUPTS();
+    check_stack_depth();
+
+    context.buf = buf;
+    context.namespaces = lcons(&dpns, list_copy(parentnamespace));
+    context.windowClause = NIL;
+    context.windowTList = NIL;
+    context.varprefix = (parentnamespace != NIL || list_length(query->rtable) != 1);
+    context.prettyFlags = prettyFlags;
+    context.wrapColumn = wrapColumn;
+    context.indentLevel = startIndent;
+#ifdef PGXC
+    context.finalise_aggs = finalise_aggs;
+    context.sortgroup_colno = sortgroup_colno;
+    context.parser_arg = parserArg;
+#endif /* PGXC */
+    context.qrw_phase = qrw_phase;
+    context.viewdef = viewdef;
+    context.is_fqs = is_fqs;
+    context.is_upsert_clause = false;
+
+    errno_t rc = memset_s(&dpns, sizeof(dpns), 0, sizeof(dpns));
+    securec_check(rc, "", "");
+    dpns.rtable = query->rtable;
+    dpns.ctes = query->cteList;
+#ifdef PGXC
+    dpns.remotequery = false;
+#endif
+    get_select_query_def(query, &context, resultDesc);
+}
+
 /* ----------
  * make_viewdef			- reconstruct the SELECT part of a
  *				  view rewrite rule
  * ----------
  */
-static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn)
+static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn
+#ifdef DOLPHIN
+    , bool isInvalidView
+#endif
+)
 {
     Query* query = NULL;
     char ev_type;
@@ -5997,6 +6079,27 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
 
     ev_relation = heap_open(ev_class, AccessShareLock);
 
+#ifdef DOLPHIN
+    if (isInvalidView) {
+        get_view_def(query,
+            buf,
+            NIL,
+            RelationGetDescr(ev_relation),
+            prettyFlags,
+            wrapColumn,
+            0
+#ifdef PGXC
+            ,
+            false,
+            false,
+            NULL
+#endif /* PGXC */
+            ,
+            false,
+            true,
+            false);
+    } else {
+#endif
     get_query_def(query,
         buf,
         NIL,
@@ -6013,6 +6116,9 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
         ,
         false,
         true);
+#ifdef DOLPHIN
+    }
+#endif
     appendStringInfo(buf, ";");
 
     heap_close(ev_relation, AccessShareLock);
@@ -6595,7 +6701,11 @@ static void get_basic_select_query(Query* query, deparse_context* context, Tuple
     get_target_list(query, query->targetList, context, resultDesc);
 
     /* Add the FROM clause if needed */
-    get_from_clause(query, " FROM ", context);
+    get_from_clause(query, " FROM ", context
+#ifdef DOLPHIN
+    , NIL, false
+#endif
+    );
 
     /* Add the WHERE clause if given */
     if (query->jointree->quals != NULL) {
@@ -11784,7 +11894,11 @@ static void get_sublink_expr(SubLink* sublink, deparse_context* context)
  * is USING when parsing back DELETE.
  * ----------
  */
-static void get_from_clause(Query* query, const char* prefix, deparse_context* context, List* fromlist)
+static void get_from_clause(Query* query, const char* prefix, deparse_context* context, List* fromlist
+#ifdef DOLPHIN
+    , bool isNeedError
+#endif
+)
 {
     StringInfo buf = context->buf;
     bool first = true;
@@ -11813,7 +11927,11 @@ static void get_from_clause(Query* query, const char* prefix, deparse_context* c
             appendContextKeyword(context, prefix, -PRETTYINDENT_STD, PRETTYINDENT_STD, 2);
             first = false;
 
-            get_from_clause_item(jtnode, query, context);
+            get_from_clause_item(jtnode, query, context
+#ifdef DOLPHIN
+                , isNeedError
+#endif
+            );
         } else {
             StringInfoData itembuf;
 
@@ -11826,7 +11944,11 @@ static void get_from_clause(Query* query, const char* prefix, deparse_context* c
             initStringInfo(&itembuf);
             context->buf = &itembuf;
 
-            get_from_clause_item(jtnode, query, context);
+            get_from_clause_item(jtnode, query, context
+#ifdef DOLPHIN
+                , isNeedError
+#endif
+            );
 
             /* Restore context's output buffer */
             context->buf = buf;
@@ -11964,7 +12086,11 @@ static void get_delete_from_partition_clause(RangeTblEntry* rte, StringInfo buf)
     appendStringInfo(buf, ")");
 }
 
-static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* context)
+static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* context
+#ifdef DOLPHIN
+    , bool isNeedError
+#endif
+)
 {
     StringInfo buf = context->buf;
 
@@ -11995,8 +12121,16 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
                 if (OidIsValid(rte->refSynOid)) {
                     appendStringInfo(buf, "%s%s", only_marker(rte), GetQualifiedSynonymName(rte->refSynOid, true));
                 } else {
+#ifdef DOLPHIN
+                    char *relname = generate_relation_name(rte->relid, context->namespaces, isNeedError);
                     appendStringInfo(
-                        buf, "%s%s", only_marker(rte), generate_relation_name(rte->relid, context->namespaces));
+                        buf, "%s%s", only_marker(rte), relname == NULL ? rte->relname : relname
+                    );
+#else
+                    appendStringInfo(
+                        buf, "%s%s", only_marker(rte), generate_relation_name(rte->relid, context->namespaces)
+                    );
+#endif
                 }
 #endif
                 if (rte->orientation == REL_COL_ORIENTED || rte->orientation == REL_TIMESERIES_ORIENTED)
@@ -12053,10 +12187,18 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
             get_from_clause_bucket(rte, buf, context);
         }
 
+        char *relname = get_relation_name(rte->relid
+#ifdef DOLPHIN
+            , isNeedError
+#endif
+        );
+
+        relname = relname == NULL ? rte->relname : relname;
+
         if (rte->alias != NULL) {
             appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
             gavealias = true;
-        } else if (rte->rtekind == RTE_RELATION && strcmp(rte->eref->aliasname, get_relation_name(rte->relid)) != 0) {
+        } else if (rte->rtekind == RTE_RELATION && strcmp(rte->eref->aliasname, relname) != 0) {
             /*
              * Apparently the rel has been renamed since the rule was made.
              * Emit a fake alias clause so that variable references will still
@@ -12140,7 +12282,11 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         if (!PRETTY_PAREN(context) || j->alias != NULL)
             appendStringInfoChar(buf, '(');
 
-        get_from_clause_item(j->larg, query, context);
+        get_from_clause_item(j->larg, query, context
+#ifdef DOLPHIN
+            , isNeedError
+#endif
+);
 
         if (j->isNatural) {
             if (!PRETTY_INDENT(context))
@@ -12166,6 +12312,12 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         } else {
             switch (j->jointype) {
                 case JOIN_INNER:
+#ifdef DOLPHIN
+                    if (j->is_straight_join) {
+                        appendContextKeyword(context, " STRAIGHT_JOIN ", -PRETTYINDENT_JOIN, PRETTYINDENT_JOIN, 2);
+                        break;
+                    }
+#endif
                     if (j->quals)
                         appendContextKeyword(context, " JOIN ", -PRETTYINDENT_JOIN, PRETTYINDENT_JOIN, 2);
                     else
@@ -12215,7 +12367,11 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
 
         if (need_paren_on_right)
             appendStringInfoChar(buf, '(');
-        get_from_clause_item(j->rarg, query, context);
+        get_from_clause_item(j->rarg, query, context
+#ifdef DOLPHIN
+            , isNeedError
+#endif
+        );
         if (need_paren_on_right)
             appendStringInfoChar(buf, ')');
 
@@ -12645,12 +12801,23 @@ char* quote_qualified_identifier(const char* qualifier, const char* ident1, cons
  * This differs from the underlying get_rel_name() function in that it will
  * throw error instead of silently returning NULL if the OID is bad.
  */
-static char* get_relation_name(Oid relid)
+static char* get_relation_name(Oid relid
+#ifdef DOLPHIN
+    , bool isNeedError
+#endif
+)
 {
     char* relname = get_rel_name(relid);
 
-    if (relname == NULL)
-        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", relid)));
+    if (relname == NULL) {
+#ifdef DOLPHIN
+        if (isNeedError) {
+#endif
+            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", relid)));
+#ifdef DOLPHIN
+        }
+#endif
+    }
     return relname;
 }
 
@@ -12664,7 +12831,11 @@ static char* get_relation_name(Oid relid)
  * We will forcibly qualify the relation name if it equals any CTE name
  * visible in the namespace list.
  */
-static char* generate_relation_name(Oid relid, List* namespaces)
+static char* generate_relation_name(Oid relid, List* namespaces
+#ifdef DOLPHIN
+, bool isNeedError
+#endif
+)
 {
     HeapTuple tp;
     Form_pg_class reltup;
@@ -12675,8 +12846,17 @@ static char* generate_relation_name(Oid relid, List* namespaces)
     char* result = NULL;
 
     tp = SearchSysCache1(RELOID, ObjectIdGetDatum(relid));
-    if (!HeapTupleIsValid(tp))
+    if (!HeapTupleIsValid(tp)) {
+#ifdef DOLPHIN
+        if (isNeedError) {
+            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", relid)));
+        } else {
+            return NULL;
+        }
+#else
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", relid)));
+#endif
+    }
     reltup = (Form_pg_class)GETSTRUCT(tp);
     relname = NameStr(reltup->relname);
 

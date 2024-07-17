@@ -351,7 +351,7 @@ select date_add('1997-12-31 23:59:59',interval '1:1:1:1:111' day_microsecond);
 select date_add('1997-12-31 23:59:59',INTERVAL '1:1:1:1.111' DAY_MICROSECOND);
         date_add         
 -------------------------
- 1998-01-01 01:01:00.111
+ 1998-01-02 01:01:00.111
 (1 row)
 
 select date_add('1997-12-31 23:59:59',INTERVAL '1:1:1:1 111' DAY_MICROSECOND);
@@ -849,7 +849,7 @@ select '2020-01-01' + INTERVAL '1-1' YEAR_MONTH;
 select '2020-01-01' + INTERVAL '1-1.1' MINUTE_MICROSECOND;
        ?column?        
 -----------------------
- 2021-02-01 00:00:00.1
+ 2020-01-01 00:01:01.1
 (1 row)
 
 select '2020-01-01' + INTERVAL '1,1' MINUTE_SECOND;
@@ -861,7 +861,7 @@ select '2020-01-01' + INTERVAL '1,1' MINUTE_SECOND;
 select '2020-01-01' + INTERVAL '1.1;1.1' HOUR_MICROSECOND;
        ?column?        
 -----------------------
- 2020-01-01 00:01:07.1
+ 2020-01-01 01:01:01.1
 (1 row)
 
 select '2020-01-01' + INTERVAL '1|1|1' HOUR_SECOND;

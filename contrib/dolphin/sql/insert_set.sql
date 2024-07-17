@@ -21,8 +21,8 @@ create table test_binary(blob blob, raw raw, bytea bytea);
 insert into test_binary set bytea = '01101', raw = 'AF0189DBE', blob = '1001111101';
 select * from test_binary;
 
-create table test_time(date date, timestamp timestamp, timestamptz timestamptz, smalldatetime smalldatetime, interval interval, reltime reltime);
-insert into test_time set reltime = '15:38:32', interval = now() - current_timestamp, smalldatetime = '2022-08-15 14:32:43', timestamptz = now(), timestamp = current_timestamp, date=current_date;
+create table test_time(date date, timestamp timestamp, timestamptz timestamptz, smalldatetime smalldatetime, `interval` interval, reltime reltime);
+insert into test_time set reltime = '15:38:32', `interval` = now() - current_timestamp, smalldatetime = '2022-08-15 14:32:43', timestamptz = now(), timestamp = current_timestamp, date=current_date;
 select * from test_time;
 
 create table test_netid(cidr cidr, inet inet, macaddr macaddr);
