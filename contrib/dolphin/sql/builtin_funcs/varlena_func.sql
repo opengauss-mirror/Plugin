@@ -369,6 +369,44 @@ explain(costs off) select * from t1 where a like concat('%', '1'::longblob, '%')
 explain(costs off) select * from t1 where a like concat('%', '1'::bit(8), '%')::text;
 drop table t1;
 
+-- test default value & concat_ws
+create table concat_ws_t (
+    c1 decimal default 16,
+    c2 decimal(10, 2) default 17,
+    c3 varchar(100) default concat('hello', ' world'),
+    c4 varchar(100) default concat_ws('|', 'a', 'b'),
+    c5 int default 10.0,
+    c6 float default 10
+);
+insert into concat_ws_t values(c1, c2, c3, c4, c5, c6);
+select * from concat_ws_t;
+
+drop table if exists textlen_t;
+create table textlen_t(
+	c1 int4 default (char_length('10')),
+    c2 text default (char_length('10'))
+);
+insert into textlen_t values (c1, c2);
+select * from textlen_t;
+
+create table expr_t(
+	c1 float default 1,
+    c2 varchar(30) default 1,
+    c3 int default (100 + 20*2)
+);
+insert into expr_t values(c1, c2, c3);
+insert into expr_t values(default, default, default);
+select * from expr_t;
+
+create table func_t(
+    c1 varchar(30) default (concat('hello', ' world')),
+    c2 varchar(30) default 'hello world'
+);
+insert into func_t values (c1, c2);
+insert into func_t values (default, default);
+select * from func_t;
+explain(costs off) select * from func_t where c1 like concat_ws(',', '1', '2');
+
 drop schema db_test_varlena cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
