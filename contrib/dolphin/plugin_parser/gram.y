@@ -632,6 +632,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	struct TypeAttr* typeattr;
 	RotateClause         *rotateinfo;
 	UnrotateClause       *unrotateinfo;
+	FunctionPartitionInfo *funcPartInfo;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption CreateTableOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -884,11 +885,12 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <lockstrength> for_locking_strength
 %type <node>	for_locking_item
 %type <list>	for_locking_clause opt_for_locking_clause for_locking_items
-%type <list>	locked_rels_list
+%type <list>	locked_rels_list colid_list
 %type <boolean>	opt_all opt_all_b
 %type <ival>	opt_select_option_list
 %type <ival>	opt_select_option_item
 
+%type <funcPartInfo> parallel_partition_opt
 %type <node>	join_outer join_qual
 %type <jtype>	join_type natural_join_type inner_join_type
 
@@ -1276,7 +1278,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
-	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PACKAGE PACKAGES PARALLEL_ENABLE PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 	PIPELINED
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
@@ -7877,6 +7879,9 @@ copy_generic_opt_list:
 copy_generic_opt_elem:
 			ColLabel copy_generic_opt_arg
 				{
+					/* Character "when_expr" may be injected as "COPY ... WHEN ... "*/
+					if (pg_strcasecmp($1, "when_expr") == 0)
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("option \"%s\" not recognized", $1)));
 					$$ = makeDefElem($1, $2);
 				}
 		;
@@ -22313,6 +22318,55 @@ common_func_opt_item:
 				{
 					BCompatibilityOptionSupportCheck($1);
 					$$ = makeDefElem("comment", (Node *)makeString($2));
+				}
+		;
+
+parallel_partition_opt:
+			'(' PARTITION param_name BY ANY ')'
+				{
+					$$ = makeNode(FunctionPartitionInfo);
+					$$->strategy = FUNC_PARTITION_ANY;
+					$$->partitionCursor = $3;
+
+				}
+			| '(' PARTITION param_name BY IDENT '(' colid_list ')' ')'
+				{
+					if (strcmp($5, "hash") != 0) {
+						const char* message = "Un-support feature";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("unrecognized option \"%s\"", $3)));	
+					}
+					$$ = makeNode(FunctionPartitionInfo);
+					$$->strategy = FUNC_PARTITION_HASH;
+					$$->partitionCursor = $3;
+					$$->partitionCols = $7;
+				}
+			| '(' PARTITION param_name BY RANGE '(' colid_list ')' ')'
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("PARALLEL_ENABLE PARTITION BY RANGE is not yet supported.")));
+				}
+			| '(' PARTITION param_name BY VALUE_P '(' ColId ')' ')'
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("PARALLEL_ENABLE PARTITION BY VALUE is not yet supported.")));
+				}
+			| /* EMPTY */
+				{
+					$$ = NULL;
+				}
+
+colid_list:
+			ColId
+				{
+					$$ = list_make1($1);
+				}
+			| colid_list ',' ColId
+				{
+					$$ = lappend($1, $3);
 				}
 		;
 
@@ -39569,6 +39623,7 @@ alias_name_unreserved_keyword_without_key:
 			| PACK_KEYS
 			| PACKAGE
 			| PACKAGES
+			| PARALLEL_ENABLE
 			| PARSER
 			| PARTIAL %prec PARTIAL_EMPTY_PREC
 			| PARTITIONING
