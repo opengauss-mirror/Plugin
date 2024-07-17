@@ -1183,7 +1183,7 @@ bool plpgsql_is_token_keyword(int token)
     }
 }
 
-static PLpgSQL_package* GetCompileListPkg(Oid pkgOid)
+PLpgSQL_package* GetCompileListPkg(Oid pkgOid)
 {
     List* compPkgList = u_sess->plsql_cxt.compile_context_list;
     ListCell *item = NULL;
