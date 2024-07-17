@@ -4959,8 +4959,11 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
         ExtensiblePlan* expPlan1 =(ExtensiblePlan*)tsdbPlan;
         ExtensiblePlan* expPlan2;
         ListCell* expL;
+        expPlan1->scan.plan.exec_nodes = result_plan->exec_nodes;
+
         foreach(expL,expPlan1->extensible_plans) {
             Plan* planTemp = (Plan*) lfirst(expL);
+            planTemp->exec_nodes = result_plan->exec_nodes;
 
             if (IsA(planTemp, ExtensiblePlan)) {
                 expPlan2 = (ExtensiblePlan*)planTemp;
