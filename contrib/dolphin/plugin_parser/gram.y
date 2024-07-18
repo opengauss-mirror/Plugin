@@ -627,7 +627,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 		AlterSystemStmt
 		AlterRoleStmt AlterRoleSetStmt AlterRlsPolicyStmt
 		AlterDefaultPrivilegesStmt DefACLAction AlterSessionStmt
-		AnalyzeStmt AnalyzePartitionStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
+		AnalyzeStmt AnalyzePartitionStmt AnalyzeTableStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
 		ConstraintsSetStmt CopyStmt CreateAsStmt CreateCastStmt CreateContQueryStmt CreateDirectoryStmt 
 		CreateDomainStmt CreateExtensionStmt CreateGroupStmt CreateKeyStmt CreateOpClassStmt
 		CreateOpFamilyStmt AlterOpFamilyStmt CreatePLangStmt
@@ -1534,6 +1534,7 @@ stmt :
 			| AlterWorkloadGroupStmt
 			| AnalyzeStmt
 			| AnalyzePartitionStmt
+			| AnalyzeTableStmt
 			| AnonyBlockStmt
 			| BarrierStmt
 			| CreateAppWorkloadGroupMappingStmt
@@ -26178,7 +26179,9 @@ AnalyzeStmt:
 					$$ = (Node *)n;
 
 				}
-			| analyze_keyword opt_verbose_with_brance opt_no_write_to_binlog TABLE qualified_name_list
+		;
+
+AnalyzeTableStmt: analyze_keyword opt_verbose_with_brance opt_no_write_to_binlog TABLE qualified_name_list
 				{
 					SelectStmt *n = makeNode(SelectStmt);
 
@@ -29681,8 +29684,8 @@ opt_all:	ALL										{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
-opt_all_b:	ALL										{}
-			| /*EMPTY*/								{}
+opt_all_b:	ALL										{ $$ = TRUE; }
+			| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
 /* We use (NIL) as a placeholder to indicate that all target expressions
@@ -34049,7 +34052,7 @@ func_application_special:	dolphin_func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| dolphin_func_name '(' '*' ')'
+			| dolphin_func_name '(' opt_all_b '*' ')'
 				{
 					/*
 					 * We consider AGGREGATE(*) to invoke a parameterless
@@ -34061,6 +34064,17 @@ func_application_special:	dolphin_func_name '(' ')'
 					 * so that later processing can detect what the argument
 					 * really was.
 					 */
+					if ($3) {
+						char *schemaname = NULL;
+						char *name = NULL;
+						DeconstructQualifiedName($1, &schemaname, &name);
+						/* only count function support 'count(all *)' */
+						if (pg_strcasecmp(name, "count") != 0) {
+							const char* message = "syntax error at or near \"*\"";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg(message), parser_errposition(@4)));
+						}
+					}
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
 					n->args = NIL;
@@ -35294,48 +35308,6 @@ func_expr_common_subexpr:
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| COUNT '(' opt_all_b '*' ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("count");
-					n->args = NIL;
-					n->agg_order = NIL;
-					n->agg_star = TRUE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| COUNT '(' in_sum_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("count");
-					n->args = list_make1($3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| COUNT '(' DISTINCT expr_list ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("count");
-					n->args = $4;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = TRUE;
 					n->func_variadic = FALSE;
 					n->over = NULL;
 					n->location = @1;
@@ -37806,7 +37778,7 @@ alias_name_unreserved_keyword_without_key:
 			| COORDINATORS
 			| COPY
 			| COST
-			| COUNT %prec UMINUS
+			| COUNT
 			| CSV
 			| CURRENT_P
 			| CYCLE

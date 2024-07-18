@@ -319,6 +319,10 @@ ANALYZE TABLE t_not_exist, t_new_analyze;
  db_b_new_gram_test.t_new_analyze | analyze | status   | OK
 (3 rows)
 
+VACUUM ANALYZE TABLE t_new_analyze; --error
+ERROR:  syntax error at or near "TABLE"
+LINE 1: VACUUM ANALYZE TABLE t_new_analyze;
+                       ^
 -- new grammar test for CREATE TABLESPACE
 CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
 ALTER TABLESPACE test_tbspace rename to test_tbspace_1 wait;

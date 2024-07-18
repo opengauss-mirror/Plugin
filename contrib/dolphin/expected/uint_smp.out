@@ -409,6 +409,37 @@ WARNING:  unused hint: MergeJoin(join_1 join_2)
                      Output: join_1.a
 (13 rows)
 
+-- test
+set query_dop = 6;
+drop table if exists t_t_mutil_t1;
+NOTICE:  table "t_t_mutil_t1" does not exist, skipping
+drop table if exists t_t_mutil_t2;
+NOTICE:  table "t_t_mutil_t2" does not exist, skipping
+drop table if exists t_t_mutil_t3;
+NOTICE:  table "t_t_mutil_t3" does not exist, skipping
+create table t_t_mutil_t1(col1 int,col2 int);
+create table t_t_mutil_t2(col1 int,col2 int);
+create table t_t_mutil_t3(col1 int,col2 int);
+insert into t_t_mutil_t1 values(generate_series(1,1000000),generate_series(1,1000000));
+insert into t_t_mutil_t2 values(generate_series(1,1000000),generate_series(1,1000000));
+insert into t_t_mutil_t3 values(generate_series(1,1000000),generate_series(1,1000000));
+explain(costs off, verbose) update/*+nestloop(a b)*/ t_t_mutil_t1 a,t_t_mutil_t2 b set b.col1=5,a.col2=4 where a.col1=b.col1;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Update on MULTI-RELATION
+   ->  Nested Loop
+         Output: a.col1, 4, a.ctid, a.ctid, b.ctid
+         Join Filter: (a.col1 = b.col1)
+         ->  Seq Scan on uint_smp.t_t_mutil_t1 a
+               Output: a.col1, a.ctid
+         ->  Seq Scan on uint_smp.t_t_mutil_t2 b
+               Output: b.col2, b.ctid, b.col1
+(8 rows)
+
+drop table if exists t_t_mutil_t1;
+drop table if exists t_t_mutil_t2;
+drop table if exists t_t_mutil_t3;
+reset query_dop;
 drop schema uint_smp cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t2

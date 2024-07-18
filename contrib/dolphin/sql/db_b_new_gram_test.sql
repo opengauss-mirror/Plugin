@@ -133,6 +133,8 @@ ANALYZE LOCAL TABLE t_new_analyze;
 ANALYZE TABLE t_new_analyze;
 ANALYZE TABLE t_not_exist, t_new_analyze;
 
+VACUUM ANALYZE TABLE t_new_analyze; --error
+
 -- new grammar test for CREATE TABLESPACE
 CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
 ALTER TABLESPACE test_tbspace rename to test_tbspace_1 wait;

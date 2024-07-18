@@ -258,6 +258,34 @@ select hour('840:59:59');
 select hour('');
 select hour('abc');
 select hour('1234abc');
+select hour('23:59:59.999999');
+select hour('23:59:59.9999999');
+select hour('23:59:59.9999995');
+select hour('23:59:59.9999994');
+
+create table test_hour(hour int);
+insert into test_hour select hour('-838:59:59');
+insert into test_hour select hour('838:59:59');
+insert into test_hour select hour('-840:59:59');
+insert into test_hour select hour('840:59:59');
+insert into test_hour select hour('');
+insert into test_hour select hour('abc');
+insert into test_hour select hour('1234abc');
+insert into test_hour select hour('23:59:59.999999');
+insert into test_hour select hour('23:59:59.9999999');
+insert into test_hour select hour('23:59:59.9999995');
+insert into test_hour select hour('23:59:59.9999994');
+insert ignore into test_hour select hour('-838:59:59');
+insert ignore into test_hour select hour('838:59:59');
+insert ignore into test_hour select hour('-840:59:59');
+insert ignore into test_hour select hour('840:59:59');
+insert ignore into test_hour select hour('');
+insert ignore into test_hour select hour('abc');
+insert ignore into test_hour select hour('1234abc');
+insert ignore into test_hour select hour('23:59:59.999999');
+insert ignore into test_hour select hour('23:59:59.9999999');
+insert ignore into test_hour select hour('23:59:59.9999995');
+insert ignore into test_hour select hour('23:59:59.9999994');
 
 set dolphin.sql_mode = '';
 
@@ -268,6 +296,24 @@ select hour('840:59:59');
 select hour('');
 select hour('abc');
 select hour('1234abc');
+select hour('23:59:59.999999');
+select hour('23:59:59.9999999');
+select hour('23:59:59.9999995');
+select hour('23:59:59.9999994');
+
+insert into test_hour select hour('-838:59:59');
+insert into test_hour select hour('838:59:59');
+insert into test_hour select hour('-840:59:59');
+insert into test_hour select hour('840:59:59');
+insert into test_hour select hour('');
+insert into test_hour select hour('abc');
+insert into test_hour select hour('1234abc');
+insert into test_hour select hour('23:59:59.999999');
+insert into test_hour select hour('23:59:59.9999999');
+insert into test_hour select hour('23:59:59.9999995');
+insert into test_hour select hour('23:59:59.9999994');
+select * from test_hour;
+drop table test_hour;
 
 set dolphin.b_compatibility_mode = true;
 
