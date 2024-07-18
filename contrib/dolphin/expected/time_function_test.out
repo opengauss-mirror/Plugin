@@ -932,5 +932,91 @@ select * from test_time;
 (12 rows)
 
 drop table if exists test_time;
+set dolphin.cmpt_version = '8.0';
+select convert('中文', time);
+WARNING:  invalid input syntax for type time: "中文"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select convert('123中文', time);
+WARNING:  invalid input syntax for type time: "123中文"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:23
+(1 row)
+
+select convert('中文123', time);
+WARNING:  invalid input syntax for type time: "中文123"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
+create table test_time(time time);
+insert into test_time select convert('中文', time);
+ERROR:  invalid input syntax for type time: "中文"
+CONTEXT:  referenced column: time
+insert into test_time select convert('123中文', time);
+ERROR:  invalid input syntax for type time: "123中文"
+CONTEXT:  referenced column: time
+insert into test_time select convert('中文123', time);
+ERROR:  invalid input syntax for type time: "中文123"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('中文', time);
+WARNING:  invalid input syntax for type time: "中文"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('123中文', time);
+WARNING:  invalid input syntax for type time: "123中文"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('中文123', time);
+WARNING:  invalid input syntax for type time: "中文123"
+CONTEXT:  referenced column: time
+select * from test_time;
+   time   
+----------
+ 
+ 00:01:23
+ 
+(3 rows)
+
+drop table if exists test_time;
+set dolphin.sql_mode = '';
+create table test_time(time time);
+insert into test_time select convert('中文', time);
+WARNING:  invalid input syntax for type time: "中文"
+CONTEXT:  referenced column: time
+insert into test_time select convert('123中文', time);
+WARNING:  invalid input syntax for type time: "123中文"
+CONTEXT:  referenced column: time
+insert into test_time select convert('中文123', time);
+WARNING:  invalid input syntax for type time: "中文123"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('中文', time);
+WARNING:  invalid input syntax for type time: "中文"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('123中文', time);
+WARNING:  invalid input syntax for type time: "123中文"
+CONTEXT:  referenced column: time
+insert ignore into test_time select convert('中文123', time);
+WARNING:  invalid input syntax for type time: "中文123"
+CONTEXT:  referenced column: time
+select * from test_time;
+   time   
+----------
+ 
+ 00:01:23
+ 
+ 
+ 00:01:23
+ 
+(6 rows)
+
+drop table if exists test_time;
 drop schema time_function_test cascade ;
 NOTICE:  drop cascades to table time_function_test.test_year
