@@ -88,6 +88,7 @@
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #include "plugin_executor/functions.h"
+#include "plugin_utils/varbit.h"
 #endif
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
@@ -196,6 +197,11 @@ static const struct config_enum_entry cmpt_version_options[] = {
     {"5.7", MYSQL_VERSION_5_7, false},
     {"8.0", MYSQL_VERSION_8_0, false},
     {NULL, 0, false}};
+
+static const struct config_enum_entry bit_output_options[] = {
+    {"bin", BIT_OUTPUT_BIN, false}, {"dec", BIT_OUTPUT_DEC, false}, {"hex", BIT_OUTPUT_HEX, false}, {NULL, 0, false}};
+
+
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -1336,6 +1342,17 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+    DefineCustomEnumVariable("dolphin.bit_output",
+                             gettext_noop("Sets the output format for bit, support bin,dec,hex"),
+                             NULL,
+                             &GetSessionContext()->bit_output,
+                             0,
+                             bit_output_options,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
 #endif
 
 }

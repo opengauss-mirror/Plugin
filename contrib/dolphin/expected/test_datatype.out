@@ -428,5 +428,86 @@ select pg_catalog.delete(cast('test=>NULL' as hstore), cast(pg_catalog.dolphin_t
  "test"=>NULL
 (1 row)
 
+-- test bit output 
+create table test_bit64(c1 bit(64));
+insert into test_bit64 values (b'1001000110100010101111000100110101011110011011111000100100100');
+insert into test_bit64 values (b'10101011110011011111000100100100');
+insert into test_bit64 values (b'1111011');
+create table t_bit(c_bit1 bit(1), c_bit10 bit(10));
+insert into t_bit values (null, 12);
+insert into t_bit values (1, 123);
+insert into t_bit values (null, 123.4);
+insert into t_bit values (null, 12.345);
+insert into t_bit values (null, 123.45);
+insert into t_bit values (null, 123.45678);
+insert into t_bit values (1, b'0101111');
+-- dec format
+set dolphin.bit_output = dec;
+select * from test_bit64;
+              c1               
+-------------------------------
+ \x124W$
+ \000\000\000\000$
+ \000\000\000\000\000\000\000{
+(3 rows)
+
+select * from t_bit;
+ c_bit1 | c_bit10  
+--------+----------
+        | \000\x0C
+ \x01   | \000{
+        | \000{
+        | \000\x0C
+        | \000{
+        | \000{
+ \x01   | \000/
+(7 rows)
+
+-- hex format
+set dolphin.bit_output = hex;
+select * from test_bit64;
+         c1         
+--------------------
+ \x12345789ABCDF124
+ \x00000000ABCDF124
+ \x000000000000007B
+(3 rows)
+
+select * from t_bit;
+ c_bit1 | c_bit10 
+--------+---------
+        | \x000C
+ \x01   | \x007B
+        | \x007B
+        | \x000C
+        | \x007B
+        | \x007B
+ \x01   | \x002F
+(7 rows)
+
+-- binary format
+set dolphin.bit_output = bin;
+select * from test_bit64;
+                                c1                                
+------------------------------------------------------------------
+ 0001001000110100010101111000100110101011110011011111000100100100
+ 0000000000000000000000000000000010101011110011011111000100100100
+ 0000000000000000000000000000000000000000000000000000000001111011
+(3 rows)
+
+select * from t_bit;
+ c_bit1 |  c_bit10   
+--------+------------
+        | 0000001100
+ 1      | 0001111011
+        | 0001111011
+        | 0000001100
+        | 0001111011
+        | 0001111011
+ 1      | 0000101111
+(7 rows)
+
+drop table test_bit64;
+drop table t_bit;
 drop schema b_datatype_test cascade;
 reset current_schema;

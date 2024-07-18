@@ -124,7 +124,6 @@ bool check_time_min_value(char* input_str, long long nr, bool can_ignore = false
 bool resolve_units(char *unit_str, b_units *unit);
 /* same as longlong_to_tm */
 extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm, bool can_ignore = false);
-extern char* bit_to_str(VarBit *bits);
 
 typedef struct DateTimeFormat
 {

@@ -25,6 +25,7 @@
 #ifdef DOLPHIN
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include "plugin_utils/varbit.h"
 #endif
 
 #include "access/hash.h"
