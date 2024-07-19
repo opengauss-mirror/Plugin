@@ -1007,7 +1007,10 @@ typedef enum AlterTableType {
     AT_STATS_SAMPLE_PAGES,
     AT_UNION,
     AT_TABLESPACE,
-    AT_TABLESPACE_STORAGE
+    AT_TABLESPACE_STORAGE,
+    AT_RemovePartitioning,
+    AT_RebuildPartition,
+    AT_AnalyzePartition,
 #endif
 } AlterTableType;
 

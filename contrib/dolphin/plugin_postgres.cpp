@@ -1,4 +1,5 @@
 #include "postgres.h"
+#include "plugin_nodes/parsenodes_common.h"
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/parse_oper.h"
@@ -83,12 +84,14 @@
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_protocol/startup.h"
 #include "libpq/libpq.h"
+#include "tcop/ddldeparse.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/dqformat.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #include "plugin_executor/functions.h"
 #include "plugin_utils/varbit.h"
+#include "plugin_commands/defrem.h"
 #include "utils/biginteger.h"
 #endif
 #ifndef WIN32_ONLY_COMPILER
@@ -227,6 +230,8 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
 static bool NullsMinimalPolicy();
 
+static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub, ddl_deparse_context *context);
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
 {
@@ -364,8 +369,10 @@ void init_plugin_object()
     u_sess->hook_cxt.getIgnoreKeywordTokenHook = (void*)semtc_get_ignore_keyword_token;
     u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
     u_sess->hook_cxt.isBinaryType = (void*)IsBinaryType;
+    u_sess->hook_cxt.deparseCollectedCommandHook = (void*)DeparseCollectedCommand;
     set_default_guc();
 
+   
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
         u_sess->proc_cxt.MyProcPort->database_name) {
         init_dolphin_proto(u_sess->proc_cxt.MyProcPort->database_name);
@@ -1811,3 +1818,99 @@ static bool NullsMinimalPolicy()
 {
     return ENABLE_B_CMPT_MODE && ENABLE_NULLS_MINIMAL_POLICY_MODE;
 }
+
+
+/* preserved interface for future */
+static ObjTree *
+DeparseSimpleCommand(CollectedCommand *cmd, bool *include_owner)
+{
+    Node *parsetree = cmd->parsetree;
+    Oid objectId = cmd->d.simple.address.objectId;
+
+    switch (nodeTag(parsetree)) {
+        // case T_CreateEventStmt:
+        //     return deparse_CreateEventStmt(objectId, parsetree);
+        // case T_AlterEventStmt:
+        //     return deparse_AlterEventStmt(objectId, parsetree);
+        // case T_DropEventStmt:
+        //     return deparse_DropEventStmt(objectId, parsetree);
+        default:
+            elog(INFO, "unrecognized node type in deparse command: %d",
+                 (int) nodeTag(parsetree));
+            break;
+    }
+    return NULL;
+}
+
+static ObjTree* DeparseAlterRelationSubCmd(CollectedCommand *cmd, CollectedATSubcmd *sub)
+{
+    AlterTableCmd *subcmd = (AlterTableCmd *) sub->parsetree;
+    ObjTree *tmp_obj = NULL;
+    switch (subcmd->subtype) {
+        case AT_DropIndex:
+            tmp_obj = new_objtree_VA("DROP INDEX %{index_identity}I %{cascade}s", 3,
+                "type", ObjTypeString, "drop index",
+                "index_identity", ObjTypeString, subcmd->name,
+                "cascade", ObjTypeString, subcmd->behavior == DROP_CASCADE ? "CASCADE" : "");
+            return tmp_obj;
+        case AT_DropForeignKey:
+            tmp_obj = new_objtree_VA("DROP FOREIGN KEY %{fk_identity}I %{cascade}s", 3,
+                "type", ObjTypeString, "drop foreign key",
+                "fk_identity", ObjTypeString, subcmd->name,
+                "cascade", ObjTypeString, subcmd->behavior == DROP_CASCADE ? "CASCADE" : "");
+            return tmp_obj;
+        case AT_RemovePartitioning:
+            tmp_obj = new_objtree_VA("REMOVE PARTITIONING", 1,
+                "type", ObjTypeString, "remove partitioning");
+            return tmp_obj;
+        case AT_RebuildPartition:
+            if (subcmd->def) {
+                List *list = NIL;
+                List *plist = (List*)subcmd->def;
+                ListCell* pcell = NULL;
+
+                foreach(pcell, plist) {
+                    A_Const* con = (A_Const*)lfirst(pcell);
+                    list = lappend(list, new_string_object(strVal(&con->val)));
+                }
+
+                tmp_obj = new_objtree_VA("REBUILD PARTITION", 1,
+                    "type", ObjTypeString, "remove partitioning");
+                append_array_object(tmp_obj, "%{partition_list:, }s", list);
+            } else {
+                tmp_obj = new_objtree_VA("REBUILD PARTITION ALL", 1,
+                    "type", ObjTypeString, "remove partitioning");
+            }
+            return tmp_obj;
+        case AT_AnalyzePartition:
+            if (subcmd->def) {
+                List *list = NIL;
+                List *plist = (List*)subcmd->def;
+                ListCell* pcell = NULL;
+
+                foreach(pcell, plist) {
+                    A_Const* con = (A_Const*)lfirst(pcell);
+                    list = lappend(list, new_string_object(strVal(&con->val)));
+                }
+
+                tmp_obj = new_objtree_VA("ANALYZE PARTITION", 1,
+                    "type", ObjTypeString, "analyze partitioning");
+                append_array_object(tmp_obj, "%{partition_list:, }s", list);
+            }
+            return tmp_obj;
+        default:
+            break;
+    }
+    return NULL;
+}
+
+static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub, ddl_deparse_context *context)
+{
+    if (type == DEPARSE_SIMPLE_COMMAND) {
+        return (void*)DeparseSimpleCommand(cmd, &context->include_owner);
+    } else if (type == ALTER_RELATION_SUBCMD) {
+        return (void*)DeparseAlterRelationSubCmd(cmd, sub);
+    }
+    return NULL;
+}
+

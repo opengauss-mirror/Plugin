@@ -317,22 +317,11 @@ ERROR:  Un-support feature
 DETAIL:  For subpartition table, exchange partition is not yet supported.
 --test b database analyze partition syntax
 alter table test_part1 analyze partition p0,p1;
- analyze_partition 
--------------------
- test_part1
-(1 row)
-
 alter table test_part1 analyze partition all;
 alter table test_subpart analyze partition p0,p1;
- analyze_partition 
--------------------
- test_subpart
-(1 row)
-
 alter table test_subpart analyze partition all;
 alter table test_subpart analyze partition perror;
 ERROR:  The partition perror can't be found in table test_subpart
-CONTEXT:  referenced column: analyze_partition
 --test opengauss analyze partition syntax
 analyze test_part1 partition (p1);
 analyze test_subpart partition (p1);
@@ -402,11 +391,6 @@ select * from test_no_part2;
 (1 row)
 
 alter table test_part_ustore analyze partition p0,p1;
- analyze_partition 
--------------------
- test_part_ustore
-(1 row)
-
 alter table test_part_ustore analyze partition all;
 -------test segment table
 CREATE TABLE IF NOT EXISTS test_part_segment
@@ -473,11 +457,6 @@ select * from test_no_part1;
 (0 rows)
 
 alter table test_part_segment analyze partition p0,p1;
- analyze_partition 
--------------------
- test_part_segment
-(1 row)
-
 alter table test_part_segment analyze partition all;
 -------test list partition tables
 CREATE TABLE test_part_list (a int, b int)
@@ -526,11 +505,6 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part_list analyze partition p1,p2;
- analyze_partition 
--------------------
- test_part_list
-(1 row)
-
 alter table test_part_list analyze partition all;
 -------test hash partition tables
 CREATE TABLE IF NOT EXISTS test_part_hash
@@ -598,11 +572,6 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part_hash analyze partition p0,p1;
- analyze_partition 
--------------------
- test_part_hash
-(1 row)
-
 alter table test_part_hash analyze partition all;
 drop schema partition_test2 cascade;
 NOTICE:  drop cascades to 8 other objects

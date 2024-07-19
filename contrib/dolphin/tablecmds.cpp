@@ -221,6 +221,7 @@
 
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
+#include "plugin_utils/partitionfuncs.h"
 #endif
 
 extern void vacuum_set_xid_limits(Relation rel, int64 freeze_min_age, int64 freeze_table_age, TransactionId* oldestXmin,
@@ -851,6 +852,9 @@ static Node* RecookAutoincAttrDefault(Relation rel, int attrno, Oid targettype, 
 static void check_unsupported_charset_for_column(Oid collation, const char* col_name);
 static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel, Oid oldNspOid,
                                                 Oid nspOid, ObjectAddresses* objsMoved, char* newrelname);
+#ifdef DOLPHIN
+static bool SpecialAlterTableCmd(AlterTableStmt* stmt);
+#endif
 
 static inline void validate_relation_kind(Relation r)
 {
@@ -8362,6 +8366,71 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
         list_free_ext(enumOidList);
         enumOidList = NIL;
     }
+
+    if (SpecialAlterTableCmd(stmt)) {
+        OverrideSearchPath* overridePath = NULL;
+        Oid namespaceId = get_rel_namespace(relid);
+        AlterTableCmd* cmd = (AlterTableCmd*)lfirst(list_head(stmt->cmds));
+
+        overridePath = GetOverrideSearchPath(CurrentMemoryContext);
+        overridePath->schemas = lcons_oid(namespaceId, overridePath->schemas);
+        PushOverrideSearchPath(overridePath);
+        
+
+        /* copy the original function RemovePartitioning operation  */
+        if (cmd->subtype == AT_RemovePartitioning) {
+            // Oid relid = RelnameGetRelid(cmd->name);
+            // if (!OidIsValid(relid))
+            //     ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The table %s can't be found", cmd->name)));
+            // ExecRemovePartition(relid, cmd->name);
+
+            // DirectFunctionCall1(RemovePartitioning, CStringGetDatum(cmd->name));
+            RemovePartitioningExt(cmd->name);
+        } else if (cmd->subtype == AT_RebuildPartition) {
+            ArrayType* args_array = NULL;
+            Datum* tmp_ary = NULL;
+            List *plist = (List*)cmd->def;
+            ListCell* pcell = NULL;
+            int array_len = 1;
+            int i = 0;
+            if (plist) {
+                array_len += list_length(plist);
+            } 
+            tmp_ary = (Datum*)palloc(array_len * sizeof(Datum));
+            tmp_ary[0] = CStringGetTextDatum(cmd->name);
+            foreach(pcell, plist) {
+                A_Const* con = (A_Const*)lfirst(pcell);
+                tmp_ary[++i] = CStringGetTextDatum(strVal(&con->val));
+            }
+
+            args_array = construct_array(tmp_ary, array_len, TEXTOID, -1, false, 'i');
+
+            // DirectFunctionCall1(RebuildPartition, PointerGetDatum(args_array));
+            RebuildPartitionExt(args_array);
+        } else if (cmd->subtype == AT_AnalyzePartition) {
+            ArrayType* args_array = NULL;
+            Datum* tmp_ary = NULL;
+            List *plist = (List*)cmd->def;
+            ListCell* pcell = NULL;
+            int array_len = 1;
+            int i = 0;
+            if (plist) {
+                array_len += list_length(plist);
+            } 
+            tmp_ary = (Datum*)palloc(array_len * sizeof(Datum));
+            tmp_ary[0] = CStringGetTextDatum(get_rel_name(relid));
+            foreach(pcell, plist) {
+                A_Const* con = (A_Const*)lfirst(pcell);
+                tmp_ary[++i] = CStringGetTextDatum(strVal(&con->val));
+            }
+
+            args_array = construct_array(tmp_ary, array_len, TEXTOID, -1, false, 'i');
+
+            AnalyzePartitionExt(args_array, get_database_name(u_sess->proc_cxt.MyDatabaseId), cmd->name);
+        }
+
+        PopOverrideSearchPath();
+    } 
 #endif
 }
 
@@ -9106,6 +9175,13 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
         case AT_TABLESPACE_STORAGE:
             pass = AT_PASS_MISC;
             break;
+        case AT_DropIndex:
+        case AT_RemovePartitioning:
+        case AT_RebuildPartition:
+        case AT_AnalyzePartition:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_MISC;
+            break;
 #endif
         default: /* oops */
             ereport(ERROR,
@@ -9616,6 +9692,8 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
                     atcmds = lappend(atcmds, atcmd);
                     AlterTableInternal(indexId, atcmds, false);
                 }
+                //not collect relation level cmd for event trigger if collect index cmd
+                commandCollected = true;
             } else
 #endif
             {
@@ -9935,6 +10013,10 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_UNION:
         case AT_TABLESPACE:
         case AT_TABLESPACE_STORAGE:
+        case AT_DropIndex:
+        case AT_RemovePartitioning:
+        case AT_RebuildPartition:
+        case AT_AnalyzePartition:
             break;
 #endif
         default: /* oops */
@@ -35424,5 +35506,20 @@ void ExecRebuildPartition(List* partList, Relation rel) {
     }
     list_free_ext(tempTableOidList);
 }
+
+static bool SpecialAlterTableCmd(AlterTableStmt* stmt)
+{
+    if (list_length(stmt->cmds) == 1) {
+        AlterTableCmd* cmd = (AlterTableCmd*)lfirst(list_head(stmt->cmds));
+
+        if (cmd->subtype == AT_RemovePartitioning ||
+                cmd->subtype == AT_RebuildPartition ||
+                cmd->subtype == AT_AnalyzePartition) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 #endif
