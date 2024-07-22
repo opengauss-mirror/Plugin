@@ -782,3 +782,38 @@ CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(longblob) RETURNS text LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(nvarchar2) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+
+-- rollback sum
+drop aggregate if exists pg_catalog.sum(anyenum);
+drop aggregate if exists pg_catalog.sum(anyset);
+drop aggregate if exists pg_catalog.sum(text);
+drop aggregate if exists pg_catalog.sum(year);
+drop aggregate if exists pg_catalog.sum_ext(int);
+drop aggregate if exists pg_catalog.sum_ext(smallint);
+drop aggregate if exists pg_catalog.sum(tinyint);
+drop aggregate if exists pg_catalog.sum_ext(float4);
+DROP FUNCTION IF EXISTS pg_catalog.anyenum_sum(double precision, anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.anyset_sum(double precision, anyset);
+DROP FUNCTION IF EXISTS pg_catalog.text_sum(double precision, text);
+DROP FUNCTION IF EXISTS pg_catalog.tinyint_sum(numeric, year);
+DROP FUNCTION IF EXISTS pg_catalog.int_sum_ext(numeric, int);
+DROP FUNCTION IF EXISTS pg_catalog.smallint_sum_ext(numeric, smallint);
+DROP FUNCTION IF EXISTS pg_catalog.tinyint_sum(numeric, tinyint);
+DROP FUNCTION IF EXISTS pg_catalog.float_sum(double precision, float4);
+DROP FUNCTION IF EXISTS pg_catalog.float8_sum(float8, float8);
+
+drop aggregate if exists pg_catalog.sum(uint1);
+drop aggregate if exists pg_catalog.sum(uint2);
+drop aggregate if exists pg_catalog.sum(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.uint1_sum(numeric, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_sum(numeric, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_sum(numeric, uint4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_sum(int8, uint1) RETURNS int8 LANGUAGE C AS  '$libdir/dolphin',  'uint1_sum';
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_sum(int8, uint2) RETURNS int8 LANGUAGE C AS  '$libdir/dolphin',  'uint2_sum';
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_sum(int8, uint4) RETURNS int8 LANGUAGE C AS  '$libdir/dolphin',  'uint4_sum';
+
+create aggregate pg_catalog.sum(uint1) (SFUNC=uint1_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
+create aggregate pg_catalog.sum(uint2) (SFUNC=uint2_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
+create aggregate pg_catalog.sum(uint4) (SFUNC=uint4_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
