@@ -4,12 +4,9 @@
 #include "postgres.h"
 
 #include "access/genam.h"
-#include "access/parallel.h"
 #include "lib/pairingheap.h"
 #include "nodes/execnodes.h"
 #include "port.h"				/* for random() */
-#include "utils/relptr.h"
-#include "utils/sampling.h"
 #include "vector.h"
 
 #define HNSW_MAX_DIM 2000
@@ -78,7 +75,38 @@
 
 #if PG_VERSION_NUM < 130000
 #define list_delete_last(list) list_truncate(list, list_length(list) - 1)
-#define list_sort(list, cmp) ((list) = list_qsort(list, cmp))
+#define list_sort(list, cmp) \
+    do { \
+        ListCell   *cell; \
+        int         i; \
+        int         len = list_length(list); \
+        ListCell  **list_arr; \
+        List       *new_list; \
+        \
+        if (len == 0) { \
+            list = NIL; \
+	    return list; \
+	} \
+        i = 0; \
+        list_arr = (ListCell **)palloc(sizeof(ListCell *) * len); \
+        foreach(cell, list) \
+            list_arr[i++] = cell; \
+        \
+        qsort(list_arr, len, sizeof(ListCell *), cmp); \
+        \
+        new_list = (List *) palloc(sizeof(List)); \
+        new_list->type = list->type; \
+        new_list->length = len; \
+        new_list->head = list_arr[0]; \
+        new_list->tail = list_arr[len - 1]; \
+        \
+        for (i = 0; i < len - 1; i++) \
+            list_arr[i]->next = list_arr[i + 1]; \
+        \
+        list_arr[len - 1]->next = NULL; \
+        pfree(list_arr); \
+        list = new_list; \
+    } while (0)
 #endif
 
 #define HnswIsElementTuple(tup) ((tup)->type == HNSW_ELEMENT_TUPLE_TYPE)
@@ -116,16 +144,71 @@ extern int	hnsw_lock_tranche_id;
 typedef struct HnswElementData HnswElementData;
 typedef struct HnswNeighborArray HnswNeighborArray;
 
+
+#define relptr(type)     union { type *relptr_type; Size relptr_off; }
+
+#define relptr_declare(type, relptrtype) \
+        typedef relptr(type) relptrtype
+
+#ifdef HAVE__BUILTIN_TYPES_COMPATIBLE_P
+#define relptr_access(base, rp) \
+        (AssertVariableIsOfTypeMacro(base, char *), \
+         (__typeof__((rp).relptr_type)) ((rp).relptr_off == 0 ? NULL : \
+                (base) + (rp).relptr_off - 1))
+#else
+/*
+ * If we don't have __builtin_types_compatible_p, assume we might not have
+ * __typeof__ either.
+ */
+#define relptr_access(base, rp) \
+        (AssertVariableIsOfTypeMacro(base, char *), \
+         (void *) ((rp).relptr_off == 0 ? NULL : (base) + (rp).relptr_off - 1))
+#endif
+
+#define relptr_is_null(rp) \
+        ((rp).relptr_off == 0)
+
+#define relptr_offset(rp) \
+        ((rp).relptr_off - 1)
+
+/* We use this inline to avoid double eval of "val" in relptr_store */
+static inline Size
+relptr_store_eval(char *base, char *val)
+{
+        if (val == NULL)
+                return 0;
+        else
+        {
+                Assert(val >= base);
+                return val - base + 1;
+        }
+}
+
+#ifdef HAVE__BUILTIN_TYPES_COMPATIBLE_P
+#define relptr_store(base, rp, val) \
+        (AssertVariableIsOfTypeMacro(base, char *), \
+         AssertVariableIsOfTypeMacro(val, __typeof__((rp).relptr_type)), \
+         (rp).relptr_off = relptr_store_eval((base), (char *) (val)))
+#else
+/*
+ * If we don't have __builtin_types_compatible_p, assume we might not have
+ * __typeof__ either.
+ */
+#define relptr_store(base, rp, val) \
+        (AssertVariableIsOfTypeMacro(base, char *), \
+         (rp).relptr_off = relptr_store_eval((base), (char *) (val)))
+#endif
+
 #define HnswPtrDeclare(type, relptrtype, ptrtype) \
 	relptr_declare(type, relptrtype); \
 	typedef union { type *ptr; relptrtype relptr; } ptrtype;
 
 /* Pointers that can be absolute or relative */
-/* Use char for DatumPtr so works with Pointer */
+/* Use char for HnswDatumPtr so works with Pointer */
 HnswPtrDeclare(HnswElementData, HnswElementRelptr, HnswElementPtr);
 HnswPtrDeclare(HnswNeighborArray, HnswNeighborArrayRelptr, HnswNeighborArrayPtr);
 HnswPtrDeclare(HnswNeighborArrayPtr, HnswNeighborsRelptr, HnswNeighborsPtr);
-HnswPtrDeclare(char, DatumRelptr, DatumPtr);
+HnswPtrDeclare(char, DatumRelptr, HnswDatumPtr);
 
 struct HnswElementData
 {
@@ -140,7 +223,7 @@ struct HnswElementData
 	OffsetNumber offno;
 	OffsetNumber neighborOffno;
 	BlockNumber neighborPage;
-	DatumPtr	value;
+	HnswDatumPtr	value;
 	LWLock		lock;
 };
 
@@ -203,9 +286,6 @@ typedef struct HnswShared
 	Oid			indexrelid;
 	bool		isconcurrent;
 
-	/* Worker progress */
-	ConditionVariable workersdonecv;
-
 	/* Mutex for mutable state */
 	slock_t		mutex;
 
@@ -215,12 +295,8 @@ typedef struct HnswShared
 	HnswGraph	graphData;
 }			HnswShared;
 
-#define ParallelTableScanFromHnswShared(shared) \
-	(ParallelTableScanDesc) ((char *) (shared) + BUFFERALIGN(sizeof(HnswShared)))
-
 typedef struct HnswLeader
 {
-	ParallelContext *pcxt;
 	int			nparticipanttuplesorts;
 	HnswShared *hnswshared;
 	Snapshot	snapshot;
@@ -390,41 +466,53 @@ void		HnswUpdateMetaPage(Relation index, int updateEntry, HnswElement entryPoint
 void		HnswSetNeighborTuple(char *base, HnswNeighborTuple ntup, HnswElement e, int m);
 void		HnswAddHeapTid(HnswElement element, ItemPointer heaptid);
 void		HnswInitNeighbors(char *base, HnswElement element, int m, HnswAllocator * alloc);
-bool		HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, bool *isnull, ItemPointer heap_tid, bool building);
+bool		HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, const bool *isnull, ItemPointer heap_tid, bool building);
 void		HnswUpdateNeighborsOnDisk(Relation index, FmgrInfo *procinfo, Oid collation, HnswElement e, int m, bool checkExisting, bool building);
 void		HnswLoadElementFromTuple(HnswElement element, HnswElementTuple etup, bool loadHeaptids, bool loadVec);
 void		HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo, Oid collation, bool loadVec, float *maxDistance);
 void		HnswSetElementTuple(char *base, HnswElementTuple etup, HnswElement element);
 void		HnswUpdateConnection(char *base, HnswElement element, HnswCandidate * hc, int lm, int lc, int *updateIdx, Relation index, FmgrInfo *procinfo, Oid collation);
 void		HnswLoadNeighbors(HnswElement element, Relation index, int m);
-void		HnswInitLockTranche(void);
 const		HnswTypeInfo *HnswGetTypeInfo(Relation index);
-PGDLLEXPORT void HnswParallelBuildMain(dsm_segment *seg, shm_toc *toc);
+
+extern "C" {
+    Datum hnswhandler(PG_FUNCTION_ARGS);
+    Datum hnswbuild(PG_FUNCTION_ARGS);
+    Datum hnswbuildempty(PG_FUNCTION_ARGS);
+    Datum hnswinsert(PG_FUNCTION_ARGS);
+    Datum hnswbulkdelete(PG_FUNCTION_ARGS);
+    Datum hnswvacuumcleanup(PG_FUNCTION_ARGS);
+    Datum hnswcostestimate(PG_FUNCTION_ARGS);
+    Datum hnswoptions(PG_FUNCTION_ARGS);
+    Datum hnswvalidate(PG_FUNCTION_ARGS);
+    Datum hnswbeginscan(PG_FUNCTION_ARGS);
+    Datum hnswrescan(PG_FUNCTION_ARGS);
+    Datum hnswgettuple(PG_FUNCTION_ARGS);
+    Datum hnswendscan(PG_FUNCTION_ARGS);
+    Datum hnsw_halfvec_support(PG_FUNCTION_ARGS);
+    Datum hnsw_bit_support(PG_FUNCTION_ARGS);
+    Datum hnsw_sparsevec_support(PG_FUNCTION_ARGS);
+}
 
 /* Index access methods */
-IndexBuildResult *hnswbuild(Relation heap, Relation index, IndexInfo *indexInfo);
-void		hnswbuildempty(Relation index);
-bool		hnswinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-					   ,bool indexUnchanged
-#endif
-					   ,IndexInfo *indexInfo
-);
-IndexBulkDeleteResult *hnswbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, void *callback_state);
-IndexBulkDeleteResult *hnswvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
-IndexScanDesc hnswbeginscan(Relation index, int nkeys, int norderbys);
-void		hnswrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
-bool		hnswgettuple(IndexScanDesc scan, ScanDirection dir);
-void		hnswendscan(IndexScanDesc scan);
+IndexBuildResult *hnswbuild_internal(Relation heap, Relation index, IndexInfo *indexInfo);
+void		hnswbuildempty_internal(Relation index);
+bool		hnswinsert_internal(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique);
+IndexBulkDeleteResult *hnswbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, void *callback_state);
+IndexBulkDeleteResult *hnswvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
+IndexScanDesc hnswbeginscan_internal(Relation index, int nkeys, int norderbys);
+void		hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
+bool		hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir);
+void		hnswendscan_internal(IndexScanDesc scan);
 
 static inline HnswNeighborArray *
 HnswGetNeighbors(char *base, HnswElement element, int lc)
 {
-	HnswNeighborArrayPtr *neighborList = HnswPtrAccess(base, element->neighbors);
+	HnswNeighborArrayPtr *neighborList = (HnswNeighborArrayPtr *)HnswPtrAccess(base, element->neighbors);
 
 	Assert(element->level >= lc);
 
-	return HnswPtrAccess(base, neighborList[lc]);
+	return (HnswNeighborArray *)HnswPtrAccess(base, neighborList[lc]);
 }
 
 /* Hash tables */

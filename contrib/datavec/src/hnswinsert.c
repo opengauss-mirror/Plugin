@@ -4,7 +4,7 @@
 
 #include "access/generic_xlog.h"
 #include "hnsw.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "storage/lmgr.h"
 #include "utils/datum.h"
 #include "utils/memutils.h"
@@ -145,11 +145,11 @@ AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, B
 	minCombinedSize = etupSize + HNSW_NEIGHBOR_TUPLE_SIZE(0, m) + sizeof(ItemIdData);
 
 	/* Prepare element tuple */
-	etup = palloc0(etupSize);
+	etup = (HnswElementTuple)palloc0(etupSize);
 	HnswSetElementTuple(base, etup, e);
 
 	/* Prepare neighbor tuple */
-	ntup = palloc0(ntupSize);
+	ntup = (HnswNeighborTuple)palloc0(ntupSize);
 	HnswSetNeighborTuple(base, ntup, e, m);
 
 	/* Find a page (or two if needed) to insert the tuples */
@@ -283,10 +283,10 @@ AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, B
 	/* Add element and neighbors */
 	if (OffsetNumberIsValid(freeOffno))
 	{
-		if (!PageIndexTupleOverwrite(page, e->offno, (Item) etup, etupSize))
+		if (!page_index_tuple_overwrite(page, e->offno, (Item) etup, etupSize))
 			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
 
-		if (!PageIndexTupleOverwrite(npage, e->neighborOffno, (Item) ntup, ntupSize))
+		if (!page_index_tuple_overwrite(npage, e->neighborOffno, (Item) ntup, ntupSize))
 			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
 	}
 	else
@@ -358,7 +358,7 @@ HnswUpdateNeighborsOnDisk(Relation index, FmgrInfo *procinfo, Oid collation, Hns
 			HnswNeighborTuple ntup;
 			int			idx = -1;
 			int			startIdx;
-			HnswElement neighborElement = HnswPtrAccess(base, hc->element);
+			HnswElement neighborElement = (HnswElement)HnswPtrAccess(base, hc->element);
 			OffsetNumber offno = neighborElement->neighborOffno;
 
 			/* Get latest neighbors since they may have changed */
@@ -509,7 +509,7 @@ FindDuplicateOnDisk(Relation index, HnswElement element, bool building)
 	for (int i = 0; i < neighbors->length; i++)
 	{
 		HnswCandidate *neighbor = &neighbors->items[i];
-		HnswElement neighborElement = HnswPtrAccess(base, neighbor->element);
+		HnswElement neighborElement = (HnswElement)HnswPtrAccess(base, neighbor->element);
 		Datum		neighborValue = HnswGetValue(base, neighborElement);
 
 		/* Exit early since ordered by distance */
@@ -554,7 +554,7 @@ UpdateGraphOnDisk(Relation index, FmgrInfo *procinfo, Oid collation, HnswElement
  * Insert a tuple into the index
  */
 bool
-HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, bool *isnull, ItemPointer heap_tid, bool building)
+HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, const bool *isnull, ItemPointer heap_tid, bool building)
 {
 	HnswElement entryPoint;
 	HnswElement element;
@@ -640,13 +640,8 @@ HnswInsertTuple(Relation index, Datum *values, bool *isnull, ItemPointer heap_ti
  * Insert a tuple into the index
  */
 bool
-hnswinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid,
-		   Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-		   ,bool indexUnchanged
-#endif
-		   ,IndexInfo *indexInfo
-)
+hnswinsert_internal(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid,
+		   Relation heap, IndexUniqueCheck checkUnique)
 {
 	MemoryContext oldCtx;
 	MemoryContext insertCtx;

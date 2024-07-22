@@ -5,11 +5,11 @@
 
 #include "access/genam.h"
 #include "access/generic_xlog.h"
-#include "access/parallel.h"
+#include "catalog/pg_operator.h"
 #include "lib/pairingheap.h"
 #include "nodes/execnodes.h"
 #include "port.h"				/* for random() */
-#include "utils/sampling.h"
+#include "sampling.h"
 #include "utils/tuplesort.h"
 #include "vector.h"
 
@@ -120,9 +120,6 @@ typedef struct IvfflatShared
 	bool		isconcurrent;
 	int			scantuplesortstates;
 
-	/* Worker progress */
-	ConditionVariable workersdonecv;
-
 	/* Mutex for mutable state */
 	slock_t		mutex;
 
@@ -138,16 +135,6 @@ typedef struct IvfflatShared
 
 #define ParallelTableScanFromIvfflatShared(shared) \
 	(ParallelTableScanDesc) ((char *) (shared) + BUFFERALIGN(sizeof(IvfflatShared)))
-
-typedef struct IvfflatLeader
-{
-	ParallelContext *pcxt;
-	int			nparticipanttuplesorts;
-	IvfflatShared *ivfshared;
-	Sharedsort *sharedsort;
-	Snapshot	snapshot;
-	char	   *ivfcenters;
-}			IvfflatLeader;
 
 typedef struct IvfflatTypeInfo
 {
@@ -204,8 +191,6 @@ typedef struct IvfflatBuildState
 	/* Memory */
 	MemoryContext tmpCtx;
 
-	/* Parallel builds */
-	IvfflatLeader *ivfleader;
 }			IvfflatBuildState;
 
 typedef struct IvfflatMetaPageData
@@ -302,22 +287,34 @@ void		IvfflatInitPage(Buffer buf, Page page);
 void		IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state);
 void		IvfflatInit(void);
 const		IvfflatTypeInfo *IvfflatGetTypeInfo(Relation index);
-PGDLLEXPORT void IvfflatParallelBuildMain(dsm_segment *seg, shm_toc *toc);
+
+extern "C" {
+	Datum ivfflathandler(PG_FUNCTION_ARGS);
+	Datum ivfflatbuild(PG_FUNCTION_ARGS);
+	Datum ivfflatbuildempty(PG_FUNCTION_ARGS);
+	Datum ivfflatinsert(PG_FUNCTION_ARGS);
+	Datum ivfflatbulkdelete(PG_FUNCTION_ARGS);
+	Datum ivfflatvacuumcleanup(PG_FUNCTION_ARGS);
+	Datum ivfflatcostestimate(PG_FUNCTION_ARGS);
+	Datum ivfflatoptions(PG_FUNCTION_ARGS);
+	Datum ivfflatvalidate(PG_FUNCTION_ARGS);
+	Datum ivfflatbeginscan(PG_FUNCTION_ARGS);
+	Datum ivfflatrescan(PG_FUNCTION_ARGS);
+	Datum ivfflatgettuple(PG_FUNCTION_ARGS);
+	Datum ivfflatendscan(PG_FUNCTION_ARGS);
+	Datum ivfflat_halfvec_support(PG_FUNCTION_ARGS);
+	Datum ivfflat_bit_support(PG_FUNCTION_ARGS);
+}
 
 /* Index access methods */
-IndexBuildResult *ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo);
-void		ivfflatbuildempty(Relation index);
-bool		ivfflatinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-						  ,bool indexUnchanged
-#endif
-						  ,IndexInfo *indexInfo
-);
-IndexBulkDeleteResult *ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, void *callback_state);
-IndexBulkDeleteResult *ivfflatvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
-IndexScanDesc ivfflatbeginscan(Relation index, int nkeys, int norderbys);
-void		ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
-bool		ivfflatgettuple(IndexScanDesc scan, ScanDirection dir);
-void		ivfflatendscan(IndexScanDesc scan);
+IndexBuildResult *ivfflatbuild_internal(Relation heap, Relation index, IndexInfo *indexInfo);
+void		ivfflatbuildempty_internal(Relation index);
+bool		ivfflatinsert_internal(Relation index, Datum *values, const bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique);
+IndexBulkDeleteResult *ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, void *callback_state);
+IndexBulkDeleteResult *ivfflatvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
+IndexScanDesc ivfflatbeginscan_internal(Relation index, int nkeys, int norderbys);
+void		ivfflatrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
+bool		ivfflatgettuple_internal(IndexScanDesc scan, ScanDirection dir);
+void		ivfflatendscan_internal(IndexScanDesc scan);
 
 #endif

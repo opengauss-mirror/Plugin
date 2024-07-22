@@ -3,11 +3,11 @@
 #include <limits.h>
 #include <math.h>
 
-#include "common/string.h"
 #include "fmgr.h"
 #include "halfutils.h"
 #include "halfvec.h"
 #include "libpq/pqformat.h"
+#include "shortest_dec.h"
 #include "sparsevec.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
@@ -217,7 +217,7 @@ sparsevec_in(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				 errmsg("sparsevec cannot have more than %d non-zero elements", SPARSEVEC_MAX_NNZ)));
 
-	elements = palloc(maxNnz * sizeof(SparseInputElement));
+	elements = (SparseInputElement *)palloc(maxNnz * sizeof(SparseInputElement));
 
 	pt = lit;
 
@@ -925,6 +925,14 @@ sparsevec_l2_norm(PG_FUNCTION_ARGS)
 		norm += (double) ax[i] * (double) ax[i];
 
 	PG_RETURN_FLOAT8(sqrt(norm));
+}
+
+static pg_noinline void
+float_overflow_error(void)
+{
+    ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+             errmsg("value out of range: overflow")));
 }
 
 /*

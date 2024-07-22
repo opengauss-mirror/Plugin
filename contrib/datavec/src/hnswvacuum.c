@@ -5,7 +5,7 @@
 #include "access/generic_xlog.h"
 #include "commands/vacuum.h"
 #include "hnsw.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "storage/lmgr.h"
 #include "utils/memutils.h"
 
@@ -76,7 +76,7 @@ RemoveHeapTids(HnswVacuumState * vacuumstate)
 					if (!ItemPointerIsValid(&etup->heaptids[i]))
 						break;
 
-					if (vacuumstate->callback(&etup->heaptids[i], vacuumstate->callback_state))
+					if (vacuumstate->callback(&etup->heaptids[i], vacuumstate->callback_state, InvalidOid, InvalidBktId))
 					{
 						itemUpdated = true;
 						stats->tuples_removed++;
@@ -221,7 +221,7 @@ RepairGraphElement(HnswVacuumState * vacuumstate, HnswElement element, HnswEleme
 	page = GenericXLogRegisterBuffer(state, buf, 0);
 
 	/* Overwrite tuple */
-	if (!PageIndexTupleOverwrite(page, element->neighborOffno, (Item) ntup, ntupSize))
+	if (!page_index_tuple_overwrite(page, element->neighborOffno, (Item) ntup, ntupSize))
 		elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
 
 	/* Commit */
@@ -529,7 +529,7 @@ MarkDeleted(HnswVacuumState * vacuumstate)
 
 			/*
 			 * We modified the tuples in place, no need to call
-			 * PageIndexTupleOverwrite
+			 * page_index_tuple_overwrite
 			 */
 
 			/* Commit */
@@ -575,7 +575,7 @@ InitVacuumState(HnswVacuumState * vacuumstate, IndexVacuumInfo *info, IndexBulkD
 	vacuumstate->bas = GetAccessStrategy(BAS_BULKREAD);
 	vacuumstate->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
 	vacuumstate->collation = index->rd_indcollation[0];
-	vacuumstate->ntup = palloc0(HNSW_TUPLE_ALLOC_SIZE);
+	vacuumstate->ntup = (HnswNeighborTuple)palloc0(HNSW_TUPLE_ALLOC_SIZE);
 	vacuumstate->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
 												"Hnsw vacuum temporary context",
 												ALLOCSET_DEFAULT_SIZES);
@@ -603,7 +603,7 @@ FreeVacuumState(HnswVacuumState * vacuumstate)
  * Bulk delete tuples from the index
  */
 IndexBulkDeleteResult *
-hnswbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
+hnswbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 			   IndexBulkDeleteCallback callback, void *callback_state)
 {
 	HnswVacuumState vacuumstate;
@@ -628,7 +628,7 @@ hnswbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
  * Clean up after a VACUUM operation
  */
 IndexBulkDeleteResult *
-hnswvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
+hnswvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
 {
 	Relation	rel = info->index;
 

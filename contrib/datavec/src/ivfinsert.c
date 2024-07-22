@@ -4,7 +4,7 @@
 
 #include "access/generic_xlog.h"
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "storage/lmgr.h"
 #include "utils/memutils.h"
 
@@ -65,7 +65,7 @@ FindInsertPage(Relation index, Datum *values, BlockNumber *insertPage, ListInfo 
  * Insert a tuple into the index
  */
 static void
-InsertTuple(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heapRel)
+InsertTuple(Relation index, Datum *values, const bool *isnull, ItemPointer heap_tid, Relation heapRel)
 {
 	const		IvfflatTypeInfo *typeInfo = IvfflatGetTypeInfo(index);
 	IndexTuple	itup;
@@ -179,13 +179,7 @@ InsertTuple(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, R
  * Insert a tuple into the index
  */
 bool
-ivfflatinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid,
-			  Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-			  ,bool indexUnchanged
-#endif
-			  ,IndexInfo *indexInfo
-)
+ivfflatinsert_internal(Relation index, Datum *values, const bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique)
 {
 	MemoryContext oldCtx;
 	MemoryContext insertCtx;

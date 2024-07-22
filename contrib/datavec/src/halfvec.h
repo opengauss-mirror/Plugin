@@ -4,6 +4,7 @@
 #define __STDC_WANT_IEC_60559_TYPES_EXT__
 
 #include <float.h>
+#include "fmgr.h"
 
 /* We use two types of dispatching: intrinsics and target_clones */
 /* TODO Move to better place */
@@ -42,8 +43,9 @@
 #define FLT16_SUPPORT
 #endif
 
+//TODO support _Float16
 #ifdef FLT16_SUPPORT
-#define half _Float16
+#define half float
 #define HALF_MAX FLT16_MAX
 #else
 #define half uint16
@@ -66,5 +68,47 @@ typedef struct HalfVector
 }			HalfVector;
 
 HalfVector *InitHalfVector(int dim);
+
+extern "C" {
+    Datum halfvec_in(PG_FUNCTION_ARGS);
+    Datum halfvec_out(PG_FUNCTION_ARGS);
+    Datum halfvec_typmod_in(PG_FUNCTION_ARGS);
+    Datum halfvec_recv(PG_FUNCTION_ARGS);
+    Datum halfvec_send(PG_FUNCTION_ARGS);
+    Datum halfvec_l2_distance(PG_FUNCTION_ARGS);
+    Datum halfvec_inner_product(PG_FUNCTION_ARGS);
+    Datum halfvec_cosine_distance(PG_FUNCTION_ARGS);
+    Datum halfvec_l1_distance(PG_FUNCTION_ARGS);
+    Datum halfvec_vector_dims(PG_FUNCTION_ARGS);
+    Datum halfvec_l2_norm(PG_FUNCTION_ARGS);
+    Datum halfvec_l2_normalize(PG_FUNCTION_ARGS);
+    Datum halfvec_binary_quantize(PG_FUNCTION_ARGS);
+    Datum halfvec_subvector(PG_FUNCTION_ARGS);
+    Datum halfvec_add(PG_FUNCTION_ARGS);
+    Datum halfvec_sub(PG_FUNCTION_ARGS);
+    Datum halfvec_mul(PG_FUNCTION_ARGS);
+    Datum halfvec_concat(PG_FUNCTION_ARGS);
+    Datum halfvec_lt(PG_FUNCTION_ARGS);
+    Datum halfvec_le(PG_FUNCTION_ARGS);
+    Datum halfvec_eq(PG_FUNCTION_ARGS);
+    Datum halfvec_ne(PG_FUNCTION_ARGS);
+    Datum halfvec_ge(PG_FUNCTION_ARGS);
+    Datum halfvec_gt(PG_FUNCTION_ARGS);
+    Datum halfvec_cmp(PG_FUNCTION_ARGS);
+    Datum halfvec_l2_squared_distance(PG_FUNCTION_ARGS);
+    Datum halfvec_negative_inner_product(PG_FUNCTION_ARGS);
+    Datum halfvec_spherical_distance(PG_FUNCTION_ARGS);
+    Datum halfvec_accum(PG_FUNCTION_ARGS);
+    Datum halfvec_avg(PG_FUNCTION_ARGS);
+    Datum halfvec_combine(PG_FUNCTION_ARGS);
+    Datum halfvec(PG_FUNCTION_ARGS);
+    Datum halfvec_to_vector(PG_FUNCTION_ARGS);
+    Datum vector_to_halfvec(PG_FUNCTION_ARGS);
+    Datum array_to_halfvec(PG_FUNCTION_ARGS);
+    Datum array_to_halfvec(PG_FUNCTION_ARGS);
+    Datum array_to_halfvec(PG_FUNCTION_ARGS);
+    Datum array_to_halfvec(PG_FUNCTION_ARGS);
+    Datum halfvec_to_float4(PG_FUNCTION_ARGS);
+}
 
 #endif

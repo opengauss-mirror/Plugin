@@ -12,6 +12,35 @@
  * Indices use 0-based numbering for the on-disk (and binary) format (consistent with C)
  * and are always sorted. Values come after indices.
  */
+
+extern "C" {
+    Datum sparsevec_in(PG_FUNCTION_ARGS);
+    Datum sparsevec_out(PG_FUNCTION_ARGS);
+    Datum sparsevec_typmod_in(PG_FUNCTION_ARGS);
+    Datum sparsevec_recv(PG_FUNCTION_ARGS);
+    Datum sparsevec_send(PG_FUNCTION_ARGS);
+    Datum sparsevec_l2_distance(PG_FUNCTION_ARGS);
+    Datum sparsevec_inner_product(PG_FUNCTION_ARGS);
+    Datum sparsevec_cosine_distance(PG_FUNCTION_ARGS);
+    Datum sparsevec_l1_distance(PG_FUNCTION_ARGS);
+    Datum sparsevec_l2_norm(PG_FUNCTION_ARGS);
+    Datum sparsevec_l2_normalize(PG_FUNCTION_ARGS);
+    Datum sparsevec_lt(PG_FUNCTION_ARGS);
+    Datum sparsevec_le(PG_FUNCTION_ARGS);
+    Datum sparsevec_eq(PG_FUNCTION_ARGS);
+    Datum sparsevec_ne(PG_FUNCTION_ARGS);
+    Datum sparsevec_ge(PG_FUNCTION_ARGS);
+    Datum sparsevec_gt(PG_FUNCTION_ARGS);
+    Datum sparsevec_cmp(PG_FUNCTION_ARGS);
+    Datum sparsevec_l2_squared_distance(PG_FUNCTION_ARGS);
+    Datum sparsevec_negative_inner_product(PG_FUNCTION_ARGS);
+    Datum sparsevec(PG_FUNCTION_ARGS);
+    Datum vector_to_sparsevec(PG_FUNCTION_ARGS);
+    Datum sparsevec_to_vector(PG_FUNCTION_ARGS);
+    Datum halfvec_to_sparsevec(PG_FUNCTION_ARGS);
+    Datum sparsevec_to_halfvec(PG_FUNCTION_ARGS);
+}
+
 typedef struct SparseVector
 {
 	int32		vl_len_;		/* varlena header (do not touch directly!) */

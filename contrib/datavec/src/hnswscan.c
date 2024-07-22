@@ -3,7 +3,7 @@
 #include "access/relscan.h"
 #include "hnsw.h"
 #include "pgstat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "storage/lmgr.h"
 #include "utils/memutils.h"
 
@@ -71,7 +71,7 @@ GetScanValue(IndexScanDesc scan)
  * Prepare for an index scan
  */
 IndexScanDesc
-hnswbeginscan(Relation index, int nkeys, int norderbys)
+hnswbeginscan_internal(Relation index, int nkeys, int norderbys)
 {
 	IndexScanDesc scan;
 	HnswScanOpaque so;
@@ -99,7 +99,7 @@ hnswbeginscan(Relation index, int nkeys, int norderbys)
  * Start or restart an index scan
  */
 void
-hnswrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
+hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
 {
 	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
 
@@ -117,7 +117,7 @@ hnswrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int no
  * Fetch the next tuple in the given scan
  */
 bool
-hnswgettuple(IndexScanDesc scan, ScanDirection dir)
+hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 {
 	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
 	MemoryContext oldCtx = MemoryContextSwitchTo(so->tmpCtx);
@@ -168,8 +168,8 @@ hnswgettuple(IndexScanDesc scan, ScanDirection dir)
 	while (list_length(so->w) > 0)
 	{
 		char	   *base = NULL;
-		HnswCandidate *hc = llast(so->w);
-		HnswElement element = HnswPtrAccess(base, hc->element);
+		HnswCandidate *hc = (HnswCandidate *)llast(so->w);
+		HnswElement element = (HnswElement)HnswPtrAccess(base, hc->element);
 		ItemPointer heaptid;
 
 		/* Move to next element if no valid heap TIDs */
@@ -183,9 +183,8 @@ hnswgettuple(IndexScanDesc scan, ScanDirection dir)
 
 		MemoryContextSwitchTo(oldCtx);
 
-		scan->xs_heaptid = *heaptid;
+		scan->xs_ctup.t_self = *heaptid;
 		scan->xs_recheck = false;
-		scan->xs_recheckorderby = false;
 		return true;
 	}
 
@@ -197,7 +196,7 @@ hnswgettuple(IndexScanDesc scan, ScanDirection dir)
  * End a scan and release resources
  */
 void
-hnswendscan(IndexScanDesc scan)
+hnswendscan_internal(IndexScanDesc scan)
 {
 	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
 

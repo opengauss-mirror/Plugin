@@ -7,7 +7,7 @@
 #include "halfutils.h"
 #include "halfvec.h"
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 
 /*
  * Allocate a vector array
@@ -15,7 +15,7 @@
 VectorArray
 VectorArrayInit(int maxlen, int dimensions, Size itemsize)
 {
-	VectorArray res = palloc(sizeof(VectorArrayData));
+	VectorArray res = (VectorArray)palloc(sizeof(VectorArrayData));
 
 	/* Ensure items are aligned to prevent UB */
 	itemsize = MAXALIGN(itemsize);
@@ -24,7 +24,7 @@ VectorArrayInit(int maxlen, int dimensions, Size itemsize)
 	res->maxlen = maxlen;
 	res->dim = dimensions;
 	res->itemsize = itemsize;
-	res->items = palloc_extended(maxlen * itemsize, MCXT_ALLOC_ZERO | MCXT_ALLOC_HUGE);
+	res->items = (char *)palloc_extended(maxlen * itemsize, MCXT_ALLOC_ZERO | MCXT_ALLOC_HUGE);
 	return res;
 }
 
@@ -229,9 +229,11 @@ IvfflatUpdateList(Relation index, ListInfo listInfo,
 	}
 }
 
-PGDLLEXPORT Datum l2_normalize(PG_FUNCTION_ARGS);
-PGDLLEXPORT Datum halfvec_l2_normalize(PG_FUNCTION_ARGS);
-PGDLLEXPORT Datum sparsevec_l2_normalize(PG_FUNCTION_ARGS);
+extern "C" {
+    PGDLLEXPORT Datum l2_normalize(PG_FUNCTION_ARGS);
+    PGDLLEXPORT Datum halfvec_l2_normalize(PG_FUNCTION_ARGS);
+    PGDLLEXPORT Datum sparsevec_l2_normalize(PG_FUNCTION_ARGS);
+}
 
 static Size
 VectorItemSize(int dimensions)
@@ -339,7 +341,7 @@ IvfflatGetTypeInfo(Relation index)
 		return (&typeInfo);
 	}
 	else
-		return (const IvfflatTypeInfo *) DatumGetPointer(FunctionCall0Coll(procinfo, InvalidOid));
+		return (const IvfflatTypeInfo *) DatumGetPointer(OidFunctionCall0Coll(procinfo->fn_oid, InvalidOid));
 }
 
 PGDLLEXPORT PG_FUNCTION_INFO_V1(ivfflat_halfvec_support);

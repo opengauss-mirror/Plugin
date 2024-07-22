@@ -4,17 +4,16 @@
 
 #include "bitvec.h"
 #include "catalog/pg_type.h"
-#include "common/shortest_dec.h"
 #include "fmgr.h"
 #include "halfutils.h"
 #include "halfvec.h"
 #include "lib/stringinfo.h"
 #include "libpq/pqformat.h"
 #include "port.h"				/* for strtof() */
+#include "shortest_dec.h"
 #include "sparsevec.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
-#include "utils/float.h"
 #include "utils/lsyscache.h"
 #include "utils/numeric.h"
 #include "vector.h"
@@ -1122,7 +1121,7 @@ halfvec_accum(PG_FUNCTION_ARGS)
 
 	n = statevalues[0] + 1.0;
 
-	statedatums = CreateStateDatums(dim);
+	statedatums = (Datum *)CreateStateDatums(dim);
 	statedatums[0] = Float8GetDatum(n);
 
 	if (newarr)

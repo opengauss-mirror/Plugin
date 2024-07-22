@@ -2,20 +2,14 @@
 
 #include <float.h>
 
-#include "access/table.h"
 #include "access/tableam.h"
-#include "access/parallel.h"
 #include "access/xact.h"
 #include "bitvec.h"
 #include "catalog/index.h"
-#include "catalog/pg_operator_d.h"
-#include "catalog/pg_type_d.h"
-#include "commands/progress.h"
 #include "halfvec.h"
 #include "ivfflat.h"
 #include "miscadmin.h"
-#include "optimizer/optimizer.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "tcop/tcopprot.h"
 #include "utils/memutils.h"
 #include "vector.h"
@@ -41,104 +35,6 @@
 #define PARALLEL_KEY_TUPLESORT			UINT64CONST(0xA000000000000002)
 #define PARALLEL_KEY_IVFFLAT_CENTERS	UINT64CONST(0xA000000000000003)
 #define PARALLEL_KEY_QUERY_TEXT			UINT64CONST(0xA000000000000004)
-
-/*
- * Add sample
- */
-static void
-AddSample(Datum *values, IvfflatBuildState * buildstate)
-{
-	VectorArray samples = buildstate->samples;
-	int			targsamples = samples->maxlen;
-
-	/* Detoast once for all calls */
-	Datum		value = PointerGetDatum(PG_DETOAST_DATUM(values[0]));
-
-	/*
-	 * Normalize with KMEANS_NORM_PROC since spherical distance function
-	 * expects unit vectors
-	 */
-	if (buildstate->kmeansnormprocinfo != NULL)
-	{
-		if (!IvfflatCheckNorm(buildstate->kmeansnormprocinfo, buildstate->collation, value))
-			return;
-
-		value = IvfflatNormValue(buildstate->typeInfo, buildstate->collation, value);
-	}
-
-	if (samples->length < targsamples)
-	{
-		VectorArraySet(samples, samples->length, DatumGetPointer(value));
-		samples->length++;
-	}
-	else
-	{
-		if (buildstate->rowstoskip < 0)
-			buildstate->rowstoskip = reservoir_get_next_S(&buildstate->rstate, samples->length, targsamples);
-
-		if (buildstate->rowstoskip <= 0)
-		{
-#if PG_VERSION_NUM >= 150000
-			int			k = (int) (targsamples * sampler_random_fract(&buildstate->rstate.randstate));
-#else
-			int			k = (int) (targsamples * sampler_random_fract(buildstate->rstate.randstate));
-#endif
-
-			Assert(k >= 0 && k < targsamples);
-			VectorArraySet(samples, k, DatumGetPointer(value));
-		}
-
-		buildstate->rowstoskip -= 1;
-	}
-}
-
-/*
- * Callback for sampling
- */
-static void
-SampleCallback(Relation index, CALLBACK_ITEM_POINTER, Datum *values,
-			   bool *isnull, bool tupleIsAlive, void *state)
-{
-	IvfflatBuildState *buildstate = (IvfflatBuildState *) state;
-	MemoryContext oldCtx;
-
-	/* Skip nulls */
-	if (isnull[0])
-		return;
-
-	/* Use memory context since detoast can allocate */
-	oldCtx = MemoryContextSwitchTo(buildstate->tmpCtx);
-
-	/* Add sample */
-	AddSample(values, buildstate);
-
-	/* Reset memory context */
-	MemoryContextSwitchTo(oldCtx);
-	MemoryContextReset(buildstate->tmpCtx);
-}
-
-/*
- * Sample rows with same logic as ANALYZE
- */
-static void
-SampleRows(IvfflatBuildState * buildstate)
-{
-	int			targsamples = buildstate->samples->maxlen;
-	BlockNumber totalblocks = RelationGetNumberOfBlocks(buildstate->heap);
-
-	buildstate->rowstoskip = -1;
-
-	BlockSampler_Init(&buildstate->bs, totalblocks, targsamples, RandomInt());
-
-	reservoir_init_selection_state(&buildstate->rstate, targsamples);
-	while (BlockSampler_HasMore(&buildstate->bs))
-	{
-		BlockNumber targblock = BlockSampler_Next(&buildstate->bs);
-
-		table_index_build_range_scan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-									 false, true, false, targblock, 1, SampleCallback, (void *) buildstate, NULL);
-	}
-}
 
 /*
  * Add tuple to sort
@@ -208,7 +104,7 @@ AddTupleToSort(Relation index, ItemPointer tid, Datum *values, IvfflatBuildState
  */
 static void
 BuildCallback(Relation index, CALLBACK_ITEM_POINTER, Datum *values,
-			  bool *isnull, bool tupleIsAlive, void *state)
+			  const bool *isnull, bool tupleIsAlive, void *state)
 {
 	IvfflatBuildState *buildstate = (IvfflatBuildState *) state;
 	MemoryContext oldCtx;
@@ -241,14 +137,14 @@ GetNextTuple(Tuplesortstate *sortstate, TupleDesc tupdesc, TupleTableSlot *slot,
 	Datum		value;
 	bool		isnull;
 
-	if (tuplesort_gettupleslot(sortstate, true, false, slot, NULL))
+	if (tuplesort_gettupleslot(sortstate, true, slot, NULL))
 	{
-		*list = DatumGetInt32(slot_getattr(slot, 1, &isnull));
-		value = slot_getattr(slot, 3, &isnull);
+		*list = DatumGetInt32(heap_slot_getattr(slot, 1, &isnull));
+		value = heap_slot_getattr(slot, 3, &isnull);
 
 		/* Form the index tuple */
 		*itup = index_form_tuple(tupdesc, &value, &isnull);
-		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(slot_getattr(slot, 2, &isnull)));
+		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(heap_slot_getattr(slot, 2, &isnull)));
 	}
 	else
 		*list = -1;
@@ -262,14 +158,10 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 {
 	int			list;
 	IndexTuple	itup = NULL;	/* silence compiler warning */
-	int64		inserted = 0;
+	int64	inserted = 0;
 
-	TupleTableSlot *slot = MakeSingleTupleTableSlot(buildstate->tupdesc, &TTSOpsMinimalTuple);
+	TupleTableSlot *slot = MakeSingleTupleTableSlot(buildstate->tupdesc);
 	TupleDesc	tupdesc = RelationGetDescr(index);
-
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_SUBPHASE, PROGRESS_IVFFLAT_PHASE_LOAD);
-
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_TUPLES_TOTAL, buildstate->indtuples);
 
 	GetNextTuple(buildstate->sortstate, tupdesc, slot, &itup, &list);
 
@@ -305,7 +197,7 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 
 			pfree(itup);
 
-			pgstat_progress_update_param(PROGRESS_CREATEIDX_TUPLES_DONE, ++inserted);
+			UpdateProgress(PROGRESS_CREATEIDX_TUPLES_DONE, ++inserted);
 
 			GetNextTuple(buildstate->sortstate, tupdesc, slot, &itup, &list);
 		}
@@ -358,15 +250,15 @@ InitBuildState(IvfflatBuildState * buildstate, Relation heap, Relation index, In
 		elog(ERROR, "dimensions must be greater than one for this opclass");
 
 	/* Create tuple description for sorting */
-	buildstate->tupdesc = CreateTemplateTupleDesc(3);
+	buildstate->tupdesc = CreateTemplateTupleDesc(3, false);
 	TupleDescInitEntry(buildstate->tupdesc, (AttrNumber) 1, "list", INT4OID, -1, 0);
 	TupleDescInitEntry(buildstate->tupdesc, (AttrNumber) 2, "tid", TIDOID, -1, 0);
 	TupleDescInitEntry(buildstate->tupdesc, (AttrNumber) 3, "vector", RelationGetDescr(index)->attrs[0].atttypid, -1, 0);
 
-	buildstate->slot = MakeSingleTupleTableSlot(buildstate->tupdesc, &TTSOpsVirtual);
+	buildstate->slot = MakeSingleTupleTableSlot(buildstate->tupdesc);
 
 	buildstate->centers = VectorArrayInit(buildstate->lists, buildstate->dimensions, buildstate->typeInfo->itemSize(buildstate->dimensions));
-	buildstate->listInfo = palloc(sizeof(ListInfo) * buildstate->lists);
+	buildstate->listInfo = (ListInfo *)palloc(sizeof(ListInfo) * buildstate->lists);
 
 	buildstate->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
 											   "Ivfflat build temporary context",
@@ -377,8 +269,6 @@ InitBuildState(IvfflatBuildState * buildstate, Relation heap, Relation index, In
 	buildstate->listSums = palloc0(sizeof(double) * buildstate->lists);
 	buildstate->listCounts = palloc0(sizeof(int) * buildstate->lists);
 #endif
-
-	buildstate->ivfleader = NULL;
 }
 
 /*
@@ -406,8 +296,6 @@ ComputeCenters(IvfflatBuildState * buildstate)
 {
 	int			numSamples;
 
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_SUBPHASE, PROGRESS_IVFFLAT_PHASE_KMEANS);
-
 	/* Target 50 samples per list, with at least 10000 samples */
 	/* The number of samples has a large effect on index build time */
 	numSamples = buildstate->lists * 50;
@@ -423,8 +311,6 @@ ComputeCenters(IvfflatBuildState * buildstate)
 	buildstate->samples = VectorArrayInit(numSamples, buildstate->dimensions, buildstate->centers->itemsize);
 	if (buildstate->heap != NULL)
 	{
-		SampleRows(buildstate);
-
 		if (buildstate->samples->length < buildstate->lists)
 		{
 			ereport(NOTICE,
@@ -481,7 +367,7 @@ CreateListPages(Relation index, VectorArray centers, int dimensions,
 	IvfflatList list;
 
 	listSize = MAXALIGN(IVFFLAT_LIST_SIZE(centers->itemsize));
-	list = palloc0(listSize);
+	list = (IvfflatList)palloc0(listSize);
 
 	buf = IvfflatNewBuffer(index, forkNum);
 	IvfflatInitRegisterPage(index, &buf, &page, &state);
@@ -527,7 +413,7 @@ PrintKmeansMetrics(IvfflatBuildState * buildstate)
 	elog(INFO, "inertia: %.3e", buildstate->inertia);
 
 	/* Calculate Davies-Bouldin index */
-	if (buildstate->lists > 1 && !buildstate->ivfleader)
+	if (buildstate->lists > 1)
 	{
 		double		db = 0.0;
 
@@ -563,403 +449,27 @@ PrintKmeansMetrics(IvfflatBuildState * buildstate)
 #endif
 
 /*
- * Within leader, wait for end of heap scan
- */
-static double
-ParallelHeapScan(IvfflatBuildState * buildstate)
-{
-	IvfflatShared *ivfshared = buildstate->ivfleader->ivfshared;
-	int			nparticipanttuplesorts;
-	double		reltuples;
-
-	nparticipanttuplesorts = buildstate->ivfleader->nparticipanttuplesorts;
-	for (;;)
-	{
-		SpinLockAcquire(&ivfshared->mutex);
-		if (ivfshared->nparticipantsdone == nparticipanttuplesorts)
-		{
-			buildstate->indtuples = ivfshared->indtuples;
-			reltuples = ivfshared->reltuples;
-#ifdef IVFFLAT_KMEANS_DEBUG
-			buildstate->inertia = ivfshared->inertia;
-#endif
-			SpinLockRelease(&ivfshared->mutex);
-			break;
-		}
-		SpinLockRelease(&ivfshared->mutex);
-
-		ConditionVariableSleep(&ivfshared->workersdonecv,
-							   WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN);
-	}
-
-	ConditionVariableCancelSleep();
-
-	return reltuples;
-}
-
-/*
- * Perform a worker's portion of a parallel sort
- */
-static void
-IvfflatParallelScanAndSort(IvfflatSpool * ivfspool, IvfflatShared * ivfshared, Sharedsort *sharedsort, char *ivfcenters, int sortmem, bool progress)
-{
-	SortCoordinate coordinate;
-	IvfflatBuildState buildstate;
-	TableScanDesc scan;
-	double		reltuples;
-	IndexInfo  *indexInfo;
-
-	/* Sort options, which must match AssignTuples */
-	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {Int4LessOperator};
-	Oid			sortCollations[] = {InvalidOid};
-	bool		nullsFirstFlags[] = {false};
-
-	/* Initialize local tuplesort coordination state */
-	coordinate = palloc0(sizeof(SortCoordinateData));
-	coordinate->isWorker = true;
-	coordinate->nParticipants = -1;
-	coordinate->sharedsort = sharedsort;
-
-	/* Join parallel scan */
-	indexInfo = BuildIndexInfo(ivfspool->index);
-	indexInfo->ii_Concurrent = ivfshared->isconcurrent;
-	InitBuildState(&buildstate, ivfspool->heap, ivfspool->index, indexInfo);
-	memcpy(buildstate.centers->items, ivfcenters, buildstate.centers->itemsize * buildstate.centers->maxlen);
-	buildstate.centers->length = buildstate.centers->maxlen;
-	ivfspool->sortstate = tuplesort_begin_heap(buildstate.tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, sortmem, coordinate, false);
-	buildstate.sortstate = ivfspool->sortstate;
-	scan = table_beginscan_parallel(ivfspool->heap,
-									ParallelTableScanFromIvfflatShared(ivfshared));
-	reltuples = table_index_build_scan(ivfspool->heap, ivfspool->index, indexInfo,
-									   true, progress, BuildCallback,
-									   (void *) &buildstate, scan);
-
-	/* Execute this worker's part of the sort */
-	tuplesort_performsort(ivfspool->sortstate);
-
-	/* Record statistics */
-	SpinLockAcquire(&ivfshared->mutex);
-	ivfshared->nparticipantsdone++;
-	ivfshared->reltuples += reltuples;
-	ivfshared->indtuples += buildstate.indtuples;
-#ifdef IVFFLAT_KMEANS_DEBUG
-	ivfshared->inertia += buildstate.inertia;
-#endif
-	SpinLockRelease(&ivfshared->mutex);
-
-	/* Log statistics */
-	if (progress)
-		ereport(DEBUG1, (errmsg("leader processed " INT64_FORMAT " tuples", (int64) reltuples)));
-	else
-		ereport(DEBUG1, (errmsg("worker processed " INT64_FORMAT " tuples", (int64) reltuples)));
-
-	/* Notify leader */
-	ConditionVariableSignal(&ivfshared->workersdonecv);
-
-	/* We can end tuplesorts immediately */
-	tuplesort_end(ivfspool->sortstate);
-
-	FreeBuildState(&buildstate);
-}
-
-/*
- * Perform work within a launched parallel process
- */
-void
-IvfflatParallelBuildMain(dsm_segment *seg, shm_toc *toc)
-{
-	char	   *sharedquery;
-	IvfflatSpool *ivfspool;
-	IvfflatShared *ivfshared;
-	Sharedsort *sharedsort;
-	char	   *ivfcenters;
-	Relation	heapRel;
-	Relation	indexRel;
-	LOCKMODE	heapLockmode;
-	LOCKMODE	indexLockmode;
-	int			sortmem;
-
-	/* Set debug_query_string for individual workers first */
-	sharedquery = shm_toc_lookup(toc, PARALLEL_KEY_QUERY_TEXT, true);
-	debug_query_string = sharedquery;
-
-	/* Report the query string from leader */
-	pgstat_report_activity(STATE_RUNNING, debug_query_string);
-
-	/* Look up shared state */
-	ivfshared = shm_toc_lookup(toc, PARALLEL_KEY_IVFFLAT_SHARED, false);
-
-	/* Open relations using lock modes known to be obtained by index.c */
-	if (!ivfshared->isconcurrent)
-	{
-		heapLockmode = ShareLock;
-		indexLockmode = AccessExclusiveLock;
-	}
-	else
-	{
-		heapLockmode = ShareUpdateExclusiveLock;
-		indexLockmode = RowExclusiveLock;
-	}
-
-	/* Open relations within worker */
-	heapRel = table_open(ivfshared->heaprelid, heapLockmode);
-	indexRel = index_open(ivfshared->indexrelid, indexLockmode);
-
-	/* Initialize worker's own spool */
-	ivfspool = (IvfflatSpool *) palloc0(sizeof(IvfflatSpool));
-	ivfspool->heap = heapRel;
-	ivfspool->index = indexRel;
-
-	/* Look up shared state private to tuplesort.c */
-	sharedsort = shm_toc_lookup(toc, PARALLEL_KEY_TUPLESORT, false);
-	tuplesort_attach_shared(sharedsort, seg);
-
-	ivfcenters = shm_toc_lookup(toc, PARALLEL_KEY_IVFFLAT_CENTERS, false);
-
-	/* Perform sorting */
-	sortmem = maintenance_work_mem / ivfshared->scantuplesortstates;
-	IvfflatParallelScanAndSort(ivfspool, ivfshared, sharedsort, ivfcenters, sortmem, false);
-
-	/* Close relations within worker */
-	index_close(indexRel, indexLockmode);
-	table_close(heapRel, heapLockmode);
-}
-
-/*
- * End parallel build
- */
-static void
-IvfflatEndParallel(IvfflatLeader * ivfleader)
-{
-	/* Shutdown worker processes */
-	WaitForParallelWorkersToFinish(ivfleader->pcxt);
-
-	/* Free last reference to MVCC snapshot, if one was used */
-	if (IsMVCCSnapshot(ivfleader->snapshot))
-		UnregisterSnapshot(ivfleader->snapshot);
-	DestroyParallelContext(ivfleader->pcxt);
-	ExitParallelMode();
-}
-
-/*
- * Return size of shared memory required for parallel index build
- */
-static Size
-ParallelEstimateShared(Relation heap, Snapshot snapshot)
-{
-	return add_size(BUFFERALIGN(sizeof(IvfflatShared)), table_parallelscan_estimate(heap, snapshot));
-}
-
-/*
- * Within leader, participate as a parallel worker
- */
-static void
-IvfflatLeaderParticipateAsWorker(IvfflatBuildState * buildstate)
-{
-	IvfflatLeader *ivfleader = buildstate->ivfleader;
-	IvfflatSpool *leaderworker;
-	int			sortmem;
-
-	/* Allocate memory and initialize private spool */
-	leaderworker = (IvfflatSpool *) palloc0(sizeof(IvfflatSpool));
-	leaderworker->heap = buildstate->heap;
-	leaderworker->index = buildstate->index;
-
-	/* Perform work common to all participants */
-	sortmem = maintenance_work_mem / ivfleader->nparticipanttuplesorts;
-	IvfflatParallelScanAndSort(leaderworker, ivfleader->ivfshared,
-							   ivfleader->sharedsort, ivfleader->ivfcenters,
-							   sortmem, true);
-}
-
-/*
- * Begin parallel build
- */
-static void
-IvfflatBeginParallel(IvfflatBuildState * buildstate, bool isconcurrent, int request)
-{
-	ParallelContext *pcxt;
-	int			scantuplesortstates;
-	Snapshot	snapshot;
-	Size		estivfshared;
-	Size		estsort;
-	Size		estcenters;
-	IvfflatShared *ivfshared;
-	Sharedsort *sharedsort;
-	char	   *ivfcenters;
-	IvfflatLeader *ivfleader = (IvfflatLeader *) palloc0(sizeof(IvfflatLeader));
-	bool		leaderparticipates = true;
-	int			querylen;
-
-#ifdef DISABLE_LEADER_PARTICIPATION
-	leaderparticipates = false;
-#endif
-
-	/* Enter parallel mode and create context */
-	EnterParallelMode();
-	Assert(request > 0);
-	pcxt = CreateParallelContext("vector", "IvfflatParallelBuildMain", request);
-
-	scantuplesortstates = leaderparticipates ? request + 1 : request;
-
-	/* Get snapshot for table scan */
-	if (!isconcurrent)
-		snapshot = SnapshotAny;
-	else
-		snapshot = RegisterSnapshot(GetTransactionSnapshot());
-
-	/* Estimate size of workspaces */
-	estivfshared = ParallelEstimateShared(buildstate->heap, snapshot);
-	shm_toc_estimate_chunk(&pcxt->estimator, estivfshared);
-	estsort = tuplesort_estimate_shared(scantuplesortstates);
-	shm_toc_estimate_chunk(&pcxt->estimator, estsort);
-	estcenters = buildstate->centers->itemsize * buildstate->centers->maxlen;
-	shm_toc_estimate_chunk(&pcxt->estimator, estcenters);
-	shm_toc_estimate_keys(&pcxt->estimator, 3);
-
-	/* Finally, estimate PARALLEL_KEY_QUERY_TEXT space */
-	if (debug_query_string)
-	{
-		querylen = strlen(debug_query_string);
-		shm_toc_estimate_chunk(&pcxt->estimator, querylen + 1);
-		shm_toc_estimate_keys(&pcxt->estimator, 1);
-	}
-	else
-		querylen = 0;			/* keep compiler quiet */
-
-	/* Everyone's had a chance to ask for space, so now create the DSM */
-	InitializeParallelDSM(pcxt);
-
-	/* If no DSM segment was available, back out (do serial build) */
-	if (pcxt->seg == NULL)
-	{
-		if (IsMVCCSnapshot(snapshot))
-			UnregisterSnapshot(snapshot);
-		DestroyParallelContext(pcxt);
-		ExitParallelMode();
-		return;
-	}
-
-	/* Store shared build state, for which we reserved space */
-	ivfshared = (IvfflatShared *) shm_toc_allocate(pcxt->toc, estivfshared);
-	/* Initialize immutable state */
-	ivfshared->heaprelid = RelationGetRelid(buildstate->heap);
-	ivfshared->indexrelid = RelationGetRelid(buildstate->index);
-	ivfshared->isconcurrent = isconcurrent;
-	ivfshared->scantuplesortstates = scantuplesortstates;
-	ConditionVariableInit(&ivfshared->workersdonecv);
-	SpinLockInit(&ivfshared->mutex);
-	/* Initialize mutable state */
-	ivfshared->nparticipantsdone = 0;
-	ivfshared->reltuples = 0;
-	ivfshared->indtuples = 0;
-#ifdef IVFFLAT_KMEANS_DEBUG
-	ivfshared->inertia = 0;
-#endif
-	table_parallelscan_initialize(buildstate->heap,
-								  ParallelTableScanFromIvfflatShared(ivfshared),
-								  snapshot);
-
-	/* Store shared tuplesort-private state, for which we reserved space */
-	sharedsort = (Sharedsort *) shm_toc_allocate(pcxt->toc, estsort);
-	tuplesort_initialize_shared(sharedsort, scantuplesortstates,
-								pcxt->seg);
-
-	ivfcenters = shm_toc_allocate(pcxt->toc, estcenters);
-	memcpy(ivfcenters, buildstate->centers->items, estcenters);
-
-	shm_toc_insert(pcxt->toc, PARALLEL_KEY_IVFFLAT_SHARED, ivfshared);
-	shm_toc_insert(pcxt->toc, PARALLEL_KEY_TUPLESORT, sharedsort);
-	shm_toc_insert(pcxt->toc, PARALLEL_KEY_IVFFLAT_CENTERS, ivfcenters);
-
-	/* Store query string for workers */
-	if (debug_query_string)
-	{
-		char	   *sharedquery;
-
-		sharedquery = (char *) shm_toc_allocate(pcxt->toc, querylen + 1);
-		memcpy(sharedquery, debug_query_string, querylen + 1);
-		shm_toc_insert(pcxt->toc, PARALLEL_KEY_QUERY_TEXT, sharedquery);
-	}
-
-	/* Launch workers, saving status for leader/caller */
-	LaunchParallelWorkers(pcxt);
-	ivfleader->pcxt = pcxt;
-	ivfleader->nparticipanttuplesorts = pcxt->nworkers_launched;
-	if (leaderparticipates)
-		ivfleader->nparticipanttuplesorts++;
-	ivfleader->ivfshared = ivfshared;
-	ivfleader->sharedsort = sharedsort;
-	ivfleader->snapshot = snapshot;
-	ivfleader->ivfcenters = ivfcenters;
-
-	/* If no workers were successfully launched, back out (do serial build) */
-	if (pcxt->nworkers_launched == 0)
-	{
-		IvfflatEndParallel(ivfleader);
-		return;
-	}
-
-	/* Log participants */
-	ereport(DEBUG1, (errmsg("using %d parallel workers", pcxt->nworkers_launched)));
-
-	/* Save leader state now that it's clear build will be parallel */
-	buildstate->ivfleader = ivfleader;
-
-	/* Join heap scan ourselves */
-	if (leaderparticipates)
-		IvfflatLeaderParticipateAsWorker(buildstate);
-
-	/* Wait for all launched workers */
-	WaitForParallelWorkersToAttach(pcxt);
-}
-
-/*
  * Scan table for tuples to index
  */
 static void
 AssignTuples(IvfflatBuildState * buildstate)
 {
-	int			parallel_workers = 0;
 	SortCoordinate coordinate = NULL;
 
 	/* Sort options, which must match IvfflatParallelScanAndSort */
 	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {Int4LessOperator};
+	Oid			sortOperators[] = {INT4LTOID};
 	Oid			sortCollations[] = {InvalidOid};
 	bool		nullsFirstFlags[] = {false};
 
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_SUBPHASE, PROGRESS_IVFFLAT_PHASE_ASSIGN);
-
-	/* Calculate parallel workers */
-	if (buildstate->heap != NULL)
-		parallel_workers = plan_create_index_workers(RelationGetRelid(buildstate->heap), RelationGetRelid(buildstate->index));
-
-	/* Attempt to launch parallel worker scan when required */
-	if (parallel_workers > 0)
-		IvfflatBeginParallel(buildstate, buildstate->indexInfo->ii_Concurrent, parallel_workers);
-
-	/* Set up coordination state if at least one worker launched */
-	if (buildstate->ivfleader)
-	{
-		coordinate = (SortCoordinate) palloc0(sizeof(SortCoordinateData));
-		coordinate->isWorker = false;
-		coordinate->nParticipants = buildstate->ivfleader->nparticipanttuplesorts;
-		coordinate->sharedsort = buildstate->ivfleader->sharedsort;
-	}
-
 	/* Begin serial/leader tuplesort */
-	buildstate->sortstate = tuplesort_begin_heap(buildstate->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, maintenance_work_mem, coordinate, false);
+	buildstate->sortstate = tuplesort_begin_heap(buildstate->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, u_sess->attr.attr_memory.maintenance_work_mem, coordinate, false);
 
 	/* Add tuples to sort */
 	if (buildstate->heap != NULL)
 	{
-		if (buildstate->ivfleader)
-			buildstate->reltuples = ParallelHeapScan(buildstate);
-		else
-			buildstate->reltuples = table_index_build_scan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-														   true, true, BuildCallback, (void *) buildstate, NULL);
+		buildstate->reltuples = IndexBuildHeapScan(buildstate->heap, buildstate->index, buildstate->indexInfo,
+							   true, BuildCallback, (void *) buildstate, NULL);
 
 #ifdef IVFFLAT_KMEANS_DEBUG
 		PrintKmeansMetrics(buildstate);
@@ -984,10 +494,6 @@ CreateEntryPages(IvfflatBuildState * buildstate, ForkNumber forkNum)
 
 	/* End sort */
 	tuplesort_end(buildstate->sortstate);
-
-	/* End parallel build */
-	if (buildstate->ivfleader)
-		IvfflatEndParallel(buildstate->ivfleader);
 }
 
 /*
@@ -1017,7 +523,7 @@ BuildIndex(Relation heap, Relation index, IndexInfo *indexInfo,
  * Build the index for a logged table
  */
 IndexBuildResult *
-ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+ivfflatbuild_internal(Relation heap, Relation index, IndexInfo *indexInfo)
 {
 	IndexBuildResult *result;
 	IvfflatBuildState buildstate;
@@ -1035,7 +541,7 @@ ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo)
  * Build the index for an unlogged table
  */
 void
-ivfflatbuildempty(Relation index)
+ivfflatbuildempty_internal(Relation index)
 {
 	IndexInfo  *indexInfo = BuildIndexInfo(index);
 	IvfflatBuildState buildstate;

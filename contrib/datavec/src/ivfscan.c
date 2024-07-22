@@ -3,13 +3,11 @@
 #include <float.h>
 
 #include "access/relscan.h"
-#include "catalog/pg_operator_d.h"
-#include "catalog/pg_type_d.h"
 #include "lib/pairingheap.h"
 #include "ivfflat.h"
 #include "miscadmin.h"
 #include "pgstat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 
 /*
  * Compare list distances
@@ -106,7 +104,7 @@ GetScanItems(IndexScanDesc scan, Datum value)
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 	TupleDesc	tupdesc = RelationGetDescr(scan->indexRelation);
 	double		tuples = 0;
-	TupleTableSlot *slot = MakeSingleTupleTableSlot(so->tupdesc, &TTSOpsVirtual);
+	TupleTableSlot *slot = MakeSingleTupleTableSlot(so->tupdesc);
 
 	/*
 	 * Reuse same set of shared buffers for scan
@@ -221,14 +219,14 @@ GetScanValue(IndexScanDesc scan)
  * Prepare for an index scan
  */
 IndexScanDesc
-ivfflatbeginscan(Relation index, int nkeys, int norderbys)
+ivfflatbeginscan_internal(Relation index, int nkeys, int norderbys)
 {
 	IndexScanDesc scan;
 	IvfflatScanOpaque so;
 	int			lists;
 	int			dimensions;
 	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {Float8LessOperator};
+	Oid			sortOperators[] = {FLOAT8LTOID};
 	Oid			sortCollations[] = {InvalidOid};
 	bool		nullsFirstFlags[] = {false};
 	int			probes = ivfflat_probes;
@@ -253,14 +251,14 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
 	so->collation = index->rd_indcollation[0];
 
 	/* Create tuple description for sorting */
-	so->tupdesc = CreateTemplateTupleDesc(2);
+	so->tupdesc = CreateTemplateTupleDesc(2, false);
 	TupleDescInitEntry(so->tupdesc, (AttrNumber) 1, "distance", FLOAT8OID, -1, 0);
 	TupleDescInitEntry(so->tupdesc, (AttrNumber) 2, "heaptid", TIDOID, -1, 0);
 
 	/* Prep sort */
-	so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, work_mem, NULL, false);
+	so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, u_sess->attr.attr_memory.work_mem, NULL, false);
 
-	so->slot = MakeSingleTupleTableSlot(so->tupdesc, &TTSOpsMinimalTuple);
+	so->slot = MakeSingleTupleTableSlot(so->tupdesc);
 
 	so->listQueue = pairingheap_allocate(CompareLists, scan);
 
@@ -273,7 +271,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
  * Start or restart an index scan
  */
 void
-ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
+ivfflatrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 
@@ -296,7 +294,7 @@ ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int
  * Fetch the next tuple in the given scan
  */
 bool
-ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
+ivfflatgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 
@@ -332,13 +330,12 @@ ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
 			pfree(DatumGetPointer(value));
 	}
 
-	if (tuplesort_gettupleslot(so->sortstate, true, false, so->slot, NULL))
+	if (tuplesort_gettupleslot(so->sortstate, true, so->slot, NULL))
 	{
-		ItemPointer heaptid = (ItemPointer) DatumGetPointer(slot_getattr(so->slot, 2, &so->isnull));
+		ItemPointer heaptid = (ItemPointer) DatumGetPointer(heap_slot_getattr(so->slot, 2, &so->isnull));
 
-		scan->xs_heaptid = *heaptid;
+		scan->xs_ctup.t_self = *heaptid;
 		scan->xs_recheck = false;
-		scan->xs_recheckorderby = false;
 		return true;
 	}
 
@@ -349,7 +346,7 @@ ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
  * End a scan and release resources
  */
 void
-ivfflatendscan(IndexScanDesc scan)
+ivfflatendscan_internal(IndexScanDesc scan)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 

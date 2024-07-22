@@ -3,13 +3,13 @@
 #include "access/generic_xlog.h"
 #include "commands/vacuum.h"
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 
 /*
  * Bulk delete tuples from the index
  */
 IndexBulkDeleteResult *
-ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
+ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 				  IndexBulkDeleteCallback callback, void *callback_state)
 {
 	Relation	index = info->index;
@@ -88,7 +88,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 					IndexTuple	itup = (IndexTuple) PageGetItem(page, PageGetItemId(page, offno));
 					ItemPointer htup = &(itup->t_tid);
 
-					if (callback(htup, callback_state))
+					if (callback(htup, callback_state, InvalidOid, InvalidBktId))
 					{
 						deletable[ndeletable++] = offno;
 						stats->tuples_removed++;
@@ -139,7 +139,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
  * Clean up after a VACUUM operation
  */
 IndexBulkDeleteResult *
-ivfflatvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
+ivfflatvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
 {
 	Relation	rel = info->index;
 

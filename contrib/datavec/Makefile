@@ -1,9 +1,9 @@
-EXTENSION = vector
+EXTENSION = datavec
 EXTVERSION = 0.7.2
 
-MODULE_big = vector
-DATA = $(wildcard sql/*--*.sql)
-OBJS = src/bitutils.o src/bitvec.o src/halfutils.o src/halfvec.o src/hnsw.o src/hnswbuild.o src/hnswinsert.o src/hnswscan.o src/hnswutils.o src/hnswvacuum.o src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/sparsevec.o src/vector.o
+MODULE_big = datavec
+DATA = sql/$(EXTENSION)--$(EXTVERSION).sql
+OBJS = src/bitutils.o src/bitvec.o src/f2s.o src/halfutils.o src/halfvec.o src/hnsw.o src/hnswbuild.o src/hnswinsert.o src/hnswscan.o src/hnswutils.o src/hnswvacuum.o src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/sparsevec.o src/vector.o
 HEADERS = src/halfvec.h src/sparsevec.h src/vector.h
 
 TESTS = $(wildcard test/sql/*.sql)
@@ -44,9 +44,19 @@ sql/$(EXTENSION)--$(EXTVERSION).sql: sql/$(EXTENSION).sql
 
 EXTRA_CLEAN = sql/$(EXTENSION)--$(EXTVERSION).sql
 
+ifdef USE_PGXS
 PG_CONFIG ?= pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
+else
+subdir = contrib/datavec
+top_builddir = ../..
+include $(top_builddir)/src/Makefile.global
+include $(top_srcdir)/contrib/contrib-global.mk
+endif
+
+override CXXFLAGS :=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC
+override CPPFLAGS +=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC
 
 # for Mac
 ifeq ($(PROVE),)

@@ -3,8 +3,8 @@
 
 #include <math.h>
 
-#include "common/shortest_dec.h"
 #include "halfvec.h"
+#include "shortest_dec.h"
 
 #ifdef F16C_SUPPORT
 #include <immintrin.h>
@@ -149,7 +149,7 @@ Float4ToHalfUnchecked(float num)
 #if defined(F16C_SUPPORT)
 	return _cvtss_sh(num, 0);
 #elif defined(FLT16_SUPPORT)
-	return (_Float16) num;
+	return num;
 #else
 	union
 	{
@@ -248,7 +248,7 @@ Float4ToHalf(float num)
 
 	if (unlikely(HalfIsInf(result)) && !isinf(num))
 	{
-		char	   *buf = palloc(FLOAT_SHORTEST_DECIMAL_LEN);
+		char	   *buf = (char *)palloc(FLOAT_SHORTEST_DECIMAL_LEN);
 
 		float_to_shortest_decimal_buf(num, buf);
 

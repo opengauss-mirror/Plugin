@@ -5,4 +5,9 @@
 
 VarBit	   *InitBitVector(int dim);
 
+extern "C" {
+    Datum hamming_distance(PG_FUNCTION_ARGS);
+    Datum jaccard_distance(PG_FUNCTION_ARGS);
+}
+
 #endif
