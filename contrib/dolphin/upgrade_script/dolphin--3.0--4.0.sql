@@ -1064,3 +1064,55 @@ CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(longblob) RETURNS varchar LANGUA
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(nvarchar2) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(year) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa(json) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+
+-- sum
+drop aggregate if exists pg_catalog.sum(uint1);
+drop aggregate if exists pg_catalog.sum(uint2);
+drop aggregate if exists pg_catalog.sum(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.uint1_sum(int8, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_sum(int8, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_sum(int8, uint4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_sum(numeric, uint1) RETURNS numeric LANGUAGE C AS  '$libdir/dolphin',  'uint1_sum';
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_sum(numeric, uint2) RETURNS numeric LANGUAGE C AS  '$libdir/dolphin',  'uint2_sum';
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_sum(numeric, uint4) RETURNS numeric LANGUAGE C AS  '$libdir/dolphin',  'uint4_sum';
+
+create aggregate pg_catalog.sum(uint1) (SFUNC=uint1_sum, cFUNC=numeric_add, STYPE= numeric );
+create aggregate pg_catalog.sum(uint2) (SFUNC=uint2_sum, cFUNC=numeric_add, STYPE= numeric );
+create aggregate pg_catalog.sum(uint4) (SFUNC=uint4_sum, cFUNC=numeric_add, STYPE= numeric );
+
+CREATE OR REPLACE FUNCTION pg_catalog.float8_sum(float8, float8) RETURNS float8 LANGUAGE C AS  '$libdir/dolphin',  'float8_sum';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float_sum(double precision, float4) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum_ext(float4);
+create aggregate pg_catalog.sum_ext(float4) (SFUNC=float_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyint_sum(numeric, tinyint) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(tinyint);
+create aggregate pg_catalog.sum(tinyint) (SFUNC=tinyint_sum, cFUNC=numeric_add, STYPE= numeric, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.smallint_sum_ext(numeric, smallint) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum_ext(smallint);
+create aggregate pg_catalog.sum_ext(smallint) (SFUNC=smallint_sum_ext, cFUNC=numeric_add, STYPE= numeric, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int_sum_ext(numeric, int) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum_ext(int);
+create aggregate pg_catalog.sum_ext(int) (SFUNC=int_sum_ext, cFUNC=numeric_add, STYPE= numeric, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyint_sum(numeric, year) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(year);
+create aggregate pg_catalog.sum(year) (SFUNC=tinyint_sum, cFUNC=numeric_add, STYPE= numeric, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_sum(double precision, text) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum(text);
+create aggregate pg_catalog.sum(text) (SFUNC=text_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.anyset_sum(double precision, anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum(anyset);
+create aggregate pg_catalog.sum(anyset) (SFUNC=anyset_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
+
+CREATE OR REPLACE FUNCTION pg_catalog.anyenum_sum(double precision, anyenum) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum(anyenum);
+create aggregate pg_catalog.sum(anyenum) (SFUNC=anyenum_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
+

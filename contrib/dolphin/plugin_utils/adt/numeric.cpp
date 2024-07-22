@@ -335,6 +335,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint1_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint4_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_sum);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_sum);
+
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_avg_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_avg_accum);
@@ -382,6 +384,7 @@ extern "C" DLL_PUBLIC Datum uint1_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint4_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint8_sum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float8_sum(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum uint1_avg_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_avg_accum(PG_FUNCTION_ARGS);
@@ -405,6 +408,19 @@ extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
+
+
+#define CHECKFLOATVAL(val, inf_is_valid, zero_is_valid)                                                             \
+    do {                                                                                                            \
+        if (isinf(val) && !(inf_is_valid))                                                                          \
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: overflow")));  \
+                                                                                                                    \
+        if ((val) == 0.0 && !(zero_is_valid))                                                                       \
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: underflow"))); \
+    } while (0)
+
+extern Datum DirectCall2WithNullArg(bool* isRetNull, PGFunction func, Oid collation, Datum arg1, Datum arg2,
+    bool arg1null, bool arg2null);
 
 #endif
 static void accum_sum_add(NumericSumAccum *accum, NumericVar *var1);
@@ -21440,142 +21456,31 @@ Datum uint1_avg_accum(PG_FUNCTION_ARGS)
     PG_RETURN_ARRAYTYPE_P(transarray);
 }
 
+Datum uint8_sum_wrapper(int64 value, PG_FUNCTION_ARGS)
+{
+    Datum result;
+    bool isRetNull = false;
+    result = DirectCall2WithNullArg(&isRetNull, uint8_sum, InvalidOid, PG_GETARG_DATUM(0),
+        UInt64GetDatum(value), PG_ARGISNULL(0), PG_ARGISNULL(1));
+    if (isRetNull)
+        PG_RETURN_NULL();
+
+    PG_RETURN_DATUM(result);
+}
+
 Datum uint1_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT8(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT8(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT8(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT8(1), fcinfo);
 }
 
 Datum uint2_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT16(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT16(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT16(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT16(1), fcinfo);
 }
 
 Datum uint4_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT32(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT32(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT32(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT32(1), fcinfo);
 }
 
 Datum uint8_sum(PG_FUNCTION_ARGS)
@@ -21609,6 +21514,35 @@ Datum uint8_sum(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
 }
+
+
+Datum float8_sum(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = 0;
+    float8 arg2 = 0;
+    float8 result;
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); 
+
+        PG_RETURN_DATUM(PG_GETARG_DATUM(1));
+    }
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_DATUM(PG_GETARG_DATUM(0));
+
+    arg1 = PG_GETARG_FLOAT8(0);
+    arg2 = PG_GETARG_FLOAT8(1);
+
+    result = arg1 + arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+
+    PG_RETURN_FLOAT8(result);
+}
+
 
 Datum uint8_avg_accum(PG_FUNCTION_ARGS)
 {

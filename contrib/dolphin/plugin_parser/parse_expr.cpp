@@ -2445,6 +2445,19 @@ void ReplaceBCmptFuncName(List* names, char* objname, char* defaultname, char* r
         }
     }
 }
+
+
+static inline bool is_neeed_replace_sum_function(List* args)
+{
+    ListCell* arg = NULL;
+    foreach (arg, args) {
+        Oid type = exprType((Node*)lfirst(arg));
+        if (type == FLOAT4OID || type == INT4OID || type == INT2OID) {
+            return true;
+        }
+    }
+    return false;
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -2527,6 +2540,13 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("Incorrect arguments to NAME_CONST"),
                             errhint("'NAME_CONST' function does not accept input of type %s", hint_str)));
         }
+    }
+
+    /* we cannot modify the result type of the built-in function directly, so we need to replace 
+     * it with a function equivalent to mysql
+     */
+    if (strcmp(objname, "sum") == 0 && SYSTEM_SCHEMA_NAME(schemaname) && is_neeed_replace_sum_function(targs)) {
+        ReplaceBCmptFuncName(fn->funcname, objname, "sum", "sum_ext");
     }
 #endif
     /* ... and hand off to ParseFuncOrColumn */
