@@ -253,6 +253,7 @@ void set_default_guc()
 
     set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
     set_config_option("datestyle", "ISO, YMD", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+    set_config_option("disable_keyword_options", u_sess->attr.attr_sql.disable_keyword_string, PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
 void init_dolphin_proto(char* database_name)
@@ -340,6 +341,7 @@ void init_plugin_object()
     }
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
     u_sess->hook_cxt.nullsMinimalPolicyHook = (void*)NullsMinimalPolicy;
+    u_sess->hook_cxt.getIgnoreKeywordTokenHook = (void*)semtc_get_ignore_keyword_token;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
