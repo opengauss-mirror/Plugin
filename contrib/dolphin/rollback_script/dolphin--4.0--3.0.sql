@@ -930,3 +930,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.uint4_sum(int8, uint4) RETURNS int8 LANGUA
 create aggregate pg_catalog.sum(uint1) (SFUNC=uint1_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
 create aggregate pg_catalog.sum(uint2) (SFUNC=uint2_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
 create aggregate pg_catalog.sum(uint4) (SFUNC=uint4_sum, cFUNC=int8_sum_to_int8, STYPE= int8 );
+
+DROP FUNCTION IF EXISTS pg_catalog.round(text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(time without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(timestamp with time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(anyset) CASCADE;

@@ -1746,11 +1746,7 @@ Datum i2tof(PG_FUNCTION_ARGS)
 Datum dround(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
-#ifdef DOLPHIN
-    PG_RETURN_FLOAT8(round(arg1));
-#else
     PG_RETURN_FLOAT8(rint(arg1));
-#endif
 }
 
 /*
