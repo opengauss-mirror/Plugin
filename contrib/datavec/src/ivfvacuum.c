@@ -1,45 +1,35 @@
 #include "postgres.h"
 
+#include "access/generic_xlog.h"
 #include "commands/vacuum.h"
 #include "ivfflat.h"
-#include "storage/buf/bufmgr.h"
-
+#include "storage/bufmgr.h"
 
 /*
  * Bulk delete tuples from the index
  */
 IndexBulkDeleteResult *
-ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
-				  IndexBulkDeleteCallback callback, const void *callback_state)
+ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
+				  IndexBulkDeleteCallback callback, void *callback_state)
 {
 	Relation	index = info->index;
-	Buffer		cbuf;
-	Page		cpage;
-	Buffer		buf;
-	Page		page;
-	IvfflatList list;
-	IndexTuple	itup;
-	ItemPointer htup;
-	OffsetNumber deletable[MaxOffsetNumber];
-	int			ndeletable;
-	BlockNumber startPages[MaxOffsetNumber];
-	BlockNumber nextblkno = IVFFLAT_HEAD_BLKNO;
-	BlockNumber searchPage;
-	BlockNumber insertPage;
-	OffsetNumber coffno;
-	OffsetNumber cmaxoffno;
-	OffsetNumber offno;
-	OffsetNumber maxoffno;
-	ListInfo	listInfo;
+	BlockNumber blkno = IVFFLAT_HEAD_BLKNO;
 	BufferAccessStrategy bas = GetAccessStrategy(BAS_BULKREAD);
 
 	if (stats == NULL)
 		stats = (IndexBulkDeleteResult *) palloc0(sizeof(IndexBulkDeleteResult));
 
 	/* Iterate over list pages */
-	while (BlockNumberIsValid(nextblkno))
+	while (BlockNumberIsValid(blkno))
 	{
-		cbuf = ReadBuffer(index, nextblkno);
+		Buffer		cbuf;
+		Page		cpage;
+		OffsetNumber coffno;
+		OffsetNumber cmaxoffno;
+		BlockNumber startPages[MaxOffsetNumber];
+		ListInfo	listInfo;
+
+		cbuf = ReadBuffer(index, blkno);
 		LockBuffer(cbuf, BUFFER_LOCK_SHARE);
 		cpage = BufferGetPage(cbuf);
 
@@ -48,23 +38,32 @@ ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 		/* Iterate over lists */
 		for (coffno = FirstOffsetNumber; coffno <= cmaxoffno; coffno = OffsetNumberNext(coffno))
 		{
-			list = (IvfflatList) PageGetItem(cpage, PageGetItemId(cpage, coffno));
+			IvfflatList list = (IvfflatList) PageGetItem(cpage, PageGetItemId(cpage, coffno));
+
 			startPages[coffno - FirstOffsetNumber] = list->startPage;
 		}
 
-		listInfo.blkno = nextblkno;
-		nextblkno = IvfflatPageGetOpaque(cpage)->nextblkno;
+		listInfo.blkno = blkno;
+		blkno = IvfflatPageGetOpaque(cpage)->nextblkno;
 
 		UnlockReleaseBuffer(cbuf);
 
 		for (coffno = FirstOffsetNumber; coffno <= cmaxoffno; coffno = OffsetNumberNext(coffno))
 		{
-			searchPage = startPages[coffno - FirstOffsetNumber];
-			insertPage = InvalidBlockNumber;
+			BlockNumber searchPage = startPages[coffno - FirstOffsetNumber];
+			BlockNumber insertPage = InvalidBlockNumber;
 
 			/* Iterate over entry pages */
 			while (BlockNumberIsValid(searchPage))
 			{
+				Buffer		buf;
+				Page		page;
+				GenericXLogState *state;
+				OffsetNumber offno;
+				OffsetNumber maxoffno;
+				OffsetNumber deletable[MaxOffsetNumber];
+				int			ndeletable;
+
 				vacuum_delay_point();
 
 				buf = ReadBufferExtended(index, MAIN_FORKNUM, searchPage, RBM_NORMAL, bas);
@@ -77,7 +76,8 @@ ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 				 */
 				LockBufferForCleanup(buf);
 
-				page = BufferGetPage(buf);
+				state = GenericXLogStart(index);
+				page = GenericXLogRegisterBuffer(state, buf, 0);
 
 				maxoffno = PageGetMaxOffsetNumber(page);
 				ndeletable = 0;
@@ -85,10 +85,10 @@ ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 				/* Find deleted tuples */
 				for (offno = FirstOffsetNumber; offno <= maxoffno; offno = OffsetNumberNext(offno))
 				{
-					itup = (IndexTuple) PageGetItem(page, PageGetItemId(page, offno));
-					htup = &(itup->t_tid);
+					IndexTuple	itup = (IndexTuple) PageGetItem(page, PageGetItemId(page, offno));
+					ItemPointer htup = &(itup->t_tid);
 
-					if (callback(htup, (void *)callback_state, InvalidOid, InvalidBktId))
+					if (callback(htup, callback_state))
 					{
 						deletable[ndeletable++] = offno;
 						stats->tuples_removed++;
@@ -108,8 +108,10 @@ ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 				{
 					/* Delete tuples */
 					PageIndexMultiDelete(page, deletable, ndeletable);
-					MarkBufferDirty(buf);
+					GenericXLogFinish(state);
 				}
+				else
+					GenericXLogAbort(state);
 
 				UnlockReleaseBuffer(buf);
 			}
@@ -137,7 +139,7 @@ ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
  * Clean up after a VACUUM operation
  */
 IndexBulkDeleteResult *
-ivfflatvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
+ivfflatvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
 {
 	Relation	rel = info->index;
 
