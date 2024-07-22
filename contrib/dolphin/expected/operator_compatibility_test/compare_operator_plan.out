@@ -1,0 +1,4754 @@
+drop schema if exists compare_operator_plan_schema cascade;
+NOTICE:  schema "compare_operator_plan_schema" does not exist, skipping
+create schema compare_operator_plan_schema;
+set current_schema to 'compare_operator_plan_schema';
+set dolphin.b_compatibility_mode to on;
+drop table if exists t13,t14,t15,t16,t17,t18,t19,t20,t21,t22;
+NOTICE:  table "t13" does not exist, skipping
+NOTICE:  table "t14" does not exist, skipping
+NOTICE:  table "t15" does not exist, skipping
+NOTICE:  table "t16" does not exist, skipping
+NOTICE:  table "t17" does not exist, skipping
+NOTICE:  table "t18" does not exist, skipping
+NOTICE:  table "t19" does not exist, skipping
+NOTICE:  table "t20" does not exist, skipping
+NOTICE:  table "t21" does not exist, skipping
+NOTICE:  table "t22" does not exist, skipping
+create table t12(a bit(1) primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t12_pkey" for table "t12"
+create table t13(a bit(64) primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t13_pkey" for table "t13"
+create table t14(a boolean primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t14_pkey" for table "t14"
+create table t15(a date primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t15_pkey" for table "t15"
+create table t16(a time primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t16_pkey" for table "t16"
+create table t17(a time(4) primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t17_pkey" for table "t17"
+create table t18(a datetime primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t18_pkey" for table "t18"
+create table t19(a datetime(4) default '2022-11-11 11:11:11' primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t19_pkey" for table "t19"
+create table t20(a timestamp primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t20_pkey" for table "t20"
+create table t21(a timestamp(4) default '2022-11-11 11:11:11' primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t21_pkey" for table "t21"
+create table t22(a year primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t22_pkey" for table "t22"
+insert into t12 values(b'1'), (b'0');
+insert into t13 values(b'111'), (b'10101100'), (b'1111001100');
+insert into t14 values(true), (false);
+insert into t15 values('2023-02-05'), ('1999-09-09'), ('2008-06-24');
+insert into t16 values('19:10:50'), ('12:12:12'), ('08:59:59');
+insert into t17 values('19:10:50.3456'), ('12:12:12.189'), ('08:59:59.666');
+insert into t18 values('2023-02-05 19:10:50'), ('1999-09-09 12:12:12'), ('2008-06-24 08:59:59');
+insert into t19 values('2023-02-05 19:10:50.456'), ('1999-09-09 12:12:12.189'), ('2008-06-24 08:59:59.666');
+insert into t20 values('2023-02-05 19:10:50'), ('1999-09-09 12:12:12'), ('2008-06-24 08:59:59');
+insert into t21 values('2023-02-05 19:10:50.456'), ('1999-09-09 12:12:12.189'), ('2008-06-24 08:59:59.666');
+insert into t22 values('2023'), ('1999'), ('2008'), ('2024'), ('2077'), ('1984');
+set enable_seqscan to off;
+-- a = b
+explain (costs off) select * from t12, t13 where t12.a = t13.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t12.a = t13.a)
+   ->  Index Only Scan using t12_pkey on t12
+   ->  Index Only Scan using t13_pkey on t13
+(4 rows)
+
+explain (costs off) select * from t12, t14 where t12.a = t14.a;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::integer = (t12.a)::uint4)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(7 rows)
+
+explain (costs off) select * from t12, t15 where t12.a = t15.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t15.a)::numeric)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t16 where t12.a = t16.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t16.a)::numeric)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t17 where t12.a = t17.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t17.a)::numeric)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t18 where t12.a = t18.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t18.a)::numeric)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t19 where t12.a = t19.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t19.a)::numeric)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t20 where t12.a = t20.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t20.a)::numeric)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t21 where t12.a = t21.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::numeric = (t21.a)::numeric)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t12 where t13.a = t12.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t13.a = t12.a)
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+(4 rows)
+
+explain (costs off) select * from t13, t14 where t13.a = t14.a;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::integer = (t13.a)::uint4)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(7 rows)
+
+explain (costs off) select * from t13, t15 where t13.a = t15.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t15.a)::numeric)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t16 where t13.a = t16.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t16.a)::numeric)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t17 where t13.a = t17.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t17.a)::numeric)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t18 where t13.a = t18.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t18.a)::numeric)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t19 where t13.a = t19.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t19.a)::numeric)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t20 where t13.a = t20.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t20.a)::numeric)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t21 where t13.a = t21.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::numeric = (t21.a)::numeric)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t12 where t14.a = t12.a;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::integer = (t12.a)::uint4)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(7 rows)
+
+explain (costs off) select * from t14, t13 where t14.a = t13.a;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::integer = (t13.a)::uint4)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(7 rows)
+
+explain (costs off) select * from t14, t15 where t14.a = t15.a;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Hash Join
+   Hash Cond: ((t15.a)::boolean = t14.a)
+   ->  Bitmap Heap Scan on t15
+         ->  Bitmap Index Scan on t15_pkey
+   ->  Hash
+         ->  Index Only Scan using t14_pkey on t14
+(6 rows)
+
+explain (costs off) select * from t14, t16 where t14.a = t16.a;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Hash Join
+   Hash Cond: ((t16.a)::boolean = t14.a)
+   ->  Bitmap Heap Scan on t16
+         ->  Bitmap Index Scan on t16_pkey
+   ->  Hash
+         ->  Index Only Scan using t14_pkey on t14
+(6 rows)
+
+explain (costs off) select * from t14, t17 where t14.a = t17.a;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Hash Join
+   Hash Cond: ((t17.a)::boolean = t14.a)
+   ->  Bitmap Heap Scan on t17
+         ->  Bitmap Index Scan on t17_pkey
+   ->  Hash
+         ->  Index Only Scan using t14_pkey on t14
+(6 rows)
+
+explain (costs off) select * from t14, t18 where t14.a = t18.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::numeric = (t18.a)::numeric)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(7 rows)
+
+explain (costs off) select * from t14, t19 where t14.a = t19.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::numeric = (t19.a)::numeric)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(7 rows)
+
+explain (costs off) select * from t14, t20 where t14.a = t20.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::numeric = (t20.a)::numeric)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(7 rows)
+
+explain (costs off) select * from t14, t21 where t14.a = t21.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Hash Join
+   Hash Cond: ((t14.a)::numeric = (t21.a)::numeric)
+   ->  Bitmap Heap Scan on t14
+         ->  Bitmap Index Scan on t14_pkey
+   ->  Hash
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(7 rows)
+
+explain (costs off) select * from t15, t12 where t15.a = t12.a;
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone = (t12.a)::double precision)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t13 where t15.a = t13.a;
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone = (t13.a)::double precision)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t14 where t15.a = t14.a;
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: texteq((t15.a)::text, ((uint2out((t14.a)::uint2))::character varying)::text)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t15
+               ->  Bitmap Index Scan on t15_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t16 where t15.a = t16.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone = t16.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t17 where t15.a = t17.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone = t17.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t18 where t15.a = t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t15.a = t18.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t18_pkey on t18
+(4 rows)
+
+explain (costs off) select * from t15, t19 where t15.a = t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t15.a = t19.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t19_pkey on t19
+(4 rows)
+
+explain (costs off) select * from t15, t20 where t15.a = t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t15.a = t20.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t20_pkey on t20
+(4 rows)
+
+explain (costs off) select * from t15, t21 where t15.a = t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t15.a = t21.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t21_pkey on t21
+(4 rows)
+
+explain (costs off) select * from t16, t12 where t16.a = t12.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t16.a)::numeric = (t12.a)::numeric)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t13 where t16.a = t13.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t16.a)::numeric = (t13.a)::numeric)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t14 where t16.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t15 where t16.a = t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t17 where t16.a = t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t16.a = t17.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t17_pkey on t17
+(4 rows)
+
+explain (costs off) select * from t16, t18 where t16.a = t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = t18.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t19 where t16.a = t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = t19.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t20 where t16.a = t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = t20.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t21 where t16.a = t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a = t21.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t12 where t17.a = t12.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t17.a)::numeric = (t12.a)::numeric)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t13 where t17.a = t13.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t17.a)::numeric = (t13.a)::numeric)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t14 where t17.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t15 where t17.a = t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t16 where t17.a = t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t17.a = t16.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t16_pkey on t16
+(4 rows)
+
+explain (costs off) select * from t17, t18 where t17.a = t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = t18.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t19 where t17.a = t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = t19.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t20 where t17.a = t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = t20.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t21 where t17.a = t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a = t21.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t12 where t18.a = t12.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a = (t12.a)::double precision)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t13 where t18.a = t13.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a = (t13.a)::double precision)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t14 where t18.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a = (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t15 where t18.a = t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t18.a = t15.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+(4 rows)
+
+explain (costs off) select * from t18, t16 where t18.a = t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a = t16.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t17 where t18.a = t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a = t17.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t19 where t18.a = t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t18.a = t19.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t19_pkey on t19
+(4 rows)
+
+explain (costs off) select * from t18, t20 where t18.a = t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t18.a = t20.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t20_pkey on t20
+(4 rows)
+
+explain (costs off) select * from t18, t21 where t18.a = t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t18.a = t21.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t21_pkey on t21
+(4 rows)
+
+explain (costs off) select * from t19, t12 where t19.a = t12.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a = (t12.a)::double precision)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t13 where t19.a = t13.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a = (t13.a)::double precision)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t14 where t19.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a = (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t15 where t19.a = t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t19.a = t15.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+(4 rows)
+
+explain (costs off) select * from t19, t16 where t19.a = t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a = t16.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t17 where t19.a = t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a = t17.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t18 where t19.a = t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t19.a = t18.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t18_pkey on t18
+(4 rows)
+
+explain (costs off) select * from t19, t20 where t19.a = t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t19.a = t20.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t20_pkey on t20
+(4 rows)
+
+explain (costs off) select * from t19, t21 where t19.a = t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t19.a = t21.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t21_pkey on t21
+(4 rows)
+
+explain (costs off) select * from t20, t12 where t20.a = t12.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a = (t12.a)::double precision)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t13 where t20.a = t13.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a = (t13.a)::double precision)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t14 where t20.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a = (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t15 where t20.a = t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t20.a = t15.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+(4 rows)
+
+explain (costs off) select * from t20, t16 where t20.a = t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a = t16.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t17 where t20.a = t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a = t17.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t18 where t20.a = t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t20.a = t18.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t18_pkey on t18
+(4 rows)
+
+explain (costs off) select * from t20, t19 where t20.a = t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t20.a = t19.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t19_pkey on t19
+(4 rows)
+
+explain (costs off) select * from t20, t21 where t20.a = t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t20.a = t21.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t21_pkey on t21
+(4 rows)
+
+explain (costs off) select * from t21, t12 where t21.a = t12.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a = (t12.a)::double precision)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t13 where t21.a = t13.a;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a = (t13.a)::double precision)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t14 where t21.a = t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a = (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t15 where t21.a = t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t21.a = t15.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+(4 rows)
+
+explain (costs off) select * from t21, t16 where t21.a = t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a = t16.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t17 where t21.a = t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a = t17.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t18 where t21.a = t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t21.a = t18.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t18_pkey on t18
+(4 rows)
+
+explain (costs off) select * from t21, t19 where t21.a = t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t21.a = t19.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t19_pkey on t19
+(4 rows)
+
+explain (costs off) select * from t21, t20 where t21.a = t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Merge Join
+   Merge Cond: (t21.a = t20.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t20_pkey on t20
+(4 rows)
+
+-- a > b
+explain (costs off) select * from t12, t13 where t12.a > t13.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a > t13.a)
+(4 rows)
+
+explain (costs off) select * from t12, t14 where t12.a > t14.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::integer > (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t15 where t12.a > t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t16 where t12.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t17 where t12.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t18 where t12.a > t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t19 where t12.a > t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t20 where t12.a > t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t21 where t12.a > t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a > t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t12 where t13.a > t12.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a < t13.a)
+(4 rows)
+
+explain (costs off) select * from t13, t14 where t13.a > t14.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::integer > (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t15 where t13.a > t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t16 where t13.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t17 where t13.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t18 where t13.a > t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t19 where t13.a > t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t20 where t13.a > t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t21 where t13.a > t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a > t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t12 where t14.a > t12.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer > (t12.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t13 where t14.a > t13.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer > (t13.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t15 where t14.a > t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a > (t15.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t16 where t14.a > t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a > (t16.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t17 where t14.a > t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a > (t17.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t18 where t14.a > t18.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric > (t18.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t19 where t14.a > t19.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric > (t19.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t20 where t14.a > t20.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric > (t20.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t21 where t14.a > t21.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric > (t21.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t12 where t15.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a > t12.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t13 where t15.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a > t13.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t14 where t15.a > t14.a;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: text_gt((t15.a)::text, ((uint2out((t14.a)::uint2))::character varying)::text)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t15
+               ->  Bitmap Index Scan on t15_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t16 where t15.a > t16.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone > t16.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t17 where t15.a > t17.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone > t17.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t18 where t15.a > t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t18.a)
+(4 rows)
+
+explain (costs off) select * from t15, t19 where t15.a > t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t19.a)
+(4 rows)
+
+explain (costs off) select * from t15, t20 where t15.a > t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t20.a)
+(4 rows)
+
+explain (costs off) select * from t15, t21 where t15.a > t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t21.a)
+(4 rows)
+
+explain (costs off) select * from t16, t12 where t16.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t12.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t13 where t16.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t13.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t14 where t16.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t15 where t16.a > t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t17 where t16.a > t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t17_pkey on t17
+         Index Cond: (a < t16.a)
+(4 rows)
+
+explain (costs off) select * from t16, t18 where t16.a > t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t18.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t19 where t16.a > t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t19.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t20 where t16.a > t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t20.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t21 where t16.a > t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a > t21.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t12 where t17.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t12.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t13 where t17.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t13.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t14 where t17.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t15 where t17.a > t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t16 where t17.a > t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t16_pkey on t16
+         Index Cond: (a < t17.a)
+(4 rows)
+
+explain (costs off) select * from t17, t18 where t17.a > t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t18.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t19 where t17.a > t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t19.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t20 where t17.a > t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t20.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t21 where t17.a > t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a > t21.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t12 where t18.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a > t12.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t13 where t18.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a > t13.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t14 where t18.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a > (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t15 where t18.a > t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t16 where t18.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a > t16.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t17 where t18.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a > t17.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t19 where t18.a > t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a < t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t20 where t18.a > t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a < t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t21 where t18.a > t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a < t18.a)
+(4 rows)
+
+explain (costs off) select * from t19, t12 where t19.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a > t12.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t13 where t19.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a > t13.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t14 where t19.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a > (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t15 where t19.a > t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t16 where t19.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a > t16.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t17 where t19.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a > t17.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t18 where t19.a > t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a < t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t20 where t19.a > t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a < t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t21 where t19.a > t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a < t19.a)
+(4 rows)
+
+explain (costs off) select * from t20, t12 where t20.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a > t12.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t13 where t20.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a > t13.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t14 where t20.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a > (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t15 where t20.a > t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t16 where t20.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a > t16.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t17 where t20.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a > t17.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t18 where t20.a > t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a < t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t19 where t20.a > t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a < t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t21 where t20.a > t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a < t20.a)
+(4 rows)
+
+explain (costs off) select * from t21, t12 where t21.a > t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a > t12.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t13 where t21.a > t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a > t13.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t14 where t21.a > t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a > (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t15 where t21.a > t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t16 where t21.a > t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a > t16.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t17 where t21.a > t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a > t17.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t18 where t21.a > t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a < t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t19 where t21.a > t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a < t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t20 where t21.a > t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a < t21.a)
+(4 rows)
+
+-- a >= b
+explain (costs off) select * from t12, t13 where t12.a >= t13.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a >= t13.a)
+(4 rows)
+
+explain (costs off) select * from t12, t14 where t12.a >= t14.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::integer >= (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t15 where t12.a >= t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t16 where t12.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t17 where t12.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t18 where t12.a >= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t19 where t12.a >= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t20 where t12.a >= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t21 where t12.a >= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a >= t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t12 where t13.a >= t12.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a <= t13.a)
+(4 rows)
+
+explain (costs off) select * from t13, t14 where t13.a >= t14.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::integer >= (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t15 where t13.a >= t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t16 where t13.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t17 where t13.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t18 where t13.a >= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t19 where t13.a >= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t20 where t13.a >= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t21 where t13.a >= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a >= t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t12 where t14.a >= t12.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer >= (t12.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t13 where t14.a >= t13.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer >= (t13.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t15 where t14.a >= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a >= (t15.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t16 where t14.a >= t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a >= (t16.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t17 where t14.a >= t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a >= (t17.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t18 where t14.a >= t18.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric >= (t18.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t19 where t14.a >= t19.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric >= (t19.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t20 where t14.a >= t20.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric >= (t20.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t21 where t14.a >= t21.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric >= (t21.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t12 where t15.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a >= t12.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t13 where t15.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a >= t13.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t14 where t15.a >= t14.a;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: text_ge((t15.a)::text, ((uint2out((t14.a)::uint2))::character varying)::text)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t15
+               ->  Bitmap Index Scan on t15_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t16 where t15.a >= t16.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone >= t16.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t17 where t15.a >= t17.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone >= t17.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t18 where t15.a >= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t18.a)
+(4 rows)
+
+explain (costs off) select * from t15, t19 where t15.a >= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t19.a)
+(4 rows)
+
+explain (costs off) select * from t15, t20 where t15.a >= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t20.a)
+(4 rows)
+
+explain (costs off) select * from t15, t21 where t15.a >= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t21.a)
+(4 rows)
+
+explain (costs off) select * from t16, t12 where t16.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t12.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t13 where t16.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t13.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t14 where t16.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t15 where t16.a >= t15.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t17 where t16.a >= t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t17_pkey on t17
+         Index Cond: (a <= t16.a)
+(4 rows)
+
+explain (costs off) select * from t16, t18 where t16.a >= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t18.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t19 where t16.a >= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t19.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t20 where t16.a >= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t20.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t21 where t16.a >= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a >= t21.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t12 where t17.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t12.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t13 where t17.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t13.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t14 where t17.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t15 where t17.a >= t15.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t16 where t17.a >= t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t16_pkey on t16
+         Index Cond: (a <= t17.a)
+(4 rows)
+
+explain (costs off) select * from t17, t18 where t17.a >= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t18.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t19 where t17.a >= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t19.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t20 where t17.a >= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t20.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t21 where t17.a >= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a >= t21.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t12 where t18.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a >= t12.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t13 where t18.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a >= t13.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t14 where t18.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a >= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t15 where t18.a >= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t16 where t18.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a >= t16.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t17 where t18.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a >= t17.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t19 where t18.a >= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a <= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t20 where t18.a >= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a <= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t21 where t18.a >= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a <= t18.a)
+(4 rows)
+
+explain (costs off) select * from t19, t12 where t19.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a >= t12.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t13 where t19.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a >= t13.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t14 where t19.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a >= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t15 where t19.a >= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t16 where t19.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a >= t16.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t17 where t19.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a >= t17.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t18 where t19.a >= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a <= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t20 where t19.a >= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a <= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t21 where t19.a >= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a <= t19.a)
+(4 rows)
+
+explain (costs off) select * from t20, t12 where t20.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a >= t12.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t13 where t20.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a >= t13.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t14 where t20.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a >= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t15 where t20.a >= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t16 where t20.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a >= t16.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t17 where t20.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a >= t17.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t18 where t20.a >= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a <= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t19 where t20.a >= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a <= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t21 where t20.a >= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a <= t20.a)
+(4 rows)
+
+explain (costs off) select * from t21, t12 where t21.a >= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a >= t12.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t13 where t21.a >= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a >= t13.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t14 where t21.a >= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a >= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t15 where t21.a >= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t16 where t21.a >= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a >= t16.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t17 where t21.a >= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a >= t17.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t18 where t21.a >= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a <= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t19 where t21.a >= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a <= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t20 where t21.a >= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a <= t21.a)
+(4 rows)
+
+-- a < b
+explain (costs off) select * from t12, t13 where t12.a < t13.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a < t13.a)
+(4 rows)
+
+explain (costs off) select * from t12, t14 where t12.a < t14.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::integer < (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t15 where t12.a < t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t16 where t12.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t17 where t12.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t18 where t12.a < t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t19 where t12.a < t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t20 where t12.a < t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t21 where t12.a < t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a < t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t12 where t13.a < t12.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a > t13.a)
+(4 rows)
+
+explain (costs off) select * from t13, t14 where t13.a < t14.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::integer < (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t15 where t13.a < t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t16 where t13.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t17 where t13.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t18 where t13.a < t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t19 where t13.a < t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t20 where t13.a < t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t21 where t13.a < t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a < t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t12 where t14.a < t12.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer < (t12.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t13 where t14.a < t13.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer < (t13.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t15 where t14.a < t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a < (t15.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t16 where t14.a < t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a < (t16.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t17 where t14.a < t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a < (t17.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t18 where t14.a < t18.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric < (t18.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t19 where t14.a < t19.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric < (t19.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t20 where t14.a < t20.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric < (t20.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t21 where t14.a < t21.a;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric < (t21.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t12 where t15.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a < t12.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t13 where t15.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a < t13.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t14 where t15.a < t14.a;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: text_lt((t15.a)::text, ((uint2out((t14.a)::uint2))::character varying)::text)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t15
+               ->  Bitmap Index Scan on t15_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t16 where t15.a < t16.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone < t16.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t17 where t15.a < t17.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone < t17.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t18 where t15.a < t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t18.a)
+(4 rows)
+
+explain (costs off) select * from t15, t19 where t15.a < t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t19.a)
+(4 rows)
+
+explain (costs off) select * from t15, t20 where t15.a < t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t20.a)
+(4 rows)
+
+explain (costs off) select * from t15, t21 where t15.a < t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a < t21.a)
+(4 rows)
+
+explain (costs off) select * from t16, t12 where t16.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t12.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t13 where t16.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t13.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t14 where t16.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t15 where t16.a < t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t17 where t16.a < t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t17_pkey on t17
+         Index Cond: (a > t16.a)
+(4 rows)
+
+explain (costs off) select * from t16, t18 where t16.a < t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t18.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t19 where t16.a < t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t19.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t20 where t16.a < t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t20.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t21 where t16.a < t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a < t21.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t12 where t17.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t12.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t13 where t17.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t13.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t14 where t17.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t15 where t17.a < t15.a;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t16 where t17.a < t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t16_pkey on t16
+         Index Cond: (a > t17.a)
+(4 rows)
+
+explain (costs off) select * from t17, t18 where t17.a < t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t18.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t19 where t17.a < t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t19.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t20 where t17.a < t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t20.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t21 where t17.a < t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a < t21.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t12 where t18.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a < t12.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t13 where t18.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a < t13.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t14 where t18.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a < (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t15 where t18.a < t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t16 where t18.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a < t16.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t17 where t18.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a < t17.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t19 where t18.a < t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a > t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t20 where t18.a < t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a > t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t21 where t18.a < t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a > t18.a)
+(4 rows)
+
+explain (costs off) select * from t19, t12 where t19.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a < t12.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t13 where t19.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a < t13.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t14 where t19.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a < (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t15 where t19.a < t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t16 where t19.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a < t16.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t17 where t19.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a < t17.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t18 where t19.a < t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a > t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t20 where t19.a < t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a > t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t21 where t19.a < t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a > t19.a)
+(4 rows)
+
+explain (costs off) select * from t20, t12 where t20.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a < t12.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t13 where t20.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a < t13.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t14 where t20.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a < (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t15 where t20.a < t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t16 where t20.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a < t16.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t17 where t20.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a < t17.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t18 where t20.a < t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a > t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t19 where t20.a < t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a > t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t21 where t20.a < t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a > t20.a)
+(4 rows)
+
+explain (costs off) select * from t21, t12 where t21.a < t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a < t12.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t13 where t21.a < t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a < t13.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t14 where t21.a < t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a < (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t15 where t21.a < t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a > t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t16 where t21.a < t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a < t16.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t17 where t21.a < t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a < t17.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t18 where t21.a < t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a > t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t19 where t21.a < t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a > t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t20 where t21.a < t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a > t21.a)
+(4 rows)
+
+-- a <= b
+explain (costs off) select * from t12, t13 where t12.a <= t13.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a <= t13.a)
+(4 rows)
+
+explain (costs off) select * from t12, t14 where t12.a <= t14.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t12.a)::integer <= (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t15 where t12.a <= t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t16 where t12.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t17 where t12.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t18 where t12.a <= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t19 where t12.a <= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t20 where t12.a <= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t12, t21 where t12.a <= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t12.a <= t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t12 where t13.a <= t12.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t13_pkey on t13
+   ->  Index Only Scan using t12_pkey on t12
+         Index Cond: (a >= t13.a)
+(4 rows)
+
+explain (costs off) select * from t13, t14 where t13.a <= t14.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t13.a)::integer <= (t14.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t15 where t13.a <= t15.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t15.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t16 where t13.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t16.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t17 where t13.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t17.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t18 where t13.a <= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t18.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t19 where t13.a <= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t19.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t20 where t13.a <= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t20.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t13, t21 where t13.a <= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t13.a <= t21.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t12 where t14.a <= t12.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer <= (t12.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t13 where t14.a <= t13.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::integer <= (t13.a)::integer)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t15 where t14.a <= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a <= (t15.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t16 where t14.a <= t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a <= (t16.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t17 where t14.a <= t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t14_pkey on t14
+         Index Cond: (a <= (t17.a)::boolean)
+(4 rows)
+
+explain (costs off) select * from t14, t18 where t14.a <= t18.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric <= (t18.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t19 where t14.a <= t19.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric <= (t19.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t20 where t14.a <= t20.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric <= (t20.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t14, t21 where t14.a <= t21.a;
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t14.a)::numeric <= (t21.a)::numeric)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t12 where t15.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a <= t12.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t13 where t15.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t15.a <= t13.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t14 where t15.a <= t14.a;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: text_le((t15.a)::text, ((uint2out((t14.a)::uint2))::character varying)::text)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t15
+               ->  Bitmap Index Scan on t15_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t16 where t15.a <= t16.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone <= t16.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t17 where t15.a <= t17.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t15.a)::timestamp with time zone <= t17.a)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t15, t18 where t15.a <= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t18.a)
+(4 rows)
+
+explain (costs off) select * from t15, t19 where t15.a <= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t19.a)
+(4 rows)
+
+explain (costs off) select * from t15, t20 where t15.a <= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t20.a)
+(4 rows)
+
+explain (costs off) select * from t15, t21 where t15.a <= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a <= t21.a)
+(4 rows)
+
+explain (costs off) select * from t16, t12 where t16.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t12.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t13 where t16.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t13.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t14 where t16.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t15 where t16.a <= t15.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t17 where t16.a <= t17.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Index Only Scan using t17_pkey on t17
+         Index Cond: (a >= t16.a)
+(4 rows)
+
+explain (costs off) select * from t16, t18 where t16.a <= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t18.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t19 where t16.a <= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t19.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t20 where t16.a <= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t20.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t16, t21 where t16.a <= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t16.a <= t21.a)
+   ->  Index Only Scan using t16_pkey on t16
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t12 where t17.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t12.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t13 where t17.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t13.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t14 where t17.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= (t14.a)::uint2)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t15 where t17.a <= t15.a;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= (t15.a)::timestamp with time zone)
+   ->  Index Only Scan using t15_pkey on t15
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t16 where t17.a <= t16.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Index Only Scan using t16_pkey on t16
+         Index Cond: (a >= t17.a)
+(4 rows)
+
+explain (costs off) select * from t17, t18 where t17.a <= t18.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t18.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t19 where t17.a <= t19.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t19.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t20 where t17.a <= t20.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t20.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t17, t21 where t17.a <= t21.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t17.a <= t21.a)
+   ->  Index Only Scan using t17_pkey on t17
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t12 where t18.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a <= t12.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t13 where t18.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a <= t13.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t14 where t18.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a <= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t18
+               ->  Bitmap Index Scan on t18_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t15 where t18.a <= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t16 where t18.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a <= t16.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t17 where t18.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t18.a <= t17.a)
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t18, t19 where t18.a <= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a >= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t20 where t18.a <= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a >= t18.a)
+(4 rows)
+
+explain (costs off) select * from t18, t21 where t18.a <= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t18_pkey on t18
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a >= t18.a)
+(4 rows)
+
+explain (costs off) select * from t19, t12 where t19.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a <= t12.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t13 where t19.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a <= t13.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t14 where t19.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a <= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t19
+               ->  Bitmap Index Scan on t19_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t15 where t19.a <= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t16 where t19.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a <= t16.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t17 where t19.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t19.a <= t17.a)
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t19, t18 where t19.a <= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a >= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t20 where t19.a <= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a >= t19.a)
+(4 rows)
+
+explain (costs off) select * from t19, t21 where t19.a <= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t19_pkey on t19
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a >= t19.a)
+(4 rows)
+
+explain (costs off) select * from t20, t12 where t20.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a <= t12.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t13 where t20.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a <= t13.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t14 where t20.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a <= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t20
+               ->  Bitmap Index Scan on t20_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t15 where t20.a <= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t16 where t20.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a <= t16.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t17 where t20.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t20.a <= t17.a)
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t20, t18 where t20.a <= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a >= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t19 where t20.a <= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a >= t20.a)
+(4 rows)
+
+explain (costs off) select * from t20, t21 where t20.a <= t21.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t20_pkey on t20
+   ->  Index Only Scan using t21_pkey on t21
+         Index Cond: (a >= t20.a)
+(4 rows)
+
+explain (costs off) select * from t21, t12 where t21.a <= t12.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a <= t12.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t12
+               ->  Bitmap Index Scan on t12_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t13 where t21.a <= t13.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a <= t13.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t13
+               ->  Bitmap Index Scan on t13_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t14 where t21.a <= t14.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a <= (t14.a)::uint8)
+   ->  Index Only Scan using t14_pkey on t14
+   ->  Materialize
+         ->  Bitmap Heap Scan on t21
+               ->  Bitmap Index Scan on t21_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t15 where t21.a <= t15.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t15_pkey on t15
+         Index Cond: (a >= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t16 where t21.a <= t16.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a <= t16.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t16
+               ->  Bitmap Index Scan on t16_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t17 where t21.a <= t17.a;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Nested Loop
+   Join Filter: (t21.a <= t17.a)
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Materialize
+         ->  Bitmap Heap Scan on t17
+               ->  Bitmap Index Scan on t17_pkey
+(6 rows)
+
+explain (costs off) select * from t21, t18 where t21.a <= t18.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t18_pkey on t18
+         Index Cond: (a >= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t19 where t21.a <= t19.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t19_pkey on t19
+         Index Cond: (a >= t21.a)
+(4 rows)
+
+explain (costs off) select * from t21, t20 where t21.a <= t20.a;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop
+   ->  Index Only Scan using t21_pkey on t21
+   ->  Index Only Scan using t20_pkey on t20
+         Index Cond: (a >= t21.a)
+(4 rows)
+
+---------- tail ----------
+reset enable_seqscan;
+drop table t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22;
+drop schema compare_operator_plan_schema cascade;
+reset current_schema;

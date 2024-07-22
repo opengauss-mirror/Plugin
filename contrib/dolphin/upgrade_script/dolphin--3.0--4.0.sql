@@ -106,6 +106,126 @@ CREATE OR REPLACE FUNCTION pg_catalog.microsecond (json) RETURNS int8 LANGUAGE S
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (integer) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (float) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
 
+-- bit bool compare
+CREATE OR REPLACE FUNCTION pg_catalog.bool_bit_gt(boolean, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int > $2::int)';
+CREATE OPERATOR pg_catalog.>(leftarg = boolean, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bool_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bool_bit_ge(boolean, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int >= $2::int)';
+CREATE OPERATOR pg_catalog.>=(leftarg = boolean, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bool_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bool_bit_lt(boolean, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int < $2::int)';
+CREATE OPERATOR pg_catalog.<(leftarg = boolean, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bool_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bool_bit_le(boolean, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int <= $2::int)';
+CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bool_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bool_gt(bit, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int > $2::int)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_bool_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bool_ge(bit, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int >= $2::int)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_bool_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bool_lt(bit, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int < $2::int)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_bool_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bool_le(bit, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int <= $2::int)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_bool_le);
+-- bit date compare
+CREATE OR REPLACE FUNCTION pg_catalog.date_bit_gt(date, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = date, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.date_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.date_bit_ge(date, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = date, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.date_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.date_bit_lt(date, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = date, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.date_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.date_bit_le(date, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = date, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.date_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_date_gt(bit, date) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = date, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_date_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_date_ge(bit, date) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = date, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_date_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_date_lt(bit, date) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = date, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_date_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_date_le(bit, date) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = date, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_date_le);
+-- bit timestamp without time zone compare
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bit_gt(timestamp without time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = timestamp without time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.timestamp_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bit_ge(timestamp without time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = timestamp without time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.timestamp_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bit_lt(timestamp without time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = timestamp without time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.timestamp_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bit_le(timestamp without time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = timestamp without time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.timestamp_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamp_gt(bit, timestamp without time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_timestamp_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamp_ge(bit, timestamp without time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_timestamp_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamp_lt(bit, timestamp without time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_timestamp_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamp_le(bit, timestamp without time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_timestamp_le);
+-- bit timestamp with time zone
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bit_gt(timestamp with time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = timestamp with time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.timestamptz_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bit_ge(timestamp with time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = timestamp with time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.timestamptz_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bit_lt(timestamp with time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = timestamp with time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.timestamptz_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bit_le(timestamp with time zone, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = timestamp with time zone, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.timestamptz_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamptz_gt(bit, timestamp with time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = timestamp with time zone, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_timestamptz_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamptz_ge(bit, timestamp with time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = timestamp with time zone, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_timestamptz_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamptz_lt(bit, timestamp with time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = timestamp with time zone, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_timestamptz_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_timestamptz_le(bit, timestamp with time zone) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = timestamp with time zone, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_timestamptz_le);
+-- bit year compare
+CREATE OR REPLACE FUNCTION pg_catalog.year_bit_gt(year, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = year, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.year_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.year_bit_ge(year, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = year, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.year_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.year_bit_lt(year, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = year, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.year_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.year_bit_le(year, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = year, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.year_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_year_gt(bit, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = year, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_year_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_year_ge(bit, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = year, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_year_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_year_lt(bit, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = year, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_year_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_year_le(bit, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = year, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_year_le);
+-- bit time compare
+CREATE OR REPLACE FUNCTION pg_catalog.time_bit_gt(time, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = time, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.time_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.time_bit_ge(time, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = time, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.time_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.time_bit_lt(time, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = time, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.time_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.time_bit_le(time, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = time, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.time_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_time_gt(bit, time) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = time, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_time_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_time_ge(bit, time) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = time, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_time_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_time_lt(bit, time) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = time, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_time_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_time_le(bit, time) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = time, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_time_le);
+-- bit uint8 compare
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_bit_gt(uint8, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = uint8, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.uint8_bit_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_bit_ge(uint8, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = uint8, rightarg = bit, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.uint8_bit_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_bit_lt(uint8, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = uint8, rightarg = bit, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.uint8_bit_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_bit_le(uint8, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = uint8, rightarg = bit, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.uint8_bit_le);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_uint8_gt(bit, uint8) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 > $2::float4)';
+CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = uint8, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bit_uint8_gt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_uint8_ge(bit, uint8) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 >= $2::float4)';
+CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = uint8, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.bit_uint8_ge);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_uint8_lt(bit, uint8) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 < $2::float4)';
+CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = uint8, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.bit_uint8_lt);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_uint8_le(bit, uint8) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float4 <= $2::float4)';
+CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = uint8, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.bit_uint8_le);
+
 DO $for_upgrade_only$
 DECLARE
   ans boolean;
