@@ -1116,3 +1116,17 @@ CREATE OR REPLACE FUNCTION pg_catalog.anyenum_sum(double precision, anyenum) RET
 drop aggregate if exists pg_catalog.sum(anyenum);
 create aggregate pg_catalog.sum(anyenum) (SFUNC=anyenum_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
 
+
+DROP FUNCTION IF EXISTS pg_catalog.round(text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(time without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(timestamp with time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.round(anyset) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.round(text) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+CREATE OR REPLACE FUNCTION pg_catalog.round(time without time zone) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+CREATE OR REPLACE FUNCTION pg_catalog.round(timestamp with time zone) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+CREATE OR REPLACE FUNCTION pg_catalog.round(timestamp without time zone) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+CREATE OR REPLACE FUNCTION pg_catalog.round(anyenum) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+CREATE OR REPLACE FUNCTION pg_catalog.round(anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
+
