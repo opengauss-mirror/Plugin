@@ -43,6 +43,11 @@ static void remove_cached_stmt_data(uint32 *statement_id);
 static void execute_com_stmt_close(StringInfo buf);
 static void execute_com_stmt_reset(StringInfo buf);
 static void execute_com_field_list(char *tableName);
+static bool parse_query_bind_params(uint param_count,
+                                    unsigned char **inout_read_pos,
+                                    size_t *inout_packet_left,
+                                    bool receive_named_params,
+                                    bool receive_parameter_set_count);
 
 void dophin_send_ready_for_query(CommandDest dest)
 {
@@ -81,7 +86,11 @@ void dolphin_end_command(const char *completionTag)
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 ) {
         // EOF packet
-        send_network_eof_packet(buf);
+        if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+            send_network_eof_packet(buf);
+        } else {
+            send_new_eof_packet(buf);
+        }
     } else {
         int64 affected_rows = u_sess->statement_cxt.current_row_count;
         uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
@@ -137,12 +146,13 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         case COM_QUERY: {
-            const char *sql = dq_get_string_eof(buf);
-
-            if (strcmp(sql, "select @@version_comment limit 1") == 0) {
+            size_t sql_len =  buf->len - buf->cursor;
+            unsigned char* sql = (unsigned char*)dq_get_string_len(buf, buf->len - buf->cursor);
+            parse_query_bind_params(/*THD *thd, */0, &sql, &sql_len, TRUE, TRUE);
+            if (strcmp((const char*)sql, "select @@version_comment limit 1") == 0) {
                 execute_text_protocol_sql("select \'dolphin\'");
             } else {
-                execute_simple_query(sql);
+                execute_simple_query((const char*)sql);
             }
             break;
         }
@@ -182,6 +192,124 @@ int dolphin_process_command(StringInfo buf)
     return 0;
 }
 
+#define CHARSET_251         251
+#define CHARSET_252         252
+#define CHARSET_253         253
+#define CHARSETNUM_0        0
+#define CHARSETNUM_1        1
+#define CHARSETNUM_2        2
+#define CHARSETNUM_3        3
+#define CHARSETNUM_4        4
+#define CHARSETNUM_8        8
+#define CHARSETNUM_9        9
+#define CHARSETNUM_16       16
+#define PARAMNUM            65535
+
+static uint16 uint2korr(const unsigned char *A)
+{
+    errno_t rc = 0;
+    uint16 ret;
+    rc = memcpy_s(&ret, sizeof(ret), A, sizeof(ret));
+    securec_check(rc, "\0", "\0");
+    return ret;
+}
+
+static uint32 uint3korr(const unsigned char *A)
+{
+    return (uint32)(((uint32)(A[CHARSETNUM_0])) +
+           (((uint32)(A[CHARSETNUM_1])) << CHARSETNUM_8) + (((uint32)(A[CHARSETNUM_2])) << CHARSETNUM_16));
+}
+
+static uint32 uint4korr(const unsigned char *A)
+{
+    errno_t rc = 0;
+    uint32 ret;
+    rc = memcpy_s(&ret, sizeof(ret), A, sizeof(ret));
+    securec_check(rc, "\0", "\0");
+    return ret;
+}
+
+/* Get the length of next field. Change parameter to point at fieldstart */
+ulong net_field_length(unsigned char **packet)
+{
+    const unsigned char *pos = *packet;
+    if (*pos < CHARSET_251) {
+        (*packet)++;
+        return (ulong)*pos;
+    }
+    if (*pos == CHARSET_251) {
+        (*packet)++;
+        return ((unsigned long)~0);
+    }
+    if (*pos == CHARSET_252) {
+        (*packet) += CHARSETNUM_3;
+        return (ulong)uint2korr(pos + 1);
+    }
+    if (*pos == CHARSET_253) {
+        (*packet) += CHARSETNUM_4;
+        return (ulong)uint3korr(pos + 1);
+    }
+    (*packet) += CHARSETNUM_9; /* Must be 254 when here */
+    return (ulong)uint4korr(pos + 1);
+}
+
+uint net_field_length_size(const unsigned char *pos)
+{
+    if (*pos <= CHARSET_251) {
+        return CHARSETNUM_1;
+    }
+    if (*pos == CHARSET_252) {
+        return CHARSETNUM_3;
+    }
+    if (*pos == CHARSET_253) {
+        return CHARSETNUM_4;
+    }
+    return CHARSETNUM_9;
+}
+
+static bool parse_query_bind_params(uint param_count,
+                                    unsigned char **inout_read_pos,
+                                    size_t *inout_packet_left,
+                                    bool receive_named_params,
+                                    bool receive_parameter_set_count)
+{
+    unsigned char *read_pos = *inout_read_pos;
+    size_t packet_left = *inout_packet_left;
+
+    if (receive_named_params) {
+        unsigned long n_params = 0, n_sets;
+        if (packet_left < 1 || packet_left < net_field_length_size(read_pos)) {
+            return true;
+        }
+        unsigned char *pre = read_pos;
+        /* read the number of params */
+        n_params = net_field_length(&read_pos);
+        packet_left -= read_pos - pre;
+
+        if (receive_parameter_set_count) {
+            if (packet_left < 1 || packet_left < net_field_length_size(read_pos)) {
+                return true;
+            }
+            pre = read_pos;
+            n_sets = net_field_length(&read_pos);
+            packet_left -= read_pos - pre;
+            if (n_sets != 1) {
+                return true;
+            }
+        }
+
+        /* Cap the param count to 64k. Should be enough for everybody! */
+        if (n_params > PARAMNUM) {
+            return true;
+        }
+        param_count = n_params;
+    }
+
+    *inout_read_pos = read_pos;
+    *inout_packet_left = packet_left;
+    return false;
+}
+
 int execute_text_protocol_sql(const char *sql)
 {
     int rc;
@@ -213,7 +341,11 @@ int execute_text_protocol_sql(const char *sql)
         }
 
         // EOF packet
-        send_network_eof_packet(buf);
+        if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+            send_network_eof_packet(buf);
+        } else {
+            send_new_eof_packet(buf);
+        }
     } else {
         uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
         network_mysqld_ok_packet_t *ok_packet = make_ok_packet(SPI_processed, last_insert_id);
@@ -274,13 +406,17 @@ int execute_com_stmt_prepare(const char *client_sql)
         param_field->charsetnr = item->charset_flag;
         send_column_definition41_packet(buf, param_field);
     }
-    send_network_eof_packet(buf);
+    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+        send_network_eof_packet(buf);
+    }
     
     for (int i = 0; i < column_count; i++) {
         dolphin_column_definition* column_field = make_dolphin_column_definition("");
         send_column_definition41_packet(buf, column_field);
     }
-    send_network_eof_packet(buf);
+    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+        send_network_eof_packet(buf);
+    }
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
@@ -433,7 +569,11 @@ void execute_com_field_list(char *tableName)
         }
 
         /* EOF packet at end of all rows*/
-        send_network_eof_packet(buf);
+        if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+            send_network_eof_packet(buf);
+        } else {
+            send_new_eof_packet(buf);
+        }
     }
     
     DestroyStringInfo(sql);

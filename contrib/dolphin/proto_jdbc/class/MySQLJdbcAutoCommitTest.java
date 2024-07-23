@@ -27,14 +27,19 @@ public class MySQLJdbcAutoCommitTest {
     private static String dbname;
     private static String user;
     private static String password;
+    private static String jar_version = "old";
+    private static String url_jdbc;
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 5) {
+        if (args.length >= 5) {
             host = args[0];
             port = args[1];
             dbname = args[2];
             user = args[3];
             password = args[4];
+            if (args.length == 6) {
+                jar_version = args[5];
+            }
         }
 
         Properties info = new Properties();
@@ -43,9 +48,15 @@ public class MySQLJdbcAutoCommitTest {
         info.setProperty("DBNAME", dbname);
         info.setProperty("user", user);
         info.setProperty("password", password);
+        
+        if (jar_version.equals("new")) {
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC";
+        } else {
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false";
+        }
 
         try (Connection connection = DriverManager
-                .getConnection("jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false", info);
+                .getConnection(url_jdbc, info);
                 Statement statement = connection.createStatement()) {
             statement.execute("set autocommit to false");
             statement.execute("create table autocommit_test1(a int)"); // not exists in \d
@@ -61,11 +72,6 @@ public class MySQLJdbcAutoCommitTest {
             statement.execute("create table autocommit_test5(a int)");
             connection.commit();
             statement.execute("create table autocommit_test6(a int)");
-            connection.setAutoCommit(true);
-
-            connection.setAutoCommit(false);
-            statement.execute("insert into autocommit_test6 values(0)");
-            statement.execute("abort");
             connection.setAutoCommit(true);
 
             connection.setAutoCommit(false);

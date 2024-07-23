@@ -68,6 +68,7 @@
 #include "libpq/libpq-int.h"
 #include "plugin_utils/varlena.h"
 #include "catalog/pg_cast.h"
+#include "plugin_protocol/auth.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
@@ -6255,6 +6256,282 @@ Datum sha2(PG_FUNCTION_ARGS)
     pfree(text_str);
     pfree(result);
 
+    PG_RETURN_TEXT_P(ret);
+}
+
+static const char crypt_alg_magic[] = "$5";
+static const int crypt_alg_magic_len = sizeof(crypt_alg_magic) - 1;
+
+static unsigned char b64t[] = /* 0 ... 63 => ascii - 64 */
+  "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+#define b64_from_24bit(B2, B1, B0, N)                                                                                  \
+    {                                                                                                                  \
+        uint32_t w = ((B2) << 16) | ((B1) << 8) | (B0);                                                                \
+        int      n = (N);                                                                                              \
+        while (--n >= 0 && ctbufflen > 0)                                                                              \
+        {                                                                                                              \
+            *p++ = b64t[w & 0x3f];                                                                                     \
+            w >>= 6;                                                                                                   \
+            ctbufflen--;                                                                                               \
+        }                                                                                                              \
+    }
+
+#define ROUNDS    "rounds="
+#define ROUNDSLEN (sizeof(ROUNDS) - 1)
+
+static uint getrounds(const char* s)
+{
+    const char* r;
+    const char* p;
+    char*       e;
+    long        val;
+
+    if (s == NULL) {
+        return (0);
+    }
+
+    if ((r = strstr(s, ROUNDS)) == NULL) {
+        return (0);
+    }
+
+    if (strncmp(r, ROUNDS, ROUNDSLEN) != 0) {
+        return (0);
+    }
+
+    p     = r + ROUNDSLEN;
+    errno = 0;
+    val   = strtol(p, &e, 10);
+    /*
+    An error occurred or there is non-numeric stuff at the end
+    which isn't one of the crypt(3c) special chars ',' or '$'
+  */
+    if (errno != 0 || val < 0 || !(*e == '\0' || *e == ',' || *e == '$')) {
+        return (0);
+    }
+
+    return ((uint32_t)val);
+}
+
+#define MIN(A, B) ((B) < (A) ? (B) : (A))
+#define MAX(A, B) ((B) > (A) ? (B) : (A))
+
+Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
+{
+    int32 salt_len;
+    errno_t rc = 0;
+    uint64_t  i = 0;
+    uint8 A[SHA256_DIGEST_LENGTH]  = { 0 };
+    uint8 B[SHA256_DIGEST_LENGTH]  = { 0 };
+    uint8 DP[SHA256_DIGEST_LENGTH] = { 0 };
+    uint8 DS[SHA256_DIGEST_LENGTH] = { 0 };
+    char ctbuffer[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    uint64_t ctbufflen = CRYPT_MAX_PASSWORD_SIZE;
+    EVP_MD_CTX *ctxA = NULL, *ctxB = NULL, *ctxC = NULL, *ctxDP = NULL, *ctxDS = NULL;
+
+    char         digest[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    StringInfo   passwdbuffer = makeStringInfo();
+    char* plaintext = PG_GETARG_CSTRING(ARG_0);
+    size_t plaintext_len = strlen(plaintext);
+    char* salt = PG_GETARG_CSTRING(ARG_1);
+
+    uint32    rounds = ROUNDS_DEFAULT;
+    int32 srounds       = 0;
+    bool    custom_rounds = false;
+    char *p = NULL, *P = NULL, *Pp = NULL, *S = NULL, *Sp = NULL;
+    /* Create Digest context. */
+    ctxA  = EVP_MD_CTX_create();
+    ctxB  = EVP_MD_CTX_create();
+    ctxC  = EVP_MD_CTX_create();
+    ctxDP = EVP_MD_CTX_create();
+    ctxDS = EVP_MD_CTX_create();
+
+    /* skip our magic string */
+    if (strncmp(salt, crypt_alg_magic, crypt_alg_magic_len) == 0) {
+        salt += crypt_alg_magic_len + 1;
+    }
+
+    srounds = getrounds(salt);
+    if (srounds != 0) {
+        rounds        = MAX(ROUNDS_MIN, MIN(srounds, ROUNDS_MAX));
+        custom_rounds = true;
+        p             = strchr(salt, '$');
+        if (p != NULL) {
+            salt = p + 1;
+        }
+    }
+
+    salt_len = MIN(strcspn(salt, "$"), CRYPT_SALT_LENGTH);
+
+    /* 1. */
+    EVP_DigestInit_ex(ctxA, EVP_sha256(), NULL);
+    /* 2. The password first, since that is what is most unknown */
+    EVP_DigestUpdate(ctxA, plaintext, plaintext_len);
+
+    /* 3. Then the raw salt */
+    EVP_DigestUpdate(ctxA, salt, salt_len);
+
+    /* 4. - 8. */
+    EVP_DigestInit_ex(ctxB, EVP_sha256(), NULL);
+    EVP_DigestUpdate(ctxB, plaintext, plaintext_len);
+    EVP_DigestUpdate(ctxB, salt, salt_len);
+    EVP_DigestUpdate(ctxB, plaintext, plaintext_len);
+    EVP_DigestFinal_ex(ctxB, B, NULL);
+
+    /* 9. - 10. */
+    for (i = plaintext_len; i > MIXCHARS; i -= MIXCHARS)
+        EVP_DigestUpdate(ctxA, B, MIXCHARS);
+    EVP_DigestUpdate(ctxA, B, i);
+
+    /* 11. */
+    for (i = plaintext_len; i > 0; i >>= 1)
+    {
+        if ((i & 1) != 0)
+        {
+            EVP_DigestUpdate(ctxA, B, MIXCHARS);
+        }
+        else
+        {
+            EVP_DigestUpdate(ctxA, plaintext, plaintext_len);
+        }
+    }
+    /* 12. */
+    EVP_DigestFinal_ex(ctxA, A, NULL);
+    /* 13. - 15. */
+    EVP_DigestInit_ex(ctxDP, EVP_sha256(), NULL);
+    for (i = 0; i < plaintext_len; i++) {
+        EVP_DigestUpdate(ctxDP, plaintext, plaintext_len);
+    }
+    EVP_DigestFinal_ex(ctxDP, DP, NULL);
+
+    /* 16. */
+    Pp = P = (char *)palloc(plaintext_len);
+    for (i = plaintext_len; i >= MIXCHARS; i -= MIXCHARS)
+    {
+        rc = memcpy_s(Pp, MIXCHARS, DP, MIXCHARS);
+        securec_check(rc, "\0", "\0");
+        Pp += MIXCHARS;
+    }
+    rc = memcpy_s(Pp, i, DP, i);
+    securec_check(rc, "\0", "\0");
+
+    /* 17. - 19. */
+    EVP_DigestInit_ex(ctxDS, EVP_sha256(), NULL);
+    for (i = 0; i < 16U + (uint8_t)A[0]; i++)
+        EVP_DigestUpdate(ctxDS, salt, salt_len);
+    EVP_DigestFinal_ex(ctxDS, DS, NULL);
+
+    /* 20. */
+    Sp = S = (char *)palloc(salt_len);
+    for (i = salt_len; i >= MIXCHARS; i -= MIXCHARS)
+    {
+        rc = memcpy_s(Sp, MIXCHARS, DS, MIXCHARS);
+        securec_check(rc, "\0", "\0");
+        Sp += MIXCHARS;
+    }
+    rc = memcpy_s(Sp, i, DS, i);
+    securec_check(rc, "\0", "\0");
+
+    /*  21. */
+    for (i = 0; i < rounds; i++)
+    {
+        EVP_DigestInit_ex(ctxC, EVP_sha256(), NULL);
+
+        if ((i & 1) != 0)
+        {
+            EVP_DigestUpdate(ctxC, P, plaintext_len);
+        }
+        else
+        {
+            if (i == 0)
+                EVP_DigestUpdate(ctxC, A, MIXCHARS);
+            else
+                EVP_DigestUpdate(ctxC, DP, MIXCHARS);
+        }
+
+        if (i % 3 != 0)
+        {
+            EVP_DigestUpdate(ctxC, S, salt_len);
+        }
+
+        if (i % 7 != 0)
+        {
+            EVP_DigestUpdate(ctxC, P, plaintext_len);
+        }
+
+        if ((i & 1) != 0)
+        {
+            if (i == 0)
+                EVP_DigestUpdate(ctxC, A, MIXCHARS);
+            else
+                EVP_DigestUpdate(ctxC, DP, MIXCHARS);
+        }
+        else
+        {
+            EVP_DigestUpdate(ctxC, P, plaintext_len);
+        }
+        EVP_DigestFinal_ex(ctxC, DP, NULL);
+    }
+
+    /* 22. Now make the output string */
+    if (custom_rounds)
+    {
+        (void)snprintf(ctbuffer, ctbufflen, "%s$rounds=%zu$", crypt_alg_magic, (size_t)rounds);
+    }
+    else
+    {
+        (void)snprintf(ctbuffer, ctbufflen, "%s$", crypt_alg_magic);
+    }
+    (void)strncat(ctbuffer, (const char*)salt, salt_len);
+    (void)strlcat(ctbuffer, "$", ctbufflen);
+
+    p = ctbuffer + strlen(ctbuffer);
+    ctbufflen -= strlen(ctbuffer);
+
+    b64_from_24bit(DP[0], DP[10], DP[20], 4);
+    b64_from_24bit(DP[21], DP[1], DP[11], 4);
+    b64_from_24bit(DP[12], DP[22], DP[2], 4);
+    b64_from_24bit(DP[3], DP[13], DP[23], 4);
+    b64_from_24bit(DP[24], DP[4], DP[14], 4);
+    b64_from_24bit(DP[15], DP[25], DP[5], 4);
+    b64_from_24bit(DP[6], DP[16], DP[26], 4);
+    b64_from_24bit(DP[27], DP[7], DP[17], 4);
+    b64_from_24bit(DP[18], DP[28], DP[8], 4);
+    b64_from_24bit(DP[9], DP[19], DP[29], 4);
+    b64_from_24bit(0, DP[31], DP[30], 3);
+    *p = '\0';
+
+    rc = memset_s(A, sizeof(A), 0, sizeof(A));
+    securec_check(rc, "\0", "\0");
+    rc = memset_s(B, sizeof(B), 0, sizeof(B));
+    securec_check(rc, "\0", "\0");
+    rc = memset_s(DP, sizeof(DP), 0, sizeof(DP));
+    securec_check(rc, "\0", "\0");
+    rc = memset_s(DS, sizeof(DS), 0, sizeof(DS));
+    securec_check(rc, "\0", "\0");
+
+    /* 23. Clearing the context */
+    EVP_MD_CTX_destroy(ctxA);
+    ctxA = NULL;
+    EVP_MD_CTX_destroy(ctxB);
+    ctxB = NULL;
+    EVP_MD_CTX_destroy(ctxC);
+    ctxC = NULL;
+    EVP_MD_CTX_destroy(ctxDP);
+    ctxDP = NULL;
+    EVP_MD_CTX_destroy(ctxDS);
+    ctxDS = NULL;
+    
+    rc = strcpy_s(digest, CRYPT_MAX_PASSWORD_SIZE + 1, ctbuffer + (CRYPT_MAGIC_LENGTH + CRYPT_SALT_LENGTH + 1));
+    securec_check(rc, "\0", "\0");
+    appendBinaryStringInfo(passwdbuffer, "$A$005$", strlen("$A$005$"));
+    appendBinaryStringInfo(passwdbuffer, salt, strlen(salt));
+    appendBinaryStringInfo(passwdbuffer, digest, strlen(digest));
+    rc = memcpy_s(ctbuffer, passwdbuffer->len, passwdbuffer->data, passwdbuffer->len);
+    securec_check(rc, "\0", "\0");
+    DestroyStringInfo(passwdbuffer);
+
+    text* ret = cstring_to_text(ctbuffer);
     PG_RETURN_TEXT_P(ret);
 }
 

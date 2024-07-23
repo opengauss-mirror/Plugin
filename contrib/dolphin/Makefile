@@ -158,6 +158,7 @@ REGRESS:=dummy
 
 ifdef MJDBC_TEST
 	REGRESS+=b_proto_jdbc
+	REGRESS+=b_proto_jdbc_8_0_28
 endif
 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin${PART} --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf --dbcmpt=B

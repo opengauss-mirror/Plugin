@@ -96,14 +96,23 @@ TypeItem b_type_items[] = {
 };
 
 pthread_mutex_t gMarcoHashLock;
+pthread_mutex_t gUserCachedLinesHashLock;
 
 const int b_ntype_items = sizeof(b_type_items) / sizeof(TypeItem);
 static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const TypeItem* item);
 static void InitDolphinMicroHashTable(int size);
 static void InitSendBlobHashTable();
 static void InitStmtParamTypesTable();
+static void InitUserCachedLinesHashTable();
 
 static void AssignDatabaseName(const char* newval, void* extra);
+static void AssignMysqlCa(const char *newval, void *extra);
+static void AssignMysqlServerCert(const char *newval, void *extra);
+static void AssignMysqlServerKey(const char *newval, void *extra);
+
+struct HTAB* b_UserCachedLinesHash;
+
+SSL_CTX* g_tls_ctx = NULL;
 
 static ProtocolExtensionConfig dolphin_protocol_config = {
     true,
@@ -133,20 +142,74 @@ void define_dolphin_server_guc()
         (void**)MemoryContextAllocZero(u_sess->self_mem_cxt, (Size)(initExtArraySize * sizeof(void*)));
     }
     DefineCustomStringVariable(
-                "dolphin.default_database_name",
-                gettext_noop("Predefined dolphin database name"),
-                NULL,
-                &GetSessionContext()->default_database_name,
-                g_proto_ctx.database_name.data,
-                PGC_SIGHUP,
-                GUC_NOT_IN_SAMPLE,
-                NULL, AssignDatabaseName, NULL);
+        "dolphin.default_database_name",
+        gettext_noop("Predefined dolphin database name"),
+        NULL,
+        &GetSessionContext()->default_database_name,
+        g_proto_ctx.database_name.data,
+        PGC_SIGHUP,
+        GUC_NOT_IN_SAMPLE,
+        NULL, AssignDatabaseName, NULL);
+
+    DefineCustomStringVariable(
+        "dolphin.mysql_ca",
+        "Initialize MySQL CA file name.",
+        NULL,
+        &GetSessionContext()->mysql_ca,
+        g_proto_ctx.mysql_ca,
+        PGC_USERSET,
+        0,
+        NULL, AssignMysqlCa, NULL);
+                             
+    DefineCustomStringVariable(
+        "dolphin.mysql_server_cert",
+        "Initialize MySQL server-cert file name.",
+        NULL,
+        &GetSessionContext()->mysql_server_cert,
+        g_proto_ctx.mysql_server_cert,
+        PGC_USERSET,
+        0,
+        NULL, AssignMysqlServerCert, NULL);
+                             
+    DefineCustomStringVariable(
+        "dolphin.mysql_server_key",
+        "Initialize MySQL server-key file name.",
+        NULL,
+        &GetSessionContext()->mysql_server_key,
+        g_proto_ctx.mysql_server_key,
+        PGC_USERSET,
+        0,
+        NULL, AssignMysqlServerKey, NULL);
 }
 
 static void AssignDatabaseName(const char *newval, void *extra)
 {
     if (strcmp(newval, g_proto_ctx.database_name.data)) {
-        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, newval);
+        errno_t ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, newval);
+        securec_check(ret, "\0", "\0");
+    }
+}
+
+static void AssignMysqlCa(const char *newval, void *extra)
+{
+    if (strcmp(newval, g_proto_ctx.mysql_ca)) {
+        errno_t ret = strcpy_s(g_proto_ctx.mysql_ca, NAMEDATALEN, newval);
+        securec_check(ret, "\0", "\0");
+    }
+}
+
+static void AssignMysqlServerCert(const char *newval, void *extra)
+{
+    if (strcmp(newval, g_proto_ctx.mysql_server_cert)) {
+        errno_t ret = strcpy_s(g_proto_ctx.mysql_server_cert, NAMEDATALEN, newval);
+        securec_check(ret, "\0", "\0");
+    }
+}
+
+static void AssignMysqlServerKey(const char *newval, void *extra)
+{
+    if (strcmp(newval, g_proto_ctx.mysql_server_key)) {
+        errno_t ret = strcpy_s(g_proto_ctx.mysql_server_key, NAMEDATALEN, newval);
         securec_check(ret, "\0", "\0");
     }
 }
@@ -174,6 +237,21 @@ static void StreamDoUnlink(int code, Datum arg)
 void server_listen_init(void)
 {
     int status;
+
+    g_tls_ctx = NULL;
+    if (!tls_secure_initialize()) {
+        ereport(WARNING, (errmsg("could not initialize SSL")));
+    }
+
+    // double check is used to solve concurrent error problems
+    if (b_UserCachedLinesHash == NULL) {
+        AutoMutexLock UserCachedLinesHashLock(&gUserCachedLinesHashLock);
+        UserCachedLinesHashLock.lock();
+        if (b_UserCachedLinesHash == NULL) {
+        InitUserCachedLinesHashTable();
+        }
+        UserCachedLinesHashLock.unLock();
+    }
 
     if (u_sess->attr.attr_network.ListenAddresses && !dummyStandbyMode) {
         char* rawstring = NULL;
@@ -386,6 +464,44 @@ static void InitDolphinMicroHashTable(int size)
                                             HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
+UserCachedLinesHash* UserCachedLinesHashTableAccess(HASHACTION action, char* user_name, char* fastpassword)
+{
+    UserCachedLinesHash* result = NULL;
+    bool found = false;
+
+    if (!user_name) {
+        ereport(ERROR, (errmsg("the user name is NULL")));
+    }
+
+    result = (UserCachedLinesHash*)hash_search(b_UserCachedLinesHash, user_name, action, &found);
+    if (action == HASH_ENTER) {
+        Assert(!found);
+        errno_t rc = strcpy_s(result->fastpasswd, CRYPT_MAX_PASSWORD_SIZE, fastpassword);
+        securec_check(rc, "\0", "\0");
+        return result;
+    } else if (action == HASH_FIND) {
+        if (found) {
+            return result;
+        }
+    } else if (action == HASH_REMOVE) {
+        if (found) {
+            return result;
+        }
+    }
+    return NULL;
+}
+
+static void InitUserCachedLinesHashTable()
+{
+    HASHCTL info = {0};
+    info.keysize = NAMEDATALEN;
+    info.entrysize = sizeof(UserCachedLinesHash);
+    info.hash = string_hash;
+    info.hcxt = g_instance.instance_context;
+    b_UserCachedLinesHash = hash_create("Dolphin User Cached Lines Hash Table",
+                                        NAMEDATALEN, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+}
+
 static void InitStmtParamTypesTable()
 {
     HASHCTL info = {0};
@@ -394,7 +510,8 @@ static void InitStmtParamTypesTable()
     info.hash = oid_hash;
     info.hcxt = u_sess->cache_mem_cxt;
     GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin stmt input type Table",
-        PARAM_TYPE_PER_SESSION, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+                                                           PARAM_TYPE_PER_SESSION, &info,
+                                                           HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
 const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)

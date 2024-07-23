@@ -1116,7 +1116,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.anyenum_sum(double precision, anyenum) RET
 drop aggregate if exists pg_catalog.sum(anyenum);
 create aggregate pg_catalog.sum(anyenum) (SFUNC=anyenum_sum, cFUNC=float8pl, STYPE= double precision, initcond = 0);
 
-
+DROP FUNCTION IF EXISTS pg_catalog.set_native_password(text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.set_native_password(text, text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'set_native_password';
+DROP FUNCTION IF EXISTS pg_catalog.set_caching_sha2_password(text, text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.set_caching_sha2_password(text, text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'set_caching_sha2_password';
 DROP FUNCTION IF EXISTS pg_catalog.round(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.round(time without time zone) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.round(timestamp with time zone) CASCADE;

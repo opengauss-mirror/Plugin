@@ -1,0 +1,266 @@
+-- check auto startup dolphin-proto
+\! netstat -antp | grep $dp | wc -l
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+--?.*
+-- dowload mysql-connector-java
+\! sh @abs_builddir@/proto_jdbc/install-jars.sh > /dev/null 2>&1
+set dolphin.b_compatibility_mode to off;
+drop database if exists b_databaseproto;
+create database b_databaseproto dbcompatibility 'b';
+\c b_databaseproto
+-- change logic database for dolphin-server
+alter system set dolphin.default_database_name=b_databaseproto;
+DROP USER IF EXISTS proto_user CASCADE;
+NOTICE:  role "proto_user" does not exist, skipping
+CREATE USER proto_user WITH PASSWORD 'Gauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL PRIVILEGES TO proto_user;
+GRANT ALL ON SCHEMA dbe_perf TO proto_user;
+SET ROLE proto_user PASSWORD 'Gauss@123';
+create schema db_jdbc;
+-- ****************************************************************************************************************************************************************************************************************
+\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
+-- wrong password before setting set_native_password
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user wrong_pass@123 new
+Exception in thread "main" java.sql.SQLException: failed in auth check, role:proto_user
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+-- normal password before setting set_native_password
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123 new
+Exception in thread "main" java.sql.SQLException: failed in auth check, role:proto_user
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+-- set password for navtive_password_plugin authentication
+select set_native_password('proto_user', 'Gauss@123', 'Gauss@123');
+           set_native_password            
+------------------------------------------
+ 676a8fd5633248f6f59e17d4939f7f6e7093c350
+(1 row)
+
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123 new
+c1:INT
+c2:CHAR
+c3:TINYINT
+c4:CHAR
+c5:SMALLINT
+c6:CHAR
+c7:BIGINT
+c8:CHAR
+c9:FLOAT
+c10:DOUBLE
+c11:BIT
+c12:TINYINT
+c13:CHAR
+c14:CHAR
+c15:VARCHAR
+c16:VARCHAR
+c17:CHAR
+c18:CHAR
+c19:DATE
+c20:TIME
+c21:TIMESTAMP
+c22:DATETIME
+c23:CHAR
+c24:BLOB
+c25:CHAR
+c26:CHAR
+c27:GEOMETRY
+c28:GEOMETRY
+c29:TINYTEXT
+c30:DECIMAL
+c31:JSON
+c32:CHAR
+c33:CHAR
+QUERY PLAN:TINYTEXT
+Hash Join
+  Hash Cond: (a.c1 = b.c2)
+  ->  Seq Scan on t3 a
+  ->  Hash
+        ->  Seq Scan on t3 b
+res_getBoolean: true
+res_getInt: 1
+res_getString: 1
+res_getBoolean: false
+res_getInt: 0
+res_getString: 0
+1
+mysql
+2
+dolphin-server
+3
+postgres
+select * from t3 order by id;
+ id |      name      
+----+----------------
+  1 | mysql
+  2 | dolphin-server
+  3 | postgres
+(3 rows)
+
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123 new
+select relname from pg_class where relname like '%autocommit_test%' order by relname;
+     relname      
+------------------
+ autocommit_test2
+ autocommit_test3
+ autocommit_test5
+ autocommit_test6
+(4 rows)
+
+select * from autocommit_test6;
+ a 
+---
+ 2
+(1 row)
+
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-native-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoIncrementTest $dp db_uds $USER
+1
+2
+3
+4
+-- ****************************************************************************************************************************************************************************************************************
+-- wrong change password for navtive_password_plugin authentication
+select set_native_password('proto_user', 'Gauss@456', 'Gauss@456');
+ERROR:  Set authentication method verification failed, password does not match original password
+CONTEXT:  referenced column: set_native_password
+-- normal change password for navtive_password_plugin authentication
+select set_native_password('proto_user', 'Gauss@456', 'Gauss@123');
+           set_native_password            
+------------------------------------------
+ d70ae08bb6819b87c64fde0d9f97032ca67392c0
+(1 row)
+
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@456 new
+c1:INT
+c2:CHAR
+c3:TINYINT
+c4:CHAR
+c5:SMALLINT
+c6:CHAR
+c7:BIGINT
+c8:CHAR
+c9:FLOAT
+c10:DOUBLE
+c11:BIT
+c12:TINYINT
+c13:CHAR
+c14:CHAR
+c15:VARCHAR
+c16:VARCHAR
+c17:CHAR
+c18:CHAR
+c19:DATE
+c20:TIME
+c21:TIMESTAMP
+c22:DATETIME
+c23:CHAR
+c24:BLOB
+c25:CHAR
+c26:CHAR
+c27:GEOMETRY
+c28:GEOMETRY
+c29:TINYTEXT
+c30:DECIMAL
+c31:JSON
+c32:CHAR
+c33:CHAR
+QUERY PLAN:TINYTEXT
+Hash Join
+  Hash Cond: (a.c1 = b.c2)
+  ->  Seq Scan on t3 a
+  ->  Hash
+        ->  Seq Scan on t3 b
+res_getBoolean: true
+res_getInt: 1
+res_getString: 1
+res_getBoolean: false
+res_getInt: 0
+res_getString: 0
+1
+mysql
+2
+dolphin-server
+3
+postgres
+select * from t3 order by id;
+ id |      name      
+----+----------------
+  1 | mysql
+  2 | dolphin-server
+  3 | postgres
+(3 rows)
+
+select relname from pg_class where relname like '%autocommit_test%' order by relname;
+     relname      
+------------------
+ autocommit_test2
+ autocommit_test3
+ autocommit_test5
+ autocommit_test6
+(4 rows)
+
+select * from autocommit_test6;
+ a 
+---
+ 2
+(1 row)
+
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-native-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoIncrementTest $dp db_uds $USER
+1
+2
+3
+4
+--		-- ************************* The plug-in fails to perform SSL initialization. The caching_sha2_password authentication test cannot be supported ******************************************************************
+--
+--		-- wrong change authentication for caching_sha2_password_plugin authentication
+--		select replace(set_caching_sha2_password('proto_user', 'Gauss@456', 'Gauss@123'),E'\n','X');
+--
+--		-- normal change authentication for caching_sha2_password_plugin authentication
+--		select replace(set_caching_sha2_password('proto_user', 'Gauss@456', 'Gauss@456'),E'\n','X');
+--
+--		\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@456 new
+--
+--		select * from t3 order by id;
+--
+--		\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@456 new
+--
+--		select relname from pg_class where relname like '%autocommit_test%' order by relname;
+--
+--		select * from autocommit_test6;
+--
+--		\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-native-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoIncrementTest $dp db_uds $USER
+--
+--		-- ****************************************************************************************************************************************************************************************************************
+--		-- wrong change password for caching_sha2_password_plugin authentication
+--		select replace(set_caching_sha2_password('proto_user', 'Gauss@456', 'Gauss@123'),E'\n','X');
+--
+--		-- normal change password for caching_sha2_password_plugin authentication
+--		select replace(set_caching_sha2_password('proto_user', 'Gauss@123', 'Gauss@456'),E'\n','X');
+--
+--		\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123 new
+--
+--		select * from t3 order by id;
+--
+--		select relname from pg_class where relname like '%autocommit_test%' order by relname;
+--
+--		select * from autocommit_test6;
+--
+--		\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-native-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoIncrementTest $dp db_uds $USER
+RESET ROLE;
+DROP USER IF EXISTS proto_user CASCADE;
+\! rm @abs_builddir@/proto_jdbc/class/*.class

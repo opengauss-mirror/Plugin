@@ -3,6 +3,8 @@
 
 #include "nodes/pg_list.h"
 #include "plugin_utils/fmgr.h"
+#include "replication/replicainternal.h"
+#include "plugin_protocol/auth.h"
 
 #define ENABLE_B_CMPT_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enableBCmptMode)
 #define ENABLE_NULLS_MINIMAL_POLICY_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enable_nulls_minimal_policy)
@@ -106,6 +108,19 @@ typedef enum DataKind {
 #define UINT8OID (GetSessionContext()->uint8Oid)
 #define YEAROID (GetSessionContext()->yearOid)
 
+typedef struct conn_mysql_info {
+    char conn_scramble[SHA1_HASH_SIZE + 1];
+    char conn_native_token[CLIENT_PASSWORD_NATIVE_TOKEN_LEN + 1];
+    char conn_sha256_token[CLIENT_PASSWORD_SHA256_TOKEN_LEN + 1];
+    uint32 client_capabilities;
+    uint32 server_capabilities;
+    uint32 max_packet_size;
+    uint8 charset;
+    /* data */
+} conn_mysql_info_t, *conn_mysql_infoP_t;
+
+extern THR_LOCAL conn_mysql_infoP_t temp_Conn_Mysql_Info;
+
 typedef struct BSqlPluginContext {
     bool enableBCmptMode;
     bool enable_nulls_minimal_policy;
@@ -118,6 +133,9 @@ typedef struct BSqlPluginContext {
     char* lc_time_names;
     bool scan_from_pl;
     char* default_database_name;
+    char* mysql_ca;
+    char* mysql_server_cert;
+    char* mysql_server_key;
     int paramIdx;
     bool isUpsert;
 #ifdef DOLPHIN
@@ -175,6 +193,7 @@ typedef struct BSqlPluginContext {
     int cmpt_version;
     int bit_output;
     char* last_insert_id; /* for select @@identity */
+    conn_mysql_infoP_t Conn_Mysql_Info;
     bool use_const_value_as_colname;
 #endif
 } bSqlPluginContext;

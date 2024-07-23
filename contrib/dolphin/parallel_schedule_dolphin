@@ -153,6 +153,8 @@ test: operator_compatibility_test/json_operator_test operator_compatibility_test
 
 test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl
 
+test: b_auth_8_0
+
 # lock tables
 test: lock_tables lock_tables_1
 
