@@ -17,11 +17,7 @@
 #include <intrin.h>
 #endif
 
-#ifdef _MSC_VER
 #define TARGET_AVX512_POPCOUNT
-#else
-#define TARGET_AVX512_POPCOUNT __attribute__((target("avx512f,avx512vpopcntdq")))
-#endif
 #endif
 
 /* Disable for LLVM due to crash with bitcode generation */

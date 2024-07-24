@@ -2,18 +2,18 @@ ARG PG_MAJOR=16
 FROM postgres:$PG_MAJOR
 ARG PG_MAJOR
 
-COPY . /tmp/pgvector
+COPY . /tmp/datavec
 
 RUN apt-get update && \
 		apt-mark hold locales && \
 		apt-get install -y --no-install-recommends build-essential postgresql-server-dev-$PG_MAJOR && \
-		cd /tmp/pgvector && \
+		cd /tmp/datavec && \
 		make clean && \
 		make OPTFLAGS="" && \
 		make install && \
-		mkdir /usr/share/doc/pgvector && \
-		cp LICENSE README.md /usr/share/doc/pgvector && \
-		rm -r /tmp/pgvector && \
+		mkdir /usr/share/doc/datavec && \
+		cp LICENSE README.md /usr/share/doc/datavec && \
+		rm -r /tmp/datavec && \
 		apt-get remove -y build-essential postgresql-server-dev-$PG_MAJOR && \
 		apt-get autoremove -y && \
 		apt-mark unhold locales && \

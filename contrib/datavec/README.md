@@ -1,4 +1,4 @@
-# pgvector
+# datavec
 
 Open-source vector similarity search for Postgres
 
@@ -11,7 +11,7 @@ Store your vectors with the rest of your data. Supports:
 
 Plus [ACID](https://en.wikipedia.org/wiki/ACID) compliance, point-in-time recovery, JOINs, and all of the other [great features](https://www.postgresql.org/about/) of Postgres
 
-[![Build Status](https://github.com/pgvector/pgvector/actions/workflows/build.yml/badge.svg)](https://github.com/pgvector/pgvector/actions)
+[![Build Status](https://github.com/datavec/datavec/workflows/build/badge.svg?branch=master)](https://github.com/datavec/datavec/actions)
 
 ## Installation
 
@@ -21,15 +21,16 @@ Compile and install the extension (supports Postgres 12+)
 
 ```sh
 cd /tmp
-git clone --branch v0.7.2 https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone https://gitee.com/opengauss/Plugin.git
+cd Plugin/contrib/datavec 
+# you would better copy those files to openGauss-server, i.e. cp Plugin/contrib/datavec openGauss-server/contrib, and run the following command.
 make
 make install # may need sudo
 ```
 
 See the [installation notes](#installation-notes---linux-and-mac) if you run into issues
 
-You can also install it with [Docker](#docker), [Homebrew](#homebrew), [PGXN](#pgxn), [APT](#apt), [Yum](#yum), [pkg](#pkg), or [conda-forge](#conda-forge), and it comes preinstalled with [Postgres.app](#postgresapp) and many [hosted providers](#hosted-postgres). There are also instructions for [GitHub Actions](https://github.com/pgvector/setup-pgvector).
+You can also install it with [Docker](#docker), [Homebrew](#homebrew), [PGXN](#pgxn), [APT](#apt), [Yum](#yum), [pkg](#pkg), or [conda-forge](#conda-forge), and it comes preinstalled with [Postgres.app](#postgresapp) and many [hosted providers](#hosted-postgres). There are also instructions for [GitHub Actions](https://github.com/datavec/setup-datavec).
 
 ### Windows
 
@@ -46,8 +47,8 @@ Then use `nmake` to build:
 ```cmd
 set "PGROOT=C:\Program Files\PostgreSQL\16"
 cd %TEMP%
-git clone --branch v0.7.2 https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone https://gitee.com/opengauss/Plugin.git
+cd Plugin/contrib/datavec
 nmake /F Makefile.win
 nmake /F Makefile.win install
 ```
@@ -61,7 +62,7 @@ You can also install it with [Docker](#docker) or [conda-forge](#conda-forge).
 Enable the extension (do this once in each database where you want to use it)
 
 ```tsql
-CREATE EXTENSION vector;
+CREATE EXTENSION datavec;
 ```
 
 Create a vector column with 3 dimensions
@@ -106,7 +107,7 @@ Insert vectors
 INSERT INTO items (embedding) VALUES ('[1,2,3]'), ('[4,5,6]');
 ```
 
-Or load vectors in bulk using `COPY` ([example](https://github.com/pgvector/pgvector-python/blob/master/examples/bulk_loading.py))
+Or load vectors in bulk using `COPY`
 
 ```sql
 COPY items (embedding) FROM STDIN WITH (FORMAT BINARY);
@@ -196,7 +197,7 @@ SELECT category_id, AVG(embedding) FROM items GROUP BY category_id;
 
 ## Indexing
 
-By default, pgvector performs exact nearest neighbor search, which provides perfect recall.
+By default, datavec performs exact nearest neighbor search, which provides perfect recall.
 
 You can add an index to use approximate nearest neighbor search, which trades some recall for speed. Unlike typical indexes, you will see different results for queries after adding an approximate index.
 
@@ -473,7 +474,7 @@ SELECT * FROM items ORDER BY embedding::halfvec(3) <-> '[1,2,3]' LIMIT 5;
 
 ## Binary Vectors
 
-Use the `bit` type to store binary vectors ([example](https://github.com/pgvector/pgvector-python/blob/master/examples/hash_image_search.py))
+Use the `bit` type to store binary vectors
 
 ```sql
 CREATE TABLE items (id bigserial PRIMARY KEY, embedding bit(3));
@@ -551,7 +552,7 @@ SELECT id, content FROM items, plainto_tsquery('hello search') query
     WHERE textsearch @@ query ORDER BY ts_rank_cd(textsearch, query) DESC LIMIT 5;
 ```
 
-You can use [Reciprocal Rank Fusion](https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search_rrf.py) or a [cross-encoder](https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search.py) to combine results.
+You can use [Reciprocal Rank Fusion] or a [cross-encoder] to combine results.
 
 ## Indexing Subvectors
 
@@ -597,7 +598,7 @@ Be sure to restart Postgres for changes to take effect.
 
 ### Loading
 
-Use `COPY` for bulk loading data ([example](https://github.com/pgvector/pgvector-python/blob/master/examples/bulk_loading.py)).
+Use `COPY` for bulk loading data.
 
 ```sql
 COPY items (embedding) FROM STDIN WITH (FORMAT BINARY);
@@ -683,41 +684,11 @@ COMMIT;
 
 ## Scaling
 
-Scale pgvector the same way you scale Postgres.
+Scale datavec the same way you scale Postgres.
 
 Scale vertically by increasing memory, CPU, and storage on a single instance. Use existing tools to [tune parameters](#tuning) and [monitor performance](#monitoring).
 
-Scale horizontally with [replicas](https://www.postgresql.org/docs/current/hot-standby.html), or use [Citus](https://github.com/citusdata/citus) or another approach for sharding ([example](https://github.com/pgvector/pgvector-python/blob/master/examples/citus.py)).
-
-## Languages
-
-Use pgvector from any language with a Postgres client. You can even generate and store vectors in one language and query them in another.
-
-Language | Libraries / Examples
---- | ---
-C | [pgvector-c](https://github.com/pgvector/pgvector-c)
-C++ | [pgvector-cpp](https://github.com/pgvector/pgvector-cpp)
-C#, F#, Visual Basic | [pgvector-dotnet](https://github.com/pgvector/pgvector-dotnet)
-Crystal | [pgvector-crystal](https://github.com/pgvector/pgvector-crystal)
-Dart | [pgvector-dart](https://github.com/pgvector/pgvector-dart)
-Elixir | [pgvector-elixir](https://github.com/pgvector/pgvector-elixir)
-Go | [pgvector-go](https://github.com/pgvector/pgvector-go)
-Haskell | [pgvector-haskell](https://github.com/pgvector/pgvector-haskell)
-Java, Kotlin, Groovy, Scala | [pgvector-java](https://github.com/pgvector/pgvector-java)
-JavaScript, TypeScript | [pgvector-node](https://github.com/pgvector/pgvector-node)
-Julia | [pgvector-julia](https://github.com/pgvector/pgvector-julia)
-Lisp | [pgvector-lisp](https://github.com/pgvector/pgvector-lisp)
-Lua | [pgvector-lua](https://github.com/pgvector/pgvector-lua)
-Nim | [pgvector-nim](https://github.com/pgvector/pgvector-nim)
-OCaml | [pgvector-ocaml](https://github.com/pgvector/pgvector-ocaml)
-Perl | [pgvector-perl](https://github.com/pgvector/pgvector-perl)
-PHP | [pgvector-php](https://github.com/pgvector/pgvector-php)
-Python | [pgvector-python](https://github.com/pgvector/pgvector-python)
-R | [pgvector-r](https://github.com/pgvector/pgvector-r)
-Ruby | [pgvector-ruby](https://github.com/pgvector/pgvector-ruby), [Neighbor](https://github.com/ankane/neighbor)
-Rust | [pgvector-rust](https://github.com/pgvector/pgvector-rust)
-Swift | [pgvector-swift](https://github.com/pgvector/pgvector-swift)
-Zig | [pgvector-zig](https://github.com/pgvector/pgvector-zig)
+Scale horizontally with [replicas](https://www.postgresql.org/docs/current/hot-standby.html), or use [Citus] or another approach for sharding.
 
 ## Frequently Asked Questions
 
@@ -727,7 +698,7 @@ A non-partitioned table has a limit of 32 TB by default in Postgres. A partition
 
 #### Is replication supported?
 
-Yes, pgvector uses the write-ahead log (WAL), which allows for replication and point-in-time recovery.
+Yes, datavec uses the write-ahead log (WAL), which allows for replication and point-in-time recovery.
 
 #### What if I want to index vectors with more than 2,000 dimensions?
 
@@ -1018,7 +989,7 @@ If compilation fails and the output includes `warning: no such sysroot directory
 
 ### Portability
 
-By default, pgvector compiles with `-march=native` on some platforms for best performance. However, this can lead to `Illegal instruction` errors if trying to run the compiled extension on a different machine.
+By default, datavec compiles with `-march=native` on some platforms for best performance. However, this can lead to `Illegal instruction` errors if trying to run the compiled extension on a different machine.
 
 To compile for portability, use:
 
@@ -1040,20 +1011,20 @@ If installation fails with `Access is denied`, re-run the installation instructi
 
 ### Docker
 
-Get the [Docker image](https://hub.docker.com/r/pgvector/pgvector) with:
+Get the [Docker image](https://hub.docker.com/r/datavec/datavec) with:
 
 ```sh
-docker pull pgvector/pgvector:pg16
+docker pull datavec/datavec:pg16
 ```
 
-This adds pgvector to the [Postgres image](https://hub.docker.com/_/postgres) (replace `16` with your Postgres server version, and run it the same way).
+This adds datavec to the [Postgres image](https://hub.docker.com/_/postgres) (replace `16` with your Postgres server version, and run it the same way).
 
 You can also build the image manually:
 
 ```sh
-git clone --branch v0.7.2 https://github.com/pgvector/pgvector.git
-cd pgvector
-docker build --pull --build-arg PG_MAJOR=16 -t myuser/pgvector .
+git clone https://gitee.com/opengauss/Plugin.git
+cd Plugin/contrib/datavec
+docker build --pull --build-arg PG_MAJOR=16 -t myuser/datavec .
 ```
 
 ### Homebrew
@@ -1061,7 +1032,7 @@ docker build --pull --build-arg PG_MAJOR=16 -t myuser/pgvector .
 With Homebrew Postgres, you can use:
 
 ```sh
-brew install pgvector
+brew install datavec
 ```
 
 Note: This only adds it to the `postgresql@14` formula
@@ -1079,7 +1050,7 @@ pgxn install vector
 Debian and Ubuntu packages are available from the [PostgreSQL APT Repository](https://wiki.postgresql.org/wiki/Apt). Follow the [setup instructions](https://wiki.postgresql.org/wiki/Apt#Quickstart) and run:
 
 ```sh
-sudo apt install postgresql-16-pgvector
+sudo apt install postgresql-16-datavec
 ```
 
 Note: Replace `16` with your Postgres server version
@@ -1089,9 +1060,9 @@ Note: Replace `16` with your Postgres server version
 RPM packages are available from the [PostgreSQL Yum Repository](https://yum.postgresql.org/). Follow the [setup instructions](https://www.postgresql.org/download/linux/redhat/) for your distribution and run:
 
 ```sh
-sudo yum install pgvector_16
+sudo yum install datavec_16
 # or
-sudo dnf install pgvector_16
+sudo dnf install datavec_16
 ```
 
 Note: Replace `16` with your Postgres server version
@@ -1101,25 +1072,25 @@ Note: Replace `16` with your Postgres server version
 Install the FreeBSD package with:
 
 ```sh
-pkg install postgresql15-pgvector
+pkg install postgresql15-datavec
 ```
 
 or the port with:
 
 ```sh
-cd /usr/ports/databases/pgvector
+cd /usr/ports/databases/datavec
 make install
 ```
 
 ### conda-forge
 
-With Conda Postgres, install from [conda-forge](https://anaconda.org/conda-forge/pgvector) with:
+With Conda Postgres, install from [conda-forge](https://anaconda.org/conda-forge/datavec) with:
 
 ```sh
-conda install -c conda-forge pgvector
+conda install -c conda-forge datavec
 ```
 
-This method is [community-maintained](https://github.com/conda-forge/pgvector-feedstock) by [@mmcauliffe](https://github.com/mmcauliffe)
+This method is [community-maintained](https://github.com/conda-forge/datavec-feedstock) by [@mmcauliffe](https://github.com/mmcauliffe)
 
 ### Postgres.app
 
@@ -1127,7 +1098,7 @@ Download the [latest release](https://postgresapp.com/downloads.html) with Postg
 
 ## Hosted Postgres
 
-pgvector is available on [these providers](https://github.com/pgvector/pgvector/issues/54).
+datavec is available on [these providers].
 
 ## Upgrading
 
@@ -1152,19 +1123,19 @@ SELECT extversion FROM pg_extension WHERE extname = 'vector';
 If upgrading with Postgres 12, remove this line from `sql/vector--0.5.1--0.6.0.sql`:
 
 ```sql
-ALTER TYPE vector SET (STORAGE = external);
+ALTER TYPE datavec SET (STORAGE = external);
 ```
 
-Then run `make install` and `ALTER EXTENSION vector UPDATE;`.
+Then run `make install` and `ALTER EXTENSION datavec UPDATE;`.
 
 #### Docker
 
-The Docker image is now published in the `pgvector` org, and there are tags for each supported version of Postgres (rather than a `latest` tag).
+The Docker image is now published in the `datavec` org, and there are tags for each supported version of Postgres (rather than a `latest` tag).
 
 ```sh
-docker pull pgvector/pgvector:pg16
+docker pull datavec/datavec:pg16
 # or
-docker pull pgvector/pgvector:0.6.0-pg16
+docker pull datavec/datavec:0.6.0-pg16
 ```
 
 Also, if you’ve increased `maintenance_work_mem`, make sure `--shm-size` is at least that size to avoid an error with parallel HNSW index builds.
@@ -1186,22 +1157,22 @@ Thanks to:
 
 ## History
 
-View the [changelog](https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md)
+View the [changelog](https://github.com/datavec/datavec/blob/master/CHANGELOG.md)
 
 ## Contributing
 
 Everyone is encouraged to help improve this project. Here are a few ways you can help:
 
-- [Report bugs](https://github.com/pgvector/pgvector/issues)
-- Fix bugs and [submit pull requests](https://github.com/pgvector/pgvector/pulls)
+- [Report bugs](https://github.com/datavec/datavec/issues)
+- Fix bugs and [submit pull requests](https://github.com/datavec/datavec/pulls)
 - Write, clarify, or fix documentation
 - Suggest or add new features
 
 To get started with development:
 
 ```sh
-git clone https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone https://gitee.com/opengauss/Plugin.git
+cd Plugin/contrib/datavec
 make
 make install
 ```

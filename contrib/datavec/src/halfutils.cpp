@@ -12,11 +12,7 @@
 #include <intrin.h>
 #endif
 
-#ifdef _MSC_VER
 #define TARGET_F16C
-#else
-#define TARGET_F16C __attribute__((target("avx,f16c,fma")))
-#endif
 #endif
 
 float		(*HalfvecL2SquaredDistance) (int dim, half * ax, half * bx);
