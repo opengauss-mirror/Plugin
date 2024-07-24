@@ -3414,8 +3414,6 @@ WARNING:  invalid input syntax for type timestamp: "-1.1                        
 CONTEXT:  referenced column: t23<t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<t21
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t23<t25
  t23<t1 | t23<t2 | t23<t3 | t23<t4 | t23<t5 | t23<t6 | t23<t7 | t23<t8 | t23<t9 | t23<t10 | t23<t11 | t23<t12 | t23<t13 | t23<t14 | t23<t15 | t23<t16 | t23<t17 | t23<t18 | t23<t19 | t23<t20 | t23<t21 | t23<t22 | t23<t23 | t23<t24 | t23<t25 | t23<t26 | t23<t27 | t23<t28 | t23<t29 | t23<t30 | t23<t31 | t23<t32 | t23<t33 | t23<t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  t      | t      | t      | t      | t      | t      | t      | t      | t      | t       | t       | t       | t       | f       | t       | t       | t       | t       | t       | t       | t       | t       | f       | f       | t       | t       | f       | f       | f       | f       | t       | t       | t       | t
@@ -3563,8 +3561,6 @@ CONTEXT:  referenced column: t25<t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_lt" statement 1
 referenced column: t25<t22
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25<t23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -5456,8 +5452,6 @@ WARNING:  invalid input syntax for type timestamp: "-1.1                        
 CONTEXT:  referenced column: t23<>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<>t21
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t23<>t25
  t23<>t1 | t23<>t2 | t23<>t3 | t23<>t4 | t23<>t5 | t23<>t6 | t23<>t7 | t23<>t8 | t23<>t9 | t23<>t10 | t23<>t11 | t23<>t12 | t23<>t13 | t23<>t14 | t23<>t15 | t23<>t16 | t23<>t17 | t23<>t18 | t23<>t19 | t23<>t20 | t23<>t21 | t23<>t22 | t23<>t23 | t23<>t24 | t23<>t25 | t23<>t26 | t23<>t27 | t23<>t28 | t23<>t29 | t23<>t30 | t23<>t31 | t23<>t32 | t23<>t33 | t23<>t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
  t       | t       | t       | t       | t       | t       | t       | t       | t       | t        | t        | t        | t        | f        | t        | t        | t        | t        | t        | t        | t        | t        | f        | f        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t
@@ -5605,8 +5599,6 @@ CONTEXT:  referenced column: t25<>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ne" statement 1
 referenced column: t25<>t22
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25<>t23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<>t24
  t25<>t1 | t25<>t2 | t25<>t3 | t25<>t4 | t25<>t5 | t25<>t6 | t25<>t7 | t25<>t8 | t25<>t9 | t25<>t10 | t25<>t11 | t25<>t12 | t25<>t13 | t25<>t14 | t25<>t15 | t25<>t16 | t25<>t17 | t25<>t18 | t25<>t19 | t25<>t20 | t25<>t21 | t25<>t22 | t25<>t23 | t25<>t24 | t25<>t25 | t25<>t26 | t25<>t27 | t25<>t28 | t25<>t29 | t25<>t30 | t25<>t31 | t25<>t32 | t25<>t33 | t25<>t34 
@@ -7390,8 +7382,6 @@ WARNING:  invalid input syntax for type timestamp: "-1.1                        
 CONTEXT:  referenced column: t23<=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23<=t21
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t23<=t25
  t23<=t1 | t23<=t2 | t23<=t3 | t23<=t4 | t23<=t5 | t23<=t6 | t23<=t7 | t23<=t8 | t23<=t9 | t23<=t10 | t23<=t11 | t23<=t12 | t23<=t13 | t23<=t14 | t23<=t15 | t23<=t16 | t23<=t17 | t23<=t18 | t23<=t19 | t23<=t20 | t23<=t21 | t23<=t22 | t23<=t23 | t23<=t24 | t23<=t25 | t23<=t26 | t23<=t27 | t23<=t28 | t23<=t29 | t23<=t30 | t23<=t31 | t23<=t32 | t23<=t33 | t23<=t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
  t       | t       | t       | t       | t       | t       | t       | t       | t       | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | f        | f        | f        | f        | t        | t        | t        | t
@@ -7539,8 +7529,6 @@ CONTEXT:  referenced column: t25<=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_le" statement 1
 referenced column: t25<=t22
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25<=t23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<=t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -9332,8 +9320,6 @@ WARNING:  invalid input syntax for type timestamp: "-1.1                        
 CONTEXT:  referenced column: t23>t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23>t21
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t23>t25
  t23>t1 | t23>t2 | t23>t3 | t23>t4 | t23>t5 | t23>t6 | t23>t7 | t23>t8 | t23>t9 | t23>t10 | t23>t11 | t23>t12 | t23>t13 | t23>t14 | t23>t15 | t23>t16 | t23>t17 | t23>t18 | t23>t19 | t23>t20 | t23>t21 | t23>t22 | t23>t23 | t23>t24 | t23>t25 | t23>t26 | t23>t27 | t23>t28 | t23>t29 | t23>t30 | t23>t31 | t23>t32 | t23>t33 | t23>t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
  f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | f
@@ -9481,8 +9467,6 @@ CONTEXT:  referenced column: t25>t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_gt" statement 1
 referenced column: t25>t22
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25>t23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25>t24
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -11274,8 +11258,6 @@ WARNING:  invalid input syntax for type timestamp: "-1.1                        
 CONTEXT:  referenced column: t23>=t20
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t23>=t21
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t23>=t25
  t23>=t1 | t23>=t2 | t23>=t3 | t23>=t4 | t23>=t5 | t23>=t6 | t23>=t7 | t23>=t8 | t23>=t9 | t23>=t10 | t23>=t11 | t23>=t12 | t23>=t13 | t23>=t14 | t23>=t15 | t23>=t16 | t23>=t17 | t23>=t18 | t23>=t19 | t23>=t20 | t23>=t21 | t23>=t22 | t23>=t23 | t23>=t24 | t23>=t25 | t23>=t26 | t23>=t27 | t23>=t28 | t23>=t29 | t23>=t30 | t23>=t31 | t23>=t32 | t23>=t33 | t23>=t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
  f       | f       | f       | f       | f       | f       | f       | f       | f       | f        | f        | f        | f        | t        | f        | f        | f        | f        | f        | f        | f        | f        | t        | t        | f        | f        | t        | t        | t        | t        | f        | f        | f        | f
@@ -11423,8 +11405,6 @@ CONTEXT:  referenced column: t25>=t21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL function "binary_year_ge" statement 1
 referenced column: t25>=t22
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25>=t23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25>=t24
 WARNING:  invalid input syntax for type double precision: "1.23a"

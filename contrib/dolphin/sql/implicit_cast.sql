@@ -67,5 +67,16 @@ insert into t1 values (default,default,default,default);
 select * from t1;
 drop table t1;
 
+
+create table test1(id int, ptype varchar(30));
+insert into test1 values (1, 'type1');
+insert into test1 values (2, 'type2');
+insert into test1 values (3, 'type3');
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype) in ('type1'::varchar, 'type2'::varchar);
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype) in ('type1'::char(30), 'type2'::char(30));
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('type1'::varchar, 'type2'::varchar);
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('type1'::char(30), 'type2'::char(30));
+drop table test1;
+
 drop schema implicit_cast cascade;
 reset current_schema;

@@ -308,5 +308,34 @@ select * from t1;
 (1 row)
 
 drop table t1;
+create table test1(id int, ptype varchar(30));
+insert into test1 values (1, 'type1');
+insert into test1 values (2, 'type2');
+insert into test1 values (3, 'type3');
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype) in ('type1'::varchar, 'type2'::varchar);
+ id | ptype 
+----+-------
+  1 | type1
+(1 row)
+
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype) in ('type1'::char(30), 'type2'::char(30));
+ id | ptype 
+----+-------
+  1 | type1
+(1 row)
+
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('type1'::varchar, 'type2'::varchar);
+ id | ptype 
+----+-------
+  1 | type1
+(1 row)
+
+select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('type1'::char(30), 'type2'::char(30));
+ id | ptype 
+----+-------
+  1 | type1
+(1 row)
+
+drop table test1;
 drop schema implicit_cast cascade;
 reset current_schema;
