@@ -1,5 +1,15 @@
 create schema test_view_table_depend;
 set current_schema to 'test_view_table_depend';
+
+create table t1 (c1 int);
+create view v1 as select * from t1;
+drop table t1;
+\d+ v1;
+create table t1 (c1 int);
+\d+ v1;
+select valid = true from pg_class join pg_object on oid = object_oid where relname = 'v1';
+
+drop table t1 cascade;
 create table t1 (c1 int);
 create view v1 as select * from t1;
 drop table t1;

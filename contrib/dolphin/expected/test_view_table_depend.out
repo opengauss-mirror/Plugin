@@ -3,6 +3,38 @@ set current_schema to 'test_view_table_depend';
 create table t1 (c1 int);
 create view v1 as select * from t1;
 drop table t1;
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+create table t1 (c1 int);
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+select valid = true from pg_class join pg_object on oid = object_oid where relname = 'v1';
+ ?column? 
+----------
+ t
+(1 row)
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int);
+create view v1 as select * from t1;
+drop table t1;
 \d v1;
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
@@ -10,6 +42,8 @@ View "test_view_table_depend.v1"
  c1     | integer | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
  Column |  Type   | Modifiers | Storage | Description 
 --------+---------+-----------+---------+-------------
@@ -173,6 +207,8 @@ View "test_view_table_depend.v1"
  c3     | integer | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
  Column |  Type   | Modifiers | Storage | Description 
 --------+---------+-----------+---------+-------------
@@ -245,6 +281,8 @@ View "test_view_table_depend.v2"
  c1     | integer | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
  Column |  Type   | Modifiers | Storage | Description 
 --------+---------+-----------+---------+-------------
@@ -254,6 +292,8 @@ View definition:
    FROM t1;
 
 \d+ v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v2"
  Column |  Type   | Modifiers | Storage | Description 
 --------+---------+-----------+---------+-------------
@@ -376,6 +416,8 @@ View "test_view_table_depend.v2"
  ?column? | bigint | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
  Column |  Type   | Modifiers | Storage | Description 
 --------+---------+-----------+---------+-------------
@@ -385,6 +427,8 @@ View definition:
    FROM t1;
 
 \d+ v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v2"
   Column  |  Type  | Modifiers | Storage | Description 
 ----------+--------+-----------+---------+-------------
@@ -479,6 +523,8 @@ View "test_view_table_depend.v1"
  ?column? | bigint | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
   Column  |  Type  | Modifiers | Storage | Description 
 ----------+--------+-----------+---------+-------------
@@ -550,6 +596,8 @@ View "test_view_table_depend.v1"
  ?column? | bigint | 
 
 \d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
            View "test_view_table_depend.v1"
   Column  |  Type  | Modifiers | Storage | Description 
 ----------+--------+-----------+---------+-------------

@@ -284,11 +284,7 @@ static void pop_child_plan(deparse_namespace* dpns, deparse_namespace* save_dpns
 static void push_ancestor_plan(deparse_namespace* dpns, ListCell* ancestor_cell, deparse_namespace* save_dpns);
 static void pop_ancestor_plan(deparse_namespace* dpns, deparse_namespace* save_dpns);
 static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags);
-static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn
-#ifdef DOLPHIN
-    , bool isInvalidView = false
-#endif
-);
+static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn);
 static void get_values_def(List* values_lists, deparse_context* context);
 static void get_with_clause(Query* query, deparse_context* context);
 static void get_select_query_def(Query* query, deparse_context* context, TupleDesc resultDesc);
@@ -600,9 +596,6 @@ char* pg_get_viewdef_worker(Oid viewoid, int prettyFlags, int wrapColumn)
      */
     initStringInfo(&buf);
 
-#ifdef DOLPHIN
-    if (GetPgObjectValid(viewoid, OBJECT_TYPE_VIEW)) {
-#endif
     /*
      * Connect to SPI manager
      */
@@ -658,16 +651,6 @@ char* pg_get_viewdef_worker(Oid viewoid, int prettyFlags, int wrapColumn)
     SPI_STACK_LOG("finish", NULL, NULL);
     if (SPI_finish() != SPI_OK_FINISH)
         ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));
-#ifdef DOLPHIN
-    } else {
-        ruletup = SearchSysCache2(RULERELNAME, ObjectIdGetDatum(viewoid), PointerGetDatum(ViewSelectRuleName));
-        Relation rewrite_rel = heap_open(RewriteRelationId, AccessShareLock);
-        rulettc = RelationGetDescr(rewrite_rel);
-        make_viewdef(&buf, ruletup, rulettc, prettyFlags, wrapColumn, true);
-        ReleaseSysCache(ruletup);
-        heap_close(rewrite_rel, AccessShareLock);
-    }
-#endif
     return buf.data;
 }
 
@@ -6064,11 +6047,7 @@ static void get_view_def(Query* query, StringInfo buf, List* parentnamespace, Tu
  *				  view rewrite rule
  * ----------
  */
-static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn
-#ifdef DOLPHIN
-    , bool isInvalidView
-#endif
-)
+static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, int prettyFlags, int wrapColumn)
 {
     Query* query = NULL;
     char ev_type;
@@ -6121,7 +6100,13 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
     ev_relation = heap_open(ev_class, AccessShareLock);
 
 #ifdef DOLPHIN
-    if (isInvalidView) {
+    char relKind = get_rel_relkind(ev_class);
+    if (ev_class >= FirstNormalObjectId && !GetPgObjectValid(ev_class, relKind)) {
+        if (!ValidateDependView(ev_class, relKind)) {
+            ereport(WARNING,
+                    (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("View %s references invalid table(s), view(s) or column(s).", get_rel_name(ev_class))));
+        }
         get_view_def(query,
             buf,
             NIL,
