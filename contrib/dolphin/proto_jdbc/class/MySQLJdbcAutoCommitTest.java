@@ -64,6 +64,11 @@ public class MySQLJdbcAutoCommitTest {
             connection.setAutoCommit(true);
 
             connection.setAutoCommit(false);
+            statement.execute("insert into autocommit_test6 values(0)");
+            statement.execute("abort");
+            connection.setAutoCommit(true);
+
+            connection.setAutoCommit(false);
             PreparedStatement preparedStatement = connection.prepareStatement("insert into autocommit_test6 values(?)");
             preparedStatement.setInt(1, 1);
             preparedStatement.execute();

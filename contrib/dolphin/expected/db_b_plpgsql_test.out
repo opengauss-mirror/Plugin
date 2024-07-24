@@ -139,11 +139,47 @@ END $$;
 NOTICE:  执行SQL：ALTER TABLE t1 MODIFY COLUMN c1 varchar(40) DEFAULT 'b' NOT NULL;
 drop table t1;
 reset enable_set_variable_b_format;
+drop table if exists t_abort_050;
+NOTICE:  table "t_abort_050" does not exist, skipping
+create table t_abort_050(a int);
+create or replace function fun_abort_050
+return  int
+as
+begin
+    insert into t_abort_050 values (100);
+    commit;
+    return 1;
+end;
+/
+create or replace procedure proc_abort_050_01
+as
+begin
+    insert into t_abort_050 values (200);
+    commit;
+    fun_abort_050();
+end;
+/
+create or replace procedure proc_abort_050_02
+as
+begin
+    insert into t_abort_050 values (300);
+    abort;
+    proc_abort_050_01();
+end;
+/
+call proc_abort_050_02();
+ERROR:  only support commit/rollback transaction statements.
+HINT:  Use a BEGIN block with an EXCEPTION clause instead of begin/end transaction.
+CONTEXT:  PL/pgSQL function proc_abort_050_02() line 3 at SQL statement
 drop schema db_b_plpgsql_test cascade;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to table tb_b_grammar_0038
 drop cascades to function proc_01()
 drop cascades to table j1_tbl
 drop cascades to table j2_tbl
 drop cascades to function peoc_165()
+drop cascades to table t_abort_050
+drop cascades to function fun_abort_050()
+drop cascades to function proc_abort_050_01()
+drop cascades to function proc_abort_050_02()
 reset current_schema;
