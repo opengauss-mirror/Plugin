@@ -773,7 +773,7 @@ int DatetimeDate(char *str, pg_tm *tm, int time_cast_type)
             break;
 
         case TEXT_TIME_EXPLICIT:
-            datetime = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(str),
+            datetime = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetTextDatum(str),
                 ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
             if (isRetNull) {
                 return ERRCODE_DATETIME_VALUE_OUT_OF_RANGE;
@@ -1886,9 +1886,8 @@ char* parser_function_input(Datum txt, Oid oid)
  */
 Datum text_time_explicit(PG_FUNCTION_ARGS)
 {
-    char* input_str = fcinfo->argTypes[0] ?
-                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
-                      PG_GETARG_CSTRING(0);
+    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
