@@ -650,9 +650,8 @@ Datum timestamp_cast(PG_FUNCTION_ARGS)
 
 Datum timestamp_explicit(PG_FUNCTION_ARGS)
 {
-    char* input_str = fcinfo->argTypes[0] ?
-                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
-                      PG_GETARG_CSTRING(0);
+    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = timestamp_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
@@ -888,7 +887,7 @@ Datum float8_b_format_datetime(PG_FUNCTION_ARGS)
     fillZeroBeforeNumericTimestamp(str, buf);
     bool isRetNull = false;
     if (is_explicit_call(fcinfo)) {
-        Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+        Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetTextDatum(buf),
             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
         if (isRetNull) {
             PG_RETURN_NULL();
@@ -909,7 +908,7 @@ Datum float8_b_format_timestamp(PG_FUNCTION_ARGS)
     fillZeroBeforeNumericTimestamp(str, buf);
     if (is_explicit_call(fcinfo)) {
         bool isRetNull = false;
-        Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetDatum(buf),
+        Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetTextDatum(buf),
             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
         if (isRetNull) {
             PG_RETURN_NULL();
@@ -937,7 +936,7 @@ Datum numeric_b_format_datetime(PG_FUNCTION_ARGS)
     fillZeroBeforeNumericTimestamp(str, buf);
     if (is_explicit_call(fcinfo)) {
         bool isRetNull = false;
-        Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+        Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetTextDatum(buf),
             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
         if (isRetNull) {
             PG_RETURN_NULL();
@@ -957,7 +956,7 @@ Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
     fillZeroBeforeNumericTimestamp(str, buf);
     if (is_explicit_call(fcinfo)) {
         bool isRetNull = false;
-        Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetDatum(buf),
+        Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetTextDatum(buf),
             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
         if (isRetNull) {
             PG_RETURN_NULL();
@@ -1848,9 +1847,8 @@ Datum timestamptz_cast(PG_FUNCTION_ARGS)
 
 Datum timestamptz_explicit(PG_FUNCTION_ARGS)
 {
-    char* input_str = fcinfo->argTypes[0] ?
-                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
-                      PG_GETARG_CSTRING(0);
+    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
 
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum result = timestamptz_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
@@ -12206,7 +12204,7 @@ Datum str_cast_datetime(PG_FUNCTION_ARGS, char *str, bool with_tz)
     fillZeroBeforeNumericTimestamp(str, buf);
     bool isRetNull = false;
     PGFunction func = with_tz ? timestamptz_explicit : timestamp_explicit;
-    Datum result = DirectCall3(&isRetNull, func, InvalidOid, CStringGetDatum(buf),
+    Datum result = DirectCall3(&isRetNull, func, InvalidOid, CStringGetTextDatum(buf),
         ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
     if (isRetNull) {
         PG_RETURN_NULL();
