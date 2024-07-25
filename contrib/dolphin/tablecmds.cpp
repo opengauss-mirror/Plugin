@@ -18,6 +18,7 @@
 #include "knl/knl_variable.h"
 
 #include "plugin_nodes/parsenodes_common.h"
+#include "plugin_parser/parse_oper.h"
 #include "access/cstore_delete.h"
 #include "access/cstore_delta.h"
 #include "access/cstore_insert.h"
@@ -117,7 +118,6 @@
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_collate.h"
 #include "plugin_parser/parse_expr.h"
-#include "plugin_parser/parse_oper.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_utilcmd.h"
@@ -24049,6 +24049,10 @@ Node* GetTargetValue(Form_pg_attribute attrs, Const* src, bool isinterval, bool 
     } else if (!ConfirmTypeInfo(&target_oid, &target_mod, src, attrs, isinterval)) {
         return NULL;
     }
+
+#ifdef DOLPHIN
+    target_oid = modify_type_for_partition_key(target_oid);
+#endif
 
     expr = (Node*)coerce_to_target_type(
         NULL, (Node*)src, exprType((Node*)src), target_oid, target_mod, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);

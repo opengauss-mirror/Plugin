@@ -234,6 +234,8 @@ static const struct optimizer_switch_entry optimizer_switch_options[OPT_OPTIMIZE
 #define B_KWMASK_TRIGGER (0x01<<1)
 #define B_KWMASK_CREATE_TRIGGER  (0x01 | (0x01<<1))
 
+Oid modify_type_for_partition_key(Oid attType);
+
 typedef enum {
     MYSQL_VERSION_5_7,
     MYSQL_VERSION_8_0

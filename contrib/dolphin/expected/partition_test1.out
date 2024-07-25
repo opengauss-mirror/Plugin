@@ -1622,6 +1622,19 @@ select * from tb_subpart subpartitio(p0);
   2 | 2024-02-02 00:00:00 | 
 (4 rows)
 
+drop table if exists RangePartionLevel1_IntegerTypes;
+NOTICE:  table "rangepartionlevel1_integertypes" does not exist, skipping
+create table RangePartionLevel1_IntegerTypes(
+    id TINYINT not null,
+    store_id SMALLINT unsigned
+) 
+partition by range(store_id)(
+    partition p0 values less than (0),
+    partition p1 values less than (65536)
+);
+insert into RangePartionLevel1_IntegerTypes values (1,2);
+insert into RangePartionLevel1_IntegerTypes values (1,65535);
+drop table RangePartionLevel1_IntegerTypes;
 drop schema partition_test1 cascade;
 NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to table test_part_list
