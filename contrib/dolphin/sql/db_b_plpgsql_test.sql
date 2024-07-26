@@ -115,5 +115,34 @@ drop table t1;
 
 reset enable_set_variable_b_format;
 
+drop table if exists t_abort_050;
+create table t_abort_050(a int);
+create or replace function fun_abort_050
+return  int
+as
+begin
+    insert into t_abort_050 values (100);
+    commit;
+    return 1;
+end;
+/
+create or replace procedure proc_abort_050_01
+as
+begin
+    insert into t_abort_050 values (200);
+    commit;
+    fun_abort_050();
+end;
+/
+create or replace procedure proc_abort_050_02
+as
+begin
+    insert into t_abort_050 values (300);
+    abort;
+    proc_abort_050_01();
+end;
+/
+call proc_abort_050_02();
+
 drop schema db_b_plpgsql_test cascade;
 reset current_schema;
