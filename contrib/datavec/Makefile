@@ -1,17 +1,19 @@
 EXTENSION = datavec
-EXTVERSION = 0.4.4
+EXTVERSION = 0.7.2
 
 MODULE_big = datavec
-DATA = sql/datavec--0.4.4.sql
-OBJS = src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/vector.o
+DATA = sql/$(EXTENSION)--$(EXTVERSION).sql
+OBJS = src/bitutils.o src/bitvec.o src/f2s.o src/halfutils.o src/halfvec.o src/hnsw.o src/hnswbuild.o src/hnswinsert.o src/hnswscan.o src/hnswutils.o src/hnswvacuum.o src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/sparsevec.o src/vector.o
+HEADERS = src/halfvec.h src/sparsevec.h src/vector.h
 
 TESTS = $(wildcard test/sql/*.sql)
 REGRESS = $(patsubst test/sql/%.sql,%,$(TESTS))
-REGRESS_OPTS = --inputdir=test --load-extension=datavec
+REGRESS_OPTS = --inputdir=test --load-extension=$(EXTENSION)
 
+# To compile for portability, run: make OPTFLAGS=""
 OPTFLAGS = -march=native
 
-# Mac ARM doesn't support -march=native
+# Mac ARM doesn't always support -march=native
 ifeq ($(shell uname -s), Darwin)
 	ifeq ($(shell uname -p), arm)
 		# no difference with -march=armv8.5-a
@@ -43,7 +45,7 @@ sql/$(EXTENSION)--$(EXTVERSION).sql: sql/$(EXTENSION).sql
 EXTRA_CLEAN = sql/$(EXTENSION)--$(EXTVERSION).sql
 
 ifdef USE_PGXS
-PG_CONFIG = pg_config
+PG_CONFIG ?= pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 else
@@ -74,13 +76,15 @@ dist:
 	mkdir -p dist
 	git archive --format zip --prefix=$(EXTENSION)-$(EXTVERSION)/ --output dist/$(EXTENSION)-$(EXTVERSION).zip master
 
+# for Docker
+PG_MAJOR ?= 16
+
 .PHONY: docker
 
 docker:
-	docker build --pull --no-cache --platform linux/amd64 -t ankane/datavec:latest .
+	docker build --pull --no-cache --build-arg PG_MAJOR=$(PG_MAJOR) -t datavec/datavec:pg$(PG_MAJOR) -t datavec/datavec:$(EXTVERSION)-pg$(PG_MAJOR) .
 
 .PHONY: docker-release
 
 docker-release:
-	docker buildx build --push --pull --no-cache --platform linux/amd64,linux/arm64 -t ankane/datavec:latest .
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t ankane/datavec:v$(EXTVERSION) .
+	docker buildx build --push --pull --no-cache --platform linux/amd64,linux/arm64 --build-arg PG_MAJOR=$(PG_MAJOR) -t datavec/datavec:pg$(PG_MAJOR) -t datavec/datavec:$(EXTVERSION)-pg$(PG_MAJOR) .

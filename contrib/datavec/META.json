@@ -2,7 +2,7 @@
 	"name": "datavec",
 	"abstract": "Open-source vector similarity search for Postgres",
 	"description": "Supports L2 distance, inner product, and cosine distance",
-	"version": "0.4.4",
+	"version": "0.7.2",
 	"maintainer": [
 		"Andrew Kane <andrew@ankane.org>"
 	],
@@ -12,7 +12,7 @@
 	"prereqs": {
 		"runtime": {
 			"requires": {
-				"PostgreSQL": "11.0.0"
+				"PostgreSQL": "12.0.0"
 			}
 		}
 	},
@@ -20,19 +20,19 @@
 		"datavec": {
 			"file": "sql/datavec.sql",
 			"docfile": "README.md",
-			"version": "0.4.4",
+			"version": "0.7.2",
 			"abstract": "Open-source vector similarity search for Postgres"
 		}
 	},
 	"resources": {
-		"homepage": "https://github.com/datavec/datavec",
+		"homepage": "https://gitee.com/opengauss/Plugin/tree/master/contrib/datavec",
 		"bugtracker": {
-			"web": "https://github.com/datavec/datavec/issues"
+			"web": "https://gitee.com/opengauss/Plugin/issues"
 		},
 		"repository": {
-			"url":  "https://github.com/datavec/datavec.git",
-			"web":  "https://github.com/datavec/datavec",
-			"type": "git"
+			"url":  "https://gitee.com/opengauss/Plugin.git",
+			"web":  "https://gitee.com/opengauss/Plugin",
+			"type": "gitee"
 		}
 	},
 	"generated_by": "Andrew Kane",
