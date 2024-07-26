@@ -33315,6 +33315,15 @@ void ExecutePurge(PurgeStmt *stmt)
             break;
         }
         case PURGE_RECYCLEBIN: {
+            Oid userId = GetUserId();
+            /* 
+             * Superusers bypass all permission checking.
+             * Database Security: Support seperation of privilege.
+             */
+            if (!(superuser_arg(userId) || systemDBA_arg(userId))) {
+                ereport(ERROR,
+                    (errmsg("Only superuser can do purge recyclebin operation.")));
+            }
             RbCltPurgeRecyclebin();
             break;
         }
@@ -33438,7 +33447,7 @@ void ShrinkCfsChunkRestore(Oid relationId, LOCKMODE lockmode, bool nowait)
     relation_close(relation, lockmode);
 }
 
-void ShrinkRealtionChunk(ShrinkStmt* shrink)
+void ShrinkRelationChunk(ShrinkStmt* shrink)
 {
     ListCell* cell = NULL;
     foreach (cell, shrink->relations) {
@@ -33452,9 +33461,11 @@ void ShrinkRealtionChunk(ShrinkStmt* shrink)
 
         reloid = RangeVarGetRelid(r, AccessShareLock, true);
         if (!OidIsValid(reloid)) {
-            continue;
+            ereport(ERROR, (errmsg("[shrink] relation %s%s%s does not exist.",
+                                   r->schemaname == NULL ? "" : r->schemaname,
+                                   r->schemaname == NULL ? "" : ".",
+                                   r->relname)));
         }
-
         ShrinkCfsChunkRestore(reloid, AccessShareLock, shrink->nowait);
     }
 }
