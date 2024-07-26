@@ -1087,7 +1087,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
 				list_dist_state OptListDistribution list_dist_value interval_intexpr initime
-				interval_list every_interval interval_cell ev_timeexpr
+				interval_list every_interval opt_interval_cell interval_cell ev_timeexpr
 
 %type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
 /* PGXC_END */
@@ -20496,35 +20496,31 @@ ev_timeexpr:		initime	{ $$ = $1; }
 			{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2);}
 		;
 
-interval_list: interval_cell						{ $$ = $1; }
+interval_list: opt_interval_cell						{ $$ = $1; }
 			| interval_list '+' interval_list
             	{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
             | interval_list '-' interval_list
             	{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
 	;
 
-interval_cell:  INTERVAL ICONST interval_unit
+opt_interval_cell: interval_cell
+			| /* EMPTY */ 				{ $$ = NULL; }
+
+interval_cell:  INTERVAL a_expr interval_unit
 				{
-					char* a = NULL;
-					a = (char*)palloc(8);
-					pg_itoa($2, a);
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					$$ = makeStringConstCast(a, @2, t);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("any2interval");
+					n->colname = pstrdup("interval");
+					n->args = lcons($2, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
-				| INTERVAL SCONST interval_unit
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					$$ = makeStringConstCast($2, @2, t);
-				}
-				| INTERVAL FCONST interval_unit
-				{
-					$$  = makeFloatConst($2, @2);
-				}
-				| /* EMPTY */ 				{ $$ = NULL; }
 			;
 
 initime: 		interval_intexpr			{$$ = $1; }
@@ -33975,21 +33971,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| a_expr '=' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-			| INTERVAL a_expr interval_unit
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("any2interval");
-					n->colname = pstrdup("interval");
-					n->args = lcons($2, $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
+			| interval_cell
 			| a_expr '@' a_expr
 				 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| a_expr CmpNullOp a_expr    	%prec CmpNullOp

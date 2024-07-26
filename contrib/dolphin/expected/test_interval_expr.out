@@ -14,10 +14,11 @@ select 1::interval year;
 (1 row)
 
 select 1::interval quarter;
-ERROR:  invalid INTERVAL type modifier
-LINE 1: select 1::interval quarter;
-                  ^
-CONTEXT:  referenced column: interval
+ interval 
+----------
+ @ 3 mons
+(1 row)
+
 select 1::interval month;
  interval 
 ----------
@@ -66,10 +67,12 @@ select '1 2'::interval year_month;
  @ 1 year 2 mons
 (1 row)
 
-select '1 2'::intervalyear to month;
-ERROR:  syntax error at or near "to"
-LINE 1: select '1 2'::intervalyear to month;
-                                   ^
+select '1 2'::interval year to month;
+    interval     
+-----------------
+ @ 1 year 2 mons
+(1 row)
+
 select '1 2'::interval day_hour;
     interval     
 -----------------
@@ -652,136 +655,136 @@ select '2024-06-18 18:30:00' + interval 1 + c1 microsecond from t1;
  2024-06-18 18:30:00.000002
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' year_month from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 year_month from t1;
       ?column?       
 ---------------------
- 2025-08-18 18:30:00
+ 2024-08-18 18:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' year to month from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 year to month from t1;
       ?column?       
 ---------------------
- 2025-08-18 18:30:00
+ 2024-08-18 18:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' day_hour from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day_hour from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:30:00
+ 2024-06-18 20:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' day to hour from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day to hour from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:30:00
+ 2024-06-18 20:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' day_minute from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day_minute from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:33:00
+ 2024-06-18 18:32:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' day to minute from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day to minute from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:33:00
+ 2024-06-18 18:32:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4' day_second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day_second from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:33:04
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4' day to second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day to second from t1;
       ?column?       
 ---------------------
- 2024-06-19 20:33:04
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4 5' day_microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day_microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-19 20:33:04.5
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4 5' day to microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 day to microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-19 20:33:04.5
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' hour_minute from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour_minute from t1;
       ?column?       
 ---------------------
- 2024-06-18 19:32:00
+ 2024-06-18 18:32:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' hour to minute from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour to minute from t1;
       ?column?       
 ---------------------
- 2024-06-18 19:32:00
+ 2024-06-18 18:32:00
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' hour_second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour_second from t1;
       ?column?       
 ---------------------
- 2024-06-18 19:32:03
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' hour to second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour to second from t1;
       ?column?       
 ---------------------
- 2024-06-18 19:32:03
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4' hour_microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour_microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 19:32:03.4
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3 4' hour to microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 hour to microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 19:32:03.4
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' minute_second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 minute_second from t1;
       ?column?       
 ---------------------
- 2024-06-18 18:31:02
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' minute to second from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 minute to second from t1;
       ?column?       
 ---------------------
- 2024-06-18 18:31:02
+ 2024-06-18 18:30:02
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' minute_microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 minute_microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 18:31:02.3
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2 3' minute to microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 minute to microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 18:31:02.3
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' second_microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 second_microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 18:30:01.2
+ 2024-06-18 18:30:00.2
 (1 row)
 
-select '2024-06-18 18:30:00' + interval '1 2' second to microsecond from t1;
+select '2024-06-18 18:30:00' + interval 1 + c1 second to microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-18 18:30:01.2
+ 2024-06-18 18:30:00.2
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 year from t1;
@@ -838,138 +841,6877 @@ select '2024-06-18 18:30:00' - interval 1 + c1 microsecond from t1;
  2024-06-18 18:29:59.999998
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' year_month from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 year_month from t1;
       ?column?       
 ---------------------
- 2023-04-18 18:30:00
+ 2024-04-18 18:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' year to month from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 year to month from t1;
       ?column?       
 ---------------------
- 2023-04-18 18:30:00
+ 2024-04-18 18:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' day_hour from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day_hour from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:30:00
+ 2024-06-18 16:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' day to hour from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day to hour from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:30:00
+ 2024-06-18 16:30:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' day_minute from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day_minute from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:27:00
+ 2024-06-18 18:28:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' day to minute from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day to minute from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:27:00
+ 2024-06-18 18:28:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4' day_second from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day_second from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:26:56
+ 2024-06-18 18:29:58
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4' day to second from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day to second from t1;
       ?column?       
 ---------------------
- 2024-06-17 16:26:56
+ 2024-06-18 18:29:58
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4 5' day_microsecond from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day_microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-17 16:26:55.5
+ 2024-06-18 18:29:59.8
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4 5' day to microsecond from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 day to microsecond from t1;
        ?column?        
 -----------------------
- 2024-06-17 16:26:55.5
+ 2024-06-18 18:29:59.8
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' hour_minute from t1;
+select '2024-06-18 18:30:00' - interval 1 + c1 hour_minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour to minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 minute_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 minute to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 minute_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 minute to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 second_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 second to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.8
+(1 row)
+
+-- 全类型兼容
+create table all_types_table (
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `date` date,
+    `time` time,
+    `time4` time(4),
+    `datetime` datetime,
+    `datetime4` datetime(4) default '2023-12-30 12:00:12',
+    `timestamp` timestamp,
+    `timestamp4` timestamp(4) default '2023-12-30 12:00:12',
+    `year` year,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `text` text,
+    `enum_t` enum('a', 'b', 'c'),
+    `set_t` set('a', 'b', 'c'),
+    `json` json,
+    `null` integer
+);
+NOTICE:  CREATE TABLE will create implicit set "all_types_table_set_t_set" for column "all_types_table.set_t"
+INSERT INTO all_types_table
+VALUES(
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1.0,
+        1.0,
+        3.14259,
+        1,
+        10101100,
+        1,
+        '2024-01-11',
+        '11:47:58',
+        '11:47:58.7896',
+        '2024-01-11 11:49:25',
+        '2024-01-11 11:49:25.1234',
+        '2024-01-11 11:49:25',
+        '2024-01-11 11:49:25.1234',
+        '2024',
+        '62.345*67-89',
+        '62.345*67-89',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        '67890 - 12345 = 55545',
+        'b',
+        'a,b',
+        json_object('a', 2, 'b', 3),
+        NULL
+    );
+select '2024-06-18 18:30:00' - interval `int1` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int1` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint1` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int2` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint2` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int4` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint4` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `int8` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `uint8` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float4` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` day to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` hour to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` minute_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` minute to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` second_microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `float8` second to microsecond from all_types_table;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:59.9
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` year from all_types_table;
+      ?column?       
+---------------------
+ 2021-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2023-09-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-28 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-15 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 15:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:27:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` second from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999997
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` year_month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `numeric` year to month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `numeric` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2008-03-10 12:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2008-03-10 12:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-11 15:00:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-11 15:00:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` day to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-11 15:00:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-11 15:00:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` hour to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 02:50:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` minute_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` minute to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` second_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `numeric` second to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:56.85741
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit1` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `bit64` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `bit64` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `bit64` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `bit64` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `bit64` hour from all_types_table;
+      ?column?       
+---------------------
+ 0872-02-19 14:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` minute from all_types_table;
+      ?column?       
+---------------------
+ 2005-04-05 02:50:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-02-22 20:38:20
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` microsecond from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-18 18:29:49.8989
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `bit64` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` year from all_types_table;
+      ?column?       
+---------------------
+ 2023-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 17:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:59
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999999
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `boolean` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `date` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `date` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `date` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `date` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `date` hour from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` minute from all_types_table;
+      ?column?       
+---------------------
+ 1985-12-25 03:19:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` second from all_types_table;
+      ?column?       
+---------------------
+ 2023-10-28 12:14:49
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:39.759889
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2018-12-03 17:19:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2018-12-03 17:19:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-26 10:28:49
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-26 10:28:49
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` day to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-26 10:28:49
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-26 10:28:49
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` hour to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` minute_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` minute to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-17 08:45:58.89
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `date` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time` week from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day from all_types_table;
+      ?column?       
+---------------------
+ 1710-04-08 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour from all_types_table;
+      ?column?       
+---------------------
+ 2011-05-17 04:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-31 01:52:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-17 10:37:22
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.885242
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-05 18:32:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-05 18:32:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 06:42:02
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 06:42:02
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` day to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 06:42:02
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 06:42:02
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` hour to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` minute_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` minute to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-18 18:18:12.42
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time4` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time4` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `time4` week from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day from all_types_table;
+      ?column?       
+---------------------
+ 1710-04-07 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour from all_types_table;
+      ?column?       
+---------------------
+ 2011-05-17 03:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-31 01:51:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` second from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-17 10:37:21.2104
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.885241
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-05 16:20:24
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-05 16:20:24
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day_microsecond from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-18 06:42:01.2104
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` day to microsecond from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-18 06:42:01.2104
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour_microsecond from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-18 06:42:01.2104
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` hour to microsecond from all_types_table;
+         ?column?         
+--------------------------
+ 2024-06-18 06:42:01.2104
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `time4` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` hour from all_types_table;
+         ?column?         
+--------------------------
+ 9600-07-11 13:42:08.8832
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` minute from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` second from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2023-10-28 12:14:48.885075
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` day to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` hour to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` hour from all_types_table;
+         ?column?         
+--------------------------
+ 9600-07-11 13:42:08.8832
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` minute from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` second from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `datetime4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2023-10-28 12:14:48.885075
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` day to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` hour to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `datetime4` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` hour from all_types_table;
+         ?column?         
+--------------------------
+ 9600-07-11 13:42:08.8832
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` minute from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` second from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2023-10-28 12:14:48.885075
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` day to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` hour to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` year from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` quarter from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` month from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` week from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` day from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` hour from all_types_table;
+         ?column?         
+--------------------------
+ 9600-07-11 13:42:08.8832
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` minute from all_types_table;
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` second from all_types_table;
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `timestamp4` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2023-10-28 12:14:48.885075
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` day to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` hour to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `timestamp4` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `year` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` year from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 1962-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` quarter from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 2008-12-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` month from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 2019-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` week from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 2023-04-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 2024-04-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+      ?column?       
+---------------------
+ 2024-06-16 04:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` minute from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
       ?column?       
 ---------------------
  2024-06-18 17:28:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' hour to minute from t1;
+select '2024-06-18 18:30:00' - interval `char` second from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+        ?column?         
+-------------------------
+ 2024-06-18 18:28:57.655
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` microsecond from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999938
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-04-03 08:21:31
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-04-03 08:21:31
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` day to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` hour to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `char` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` year from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 1962-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` quarter from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 2008-12-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` month from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 2019-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` week from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 2023-04-11 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 2024-04-17 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+      ?column?       
+---------------------
+ 2024-06-16 04:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` minute from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2024-06-18 17:28:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' hour_second from t1;
+select '2024-06-18 18:30:00' - interval `varchar` second from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+        ?column?         
+-------------------------
+ 2024-06-18 18:28:57.655
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` microsecond from all_types_table;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999938
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` day_second from all_types_table;
       ?column?       
 ---------------------
- 2024-06-18 17:27:57
+ 2024-04-03 08:21:31
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' hour to second from t1;
+select '2024-06-18 18:30:00' - interval `varchar` day to second from all_types_table;
       ?column?       
 ---------------------
- 2024-06-18 17:27:57
+ 2024-04-03 08:21:31
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4' hour_microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 17:27:56.6
+select '2024-06-18 18:30:00' - interval `varchar` day_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3 4' hour to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 17:27:56.6
+select '2024-06-18 18:30:00' - interval `varchar` day to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' minute_second from t1;
+select '2024-06-18 18:30:00' - interval `varchar` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour_microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` hour to microsecond from all_types_table;
+        ?column?        
+------------------------
+ 2024-06-15 22:43:52.11
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varchar` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` day_minute from all_types_table;
       ?column?       
 ---------------------
- 2024-06-18 18:28:58
+ 1837-01-27 19:45:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' minute to second from t1;
+select '2024-06-18 18:30:00' - interval `binary` day to minute from all_types_table;
       ?column?       
 ---------------------
- 2024-06-18 18:28:58
+ 1837-01-27 19:45:00
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' minute_microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:28:57.7
+select '2024-06-18 18:30:00' - interval `binary` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2 3' minute to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:28:57.7
+select '2024-06-18 18:30:00' - interval `binary` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' second_microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:58.8
+select '2024-06-18 18:30:00' - interval `binary` day_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
 (1 row)
 
-select '2024-06-18 18:30:00' - interval '1 2' second to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:58.8
+select '2024-06-18 18:30:00' - interval `binary` day to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
 (1 row)
 
+select '2024-06-18 18:30:00' - interval `binary` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` hour to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` minute_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` minute to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `binary` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 1837-01-27 19:45:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 1837-01-27 19:45:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` day to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` hour to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` minute_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` minute to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `varbinary` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `tinyblob` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `blob` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `mediumblob` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `longblob` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` year from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `text` quarter from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+ERROR:  timestamp out of range
+select '2024-06-18 18:30:00' - interval `text` month from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+WARNING:  date/time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` week from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+      ?column?       
+---------------------
+ 0723-05-01 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+      ?column?       
+---------------------
+ 1838-08-03 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+      ?column?       
+---------------------
+ 2016-09-20 00:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` minute from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+      ?column?       
+---------------------
+ 2024-05-02 15:00:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` second from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+      ?column?       
+---------------------
+ 2024-06-17 23:38:30
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` microsecond from all_types_table;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+         ?column?          
+---------------------------
+ 2024-06-18 18:29:59.93211
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 1837-01-27 19:45:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 1837-01-27 19:45:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` day to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2016-09-10 19:19:15
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` hour to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` minute_microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` minute to microsecond from all_types_table;
+         ?column?          
+---------------------------
+ 2024-05-02 11:34:14.44455
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `text` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` year from all_types_table;
+      ?column?       
+---------------------
+ 2022-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2023-12-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-04 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-16 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 16:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999998
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `enum_t` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` year from all_types_table;
+      ?column?       
+---------------------
+ 2021-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` quarter from all_types_table;
+      ?column?       
+---------------------
+ 2023-09-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` month from all_types_table;
+      ?column?       
+---------------------
+ 2024-03-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` week from all_types_table;
+      ?column?       
+---------------------
+ 2024-05-28 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-15 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 15:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:27:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:57
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` microsecond from all_types_table;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999997
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` year_month from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` year to month from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day_hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day to hour from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day_microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` day to microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour_minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour to minute from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour_microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` hour to microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` minute_second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` minute to second from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` minute_microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` minute to microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` second_microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `set_t` second to microsecond from all_types_table;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` year from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` quarter from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` week from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` year_month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` year to month from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day_hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day to hour from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` day to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour_minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour to minute from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` hour to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` minute_second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` minute to second from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` minute_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` minute to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` second_microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `json` second to microsecond from all_types_table;
+WARNING:  invalid interval parameter
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` year from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` quarter from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` week from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` year_month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` year to month from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day_hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day to hour from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` day to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour_minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour to minute from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` hour to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` minute_second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` minute to second from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` minute_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` minute to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '2024-06-18 18:30:00' - interval `NULL` second to microsecond from all_types_table;
+ ?column? 
+----------
+ 
+(1 row)
+
+drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 NOTICE:  drop cascades to table t1
 reset current_schema;

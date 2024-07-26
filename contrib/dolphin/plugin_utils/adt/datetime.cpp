@@ -3400,6 +3400,9 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                         case INTERVAL_MASK(WEEK):
                             type = DTK_WEEK;
                             break;
+                        case INTERVAL_MASK(QUARTER):
+                            type = DTK_QUARTER;
+                            break;
 #endif
                         default:
                             type = DB_IS_CMPT(PG_FORMAT) ? DTK_SECOND : DTK_DAY;
@@ -3564,7 +3567,14 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                             tm->tm_mon += (int)(fval * MONTHS_PER_YEAR * 1000);
                         tmask = DTK_M(MILLENNIUM);
                         break;
-
+#ifdef DOLPHIN
+                    case DTK_QUARTER:
+                        tm->tm_mon += val * MONTHS_PER_QUARTER;
+                        if (fval != 0)
+                            tm->tm_mday += (int)(fval * DAYS_PER_MONTH * MONTHS_PER_QUARTER);
+                        tmask = DTK_M(QUARTER);
+                        break;
+#endif
                     default:
                         return DTERR_BAD_FORMAT;
                 }
@@ -5242,7 +5252,7 @@ Interval *char_to_interval(char *str, int32 typmod, bool can_ignore) {
 
     if (typmod >= 0)
 #ifdef DOLPHIN
-        range = (typmod == INTERVAL_MASK(WEEK)) ? typmod : INTERVAL_RANGE(typmod);
+        range = (typmod == INTERVAL_MASK(WEEK) || typmod == INTERVAL_MASK(QUARTER)) ? typmod : INTERVAL_RANGE(typmod);
 #else
         range = INTERVAL_RANGE(typmod);
 #endif

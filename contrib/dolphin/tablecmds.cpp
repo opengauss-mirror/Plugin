@@ -33438,7 +33438,7 @@ void ShrinkCfsChunkRestore(Oid relationId, LOCKMODE lockmode, bool nowait)
     relation_close(relation, lockmode);
 }
 
-void ShrinkRealtionChunk(ShrinkStmt* shrink)
+void ShrinkRelationChunk(ShrinkStmt* shrink)
 {
     ListCell* cell = NULL;
     foreach (cell, shrink->relations) {
