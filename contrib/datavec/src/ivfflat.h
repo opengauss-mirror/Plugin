@@ -12,6 +12,7 @@
 #include "sampling.h"
 #include "utils/tuplesort.h"
 #include "vector.h"
+#include "postmaster/bgworker.h"
 
 #if PG_VERSION_NUM >= 150000
 #include "common/pg_prng.h"
@@ -117,7 +118,6 @@ typedef struct IvfflatShared
 	/* Immutable state */
 	Oid			heaprelid;
 	Oid			indexrelid;
-	bool		isconcurrent;
 	int			scantuplesortstates;
 
 	/* Mutex for mutable state */
@@ -128,13 +128,24 @@ typedef struct IvfflatShared
 	double		reltuples;
 	double		indtuples;
 
+	Sharedsort  *sharedsort;
+	Vector      *ivfcenters;
+	int         workmem;
+
 #ifdef IVFFLAT_KMEANS_DEBUG
 	double		inertia;
 #endif
+    ParallelHeapScanDescData heapdesc; // must come last
 }			IvfflatShared;
 
 #define ParallelTableScanFromIvfflatShared(shared) \
 	(ParallelTableScanDesc) ((char *) (shared) + BUFFERALIGN(sizeof(IvfflatShared)))
+
+typedef struct IvfflatLeader
+{
+	int			nparticipanttuplesorts;
+	IvfflatShared		*ivfshared;
+}			IvfflatLeader;
 
 typedef struct IvfflatTypeInfo
 {
@@ -190,6 +201,9 @@ typedef struct IvfflatBuildState
 
 	/* Memory */
 	MemoryContext tmpCtx;
+
+	/* Parallel builds */
+	IvfflatLeader *ivfleader;
 
 }			IvfflatBuildState;
 
@@ -285,6 +299,7 @@ void		IvfflatAppendPage(Relation index, Buffer *buf, Page *page, GenericXLogStat
 Buffer		IvfflatNewBuffer(Relation index, ForkNumber forkNum);
 void		IvfflatInitPage(Buffer buf, Page page);
 void		IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state);
+PGDLLEXPORT void IvfflatParallelBuildMain(const BgWorkerContext *bwc);
 void		IvfflatInit(void);
 const		IvfflatTypeInfo *IvfflatGetTypeInfo(Relation index);
 
