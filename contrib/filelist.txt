@@ -192,7 +192,6 @@ plpgsql.h
 plugin_config.h
 plugin_postgres.cpp
 plugin_postgres.h
-plugin_utility.cpp
 prep.h
 prepare.cpp
 prepunion.cpp
@@ -240,6 +239,7 @@ typecmds.cpp
 unsigned_int.cpp
 unsigned_int.h
 user.cpp
+utility.cpp
 uuid.cpp
 vacuumfuncs.cpp
 varbit.cpp
