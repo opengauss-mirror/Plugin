@@ -2533,6 +2533,26 @@ select pg_typeof(cast(now(3) as timestamp(3)) + 10);
  number
 (1 row)
 
+declare
+a timestamp;
+b timestamp without time zone;
+c time with time zone;
+d time without time zone;
+begin
+a := '4714-11-24 00:00:00+08';
+b := '4714-11-24 00:00:00';
+c := '11:11:11+08';
+d := '11:11:11';
+raise notice 'RESULT COL :%t', a;
+raise notice 'RESULT COL :%t', b;
+raise notice 'RESULT COL :%t', c;
+raise notice 'RESULT COL :%t', d;
+end;
+/
+NOTICE:  RESULT COL :4714-11-23 08:00:00-08t
+NOTICE:  RESULT COL :4714-11-24 00:00:00t
+NOTICE:  RESULT COL :11:11:11+08t
+NOTICE:  RESULT COL :11:11:11t
 drop table test_time;
 drop table t_time;
 drop schema b_time_funcs3 cascade;

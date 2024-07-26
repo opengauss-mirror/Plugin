@@ -1,0 +1,520 @@
+create schema test_straight_join;
+set current_schema to 'test_straight_join';
+create table t1 (c1 int);
+create table t2 (c2 int);
+insert into t1 values(1),(2),(2),(3),(4),(5);
+insert into t2 values(2),(4),(6);
+-- straight_join with on
+explain select c1, c2 from t1 inner join t2 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t1.c1 = t2.c2)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+explain select c1, c2 from t1 straight_join t2 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t1.c1 = t2.c2)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+explain select straight_join c1, c2 from t1 join t2 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t1.c1 = t2.c2)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+explain select c1, c2 from t2 straight_join t1 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t2.c2 = t1.c1)
+   ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+explain select straight_join c1, c2 from t2 join t1 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t2.c2 = t1.c1)
+   ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+select c1, c2 from t1 inner join t2 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+select c1, c2 from t1 straight_join t2 on c1 = c2; 
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+select straight_join c1, c2 from t1 join t2 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+select c1, c2 from t2 straight_join t1 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+select straight_join c1, c2 from t2 join t1 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+-- straight_join without on
+explain select c1, c2 from t1 inner join t2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(4 rows)
+
+explain select c1, c2 from t1 straight_join t2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(4 rows)
+
+explain select straight_join c1, c2 from t1 join t2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(4 rows)
+
+explain select c1, c2 from t2 straight_join t1;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+   ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(4 rows)
+
+explain select straight_join c1, c2 from t2 join t1;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+   ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(4 rows)
+
+select c1, c2 from t1 inner join t2;
+ c1 | c2 
+----+----
+  1 |  2
+  1 |  4
+  1 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  3 |  2
+  3 |  4
+  3 |  6
+  4 |  2
+  4 |  4
+  4 |  6
+  5 |  2
+  5 |  4
+  5 |  6
+(18 rows)
+
+select c1, c2 from t1 straight_join t2; 
+ c1 | c2 
+----+----
+  1 |  2
+  1 |  4
+  1 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  3 |  2
+  3 |  4
+  3 |  6
+  4 |  2
+  4 |  4
+  4 |  6
+  5 |  2
+  5 |  4
+  5 |  6
+(18 rows)
+
+select straight_join c1, c2 from t1 join t2;
+ c1 | c2 
+----+----
+  1 |  2
+  1 |  4
+  1 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  2 |  2
+  2 |  4
+  2 |  6
+  3 |  2
+  3 |  4
+  3 |  6
+  4 |  2
+  4 |  4
+  4 |  6
+  5 |  2
+  5 |  4
+  5 |  6
+(18 rows)
+
+select c1, c2 from t2 straight_join t1;
+ c1 | c2 
+----+----
+  1 |  2
+  2 |  2
+  2 |  2
+  3 |  2
+  4 |  2
+  5 |  2
+  1 |  4
+  2 |  4
+  2 |  4
+  3 |  4
+  4 |  4
+  5 |  4
+  1 |  6
+  2 |  6
+  2 |  6
+  3 |  6
+  4 |  6
+  5 |  6
+(18 rows)
+
+select straight_join c1, c2 from t2 join t1;
+ c1 | c2 
+----+----
+  1 |  2
+  2 |  2
+  2 |  2
+  3 |  2
+  4 |  2
+  5 |  2
+  1 |  4
+  2 |  4
+  2 |  4
+  3 |  4
+  4 |  4
+  5 |  4
+  1 |  6
+  2 |  6
+  2 |  6
+  3 |  6
+  4 |  6
+  5 |  6
+(18 rows)
+
+-- straight_join with distinct
+explain select distinct c1, c2 from t1 inner join t2;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+explain select distinct c1, c2 from t1 straight_join t2;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+explain select distinct straight_join c1, c2 from t1 join t2;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+explain select distinct c1, c2 from t2 straight_join t1;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+explain select distinct straight_join c1, c2 from t2 join t1;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+select distinct c1, c2 from t1 inner join t2;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+select distinct c1, c2 from t1 straight_join t2; 
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+select distinct straight_join c1, c2 from t1 join t2;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+select distinct c1, c2 from t2 straight_join t1;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+select distinct straight_join c1, c2 from t2 join t1;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+-- straight_join with distinct behind
+explain select straight_join distinct c1, c2 from t1 join t2;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+explain select straight_join distinct c1, c2 from t2 join t1;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ HashAggregate  (cost=101042.12..101442.12 rows=40000 width=8)
+   Group By Key: t1.c1, t2.c2
+   ->  Nested Loop  (cost=0.00..72194.10 rows=5769604 width=8)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Materialize  (cost=0.00..46.03 rows=2402 width=4)
+               ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(6 rows)
+
+select straight_join distinct c1, c2 from t1 join t2;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+select straight_join distinct c1, c2 from t2 join t1;
+ c1 | c2 
+----+----
+  4 |  6
+  2 |  6
+  5 |  6
+  1 |  6
+  4 |  2
+  1 |  4
+  1 |  2
+  5 |  2
+  5 |  4
+  4 |  4
+  3 |  6
+  3 |  2
+  2 |  4
+  3 |  4
+  2 |  2
+(15 rows)
+
+-- straight_join with leading hint
+explain select /*+ leading((t2 t1)) */ * from t1 join t2 on c1 = c2;
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t2.c2 = t1.c1)
+   ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+explain select /*+ leading((t2 t1)) */ * from t1 straight_join t2 on c1 = c2;
+WARNING:  unused hint: Leading((t2 t1))
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=64.05..428.58 rows=28848 width=8)
+   Hash Cond: (t1.c1 = t2.c2)
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+   ->  Hash  (cost=34.02..34.02 rows=2402 width=4)
+         ->  Seq Scan on t2  (cost=0.00..34.02 rows=2402 width=4)
+(5 rows)
+
+select /*+ leading((t2 t1)) */ * from t1 join t2 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+select /*+ leading((t2 t1)) */ * from t1 straight_join t2 on c1 = c2;
+ c1 | c2 
+----+----
+  2 |  2
+  2 |  2
+  4 |  4
+(3 rows)
+
+drop schema test_straight_join cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+reset current_schema;

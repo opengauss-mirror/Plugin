@@ -23,16 +23,18 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/supportnodes.h"
 #include "utils/array.h"
-#include "utils/varbit.h"
 #include "access/tuptoaster.h"
 #include "plugin_postgres.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_utils/int8.h"
 #include "plugin_utils/year.h"
+#include "plugin_utils/varbit.h"
 #define BYTE_SIZE 8
 #define SMALL_SIZE 16
 #define M_BIT_LEN 64
+#else
+#include "utils/varbit.h"
 #endif
 
 
@@ -320,44 +322,63 @@ Datum bit_in(PG_FUNCTION_ARGS)
     PG_RETURN_VARBIT_P(bit_in_internal(input_string, atttypmod, can_ignore));
 }
 
+
+bool is_req_from_gsql_or_jdbc()
+{
+    return is_req_from_jdbc() || is_req_from_gsql();
+}
+
+Datum bit_out_encode_as_str(VarBit *bits)
+{
+    char* rp = NULL;
+    rp = bit_to_str(bits, true);
+    PG_RETURN_CSTRING(rp);
+}
+
+Datum bit_out_encode_as_int64(VarBit *bits)
+{
+    Datum arg_int_datum = DirectFunctionCall1(bittoint8, VarBitPGetDatum(bits));
+    return DirectFunctionCall1(int8out, arg_int_datum);
+}
+
+Datum bit_out_as_hex(VarBit *bits)
+{
+    int len = 0;
+    char* result = NULL;
+    char* rp = NULL;
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, VarBitPGetDatum(bits)));
+    len = VARBITBYTES(bits) * 2;
+    result = (char*)palloc(len + 3);
+    result[len + 2] = '\0';
+    rp = &result[len + 1];
+    do {
+        *rp-- = HEX_CHARS[arg_int & 15];
+        len--;
+        arg_int >>= 4;
+    } while (len > 0);
+    *rp-- = 'x';
+    *rp = '\\';
+    PG_RETURN_CSTRING(rp);
+}
+
+
 Datum bit_out(PG_FUNCTION_ARGS)
 {
-#if 1
-    /* same as varbit output */
-    return varbit_out(fcinfo);
-#else
-
-    /*
-     * This is how one would print a hex string, in case someone wants to
-     * write a formatting function.
-     */
-    VarBit* s = PG_GETARG_VARBIT_P(0);
-    char *result, *r;
-    bits8* sp = NULL;
-    int i, len, bitlen;
-
-    bitlen = VARBITLEN(s);
-    len = (bitlen + 3) / 4;
-    result = (char*)palloc(len + 2);
-    sp = VARBITS(s);
-    r = result;
-    *r++ = 'X';
-    /* we cheat by knowing that we store full bytes zero padded */
-    for (i = 0; i < len; i += 2, sp++) {
-        *r++ = HEXDIG((*sp) >> 4);
-        *r++ = HEXDIG((*sp) & 0xF);
+#ifdef DOLPHIN
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    if (likely(is_req_from_gsql_or_jdbc())) {
+        if (GetSessionContext()->bit_output == BIT_OUTPUT_DEC) {
+            if (is_req_from_gsql()) {
+                return bit_out_encode_as_str(bits);
+            } else {
+                return bit_out_encode_as_int64(bits);
+            }
+        } else if (GetSessionContext()->bit_output == BIT_OUTPUT_HEX) {
+            return bit_out_as_hex(bits);
+        }
     }
-
-    /*
-     * Go back one step if we printed a hex number that was not part of the
-     * bitstring anymore
-     */
-    if (i > len)
-        r--;
-    *r = '\0';
-
-    PG_RETURN_CSTRING(result);
 #endif
+    return varbit_out(fcinfo);
 }
 
 /*
@@ -2656,7 +2677,7 @@ static void cp_and_pad_left_zero(char *origin, int originLen, char *target, int 
     }
 }
 
-static void binary_str_to_char(char *str, char *result, int len)
+static void binary_str_to_char(char *str, char *result, int len, bool is_escape_zero)
 {
     char *rp = result, *sp = str;
     int zero = '0', s = 0, i, k;
@@ -2667,7 +2688,14 @@ static void binary_str_to_char(char *str, char *result, int len)
             int n = (int)(*sp++) - zero;
             s = n == 0 ? s : s + (n << (k - 1));
         }
-        *rp++ = (char) s;
+        if (is_escape_zero && s == 0) {
+            *rp++ = '\\';
+            *rp++ = '0';
+            *rp++ = '0';
+            *rp++ = '0';
+        } else {
+            *rp++ = (char) s;
+        }
     }
 }
 
@@ -2676,14 +2704,14 @@ static void binary_str_to_char(char *str, char *result, int len)
  * - if the length of bit value is not a multiple of 8, pad left 0.
  * - do not ignore '\0'
  */
-char* bit_to_str(VarBit *bits)
+char* bit_to_str(VarBit *bits, bool is_escape_zero)
 {
     char *result = NULL, *bitStr = NULL, *bitChars = NULL, *r = NULL;
     bits8* sp = NULL;
     bits8 x;
     int i, k, len = VARBITLEN(bits), byteLen = VARBITBYTES(bits);
+    int zero_cnt = 0;
 
-    result = (char*)palloc0(byteLen + 1);
     bitStr = (char*)palloc0(byteLen * BITS_PER_BYTE + 1);
     bitChars = (char*)palloc0(len + 1);
 
@@ -2703,9 +2731,21 @@ char* bit_to_str(VarBit *bits)
             x <<= 1;
         }
     }
-
     cp_and_pad_left_zero(bitChars, len, bitStr, byteLen * BITS_PER_BYTE);
-    binary_str_to_char(bitStr, result, byteLen);
+
+    if (is_escape_zero) {
+        for (i = 0; i < byteLen; i++) {
+            r = bitStr + i * BITS_PER_BYTE;
+            if (memcmp(r, ZERO_BITS_PER_BYTE, ZERO_BITS_PER_BYTE_LENGTH) == 0) {
+                zero_cnt++;
+            }
+        }
+        result = (char*)palloc0(byteLen + ESCAPE_ZERO_SZIE * zero_cnt + 1);
+    } else {
+        result = (char*)palloc0(byteLen + 1);
+    }
+
+    binary_str_to_char(bitStr, result, byteLen, is_escape_zero);
 
     pfree(bitChars);
     pfree(bitStr);

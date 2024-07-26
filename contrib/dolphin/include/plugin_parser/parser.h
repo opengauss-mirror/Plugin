@@ -85,6 +85,7 @@ SelectStmt* makeFlushBinaryLogsQuery(void);
 SelectStmt* makeShowOpenTablesQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeShowSlaveStatusQuery(char* channel);
 SelectStmt* makeShowEnginesQuery(void);
+extern int16 semtc_get_ignore_keyword_token(const char *item);
 #endif
 
 #endif /* PARSER_H */

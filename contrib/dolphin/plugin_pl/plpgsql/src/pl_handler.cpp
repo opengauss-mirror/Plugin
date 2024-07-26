@@ -879,6 +879,7 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
     Oid firstLevelPkgOid = InvalidOid;
     bool save_curr_status = GetCurrCompilePgObjStatus();
     bool save_is_exec_autonomous = u_sess->plsql_cxt.is_exec_autonomous;
+    bool save_is_pipelined = u_sess->plsql_cxt.is_pipelined;
     PG_TRY();
     {
         PGSTAT_START_PLSQL_TIME_RECORD();
@@ -1114,6 +1115,7 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
         u_sess->plsql_cxt.need_create_depend = save_need_create_depend;
         SetCurrCompilePgObjStatus(save_curr_status);
         u_sess->plsql_cxt.is_exec_autonomous = save_is_exec_autonomous;
+        u_sess->plsql_cxt.is_pipelined = save_is_pipelined;
         /* clean stp save pointer if the outermost function is end. */
         if (u_sess->SPI_cxt._connected == 0) {
             t_thrd.utils_cxt.STPSavedResourceOwner = NULL;
@@ -1141,6 +1143,8 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
     }
     PG_END_TRY();
     u_sess->plsql_cxt.need_create_depend = save_need_create_depend;
+    u_sess->plsql_cxt.is_exec_autonomous = save_is_exec_autonomous;
+    u_sess->plsql_cxt.is_pipelined = save_is_pipelined;
     /* clean stp save pointer if the outermost function is end. */
     if (u_sess->SPI_cxt._connected == 0) {
         t_thrd.utils_cxt.STPSavedResourceOwner = NULL;
@@ -1265,6 +1269,7 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
 
     /* Compile the anonymous code block */
     PLpgSQL_compile_context* save_compile_context = u_sess->plsql_cxt.curr_compile_context;
+    bool save_is_exec_autonomous = u_sess->plsql_cxt.is_exec_autonomous;
     int save_compile_status = getCompileStatus();
     PG_TRY();
     {
@@ -1323,8 +1328,10 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
             retval = plpgsql_exec_autonm_function(func, &fake_fcinfo, codeblock->source_text);
         } else {
             Oid old_value = saveCallFromPkgOid(func->pkg_oid);
+            u_sess->plsql_cxt.need_init = true;
             retval = plpgsql_exec_function(func, &fake_fcinfo, false);
             restoreCallFromPkgOid(old_value);
+            u_sess->plsql_cxt.need_init = true;
         }
     }
     PG_CATCH();
@@ -1361,6 +1368,7 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
         /* reset nest plpgsql compile */
         u_sess->plsql_cxt.curr_compile_context = save_compile_context;
         u_sess->plsql_cxt.compile_status = save_compile_status;
+        u_sess->plsql_cxt.is_exec_autonomous = save_is_exec_autonomous;
         clearCompileContextList(save_compile_list_length);
         /* AutonomousSession Disconnecting and releasing resources */
         DestoryAutonomousSession(true);
@@ -1374,6 +1382,7 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
         PG_RE_THROW();
     }
     PG_END_TRY();
+    u_sess->plsql_cxt.is_exec_autonomous = save_is_exec_autonomous;
 #ifndef ENABLE_MULTIPLE_NODES
     /* debug finished, close debug resource */
     if (func->debug) {
@@ -1872,7 +1881,7 @@ void PackageInit(PLpgSQL_package* pkg, bool isCreate, bool isSpec, bool isNeedCo
     List* temp_tableof_index = NULL;
     bool save_is_package_instantiation = u_sess->plsql_cxt.is_package_instantiation;
     bool needExecDoStmt = true;
-        if (enable_plpgsql_undefined()) {
+    if (enable_plpgsql_undefined()) {
         needExecDoStmt = GetCurrCompilePgObjStatus();
     }
     ResourceOwnerData* oldowner = NULL;
@@ -1886,7 +1895,7 @@ void PackageInit(PLpgSQL_package* pkg, bool isCreate, bool isSpec, bool isNeedCo
     PG_TRY();
     {
         u_sess->plsql_cxt.is_package_instantiation = true;
-        if (needExecDoStmt) {
+        if (needExecDoStmt && u_sess->plsql_cxt.need_init) {
             init_do_stmt(pkg, isCreate, cell, oldCompileStatus, curr_compile, temp_tableof_index, oldcxt);
         }
         if (isCreate && enable_plpgsql_gsdependency_guc() && !IsInitdb) {

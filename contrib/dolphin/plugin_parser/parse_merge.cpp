@@ -759,6 +759,9 @@ static JoinExpr* buildJoinExpr(MergeStmt* stmt, AclMode targetPerms)
     joinexpr->quals = stmt->join_condition;
     joinexpr->larg = (Node*)stmt->relation;
     joinexpr->rarg = (Node*)stmt->source_relation;
+#ifdef DOLPHIN
+    joinexpr->is_straight_join = false;
+#endif
 
     /*
      * Simplify the MERGE query as much as possible

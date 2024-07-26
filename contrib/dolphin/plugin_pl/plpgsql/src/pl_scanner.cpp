@@ -496,7 +496,7 @@ void plpgsql_append_object_typename(StringInfo buf, PLpgSQL_type *var_type)
             char* precision = (char*)palloc(INT32_STRING_SIZE);
             char* scale = (char*)palloc(INT32_STRING_SIZE);
             pg_ltoa((int32)(((uint32)(typmod) >> 16) & 0xffff), precision);
-            pg_ltoa((int32)(((uint32)typmod) & 0xffff), scale);
+            pg_ltoa((int32)((int16)(typmod & 0xffff)), scale);
             appendBinaryStringInfo(buf, precision, strlen(precision));
             appendBinaryStringInfo(buf, dot, 1);
             appendBinaryStringInfo(buf, scale, strlen(scale));
@@ -1183,7 +1183,7 @@ bool plpgsql_is_token_keyword(int token)
     }
 }
 
-static PLpgSQL_package* GetCompileListPkg(Oid pkgOid)
+PLpgSQL_package* GetCompileListPkg(Oid pkgOid)
 {
     List* compPkgList = u_sess->plsql_cxt.compile_context_list;
     ListCell *item = NULL;

@@ -194,4 +194,31 @@ insert into test_time select time(20031231245959::numeric);
 select * from test_time;
 drop table if exists test_time;
 
+set dolphin.cmpt_version = '8.0';
+select convert('中文', time);
+select convert('123中文', time);
+select convert('中文123', time);
+
+reset dolphin.sql_mode;
+create table test_time(time time);
+insert into test_time select convert('中文', time);
+insert into test_time select convert('123中文', time);
+insert into test_time select convert('中文123', time);
+insert ignore into test_time select convert('中文', time);
+insert ignore into test_time select convert('123中文', time);
+insert ignore into test_time select convert('中文123', time);
+select * from test_time;
+drop table if exists test_time;
+
+set dolphin.sql_mode = '';
+create table test_time(time time);
+insert into test_time select convert('中文', time);
+insert into test_time select convert('123中文', time);
+insert into test_time select convert('中文123', time);
+insert ignore into test_time select convert('中文', time);
+insert ignore into test_time select convert('123中文', time);
+insert ignore into test_time select convert('中文123', time);
+select * from test_time;
+drop table if exists test_time;
+
 drop schema time_function_test cascade ;

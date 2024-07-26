@@ -1,0 +1,975 @@
+create schema test_interval_expr;
+set current_schema to 'test_interval_expr';
+-- 类型
+select 1::interval;
+ interval 
+----------
+ @ 1 day
+(1 row)
+
+select 1::interval year;
+ interval 
+----------
+ @ 1 year
+(1 row)
+
+select 1::interval quarter;
+ERROR:  invalid INTERVAL type modifier
+LINE 1: select 1::interval quarter;
+                  ^
+CONTEXT:  referenced column: interval
+select 1::interval month;
+ interval 
+----------
+ @ 1 mon
+(1 row)
+
+select 1::interval week;
+ interval 
+----------
+ @ 7 days
+(1 row)
+
+select 1::interval day;
+ interval 
+----------
+ @ 1 day
+(1 row)
+
+select 1::interval hour;
+ interval 
+----------
+ @ 1 hour
+(1 row)
+
+select 1::interval minute;
+ interval 
+----------
+ @ 1 min
+(1 row)
+
+select 1::interval second;
+ interval 
+----------
+ @ 1 sec
+(1 row)
+
+select 1::interval microsecond;
+    interval     
+-----------------
+ @ 0.000001 secs
+(1 row)
+
+select '1 2'::interval year_month;
+    interval     
+-----------------
+ @ 1 year 2 mons
+(1 row)
+
+select '1 2'::intervalyear to month;
+ERROR:  syntax error at or near "to"
+LINE 1: select '1 2'::intervalyear to month;
+                                   ^
+select '1 2'::interval day_hour;
+    interval     
+-----------------
+ @ 1 day 2 hours
+(1 row)
+
+select '1 2'::interval day to hour;
+    interval     
+-----------------
+ @ 1 day 2 hours
+(1 row)
+
+select '1 2 3'::interval day_minute;
+        interval        
+------------------------
+ @ 1 day 2 hours 3 mins
+(1 row)
+
+select '1 2 3'::interval day to minute;
+        interval        
+------------------------
+ @ 1 day 2 hours 3 mins
+(1 row)
+
+select '1 2 3 4'::interval day_second;
+           interval            
+-------------------------------
+ @ 1 day 2 hours 3 mins 4 secs
+(1 row)
+
+select '1 2 3 4'::interval day to second;
+           interval            
+-------------------------------
+ @ 1 day 2 hours 3 mins 4 secs
+(1 row)
+
+select '1 2 3 4 5'::interval day_microsecond;
+            interval             
+---------------------------------
+ @ 1 day 2 hours 3 mins 4.5 secs
+(1 row)
+
+select '1 2 3 4 5'::interval day to microsecond;
+            interval             
+---------------------------------
+ @ 1 day 2 hours 3 mins 4.5 secs
+(1 row)
+
+select '1 2'::interval hour_minute;
+    interval     
+-----------------
+ @ 1 hour 2 mins
+(1 row)
+
+select '1 2'::interval hour to minute;
+    interval     
+-----------------
+ @ 1 hour 2 mins
+(1 row)
+
+select '1 2 3'::interval hour_second;
+        interval        
+------------------------
+ @ 1 hour 2 mins 3 secs
+(1 row)
+
+select '1 2 3'::interval hour to second;
+        interval        
+------------------------
+ @ 1 hour 2 mins 3 secs
+(1 row)
+
+select '1 2 3 4'::interval hour_microsecond;
+         interval         
+--------------------------
+ @ 1 hour 2 mins 3.4 secs
+(1 row)
+
+select '1 2 3 4'::interval hour to microsecond;
+         interval         
+--------------------------
+ @ 1 hour 2 mins 3.4 secs
+(1 row)
+
+select '1 2'::interval minute_second;
+    interval    
+----------------
+ @ 1 min 2 secs
+(1 row)
+
+select '1 2'::interval minute to second;
+    interval    
+----------------
+ @ 1 min 2 secs
+(1 row)
+
+select '1 2 3'::interval minute_microsecond;
+     interval     
+------------------
+ @ 1 min 2.3 secs
+(1 row)
+
+select '1 2 3'::interval minute to microsecond;
+     interval     
+------------------
+ @ 1 min 2.3 secs
+(1 row)
+
+select '1 2'::interval second_microsecond;
+  interval  
+------------
+ @ 1.2 secs
+(1 row)
+
+select '1 2'::interval second to microsecond;
+  interval  
+------------
+ @ 1.2 secs
+(1 row)
+
+-- 表达式
+select interval 1 + 2 * 3 + 0.1 year;
+ interval  
+-----------
+ @ 7 years
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 quarter;
+    interval     
+-----------------
+ @ 1 year 9 mons
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 month;
+ interval 
+----------
+ @ 7 mons
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 week;
+ interval  
+-----------
+ @ 49 days
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 day;
+ interval 
+----------
+ @ 7 days
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 hour;
+ interval  
+-----------
+ @ 7 hours
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 minute;
+ interval 
+----------
+ @ 7 mins
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 second;
+  interval  
+------------
+ @ 7.1 secs
+(1 row)
+
+select interval 1 + 2 * 3 + 0.1 microsecond;
+    interval     
+-----------------
+ @ 0.000007 secs
+(1 row)
+
+select interval '1 2' year_month;
+    interval     
+-----------------
+ @ 1 year 2 mons
+(1 row)
+
+select interval '1 2' year to month;
+    interval     
+-----------------
+ @ 1 year 2 mons
+(1 row)
+
+select interval '1 2' day_hour;
+    interval     
+-----------------
+ @ 1 day 2 hours
+(1 row)
+
+select interval '1 2' day to hour;
+    interval     
+-----------------
+ @ 1 day 2 hours
+(1 row)
+
+select interval '1 2 3' day_minute;
+        interval        
+------------------------
+ @ 1 day 2 hours 3 mins
+(1 row)
+
+select interval '1 2 3' day to minute;
+        interval        
+------------------------
+ @ 1 day 2 hours 3 mins
+(1 row)
+
+select interval '1 2 3 4' day_second;
+           interval            
+-------------------------------
+ @ 1 day 2 hours 3 mins 4 secs
+(1 row)
+
+select interval '1 2 3 4' day to second;
+           interval            
+-------------------------------
+ @ 1 day 2 hours 3 mins 4 secs
+(1 row)
+
+select interval '1 2 3 4 5' day_microsecond;
+            interval             
+---------------------------------
+ @ 1 day 2 hours 3 mins 4.5 secs
+(1 row)
+
+select interval '1 2 3 4 5' day to microsecond;
+            interval             
+---------------------------------
+ @ 1 day 2 hours 3 mins 4.5 secs
+(1 row)
+
+select interval '1 2' hour_minute;
+    interval     
+-----------------
+ @ 1 hour 2 mins
+(1 row)
+
+select interval '1 2' hour to minute;
+    interval     
+-----------------
+ @ 1 hour 2 mins
+(1 row)
+
+select interval '1 2 3' hour_second;
+        interval        
+------------------------
+ @ 1 hour 2 mins 3 secs
+(1 row)
+
+select interval '1 2 3' hour to second;
+        interval        
+------------------------
+ @ 1 hour 2 mins 3 secs
+(1 row)
+
+select interval '1 2 3 4' hour_microsecond;
+         interval         
+--------------------------
+ @ 1 hour 2 mins 3.4 secs
+(1 row)
+
+select interval '1 2 3 4' hour to microsecond;
+         interval         
+--------------------------
+ @ 1 hour 2 mins 3.4 secs
+(1 row)
+
+select interval '1 2' minute_second;
+    interval    
+----------------
+ @ 1 min 2 secs
+(1 row)
+
+select interval '1 2' minute to second;
+    interval    
+----------------
+ @ 1 min 2 secs
+(1 row)
+
+select interval '1 2 3' minute_microsecond;
+     interval     
+------------------
+ @ 1 min 2.3 secs
+(1 row)
+
+select interval '1 2 3' minute to microsecond;
+     interval     
+------------------
+ @ 1 min 2.3 secs
+(1 row)
+
+select interval '1 2' second_microsecond;
+  interval  
+------------
+ @ 1.2 secs
+(1 row)
+
+select interval '1 2' second to microsecond;
+  interval  
+------------
+ @ 1.2 secs
+(1 row)
+
+-- 绑定参数
+prepare stmt as 'select ? + interval 1 + ? year';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2026-06-18 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? quarter';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-12-18 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? month';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-08-18 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? week';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-07-02 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? day';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-06-20 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? hour';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-06-18 20:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? minute';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-06-18 18:32:00
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? second';
+execute stmt('2024-06-18 18:30:00', 1);
+      ?column?       
+---------------------
+ 2024-06-18 18:30:02
+(1 row)
+
+prepare stmt as 'select ? + interval 1 + ? microsecond';
+execute stmt('2024-06-18 18:30:00', 1);
+          ?column?          
+----------------------------
+ 2024-06-18 18:30:00.000002
+(1 row)
+
+prepare stmt as 'select ? + interval ? year_month';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2025-08-18 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? year to month';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2025-08-18 18:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? day_hour';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-19 20:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? day to hour';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-19 20:30:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? day_minute';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? day to minute';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+      ?column?       
+---------------------
+ 2024-06-19 20:33:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? day_second';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:03
+(1 row)
+
+prepare stmt as 'select ? + interval ? day to second';
+execute stmt('2024-06-18 18:30:00', '1 2 3 4');
+      ?column?       
+---------------------
+ 2024-06-19 20:33:04
+(1 row)
+
+prepare stmt as 'select ? + interval ? day_microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3 4 5');
+       ?column?        
+-----------------------
+ 2024-06-19 20:33:04.5
+(1 row)
+
+prepare stmt as 'select ? + interval ? day to microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3 4 5');
+       ?column?        
+-----------------------
+ 2024-06-19 20:33:04.5
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour_minute';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour to minute';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:00
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour_second';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:03
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour to second';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+      ?column?       
+---------------------
+ 2024-06-18 19:32:03
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour_microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3 4');
+       ?column?        
+-----------------------
+ 2024-06-18 19:32:03.4
+(1 row)
+
+prepare stmt as 'select ? + interval ? hour to microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3 4');
+       ?column?        
+-----------------------
+ 2024-06-18 19:32:03.4
+(1 row)
+
+prepare stmt as 'select ? + interval ? minute_second';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-18 18:31:02
+(1 row)
+
+prepare stmt as 'select ? + interval ? minute to second';
+execute stmt('2024-06-18 18:30:00', '1 2');
+      ?column?       
+---------------------
+ 2024-06-18 18:31:02
+(1 row)
+
+prepare stmt as 'select ? + interval ? minute_microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+       ?column?        
+-----------------------
+ 2024-06-18 18:31:02.3
+(1 row)
+
+prepare stmt as 'select ? + interval ? minute to microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2 3');
+       ?column?        
+-----------------------
+ 2024-06-18 18:31:02.3
+(1 row)
+
+prepare stmt as 'select ? + interval ? second_microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2');
+       ?column?        
+-----------------------
+ 2024-06-18 18:30:01.2
+(1 row)
+
+prepare stmt as 'select ? + interval ? second to microsecond';
+execute stmt('2024-06-18 18:30:00', '1 2');
+       ?column?        
+-----------------------
+ 2024-06-18 18:30:01.2
+(1 row)
+
+-- 列引用
+create table t1 (c1 int);
+insert into t1 values(1);
+select '2024-06-18 18:30:00' + interval 1 + c1 year from t1;
+      ?column?       
+---------------------
+ 2026-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 quarter from t1;
+      ?column?       
+---------------------
+ 2024-12-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 month from t1;
+      ?column?       
+---------------------
+ 2024-08-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 week from t1;
+      ?column?       
+---------------------
+ 2024-07-02 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 day from t1;
+      ?column?       
+---------------------
+ 2024-06-20 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 hour from t1;
+      ?column?       
+---------------------
+ 2024-06-18 20:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:32:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:30:02
+(1 row)
+
+select '2024-06-18 18:30:00' + interval 1 + c1 microsecond from t1;
+          ?column?          
+----------------------------
+ 2024-06-18 18:30:00.000002
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' year_month from t1;
+      ?column?       
+---------------------
+ 2025-08-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' year to month from t1;
+      ?column?       
+---------------------
+ 2025-08-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' day_hour from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' day to hour from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' day_minute from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:33:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' day to minute from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:33:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4' day_second from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:33:04
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4' day to second from t1;
+      ?column?       
+---------------------
+ 2024-06-19 20:33:04
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4 5' day_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-19 20:33:04.5
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4 5' day to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-19 20:33:04.5
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' hour_minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 19:32:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' hour to minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 19:32:00
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' hour_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 19:32:03
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' hour to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 19:32:03
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4' hour_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 19:32:03.4
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3 4' hour to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 19:32:03.4
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' minute_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:31:02
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' minute to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:31:02
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' minute_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:31:02.3
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2 3' minute to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:31:02.3
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' second_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:30:01.2
+(1 row)
+
+select '2024-06-18 18:30:00' + interval '1 2' second to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:30:01.2
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 year from t1;
+      ?column?       
+---------------------
+ 2022-06-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 quarter from t1;
+      ?column?       
+---------------------
+ 2023-12-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 month from t1;
+      ?column?       
+---------------------
+ 2024-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 week from t1;
+      ?column?       
+---------------------
+ 2024-06-04 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 day from t1;
+      ?column?       
+---------------------
+ 2024-06-16 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 hour from t1;
+      ?column?       
+---------------------
+ 2024-06-18 16:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:29:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval 1 + c1 microsecond from t1;
+          ?column?          
+----------------------------
+ 2024-06-18 18:29:59.999998
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' year_month from t1;
+      ?column?       
+---------------------
+ 2023-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' year to month from t1;
+      ?column?       
+---------------------
+ 2023-04-18 18:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' day_hour from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' day to hour from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:30:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' day_minute from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:27:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' day to minute from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:27:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4' day_second from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:26:56
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4' day to second from t1;
+      ?column?       
+---------------------
+ 2024-06-17 16:26:56
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4 5' day_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-17 16:26:55.5
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4 5' day to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-17 16:26:55.5
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' hour_minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 17:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' hour to minute from t1;
+      ?column?       
+---------------------
+ 2024-06-18 17:28:00
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' hour_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 17:27:57
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' hour to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 17:27:57
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4' hour_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 17:27:56.6
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3 4' hour to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 17:27:56.6
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' minute_second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' minute to second from t1;
+      ?column?       
+---------------------
+ 2024-06-18 18:28:58
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' minute_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:28:57.7
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2 3' minute to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:28:57.7
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' second_microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:58.8
+(1 row)
+
+select '2024-06-18 18:30:00' - interval '1 2' second to microsecond from t1;
+       ?column?        
+-----------------------
+ 2024-06-18 18:29:58.8
+(1 row)
+
+drop schema test_interval_expr cascade;
+NOTICE:  drop cascades to table t1
+reset current_schema;

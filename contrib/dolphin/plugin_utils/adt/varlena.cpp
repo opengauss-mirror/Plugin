@@ -25,6 +25,7 @@
 #ifdef DOLPHIN
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include "plugin_utils/varbit.h"
 #endif
 
 #include "access/hash.h"
@@ -9857,7 +9858,7 @@ bool is_type_with_date(Oid type)
     }
 }
 
-inline bool is_type_with_time(Oid type)
+bool is_type_with_time(Oid type)
 {
     return type == TIMEOID || type == TIMETZOID;
 }

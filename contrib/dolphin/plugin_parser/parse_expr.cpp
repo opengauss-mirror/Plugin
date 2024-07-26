@@ -24,6 +24,7 @@
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
 #include "catalog/gs_collation.h"
+#include "catalog/pg_proc_ext.h"
 #include "commands/dbcommands.h"
 #include "commands/sequence.h"
 #include "db4ai/predict_by.h"
@@ -63,6 +64,12 @@
 #include "plugin_commands/mysqlmode.h"
 #endif
 #include "tcop/tcopprot.h"
+
+typedef Node* (*DriverTransFunction)(ParseState* pstate, ColumnRef *cref, char *colname);
+typedef struct {
+    char *keyword;
+    DriverTransFunction function;
+} ColnameTransition;
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
@@ -112,6 +119,15 @@ static Node* tryTransformFunc(ParseState* pstate, List* fields, int location);
 static void SubCheckOutParam(List* exprtargs, Oid funcid);
 static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey);
 static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression);
+static Node* transformStringCast(ParseState* pstate, char *str, int location, TypeName *typname);
+static Node* transformBinaryDoubleInf(ParseState* pstate, ColumnRef *cref, char *colname);
+static Node* transformBinaryDoubleNan(ParseState* pstate, ColumnRef *cref, char *colname);
+
+ColnameTransition predicateTable[] = {
+        { "binary_double_infinity", transformBinaryDoubleInf },
+        { "binary_double_nan", transformBinaryDoubleNan }
+};
+#define PREDICATE_COUNT (int)(sizeof(predicateTable) / sizeof(predicateTable[0]))
 
 #ifdef DOLPHIN
 /* MySQL field type, all types can classify into these type */
@@ -329,6 +345,31 @@ static Const* BuildColumnBaseValue(Form_pg_attribute attTup)
     return nullptr;
 }
 
+static bool IsConstDefaultValue(FuncExpr* expr)
+{
+    if (expr->funcformat != COERCE_IMPLICIT_CAST) {
+        return false;
+    }
+
+    ListCell* cell = NULL;
+    List* args = expr->args;
+    bool isFirstArg = true;
+
+    foreach (cell, args) {
+        Node* arg = (Node*)lfirst(cell);
+        if (isFirstArg) {
+            isFirstArg = false;
+            if (!IsA(arg, Const) &&
+                !(IsA(arg, FuncExpr) && ((FuncExpr*)arg)->funcformat == COERCE_IMPLICIT_CAST)) {
+                return false;
+            }
+        } else if (!IsA(arg, Const)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static void AddDefaultExprNode(ParseState* pstate)
 {
     RightRefState* refState = pstate->rightRefState;
@@ -362,7 +403,7 @@ static void AddDefaultExprNode(ParseState* pstate)
                 refState->constValues[i] = nullptr;
             } else if (IsA(node, Const)) {
                 refState->constValues[i] = (Const*)node;
-            } else if (IsA(node, FuncExpr)) {
+            } else if (IsA(node, FuncExpr) && IsConstDefaultValue((FuncExpr*)node)) {
                 FuncExpr* expr = (FuncExpr*)node;
                 List* args = expr->args;
                 Expr* simple = simplify_function(expr->funcid, expr->funcresulttype, exprTypmod((const Node*)expr), 
@@ -626,6 +667,22 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
             n->arg = (Expr*)transformExprRecurse(pstate, (Node*)n->arg);
             /* the argument can be any type, so don't coerce it */
             n->argisrow = type_is_rowtype(exprType((Node*)n->arg));
+            result = expr;
+            break;
+        }
+
+        case T_NanTest: {
+            NanTest* n = (NanTest*)expr;
+
+            n->arg = (Expr*)transformExprRecurse(pstate, (Node*)n->arg);
+            result = expr;
+            break;
+        }
+
+        case T_InfiniteTest: {
+            InfiniteTest* n = (InfiniteTest*)expr;
+
+            n->arg = (Expr*)transformExprRecurse(pstate, (Node*)n->arg);
             result = expr;
             break;
         }
@@ -992,6 +1049,15 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
 
             AssertEreport(IsA(field1, String), MOD_OPT, "");
             colname = strVal(field1);
+
+            for (int i = 0; i < PREDICATE_COUNT; i++) {
+                if(strcmp(colname, predicateTable[i].keyword) == 0){
+                    node = predicateTable[i].function(pstate, cref, colname);
+                }
+            }
+            if (node != NULL) {
+                break;
+            }
 
             if (pstate->p_hasStartWith || pstate->p_split_where_for_swcb) {
                 Node *expr = NULL;
@@ -2379,6 +2445,19 @@ void ReplaceBCmptFuncName(List* names, char* objname, char* defaultname, char* r
         }
     }
 }
+
+
+static inline bool is_neeed_replace_sum_function(List* args)
+{
+    ListCell* arg = NULL;
+    foreach (arg, args) {
+        Oid type = exprType((Node*)lfirst(arg));
+        if (type == FLOAT4OID || type == INT4OID || type == INT2OID) {
+            return true;
+        }
+    }
+    return false;
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -2397,10 +2476,15 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
         return HandleDefaultFunction(pstate, fn);
     }
 #endif
-    /* Transform the list of arguments ... */
+    /* Transform the list of arguments, skip CursorExpr which transformed later */
     targs = NIL;
     foreach (args, fn->args) {
-        targs = lappend(targs, transformExprRecurse(pstate, (Node*)lfirst(args)));
+        Node* arg = (Node*)lfirst(args);
+        if (!IsA(arg, CursorExpression)) {
+            targs = lappend(targs, transformExprRecurse(pstate, arg));
+        } else {
+            targs = lappend(targs, arg);
+        }
     }
 
     if (fn->agg_within_group) {
@@ -2457,9 +2541,36 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
                             errhint("'NAME_CONST' function does not accept input of type %s", hint_str)));
         }
     }
+
+    /* we cannot modify the result type of the built-in function directly, so we need to replace 
+     * it with a function equivalent to mysql
+     */
+    if (strcmp(objname, "sum") == 0 && SYSTEM_SCHEMA_NAME(schemaname) && is_neeed_replace_sum_function(targs)) {
+        ReplaceBCmptFuncName(fn->funcname, objname, "sum", "sum_ext");
+    }
 #endif
     /* ... and hand off to ParseFuncOrColumn */
     result = ParseFuncOrColumn(pstate, fn->funcname, targs, last_srf, fn, fn->location, fn->call_func);
+
+    if (IsA(result, FuncExpr)) {
+        /* if function is not SRF or pipelined, close smp for all CursorExpressions */
+        int2 seq = (!((FuncExpr*)result)->funcretset &&
+                    !PROC_IS_PIPELINED(get_func_prokind(((FuncExpr*)result)->funcid))) ?
+                -1 : GetParallelCursorSeq(((FuncExpr*)result)->funcid);
+        int2 i = 0;
+        AutoDopControl dopControl;
+        foreach (args, ((FuncExpr*)result)->args) {
+            Node* arg = (Node*)lfirst(args);
+            if (IsA(arg, CursorExpression)) {
+                if (i != seq) {
+                    dopControl.CloseSmp();
+                }
+                lfirst(args) = transformCursorExpression(pstate, (CursorExpression*)arg);
+                dopControl.ResetSmp();
+            }
+            i++;
+        }
+    }
 
     if (IsStartWithFunction((FuncExpr*)result) && !pstate->p_hasStartWith && !pstate->p_split_where_for_swcb) {
         ereport(ERROR,
@@ -5661,6 +5772,7 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
     ListCell* raw_parsetree_cell = NULL;
     List* stmt_list = NIL;
     ParseState* parse_state_temp = NULL;
+    int level = ++u_sess->parser_cxt.cursor_expr_level;
 
     ParseState* parse_state_parent = pstate;
 
@@ -5684,11 +5796,19 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
 
     plan_tree = pg_plan_query(query, 0, NULL);
 
+    if (IsA(plan_tree->planTree, Stream)) {
+        ((Stream*)plan_tree->planTree)->cursor_expr_level = level;
+
+        /* reset cursor_expr_level */
+        if (level == 1) {
+            u_sess->parser_cxt.cursor_expr_level = 0;
+        }
+    }
+
     int nParamExec = 0;
     parse_state_temp = parse_state_parent;
-    while (parse_state_temp != NULL) {
-        nParamExec += list_length(parse_state_temp->cursor_expression_para_var);
-        parse_state_temp = parse_state_temp->parentParseState;
+    if (parse_state_temp != NULL) {
+        nParamExec = list_length(parse_state_temp->cursor_expression_para_var);
     }
     
     plan_tree->nParamExec = nParamExec;
@@ -5708,6 +5828,29 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
         parse_state_temp = parse_state_temp->parentParseState;
     }
     return (Node*)newm;
+}
+
+static Node* transformStringCast(ParseState* pstate, char *str, int location, TypeName *typname)
+{
+    A_Const *n = makeNode(A_Const);
+    n->val.type = T_String;
+    n->val.val.str = str;
+    n->location = location;
+
+    TypeCast *tc = makeNode(TypeCast);
+    tc->arg = (Node *)n;
+    tc->typname = typname;
+    tc->location = location;
+
+    return transformTypeCast(pstate, tc);
+}
+
+static Node* transformBinaryDoubleInf(ParseState* pstate, ColumnRef *cref, char *colname) {
+    return transformStringCast(pstate, "infinity", cref->location, SystemTypeName("float8"));
+}
+
+static Node* transformBinaryDoubleNan(ParseState* pstate, ColumnRef *cref, char *colname) {
+    return transformStringCast(pstate, "nan", cref->location, SystemTypeName("float8"));
 }
 
 
@@ -5861,3 +6004,18 @@ static Node *transformStartWithWhereClauseColumnRef(ParseState *pstate, ColumnRe
     return NULL;
 }
 
+PlannedStmt* getCursorStreamFromFuncArg(FuncExpr* funcexpr)
+{
+    ListCell* lc = NULL;
+    foreach (lc, funcexpr->args) {
+        Node* arg = (Node*)lfirst(lc);
+        if (IsA(arg, CursorExpression)) {
+            CursorExpression* cursorExpr = (CursorExpression*)arg;
+            PlannedStmt* cursorPlan = (PlannedStmt*)cursorExpr->plan;
+            if (IsA(cursorPlan->planTree, Stream)) {
+                return cursorPlan;
+            }
+        }
+    }
+    return NULL;
+}

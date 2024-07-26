@@ -314,6 +314,7 @@ endif()
 option(USE_OPENSSL "Enable use of OpenSSL if available" ON)
 option(SEND_TELEMETRY_DEFAULT "The default value for whether to send telemetry" ON)
 option(REGRESS_CHECKS "PostgreSQL regress checks through installcheck" ON)
+option(ENABLE_BBOX "enable bbox,the old is --enable-bbox " ON)
 
 # Check if PostgreSQL has OpenSSL enabled by inspecting pg_config --configure.
 # Right now, a Postgres header will redefine an OpenSSL function if Postgres is not installed --with-openssl,
@@ -386,5 +387,11 @@ set(PROJECT_SRC_DIR ${PROJECT_OPENGS_DIR}/src CACHE INTERNAL "")
 set(Third_party_library $ENV{BINARYLIBS}/kernel/dependency/libobs/comm/include)
 add_definitions(-DPGXC)
 add_definitions(-DUSE_SPQ)
+if(ENABLE_BBOX)
+  add_definitions(-DENABLE_BBOX)
+  message(STATUS "ENABLE_BBOX feature is enabled")
+else()
+  message(STATUS "ENABLE_BBOX feature is disabled")
+endif()
 include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR} ${Third_party_library})
 

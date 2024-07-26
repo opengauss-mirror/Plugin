@@ -1,0 +1,641 @@
+create schema test_view_table_depend;
+set current_schema to 'test_view_table_depend';
+create table t1 (c1 int);
+create view v1 as select * from t1;
+drop table t1;
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+create table t1 (c1 int);
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+select valid = true from pg_class join pg_object on oid = object_oid where relname = 'v1';
+ ?column? 
+----------
+ t
+(1 row)
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int);
+create view v1 as select * from t1;
+drop table t1;
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+create table t2 (c1 int);
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+drop table t2;
+create table t1 (c2 int);
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+drop table t1;
+create table t1 (c1 int);
+insert into t1 values(1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+drop table t1;
+create table t1 (c1 varchar);
+insert into t1 values('a');
+select * from v1;
+ c1 
+----
+ a
+(1 row)
+
+\d v1;
+    View "test_view_table_depend.v1"
+ Column |       Type        | Modifiers 
+--------+-------------------+-----------
+ c1     | character varying | 
+
+\d+ v1;
+                View "test_view_table_depend.v1"
+ Column |       Type        | Modifiers | Storage  | Description 
+--------+-------------------+-----------+----------+-------------
+ c1     | character varying |           | extended | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int);
+create view v1 as select * from t1;
+insert into t1 values(1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+drop table t1;
+create table t1 (c2 int, c3 int, c1 int);
+insert into t1 values(2, 3, 1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int, c2 int, c3 int);
+create view v1 as select * from t1;
+insert into t1 values(1, 2, 3);
+select * from v1;
+ c1 | c2 | c3 
+----+----+----
+  1 |  2 |  3
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+ c3     | integer | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+ c2     | integer |           | plain   | 
+ c3     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+drop table t1;
+create table t1 (c2 int);
+insert into t1 values(2);
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+ c3     | integer | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+ c2     | integer |           | plain   | 
+ c3     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+drop view v1;
+drop table t1 cascade;
+create table t1 (c1 int);
+create view v1 as select * from t1;
+create view v2 as select * from v1;
+insert into t1 values(1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+select * from v2;
+ c1 
+----
+  1
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d v2;
+View "test_view_table_depend.v2"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+\d+ v2;
+           View "test_view_table_depend.v2"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM v1;
+
+drop table t1;
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d v2;
+View "test_view_table_depend.v2"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+\d+ v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v2"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT  *
+   FROM v1;
+
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+select * from v2;
+ERROR:  The view v2 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+create table t1 (c1 varchar);
+insert into t1 values('a');
+select * from v1;
+ c1 
+----
+ a
+(1 row)
+
+select * from v2;
+ c1 
+----
+ a
+(1 row)
+
+\d v1;
+    View "test_view_table_depend.v1"
+ Column |       Type        | Modifiers 
+--------+-------------------+-----------
+ c1     | character varying | 
+
+\d v2;
+    View "test_view_table_depend.v2"
+ Column |       Type        | Modifiers 
+--------+-------------------+-----------
+ c1     | character varying | 
+
+\d+ v1;
+                View "test_view_table_depend.v1"
+ Column |       Type        | Modifiers | Storage  | Description 
+--------+-------------------+-----------+----------+-------------
+ c1     | character varying |           | extended | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+\d+ v2;
+                View "test_view_table_depend.v2"
+ Column |       Type        | Modifiers | Storage  | Description 
+--------+-------------------+-----------+----------+-------------
+ c1     | character varying |           | extended | 
+View definition:
+ SELECT v1.c1
+   FROM v1;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to view v1
+drop cascades to view v2
+create table t1 (c1 int);
+create view v1 as select c1 from t1;
+create view v2 as select c1 + 1 from v1;
+insert into t1 values(1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+select * from v2;
+ ?column? 
+----------
+        2
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d v2;
+View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+\d+ v2;
+           View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+   FROM v1;
+
+drop table t1;
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d v2;
+View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+\d+ v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+   FROM v1;
+
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+select * from v2;
+ERROR:  The view v2 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+create table t1 (c1 int);
+insert into t1 values(1);
+select * from v1;
+ c1 
+----
+  1
+(1 row)
+
+select * from v2;
+ ?column? 
+----------
+        2
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+
+\d v2;
+View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+ Column |  Type   | Modifiers | Storage | Description 
+--------+---------+-----------+---------+-------------
+ c1     | integer |           | plain   | 
+View definition:
+ SELECT t1.c1
+   FROM t1;
+
+\d+ v2;
+           View "test_view_table_depend.v2"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT v1.c1::bigint + 1::bigint AS "?column?"
+   FROM v1;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to view v1
+drop cascades to view v2
+create table t1 (c1 int);
+create view v1 as select c1 + 1 from t1;
+insert into t1 values(1);
+select * from v1;
+ ?column? 
+----------
+        2
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+   FROM t1;
+
+drop table t1;
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+   FROM t1;
+
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+create table t1 (c1 int);
+insert into t1 values(1);
+select * from v1;
+ ?column? 
+----------
+        2
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1::bigint + 1::bigint AS "?column?"
+   FROM t1;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int);
+create table t2 (c2 int);
+create view v1 as select c1 + c2 from t1 join t2;
+insert into t1 values(1);
+insert into t2 values(2);
+select * from v1;
+ ?column? 
+----------
+        3
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2 AS "?column?"
+   FROM t1
+  CROSS JOIN t2;
+
+drop table t1;
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2 AS "?column?"
+   FROM t1
+  CROSS JOIN t2;
+
+select * from v1;
+ERROR:  The view v1 is invalid, please make it valid before operation.
+HINT:  Please recreate table or re-add missing table fields.
+create table t1 (c1 int);
+insert into t1 values(1);
+select * from v1;
+ ?column? 
+----------
+        3
+(1 row)
+
+\d v1;
+View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers 
+----------+--------+-----------
+ ?column? | bigint | 
+
+\d+ v1;
+           View "test_view_table_depend.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ ?column? | bigint |           | plain   | 
+View definition:
+ SELECT t1.c1::bigint + t2.c2::bigint AS "?column?"
+   FROM t1
+  CROSS JOIN t2;
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+drop schema test_view_table_depend cascade;
+NOTICE:  drop cascades to table t2
+reset current_schema;

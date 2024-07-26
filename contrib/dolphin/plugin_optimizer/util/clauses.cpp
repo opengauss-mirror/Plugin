@@ -36,7 +36,7 @@
 #include "nodes/supportnodes.h"
 #include "optimizer/clauses.h"
 #include "optimizer/cost.h"
-#include "optimizer/planmain.h"
+#include "plugin_optimizer/planmain.h"
 #include "optimizer/planner.h"
 #include "optimizer/pgxcplan.h"
 #include "optimizer/prep.h"
@@ -4200,11 +4200,7 @@ static Oid pre_evaluate_func[] = {CURRENTSCHEMAFUNCOID,
     CURRENTDATABASEFUNCOID,
     PGCLIENTENCODINGFUNCOID};
 
-#ifdef DOLPHIN
 static bool is_safe_simplify_func(Oid funcid, List *args)
-#else
-static bool is_safe_simplify_func(Oid funcid)
-#endif
 {
     if (funcid == InvalidOid) {
         return false;
@@ -4214,9 +4210,9 @@ static bool is_safe_simplify_func(Oid funcid)
             return true;
         }
     }
-#ifdef DOLPHIN
+
     /* handle some special func */
-    if (funcid == CONCATFUNCOID) {
+    if (funcid == CONCATFUNCOID || funcid == CONCATWSFUNCOID) {
         ListCell* arg = NULL;
         foreach (arg, args) {
             Oid typ = exprType((Node*)lfirst(arg));
@@ -4247,15 +4243,18 @@ static bool is_safe_simplify_func(Oid funcid)
                 case VARCHAROID:
                 case VARBITOID:
                 case CSTRINGOID:
-                case ANYSETOID:
-                case ANYENUMOID:
                 case JSONBOID:
                 case NVARCHAR2OID:
+                case XIDOID:
+                case SHORTXIDOID:
                     break;
                 default:
-                    /* some dolphin new created type */
-                    if (typ == YEAROID || typ == UINT1OID || typ == UINT2OID || typ == UINT4OID ||
-                        typ == UINT8OID || type_is_set(typ) || type_is_enum(typ)) {
+                    if (
+#ifdef DOLPHIN
+                        /* some dolphin new created type */
+                        typ == YEAROID || typ == UINT1OID || typ == UINT2OID || typ == UINT4OID || typ == UINT8OID ||
+#endif
+                        type_is_set(typ) || type_is_enum(typ)) {
                         break;
                     }
                     /* other case, return false directly */
@@ -4265,7 +4264,7 @@ static bool is_safe_simplify_func(Oid funcid)
         /* all args outfunc are immutable, return true */
         return true;
     }
-#endif
+
     return false;
 }
 
@@ -4354,11 +4353,7 @@ static Expr* evaluate_function(Oid funcid, Oid result_type, int32 result_typmod,
         /* okay */;
     else if (context->estimate && funcform->provolatile == PROVOLATILE_STABLE)
         /* okay */;
-#ifdef DOLPHIN
     else if (is_safe_simplify_func(funcid, args))
-#else
-    else if (is_safe_simplify_func(funcid))
-#endif
         /* okay */;
     else
         return NULL;

@@ -3181,3 +3181,36 @@ void CopyCursorInfoData(Cursor_Data* target_cursor, Cursor_Data* Source_cursor)
     target_cursor->null_fetch = Source_cursor->null_fetch;
     target_cursor->cur_dno = Source_cursor->cur_dno;
 }
+
+
+#ifdef DOLPHIN
+Datum DirectCall2WithNullArg(bool* isRetNull, PGFunction func, Oid collation, Datum arg1, Datum arg2,
+    bool arg1null, bool arg2null)
+{
+    FunctionCallInfoData fcinfo;
+    Datum result = 0;
+
+    if (*isRetNull) {
+        PG_RETURN_VOID();
+    }
+
+    InitFunctionCallInfoData(fcinfo, NULL, 2, collation, NULL, NULL);
+
+    fcinfo.arg[0] = arg1;
+    fcinfo.arg[1] = arg2;
+    fcinfo.argnull[0] = arg1null;
+    fcinfo.argnull[1] = arg2null;
+
+    result = (*func)(&fcinfo);
+
+    if (fcinfo.isnull) {
+        *isRetNull = true;
+    } else {
+        *isRetNull = false;
+    }
+
+    return result;
+}
+
+#endif
+

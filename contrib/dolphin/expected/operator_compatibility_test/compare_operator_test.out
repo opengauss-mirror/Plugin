@@ -2757,7 +2757,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t14<t26
  t14<t1 | t14<t2 | t14<t3 | t14<t4 | t14<t5 | t14<t6 | t14<t7 | t14<t8 | t14<t9 | t14<t10 | t14<t11 | t14<t12 | t14<t13 | t14<t14 | t14<t15 | t14<t16 | t14<t17 | t14<t18 | t14<t19 | t14<t20 | t14<t21 | t14<t22 | t14<t23 | t14<t24 | t14<t25 | t14<t26 | t14<t27 | t14<t28 | t14<t29 | t14<t30 | t14<t31 | t14<t32 | t14<t33 | t14<t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
- f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | t       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | t       | t       | t       | t       | t       | t       | f       | f       | f       | t
+ f      | f      | f      | f      | f      | f      | f      | f      | f      | f       | t       | f       | t       | f       | f       | f       | f       | t       | t       | t       | t       | f       | f       | f       | t       | t       | t       | t       | t       | t       | f       | f       | f       | t
 (1 row)
 
 select 
@@ -2802,12 +2802,6 @@ referenced column: t15<t8
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t15<t10
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t15<t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t15<t13
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15<t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
@@ -2987,12 +2981,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_lt" statement 1
 referenced column: t18<t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_lt" statement 1
-referenced column: t18<t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_lt" statement 1
-referenced column: t18<t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_lt" statement 1
 referenced column: t18<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -3093,12 +3081,6 @@ referenced column: t19<t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_lt" statement 1
 referenced column: t19<t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_lt" statement 1
-referenced column: t19<t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_lt" statement 1
-referenced column: t19<t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_lt" statement 1
 referenced column: t19<t14
@@ -3201,12 +3183,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t20<t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t20<t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t20<t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_lt" statement 1
 referenced column: t20<t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -3307,12 +3283,6 @@ referenced column: t21<t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_lt" statement 1
 referenced column: t21<t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t21<t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_lt" statement 1
-referenced column: t21<t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_lt" statement 1
 referenced column: t21<t14
@@ -6718,7 +6688,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t13<=t31
  t13<=t1 | t13<=t2 | t13<=t3 | t13<=t4 | t13<=t5 | t13<=t6 | t13<=t7 | t13<=t8 | t13<=t9 | t13<=t10 | t13<=t11 | t13<=t12 | t13<=t13 | t13<=t14 | t13<=t15 | t13<=t16 | t13<=t17 | t13<=t18 | t13<=t19 | t13<=t20 | t13<=t21 | t13<=t22 | t13<=t23 | t13<=t24 | t13<=t25 | t13<=t26 | t13<=t27 | t13<=t28 | t13<=t29 | t13<=t30 | t13<=t31 | t13<=t32 | t13<=t33 | t13<=t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
- f       | f       | f       | f       | f       | f       | f       | f       | f       | f        | f        | f        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | f        | f        | f        | f        | f        | f        | f        | f        | f        | f        | f        | t
+ f       | f       | f       | f       | f       | f       | f       | f       | f       | f        | f        | f        | t        | f        | t        | t        | t        | t        | t        | t        | t        | t        | f        | f        | f        | f        | f        | f        | f        | f        | f        | f        | f        | t
 (1 row)
 
 select 
@@ -6808,12 +6778,6 @@ referenced column: t15<=t8
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t15<=t10
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t15<=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t15<=t13
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15<=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
@@ -6993,12 +6957,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_le" statement 1
 referenced column: t18<=t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_le" statement 1
-referenced column: t18<=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_le" statement 1
-referenced column: t18<=t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_le" statement 1
 referenced column: t18<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -7099,12 +7057,6 @@ referenced column: t19<=t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_le" statement 1
 referenced column: t19<=t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_le" statement 1
-referenced column: t19<=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_le" statement 1
-referenced column: t19<=t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_le" statement 1
 referenced column: t19<=t14
@@ -7207,12 +7159,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t20<=t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t20<=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t20<=t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_le" statement 1
 referenced column: t20<=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -7313,12 +7259,6 @@ referenced column: t21<=t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_le" statement 1
 referenced column: t21<=t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t21<=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_le" statement 1
-referenced column: t21<=t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_le" statement 1
 referenced column: t21<=t14
@@ -8690,7 +8630,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t13>t31
  t13>t1 | t13>t2 | t13>t3 | t13>t4 | t13>t5 | t13>t6 | t13>t7 | t13>t8 | t13>t9 | t13>t10 | t13>t11 | t13>t12 | t13>t13 | t13>t14 | t13>t15 | t13>t16 | t13>t17 | t13>t18 | t13>t19 | t13>t20 | t13>t21 | t13>t22 | t13>t23 | t13>t24 | t13>t25 | t13>t26 | t13>t27 | t13>t28 | t13>t29 | t13>t30 | t13>t31 | t13>t32 | t13>t33 | t13>t34 
 --------+--------+--------+--------+--------+--------+--------+--------+--------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
- t      | t      | t      | t      | t      | t      | t      | t      | t      | t       | t       | t       | f       | f       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | t       | t       | t       | t       | t       | t       | t       | f
+ t      | t      | t      | t      | t      | t      | t      | t      | t      | t       | t       | t       | f       | t       | f       | f       | f       | f       | f       | f       | f       | f       | t       | t       | t       | t       | t       | t       | t       | t       | t       | t       | t       | f
 (1 row)
 
 select 
@@ -8780,12 +8720,6 @@ referenced column: t15>t8
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t15>t10
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t15>t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t15>t13
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15>t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
@@ -8965,12 +8899,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_gt" statement 1
 referenced column: t18>t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_gt" statement 1
-referenced column: t18>t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_gt" statement 1
-referenced column: t18>t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_gt" statement 1
 referenced column: t18>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -9071,12 +8999,6 @@ referenced column: t19>t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_gt" statement 1
 referenced column: t19>t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_gt" statement 1
-referenced column: t19>t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_gt" statement 1
-referenced column: t19>t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_gt" statement 1
 referenced column: t19>t14
@@ -9179,12 +9101,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t20>t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t20>t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t20>t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_gt" statement 1
 referenced column: t20>t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -9285,12 +9201,6 @@ referenced column: t21>t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_gt" statement 1
 referenced column: t21>t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t21>t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_gt" statement 1
-referenced column: t21>t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_gt" statement 1
 referenced column: t21>t14
@@ -10707,7 +10617,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t14>=t26
  t14>=t1 | t14>=t2 | t14>=t3 | t14>=t4 | t14>=t5 | t14>=t6 | t14>=t7 | t14>=t8 | t14>=t9 | t14>=t10 | t14>=t11 | t14>=t12 | t14>=t13 | t14>=t14 | t14>=t15 | t14>=t16 | t14>=t17 | t14>=t18 | t14>=t19 | t14>=t20 | t14>=t21 | t14>=t22 | t14>=t23 | t14>=t24 | t14>=t25 | t14>=t26 | t14>=t27 | t14>=t28 | t14>=t29 | t14>=t30 | t14>=t31 | t14>=t32 | t14>=t33 | t14>=t34 
 ---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
- t       | t       | t       | t       | t       | t       | t       | t       | t       | t        | f        | t        | t        | t        | t        | t        | t        | f        | f        | f        | f        | t        | t        | t        | f        | f        | f        | f        | f        | f        | t        | t        | t        | f
+ t       | t       | t       | t       | t       | t       | t       | t       | t       | t        | f        | t        | f        | t        | t        | t        | t        | f        | f        | f        | f        | t        | t        | t        | f        | f        | f        | f        | f        | f        | t        | t        | t        | f
 (1 row)
 
 select 
@@ -10752,12 +10662,6 @@ referenced column: t15>=t8
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t15>=t10
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t15>=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t15>=t13
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
 CONTEXT:  referenced column: t15>=t23
 WARNING:  invalid input syntax for type timestamp: "-1.1"
@@ -10937,12 +10841,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ge" statement 1
 referenced column: t18>=t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_ge" statement 1
-referenced column: t18>=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_ge" statement 1
-referenced column: t18>=t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ge" statement 1
 referenced column: t18>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -11043,12 +10941,6 @@ referenced column: t19>=t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_ge" statement 1
 referenced column: t19>=t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_ge" statement 1
-referenced column: t19>=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_ge" statement 1
-referenced column: t19>=t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_ge" statement 1
 referenced column: t19>=t14
@@ -11151,12 +11043,6 @@ WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t20>=t11
 WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t20>=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t20>=t13
-WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ge" statement 1
 referenced column: t20>=t14
 WARNING:  invalid input syntax for type timestamp: "-1.1                                                                                                "
@@ -11257,12 +11143,6 @@ referenced column: t21>=t10
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_ge" statement 1
 referenced column: t21>=t11
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t21>=t12
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_ge" statement 1
-referenced column: t21>=t13
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_ge" statement 1
 referenced column: t21>=t14

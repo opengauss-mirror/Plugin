@@ -273,6 +273,7 @@ static void check_record_nest_tableof_index(PLpgSQL_datum* datum);
 static void check_tableofindex_args(int tableof_var_dno, Oid argtype);
 static bool need_build_row_for_func_arg(PLpgSQL_rec **rec, PLpgSQL_row **row, int out_arg_num, int all_arg, int *varnos, char *p_argmodes);
 static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam);
+static void CheckParallelCursorOpr(PLpgSQL_stmt_fetch* fetch);
 %}
 
 %expect 0
@@ -438,7 +439,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
  * Some of these are not directly referenced in this file, but they must be
  * here anyway.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET OR_OR_SYM
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET FCONST_F FCONST_D OR_OR_SYM
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL IDENT
 
@@ -5942,6 +5943,8 @@ stmt_fetch		: K_FETCH opt_fetch_direction cursor_variable K_INTO
                         fetch->bulk_collect = false;
                         fetch->sqlString = plpgsql_get_curline_query();
 
+                        CheckParallelCursorOpr(fetch);
+
                         $$ = (PLpgSQL_stmt *)fetch;
                     }
                 | K_FETCH opt_fetch_direction cursor_variable K_BULK K_COLLECT K_INTO fetch_into_target fetch_limit_expr
@@ -5976,6 +5979,8 @@ stmt_fetch		: K_FETCH opt_fetch_direction cursor_variable K_INTO
                         fetch->bulk_collect = true;
                         fetch->sqlString = plpgsql_get_curline_query();
 
+                        CheckParallelCursorOpr(fetch);
+
                         $$ = (PLpgSQL_stmt *)fetch;
                     }
                 ;
@@ -5989,6 +5994,8 @@ stmt_move		: K_MOVE opt_fetch_direction cursor_variable ';'
                         fetch->is_move	= true;
                         fetch->bulk_collect = false;
                         fetch->sqlString = plpgsql_get_curline_query();
+
+                        CheckParallelCursorOpr(fetch);
 
                         $$ = (PLpgSQL_stmt *)fetch;
                     }
@@ -10922,7 +10929,7 @@ make_return_stmt(int location)
 	    const char* message = "pipe error";
 	    InsertErrorMessage(message, plpgsql_yylloc);
 	    ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
-                                errmsg("RETURN statement in a pipelinedd function cannot contains an expression"), errdetail("%s", message),
+                                errmsg("RETURN statement in a pipelined function cannot contains an expression"), errdetail("%s", message),
                                 errcause("A RETURN statement in a pipelined function contains an expression, \
                                 which is not allowed. \
                                 Pipelined functions must return values to the caller by using the PIPE statement."),
@@ -14428,5 +14435,30 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
         if (dtype == PLPGSQL_DTYPE_ROW) {
             *outparam = yylval.wdatum.dno;
         }
+    }
+}
+
+/*
+ * If the cursor is specified by PARALLEL_ENABLE PARTITION BY,
+ * only FETCH CURSOR support in function body.
+ */
+static void CheckParallelCursorOpr(PLpgSQL_stmt_fetch* fetch)
+{
+    AssertEreport(u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[fetch->curvar]->dtype == PLPGSQL_DTYPE_VAR,
+                  MOD_PLSQL,
+                  "Cursor which would be fetched should be var");
+
+    PLpgSQL_var* var = (PLpgSQL_var*)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[fetch->curvar];
+    if (u_sess->plsql_cxt.parallel_cursor_arg_name == NULL ||
+        strcmp(var->varname, u_sess->plsql_cxt.parallel_cursor_arg_name) != 0) {
+        return;
+    }
+
+    if (fetch->bulk_collect) {
+        return;
+    }
+
+    if (fetch->direction != FETCH_FORWARD || fetch->expr != NULL || fetch->is_move) {
+        ereport(ERROR, (errmsg("only support FETCH CURSOR for parallel cursor \"%s\"", var->varname)));
     }
 }

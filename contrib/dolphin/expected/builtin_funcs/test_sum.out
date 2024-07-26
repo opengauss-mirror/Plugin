@@ -1,0 +1,205 @@
+create schema db_test_sum;
+set current_schema to 'db_test_sum';
+set dolphin.sql_mode = '';
+create table test_type_table
+(
+   `int1` tinyint,
+   `uint1` tinyint unsigned,
+   `int2` smallint,
+   `uint2` smallint unsigned,
+   `int4` integer,
+   `uint4` integer unsigned,
+   `int8` bigint,
+   `uint8` bigint unsigned,
+   `float4` float4,
+   `float8` float8,
+   `numeric` decimal(20, 6),
+   `bit1` bit(1),
+   `bit64` bit(64),
+   `boolean` boolean,
+   `date` date,
+   `time` time,
+   `time(4)` time(4),
+   `datetime` datetime,
+   `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+   `timestamp` timestamp,
+   `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+   `year` year,
+   `char` char(100),
+   `varchar` varchar(100), 
+   `binary` binary(100),
+   `varbinary` varbinary(100),
+   `tinyblob` tinyblob,
+   `blob` blob,
+   `mediumblob` mediumblob,
+   `longblob` longblob,
+   `text` text,
+   `enum_t` enum('a', 'b', 'c'),
+   `set_t` set('a', 'b', 'c'),
+   `json` json   
+);
+NOTICE:  CREATE TABLE will create implicit set "test_type_table_set_t_set" for column "test_type_table.set_t"
+insert into test_type_table values (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+insert into test_type_table values (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+insert into test_type_table values (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+insert into test_type_table values (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+create table test_sum as select  sum(`int1`) as sum1, sum(`uint1`) as sum2, sum(`int2`) as sum3,  sum(`uint2`) as sum4,  sum(`int4`) as sum5, sum(`uint4`) as sum6,  sum(`int8`) as sum7,  sum(`uint8`) as sum8, sum(`float4`) as sum9, sum(`float8`) as sum10,  sum(`numeric`) as sum11, sum(`bit1`) as sum12,  sum(`bit64`) as sum13,  sum(`boolean`) as sum14, sum(`date`) as sum15, sum(`time`) as sum16, sum(`time(4)`) as sum17, sum(`datetime`) as sum18, sum(`datetime(4)`) as sum19, sum(`timestamp`) as sum20, sum(`timestamp(4)`) as sum21, sum(`year`) as sum22, sum(`char`) as sum23,  sum(`varchar`) as sum24,  sum(`binary`) as sum25, sum(`varbinary`) as sum26, sum(`tinyblob`) as sum27, sum(`blob`) as sum28, sum(`mediumblob`) as sum29, sum(`longblob`) as sum30, sum(`text`) as sum31, sum(`enum_t`) as sum32, sum(`set_t`) as sum33 from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: float8_sum
+SQL function "text_sum" statement 1
+select * from test_sum;
+ sum1 | sum2 | sum3 | sum4 | sum5 | sum6 | sum7 | sum8 | sum9 | sum10 |  sum11   | sum12 | sum13 | sum14 |  sum15   | sum16  |     sum17     |     sum18      |         sum19         |     sum20      |         sum21         | sum22 | sum23 | sum24 | sum25 | sum26 | sum27 | sum28 | sum29 | sum30 | sum31 | sum32 | sum33 
+------+------+------+------+------+------+------+------+------+-------+----------+-------+-------+-------+----------+--------+---------------+----------------+-----------------------+----------------+-----------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+    4 |    4 |    4 |    4 |    4 |    4 |    4 |    4 |    4 |     4 | 4.000000 |     4 |    28 |     4 | 80920820 | 764200 | 764201.382400 | 80920820764200 | 80920820764201.824000 | 80920820764200 | 80920820764201.824000 |  8092 |  4.92 |  4.92 |  4.92 |  4.92 |  4.92 |  4.92 |  4.92 |  4.92 |  4.92 |     4 |    20
+(1 row)
+
+\d test_sum
+     Table "db_test_sum.test_sum"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ sum1   | number           | 
+ sum2   | number           | 
+ sum3   | number           | 
+ sum4   | number           | 
+ sum5   | number           | 
+ sum6   | number           | 
+ sum7   | number           | 
+ sum8   | number           | 
+ sum9   | double precision | 
+ sum10  | double precision | 
+ sum11  | number           | 
+ sum12  | number           | 
+ sum13  | number           | 
+ sum14  | number           | 
+ sum15  | number           | 
+ sum16  | number           | 
+ sum17  | number           | 
+ sum18  | number           | 
+ sum19  | number           | 
+ sum20  | number           | 
+ sum21  | number           | 
+ sum22  | number           | 
+ sum23  | double precision | 
+ sum24  | double precision | 
+ sum25  | double precision | 
+ sum26  | double precision | 
+ sum27  | double precision | 
+ sum28  | double precision | 
+ sum29  | double precision | 
+ sum30  | double precision | 
+ sum31  | double precision | 
+ sum32  | double precision | 
+ sum33  | double precision | 
+
+create table test_text(c1 text);
+insert into test_text values ('9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('9999999999999999999999999999999999999999999999999999999.99');
+select sum(c1) from test_text;
+  sum  
+-------
+ 3e+55
+(1 row)
+
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
+select sum(c1) from test_text;
+  sum   
+--------
+ -3e+55
+(1 row)
+
+drop table test_text;
+drop table test_type_table;
+drop table test_sum;
+drop schema db_test_sum cascade;
+reset current_schema;

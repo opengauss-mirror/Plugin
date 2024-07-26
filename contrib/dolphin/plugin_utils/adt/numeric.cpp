@@ -283,6 +283,8 @@ static void apply_typmod(NumericVar* var, int32 typmod, bool can_ignore);
 #else
 static void apply_typmod(NumericVar* var, int32 typmod);
 #endif
+static void round_float_var(NumericVar* var, int precision);
+
 static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore = false);
 static double numericvar_to_double_no_overflow(NumericVar* var);
 
@@ -333,6 +335,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint1_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint4_sum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_sum);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_sum);
+
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_avg_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_avg_accum);
@@ -380,6 +384,7 @@ extern "C" DLL_PUBLIC Datum uint1_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint4_sum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint8_sum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float8_sum(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum uint1_avg_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_avg_accum(PG_FUNCTION_ARGS);
@@ -403,6 +408,19 @@ extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
+
+
+#define CHECKFLOATVAL(val, inf_is_valid, zero_is_valid)                                                             \
+    do {                                                                                                            \
+        if (isinf(val) && !(inf_is_valid))                                                                          \
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: overflow")));  \
+                                                                                                                    \
+        if ((val) == 0.0 && !(zero_is_valid))                                                                       \
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: underflow"))); \
+    } while (0)
+
+extern Datum DirectCall2WithNullArg(bool* isRetNull, PGFunction func, Oid collation, Datum arg1, Datum arg2,
+    bool arg1null, bool arg2null);
 
 #endif
 static void accum_sum_add(NumericSumAccum *accum, NumericVar *var1);
@@ -888,8 +906,8 @@ Datum numeric_support(PG_FUNCTION_ARGS)
             Node* source = (Node*)linitial(expr->args);
             int32 old_typmod = exprTypmod(source);
             int32 new_typmod = DatumGetInt32(((Const*)typmod)->constvalue);
-            int32 old_scale = (int32)(((uint32)(old_typmod - VARHDRSZ)) & 0xffff);
-            int32 new_scale = (int32)(((uint32)(new_typmod - VARHDRSZ)) & 0xffff);
+            int32 old_scale = (int16)(((uint32)(old_typmod - VARHDRSZ)) & 0xffff);
+            int32 new_scale = (int16)(((uint32)(new_typmod - VARHDRSZ)) & 0xffff);
             int32 old_precision = (int32)(((uint32)(old_typmod - VARHDRSZ)) >> 16 & 0xffff);
             int32 new_precision = (int32)(((uint32)(new_typmod - VARHDRSZ)) >> 16 & 0xffff);
 
@@ -956,7 +974,7 @@ Datum numeric(PG_FUNCTION_ARGS)
      */
     tmp_typmod = typmod - VARHDRSZ;
     precision = (tmp_typmod >> 16) & 0xffff;
-    scale = tmp_typmod & 0xffff;
+    scale = (int16)(tmp_typmod & 0xffff);
     maxdigits = precision - scale;
 
     /*
@@ -1009,15 +1027,17 @@ Datum numerictypmodin(PG_FUNCTION_ARGS)
     tl = ArrayGetIntegerTypmods(ta, &n);
 
     if (n == 2) {
-        if (tl[0] < 1 || tl[0] > NUMERIC_MAX_PRECISION)
+        if (tl[0] < 1 || tl[0] > NUMERIC_MAX_PRECISION) {
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg("NUMERIC precision %d must be between 1 and %d", tl[0], NUMERIC_MAX_PRECISION)));
-        if (tl[1] < 0 || tl[1] > tl[0])
+        }
+        if (!(DB_IS_CMPT(A_FORMAT) && t_thrd.proc->workingVersionNum >= FLOAT_VERSION_NUMBER) && (tl[1] < 0 || tl[1] > tl[0])) {
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg("NUMERIC scale %d must be between 0 and precision %d", tl[1], tl[0])));
-        typmod = (int32)(((uint32)(tl[0]) << 16) | (uint32)(tl[1])) + VARHDRSZ;
+        }
+        typmod = (int32)(((uint32)(tl[0]) << 16) | (uint16)(tl[1])) + VARHDRSZ;
     } else if (n == 1) {
         if (tl[0] < 1 || tl[0] > NUMERIC_MAX_PRECISION)
             ereport(ERROR,
@@ -1038,14 +1058,16 @@ Datum numerictypmodout(PG_FUNCTION_ARGS)
     const size_t len = 64;
     int32 typmod = PG_GETARG_INT32(0);
     char* res = (char*)palloc(len + 1);
+    int32 precision = (int32)((((uint32)(typmod - VARHDRSZ)) >> 16) & 0xffff);
+    int32 scale = (int16)(((uint32)(typmod - VARHDRSZ)) & 0xffff);
+    errno_t ret;
 
     if (typmod >= 0) {
-        errno_t ret = snprintf_s(res,
-            len + 1,
-            len,
-            "(%d,%d)",
-            (int32)((((uint32)(typmod - VARHDRSZ)) >> 16) & 0xffff),
-            (int32)(((uint32)(typmod - VARHDRSZ)) & 0xffff));
+        if (scale != PG_INT16_MIN) {
+            ret = snprintf_s(res, len + 1, len, "(%d,%d)", precision, scale);
+        } else {
+            ret = snprintf_s(res, len + 1, len, "(%d)", precision);
+        }
         securec_check_ss(ret, "", "");
     } else
         *res = '\0';
@@ -5647,86 +5669,136 @@ static void apply_typmod(NumericVar* var, int32 typmod)
 
     typmod -= VARHDRSZ;
     precision = (int32)(((uint32)(typmod) >> 16) & 0xffff);
-    scale = (int32)(((uint32)typmod) & 0xffff);
-    maxdigits = precision - scale;
+    scale = (int16)(((uint32)typmod) & 0xffff);
+    if (scale == PG_INT16_MIN && DB_IS_CMPT(A_FORMAT)) {
+        precision = ceil(log10(2) * precision);
+        
+        /* Round the float value to target precision (and set var->dscale) */
+        round_float_var(var, precision);
+    } else {
+        maxdigits = precision - scale;
 
-    /* Round to target scale (and set var->dscale) */
-    round_var(var, scale);
+        /* Round to target scale (and set var->dscale) */
+        round_var(var, scale);
 
-    /*
-     * Check for overflow - note we can't do this before rounding, because
-     * rounding could raise the weight.  Also note that the var's weight could
-     * be inflated by leading zeroes, which will be stripped before storage
-     * but perhaps might not have been yet. In any case, we must recognize a
-     * true zero, whose weight doesn't mean anything.
-     */
-    ddigits = (var->weight + 1) * DEC_DIGITS;
-    if (ddigits > maxdigits) {
-        /* Determine true weight; and check for all-zero result */
-        for (i = 0; i < var->ndigits; i++) {
-            NumericDigit dig = var->digits[i];
+        /*
+         * Check for overflow - note we can't do this before rounding, because
+         * rounding could raise the weight.  Also note that the var's weight could
+         * be inflated by leading zeroes, which will be stripped before storage
+         * but perhaps might not have been yet. In any case, we must recognize a
+         * true zero, whose weight doesn't mean anything.
+         */
+        ddigits = (var->weight + 1) * DEC_DIGITS;
+        if (ddigits > maxdigits) {
+            /* Determine true weight; and check for all-zero result */
+            for (i = 0; i < var->ndigits; i++) {
+                NumericDigit dig = var->digits[i];
 
-            if (dig) {
-                /* Adjust for any high-order decimal zero digits */
+                if (dig) {
+                    /* Adjust for any high-order decimal zero digits */
 #if DEC_DIGITS == 4
-                if (dig < 10)
-                    ddigits -= 3;
-                else if (dig < 100)
-                    ddigits -= 2;
-                else if (dig < 1000)
-                    ddigits -= 1;
+                    if (dig < 10)
+                        ddigits -= 3;
+                    else if (dig < 100)
+                        ddigits -= 2;
+                    else if (dig < 1000)
+                        ddigits -= 1;
 #elif DEC_DIGITS == 2
-                if (dig < 10)
-                    ddigits -= 1;
+                    if (dig < 10)
+                        ddigits -= 1;
 #elif DEC_DIGITS == 1
-                /* no adjustment */
+                    /* no adjustment */
 #else
 #error unsupported NBASE
 #endif
 #ifdef DOLPHIN
-                if (ddigits > maxdigits) {
-                    ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                    if (ddigits > maxdigits) {
+                        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
 #else
-                if (ddigits > maxdigits)
-                    ereport(ERROR,
+                    if (ddigits > maxdigits)
+                        ereport(ERROR,
 #endif
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                            errmsg("numeric field overflow"),
-                            errdetail(
-                                "A field with precision %d, scale %d must round to an absolute value less than %s%d.",
-                                precision,
-                                scale,
-                                /* Display 10^0 as 1 */
-                                maxdigits ? "10^" : "",
-                                maxdigits ? maxdigits : 1)));
+                            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                                errmsg("numeric field overflow"),
+                                errdetail(
+                                    "A field with precision %d, scale %d must round to an absolute value less than %s%d.",
+                                    precision,
+                                    scale,
+                                    /* Display 10^0 as 1 */
+                                    maxdigits ? "10^" : "",
+                                    maxdigits ? maxdigits : 1)));
 #ifdef DOLPHIN
-                    errno_t rc;
-                    size_t maxlen = precision + 3;
-                    char str[maxlen] = {};
-                    if (var->sign == NUMERIC_NEG) {
-                        rc = strcat_s(str, maxlen, "-");
-                        securec_check(rc, "\0", "\0");
-                    }
-                    while (maxdigits-- > 0) {
-                        rc = strcat_s(str, maxlen, "9");
-                        securec_check(rc, "\0", "\0");
-                    }
-                    if (scale > 0) {
-                        rc = strcat_s(str, maxlen, ".");
-                        securec_check(rc, "\0", "\0");
-                        while (scale-- > 0) {
+                        errno_t rc;
+                        size_t maxlen = precision + 3;
+                        char str[maxlen] = {};
+                        if (var->sign == NUMERIC_NEG) {
+                            rc = strcat_s(str, maxlen, "-");
+                            securec_check(rc, "\0", "\0");
+                        }
+                        while (maxdigits-- > 0) {
                             rc = strcat_s(str, maxlen, "9");
                             securec_check(rc, "\0", "\0");
                         }
+                        if (scale > 0) {
+                            rc = strcat_s(str, maxlen, ".");
+                            securec_check(rc, "\0", "\0");
+                            while (scale-- > 0) {
+                                rc = strcat_s(str, maxlen, "9");
+                                securec_check(rc, "\0", "\0");
+                            }
+                        }
+                        (void)set_var_from_str(str, str, var, can_ignore);
                     }
-                    (void)set_var_from_str(str, str, var, can_ignore);
-                }
 #endif
-                break;
+                    break;
+                }
+                ddigits -= DEC_DIGITS;
             }
-            ddigits -= DEC_DIGITS;
         }
     }
+}
+
+static void round_float_var(NumericVar* var, int precision)
+{
+    int32 exponent;
+    NumericVar denominator;
+    NumericVar significand;
+    int denom_scale;
+    int all_di;
+
+    if (var->ndigits > 0) {
+        exponent = (var->weight + 1) * DEC_DIGITS;
+
+        exponent -= DEC_DIGITS - (int)log10(var->digits[0]);
+    } else {
+        exponent = 0;
+    }
+
+    if (exponent < 0)
+        denom_scale = -exponent;
+    else
+        denom_scale = 0;
+
+    init_var(&denominator);
+    init_var(&significand);
+
+    /* count all significant digits  */
+    all_di = exponent + var->dscale + 1;
+
+    power_var_int(&const_ten, exponent, &denominator, denom_scale);
+    if (all_di >= precision) {
+        div_var(var, &denominator, &significand, precision - 1, true);
+    } else {
+        div_var(var, &denominator, &significand, all_di - 1, true);
+    }
+    if ((significand.dscale - exponent) >= 0) {
+        mul_var(&significand, &denominator, var, significand.dscale - exponent);
+    } else {
+        mul_var(&significand, &denominator, var, 0);
+    }
+
+    free_var(&denominator);
+    free_var(&significand);
 }
 
 /*
@@ -8071,8 +8143,7 @@ static void round_var(NumericVar* var, int rscale)
     int ndigits;
     int carry;
 
-    var->dscale = rscale;
-
+    var->dscale = rscale >= 0 ? rscale : 0;
     /* decimal digits wanted */
     di = (var->weight + 1) * DEC_DIGITS + rscale;
 
@@ -19293,7 +19364,7 @@ static inline int make_short_numeric_of_int64_minval(_out_ Numeric result, _in_ 
 static inline int make_short_numeric_of_zero(Numeric result, int typmod)
 {
     /// set display scale if typmod is given, otherwise is 0 at default.
-    int dscale = (typmod >= (int32)(VARHDRSZ)) ? ((typmod - VARHDRSZ) & 0xffff) : 0;
+    int dscale = (typmod >= (int32)(VARHDRSZ)) ? (int16)((typmod - VARHDRSZ) & 0xffff) : 0;
 
     SET_VARSIZE(result, NUMERIC_HDRSZ_SHORT);                                   // length info
     result->choice.n_short.n_header = NUMERIC_SHORT                             // sign is NUMERIC_POS
@@ -19382,7 +19453,7 @@ static inline int get_weight_from_ascale(int ndigits, int ascale)
 static int get_dscale_from_typmod(int typmod, int ascale, int last_item)
 {
     if (typmod >= (int32) (VARHDRSZ)) {
-        return (int32) ((uint32) (typmod - VARHDRSZ) & 0xffff);
+        return (int16)((uint32) (typmod - VARHDRSZ) & 0xffff);
     }
 
     /*
@@ -19737,7 +19808,7 @@ int convert_int64_to_short_numeric_byscale(_out_ char* outBuf, _in_ int128 v, _i
 
     int sign = NUMERIC_POS;
     int16 digits_buf[NUMERIC_NDIGITS_UPLIMITED];
-    int scale = (int32)((uint32)(typmod - VARHDRSZ) & 0xffff);
+    int scale = (int16)((uint32)(typmod - VARHDRSZ) & 0xffff);
     int scaleDiff = NUMERIC_SCALE_ADJUST(vscale) * DEC_DIGITS - vscale;
     Assert(scaleDiff >= 0 && scaleDiff <= MAXINT64DIGIT);
     v = v * ScaleMultipler[scaleDiff];
@@ -19974,7 +20045,7 @@ int convert_int128_to_short_numeric_byscale(_out_ char* outBuf, _in_ int128 v, _
         v = multiple;
     };
 
-    scale = (int32)((uint32)(typmod - VARHDRSZ) & 0xffff);
+    scale = (int16)((uint32)(typmod - VARHDRSZ) & 0xffff);
     ndigits = digits_buf + NUMERIC_NDIGITS_INT128_UPLIMITED - digits_ptr;
     weight = get_weight_from_ascale(ndigits, NUMERIC_SCALE_ADJUST(vscale));
 
@@ -21385,142 +21456,31 @@ Datum uint1_avg_accum(PG_FUNCTION_ARGS)
     PG_RETURN_ARRAYTYPE_P(transarray);
 }
 
+Datum uint8_sum_wrapper(int64 value, PG_FUNCTION_ARGS)
+{
+    Datum result;
+    bool isRetNull = false;
+    result = DirectCall2WithNullArg(&isRetNull, uint8_sum, InvalidOid, PG_GETARG_DATUM(0),
+        UInt64GetDatum(value), PG_ARGISNULL(0), PG_ARGISNULL(1));
+    if (isRetNull)
+        PG_RETURN_NULL();
+
+    PG_RETURN_DATUM(result);
+}
+
 Datum uint1_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT8(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT8(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT8(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT8(1), fcinfo);
 }
 
 Datum uint2_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT16(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT16(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT16(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT16(1), fcinfo);
 }
 
 Datum uint4_sum(PG_FUNCTION_ARGS)
 {
-    int64 newval;
-
-    if (PG_ARGISNULL(0)) {
-        /* No non-null input seen so far... */
-        if (PG_ARGISNULL(1))
-            PG_RETURN_NULL(); /* still no non-null */
-        /* This is the first non-null input. */
-        newval = (int64)PG_GETARG_UINT32(1);
-        PG_RETURN_INT64(newval);
-    }
-
-    /*
-     * If we're invoked as an aggregate, we can cheat and modify our first
-     * parameter in-place to avoid palloc overhead. If not, we need to return
-     * the new value of the transition variable. (If int8 is pass-by-value,
-     * then of course this is useless as well as incorrect, so just ifdef it
-     * out.)
-     */
-#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
-    if (AggCheckCallContext(fcinfo, NULL)) {
-        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
-
-        /* Leave the running sum unchanged in the new input is null */
-        if (!PG_ARGISNULL(1))
-            *oldsum = *oldsum + (int64)PG_GETARG_UINT32(1);
-
-        PG_RETURN_POINTER(oldsum);
-    } else
-#endif
-    {
-        int64 oldsum = PG_GETARG_INT64(0);
-
-        /* Leave sum unchanged if new input is null. */
-        if (PG_ARGISNULL(1)) {
-            PG_RETURN_INT64(oldsum);
-        }
-
-        /* OK to do the addition. */
-        newval = oldsum + (int64)PG_GETARG_UINT32(1);
-
-        PG_RETURN_INT64(newval);
-    }
+    return uint8_sum_wrapper((int64)PG_GETARG_UINT32(1), fcinfo);
 }
 
 Datum uint8_sum(PG_FUNCTION_ARGS)
@@ -21554,6 +21514,35 @@ Datum uint8_sum(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
 }
+
+
+Datum float8_sum(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = 0;
+    float8 arg2 = 0;
+    float8 result;
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); 
+
+        PG_RETURN_DATUM(PG_GETARG_DATUM(1));
+    }
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_DATUM(PG_GETARG_DATUM(0));
+
+    arg1 = PG_GETARG_FLOAT8(0);
+    arg2 = PG_GETARG_FLOAT8(1);
+
+    result = arg1 + arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+
+    PG_RETURN_FLOAT8(result);
+}
+
 
 Datum uint8_avg_accum(PG_FUNCTION_ARGS)
 {

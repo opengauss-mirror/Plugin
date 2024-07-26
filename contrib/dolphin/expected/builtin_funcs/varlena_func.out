@@ -1081,7 +1081,75 @@ explain(costs off) select * from t1 where a like concat('%', '1'::bit(8), '%')::
 (2 rows)
 
 drop table t1;
+-- test default value & concat_ws
+create table concat_ws_t (
+    c1 decimal default 16,
+    c2 decimal(10, 2) default 17,
+    c3 varchar(100) default concat('hello', ' world'),
+    c4 varchar(100) default concat_ws('|', 'a', 'b'),
+    c5 int default 10.0,
+    c6 float default 10
+);
+insert into concat_ws_t values(c1, c2, c3, c4, c5, c6);
+select * from concat_ws_t;
+ c1 |  c2   | c3 | c4 | c5 | c6 
+----+-------+----+----+----+----
+ 16 | 17.00 |    |    | 10 | 10
+(1 row)
+
+drop table if exists textlen_t;
+NOTICE:  table "textlen_t" does not exist, skipping
+create table textlen_t(
+	c1 int4 default (char_length('10')),
+    c2 text default (char_length('10'))
+);
+insert into textlen_t values (c1, c2);
+select * from textlen_t;
+ c1 | c2 
+----+----
+    | 
+(1 row)
+
+create table expr_t(
+	c1 float default 1,
+    c2 varchar(30) default 1,
+    c3 int default (100 + 20*2)
+);
+insert into expr_t values(c1, c2, c3);
+insert into expr_t values(default, default, default);
+select * from expr_t;
+ c1 | c2 | c3  
+----+----+-----
+  1 | 1  |    
+  1 | 1  | 140
+(2 rows)
+
+create table func_t(
+    c1 varchar(30) default (concat('hello', ' world')),
+    c2 varchar(30) default 'hello world'
+);
+insert into func_t values (c1, c2);
+insert into func_t values (default, default);
+select * from func_t;
+     c1      |     c2      
+-------------+-------------
+             | hello world
+ hello world | hello world
+(2 rows)
+
+explain(costs off) select * from func_t where c1 like concat_ws(',', '1', '2');
+              QUERY PLAN               
+---------------------------------------
+ Seq Scan on func_t
+   Filter: ((c1)::text ~~ '1,2'::text)
+(2 rows)
+
 drop schema db_test_varlena cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table concat_ws_t
+drop cascades to table textlen_t
+drop cascades to table expr_t
+drop cascades to table func_t
 reset bytea_output;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;

@@ -469,6 +469,7 @@ static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionTyp
 #define  BEGIN_P_LEN      14
 #define  END_STR         "\nEND\n"
 #define  END_LEN         6
+#define  SELECT_STRAIGHT_JOIN	1
 /* if delimiter is multiple characters like '$$', token will be set as END_OF_PROC. */
 #define  TOKEN_IS_DELIMITER	(tok == END_OF_PROC || (strlen(u_sess->attr.attr_common.delimiter_name) == 1 && tok == u_sess->attr.attr_common.delimiter_name[0]))
 static int get_outarg_num(List *fun_args);
@@ -496,6 +497,8 @@ static int64 SequenceStrGetInt64(const char *str);
 static int GetLoadType(int load_type_f, int load_type_s);
 static Node *MakeSqlLoadNode(char *colname);
 static void checkDeleteRelationError();
+static TypeName *ParseFloatByExtentedPrecision(int ival, int location, core_yyscan_t yyscanner);
+static void CheckTypmodScale(List* arglist, int location, core_yyscan_t yyscanner);
 static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner, bool is_byprecision = true);
 static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner);
 
@@ -629,6 +632,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	struct TypeAttr* typeattr;
 	RotateClause         *rotateinfo;
 	UnrotateClause       *unrotateinfo;
+	FunctionPartitionInfo *funcPartInfo;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption CreateTableOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -646,6 +650,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 		AlterExtensionStmt AlterExtensionContentsStmt AlterForeignTableStmt
 		AlterCompositeTypeStmt AlterUserStmt AlterUserMappingStmt AlterUserSetStmt
 		AlterSystemStmt
+		AlterTriggerStmt
 		AlterRoleStmt AlterRoleSetStmt AlterRlsPolicyStmt
 		AlterDefaultPrivilegesStmt DefACLAction AlterSessionStmt
 		AnalyzeStmt AnalyzePartitionStmt AnalyzeTableStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
@@ -817,7 +822,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				OptTypedTableElementList TypedTableElementList
 				OptForeignTableElementList ForeignTableElementList
 				reloptions opt_reloptions opt_reloptions_without_empty opt_tblspc_options tblspc_options opt_cfoptions cfoptions
-				OptWith OptWith_without_empty opt_distinct opt_definition func_args func_args_list
+				OptWith OptWith_without_empty opt_distinct distinct_option opt_select_option opt_definition func_args func_args_list
 				func_args_with_defaults func_args_with_defaults_list proc_args
 				func_as createfunc_opt_list opt_createproc_opt_list alterfunc_opt_list opt_createfunc_opt_list
 				aggr_args old_aggr_definition old_aggr_list
@@ -880,16 +885,19 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <lockstrength> for_locking_strength
 %type <node>	for_locking_item
 %type <list>	for_locking_clause opt_for_locking_clause for_locking_items
-%type <list>	locked_rels_list
+%type <list>	locked_rels_list colid_list
 %type <boolean>	opt_all opt_all_b
+%type <ival>	opt_select_option_list
+%type <ival>	opt_select_option_item
 
+%type <funcPartInfo> parallel_partition_opt
 %type <node>	join_outer join_qual
-%type <jtype>	join_type
+%type <jtype>	join_type natural_join_type inner_join_type
 
 %type <list>	extract_list timestamp_arg_list overlay_list position_list
 
 %type <list>	substr_list trim_list
-%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval event_interval_unit opt_evtime_unit
+%type <list>	interval_unit interval_second
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
@@ -983,7 +991,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				CharacterWithLength CharacterWithoutLength
 				PreciseConstDatetime ConstDatetime ConstSet
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
-				datatypecl OptCopyColTypename EnumType
+				datatypecl OptCopyColTypename EnumType interval_type
 %type <str>		character
 %type <str>		extract_arg msq_extract_arg
 %type <str>		timestamp_units
@@ -1023,7 +1031,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptConsTableSpaceWithEmpty OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <ival>	opt_check_option view_security_expression view_security_option 
+%type <ival>	opt_check_option view_security_expression view_security_option opt_precision
 %type <ival>    view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo
 
 %type <str>		opt_provider security_label
@@ -1058,7 +1066,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
 				range_partitioning_clause value_partitioning_clause opt_interval_partition_clause
-				interval_expr maxValueItem list_partitioning_clause hash_partitioning_clause
+				maxValueItem list_partitioning_clause hash_partitioning_clause
 				range_start_end_item range_less_than_item list_partition_item hash_partition_item
 				subpartitioning_clause range_subpartitioning_clause hash_subpartitioning_clause
 				list_subpartitioning_clause subpartition_item opt_subpartition_index_def
@@ -1079,7 +1087,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
 				list_dist_state OptListDistribution list_dist_value interval_intexpr initime
-				interval_list every_interval interval_cell ev_timeexpr 
+				interval_list every_interval interval_cell ev_timeexpr
 
 %type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
 /* PGXC_END */
@@ -1193,7 +1201,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET OR_OR_SYM
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET FCONST_F FCONST_D OR_OR_SYM
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1212,7 +1220,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
-	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
+	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_DOUBLE_INF BINARY_DOUBLE_NAN BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHANNEL CHAR_P
@@ -1232,7 +1240,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERROR_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1245,10 +1253,12 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
-	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
+	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INFINITE_P INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPLACE INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
-	INTERSECT INTERVAL INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
+	INTERSECT INTERVAL INTERVAL_S INTERVAL_TYPE_YEAR INTERVAL_TYPE_QUARTER INTERVAL_TYPE_MONTH INTERVAL_TYPE_WEEK INTERVAL_TYPE_DAY INTERVAL_TYPE_HOUR INTERVAL_TYPE_MINUTE
+	INTERVAL_TYPE_SECOND INTERVAL_TYPE_MICROSECOND INTERVAL_TYPE_YEAR_MONTH INTERVAL_TYPE_DAY_HOUR INTERVAL_TYPE_DAY_MINUTE INTERVAL_TYPE_DAY_SECOND INTERVAL_TYPE_DAY_MICROSECOND INTERVAL_TYPE_HOUR_MINUTE INTERVAL_TYPE_HOUR_SECOND INTERVAL_TYPE_HOUR_MICROSECOND INTERVAL_TYPE_MINUTE_SECOND INTERVAL_TYPE_MINUTE_MICROSECOND INTERVAL_TYPE_SECOND_MICROSECOND
+	INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
 
 	JOIN
 
@@ -1261,14 +1271,14 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
 	MOD MODIFIES MAX_ROWS
 	// DB4AI
-	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
+	NAME_P NAMES NAN_P NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOVALIDATE NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
-	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PACKAGE PACKAGES PARALLEL_ENABLE PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 	PIPELINED
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
@@ -1279,7 +1289,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* PGXC_END */
 	PRECEDES_P PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PROXY PUBLICATION PUBLISH PURGE
 
-	QUARTER QUERY QUICK QUOTE
+	QUARTER_P QUERY QUICK QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REPLICAS REGEXP REORGANIZE REPAIR
@@ -1289,7 +1299,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNAL SIGNED
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPECIFICATION SPILL SPLIT SQLSTATE STABLE STACKED_P STANDALONE_P START STARTS STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBCLASS_ORIGIN SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
+	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRAIGHT_JOIN STRATIFY STREAM STRICT_P STRIP_P SUBCLASS_ORIGIN SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR STARTING SQL_P
 
 	TABLE TABLE_NAME TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
@@ -1381,7 +1391,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
-%nonassoc	BETWEEN NOT_BETWEEN WEEK_P MICROSECOND_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P QUARTER
+%nonassoc	BETWEEN NOT_BETWEEN WEEK_P MICROSECOND_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P QUARTER_P
 %nonassoc	IN_P NOT_IN
 %left		DIV MOD
 %nonassoc	REGEXP RLIKE
@@ -1431,6 +1441,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* Unary Operators */
 %left		AT				/* sets precedence for AT TIME ZONE */
 %left		COLLATE
+%left		INTERVAL
 %right		UMINUS BY NAME_P PASSING ROW TYPE_P VALUE_P
 %left		'[' ']'
 %left		'(' ')'
@@ -1447,7 +1458,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * They wouldn't be given a precedence at all, were it not that we need
  * left-associativity among the JOIN rules themselves.
  */
-%left		JOIN CROSS LEFT FULL RIGHT INNER_P NATURAL ENCRYPTED
+%left		JOIN CROSS LEFT FULL RIGHT INNER_P NATURAL ENCRYPTED STRAIGHT_JOIN
 /* kluge to keep xml_whitespace_option from causing shift/reduce conflicts */
 %right		PRESERVE STRIP_P
 %%
@@ -1576,6 +1587,7 @@ stmt :
 			| AlterSubscriptionStmt
 			| AlterTableStmt
 			| AlterSystemStmt
+			| AlterTriggerStmt
 			| AlterCompositeTypeStmt
 			| AlterRoleSetStmt
 			| AlterRoleStmt
@@ -2452,6 +2464,18 @@ altersys_option:
 			|				{/* empty */}
 			;
 
+AlterTriggerStmt:
+			ALTER TRIGGER name enable_trigger
+				{
+					if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+						ereport(ERROR,(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("ALTER TRIGGER ... ENABLE/DISABLE is supported only in A_FORMAT database.")));
+					AlterTriggerStmt *n = makeNode(AlterTriggerStmt);
+					n->trigname = $3;
+					n->tgenabled = $4;
+					$$ = (Node *)n;
+				}
+			;
 /*****************************************************************************
  *
  * Kill a session or cancel all queries from a session
@@ -3606,7 +3630,7 @@ zone_value:
 				{
 					$$ = makeStringConst($1, @1);
 				}
-			| INTERVAL SCONST opt_interval
+			| INTERVAL SCONST interval_unit
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -3625,7 +3649,7 @@ zone_value:
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| INTERVAL '(' Iconst ')' SCONST opt_interval
+			| INTERVAL '(' Iconst ')' SCONST interval_unit
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -7855,6 +7879,9 @@ copy_generic_opt_list:
 copy_generic_opt_elem:
 			ColLabel copy_generic_opt_arg
 				{
+					/* Character "when_expr" may be injected as "COPY ... WHEN ... "*/
+					if (pg_strcasecmp($1, "when_expr") == 0)
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("option \"%s\" not recognized", $1)));
 					$$ = makeDefElem($1, $2);
 				}
 		;
@@ -9571,7 +9598,7 @@ column_item:
 		;
 
 opt_interval_partition_clause:
-		INTERVAL '(' interval_expr ')' opt_interval_tablespaceList
+		INTERVAL '(' a_expr ')' opt_interval_tablespaceList
 			{
 				IntervalPartitionDefState* n = makeNode(IntervalPartitionDefState);
 				n->partInterval = $3;
@@ -9593,13 +9620,6 @@ opt_interval_tablespaceList:
 		|
 			{
 				$$ = NIL;
-			}
-		;
-
-interval_expr:
-		a_expr
-			{
-				$$ = $1;
 			}
 		;
 
@@ -15424,6 +15444,8 @@ TriggerFuncArg:
 					$$ = makeString(pstrdup(buf));
 				}
 			| FCONST								{ $$ = makeString($1); }
+			| FCONST_F								{ $$ = makeString($1); }
+			| FCONST_D								{ $$ = makeString($1); }
 			| SCONST								{ $$ = makeString($1); }
 			| ColLabel								{ $$ = makeString($1); }
 		;
@@ -20428,12 +20450,8 @@ definer_opt:
 			| /* EMPTY */                           { $$ = NULL; }
 		;
 
-event_interval_unit: opt_interval			{$$ = $1;}
-					| opt_evtime_unit		{$$ = $1;}
-				;
-
 every_interval:
-                Iconst event_interval_unit			
+                Iconst interval_unit			
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -20441,7 +20459,7 @@ every_interval:
 					Node *num = makeIntConst($1, @1);
 		            $$ = makeTypeCast(num, t, -1);	
 				}
-				| SCONST event_interval_unit
+				| SCONST interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -20449,7 +20467,7 @@ every_interval:
 					Node *num = makeStringConst($1, @1);
 					$$ = makeTypeCast(num, t, -1);
 				}
-				| FCONST event_interval_unit
+				| FCONST interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -20485,7 +20503,7 @@ interval_list: interval_cell						{ $$ = $1; }
             	{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
 	;
 
-interval_cell:  INTERVAL ICONST opt_interval
+interval_cell:  INTERVAL ICONST interval_unit
 				{
 					char* a = NULL;
 					a = (char*)palloc(8);
@@ -20495,14 +20513,14 @@ interval_cell:  INTERVAL ICONST opt_interval
 					t->typmods = $3;
 					$$ = makeStringConstCast(a, @2, t);
 				}
-				| INTERVAL SCONST opt_interval
+				| INTERVAL SCONST interval_unit
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-				| INTERVAL FCONST opt_interval
+				| INTERVAL FCONST interval_unit
 				{
 					$$  = makeFloatConst($2, @2);
 				}
@@ -22300,6 +22318,55 @@ common_func_opt_item:
 				{
 					BCompatibilityOptionSupportCheck($1);
 					$$ = makeDefElem("comment", (Node *)makeString($2));
+				}
+		;
+
+parallel_partition_opt:
+			'(' PARTITION param_name BY ANY ')'
+				{
+					$$ = makeNode(FunctionPartitionInfo);
+					$$->strategy = FUNC_PARTITION_ANY;
+					$$->partitionCursor = $3;
+
+				}
+			| '(' PARTITION param_name BY IDENT '(' colid_list ')' ')'
+				{
+					if (strcmp($5, "hash") != 0) {
+						const char* message = "Un-support feature";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("unrecognized option \"%s\"", $3)));	
+					}
+					$$ = makeNode(FunctionPartitionInfo);
+					$$->strategy = FUNC_PARTITION_HASH;
+					$$->partitionCursor = $3;
+					$$->partitionCols = $7;
+				}
+			| '(' PARTITION param_name BY RANGE '(' colid_list ')' ')'
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("PARALLEL_ENABLE PARTITION BY RANGE is not yet supported.")));
+				}
+			| '(' PARTITION param_name BY VALUE_P '(' ColId ')' ')'
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("PARALLEL_ENABLE PARTITION BY VALUE is not yet supported.")));
+				}
+			| /* EMPTY */
+				{
+					$$ = NULL;
+				}
+
+colid_list:
+			ColId
+				{
+					$$ = list_make1($1);
+				}
+			| colid_list ',' ColId
+				{
+					$$ = lappend($1, $3);
 				}
 		;
 
@@ -29169,6 +29236,8 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = $1;
 					$$->isRewritten = false;
+                    if (((SelectStmt*)$1)->valuesLists == NULL)
+                      $$->is_dist_insertselect = true;
 				}
 			| '(' insert_column_list ')' SelectStmt
 				{
@@ -29176,6 +29245,8 @@ insert_rest:
 					$$->cols = $2;
 					$$->selectStmt = $4;
 					$$->isRewritten = false;
+					if (((SelectStmt*)$4)->valuesLists == NULL)
+                        $$->is_dist_insertselect = true;
 				}
 			| '(' ')' SelectStmt
 				{
@@ -29183,6 +29254,8 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = $3;
 					$$->isRewritten = false;
+					if (((SelectStmt*)$3)->valuesLists == NULL)
+                        $$->is_dist_insertselect = true;
 				}
 			| DEFAULT VALUES
 				{
@@ -29190,6 +29263,7 @@ insert_rest:
 					$$->cols = NIL;
 					$$->selectStmt = NULL;
 					$$->isRewritten = false;
+					$$->is_dist_insertselect = false;
 				}
 			| insert_empty_values
 				{
@@ -29201,6 +29275,7 @@ insert_rest:
 							$$->selectStmt = $1;
 						}
 						$$->isRewritten = false;
+						$$->is_dist_insertselect = false;
 				}
 			| '(' ')' insert_empty_values
 				{
@@ -29212,6 +29287,7 @@ insert_rest:
 						$$->selectStmt = $3;
 					}
 					$$->isRewritten = false;
+					$$->is_dist_insertselect = false;
 				}
 		;
 
@@ -29590,7 +29666,7 @@ multiple_set_clause:
 
 					$$ = $2;
 				}
-			|	'(' set_target_list ')' assign_operator '(' SELECT hint_string opt_distinct target_list
+			|	'(' set_target_list ')' assign_operator '(' SELECT hint_string opt_select_option target_list
 					from_clause where_clause group_clause having_clause ')'
 					{
 						SelectStmt *select = makeNode(SelectStmt);
@@ -30170,7 +30246,7 @@ select_clause:
  * However, this is not checked by the grammar; parse analysis must check it.
  */
 simple_select:
-			SELECT hint_string opt_distinct target_list
+			SELECT hint_string opt_select_option target_list
 			opt_into_clause from_clause where_clause start_with_clause
 			group_clause having_clause window_clause
 				{
@@ -30186,6 +30262,7 @@ simple_select:
 					n->windowClause = $11;
 					n->hintState = create_hintstate($2);
 					n->hasPlus = getOperatorPlusFlag();
+					u_sess->parser_cxt.is_straight_join = false;
 					$$ = (Node *)n;
 				}
 			| values_clause							{ $$ = $1; }
@@ -30524,13 +30601,45 @@ opt_all_b:	ALL										{ $$ = TRUE; }
 /* We use (NIL) as a placeholder to indicate that all target expressions
  * should be placed in the DISTINCT list during parsetree analysis.
  */
+opt_select_option_list:
+			opt_select_option_list opt_select_option_item	{ $$ = $1 | $2; }
+			| opt_select_option_item
+		;
+
+opt_select_option_item:
+			STRAIGHT_JOIN	{ $$ = SELECT_STRAIGHT_JOIN; }
+		;
+
+opt_select_option:
+			opt_distinct
+			| opt_select_option_list
+				{
+					u_sess->parser_cxt.is_straight_join = $1 & SELECT_STRAIGHT_JOIN;
+					$$ = NIL;
+				}
+			| distinct_option opt_select_option_list
+				{
+					u_sess->parser_cxt.is_straight_join = $2 & SELECT_STRAIGHT_JOIN;
+					$$ = $1;
+				}
+			| opt_select_option_list distinct_option
+				{
+					u_sess->parser_cxt.is_straight_join = $1 & SELECT_STRAIGHT_JOIN;
+					$$ = $2;
+				}
+		;
+
 opt_distinct:
+			distinct_option								{ $$ = $1; }
+			| /*EMPTY*/									{ $$ = NIL; }
+		;
+
+distinct_option:
 			DISTINCT									{ $$ = list_make1(NIL); }
 			| DISTINCTROW								{ $$ = list_make1(NIL); }
 			| DISTINCT ON '(' expr_list ')'				{ $$ = $4; }
 			| DISTINCTROW ON '(' expr_list ')'			{ $$ = $4; }
 			| ALL										{ $$ = NIL; }
-			| /*EMPTY*/									{ $$ = NIL; }
 		;
 
 opt_sort_clause:
@@ -31468,126 +31577,98 @@ joined_table:
 				{
 					$$ = $2;
 				}
-			| table_ref CROSS JOIN table_ref
+			| table_ref inner_join_type table_ref %prec lower_than_on
 				{
-					/* CROSS JOIN is same as unqualified inner join */
+					if ($3 != NULL && IsA($3, JoinExpr)) {
+						JoinExpr *n = makeNode(JoinExpr);
+						n->jointype = JOIN_INNER;
+						n->isNatural = FALSE;
+						if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
+							n->is_straight_join = TRUE;
+						} else {
+							n->is_straight_join = FALSE;
+						}
+						n->larg = $1;
+						n->rarg = $3;
+						Node* topJoin = (Node*) $3;
+						Node* largs = ((JoinExpr*)$3)->larg;
+						while (IsA(largs, JoinExpr)) {
+							topJoin = largs;
+							largs = ((JoinExpr*)topJoin)->larg;
+						}
+						n->rarg = largs;
+						n->usingClause = NIL;
+						n->quals = NULL;
+						((JoinExpr*)topJoin)->larg = (Node*) n;
+						$$ = (JoinExpr*)$3;
+					} else {
+						JoinExpr *n = makeNode(JoinExpr);
+						n->jointype = JOIN_INNER;
+						n->isNatural = FALSE;
+						if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
+							n->is_straight_join = TRUE;
+						} else {
+							n->is_straight_join = FALSE;
+						}
+						n->larg = $1;
+						n->rarg = $3;
+						n->usingClause = NIL;
+						n->quals = NULL;
+						$$ = n;
+					}
+				}
+			| table_ref inner_join_type table_ref join_qual 
+				{
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = JOIN_INNER;
 					n->isNatural = FALSE;
+					if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
+						n->is_straight_join = TRUE;
+					} else {
+						n->is_straight_join = FALSE;
+					}
 					n->larg = $1;
-					n->rarg = $4;
-					n->usingClause = NIL;
-					n->quals = NULL;
+					n->rarg = $3;
+					if ($4 != NULL && IsA($4, List)) {
+						n->usingClause = (List*) $4;
+					} else {
+						n->quals = $4;
+					}
 					$$ = n;
 				}
-			| table_ref join_type JOIN table_ref join_qual
+			| table_ref join_type JOIN table_ref USING '(' name_list ')'
 				{
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = $2;
 					n->isNatural = FALSE;
+					n->is_straight_join = FALSE;
 					n->larg = $1;
 					n->rarg = $4;
-					if ($5 != NULL && IsA($5, List))
-						n->usingClause = (List *) $5; /* USING clause */
-					else
-						n->quals = $5; /* ON clause */
-					$$ = n;
-				}
-			| table_ref JOIN table_ref join_qual
-				{
-					/* letting join_type reduce to empty doesn't work */
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = FALSE;
-					n->larg = $1;
-					n->rarg = $3;
-					if ($4 != NULL && IsA($4, List))
-						n->usingClause = (List *) $4; /* USING clause */
-					else
-						n->quals = $4; /* ON clause */
-					$$ = n;
-				}
-			| table_ref JOIN table_ref 
-			%prec lower_than_on
-				{
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = FALSE;
-					n->larg = $1;
-					n->rarg = $3;
-					n->usingClause = NIL;
-					n->quals = NULL;
-					if (IsA($3, JoinExpr))
+					if ((Node*) $7 != NULL && IsA((Node*) $7, List))
 					{
-						JoinExpr* join = (JoinExpr*)$3;
-						n->rarg = join->larg;
-						join->larg = (Node *)n;
-						$$ = join;
+						n->usingClause = (List*) ((Node*) $7);
 					}
-					else
-					$$ = n;	
+					n->quals = NULL;
+					$$ = n;
 				}
-			| table_ref NATURAL join_type JOIN table_ref
+			| table_ref join_type JOIN table_ref ON a_expr
+				{
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = $2;
+					n->isNatural = FALSE;
+					n->is_straight_join = FALSE;
+					n->larg = $1;
+					n->rarg = $4;
+					n->usingClause = NIL;
+					n->quals = $6;
+					$$ = n;
+				}
+			| table_ref NATURAL natural_join_type JOIN table_ref
 				{
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = $3;
 					n->isNatural = TRUE;
-					n->larg = $1;
-					n->rarg = $5;
-					n->usingClause = NIL; /* figure out which columns later... */
-					n->quals = NULL; /* fill later */
-					$$ = n;
-				}
-			| table_ref NATURAL JOIN table_ref
-				{
-					/* letting join_type reduce to empty doesn't work */
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = TRUE;
-					n->larg = $1;
-					n->rarg = $4;
-					n->usingClause = NIL; /* figure out which columns later... */
-					n->quals = NULL; /* fill later */
-					$$ = n;
-				}
-			| table_ref INNER_P JOIN table_ref join_qual
-				{
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = FALSE;
-					n->larg = $1;
-					n->rarg = $4;
-					if ($5 != NULL && IsA($5, List))
-						n->usingClause = (List *) $5; /* USING clause */
-					else
-						n->quals = $5; /* ON clause */
-					$$ = n;
-				}
-			| table_ref INNER_P JOIN table_ref 
-			%prec lower_than_on
-				{
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = FALSE;
-					n->larg = $1;
-					n->rarg = $4;
-					n->usingClause = NIL;
-					n->quals = NULL;
-					if (IsA($4, JoinExpr))
-					{
-						JoinExpr* join = (JoinExpr*)$4;
-						n->rarg = join->larg;
-						join->larg = (Node *)n;
-						$$ = join;
-					}
-					else
-					$$ = n;
-				}
-			| table_ref NATURAL INNER_P JOIN table_ref
-				{
-					JoinExpr *n = makeNode(JoinExpr);
-					n->jointype = JOIN_INNER;
-					n->isNatural = TRUE;
+					n->is_straight_join = FALSE;
 					n->larg = $1;
 					n->rarg = $5;
 					n->usingClause = NIL; /* figure out which columns later... */
@@ -31868,6 +31949,19 @@ join_type:	FULL join_outer							{ $$ = JOIN_FULL; }
 			| LEFT join_outer						{ $$ = JOIN_LEFT; }
 			| RIGHT join_outer						{ $$ = JOIN_RIGHT; }
 			| FULL_OUTER                            { $$ = JOIN_FULL; }
+		;
+
+natural_join_type:
+			/* Empty */								{ $$ = JOIN_INNER; }
+			| INNER_P								{ $$ = JOIN_INNER; }
+			| join_type								{ $$ = $1; }
+		;
+
+inner_join_type:
+			JOIN									{ $$ = JOIN_INNER; }
+			| INNER_P JOIN							{ $$ = JOIN_INNER; }
+			| CROSS JOIN							{ $$ = JOIN_INNER; }
+			| STRAIGHT_JOIN							{ $$ = JOIN_STRAIGHT; }
 		;
 
 /* OUTER is just noise... */
@@ -32332,32 +32426,7 @@ SimpleTypename:
 			| Character								{ $$ = $1; }
 			| ConstDatetime							{ $$ = $1; }
 			| ConstSet								{ $$ = $1; }
-			| INTERVAL opt_interval
-				{
-					$$ = SystemTypeName("interval");
-					$$->location = @1;
-					$$->typmods = $2;
-				}
-			| INTERVAL '(' Iconst ')' opt_interval
-				{
-					$$ = SystemTypeName("interval");
-					$$->location = @1;
-					if ($5 != NIL)
-					{
-						if (list_length($5) != 1) {
-							const char* message = "interval precision specified twice";
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("interval precision specified twice"),
-									 parser_errposition(@1)));
-						}
-						$$->typmods = lappend($5, makeIntConst($3, @3));
-					}
-					else
-						$$->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
-												 makeIntConst($3, @3));
-				}
+			| interval_type
 			| VARBINARY opt_type_modifiers
 				{
 					$$ = SystemTypeName("varbinary");
@@ -33361,236 +33430,312 @@ selected_timezone:
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
-opt_single_interval:
-			/* Interval units containing only a single part */
-			YEAR_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
-			| MONTH_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
-			| WEEK_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
-			| DAY_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
-			| HOUR_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
-			| MINUTE_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
-			| MICROSECOND_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
-			| YEAR_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
-			| MONTH_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
-			| DAY_P '(' Iconst ')'
-				{  $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1));   }
-			| HOUR_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
-			| MINUTE_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+opt_precision: 
+			'(' Iconst ')' { $$ = $2; }
+			| /* EMPTY */ { $$ = 0; }
 		;
 
-opt_multipart_interval:
-			/* Interval units containing multiple parts */
-			interval_second /* Second contain integer and fraction parts */
-				{ $$ = $1; }
-			| YEAR_P TO MONTH_P
+interval_type:	
+ 			INTERVAL
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = NIL;
+				}
+			| INTERVAL_TYPE_YEAR opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1));
+				}
+			| INTERVAL_TYPE_QUARTER opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(QUARTER), @1));
+				}
+			| INTERVAL_TYPE_MONTH opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1));
+				}
+			| INTERVAL_TYPE_WEEK opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1));
+				}
+			| INTERVAL_TYPE_DAY opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1));
+				}
+			| INTERVAL_TYPE_HOUR opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1));
+				}
+			| INTERVAL_TYPE_MINUTE opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1));
+				}
+			| INTERVAL_TYPE_SECOND opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(SECOND), @1));
+				}
+			| INTERVAL_TYPE_MICROSECOND opt_precision
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_YEAR_MONTH
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+													INTERVAL_MASK(MONTH), @1));
+				}
+			| INTERVAL_TYPE_DAY_HOUR
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR), @1));
+				}
+			| INTERVAL_TYPE_DAY_MINUTE
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE), @1));
+				}
+			| INTERVAL_TYPE_DAY_SECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1));
+				}
+			| INTERVAL_TYPE_DAY_MICROSECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_HOUR_MINUTE
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE), @1));
+				}
+			| INTERVAL_TYPE_HOUR_SECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1));
+				}
+			| INTERVAL_TYPE_HOUR_MICROSECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_MINUTE_SECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1));
+				}
+			| INTERVAL_TYPE_MINUTE_MICROSECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_SECOND_MICROSECOND
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_YEAR opt_precision TO MONTH_P
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
 												 INTERVAL_MASK(MONTH), @1));
 				}
-			| DAY_P TO HOUR_P
+			| INTERVAL_TYPE_DAY opt_precision TO HOUR_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR), @1));
 				}
-			| DAY_P TO MINUTE_P
+			| INTERVAL_TYPE_DAY opt_precision TO MINUTE_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
 				}
-			| DAY_P TO interval_second
+			| INTERVAL_TYPE_DAY opt_precision TO interval_second
 				{
-					$$ = $3;
-					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												INTERVAL_MASK(HOUR) |
 												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+												INTERVAL_MASK(SECOND), @1));
 				}
-			| HOUR_P TO MINUTE_P
+			| INTERVAL_TYPE_DAY opt_precision TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
-				}
-			| HOUR_P TO interval_second
-				{
-					$$ = $3;
-					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
-				}
-			| MINUTE_P TO interval_second
-				{
-					$$ = $3;
-					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
-				}
-			| YEAR_P '(' Iconst ')' TO MONTH_P
-				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
-												 INTERVAL_MASK(MONTH), @1));
-				}
-			| DAY_P '(' Iconst ')'  TO HOUR_P
-				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR), @1));
-				}
-			| DAY_P '(' Iconst ')'   TO MINUTE_P
-				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL_TYPE_HOUR opt_precision TO MINUTE_P
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
 				}
-			| DAY_P '(' Iconst ')' TO interval_second
+			| INTERVAL_TYPE_HOUR opt_precision TO interval_second
 				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
-												INTERVAL_MASK(HOUR) |
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+												INTERVAL_MASK(SECOND), @1));
 				}
-			| HOUR_P '(' Iconst ')'  TO MINUTE_P
+			| INTERVAL_TYPE_HOUR opt_precision TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
 				}
-			| HOUR_P '(' Iconst ')'   TO interval_second
+			| INTERVAL_TYPE_MINUTE opt_precision TO interval_second
 				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1));
 				}
-			| MINUTE_P  '(' Iconst ')'  TO interval_second
+			| INTERVAL_TYPE_MINUTE opt_precision TO MICROSECOND_P
 				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
 				}
-			| /*EMPTY*/ %prec OVERLAPS
-				{ $$ = NIL; }
+			| INTERVAL_TYPE_SECOND opt_precision TO MICROSECOND_P
+				{
+					$$ = SystemTypeName("interval");
+						$$->location = @1;
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| INTERVAL '(' Iconst ')' interval_unit
+				{
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
+					if ($5 != NIL)
+					{
+						if (list_length($5) != 1) {
+							const char* message = "interval precision specified twice";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("interval precision specified twice"),
+									 parser_errposition(@1)));
+						}
+						$$->typmods = lappend($5, makeIntConst($3, @3));
+					}
+					else
+						$$->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
+												 makeIntConst($3, @3));
+				}
 		;
 
-opt_evtime_unit:
-			DAY_HOUR_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR), @1));
-			}
-			| DAY_MINUTE_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
-			}
-			| DAY_SECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND), @1));
-			}
-			| DAY_MICROSECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
-			}
-			| HOUR_MINUTE_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
-			}
-			| HOUR_SECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND), @1));
-			}
-			| HOUR_MICROSECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
-			}
-			| MINUTE_SECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND), @1));
-			}
-			| MINUTE_MICROSECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
-			}
-			| SECOND_MICROSECOND_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
-			}
-			| YEAR_MONTH_P
-			{
-				$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
-												 INTERVAL_MASK(MONTH), @1));
-			}
-			;
-
-opt_interval:
-			YEAR_P
+interval_unit:
+			YEAR_P opt_precision
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
-			| MONTH_P
+			| QUARTER_P opt_precision
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(QUARTER), @1)); }
+			| MONTH_P opt_precision
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
-			| DAY_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
-			| HOUR_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
-			| MINUTE_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
-			| interval_second
-				{ $$ = $1; }
-			| MICROSECOND_P
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
-			| WEEK_P
+			| WEEK_P opt_precision
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
-			| YEAR_P TO MONTH_P
+			| DAY_P opt_precision
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
+			| HOUR_P opt_precision
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
+			| MINUTE_P opt_precision
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+			| interval_second /* Second contain integer and fraction parts */
+				{ $$ = $1; }
+			| MICROSECOND_P opt_precision
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
+			| YEAR_P opt_precision TO MONTH_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
 												 INTERVAL_MASK(MONTH), @1));
 				}
-			| DAY_P TO HOUR_P
+			| DAY_P opt_precision TO HOUR_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR), @1));
 				}
-			| DAY_P TO MINUTE_P
+			| DAY_P opt_precision TO MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
 				}
-			| DAY_P TO interval_second
+			| DAY_P opt_precision TO interval_second
 				{
-					$$ = $3;
+					$$ = $4;
 					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
 												INTERVAL_MASK(HOUR) |
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
-			| DAY_P TO MICROSECOND_P
+			| DAY_P opt_precision TO MICROSECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
@@ -33598,32 +33743,32 @@ opt_interval:
 												 INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
 				}
-			| HOUR_P TO MINUTE_P
+			| HOUR_P opt_precision TO MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
 				}
-			| HOUR_P TO interval_second
+			| HOUR_P opt_precision TO interval_second
 				{
-					$$ = $3;
+					$$ = $4;
 					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
-			| HOUR_P TO MICROSECOND_P
+			| HOUR_P opt_precision TO MICROSECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
 				}
-			| MINUTE_P TO interval_second
+			| MINUTE_P opt_precision TO interval_second
 				{
-					$$ = $3;
+					$$ = $4;
 					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
-			| MINUTE_P TO MICROSECOND_P
+			| MINUTE_P opt_precision TO MICROSECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND) |
@@ -33631,97 +33776,88 @@ opt_interval:
 				}
 			| interval_second TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+					$$ = $1;
+					linitial($$) = makeIntConst(INTERVAL_MASK(SECOND) |
+												INTERVAL_MASK(MICROSECOND), @1);
 				}
-			| YEAR_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
-			| MONTH_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
-			| DAY_P '(' Iconst ')'
-				{  $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1));   }
-			| HOUR_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
-			| MINUTE_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
-			| MICROSECOND_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
-			| WEEK_P '(' Iconst ')'
-				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
-			| YEAR_P '(' Iconst ')' TO MONTH_P
-				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
-												 INTERVAL_MASK(MONTH), @1));
-				}
-			| DAY_P '(' Iconst ')'  TO HOUR_P
+			| DAY_HOUR_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR), @1));
+													INTERVAL_MASK(HOUR), @1));
 				}
-			| DAY_P '(' Iconst ')'   TO MINUTE_P
+			| DAY_MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE), @1));
 				}
-			| DAY_P '(' Iconst ')' TO interval_second
-				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
-												INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
-				}
-			| DAY_P '(' Iconst ')' TO MICROSECOND_P
+			| DAY_SECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1));
 				}
-			| HOUR_P '(' Iconst ')'  TO MINUTE_P
+			| DAY_MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| HOUR_MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
+													INTERVAL_MASK(MINUTE), @1));
 				}
-			| HOUR_P '(' Iconst ')'   TO interval_second
-				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
-				}
-			| HOUR_P '(' Iconst ')' TO MICROSECOND_P
+			| HOUR_SECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1));
 				}
-			| MINUTE_P  '(' Iconst ')'  TO interval_second
+			| HOUR_MICROSECOND_P
 				{
-					$$ = $6;
-					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
 				}
-			| MINUTE_P '(' Iconst ')' TO MICROSECOND_P
+			| MINUTE_SECOND_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+													INTERVAL_MASK(SECOND), @1));
 				}
-			| /*EMPTY*/	%prec OVERLAPS
-				{ $$ = NIL; }
+			| MINUTE_MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| SECOND_MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| YEAR_MONTH_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+													INTERVAL_MASK(MONTH), @1));
+				}
 		;
 
 interval_second:
 			SECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND), @1));
+					$$ = list_make2(makeIntConst(INTERVAL_MASK(SECOND), @1), makeIntConst(TIMESTAMP_MAX_PRECISION, -1));
 				}
 			| SECOND_P '(' Iconst ')'
 				{
+					if ($3 > TIMESTAMP_MAX_PRECISION) {
+						ereport(WARNING, (errmsg("INTERVAL(%d) precision reduced to maximum allowed, %d", $3, TIMESTAMP_MAX_PRECISION)));
+						$3 = TIMESTAMP_MAX_PRECISION;
+					}
 					$$ = list_make2(makeIntConst(INTERVAL_MASK(SECOND), @1),
 									makeIntConst($3, @3));
 				}
@@ -33839,7 +33975,22 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| a_expr '=' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-			 | a_expr '@' a_expr
+			| INTERVAL a_expr interval_unit
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("any2interval");
+					n->colname = pstrdup("interval");
+					n->args = lcons($2, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| a_expr '@' a_expr
 				 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| a_expr CmpNullOp a_expr    	%prec CmpNullOp
 				{
@@ -34160,6 +34311,34 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					NullTest *n = makeNode(NullTest);
 					n->arg = (Expr *) $1;
 					n->nulltesttype = IS_NOT_NULL;
+					$$ = (Node *)n;
+				}
+			| a_expr IS NAN_P
+			    {
+					NanTest *n = makeNode(NanTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->nantesttype = IS_NAN;
+					$$ = (Node *)n;
+				}
+			| a_expr IS NOT NAN_P
+			    {
+					NanTest *n = makeNode(NanTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->nantesttype = IS_NOT_NAN;
+					$$ = (Node *)n;
+				}
+			| a_expr IS INFINITE_P
+			    {
+					InfiniteTest *n = makeNode(InfiniteTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->infinitetesttype = IS_INFINITE;
+					$$ = (Node *)n;
+				}
+			| a_expr IS NOT INFINITE_P
+			    {
+					InfiniteTest *n = makeNode(InfiniteTest);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->infinitetesttype = IS_NOT_INFINITE;
 					$$ = (Node *)n;
 				}
 			| row OVERLAPS row
@@ -34671,6 +34850,16 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					A_Expr *match_against = makeSimpleA_Expr(AEXPR_OP, "@@", (Node *)lexpr_func, (Node *)rexpr_func, -1);
 					$$ = (Node *)match_against;
 				}
+			| FCONST_F
+				{
+					Node *num = makeFloatConst($1, @1);
+					$$ = makeTypeCast(num, SystemTypeName("float4"), @1);	
+				}
+			| FCONST_D
+				{
+					Node *num = makeFloatConst($1, @1);
+					$$ = makeTypeCast(num, SystemTypeName("float8"), @1);	
+				}
 		;
 
 /*
@@ -34772,6 +34961,21 @@ b_expr:		c_expr
 											 makeXmlExpr(IS_DOCUMENT, NULL, NIL,
 														 list_make1($1), @2),
 											 @2);
+				}
+			| INTERVAL b_expr interval_unit
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("any2interval");
+					n->colname = pstrdup("interval");
+					n->args = lcons($2, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 		;
 
@@ -35276,6 +35480,32 @@ func_application_special:	dolphin_func_name '(' ')'
 					n->location = @1;
 					n->call_func = false;
 					$$ = (Node *)n;
+				}
+			| dolphin_func_name '(' func_arg_list DEFAULT func_arg_expr ON CONVERSION_P ERROR_P opt_sort_clause ')'
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						ereport(ERROR,
+						       (errcode(ERRCODE_SYNTAX_ERROR),
+							   errmsg("The syntax or function is not supported. \"%s\"", $4)));
+					}
+					if (IsA($5, ColumnRef)) {
+						ereport(ERROR,
+							   (errcode(ERRCODE_SYNTAX_ERROR),
+							   errmsg("Default param can't be ColumnRef")));
+					}
+
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = $1;
+					n->args = lappend($3, $5);
+					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
+					n->agg_order = $9;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *) n;
 				}
 			| dolphin_func_name '(' VARIADIC func_arg_expr opt_sort_clause ')'
 				{
@@ -37221,7 +37451,7 @@ extract_arg:
 			| HOUR_P								{ $$ = "hour"; }
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
-			| QUARTER								{ $$ = "quarter"; }
+			| QUARTER_P								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
 			| WEEK_P								{ $$ = "week"; }
 			| SCONST								{ $$ = $1; }
@@ -37257,7 +37487,7 @@ timestamp_units:
 			| HOUR_P								{ $$ = "hour"; }
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
-			| QUARTER								{ $$ = "quarter"; }
+			| QUARTER_P								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
 			| WEEK_P								{ $$ = "week"; }
 			| SCONST								{ $$ = $1; }
@@ -38861,106 +39091,12 @@ AexprConst_without_Sconst: Iconst
 				{
 					$$ = makeStringConstCast($2, @2, $1);
 				}
-			| INTERVAL SCONST event_interval_unit
+			| INTERVAL_S SCONST
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
-					t->typmods = $3;
+					t->typmods = NIL;
 					$$ = makeStringConstCast($2, @2, t);
-				}
-			| INTERVAL NumericOnly opt_single_interval
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					long ival;
-					char buf[64];
-					int rc;
-					if ($2->type == T_Integer) {
-						ival = $2->val.ival;
-					} else if ($2->type == T_Float) {
-						int frac_part = 0;
-						rc = sscanf_s($2->val.str, "%ld.%1d", &ival, &frac_part);
-						securec_check_ss(rc, "", "");
-						if (frac_part >= 5) {
-							/* rounding */
-							ival += (ival >= 0L ? 1 : -1);
-						}
-					}
-					rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", ival);
-					securec_check_ss(rc, "", "");
-					$$ = makeStringConstCast(pstrdup(buf), @2, t);
-				}
-			| INTERVAL NumericOnly opt_multipart_interval
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					if ($2->type == T_Integer) {
-						char buf[64];
-						snprintf(buf, sizeof(buf), "%ld", $2->val.ival);
-						$$ = makeStringConstCast(pstrdup(buf), @2, t);
-					} else if ($2->type == T_Float) {
-						$$ = makeStringConstCast($2->val.str, @2, t);
-					}
-				}
-			| INTERVAL NumericOnly opt_evtime_unit
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					if ($2->type == T_Integer) {
-						char buf[64];
-						snprintf(buf, sizeof(buf), "%ld", $2->val.ival);
-						$$ = makeStringConstCast(pstrdup(buf), @2, t);
-					} else if ($2->type == T_Float) {
-						$$ = makeStringConstCast($2->val.str, @2, t);
-					}
-				}
-			| INTERVAL '(' Iconst ')' SCONST opt_interval
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					if ($6 != NIL)
-					{
-						if (list_length($6) != 1) {
-							const char* message = "interval precision specified twice";
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("interval precision specified twice"),
-									 parser_errposition(@1)));
-						}
-						t->typmods = lappend($6, makeIntConst($3, @3));
-					}
-					else
-						t->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
-												makeIntConst($3, @3));
-					$$ = makeStringConstCast($5, @5, t);
-				}
-			| INTERVAL SCONST QUARTER
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @3));
-					char buf[64];
-					double ft = atof($2);
-					snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", lrint(ft) * THREE_MONTHS);
-					$$ = makeStringConstCast(pstrdup(buf), @2, t);
-				}
-			| INTERVAL NumericOnly QUARTER
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @3));
-					char buf[64];
-					if ($2->type == T_Integer) {
-						snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", ($2->val.ival) * THREE_MONTHS);
-					} else if ($2->type == T_Float) {
-						double ft = atof($2->val.str);
-						snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", lrint(ft) * THREE_MONTHS);
-					}
-					$$ = makeStringConstCast(pstrdup(buf), @2, t);
 				}
 			| TRUE_P
 				{
@@ -39348,6 +39484,7 @@ alias_name_unreserved_keyword_without_key:
 			| ENGINES
 			| ENFORCED
 			| EOL
+			| ERROR_P
 			| ERRORS
 			| ESCAPE
 			| ESCAPING
@@ -39397,6 +39534,7 @@ alias_name_unreserved_keyword_without_key:
 			| INCREMENTAL
 			| INDEXES
 			| INFILE
+			| INFINITE_P
 			| INHERITS
 			| INHERIT
 			| INITIAL_P
@@ -39458,6 +39596,7 @@ alias_name_unreserved_keyword_without_key:
 			| MOVEMENT
 			| MYSQL_ERRNO
 			| NAMES
+			| NAN_P
 			| NEXT
 			| NGRAM
 			| NO
@@ -39484,6 +39623,7 @@ alias_name_unreserved_keyword_without_key:
 			| PACK_KEYS
 			| PACKAGE
 			| PACKAGES
+			| PARALLEL_ENABLE
 			| PARSER
 			| PARTIAL %prec PARTIAL_EMPTY_PREC
 			| PARTITIONING
@@ -39495,6 +39635,7 @@ alias_name_unreserved_keyword_without_key:
 			| PERCENT
 			| PERM
 			| PIPELINED
+			| PERFORMANCE
 			| PLAN
 			| PLANS
 			| POLICY
@@ -39518,7 +39659,7 @@ alias_name_unreserved_keyword_without_key:
 			| PROFILE
 			| PUBLICATION
 			| PUBLISH
-			| QUARTER
+			| QUARTER_P
 			| QUERY
 			| QUICK
 			| QUOTE
@@ -39578,6 +39719,7 @@ alias_name_unreserved_keyword_without_key:
 			| SETS
 			| SHARE
 			| SHIPPABLE
+			| SHRINK
 			| SHUTDOWN
 			| SIBLINGS
 			| SIMPLE
@@ -39834,7 +39976,6 @@ col_name_keyword:
 			| alias_name_col_name_keyword
 			| CHAR_P %prec IDENT
 			| CONVERT
-			| INTERVAL	%prec UNBOUNDED
 		;
 
 /* Column identifier --- keywords that can be column, table, etc names.
@@ -39845,6 +39986,8 @@ col_name_keyword:
 alias_name_col_name_alias_nonambiguous_keyword:
 	AUTHID
 	| BINARY_DOUBLE %prec IDENT
+	| BINARY_DOUBLE_INF
+	| BINARY_DOUBLE_NAN
 	| BINARY_INTEGER %prec IDENT
 	| BIT %prec IDENT
 	| BOOLEAN_P %prec IDENT
@@ -39977,10 +40120,8 @@ alias_keyword_ColId:
 			| INITIALLY
 			| NOCYCLE
 			| NOW_FUNC
-			| PERFORMANCE
 			| PLACING
 			| SESSION_USER
-			| SHRINK
 			| SOME
 			| VARIADIC
 			| VERIFY
@@ -39995,10 +40136,8 @@ alias_name_reserved_keyword:
 	| INITIALLY
 	| NOCYCLE
 	| NOW_FUNC
-	| PERFORMANCE
 	| PLACING
 	| SESSION_USER
-	| SHRINK
 	| SOME
 	| VARIADIC
 	| VERIFY
@@ -40061,8 +40200,6 @@ reserved_keyword:
 			| REFERENCES
 			| RETURNING
 			| SELECT
-			
-			
 			| SYMMETRIC
 			| TABLE
 			| THEN
@@ -42049,6 +42186,42 @@ static void parameter_check_execute_direct(const char* query)
 		ereport(errstate,
 			(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				errmsg("must be system admin or monitor admin to use EXECUTE DIRECT")));
+	}
+}
+
+static TypeName *ParseFloatByExtentedPrecision(int ival, int location, core_yyscan_t yyscanner)
+{
+	TypeName *typnam = NULL;
+	
+	/* Float binary precision must be between 1 and 126 */
+	if (ival <= 126) {
+		typnam = SystemTypeName("numeric");
+		typnam->typmods = list_make2(makeIntConst(ival, location), makeIntConst(-32768, -1));
+	} else {
+		const char* message = "precision for type float must be less than 127 bits";
+		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				errmsg("precision for type float must be less than 127 bits"),
+				parser_errposition(location)));
+	}
+	return typnam;
+}
+
+static void CheckTypmodScale(List* arglist, int location, core_yyscan_t yyscanner)
+{
+	if (t_thrd.proc->workingVersionNum >= FLOAT_VERSION_NUMBER &&
+		u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && list_length(arglist) == 2) {
+		Node *arg = (Node*)lsecond(arglist);
+		A_Const *n = IsA(arg, A_Const) ? (A_Const *)arg : NULL;
+		if (n != NULL && (n->val.val.ival > NUMERIC_MAX_SCALE || n->val.val.ival < NUMERIC_MIN_SCALE)) {
+			const char* message = "NUMERIC scale must be between -84 and 1000";
+			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+					errmsg("NUMERIC scale must be between -84 and 1000"),
+					parser_errposition(location)));
+		}
 	}
 }
 

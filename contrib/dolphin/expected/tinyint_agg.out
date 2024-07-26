@@ -303,11 +303,11 @@ explain(costs off, verbose) select sum(a)from smp_test;
                      QUERY PLAN                     
 ----------------------------------------------------
  Aggregate
-   Output: sum((sum((a)::double precision)))
+   Output: pg_catalog.sum((sum(a)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (sum((a)::double precision))
+         Output: (sum(a))
          ->  Aggregate
-               Output: sum((a)::double precision)
+               Output: sum(a)
                ->  Seq Scan on tinyint_agg.smp_test
                      Output: a
 (8 rows)

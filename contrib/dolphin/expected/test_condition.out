@@ -2800,9 +2800,9 @@ SELECT strcmp(t2,t1) from test_bccf;
 
 ----------------interval expression------------------------
 select interval(null);
-ERROR:  syntax error at or near ")"
+ERROR:  syntax error at or near ";"
 LINE 1: select interval(null);
-                            ^
+                             ^
 select interval(null, 123);
  interval 
 ----------
@@ -5082,9 +5082,9 @@ SELECT strcmp(t2,t1) from test_bccf;
 
 ----------------interval expression------------------------
 select interval(null);
-ERROR:  syntax error at or near ")"
+ERROR:  syntax error at or near ";"
 LINE 1: select interval(null);
-                            ^
+                             ^
 select interval(null, 123);
  interval 
 ----------
