@@ -122,6 +122,7 @@ ivfflatoptions_internal(Datum reloptions, bool validate)
 {
 	static const relopt_parse_elt tab[] = {
 		{"lists", RELOPT_TYPE_INT, offsetof(IvfflatOptions, lists)},
+		{"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
 	};
 
 #if PG_VERSION_NUM >= 130000

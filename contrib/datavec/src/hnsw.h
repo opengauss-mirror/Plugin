@@ -284,7 +284,6 @@ typedef struct HnswShared
 	/* Immutable state */
 	Oid			heaprelid;
 	Oid			indexrelid;
-	bool		isconcurrent;
 
 	/* Mutex for mutable state */
 	slock_t		mutex;
@@ -293,14 +292,15 @@ typedef struct HnswShared
 	int			nparticipantsdone;
 	double		reltuples;
 	HnswGraph	graphData;
+
+	char *hnswarea;
+	ParallelHeapScanDescData heapdesc;
 }			HnswShared;
 
 typedef struct HnswLeader
 {
 	int			nparticipanttuplesorts;
 	HnswShared *hnswshared;
-	Snapshot	snapshot;
-	char	   *hnswarea;
 }			HnswLeader;
 
 typedef struct HnswAllocator

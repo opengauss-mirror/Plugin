@@ -101,6 +101,7 @@ hnswoptions_internal(Datum reloptions, bool validate)
 	static const relopt_parse_elt tab[] = {
 		{"m", RELOPT_TYPE_INT, offsetof(HnswOptions, m)},
 		{"ef_construction", RELOPT_TYPE_INT, offsetof(HnswOptions, efConstruction)},
+		{"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
 	};
 
 #if PG_VERSION_NUM >= 130000

@@ -41,6 +41,7 @@
 #include "access/tableam.h"
 #include "access/xact.h"
 #include "access/xloginsert.h"
+#include "postmaster/bgworker.h"
 #include "catalog/index.h"
 #include "hnsw.h"
 #include "miscadmin.h"
@@ -654,6 +655,19 @@ HnswMemoryContextAlloc(Size size, void *state)
 }
 
 /*
+ * Shared memory allocator
+ */
+static void *
+HnswSharedMemoryAlloc(Size size, void *state)
+{
+    HnswBuildState *buildstate = (HnswBuildState *) state;
+    void *chunk = buildstate->hnswarea + buildstate->graph->memoryUsed;
+
+    buildstate->graph->memoryUsed += MAXALIGN(size);
+    return chunk;
+}
+
+/*
  * Initialize the build state
  */
 static void
@@ -720,17 +734,195 @@ FreeBuildState(HnswBuildState * buildstate)
 	MemoryContextDelete(buildstate->tmpCtx);
 }
 
+static double
+ParallelHeapScan(HnswBuildState * buildstate, int* nparticipanttuplesorts)
+{
+	HnswShared *hnswshared = buildstate->hnswleader->hnswshared;
+	double reltuples;
+
+	BgworkerListWaitFinish(&buildstate->hnswleader->nparticipanttuplesorts);
+	pg_memory_barrier();
+
+	*nparticipanttuplesorts = buildstate->hnswleader->nparticipanttuplesorts;
+	buildstate->graph = &hnswshared->graphData;
+	buildstate->hnswarea = hnswshared->hnswarea;
+	reltuples = hnswshared->reltuples;
+
+	return reltuples;
+}
+
+/*
+ * Perform a worker's portion of a parallel insert
+ */
+static void
+HnswParallelScanAndInsert(Relation heapRel, Relation indexRel, HnswShared * hnswshared, char *hnswarea)
+{
+	HnswBuildState buildstate;
+	TableScanDesc scan;
+	double          reltuples;
+	IndexInfo  *indexInfo;
+
+	/* Join parallel scan */
+	indexInfo = BuildIndexInfo(indexRel);
+	InitBuildState(&buildstate, heapRel, indexRel, indexInfo, MAIN_FORKNUM);
+	buildstate.graph = &hnswshared->graphData;
+	buildstate.hnswarea = hnswarea;
+	InitAllocator(&buildstate.allocator, &HnswSharedMemoryAlloc, &buildstate);
+	scan = tableam_scan_begin_parallel(heapRel, &hnswshared->heapdesc);
+	reltuples = tableam_index_build_scan(heapRel, indexRel, indexInfo,
+	                                    true, BuildCallback, (void *) &buildstate, scan);
+
+	/* Record statistics */
+	SpinLockAcquire(&hnswshared->mutex);
+	hnswshared->nparticipantsdone++;
+	hnswshared->reltuples += reltuples;
+	SpinLockRelease(&hnswshared->mutex);
+
+	FreeBuildState(&buildstate);
+}
+
+/*
+ * Perform work within a launched parallel process
+ */
+void
+HnswParallelBuildMain(const BgWorkerContext *bwc)
+{
+	HnswShared *hnswshared;
+	char       *hnswarea;
+	Relation        heapRel;
+	Relation        indexRel;
+
+	/* Look up shared state */
+	hnswshared = (HnswShared*)bwc->bgshared;
+
+	/* Open relations within worker */
+	heapRel = heap_open(hnswshared->heaprelid, NoLock);
+	indexRel = index_open(hnswshared->indexrelid, NoLock);
+
+	hnswarea = hnswshared->hnswarea;
+
+	/* Perform inserts */
+	HnswParallelScanAndInsert(heapRel, indexRel, hnswshared, hnswarea);
+
+	/* Close relations within worker */
+	index_close(indexRel, NoLock);
+	heap_close(heapRel, NoLock);
+}
+
+/*
+ * End parallel build
+ */
+static void
+HnswEndParallel()
+{
+	BgworkerListSyncQuit();
+}
+
+static HnswShared*
+HnswParallelInitshared(HnswBuildState * buildstate)
+{
+	HnswShared *hnswshared;
+	char       *hnswarea;
+	Size            esthnswarea;
+	Size            estother;
+
+	/* Store shared build state, for which we reserved space */
+	hnswshared = (HnswShared *)MemoryContextAllocZero(INSTANCE_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_STORAGE), sizeof(HnswShared));
+
+	/* Initialize immutable state */
+	hnswshared->heaprelid = RelationGetRelid(buildstate->heap);
+	hnswshared->indexrelid = RelationGetRelid(buildstate->index);
+	SpinLockInit(&hnswshared->mutex);
+	/* Initialize mutable state */
+	hnswshared->nparticipantsdone = 0;
+	hnswshared->reltuples = 0;
+	HeapParallelscanInitialize(&hnswshared->heapdesc, buildstate->heap);
+
+	/* Leave space for other objects in shared memory */
+	/* Docker has a default limit of 64 MB for shm_size */
+	/* which happens to be the default value of maintenance_work_mem */
+	esthnswarea = u_sess->attr.attr_memory.maintenance_work_mem * 1024L;
+	estother = 3 * 1024 * 1024;
+	if (esthnswarea > estother)
+		esthnswarea -= estother;
+
+	hnswarea = (char *) palloc0_huge(INSTANCE_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_STORAGE), esthnswarea);
+	/* Report less than allocated so never fails */
+	InitGraph(&hnswshared->graphData, hnswarea, esthnswarea - 1024 * 1024);
+
+	/*
+	 * Avoid base address for relptr for Postgres < 14.5
+	 * https://github.com/postgres/postgres/commit/7201cd18627afc64850537806da7f22150d1a83b
+	 */
+#if PG_VERSION_NUM < 140005
+	hnswshared->graphData.memoryUsed += MAXALIGN(1);
+#endif
+
+	hnswshared->hnswarea = hnswarea;
+	return hnswshared;
+}
+
+/*
+ * Begin parallel build
+ */
+static void
+HnswBeginParallel(HnswBuildState * buildstate, int request)
+{
+	HnswShared *hnswshared;
+	HnswLeader *hnswleader = (HnswLeader *) palloc0(sizeof(HnswLeader));
+
+	Assert(request > 0);
+
+	hnswshared = HnswParallelInitshared(buildstate);
+	/* Launch workers, saving status for leader/caller */
+	hnswleader->nparticipanttuplesorts = LaunchBackgroundWorkers(request, hnswshared, HnswParallelBuildMain, NULL);
+	hnswleader->hnswshared = hnswshared;
+
+	/* If no workers were successfully launched, back out (do serial build) */
+	if (hnswleader->nparticipanttuplesorts == 0)
+	{
+		HnswEndParallel();
+		return;
+	}
+
+	/* Log participants */
+	ereport(DEBUG1, (errmsg("using %d parallel workers", hnswleader->nparticipanttuplesorts)));
+
+	/* Save leader state now that it's clear build will be parallel */
+	buildstate->hnswleader = hnswleader;
+}
+
 /*
  * Build graph
  */
 static void
 BuildGraph(HnswBuildState * buildstate, ForkNumber forkNum)
 {
+	int parallel_workers = 0;
+
+	 /* Calculate parallel workers */
+	if (buildstate->heap != NULL)
+		parallel_workers = PlanCreateIndexWorkers(buildstate->heap, buildstate->indexInfo);
+
+	/* Attempt to launch parallel worker scan when required */
+	if (parallel_workers > 0)
+		HnswBeginParallel(buildstate, parallel_workers);
+
 	/* Add tuples to graph */
 	if (buildstate->heap != NULL)
 	{
-		buildstate->reltuples = IndexBuildHeapScan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-							   true, BuildCallback, (void *) buildstate, NULL);
+		if (!buildstate->hnswleader) {
+serial_build:
+			buildstate->reltuples = IndexBuildHeapScan(buildstate->heap, buildstate->index, buildstate->indexInfo,
+							   							true, BuildCallback, (void *) buildstate, NULL);
+		} else {
+			int nruns;
+			buildstate->reltuples = ParallelHeapScan(buildstate, &nruns);
+			if (nruns == 0) {
+				/* failed to startup any bgworker, retry to do serial build */
+				goto serial_build;
+			}
+		}
 
 		buildstate->indtuples = buildstate->graph->indtuples;
 	}
@@ -738,6 +930,10 @@ BuildGraph(HnswBuildState * buildstate, ForkNumber forkNum)
 	/* Flush pages */
 	if (!buildstate->graph->flushed)
 		FlushPages(buildstate);
+
+	/* End parallel build */
+	if (buildstate->hnswleader)
+		HnswEndParallel();
 }
 
 /*

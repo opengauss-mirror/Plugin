@@ -21,6 +21,7 @@ Vector	   *InitVector(int dim);
 void		PrintVector(char *msg, Vector * vector);
 int			vector_cmp_internal(Vector * a, Vector * b);
 void log_newpage_range(Relation rel, ForkNumber forknum, BlockNumber startblk, BlockNumber endblk, bool page_std);
+int PlanCreateIndexWorkers(Relation heapRelation, IndexInfo *indexInfo);
 
 extern "C" {
     PGDLLEXPORT Datum vector_in(PG_FUNCTION_ARGS);

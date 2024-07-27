@@ -1414,3 +1414,29 @@ log_newpage_range(Relation rel, ForkNumber forknum,
                 END_CRIT_SECTION();
         }
 }
+
+int PlanCreateIndexWorkers(Relation heapRelation, IndexInfo *indexInfo)
+{
+	int parallelWorkers = RelationGetParallelWorkers(heapRelation, 0);
+	int max_hashbucket_index_worker = 32;
+
+	if (parallelWorkers != 0) {
+		parallelWorkers = Min(max_hashbucket_index_worker, parallelWorkers);
+	}
+
+	if (indexInfo->ii_Concurrent && indexInfo->ii_ParallelWorkers > 0) {
+		ereport(NOTICE, (errmsg("switch off parallel mode when concurrently flag is set")));
+		parallelWorkers = 0;
+	}
+
+	if (heapRelation->rd_rel->relpersistence == RELPERSISTENCE_GLOBAL_TEMP && indexInfo->ii_ParallelWorkers > 0) {
+		ereport(NOTICE, (errmsg("switch off parallel mode for global temp table")));
+		parallelWorkers = 0;
+	}
+
+	/* disable parallel building index for system table*/
+	if (IsCatalogRelation(heapRelation)) {
+		parallelWorkers = 0;
+	}
+	return parallelWorkers;
+}
