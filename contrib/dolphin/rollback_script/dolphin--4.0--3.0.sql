@@ -937,3 +937,9 @@ DROP FUNCTION IF EXISTS pg_catalog.round(timestamp with time zone) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.round(timestamp without time zone) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.round(anyenum) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.round(anyset) CASCADE;
+
+drop cast if exists ("binary" as varchar);
+drop cast if exists ("binary" as char);
+CREATE CAST ("binary" AS varchar) WITH FUNCTION pg_catalog.Varlena2Varchar(anyelement) AS ASSIGNMENT;
+CREATE CAST ("binary" AS char) WITH FUNCTION pg_catalog.Varlena2Bpchar(anyelement) AS ASSIGNMENT;
+

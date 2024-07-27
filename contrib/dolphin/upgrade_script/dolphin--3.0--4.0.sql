@@ -1130,3 +1130,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.round(timestamp without time zone) RETURNS
 CREATE OR REPLACE FUNCTION pg_catalog.round(anyenum) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
 CREATE OR REPLACE FUNCTION pg_catalog.round(anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
 
+drop cast if exists ("binary" as varchar);
+drop cast if exists ("binary" as char);
+CREATE CAST ("binary" AS varchar) WITH FUNCTION pg_catalog.Varlena2Varchar(anyelement) AS IMPLICIT;
+CREATE CAST ("binary" AS char) WITH FUNCTION pg_catalog.Varlena2Bpchar(anyelement) AS IMPLICIT;
+
