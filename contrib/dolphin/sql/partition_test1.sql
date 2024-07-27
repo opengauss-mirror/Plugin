@@ -354,5 +354,19 @@ set dolphin.b_compatibility_mode = off;
 select * from tb_subpart partitio(p0);
 select * from tb_subpart subpartitio(p0);
 
+drop table if exists RangePartionLevel1_IntegerTypes;
+create table RangePartionLevel1_IntegerTypes(
+    id TINYINT not null,
+    store_id SMALLINT unsigned
+) 
+partition by range(store_id)(
+    partition p0 values less than (0),
+    partition p1 values less than (65536)
+);
+
+insert into RangePartionLevel1_IntegerTypes values (1,2);
+insert into RangePartionLevel1_IntegerTypes values (1,65535);
+drop table RangePartionLevel1_IntegerTypes;
+
 drop schema partition_test1 cascade;
 reset current_schema;

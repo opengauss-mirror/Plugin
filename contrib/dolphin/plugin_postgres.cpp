@@ -348,6 +348,7 @@ void init_plugin_object()
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
     u_sess->hook_cxt.nullsMinimalPolicyHook = (void*)NullsMinimalPolicy;
     u_sess->hook_cxt.getIgnoreKeywordTokenHook = (void*)semtc_get_ignore_keyword_token;
+    u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -544,6 +545,16 @@ static bool CheckNullsMinimalPolicy(bool* newval, void** extra, GucSource source
         }
     }
     return true;
+}
+
+Oid modify_type_for_partition_key(Oid attType)
+{
+    if (IsIntType(attType)) {
+        return INT8OID;
+    } else if (IsUnsignedIntType(attType)) {
+        return UINT8OID;
+    }
+    return attType;
 }
 
 /*
