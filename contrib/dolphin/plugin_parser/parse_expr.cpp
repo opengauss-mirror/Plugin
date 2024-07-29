@@ -118,7 +118,7 @@ static Node *transformStartWithWhereClauseColumnRef(ParseState *pstate, ColumnRe
 static Node* tryTransformFunc(ParseState* pstate, List* fields, int location);
 static void SubCheckOutParam(List* exprtargs, Oid funcid);
 static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey);
-static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression);
+static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression, bool smp = false);
 static Node* transformStringCast(ParseState* pstate, char *str, int location, TypeName *typname);
 static Node* transformBinaryDoubleInf(ParseState* pstate, ColumnRef *cref, char *colname);
 static Node* transformBinaryDoubleNan(ParseState* pstate, ColumnRef *cref, char *colname);
@@ -461,6 +461,7 @@ Node* transformExpr(ParseState* pstate, Node* expr, ParseExprKind exprKind)
     sv_expr_kind = pstate->p_expr_kind;
     pstate->p_expr_kind = exprKind;
 
+    pstate->p_expr_transform_level = 0;
     result = transformExprRecurse(pstate, expr);
 
     pstate->p_expr_kind = sv_expr_kind;
@@ -477,6 +478,7 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
     }
     /* Guard against stack overflow due to overly complex expressions */
     check_stack_depth();
+    pstate->p_expr_transform_level++;
 
     switch (nodeTag(expr)) {
         case T_ColumnRef:
@@ -2553,20 +2555,19 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     result = ParseFuncOrColumn(pstate, fn->funcname, targs, last_srf, fn, fn->location, fn->call_func);
 
     if (IsA(result, FuncExpr)) {
-        /* if function is not SRF or pipelined, close smp for all CursorExpressions */
-        int2 seq = (!((FuncExpr*)result)->funcretset &&
-                    !PROC_IS_PIPELINED(get_func_prokind(((FuncExpr*)result)->funcid))) ?
+        /* 
+         * If function is not function table, close smp for all CursorExpressions.
+         * If function is not SRF or pipelined, close smp too.
+         * */
+        int2 seq = (pstate->p_expr_kind != EXPR_KIND_FROM_FUNCTION || (!((FuncExpr*)result)->funcretset &&
+                    !PROC_IS_PIPELINED(get_func_prokind(((FuncExpr*)result)->funcid)))) ?
                 -1 : GetParallelCursorSeq(((FuncExpr*)result)->funcid);
         int2 i = 0;
-        AutoDopControl dopControl;
         foreach (args, ((FuncExpr*)result)->args) {
             Node* arg = (Node*)lfirst(args);
             if (IsA(arg, CursorExpression)) {
-                if (i != seq) {
-                    dopControl.CloseSmp();
-                }
-                lfirst(args) = transformCursorExpression(pstate, (CursorExpression*)arg);
-                dopControl.ResetSmp();
+                pstate->p_expr_transform_level++;
+                lfirst(args) = transformCursorExpression(pstate, (CursorExpression*)arg, i == seq);
             }
             i++;
         }
@@ -5763,7 +5764,7 @@ static Node* transformCursorOuterVarAsParam(ParseState* pstate, ColumnRef* cref,
     
 }
 
-static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression)
+static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cursor_expression, bool smp)
 {
     CursorExpression* newm = makeNode(CursorExpression);
     char* queryString;
@@ -5773,6 +5774,11 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
     List* stmt_list = NIL;
     ParseState* parse_state_temp = NULL;
     int level = ++u_sess->parser_cxt.cursor_expr_level;
+    AutoDopControl dopControl;
+
+    if (!smp) {
+        dopControl.CloseSmp();
+    }
 
     ParseState* parse_state_parent = pstate;
 
@@ -5817,6 +5823,13 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
     newm->raw_query_str = queryString;
     newm->param = (List*)copyObject(parse_state_parent->cursor_expression_para_var);
 
+    if (pstate->p_pre_columnref_hook == NULL && pstate->p_post_columnref_hook == NULL &&
+        pstate->p_expr_kind == EXPR_KIND_SELECT_TARGET && pstate->p_expr_transform_level == 1) {
+        newm->is_simple_select_target = true;
+    } else {
+        newm->is_simple_select_target =  false;
+    }
+
     list_free_ext(stmt_list);
     list_free_ext(raw_parsetree_list);
 
@@ -5827,6 +5840,9 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
         parse_state_parent->is_outer_parse_state = false;
         parse_state_temp = parse_state_temp->parentParseState;
     }
+
+    /* restore smp */
+    dopControl.ResetSmp();
     return (Node*)newm;
 }
 
