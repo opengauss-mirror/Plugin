@@ -4350,11 +4350,24 @@ Const* setValueToConstExpr(SetVariableExpr* set)
             } break;
         case PGC_STRING:
             {
-                value = makeString(variable_str);
-                val = CStringGetDatum(strVal(value));
-                typid = UNKNOWNOID; /* will be coerced later */
-                typelen = -2;       /* cstring-style varwidth type */
-                typebyval = false;
+#ifdef DOLPHIN
+                if (strcasecmp(record->name, "identity") == 0 ||
+                    strcasecmp(record->name, "last_insert_id") == 0) {
+                    uint64 variable = (uint64)strtoul((const char*)variable_str, (char**)NULL, 10);
+                    value = makeInteger(variable);
+                    val = UInt64GetDatum(intVal(value));
+                    typid = UINT8OID;
+                    typelen = sizeof(uint64);
+                    typebyval = true;
+                } else 
+#endif
+                {
+                    value = makeString(variable_str);
+                    val = CStringGetDatum(strVal(value));
+                    typid = UNKNOWNOID; /* will be coerced later */
+                    typelen = -2;       /* cstring-style varwidth type */
+                    typebyval = false;
+                }
             } break;
         case PGC_ENUM:
             {
