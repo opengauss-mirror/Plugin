@@ -1,0 +1,298 @@
+create schema escape_char;
+set current_schema to 'escape_char';
+set dolphin.b_compatibility to on;
+-- default no escaping, all as normal strings
+SELECT 'moon\tlight';
+  ?column?   
+-------------
+ moon\tlight
+(1 row)
+
+SELECT 'moon\nlight';
+  ?column?   
+-------------
+ moon\nlight
+(1 row)
+
+SELECT 'moon\flight';
+  ?column?   
+-------------
+ moon\flight
+(1 row)
+
+SELECT 'moon\%light';
+  ?column?   
+-------------
+ moon\%light
+(1 row)
+
+SELECT 'moon\_light';
+  ?column?   
+-------------
+ moon\_light
+(1 row)
+
+SELECT 'moon\Zlight';
+  ?column?   
+-------------
+ moon\Zlight
+(1 row)
+
+-- set standard_conforming_strings to off
+set standard_conforming_strings to off;
+SELECT 'moon\tlight';
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: SELECT 'moon\tlight';
+               ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+   ?column?    
+---------------
+ moon    light
+(1 row)
+
+SELECT 'moon\flight';
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: SELECT 'moon\flight';
+               ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+  ?column?  
+------------
+ moonflight
+(1 row)
+
+SELECT 'moon\%light';
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: SELECT 'moon\%light';
+               ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+  ?column?   
+-------------
+ moon\%light
+(1 row)
+
+SELECT 'moon\_light';
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: SELECT 'moon\_light';
+               ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+  ?column?   
+-------------
+ moon\_light
+(1 row)
+
+SELECT 'moon\Zlight';
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: SELECT 'moon\Zlight';
+               ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+ ?column?  
+-----------
+ moonlight
+(1 row)
+
+-- result same with mysql
+-- cancel wanring
+set standard_conforming_strings to off;
+set escape_string_warning to off;
+SELECT 'moon\tlight';
+   ?column?    
+---------------
+ moon    light
+(1 row)
+
+SELECT 'moon\flight';
+  ?column?  
+------------
+ moonflight
+(1 row)
+
+SELECT 'moon\%light';
+  ?column?   
+-------------
+ moon\%light
+(1 row)
+
+SELECT 'moon\_light';
+  ?column?   
+-------------
+ moon\_light
+(1 row)
+
+SELECT 'moon\Zlight';
+ ?column?  
+-----------
+ moonlight
+(1 row)
+
+--  result same with mysql
+-- set standard_conforming_strings to on and use E'..'
+set standard_conforming_strings to on;
+set escape_string_warning to on;
+SELECT E'moon\tlight';
+   ?column?    
+---------------
+ moon    light
+(1 row)
+
+SELECT E'moon\nlight';
+ ?column? 
+----------
+ moon    +
+ light
+(1 row)
+
+SELECT E'moon\flight';
+  ?column?  
+------------
+ moonflight
+(1 row)
+
+SELECT E'moon\%light';
+  ?column?   
+-------------
+ moon\%light
+(1 row)
+
+SELECT E'moon\_light';
+  ?column?   
+-------------
+ moon\_light
+(1 row)
+
+SELECT E'moon\Zlight';
+ ?column?  
+-----------
+ moonlight
+(1 row)
+
+-- test insert escape
+set standard_conforming_strings to on;
+CREATE TABLE t1 (id int, c2 varchar(20));
+INSERT INTO t1 VALUES (1, 'moon\tlight');
+INSERT INTO t1 VALUES (2, 'moon\nlight');
+INSERT INTO t1 VALUES (3, 'moon\flight');
+INSERT INTO t1 VALUES (4, 'moon\%light');
+INSERT INTO t1 VALUES (5, 'moon\_light');
+INSERT INTO t1 VALUES (6, 'moon\Zlight');
+SELECT * FROM t1 ORDER BY id;
+ id |     c2      
+----+-------------
+  1 | moon\tlight
+  2 | moon\nlight
+  3 | moon\flight
+  4 | moon\%light
+  5 | moon\_light
+  6 | moon\Zlight
+(6 rows)
+
+set standard_conforming_strings to off;
+CREATE TABLE t2 (id int, c2 varchar(20));
+INSERT INTO t2 VALUES (1, 'moon\tlight');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (1, 'moon\tlight');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+INSERT INTO t2 VALUES (2, 'moon\nlight');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (2, 'moon\nlight');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+INSERT INTO t2 VALUES (3, 'moon\flight');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (3, 'moon\flight');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+INSERT INTO t2 VALUES (4, 'moon\%light');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (4, 'moon\%light');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+INSERT INTO t2 VALUES (5, 'moon\_light');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (5, 'moon\_light');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+INSERT INTO t2 VALUES (6, 'moon\Zlight');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: INSERT INTO t2 VALUES (6, 'moon\Zlight');
+                                  ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+SELECT * FROM t2 ORDER BY id;
+ id |      c2       
+----+---------------
+  1 | moon    light
+  2 | moon         +
+    | light
+  3 | moonflight
+  4 | moon\%light
+  5 | moon\_light
+  6 | moonlight
+(6 rows)
+
+--  result same with mysql
+set standard_conforming_strings to off;
+set escape_string_warning to off;
+CREATE TABLE t3 (id int, c2 varchar(20));
+INSERT INTO t3 VALUES (1, 'moon\tlight');
+INSERT INTO t3 VALUES (2, 'moon\nlight');
+INSERT INTO t3 VALUES (3, 'moon\flight');
+INSERT INTO t3 VALUES (4, 'moon\%light');
+INSERT INTO t3 VALUES (5, 'moon\_light');
+INSERT INTO t3 VALUES (6, 'moon\Zlight');
+SELECT * FROM t3 ORDER BY id;
+ id |      c2       
+----+---------------
+  1 | moon    light
+  2 | moon         +
+    | light
+  3 | moonflight
+  4 | moon\%light
+  5 | moon\_light
+  6 | moonlight
+(6 rows)
+
+--  result same with mysql
+set standard_conforming_strings to on;
+set escape_string_warning to on;
+CREATE TABLE t4 (id int, c2 varchar(20));
+INSERT INTO t4 VALUES (1, E'moon\tlight');
+INSERT INTO t4 VALUES (2, E'moon\nlight');
+INSERT INTO t4 VALUES (3, E'moon\flight');
+INSERT INTO t4 VALUES (4, E'moon\%light');
+INSERT INTO t4 VALUES (5, E'moon\_light');
+INSERT INTO t4 VALUES (6, E'moon\Zlight');
+SELECT * FROM t4 ORDER BY id;
+ id |      c2       
+----+---------------
+  1 | moon    light
+  2 | moon         +
+    | light
+  3 | moonflight
+  4 | moon\%light
+  5 | moon\_light
+  6 | moonlight
+(6 rows)
+
+drop table t1, t2, t3, t4;
+-- test insert json
+set standard_conforming_strings to off;
+set escape_string_warning to off;
+CREATE TABLE t_json (ID INT PRIMARY KEY, C2 JSON DEFAULT NULL);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_json_pkey" for table "t_json"
+INSERT INTO t_json VALUES (1, '{"id":"110", "name":"aaa\baa"}');
+ERROR:  invalid input syntax for type json
+LINE 1: INSERT INTO t_json VALUES (1, '{"id":"110", "name":"aaa\baa"...
+                                      ^
+DETAIL:  Character with value 0x08 must be escaped.
+CONTEXT:  JSON data, line 1: {"id":"110", "name":"aaa...
+referenced column: C2
+INSERT INTO t_json VALUES (2, '{"id":"110", "name":"aaa\faa"}');
+SELECT * FROM t_json ORDER BY id;
+ ID |              C2               
+----+-------------------------------
+  2 | {"id":"110", "name":"aaafaa"}
+(1 row)
+
+drop table t_json;
+drop schema escape_char cascade;
+reset current_schema;
