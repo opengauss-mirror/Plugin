@@ -913,5 +913,24 @@ insert into auto_inc_uint8(col2) values(4);
 select * from auto_inc_uint8 order by 1,2;
 drop table auto_inc_uint8;
 
+-- test select @@IDENTITY
+CREATE TABLE parent_table (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(30)
+);
+set enable_set_variable_b_format to on;
+INSERT INTO parent_table (name) VALUES ('Parent Record 1');
+SELECT LAST_INSERT_ID();
+select @@IDENTITY;
+select @@LAST_INSERT_ID;
+INSERT INTO parent_table (name) VALUES ('Parent Record 2');
+SELECT LAST_INSERT_ID();
+select @@IDENTITY;
+select @@LAST_INSERT_ID;
+set @@IDENTITY = 3;
+set @@LAST_INSERT_ID = 3;
+drop table parent_table;
+reset enable_set_variable_b_format;
+
 drop schema uint_auto_increment cascade;
 reset current_schema;

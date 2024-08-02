@@ -174,6 +174,7 @@ typedef struct BSqlPluginContext {
     bool isInTransformSet;
     int cmpt_version;
     int bit_output;
+    char* last_insert_id; /* for select @@identity */
 #endif
 } bSqlPluginContext;
 

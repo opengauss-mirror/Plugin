@@ -89,6 +89,7 @@
 #include "plugin_utils/my_locale.h"
 #include "plugin_executor/functions.h"
 #include "plugin_utils/varbit.h"
+#include "utils/biginteger.h"
 #endif
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
@@ -167,6 +168,7 @@ static void AssignSqlMode(const char* newval, void* extra);
 static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
 static void assign_b_db_timestamp(double newval, void* extra);
 #ifdef DOLPHIN
+static const char* show_last_insert_id(void);
 static bool check_sql_mode(char** newval, void** extra, GucSource source);
 static bool check_lower_case_table_names(int* newval, void** extra, GucSource source);
 static bool check_default_week_format(int* newval, void** extra, GucSource source);
@@ -669,6 +671,15 @@ static void assign_b_db_timestamp(double newval, void* extra)
 }
 
 #ifdef DOLPHIN
+static const char* show_last_insert_id(void)
+{
+    char* last_insert_id = DatumGetCString(bi128_out(u_sess->cmd_cxt.last_insert_id, 0));
+    char* result = MemoryContextStrdup(
+        SESS_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_EXECUTOR), last_insert_id);
+    pfree_ext(last_insert_id);
+    return result;
+}
+
 static bool check_sql_mode(char** newval, void** extra, GucSource source)
 {
     if (source == PGC_S_SESSION) {
@@ -1076,6 +1087,26 @@ void init_session_vars(void)
                             NULL,
                             NULL);
 #ifdef DOLPHIN
+    DefineCustomStringVariable("last_insert_id",
+                               gettext_noop("The value is equal to the one returned from LAST_INSERT_ID()."),
+                               NULL,
+                               &GetSessionContext()->last_insert_id,
+                               "0",
+                               PGC_USERSET,
+                               0,
+                               NULL,
+                               NULL,
+                               show_last_insert_id);
+    DefineCustomStringVariable("identity",
+                                gettext_noop("This variable is a synonym for the last_insert_id variable."),
+                                NULL,
+                                &GetSessionContext()->last_insert_id,
+                                "0",
+                                PGC_USERSET,
+                                0,
+                                NULL,
+                                NULL,
+                                show_last_insert_id);
     DefineCustomStringVariable("sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,

@@ -3479,6 +3479,58 @@ select * from auto_inc_uint8 order by 1,2;
 (1 row)
 
 drop table auto_inc_uint8;
+-- test select @@IDENTITY
+CREATE TABLE parent_table (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(30)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "parent_table_id_seq" for serial column "parent_table.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "parent_table_pkey" for table "parent_table"
+set enable_set_variable_b_format to on;
+INSERT INTO parent_table (name) VALUES ('Parent Record 1');
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+select @@IDENTITY;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @@LAST_INSERT_ID;
+ ?column? 
+----------
+ 1
+(1 row)
+
+INSERT INTO parent_table (name) VALUES ('Parent Record 2');
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+select @@IDENTITY;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select @@LAST_INSERT_ID;
+ ?column? 
+----------
+ 2
+(1 row)
+
+set @@IDENTITY = 3;
+ERROR:  identity and last_insert_id is not supported for setting
+set @@LAST_INSERT_ID = 3;
+ERROR:  identity and last_insert_id is not supported for setting
+drop table parent_table;
+reset enable_set_variable_b_format;
 drop schema uint_auto_increment cascade;
 NOTICE:  drop cascades to table uint_auto_increment.test_create_autoinc_err
 reset current_schema;
