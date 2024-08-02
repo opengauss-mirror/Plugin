@@ -23,10 +23,13 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 
 ### 1.3.1. 一般性限制
 
-- 不支持非编译安装版本；
+- 不支持非编译安装版本
+- TimescaleDB插件有些功能只能在pg兼容性数据库下使用，建议在pg兼容性数据库下创建与使用
 - 目前TimescaleDB安装之后，不支持删除TimescaleDB插件
 - TimescaleDB插件依赖于public schema，因此不支持使用drop schema的方式删除public schema
-- TimescaleDB创建的超表需要使用drop table CASCADE;进行删除,会同时删除其附加表；
+- Timescaledb 1.7.4 是适配 PostgreSQL 9.6 的插件。PostgreSQL 9.6 中只支持 ON CONFLICT 语法，直到 PostgreSQL 15 才支持 MERGE INTO 语法。而 openGauss 6.0 不支持 ON CONFLICT 语法，**因此该版本的 Timescaledb不支持openGauss的`MERGE INTO`语法**。
+由于 PostgreSQL 9.6 的 ON CONFLICT 语法用于在插入数据时处理冲突情况，例如更新已有记录或忽略冲突，而 MERGE INTO 语法则在 PostgreSQL 15 及以上版本中提供了更为强大的功能，允许在单个语句中执行插入、更新或删除操作。openGauss 6.0 不支持 ON CONFLICT 语法，这意味着 Timescaledb 1.7.4 无法利用此语法处理插入冲突，从而在 openGauss 上无法实现相应的功能。
+因此，Timescaledb 1.7.4 由于语法支持的限制，无法在 openGauss 6.0 上实现与 PostgreSQL 9.6+ 的相同功能。
 
 
 ### 1.3.2. 软件依赖要求
