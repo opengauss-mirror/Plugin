@@ -10,5 +10,28 @@ return (s - i);
 end|
 delimiter ;|
 drop function bug10015_2;
+-- test show open tables
+drop table if exists t2;
+NOTICE:  table "t2" does not exist, skipping
+create table t2 (a int unique);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t2_a_key" for table "t2"
+drop function if exists f2;
+NOTICE:  function f2() does not exist, skipping
+delimiter | ;
+create function f2(x int) returns int
+begin
+insert into t2 (a) values (x);
+insert into t2 (a) values (x);
+return x;
+end |
+delimiter ; |
+insert into t2 (a) values (1014);
+show open tables where (f2(14) = 14); --expect error
+ERROR:  duplicate key value violates unique constraint "t2_a_key"
+DETAIL:  Key (a)=(14) already exists.
+CONTEXT:  SQL statement "insert into t2 (a) values (x)"
+PL/pgSQL function f2(integer) line 3 at SQL statement
+drop function f2;
+drop table t2;
 reset current_schema;
 drop schema create_function_core;

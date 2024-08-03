@@ -1933,6 +1933,9 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
                     getLockCnt(mystatus, rid, &values[LOCKCNT_COL], &values[ACCESSEXCLUSIVE_LOCKCNT_COL]);
                 }
                 tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+                t_thrd.log_cxt.PG_exception_stack = save_exception_stack;
+                t_thrd.log_cxt.error_context_stack = save_context_stack;
+                gstrace_tryblock_exit(false, oldTryCounter);
                 SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
             }
         } else {
@@ -1945,6 +1948,9 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
             }
             pfree_ext(kept->lockStatus);
             pfree_ext(funcctx->user_fctx);
+            t_thrd.log_cxt.PG_exception_stack = save_exception_stack;
+            t_thrd.log_cxt.error_context_stack = save_context_stack;
+            gstrace_tryblock_exit(false, oldTryCounter);
             SRF_RETURN_DONE(funcctx);
         }
     }
