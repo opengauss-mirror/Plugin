@@ -1397,6 +1397,14 @@ void init_session_vars(void)
                              NULL,
                              NULL,
                              NULL);
+    DefineCustomBoolVariable("dolphin.use_const_value_as_colname",
+                             gettext_noop("This variable indicates using a constant value as its output column name"),
+                             NULL,
+                             &GetSessionContext()->use_const_value_as_colname,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 #endif
 
 }

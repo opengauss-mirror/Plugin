@@ -1331,5 +1331,10 @@ CREATE RULE "_RETURN" AS
   DO INSTEAD
       UPDATE  t2 set "iDdD" = 7 returning "iDdD";	
 
+
+set dolphin.use_const_value_as_colname = true;
+select 1, 2, '123', 123.45, -1, -123.45, - 123.456, true, tRue, False, fAlse, null, NUlL, 't', 'f', 'abc', 'abc.d';
+reset dolphin.use_const_value_as_colname;
+
 drop schema column_name_case_test cascade;
 reset current_schema;

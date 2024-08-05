@@ -238,6 +238,27 @@ void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
         }
     }
 }
+
+/* check is bool type const
+ * return -1: not bool
+ * return 0 : is bool, value is false
+ * return 1 : is bool, value is true
+ */
+static inline int is_bool_const(A_Const* aconst)
+{
+    const char *query_string = t_thrd.postgres_cxt.debug_query_string;
+    int location = aconst->location;
+    if (query_string != NULL && location > 0) {
+        if (pg_strcasecmp(strVal(&aconst->val), "t") == 0 &&
+            pg_strncasecmp(&query_string[location], "true", TRUE_LEN) == 0)
+            return 1;
+
+        if (pg_strcasecmp(strVal(&aconst->val), "f") == 0 &&
+            pg_strncasecmp(&query_string[location], "false", FALSE_LEN) == 0)
+            return 0;
+    }
+    return -1;
+}
 #endif
 /*
  * resolveTargetListUnknowns()
@@ -1813,6 +1834,50 @@ static int FigureColnameInternal(Node* node, char** name)
             *name = colname;
             return 1;
         } break;
+#ifdef DOLPHIN
+        case T_A_Const: {
+            if (GetSessionContext()->use_const_value_as_colname) {
+                StringInfoData buf;
+                initStringInfo(&buf);
+                A_Const* aconst = (A_Const*)node;
+                int is_bool = 0;
+                strength = 1;
+                switch (nodeTag(&aconst->val)) {
+                    case T_Integer:
+                        appendStringInfo(&buf, "%ld", intVal(&aconst->val));
+                        break;
+
+                    case T_Float:
+                         appendStringInfoString(&buf, strVal(&aconst->val));
+                         break;
+
+                    case T_Null:
+                        appendStringInfoString(&buf, "NULL");
+                        break;
+
+                    case T_String:
+                        is_bool = is_bool_const(aconst);
+                        if (is_bool > 0) {
+                            appendStringInfoString(&buf, "true");
+                            strength = 2;
+                        } else if (is_bool == 0) {
+                            appendStringInfoString(&buf, "false");
+                            strength = 2;
+                        } else {
+                            appendStringInfoString(&buf, strVal(&aconst->val));
+                        }
+                        break;
+                    case T_BitString:
+                    default:
+                        appendStringInfoString(&buf, strVal(&aconst->val));
+                        break;
+                }
+                *name = pstrdup(buf.data);
+                FreeStringInfo(&buf);
+                return strength;
+            }
+        } break;
+#endif
         default:
             break;
     }

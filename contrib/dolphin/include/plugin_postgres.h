@@ -175,6 +175,7 @@ typedef struct BSqlPluginContext {
     int cmpt_version;
     int bit_output;
     char* last_insert_id; /* for select @@identity */
+    bool use_const_value_as_colname;
 #endif
 } bSqlPluginContext;
 

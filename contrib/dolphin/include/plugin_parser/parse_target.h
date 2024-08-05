@@ -32,5 +32,7 @@ extern char* FigureIndexColname(Node* node);
 #ifdef DOLPHIN
 extern List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos);
 extern void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum);
+#define TRUE_LEN 4
+#define FALSE_LEN 5
 #endif
 #endif /* PARSE_TARGET_H */
