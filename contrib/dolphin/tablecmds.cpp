@@ -468,7 +468,11 @@ struct AlterTableOptions {
         (cmd) == AT_SplitPartition || (cmd) == AT_SplitSubPartition ||                  \
         (cmd) == AT_MergePartition)
 
+#ifdef DOLPHIN
+extern bool CStoreSupportATCmd(AlterTableType cmdtype);
+#else
 static bool CStoreSupportATCmd(AlterTableType cmdtype);
+#endif
 static bool CStoreSupportConstraint(Constraint* cons);
 static List* MergeAttributes(
     List* schema, List* supers, char relpersistence, List** supOids, List** supconstr, int* supOidCount);
@@ -850,7 +854,11 @@ static List* ATGetNonUniqueKeyList(Relation rel);
 static char* ATGetPKName(Relation rel);
 static void CheckTableOptions(AlterTableOptions *tableOptions, AlterTableCmd *cmd);
 #endif
+#ifdef DOLPHIN
+bool CStoreSupportATCmd(AlterTableType cmdtype)
+#else
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
+#endif
 {
     bool ret = false;
     switch (cmdtype) {
