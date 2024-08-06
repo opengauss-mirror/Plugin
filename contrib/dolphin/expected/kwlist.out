@@ -401,10 +401,43 @@ ERROR:  user cannot be trigger name
 CREATE TRIGGER test AFTER INSERT ON x FOR EACH ROW EXECUTE PROCEDURE fn_x_before();
 ALTER TRIGGER test ON x RENAME TO user; -- unsupported name
 ERROR:  user cannot be trigger name
-       
+-- shrink
+create table shrink(shrink int);
+insert into shrink values(1);
+select shrink from shrink;
+ shrink 
+--------
+      1
+(1 row)
+
+select shrink performance from shrink performance;
+ performance 
+-------------
+           1
+(1 row)
+
+CREATE FUNCTION shrink (s CHAR(20)) RETURNS int
+CONTAINS SQL AS $$ select 1 $$ ;
+-- performance
+create table performance(performance int);
+insert into performance values(1);
+select performance from performance;
+ performance 
+-------------
+           1
+(1 row)
+
+select performance shrink from performance shrink;
+ shrink 
+--------
+      1
+(1 row)
+
+CREATE FUNCTION performance (s CHAR(20)) RETURNS int
+CONTAINS SQL AS $$ select 1 $$ ;
 reset search_path;
 drop schema keyword_test cascade;
-NOTICE:  drop cascades to 29 other objects
+NOTICE:  drop cascades to 33 other objects
 DETAIL:  drop cascades to table keyword_test."cast"
 drop cascades to table keyword_test.last_day
 drop cascades to table keyword_test."less"
@@ -434,4 +467,8 @@ drop cascades to function keyword_test.sounds()
 drop cascades to table keyword_test."excluded"
 drop cascades to table keyword_test.x
 drop cascades to function keyword_test.fn_x_before()
+drop cascades to table keyword_test."shrink"
+drop cascades to function keyword_test."shrink"(character)
+drop cascades to table keyword_test."performance"
+drop cascades to function keyword_test."performance"(character)
 drop user user cascade;

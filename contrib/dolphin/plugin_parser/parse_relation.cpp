@@ -1182,6 +1182,66 @@ static bool CheckTargetEntryArgs(List *args, Oid rel_oid, Oid rewrite_oid, Targe
     return true;
 }
 
+static bool CheckPartitionList(List *partList, List *rtePartNameList, List *rtePartOidList)
+{
+    ListCell *nameCell = NULL;
+    ListCell *oidCell = NULL;
+    bool result = true;
+    forboth (nameCell, rtePartNameList, oidCell, rtePartOidList) {
+        char *partitionName = strVal(lfirst(nameCell));
+        Oid rtePartOid = lfirst_oid(oidCell);
+        ListCell *cell = NULL;
+        Oid partitionOid = InvalidOid;
+        bool hasPartName = false;
+        ListCell *pre = NULL;
+        foreach (cell, partList) {
+            Partition partition = (Partition)lfirst(cell);
+            if (strcmp(partition->pd_part->relname.data, partitionName) == 0) {
+                hasPartName = true;
+                if (rtePartOid != partition->pd_id) {
+                    lfirst_oid(oidCell) = partition->pd_id;
+                }
+                break;
+            }
+        }
+        if (!hasPartName) {
+            result = false;
+            break;
+        }
+    }
+    return result;
+}
+
+static bool CheckPartitionRelation(RangeTblEntry *rte, Oid relationOid)
+{
+    ListCell *partCell = NULL;
+    ListCell *subpartCell = NULL;
+    char *partitionName = NULL;
+    List *subpartitionList = NIL;
+    List *partitionList = NIL;
+    bool hasSubpartName = false;
+    bool hasPartName = false;
+    bool result = false;
+
+    Relation rel = relation_open(relationOid, AccessShareLock);
+    if (rte->isContainSubPartition) {
+        subpartitionList = RelationGetSubPartitionList(rel, AccessShareLock);
+        hasSubpartName = CheckPartitionList(subpartitionList, rte->subpartitionNameList, rte->subpartitionOidList);
+        releasePartitionList(rel, &subpartitionList, AccessShareLock);
+    }
+    partitionList = relationGetPartitionList(rel, AccessShareLock);
+    hasPartName = CheckPartitionList(partitionList, rte->partitionNameList, rte->partitionOidList);
+    releasePartitionList(rel, &partitionList, AccessShareLock);
+    relation_close(rel, AccessShareLock);
+    
+    if ((rte->isContainPartition && hasPartName) ||
+        (rte->isContainSubPartition && hasSubpartName && hasPartName)) {
+        result = true;
+    }
+    
+    return result;
+}
+
 static bool CheckRTable(Query *query, Oid rel_oid, Oid rewrite_oid)
 {
     ListCell *lc = NULL;
@@ -1239,6 +1299,10 @@ static bool CheckRTable(Query *query, Oid rel_oid, Oid rewrite_oid)
         }
         systable_endscan(scan);
         heap_close(dependRel, RowExclusiveLock);
+
+        if ((rte->isContainPartition || rte->isContainSubPartition) && !CheckPartitionRelation(rte, newRelOid)) {
+            return false;
+        }
     }
     return true;
 }
