@@ -377,12 +377,20 @@ typedef struct RangeTblEntry {
                                  * or select * from table_name partition for (partition_key_value_list)
                                  * or delete from table_name partition (partition_name, ...)
                                  */
-    int cursorDop;              /* for functionscan with cursor param */
+    List *partitionNameList;    /*
+                                 * Names of a partition if relation is partitioned table.
+                                 * Get names when partition tables deleted.
+                                 */
     List *subpartitionOidList;  /*
                                  * OIDs of a subpartition if relation is partitioned table.
                                  * Select * from table_name subpartition (subpartition_name);
                                  * or delete from table_name partition (partition_name, ...)
                                  */
+    List *subpartitionNameList; /*
+                                 * Names of a subpartition if relation is partitioned table.
+                                 * Get names when partition tables deleted.
+                                 */
+    int cursorDop;              /* for functionscan with cursor param */
 } RangeTblEntry;
 
 /*

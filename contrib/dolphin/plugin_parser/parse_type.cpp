@@ -1916,6 +1916,9 @@ bool IsBinaryType(Oid typid)
 #else
 bool IsBinaryType(Oid typid)
 {
+    if (u_sess->hook_cxt.isBinaryType != NULL) {
+        return ((isBinaryType)(u_sess->hook_cxt.isBinaryType))(typid);
+    }
     return ((typid) == BLOBOID ||
             (typid) == BYTEAOID);
 }

@@ -1638,6 +1638,7 @@ static void expand_inherited_rtentry(PlannerInfo* root, RangeTblEntry* rte, Inde
             newrc->waitPolicy = oldrc->waitPolicy;
             newrc->waitSec = oldrc->waitSec;
             newrc->isParent = false;
+            newrc->bms_nodeids = oldrc->bms_nodeids;
 
             root->rowMarks = lappend(root->rowMarks, newrc);
         }
