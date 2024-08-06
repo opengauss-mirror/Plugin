@@ -198,7 +198,23 @@ CREATE FUNCTION fn_x_before () RETURNS TRIGGER AS '
 CREATE TRIGGER "user" AFTER INSERT ON x FOR EACH ROW EXECUTE PROCEDURE fn_x_before(); -- unsupported name
 CREATE TRIGGER test AFTER INSERT ON x FOR EACH ROW EXECUTE PROCEDURE fn_x_before();
 ALTER TRIGGER test ON x RENAME TO user; -- unsupported name
-       
+
+-- shrink
+create table shrink(shrink int);
+insert into shrink values(1);
+select shrink from shrink;
+select shrink performance from shrink performance;
+CREATE FUNCTION shrink (s CHAR(20)) RETURNS int
+CONTAINS SQL AS $$ select 1 $$ ;
+
+-- performance
+create table performance(performance int);
+insert into performance values(1);
+select performance from performance;
+select performance shrink from performance shrink;
+CREATE FUNCTION performance (s CHAR(20)) RETURNS int
+CONTAINS SQL AS $$ select 1 $$ ;
+
 reset search_path;
 drop schema keyword_test cascade;
 drop user user cascade;
