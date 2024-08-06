@@ -1,0 +1,51 @@
+DROP USER IF EXISTS native_user;
+NOTICE:  role "native_user" does not exist, skipping
+CREATE USER native_user WITH PASSWORD 'Gauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL PRIVILEGES TO native_user;
+GRANT ALL ON SCHEMA dbe_perf TO native_user;
+SET ROLE native_user PASSWORD 'Gauss@123';
+-- set password for navtive_password_plugin authentication first
+select set_native_password('native_user', 'Gauss@123', '');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+-- ERROR set password for navtive_password_plugin authentication
+select set_native_password('native_user', 'Gauss@123', 'Gauss');
+ERROR:  Set authentication method verification failed, password does not match original password
+CONTEXT:  referenced column: set_native_password
+-- set password for navtive_password_plugin authentication
+select set_native_password('native_user', 'Gauss@admin', 'Gauss@123');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+DROP USER IF EXISTS caching_user;
+NOTICE:  role "caching_user" does not exist, skipping
+CREATE USER caching_user WITH PASSWORD 'Gauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL PRIVILEGES TO caching_user;
+GRANT ALL ON SCHEMA dbe_perf TO caching_user;
+ERROR:  no privileges were granted for "dbe_perf"
+SET ROLE caching_user PASSWORD 'Gauss@123';
+-- set password for caching_sha2_password authentication first
+select replace(set_caching_sha2_password('caching_user', 'Gauss@123', ''),E'\n','X');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+-- ERROR set password for caching_sha2_password authentication
+select set_caching_sha2_password('caching_user', 'Gauss@123', 'Gauss');
+ERROR:  Set authentication method verification failed, password does not match original password
+CONTEXT:  referenced column: set_caching_sha2_password
+-- set password for caching_sha2_password authentication
+select replace(set_caching_sha2_password('caching_user', 'Gauss@admin', 'Gauss@123'),E'\n','X');
+--?.*
+--?.*
+--?.*
+(1 row)
+

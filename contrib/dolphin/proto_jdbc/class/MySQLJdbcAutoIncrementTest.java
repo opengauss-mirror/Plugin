@@ -34,12 +34,17 @@ public class MySQLJdbcAutoIncrementTest {
     private static String dbname;
     private static String user;
     private static String password;
+    private static String jar_version = "old";
+    private static String url_jdbc;
     
     public static void main(String[] args) throws Exception {
-        if (args.length == 3) {
+        if (args.length >= 3) {
             port = args[0];
             dbname = args[1];
             user = args[2];
+            if (args.length == 4) {
+                jar_version = args[3];
+            }
         }
         
         Properties info = new Properties();
@@ -47,8 +52,14 @@ public class MySQLJdbcAutoIncrementTest {
         info.setProperty("user", user);
         info.put("socketFactory", AFUNIXDatabaseSocketFactory.class.getName());
         info.put("junixsocket.file", "/tmp/.s.PGSQL." + port);
+        
+        if (jar_version.equals("new")) {
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&createDatabaseIfNotExist=true";
+        } else {
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false&createDatabaseIfNotExist=true";
+        }
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false&createDatabaseIfNotExist=true", info);
+        try (Connection connection = DriverManager.getConnection(url_jdbc, info);
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("drop table if exists t_auto");
             statement.executeUpdate("create table t_auto (" +

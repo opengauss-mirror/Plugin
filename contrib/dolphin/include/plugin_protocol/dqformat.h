@@ -25,6 +25,7 @@
 #include "plugin_protocol/proto_com.h"
 #include "plugin_protocol/bytestream.h"
 #include "plugin_protocol/printtup.h"
+#include "plugin_postgres.h"
 
 #include "executor/spi.h"
 #include "commands/prepare.h"
@@ -130,9 +131,13 @@ typedef struct {
 
 network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble);
 
-network_mysqld_auth_request* read_login_request(StringInfo buf);
+network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port);
 
 network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows = 0, uint64 insert_id = 0, char *msg = "");
+
+void send_auth_switch_packet(StringInfo buf, char *scramble);
+
+char *read_switch_response(StringInfo buf);
 
 void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake);
 
@@ -141,6 +146,9 @@ void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packe
 void send_general_ok_packet();
 
 void send_network_eof_packet(StringInfo buf);
+
+void send_new_eof_packet(StringInfo buf);
+
 void send_network_fetch_packet(StringInfo buf);
 
 

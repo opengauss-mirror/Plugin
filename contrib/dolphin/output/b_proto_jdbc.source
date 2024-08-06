@@ -46,7 +46,7 @@ Exception in thread "main" java.sql.SQLException: failed in auth check, role:pro
 --?.*
 --?.*
 -- set password for navtive_password_plugin authentication
-select set_native_password('proto_user', 'Gauss@123');
+select set_native_password('proto_user', 'Gauss@123', 'Gauss@123');
            set_native_password            
 ------------------------------------------
  676a8fd5633248f6f59e17d4939f7f6e7093c350

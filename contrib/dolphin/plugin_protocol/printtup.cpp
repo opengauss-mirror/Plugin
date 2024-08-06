@@ -192,7 +192,9 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
     }
     
     // EOF packet
-    send_network_eof_packet(buf);
+    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+        send_network_eof_packet(buf);
+    }
 }
 
 inline MemoryContext changeToTmpContext(DestReceiver *self)

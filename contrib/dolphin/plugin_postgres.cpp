@@ -270,6 +270,18 @@ void init_dolphin_proto(char* database_name)
         int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, database_name);
         securec_check(ret, "\0", "\0");
     }
+    if (g_proto_ctx.mysql_ca[0] == '\0') {
+        int ret = strcpy_s(g_proto_ctx.mysql_ca, NAMEDATALEN, "cacert.pem");
+        securec_check(ret, "\0", "\0");
+    } 
+    if (g_proto_ctx.mysql_server_cert[0] == '\0') {
+        int ret = strcpy_s(g_proto_ctx.mysql_server_cert, NAMEDATALEN, "server.crt");
+        securec_check(ret, "\0", "\0");
+    } 
+    if (g_proto_ctx.mysql_server_key[0] == '\0') {
+        int ret = strcpy_s(g_proto_ctx.mysql_server_key, NAMEDATALEN, "server.key");
+        securec_check(ret, "\0", "\0");
+    }
     
     if (protocol_inited) {
         define_dolphin_server_guc();
@@ -1015,6 +1027,9 @@ void init_session_vars(void)
     cxt->scan_from_pl = false;
     cxt->is_b_declare = false;
     cxt->default_database_name = NULL;
+    cxt->mysql_ca = NULL;
+    cxt->mysql_server_cert = NULL;
+    cxt->mysql_server_key = NULL;
     cxt->paramIdx = 0;
     cxt->isUpsert = false;
     cxt->single_line_trigger_begin = 0;
@@ -1030,6 +1045,16 @@ void init_session_vars(void)
     cxt->is_create_alter_stmt = false;
     cxt->isDoCopy = false;
     cxt->isInTransformSet = false;
+
+    if (temp_Conn_Mysql_Info) {
+        cxt->Conn_Mysql_Info = (conn_mysql_infoP_t)MemoryContextAllocZero(u_sess->self_mem_cxt,
+                                                                          (Size)(sizeof(conn_mysql_info_t)));
+        errno_t rc = memcpy_s(cxt->Conn_Mysql_Info, sizeof(conn_mysql_info_t),
+                              temp_Conn_Mysql_Info, sizeof(conn_mysql_info_t));
+        securec_check(rc, "\0", "\0");
+        pfree(temp_Conn_Mysql_Info);
+        temp_Conn_Mysql_Info = NULL;
+    }
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

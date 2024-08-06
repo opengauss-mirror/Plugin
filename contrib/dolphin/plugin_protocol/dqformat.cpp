@@ -49,6 +49,8 @@
 #define PROTO_TIME_LEN 8
 #define PROTE_TIMESTATMP_LEN 12
 
+#define PACKETOFFSET_8 8
+
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
                                                    com_stmt_exec_request *req, StringInfo buf);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
@@ -60,9 +62,9 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
 {
     network_mysqld_auth_challenge *challenge =
                                     (network_mysqld_auth_challenge*) palloc0(sizeof(network_mysqld_auth_challenge));
-    challenge->capabilities = DOPHIN_DEFAULT_FLAGS;
-    challenge->auth_plugin_name = pstrdup("mysql_native_password");
-    challenge->server_version_str = pstrdup("5.7.38-dophin-server");
+    challenge->capabilities = Dophin_Flags;
+    challenge->auth_plugin_name = pstrdup("caching_sha2_password");
+    challenge->server_version_str = pstrdup("8.0.28-dophin-server");
     challenge->charset = 0x21;  /* utf8_general_ci */
     challenge->server_status = SERVER_STATUS_AUTOCOMMIT;
     challenge->thread_id = gs_atomic_add_32(&g_proto_ctx.connect_id, 1);
@@ -83,8 +85,25 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
 
     errno_t rc = memcpy_s(scramble, AUTH_PLUGIN_DATA_LEN + 1, challenge->auth_plugin_data, AUTH_PLUGIN_DATA_LEN);
     securec_check(rc, "\0", "\0");
+    scramble[AUTH_PLUGIN_DATA_LEN] = 0x00;
 
     return challenge;
+}
+
+void send_auth_switch_packet(StringInfo buf, char *scramble)
+{
+    dq_append_int1(buf, 0xfe);
+    dq_append_string_null(buf, "mysql_native_password");
+    dq_append_string_eof(buf, scramble);
+    dq_append_int1(buf, 0x00);
+    dq_putmessage(buf->data, buf->len);
+}
+
+char *read_switch_response(StringInfo buf)
+{
+    char *response_data = (char *)palloc0(sizeof(20));
+    response_data = dq_get_string_eof(buf);
+    return response_data;
 }
 
 void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake)
@@ -124,13 +143,27 @@ void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *s
     dq_putmessage(buf->data, buf->len);
 }
 
-network_mysqld_auth_request* read_login_request(StringInfo buf)
+network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
 {
     network_mysqld_auth_request *auth = (network_mysqld_auth_request*) palloc0(sizeof(network_mysqld_auth_request));
-
     dq_get_int4(buf, &auth->client_capabilities);
     dq_get_int4(buf, &auth->max_packet_size);
     dq_get_int1(buf, &auth->charset);
+
+    if ((auth->client_capabilities & CLIENT_SSL)) {
+        uint8 ssl_charset_code = 0;
+        if (TlsSecureOpen(port)) {
+            return NULL;
+        }
+        resetStringInfo(buf);
+        //Read data after SSL communication
+        if (dq_getmessage(buf, 0) != STATUS_OK) {
+            DestroyStringInfo(buf);
+            return NULL;
+        }
+        dq_skip_bytes(buf, PACKETOFFSET_8);
+        dq_get_int1(buf, &ssl_charset_code);
+    }
 
     dq_skip_bytes(buf, HANDSHAKE_RESPONSE_RESERVED_BYTES);
     auth->username = dq_get_string_null(buf);
@@ -145,12 +178,12 @@ network_mysqld_auth_request* read_login_request(StringInfo buf)
         auth->auth_response = dq_get_string_null(buf);
     }
 
-    if ((DOPHIN_DEFAULT_FLAGS & CLIENT_CONNECT_WITH_DB) &&
+    if ((Dophin_Flags & CLIENT_CONNECT_WITH_DB) &&
         (auth->client_capabilities & CLIENT_CONNECT_WITH_DB)) {
         auth->schema = dq_get_string_null(buf);
     }
 
-    if ((DOPHIN_DEFAULT_FLAGS & CLIENT_PLUGIN_AUTH) && (auth->client_capabilities & CLIENT_PLUGIN_AUTH)) {
+    if ((Dophin_Flags & CLIENT_PLUGIN_AUTH) && (auth->client_capabilities & CLIENT_PLUGIN_AUTH)) {
         auth->auth_plugin_name = dq_get_string_null(buf);
     }
 
@@ -199,6 +232,33 @@ void send_network_eof_packet(StringInfo buf)
     dq_append_int2(buf, 0x00);       /* warning count */
     dq_append_int2(buf, 0x02);      /* status flags */
     
+    dq_putmessage(buf->data, buf->len);
+}
+
+void send_new_eof_packet(StringInfo buf)
+{
+    resetStringInfo(buf);
+    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF) {
+        dq_append_int1(buf, 0xfe);
+    } else {
+        dq_append_int1(buf, 0x00);
+    }
+    dq_append_int_lenenc(buf, 0);   //affected rows
+    dq_append_int_lenenc(buf, 0);   //last insert-id
+    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_PROTOCOL_41) {
+        dq_append_int2(buf, 0x02);      /* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
+        dq_append_int2(buf, 0x00);       /* warning count *int<2>	warnings	number of warnings*/
+    } else if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_TRANSACTIONS) {
+        dq_append_int2(buf, 0x02);      //int<2>	status_flags	SERVER_STATUS_flags_enum
+    }
+    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_SESSION_TRACK) {
+        dq_append_string_lenenc(buf, "", -1);        // string<lenenc>	info	human readable status information
+    }
+    if (SERVER_SESSION_STATE_CHANGED) {
+        dq_append_string_lenenc(buf, "", -1);  //string<lenenc>	session state info	Session State Information
+    } else {
+        dq_append_string_eof(buf, "");        //string<EOF>	info	human readable status information
+    }
     dq_putmessage(buf->data, buf->len);
 }
 
@@ -479,25 +539,24 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
 com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
 {
     char stmt_name[NAMEDATALEN];
-
     com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
     dq_get_int4(buf, &req->statement_id);
     dq_get_int1(buf, &req->flags);
     dq_get_int4(buf, &req->iteration_count);
-
     int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", req->statement_id);
     securec_check_ss(rc, "\0", "\0");
-
     PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
-    int param_count = pstmt->plansource->num_params;
-
+    int param_count = 0;
+    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+        uint64 len;
+        param_count = dq_get_int_lenenc(buf, (void *)&len);
+    } else {
+        param_count = pstmt->plansource->num_params;
+    }
     if (param_count > 0) {
         int len = (param_count + 7) / 8;
         req->null_bitmap = dq_get_string_len(buf, len);
         dq_get_int1(buf, &req->new_params_bind_flag);
-    }
-
-    if (param_count > 0) {
         if (req->new_params_bind_flag) {
             /* malloc private data using u_sess->cache_mem_cxt */
             MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
@@ -506,16 +565,19 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
             parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
             for (int i = 0; i < param_count; i++) {
                 dq_get_int2(buf, &parameter_types->itypes[i]);
+                if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+                    /*At present, there is no stored parameter name, only read and not used.
+                    It will be automatically released after completion*/
+                    char* parameter_name = dq_get_string_lenenc(buf);
+                }
             }
             SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
             (void)MemoryContextSwitchTo(oldcontext);
         }
-
         com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, pstmt, req, buf);
         req->parameter_values = parameters;
         req->param_count = param_count;
     }    
-
     return req;
 }
 
@@ -772,7 +834,9 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)
     }
 
     // EOF packet
-    send_network_eof_packet(buf);
+    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+        send_network_eof_packet(buf);
+    }
 }
 
 void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable)
