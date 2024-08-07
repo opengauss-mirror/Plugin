@@ -9190,6 +9190,7 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
         rename->subname = cmd->name;
         rename->newname = def->colname;
         rename->missing_ok = false;
+        rename->is_modifycolumn = true;
         cxt->blist = lappend(cxt->blist, rename);
     }
 }

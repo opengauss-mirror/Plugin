@@ -22968,6 +22968,7 @@ AlterProcedureStmt:
 			ALTER PROCEDURE function_with_argtypes alterfunc_opt_list opt_restrict
 				{
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					n->isProcedure = true;
 					n->func = $3;
 					n->actions = $4;
 					n->noargs = false;
@@ -22976,6 +22977,7 @@ AlterProcedureStmt:
 			| ALTER PROCEDURE func_name alterfunc_opt_list opt_restrict
 				{
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					n->isProcedure = true;
 					FuncWithArgs *narg = makeNode(FuncWithArgs);
 					narg->funcname = $3;
 					narg->funcargs = NIL;

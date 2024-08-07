@@ -1674,7 +1674,8 @@ bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_r
                     foreach (cell, ((DropStmt*)parse_tree)->objects) {
                         List* obj_name = (List*)lfirst(cell);
                         char* name = NameListToString(obj_name);
-                        if (isTempNamespaceName(name) || isToastTempNamespaceName(name))
+                        if (isTempNamespaceName(name) || isToastTempNamespaceName(name)
+                            || strcmp(name, "pg_temp") == 0)
                             return true;
                     }
 
@@ -3405,15 +3406,6 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
 #else
         GrantRole((GrantRoleStmt*)parse_tree);
 #endif
-            break;
-        case T_CreateEventStmt: /* CREATE EVENT */
-            CreateEventCommand((CreateEventStmt*)parse_tree);
-            break;
-        case T_AlterEventStmt: /* CREATE EVENT */
-            AlterEventCommand((AlterEventStmt*)parse_tree);
-            break;
-        case T_DropEventStmt: /* DROP EVENT */
-            DropEventCommand((DropEventStmt*)parse_tree);
             break;
         case T_ShowEventStmt: /* SHOW EVENTS */
             ShowEventCommand((ShowEventStmt*)parse_tree, dest);
@@ -6878,6 +6870,17 @@ ProcessUtilitySlow(Node *parse_tree,
             commandCollected = true;
             break;
 
+            case T_CreateEventStmt: /* CREATE EVENT */
+                address = CreateEventCommand((CreateEventStmt*)parse_tree);
+                
+                break;
+            case T_AlterEventStmt: /* CREATE EVENT */
+                address = AlterEventCommand((AlterEventStmt*)parse_tree);
+                break;
+            case T_DropEventStmt: /* DROP EVENT */
+                DropEventCommand((DropEventStmt*)parse_tree);
+            break;
+            
             case T_TableOfTypeStmt: /* CREATE TYPE AS TABLE OF */
             {
                 TableOfTypeStmt* stmt = (TableOfTypeStmt*)parse_tree;
