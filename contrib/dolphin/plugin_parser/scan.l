@@ -2146,13 +2146,36 @@ unescape_single_char(unsigned char c, core_yyscan_t yyscanner)
 		case 'b':
 			return '\b';
 		case 'f':
-			return '\f';
+			if (ENABLE_B_CMPT_MODE) {
+				return 'f';
+			} else {
+				return '\f';
+			}
 		case 'n':
 			return '\n';
 		case 'r':
 			return '\r';
 		case 't':
 			return '\t';
+/* special escape char in M*, \Z \% \_ */
+#ifdef DOLPHIN
+		case 'Z': // \Z indicate ASCII 26
+			if (ENABLE_B_CMPT_MODE) {
+				return (unsigned char) '\032';
+			} else {
+				return 'Z';
+			}
+		case '%':
+			if (ENABLE_B_CMPT_MODE) {
+				addlitchar('\\', yyscanner);
+			}
+			return '%';
+		case '_':
+			if (ENABLE_B_CMPT_MODE) {
+				addlitchar('\\', yyscanner);
+			}
+			return '_';
+#endif
 		default:
 			/* check for backslash followed by non-7-bit-ASCII */
 			if (c == '\0' || IS_HIGHBIT_SET(c))

@@ -259,7 +259,7 @@ select binary E'\v';
 select binary E'\f';
  binary 
 --------
- \x0c
+ \x66
 (1 row)
 
 select binary E'\"';
@@ -271,13 +271,13 @@ select binary E'\"';
 select binary E'\%';
  binary 
 --------
- \x25
+ \x5c25
 (1 row)
 
 select binary E'\_';
  binary 
 --------
- \x5f
+ \x5c5f
 (1 row)
 
 select binary E'\0';
