@@ -100,13 +100,7 @@ select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200)
 --test rebuild partition syntax
 ALTER TABLE test_part REBUILD PARTITION perror;
 ERROR:  The partition perror can't be found in table test_part
-CONTEXT:  referenced column: rebuild_partition
 ALTER TABLE test_part REBUILD PARTITION p0, p1;
- rebuild_partition 
--------------------
- test_part
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -184,11 +178,6 @@ select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200)
 (20 rows)
 
 ALTER TABLE test_part REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_part
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -295,11 +284,6 @@ select parttype,relname from pg_class where relname = 'test_part' and relfilenod
 (0 rows)
 
 ALTER TABLE test_part remove PARTITIONING;
- remove_partitioning 
----------------------
- test_part
-(1 row)
-
 explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
@@ -430,11 +414,6 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 (4 rows)
 
 ALTER TABLE test_subpart REBUILD PARTITION P_2021, P_2022;
- rebuild_partition 
--------------------
- test_subpart
-(1 row)
-
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_subpart')) order by relname;
    relname    | parttype 
 --------------+----------
@@ -533,11 +512,6 @@ select * from test_subpart where ((980 < b and b < 1000) or (2180 < b and b < 22
 (20 rows)
 
 ALTER TABLE test_subpart REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_subpart
-(1 row)
-
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_subpart')) and oid = relfilenode order by relname;
  relname | parttype 
 ---------+----------
@@ -663,11 +637,6 @@ select parttype,relname from pg_class where relname = 'test_subpart' and relfile
 (0 rows)
 
 ALTER TABLE test_subpart remove PARTITIONING;
- remove_partitioning 
----------------------
- test_subpart
-(1 row)
-
 explain select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
@@ -741,11 +710,6 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 (1 row)
 
 ALTER TABLE test_part_list REBUILD PARTITION p1, p2;
- rebuild_partition 
--------------------
- test_part_list
-(1 row)
-
 select * from test_part_list order by a desc;
   a   | b | c | d 
 ------+---+---+---
@@ -764,11 +728,6 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 (3 rows)
 
 ALTER TABLE test_part_list REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_part_list
-(1 row)
-
 select * from test_part_list order by a desc;
   a   | b | c | d 
 ------+---+---+---
@@ -838,11 +797,6 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 (1 row)
 
 ALTER TABLE test_part_hash REBUILD PARTITION p0, p1;
- rebuild_partition 
--------------------
- test_part_hash
-(1 row)
-
 explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                     QUERY PLAN                                     
 -----------------------------------------------------------------------------------
@@ -879,11 +833,6 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 (3 rows)
 
 ALTER TABLE test_part_hash REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_part_hash
-(1 row)
-
 explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
                                     QUERY PLAN                                     
 -----------------------------------------------------------------------------------
@@ -924,10 +873,8 @@ select relname, parttype from pg_partition where (parentid in (select oid from p
 create table IF NOT EXISTS test_nopart(a int);
 ALTER TABLE test_nopart REBUILD PARTITION all;
 ERROR:  The table test_nopart is not partition table
-CONTEXT:  referenced column: rebuild_partition
 ALTER TABLE test_nopart remove partitioning;
 ERROR:  The table test_nopart is not partition table
-CONTEXT:  referenced column: remove_partitioning
 -------test the tables whose relkind are not 'r'
 CREATE UNLOGGED TABLE IF NOT EXISTS test_part_unlog
 (
@@ -972,23 +919,17 @@ PARTITION BY RANGE(a)
 );
 ERROR:  unsupported feature with temporary/unlogged table for partitioned table
 ALTER TABLE test_part_unlog REBUILD PARTITION all;
-ERROR:  The table test_part_unlog can't be found
-CONTEXT:  referenced column: rebuild_partition
+ERROR:  relation "test_part_unlog" does not exist
 ALTER TABLE test_part_local REBUILD PARTITION all;
-ERROR:  The table test_part_local can't be found
-CONTEXT:  referenced column: rebuild_partition
+ERROR:  relation "test_part_local" does not exist
 ALTER TABLE test_part_global REBUILD PARTITION all;
-ERROR:  The table test_part_global can't be found
-CONTEXT:  referenced column: rebuild_partition
+ERROR:  relation "test_part_global" does not exist
 ALTER TABLE test_part_unlog remove partitioning;
-ERROR:  The table test_part_unlog can't be found
-CONTEXT:  referenced column: remove_partitioning
+ERROR:  relation "test_part_unlog" does not exist
 ALTER TABLE test_part_local remove partitioning;
-ERROR:  The table test_part_local can't be found
-CONTEXT:  referenced column: remove_partitioning
+ERROR:  relation "test_part_local" does not exist
 ALTER TABLE test_part_global remove partitioning;
-ERROR:  The table test_part_global can't be found
-CONTEXT:  referenced column: remove_partitioning
+ERROR:  relation "test_part_global" does not exist
 -------test USTORE table
 CREATE TABLE IF NOT EXISTS test_part_ustore
 (
@@ -1087,11 +1028,6 @@ select * from test_part_ustore where ((980 < b and b < 1000) or (2180 < b and b 
 
 --test rebuild partition syntax
 ALTER TABLE test_part_ustore REBUILD PARTITION p0, p1;
- rebuild_partition 
--------------------
- test_part_ustore
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_ustore')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -1169,11 +1105,6 @@ select * from test_part_ustore where ((980 < b and b < 1000) or (2180 < b and b 
 (20 rows)
 
 ALTER TABLE test_part_ustore REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_part_ustore
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_ustore')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -1352,11 +1283,6 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
 
 --test rebuild partition syntax
 ALTER TABLE test_part_segment REBUILD PARTITION p0, p1;
- rebuild_partition 
--------------------
- test_part_segment
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_segment')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -1435,11 +1361,6 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
 (20 rows)
 
 ALTER TABLE test_part_segment REBUILD PARTITION all;
- rebuild_partition 
--------------------
- test_part_segment
-(1 row)
-
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_segment')) and parttype = 'p' and oid != relfilenode order by relname;
  relname 
 ---------
@@ -1520,7 +1441,6 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
 --test remove partitioning
 alter table test_part_segment remove partitioning;
 ERROR:  The segment table test_part_segment is not supported
-CONTEXT:  referenced column: remove_partitioning
 set dolphin.b_compatibility_mode = on;
 CREATE TABLE tb_subpart(
     lid int,

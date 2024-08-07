@@ -1007,7 +1007,10 @@ typedef enum AlterTableType {
     AT_STATS_SAMPLE_PAGES,
     AT_UNION,
     AT_TABLESPACE,
-    AT_TABLESPACE_STORAGE
+    AT_TABLESPACE_STORAGE,
+    AT_RemovePartitioning,
+    AT_RebuildPartition,
+    AT_AnalyzePartition,
 #endif
 } AlterTableType;
 
@@ -1037,6 +1040,7 @@ typedef struct AlterTableCmd { /* one subcommand of an ALTER TABLE */
     bool alterGPI;                              /* check whether is global partition index alter statement */
     bool is_first;                               /* a flag of ALTER TABLE ... ADD ... FIRST */
     char *after_name;                            /* column name of ALTER TABLE ... ADD ... AFTER column_name */
+    bool recursing;
 } AlterTableCmd;
 
 typedef struct AddTableIntoCBIState {
@@ -1201,6 +1205,7 @@ typedef struct ColumnDef {
     Form_pg_attribute dropped_attr; /* strcuture for dropped attribute during create table like OE */
     char generatedCol;         /* generated column setting */
     Node *update_default;
+    char *initdefval;
 } ColumnDef;
 
 /*
@@ -2518,6 +2523,7 @@ typedef struct RenameStmt {
     bool missing_ok;         /* skip error if missing? */
     List* renameTargetList = NULL;
     bool renameTableflag = false;
+    bool is_modifycolumn = false;
 } RenameStmt;
 
 /* ----------------------

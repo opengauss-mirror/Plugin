@@ -24,6 +24,11 @@
 #ifdef DOLPHIN
 extern void ExecRemovePartition(Oid relid, char* tableName);
 extern void ExecRebuildPartition(List* partList, Relation rel);
+
+extern Datum RemovePartitioningExt(const char* tabname);
+extern Datum RebuildPartitionExt(ArrayType* args_array);
+extern Datum AnalyzePartitionExt(ArrayType* args_array, const char* catalog, const char* schema);
+
 void dropPartitionTableInfo(Relation relation);
 void drop_partition_info(Relation rel);
 void updatePGClass(Oid relid, Oid tempTableOid, bool isIndex);
