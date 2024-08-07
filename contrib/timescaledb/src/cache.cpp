@@ -273,6 +273,9 @@ cache_xact_end(XactEvent event, void *arg)
 {
 	switch (event)
 	{
+        case XACT_EVENT_PREROLLBACK_CLEANUP:
+        case XACT_EVENT_STMT_FINISH:
+            break;
 		case XACT_EVENT_ABORT:
 			release_all_pinned_caches();
 			break;
@@ -328,8 +331,8 @@ cache_subxact_abort(SubXactEvent event, SubTransactionId subtxn_id, SubTransacti
 
 	switch (event)
 	{
-		case SUBXACT_EVENT_START_SUB:
-		case 2:
+        case SUBXACT_EVENT_START_SUB:
+        case SUBXACT_EVENT_CLEANUP_SUB:
 			/* do nothing */
 			break;
 		case SUBXACT_EVENT_COMMIT_SUB:
@@ -345,7 +348,9 @@ void
 _cache_init(void)
 {
 	cache_reset_pinned_caches();
+#ifdef ENABLE_MOT
 	RegisterXactCallback(cache_xact_end, NULL);
+#endif
 	RegisterSubXactCallback(cache_subxact_abort, NULL);
 }
 
@@ -355,6 +360,8 @@ _cache_fini(void)
 	MemoryContextDelete(pinned_caches_mctx);
 	pinned_caches_mctx = NULL;
 	pinned_caches = NIL;
+#ifdef ENABLE_MOT
 	UnregisterXactCallback(cache_xact_end, NULL);
+#endif
 	UnregisterSubXactCallback(cache_subxact_abort, NULL);
 }

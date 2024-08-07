@@ -3634,7 +3634,9 @@ _process_utility_init(void)
 {
 	prev_ProcessUtility_hook = ProcessUtility_hook;
 	ProcessUtility_hook = timescaledb_ddl_command_start;
+#ifdef ENABLE_MOT
 	RegisterXactCallback(process_utility_xact_abort, NULL);
+#endif
 	RegisterSubXactCallback(process_utility_subxact_abort, NULL);
 }
 
@@ -3642,6 +3644,8 @@ void
 _process_utility_fini(void)
 {
 	ProcessUtility_hook = prev_ProcessUtility_hook;
+#ifdef ENABLE_MOT
 	UnregisterXactCallback(process_utility_xact_abort, NULL);
+#endif
 	UnregisterSubXactCallback(process_utility_subxact_abort, NULL);
 }

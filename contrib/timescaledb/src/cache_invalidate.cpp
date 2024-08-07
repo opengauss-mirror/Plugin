@@ -109,7 +109,14 @@ cache_invalidate_xact_end(XactEvent event, void *arg)
 {
 	switch (event)
 	{
+        case XACT_EVENT_PREROLLBACK_CLEANUP:
+        case XACT_EVENT_POST_COMMIT_CLEANUP:
+        case XACT_EVENT_RECORD_COMMIT:
+        case XACT_EVENT_START:
+        case XACT_EVENT_STMT_FINISH:
+            break;
 		case XACT_EVENT_ABORT:
+            cache_invalidate_all();
 		default:
 			break;
 	}
@@ -136,7 +143,9 @@ cache_invalidate_subxact_end(SubXactEvent event, SubTransactionId mySubid,
 void
 _cache_invalidate_init(void)
 {
+#ifdef ENABLE_MOT
 	RegisterXactCallback(cache_invalidate_xact_end, NULL);
+#endif
 	RegisterSubXactCallback(cache_invalidate_subxact_end, NULL);
 	CacheRegisterThreadRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
 	tsdb_first_start = true;
@@ -145,7 +154,9 @@ _cache_invalidate_init(void)
 void
 _cache_invalidate_fini(void)
 {
+#ifdef ENABLE_MOT
 	UnregisterXactCallback(cache_invalidate_xact_end, NULL);
+#endif
 	UnregisterSubXactCallback(cache_invalidate_subxact_end, NULL);
 	tsdb_first_start = false;
 	/* No way to unregister relcache callback */
