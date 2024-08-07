@@ -68,11 +68,7 @@ select '1 2'::interval year_month;
 (1 row)
 
 select '1 2'::interval year to month;
-    interval     
------------------
- @ 1 year 2 mons
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '1 2'::interval day_hour;
     interval     
 -----------------
@@ -80,11 +76,7 @@ select '1 2'::interval day_hour;
 (1 row)
 
 select '1 2'::interval day to hour;
-    interval     
------------------
- @ 1 day 2 hours
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '1 2 3'::interval day_minute;
         interval        
 ------------------------
@@ -92,11 +84,7 @@ select '1 2 3'::interval day_minute;
 (1 row)
 
 select '1 2 3'::interval day to minute;
-        interval        
-------------------------
- @ 1 day 2 hours 3 mins
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '1 2 3 4'::interval day_second;
            interval            
 -------------------------------
@@ -104,11 +92,7 @@ select '1 2 3 4'::interval day_second;
 (1 row)
 
 select '1 2 3 4'::interval day to second;
-           interval            
--------------------------------
- @ 1 day 2 hours 3 mins 4 secs
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '1 2 3 4 5'::interval day_microsecond;
             interval             
 ---------------------------------
@@ -116,11 +100,7 @@ select '1 2 3 4 5'::interval day_microsecond;
 (1 row)
 
 select '1 2 3 4 5'::interval day to microsecond;
-            interval             
----------------------------------
- @ 1 day 2 hours 3 mins 4.5 secs
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '1 2'::interval hour_minute;
     interval     
 -----------------
@@ -128,11 +108,7 @@ select '1 2'::interval hour_minute;
 (1 row)
 
 select '1 2'::interval hour to minute;
-    interval     
------------------
- @ 1 hour 2 mins
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '1 2 3'::interval hour_second;
         interval        
 ------------------------
@@ -140,11 +116,7 @@ select '1 2 3'::interval hour_second;
 (1 row)
 
 select '1 2 3'::interval hour to second;
-        interval        
-------------------------
- @ 1 hour 2 mins 3 secs
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '1 2 3 4'::interval hour_microsecond;
          interval         
 --------------------------
@@ -152,11 +124,7 @@ select '1 2 3 4'::interval hour_microsecond;
 (1 row)
 
 select '1 2 3 4'::interval hour to microsecond;
-         interval         
---------------------------
- @ 1 hour 2 mins 3.4 secs
-(1 row)
-
+ERROR:  interval hour to microseond is not supported
 select '1 2'::interval minute_second;
     interval    
 ----------------
@@ -164,11 +132,7 @@ select '1 2'::interval minute_second;
 (1 row)
 
 select '1 2'::interval minute to second;
-    interval    
-----------------
- @ 1 min 2 secs
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '1 2 3'::interval minute_microsecond;
      interval     
 ------------------
@@ -176,11 +140,7 @@ select '1 2 3'::interval minute_microsecond;
 (1 row)
 
 select '1 2 3'::interval minute to microsecond;
-     interval     
-------------------
- @ 1 min 2.3 secs
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '1 2'::interval second_microsecond;
   interval  
 ------------
@@ -188,11 +148,7 @@ select '1 2'::interval second_microsecond;
 (1 row)
 
 select '1 2'::interval second to microsecond;
-  interval  
-------------
- @ 1.2 secs
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 -- 表达式
 select interval 1 + 2 * 3 + 0.1 year;
  interval  
@@ -255,11 +211,7 @@ select interval '1 2' year_month;
 (1 row)
 
 select interval '1 2' year to month;
-    interval     
------------------
- @ 1 year 2 mons
-(1 row)
-
+ERROR:  interval year to month is not supported
 select interval '1 2' day_hour;
     interval     
 -----------------
@@ -267,11 +219,7 @@ select interval '1 2' day_hour;
 (1 row)
 
 select interval '1 2' day to hour;
-    interval     
------------------
- @ 1 day 2 hours
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select interval '1 2 3' day_minute;
         interval        
 ------------------------
@@ -279,11 +227,7 @@ select interval '1 2 3' day_minute;
 (1 row)
 
 select interval '1 2 3' day to minute;
-        interval        
-------------------------
- @ 1 day 2 hours 3 mins
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select interval '1 2 3 4' day_second;
            interval            
 -------------------------------
@@ -291,11 +235,7 @@ select interval '1 2 3 4' day_second;
 (1 row)
 
 select interval '1 2 3 4' day to second;
-           interval            
--------------------------------
- @ 1 day 2 hours 3 mins 4 secs
-(1 row)
-
+ERROR:  interval day to second is not supported
 select interval '1 2 3 4 5' day_microsecond;
             interval             
 ---------------------------------
@@ -303,11 +243,7 @@ select interval '1 2 3 4 5' day_microsecond;
 (1 row)
 
 select interval '1 2 3 4 5' day to microsecond;
-            interval             
----------------------------------
- @ 1 day 2 hours 3 mins 4.5 secs
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select interval '1 2' hour_minute;
     interval     
 -----------------
@@ -315,11 +251,7 @@ select interval '1 2' hour_minute;
 (1 row)
 
 select interval '1 2' hour to minute;
-    interval     
------------------
- @ 1 hour 2 mins
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select interval '1 2 3' hour_second;
         interval        
 ------------------------
@@ -327,11 +259,7 @@ select interval '1 2 3' hour_second;
 (1 row)
 
 select interval '1 2 3' hour to second;
-        interval        
-------------------------
- @ 1 hour 2 mins 3 secs
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select interval '1 2 3 4' hour_microsecond;
          interval         
 --------------------------
@@ -339,11 +267,7 @@ select interval '1 2 3 4' hour_microsecond;
 (1 row)
 
 select interval '1 2 3 4' hour to microsecond;
-         interval         
---------------------------
- @ 1 hour 2 mins 3.4 secs
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select interval '1 2' minute_second;
     interval    
 ----------------
@@ -351,11 +275,7 @@ select interval '1 2' minute_second;
 (1 row)
 
 select interval '1 2' minute to second;
-    interval    
-----------------
- @ 1 min 2 secs
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select interval '1 2 3' minute_microsecond;
      interval     
 ------------------
@@ -363,11 +283,7 @@ select interval '1 2 3' minute_microsecond;
 (1 row)
 
 select interval '1 2 3' minute to microsecond;
-     interval     
-------------------
- @ 1 min 2.3 secs
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select interval '1 2' second_microsecond;
   interval  
 ------------
@@ -375,11 +291,7 @@ select interval '1 2' second_microsecond;
 (1 row)
 
 select interval '1 2' second to microsecond;
-  interval  
-------------
- @ 1.2 secs
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 -- 绑定参数
 prepare stmt as 'select ? + interval 1 + ? year';
 execute stmt('2024-06-18 18:30:00', 1);
@@ -452,6 +364,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? year to month';
+ERROR:  interval year to month is not supported
 execute stmt('2024-06-18 18:30:00', '1 2');
       ?column?       
 ---------------------
@@ -466,6 +379,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? day to hour';
+ERROR:  interval day to hour is not supported
 execute stmt('2024-06-18 18:30:00', '1 2');
       ?column?       
 ---------------------
@@ -480,6 +394,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? day to minute';
+ERROR:  interval day to minute is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3');
       ?column?       
 ---------------------
@@ -494,6 +409,7 @@ execute stmt('2024-06-18 18:30:00', '1 2 3');
 (1 row)
 
 prepare stmt as 'select ? + interval ? day to second';
+ERROR:  interval day to second is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3 4');
       ?column?       
 ---------------------
@@ -508,6 +424,7 @@ execute stmt('2024-06-18 18:30:00', '1 2 3 4 5');
 (1 row)
 
 prepare stmt as 'select ? + interval ? day to microsecond';
+ERROR:  interval day to microsecond is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3 4 5');
        ?column?        
 -----------------------
@@ -522,6 +439,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? hour to minute';
+ERROR:  interval hour to minute is not supported
 execute stmt('2024-06-18 18:30:00', '1 2');
       ?column?       
 ---------------------
@@ -536,6 +454,7 @@ execute stmt('2024-06-18 18:30:00', '1 2 3');
 (1 row)
 
 prepare stmt as 'select ? + interval ? hour to second';
+ERROR:  interval hour to second is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3');
       ?column?       
 ---------------------
@@ -550,6 +469,7 @@ execute stmt('2024-06-18 18:30:00', '1 2 3 4');
 (1 row)
 
 prepare stmt as 'select ? + interval ? hour to microsecond';
+ERROR:  interval hour to microsecond is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3 4');
        ?column?        
 -----------------------
@@ -564,6 +484,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? minute to second';
+ERROR:  interval minute to second is not supported
 execute stmt('2024-06-18 18:30:00', '1 2');
       ?column?       
 ---------------------
@@ -578,6 +499,7 @@ execute stmt('2024-06-18 18:30:00', '1 2 3');
 (1 row)
 
 prepare stmt as 'select ? + interval ? minute to microsecond';
+ERROR:  interval minute to microsecond is not supported
 execute stmt('2024-06-18 18:30:00', '1 2 3');
        ?column?        
 -----------------------
@@ -592,6 +514,7 @@ execute stmt('2024-06-18 18:30:00', '1 2');
 (1 row)
 
 prepare stmt as 'select ? + interval ? second to microsecond';
+ERROR:  interval second to microsecond is not supported
 execute stmt('2024-06-18 18:30:00', '1 2');
        ?column?        
 -----------------------
@@ -662,11 +585,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 year_month from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 year to month from t1;
-      ?column?       
----------------------
- 2024-08-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 day_hour from t1;
       ?column?       
 ---------------------
@@ -674,11 +593,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 day_hour from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 day to hour from t1;
-      ?column?       
----------------------
- 2024-06-18 20:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 day_minute from t1;
       ?column?       
 ---------------------
@@ -686,11 +601,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 day_minute from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 day to minute from t1;
-      ?column?       
----------------------
- 2024-06-18 18:32:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 day_second from t1;
       ?column?       
 ---------------------
@@ -698,11 +609,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 day_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 day to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:30:02
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 day_microsecond from t1;
        ?column?        
 -----------------------
@@ -710,11 +617,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 day_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 day to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:30:00.2
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 hour_minute from t1;
       ?column?       
 ---------------------
@@ -722,11 +625,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 hour_minute from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 hour to minute from t1;
-      ?column?       
----------------------
- 2024-06-18 18:32:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 hour_second from t1;
       ?column?       
 ---------------------
@@ -734,11 +633,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 hour_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 hour to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:30:02
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 hour_microsecond from t1;
        ?column?        
 -----------------------
@@ -746,11 +641,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 hour_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 hour to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:30:00.2
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 minute_second from t1;
       ?column?       
 ---------------------
@@ -758,11 +649,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 minute_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 minute to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:30:02
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 minute_microsecond from t1;
        ?column?        
 -----------------------
@@ -770,11 +657,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 minute_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 minute to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:30:00.2
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' + interval 1 + c1 second_microsecond from t1;
        ?column?        
 -----------------------
@@ -782,11 +665,7 @@ select '2024-06-18 18:30:00' + interval 1 + c1 second_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' + interval 1 + c1 second to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:30:00.2
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 year from t1;
       ?column?       
 ---------------------
@@ -848,11 +727,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 year_month from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 year to month from t1;
-      ?column?       
----------------------
- 2024-04-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 day_hour from t1;
       ?column?       
 ---------------------
@@ -860,11 +735,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 day_hour from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 day to hour from t1;
-      ?column?       
----------------------
- 2024-06-18 16:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 day_minute from t1;
       ?column?       
 ---------------------
@@ -872,11 +743,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 day_minute from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 day to minute from t1;
-      ?column?       
----------------------
- 2024-06-18 18:28:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 day_second from t1;
       ?column?       
 ---------------------
@@ -884,11 +751,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 day_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 day to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:29:58
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 day_microsecond from t1;
        ?column?        
 -----------------------
@@ -896,11 +759,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 day_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 day to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.8
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 hour_minute from t1;
       ?column?       
 ---------------------
@@ -908,11 +767,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 hour_minute from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 hour to minute from t1;
-      ?column?       
----------------------
- 2024-06-18 18:28:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 hour_second from t1;
       ?column?       
 ---------------------
@@ -920,11 +775,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 hour_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 hour to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:29:58
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 hour_microsecond from t1;
        ?column?        
 -----------------------
@@ -932,11 +783,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 hour_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 hour to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.8
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 minute_second from t1;
       ?column?       
 ---------------------
@@ -944,11 +791,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 minute_second from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 minute to second from t1;
-      ?column?       
----------------------
- 2024-06-18 18:29:58
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 minute_microsecond from t1;
        ?column?        
 -----------------------
@@ -956,11 +799,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 minute_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 minute to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.8
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval 1 + c1 second_microsecond from t1;
        ?column?        
 -----------------------
@@ -968,11 +807,7 @@ select '2024-06-18 18:30:00' - interval 1 + c1 second_microsecond from t1;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval 1 + c1 second to microsecond from t1;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.8
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,
@@ -1111,11 +946,7 @@ select '2024-06-18 18:30:00' - interval `int1` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `int1` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -1123,11 +954,7 @@ select '2024-06-18 18:30:00' - interval `int1` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `int1` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1135,11 +962,7 @@ select '2024-06-18 18:30:00' - interval `int1` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `int1` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -1147,11 +970,7 @@ select '2024-06-18 18:30:00' - interval `int1` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `int1` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1159,11 +978,7 @@ select '2024-06-18 18:30:00' - interval `int1` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int1` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1171,11 +986,7 @@ select '2024-06-18 18:30:00' - interval `int1` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `int1` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -1183,11 +994,7 @@ select '2024-06-18 18:30:00' - interval `int1` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `int1` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1195,11 +1002,7 @@ select '2024-06-18 18:30:00' - interval `int1` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int1` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -1207,11 +1010,7 @@ select '2024-06-18 18:30:00' - interval `int1` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `int1` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1219,11 +1018,7 @@ select '2024-06-18 18:30:00' - interval `int1` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int1` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1231,11 +1026,7 @@ select '2024-06-18 18:30:00' - interval `int1` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int1` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint1` year from all_types_table;
       ?column?       
 ---------------------
@@ -1297,11 +1088,7 @@ select '2024-06-18 18:30:00' - interval `uint1` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `uint1` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -1309,11 +1096,7 @@ select '2024-06-18 18:30:00' - interval `uint1` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `uint1` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1321,11 +1104,7 @@ select '2024-06-18 18:30:00' - interval `uint1` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint1` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -1333,11 +1112,7 @@ select '2024-06-18 18:30:00' - interval `uint1` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `uint1` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1345,11 +1120,7 @@ select '2024-06-18 18:30:00' - interval `uint1` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint1` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1357,11 +1128,7 @@ select '2024-06-18 18:30:00' - interval `uint1` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint1` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -1369,11 +1136,7 @@ select '2024-06-18 18:30:00' - interval `uint1` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `uint1` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1381,11 +1144,7 @@ select '2024-06-18 18:30:00' - interval `uint1` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint1` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -1393,11 +1152,7 @@ select '2024-06-18 18:30:00' - interval `uint1` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `uint1` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1405,11 +1160,7 @@ select '2024-06-18 18:30:00' - interval `uint1` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint1` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1417,11 +1168,7 @@ select '2024-06-18 18:30:00' - interval `uint1` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint1` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int2` year from all_types_table;
       ?column?       
 ---------------------
@@ -1483,11 +1230,7 @@ select '2024-06-18 18:30:00' - interval `int2` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `int2` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -1495,11 +1238,7 @@ select '2024-06-18 18:30:00' - interval `int2` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `int2` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1507,11 +1246,7 @@ select '2024-06-18 18:30:00' - interval `int2` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `int2` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -1519,11 +1254,7 @@ select '2024-06-18 18:30:00' - interval `int2` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `int2` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1531,11 +1262,7 @@ select '2024-06-18 18:30:00' - interval `int2` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int2` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1543,11 +1270,7 @@ select '2024-06-18 18:30:00' - interval `int2` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `int2` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -1555,11 +1278,7 @@ select '2024-06-18 18:30:00' - interval `int2` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `int2` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1567,11 +1286,7 @@ select '2024-06-18 18:30:00' - interval `int2` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int2` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -1579,11 +1294,7 @@ select '2024-06-18 18:30:00' - interval `int2` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `int2` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1591,11 +1302,7 @@ select '2024-06-18 18:30:00' - interval `int2` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int2` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1603,11 +1310,7 @@ select '2024-06-18 18:30:00' - interval `int2` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int2` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint2` year from all_types_table;
       ?column?       
 ---------------------
@@ -1669,11 +1372,7 @@ select '2024-06-18 18:30:00' - interval `uint2` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `uint2` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -1681,11 +1380,7 @@ select '2024-06-18 18:30:00' - interval `uint2` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `uint2` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1693,11 +1388,7 @@ select '2024-06-18 18:30:00' - interval `uint2` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint2` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -1705,11 +1396,7 @@ select '2024-06-18 18:30:00' - interval `uint2` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `uint2` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1717,11 +1404,7 @@ select '2024-06-18 18:30:00' - interval `uint2` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint2` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1729,11 +1412,7 @@ select '2024-06-18 18:30:00' - interval `uint2` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint2` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -1741,11 +1420,7 @@ select '2024-06-18 18:30:00' - interval `uint2` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `uint2` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1753,11 +1428,7 @@ select '2024-06-18 18:30:00' - interval `uint2` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint2` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -1765,11 +1436,7 @@ select '2024-06-18 18:30:00' - interval `uint2` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `uint2` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1777,11 +1444,7 @@ select '2024-06-18 18:30:00' - interval `uint2` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint2` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1789,11 +1452,7 @@ select '2024-06-18 18:30:00' - interval `uint2` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint2` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int4` year from all_types_table;
       ?column?       
 ---------------------
@@ -1855,11 +1514,7 @@ select '2024-06-18 18:30:00' - interval `int4` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `int4` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -1867,11 +1522,7 @@ select '2024-06-18 18:30:00' - interval `int4` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `int4` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1879,11 +1530,7 @@ select '2024-06-18 18:30:00' - interval `int4` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `int4` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -1891,11 +1538,7 @@ select '2024-06-18 18:30:00' - interval `int4` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `int4` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1903,11 +1546,7 @@ select '2024-06-18 18:30:00' - interval `int4` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int4` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -1915,11 +1554,7 @@ select '2024-06-18 18:30:00' - interval `int4` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `int4` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -1927,11 +1562,7 @@ select '2024-06-18 18:30:00' - interval `int4` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `int4` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1939,11 +1570,7 @@ select '2024-06-18 18:30:00' - interval `int4` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int4` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -1951,11 +1578,7 @@ select '2024-06-18 18:30:00' - interval `int4` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `int4` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1963,11 +1586,7 @@ select '2024-06-18 18:30:00' - interval `int4` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int4` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -1975,11 +1594,7 @@ select '2024-06-18 18:30:00' - interval `int4` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int4` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint4` year from all_types_table;
       ?column?       
 ---------------------
@@ -2041,11 +1656,7 @@ select '2024-06-18 18:30:00' - interval `uint4` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `uint4` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2053,11 +1664,7 @@ select '2024-06-18 18:30:00' - interval `uint4` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `uint4` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2065,11 +1672,7 @@ select '2024-06-18 18:30:00' - interval `uint4` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint4` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2077,11 +1680,7 @@ select '2024-06-18 18:30:00' - interval `uint4` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `uint4` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2089,11 +1688,7 @@ select '2024-06-18 18:30:00' - interval `uint4` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint4` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2101,11 +1696,7 @@ select '2024-06-18 18:30:00' - interval `uint4` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint4` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -2113,11 +1704,7 @@ select '2024-06-18 18:30:00' - interval `uint4` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `uint4` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2125,11 +1712,7 @@ select '2024-06-18 18:30:00' - interval `uint4` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint4` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -2137,11 +1720,7 @@ select '2024-06-18 18:30:00' - interval `uint4` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `uint4` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2149,11 +1728,7 @@ select '2024-06-18 18:30:00' - interval `uint4` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint4` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2161,11 +1736,7 @@ select '2024-06-18 18:30:00' - interval `uint4` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint4` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int8` year from all_types_table;
       ?column?       
 ---------------------
@@ -2227,11 +1798,7 @@ select '2024-06-18 18:30:00' - interval `int8` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `int8` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2239,11 +1806,7 @@ select '2024-06-18 18:30:00' - interval `int8` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `int8` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2251,11 +1814,7 @@ select '2024-06-18 18:30:00' - interval `int8` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `int8` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2263,11 +1822,7 @@ select '2024-06-18 18:30:00' - interval `int8` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `int8` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2275,11 +1830,7 @@ select '2024-06-18 18:30:00' - interval `int8` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int8` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2287,11 +1838,7 @@ select '2024-06-18 18:30:00' - interval `int8` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `int8` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -2299,11 +1846,7 @@ select '2024-06-18 18:30:00' - interval `int8` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `int8` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2311,11 +1854,7 @@ select '2024-06-18 18:30:00' - interval `int8` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int8` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -2323,11 +1862,7 @@ select '2024-06-18 18:30:00' - interval `int8` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `int8` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2335,11 +1870,7 @@ select '2024-06-18 18:30:00' - interval `int8` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `int8` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2347,11 +1878,7 @@ select '2024-06-18 18:30:00' - interval `int8` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `int8` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint8` year from all_types_table;
       ?column?       
 ---------------------
@@ -2413,11 +1940,7 @@ select '2024-06-18 18:30:00' - interval `uint8` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `uint8` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2425,11 +1948,7 @@ select '2024-06-18 18:30:00' - interval `uint8` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `uint8` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2437,11 +1956,7 @@ select '2024-06-18 18:30:00' - interval `uint8` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint8` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2449,11 +1964,7 @@ select '2024-06-18 18:30:00' - interval `uint8` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `uint8` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2461,11 +1972,7 @@ select '2024-06-18 18:30:00' - interval `uint8` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint8` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2473,11 +1980,7 @@ select '2024-06-18 18:30:00' - interval `uint8` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `uint8` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -2485,11 +1988,7 @@ select '2024-06-18 18:30:00' - interval `uint8` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `uint8` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2497,11 +1996,7 @@ select '2024-06-18 18:30:00' - interval `uint8` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint8` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -2509,11 +2004,7 @@ select '2024-06-18 18:30:00' - interval `uint8` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `uint8` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2521,11 +2012,7 @@ select '2024-06-18 18:30:00' - interval `uint8` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `uint8` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2533,11 +2020,7 @@ select '2024-06-18 18:30:00' - interval `uint8` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `uint8` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float4` year from all_types_table;
       ?column?       
 ---------------------
@@ -2599,11 +2082,7 @@ select '2024-06-18 18:30:00' - interval `float4` year_month from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `float4` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2611,11 +2090,7 @@ select '2024-06-18 18:30:00' - interval `float4` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `float4` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2623,11 +2098,7 @@ select '2024-06-18 18:30:00' - interval `float4` day_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `float4` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2635,11 +2106,7 @@ select '2024-06-18 18:30:00' - interval `float4` day_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `float4` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2647,11 +2114,7 @@ select '2024-06-18 18:30:00' - interval `float4` day_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float4` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2659,11 +2122,7 @@ select '2024-06-18 18:30:00' - interval `float4` hour_minute from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `float4` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -2671,11 +2130,7 @@ select '2024-06-18 18:30:00' - interval `float4` hour_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `float4` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2683,11 +2138,7 @@ select '2024-06-18 18:30:00' - interval `float4` hour_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float4` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -2695,11 +2146,7 @@ select '2024-06-18 18:30:00' - interval `float4` minute_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `float4` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2707,11 +2154,7 @@ select '2024-06-18 18:30:00' - interval `float4` minute_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float4` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2719,11 +2162,7 @@ select '2024-06-18 18:30:00' - interval `float4` second_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float4` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float8` year from all_types_table;
       ?column?       
 ---------------------
@@ -2785,11 +2224,7 @@ select '2024-06-18 18:30:00' - interval `float8` year_month from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-05-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `float8` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2797,11 +2232,7 @@ select '2024-06-18 18:30:00' - interval `float8` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 17:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `float8` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2809,11 +2240,7 @@ select '2024-06-18 18:30:00' - interval `float8` day_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `float8` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2821,11 +2248,7 @@ select '2024-06-18 18:30:00' - interval `float8` day_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `float8` day_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2833,11 +2256,7 @@ select '2024-06-18 18:30:00' - interval `float8` day_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` day to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float8` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2845,11 +2264,7 @@ select '2024-06-18 18:30:00' - interval `float8` hour_minute from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `float8` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -2857,11 +2272,7 @@ select '2024-06-18 18:30:00' - interval `float8` hour_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `float8` hour_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2869,11 +2280,7 @@ select '2024-06-18 18:30:00' - interval `float8` hour_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` hour to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float8` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -2881,11 +2288,7 @@ select '2024-06-18 18:30:00' - interval `float8` minute_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:29:59
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `float8` minute_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2893,11 +2296,7 @@ select '2024-06-18 18:30:00' - interval `float8` minute_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` minute to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `float8` second_microsecond from all_types_table;
        ?column?        
 -----------------------
@@ -2905,11 +2304,7 @@ select '2024-06-18 18:30:00' - interval `float8` second_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `float8` second to microsecond from all_types_table;
-       ?column?        
------------------------
- 2024-06-18 18:29:59.9
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `numeric` year from all_types_table;
       ?column?       
 ---------------------
@@ -2967,7 +2362,7 @@ select '2024-06-18 18:30:00' - interval `numeric` microsecond from all_types_tab
 select '2024-06-18 18:30:00' - interval `numeric` year_month from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `numeric` year to month from all_types_table;
-ERROR:  timestamp out of range
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `numeric` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -2975,11 +2370,7 @@ select '2024-06-18 18:30:00' - interval `numeric` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` day to hour from all_types_table;
-      ?column?       
----------------------
- 2008-03-10 12:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `numeric` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -2987,11 +2378,7 @@ select '2024-06-18 18:30:00' - interval `numeric` day_minute from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-03-11 15:00:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `numeric` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -2999,11 +2386,7 @@ select '2024-06-18 18:30:00' - interval `numeric` day_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-17 02:50:30
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `numeric` day_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -3011,11 +2394,7 @@ select '2024-06-18 18:30:00' - interval `numeric` day_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` day to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-06-18 18:29:56.85741
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `numeric` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -3023,11 +2402,7 @@ select '2024-06-18 18:30:00' - interval `numeric` hour_minute from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-03-11 15:00:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `numeric` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -3035,11 +2410,7 @@ select '2024-06-18 18:30:00' - interval `numeric` hour_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-17 02:50:30
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `numeric` hour_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -3047,11 +2418,7 @@ select '2024-06-18 18:30:00' - interval `numeric` hour_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` hour to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-06-18 18:29:56.85741
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `numeric` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -3059,11 +2426,7 @@ select '2024-06-18 18:30:00' - interval `numeric` minute_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-17 02:50:30
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `numeric` minute_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -3071,11 +2434,7 @@ select '2024-06-18 18:30:00' - interval `numeric` minute_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` minute to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-06-18 18:29:56.85741
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `numeric` second_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -3083,11 +2442,7 @@ select '2024-06-18 18:30:00' - interval `numeric` second_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` second to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-06-18 18:29:56.85741
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit1` year from all_types_table;
       ?column?       
 ---------------------
@@ -3150,12 +2505,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `bit1` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3164,12 +2514,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `bit1` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3178,12 +2523,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `bit1` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3192,12 +2532,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `bit1` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3206,12 +2541,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit1` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3220,12 +2550,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `bit1` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3234,12 +2559,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `bit1` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3248,12 +2568,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit1` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3262,12 +2577,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `bit1` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3276,12 +2586,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit1` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3290,12 +2595,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit1` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit64` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `bit64` quarter from all_types_table;
@@ -3338,12 +2638,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `bit64` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3352,12 +2647,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `bit64` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3366,12 +2656,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `bit64` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3380,12 +2665,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `bit64` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3394,12 +2674,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit64` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3408,12 +2683,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `bit64` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3422,12 +2692,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `bit64` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3436,12 +2701,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit64` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3450,12 +2710,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `bit64` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3464,12 +2719,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit64` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3478,12 +2728,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `bit64` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `boolean` year from all_types_table;
       ?column?       
 ---------------------
@@ -3546,12 +2791,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `boolean` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3560,12 +2800,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `boolean` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3574,12 +2809,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `boolean` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3588,12 +2818,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `boolean` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3602,12 +2827,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `boolean` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3616,12 +2836,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `boolean` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3630,12 +2845,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `boolean` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3644,12 +2854,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `boolean` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3658,12 +2863,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `boolean` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3672,12 +2872,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `boolean` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -3686,12 +2881,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `boolean` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `date` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `date` quarter from all_types_table;
@@ -3734,11 +2924,7 @@ select '2024-06-18 18:30:00' - interval `date` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `date` day_hour from all_types_table;
  ?column? 
 ----------
@@ -3746,11 +2932,7 @@ select '2024-06-18 18:30:00' - interval `date` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `date` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -3758,11 +2940,7 @@ select '2024-06-18 18:30:00' - interval `date` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` day to minute from all_types_table;
-      ?column?       
----------------------
- 2018-12-03 17:19:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `date` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -3770,11 +2948,7 @@ select '2024-06-18 18:30:00' - interval `date` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-03-26 10:28:49
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `date` day_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -3782,11 +2956,7 @@ select '2024-06-18 18:30:00' - interval `date` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` day to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-17 08:45:58.89
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `date` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -3794,11 +2964,7 @@ select '2024-06-18 18:30:00' - interval `date` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `date` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -3806,11 +2972,7 @@ select '2024-06-18 18:30:00' - interval `date` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-03-26 10:28:49
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `date` hour_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -3818,11 +2980,7 @@ select '2024-06-18 18:30:00' - interval `date` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` hour to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-17 08:45:58.89
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `date` minute_second from all_types_table;
  ?column? 
 ----------
@@ -3830,11 +2988,7 @@ select '2024-06-18 18:30:00' - interval `date` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `date` minute_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -3842,11 +2996,7 @@ select '2024-06-18 18:30:00' - interval `date` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` minute to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-17 08:45:58.89
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `date` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -3854,11 +3004,7 @@ select '2024-06-18 18:30:00' - interval `date` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `date` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `time` quarter from all_types_table;
@@ -3909,11 +3055,7 @@ select '2024-06-18 18:30:00' - interval `time` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `time` day_hour from all_types_table;
  ?column? 
 ----------
@@ -3921,11 +3063,7 @@ select '2024-06-18 18:30:00' - interval `time` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `time` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -3933,11 +3071,7 @@ select '2024-06-18 18:30:00' - interval `time` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-05 18:32:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `time` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -3945,11 +3079,7 @@ select '2024-06-18 18:30:00' - interval `time` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 06:42:02
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `time` day_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -3957,11 +3087,7 @@ select '2024-06-18 18:30:00' - interval `time` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` day to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-18 18:18:12.42
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -3969,11 +3095,7 @@ select '2024-06-18 18:30:00' - interval `time` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `time` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -3981,11 +3103,7 @@ select '2024-06-18 18:30:00' - interval `time` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 06:42:02
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `time` hour_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -3993,11 +3111,7 @@ select '2024-06-18 18:30:00' - interval `time` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` hour to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-18 18:18:12.42
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4005,11 +3119,7 @@ select '2024-06-18 18:30:00' - interval `time` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `time` minute_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -4017,11 +3127,7 @@ select '2024-06-18 18:30:00' - interval `time` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` minute to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-18 18:18:12.42
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4029,11 +3135,7 @@ select '2024-06-18 18:30:00' - interval `time` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time4` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `time4` quarter from all_types_table;
@@ -4084,11 +3186,7 @@ select '2024-06-18 18:30:00' - interval `time4` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `time4` day_hour from all_types_table;
  ?column? 
 ----------
@@ -4096,11 +3194,7 @@ select '2024-06-18 18:30:00' - interval `time4` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `time4` day_minute from all_types_table;
  ?column? 
 ----------
@@ -4108,11 +3202,7 @@ select '2024-06-18 18:30:00' - interval `time4` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `time4` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -4120,11 +3210,7 @@ select '2024-06-18 18:30:00' - interval `time4` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-05 16:20:24
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `time4` day_microsecond from all_types_table;
          ?column?         
 --------------------------
@@ -4132,11 +3218,7 @@ select '2024-06-18 18:30:00' - interval `time4` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` day to microsecond from all_types_table;
-         ?column?         
---------------------------
- 2024-06-18 06:42:01.2104
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time4` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -4144,11 +3226,7 @@ select '2024-06-18 18:30:00' - interval `time4` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `time4` hour_second from all_types_table;
  ?column? 
 ----------
@@ -4156,11 +3234,7 @@ select '2024-06-18 18:30:00' - interval `time4` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `time4` hour_microsecond from all_types_table;
          ?column?         
 --------------------------
@@ -4168,11 +3242,7 @@ select '2024-06-18 18:30:00' - interval `time4` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` hour to microsecond from all_types_table;
-         ?column?         
---------------------------
- 2024-06-18 06:42:01.2104
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time4` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4180,11 +3250,7 @@ select '2024-06-18 18:30:00' - interval `time4` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `time4` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4192,11 +3258,7 @@ select '2024-06-18 18:30:00' - interval `time4` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time4` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4204,11 +3266,7 @@ select '2024-06-18 18:30:00' - interval `time4` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `time4` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `datetime` quarter from all_types_table;
@@ -4247,11 +3305,7 @@ select '2024-06-18 18:30:00' - interval `datetime` year_month from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `datetime` day_hour from all_types_table;
  ?column? 
 ----------
@@ -4259,11 +3313,7 @@ select '2024-06-18 18:30:00' - interval `datetime` day_hour from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `datetime` day_minute from all_types_table;
  ?column? 
 ----------
@@ -4271,11 +3321,7 @@ select '2024-06-18 18:30:00' - interval `datetime` day_minute from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `datetime` day_second from all_types_table;
  ?column? 
 ----------
@@ -4283,11 +3329,7 @@ select '2024-06-18 18:30:00' - interval `datetime` day_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` day to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime` day_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4295,11 +3337,7 @@ select '2024-06-18 18:30:00' - interval `datetime` day_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` day to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -4307,11 +3345,7 @@ select '2024-06-18 18:30:00' - interval `datetime` hour_minute from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `datetime` hour_second from all_types_table;
  ?column? 
 ----------
@@ -4319,11 +3353,7 @@ select '2024-06-18 18:30:00' - interval `datetime` hour_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime` hour_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4331,11 +3361,7 @@ select '2024-06-18 18:30:00' - interval `datetime` hour_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` hour to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4343,11 +3369,7 @@ select '2024-06-18 18:30:00' - interval `datetime` minute_second from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4355,11 +3377,7 @@ select '2024-06-18 18:30:00' - interval `datetime` minute_microsecond from all_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4367,11 +3385,7 @@ select '2024-06-18 18:30:00' - interval `datetime` second_microsecond from all_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `datetime4` quarter from all_types_table;
@@ -4410,11 +3424,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` year_month from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` day_hour from all_types_table;
  ?column? 
 ----------
@@ -4422,11 +3432,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` day_hour from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` day_minute from all_types_table;
  ?column? 
 ----------
@@ -4434,11 +3440,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` day_minute from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` day_second from all_types_table;
  ?column? 
 ----------
@@ -4446,11 +3448,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` day_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` day to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` day_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4458,11 +3456,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` day_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` day to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -4470,11 +3464,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` hour_minute from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` hour_second from all_types_table;
  ?column? 
 ----------
@@ -4482,11 +3472,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` hour_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` hour_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4494,11 +3480,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` hour_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` hour to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4506,11 +3488,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` minute_second from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4518,11 +3496,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` minute_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4530,11 +3504,7 @@ select '2024-06-18 18:30:00' - interval `datetime4` second_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `timestamp` quarter from all_types_table;
@@ -4573,11 +3543,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` year_month from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` day_hour from all_types_table;
  ?column? 
 ----------
@@ -4585,11 +3551,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` day_hour from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` day_minute from all_types_table;
  ?column? 
 ----------
@@ -4597,11 +3559,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` day_minute from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` day_second from all_types_table;
  ?column? 
 ----------
@@ -4609,11 +3567,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` day_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` day to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` day_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4621,11 +3575,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` day_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` day to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -4633,11 +3583,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` hour_minute from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` hour_second from all_types_table;
  ?column? 
 ----------
@@ -4645,11 +3591,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` hour_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` hour_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4657,11 +3599,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` hour_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` hour to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4669,11 +3607,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` minute_second from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4681,11 +3615,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` minute_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4693,11 +3623,7 @@ select '2024-06-18 18:30:00' - interval `timestamp` second_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` year from all_types_table;
 ERROR:  timestamp out of range
 select '2024-06-18 18:30:00' - interval `timestamp4` quarter from all_types_table;
@@ -4736,11 +3662,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` year_month from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` day_hour from all_types_table;
  ?column? 
 ----------
@@ -4748,11 +3670,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` day_hour from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` day_minute from all_types_table;
  ?column? 
 ----------
@@ -4760,11 +3678,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` day_minute from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` day_second from all_types_table;
  ?column? 
 ----------
@@ -4772,11 +3686,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` day_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` day to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` day_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4784,11 +3694,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` day_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` day to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -4796,11 +3702,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` hour_minute from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` hour_second from all_types_table;
  ?column? 
 ----------
@@ -4808,11 +3710,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` hour_second from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` hour_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4820,11 +3718,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` hour_microsecond from all_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` hour to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` minute_second from all_types_table;
  ?column? 
 ----------
@@ -4832,11 +3726,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` minute_second from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4844,11 +3734,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` minute_microsecond from all
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -4856,11 +3742,7 @@ select '2024-06-18 18:30:00' - interval `timestamp4` second_microsecond from all
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `year` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -4932,12 +3814,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `year` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -4946,12 +3823,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `year` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -4960,12 +3832,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `year` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -4974,12 +3841,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `year` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -4988,12 +3850,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `year` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5002,12 +3859,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `year` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5016,12 +3868,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `year` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5030,12 +3877,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `year` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5044,12 +3886,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `year` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5058,12 +3895,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `year` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5072,12 +3904,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `year` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `char` year from all_types_table;
 WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
       ?column?       
@@ -5148,11 +3975,7 @@ select '2024-06-18 18:30:00' - interval `char` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `char` day_hour from all_types_table;
  ?column? 
 ----------
@@ -5160,11 +3983,7 @@ select '2024-06-18 18:30:00' - interval `char` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `char` day_minute from all_types_table;
  ?column? 
 ----------
@@ -5172,11 +3991,7 @@ select '2024-06-18 18:30:00' - interval `char` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `char` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -5184,11 +3999,7 @@ select '2024-06-18 18:30:00' - interval `char` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-04-03 08:21:31
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `char` day_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -5196,11 +4007,7 @@ select '2024-06-18 18:30:00' - interval `char` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` day to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-15 22:43:52.11
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `char` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -5208,11 +4015,7 @@ select '2024-06-18 18:30:00' - interval `char` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `char` hour_second from all_types_table;
  ?column? 
 ----------
@@ -5220,11 +4023,7 @@ select '2024-06-18 18:30:00' - interval `char` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `char` hour_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -5232,11 +4031,7 @@ select '2024-06-18 18:30:00' - interval `char` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` hour to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-15 22:43:52.11
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `char` minute_second from all_types_table;
  ?column? 
 ----------
@@ -5244,11 +4039,7 @@ select '2024-06-18 18:30:00' - interval `char` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `char` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5256,11 +4047,7 @@ select '2024-06-18 18:30:00' - interval `char` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `char` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5268,11 +4055,7 @@ select '2024-06-18 18:30:00' - interval `char` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varchar` year from all_types_table;
 WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
@@ -5343,11 +4126,7 @@ select '2024-06-18 18:30:00' - interval `varchar` year_month from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `varchar` day_hour from all_types_table;
  ?column? 
 ----------
@@ -5355,11 +4134,7 @@ select '2024-06-18 18:30:00' - interval `varchar` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `varchar` day_minute from all_types_table;
  ?column? 
 ----------
@@ -5367,11 +4142,7 @@ select '2024-06-18 18:30:00' - interval `varchar` day_minute from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `varchar` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -5379,11 +4150,7 @@ select '2024-06-18 18:30:00' - interval `varchar` day_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-04-03 08:21:31
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `varchar` day_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -5391,11 +4158,7 @@ select '2024-06-18 18:30:00' - interval `varchar` day_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` day to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-15 22:43:52.11
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varchar` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -5403,11 +4166,7 @@ select '2024-06-18 18:30:00' - interval `varchar` hour_minute from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `varchar` hour_second from all_types_table;
  ?column? 
 ----------
@@ -5415,11 +4174,7 @@ select '2024-06-18 18:30:00' - interval `varchar` hour_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `varchar` hour_microsecond from all_types_table;
         ?column?        
 ------------------------
@@ -5427,11 +4182,7 @@ select '2024-06-18 18:30:00' - interval `varchar` hour_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` hour to microsecond from all_types_table;
-        ?column?        
-------------------------
- 2024-06-15 22:43:52.11
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varchar` minute_second from all_types_table;
  ?column? 
 ----------
@@ -5439,11 +4190,7 @@ select '2024-06-18 18:30:00' - interval `varchar` minute_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `varchar` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5451,11 +4198,7 @@ select '2024-06-18 18:30:00' - interval `varchar` minute_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varchar` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5463,11 +4206,7 @@ select '2024-06-18 18:30:00' - interval `varchar` second_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varchar` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `binary` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5538,11 +4277,7 @@ select '2024-06-18 18:30:00' - interval `binary` year_month from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `binary` day_hour from all_types_table;
  ?column? 
 ----------
@@ -5550,11 +4285,7 @@ select '2024-06-18 18:30:00' - interval `binary` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `binary` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -5562,11 +4293,7 @@ select '2024-06-18 18:30:00' - interval `binary` day_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` day to minute from all_types_table;
-      ?column?       
----------------------
- 1837-01-27 19:45:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `binary` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -5574,11 +4301,7 @@ select '2024-06-18 18:30:00' - interval `binary` day_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` day to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `binary` day_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5586,11 +4309,7 @@ select '2024-06-18 18:30:00' - interval `binary` day_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` day to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `binary` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -5598,11 +4317,7 @@ select '2024-06-18 18:30:00' - interval `binary` hour_minute from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `binary` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -5610,11 +4325,7 @@ select '2024-06-18 18:30:00' - interval `binary` hour_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` hour to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `binary` hour_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5622,11 +4333,7 @@ select '2024-06-18 18:30:00' - interval `binary` hour_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` hour to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `binary` minute_second from all_types_table;
  ?column? 
 ----------
@@ -5634,11 +4341,7 @@ select '2024-06-18 18:30:00' - interval `binary` minute_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `binary` minute_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5646,11 +4349,7 @@ select '2024-06-18 18:30:00' - interval `binary` minute_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` minute to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `binary` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5658,11 +4357,7 @@ select '2024-06-18 18:30:00' - interval `binary` second_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `binary` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5733,11 +4428,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` year_month from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` day_hour from all_types_table;
  ?column? 
 ----------
@@ -5745,11 +4436,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` day_hour from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -5757,11 +4444,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` day_minute from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` day to minute from all_types_table;
-      ?column?       
----------------------
- 1837-01-27 19:45:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -5769,11 +4452,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` day_second from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` day to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` day_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5781,11 +4460,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` day_microsecond from all_typ
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` day to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -5793,11 +4468,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` hour_minute from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -5805,11 +4476,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` hour_second from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` hour to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` hour_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5817,11 +4484,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` hour_microsecond from all_ty
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` hour to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` minute_second from all_types_table;
  ?column? 
 ----------
@@ -5829,11 +4492,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` minute_second from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` minute_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -5841,11 +4500,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` minute_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` minute to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `varbinary` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -5853,11 +4508,7 @@ select '2024-06-18 18:30:00' - interval `varbinary` second_microsecond from all_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `varbinary` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5929,12 +4580,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5943,12 +4589,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5957,12 +4598,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5971,12 +4607,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5985,12 +4616,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -5999,12 +4625,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6013,12 +4634,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6027,12 +4643,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6041,12 +4652,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6055,12 +4661,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `tinyblob` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6069,12 +4670,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `tinyblob` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `blob` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6146,12 +4742,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `blob` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6160,12 +4751,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `blob` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6174,12 +4760,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `blob` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6188,12 +4769,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `blob` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6202,12 +4778,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `blob` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6216,12 +4787,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `blob` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6230,12 +4796,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `blob` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6244,12 +4805,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `blob` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6258,12 +4814,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `blob` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6272,12 +4823,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `blob` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6286,12 +4832,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `blob` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6363,12 +4904,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6377,12 +4913,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6391,12 +4922,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6405,12 +4931,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6419,12 +4940,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6433,12 +4949,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6447,12 +4958,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6461,12 +4967,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6475,12 +4976,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6489,12 +4985,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `mediumblob` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6503,12 +4994,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `mediumblob` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `longblob` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6580,12 +5066,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `longblob` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6594,12 +5075,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `longblob` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6608,12 +5084,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `longblob` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6622,12 +5093,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `longblob` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6636,12 +5102,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `longblob` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6650,12 +5111,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `longblob` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6664,12 +5120,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `longblob` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6678,12 +5129,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `longblob` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6692,12 +5138,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `longblob` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6706,12 +5147,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `longblob` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6720,12 +5156,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `longblob` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `text` year from all_types_table;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 ERROR:  timestamp out of range
@@ -6789,11 +5220,7 @@ select '2024-06-18 18:30:00' - interval `text` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `text` day_hour from all_types_table;
  ?column? 
 ----------
@@ -6801,11 +5228,7 @@ select '2024-06-18 18:30:00' - interval `text` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `text` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -6813,11 +5236,7 @@ select '2024-06-18 18:30:00' - interval `text` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` day to minute from all_types_table;
-      ?column?       
----------------------
- 1837-01-27 19:45:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `text` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -6825,11 +5244,7 @@ select '2024-06-18 18:30:00' - interval `text` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` day to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `text` day_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -6837,11 +5252,7 @@ select '2024-06-18 18:30:00' - interval `text` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` day to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `text` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -6849,11 +5260,7 @@ select '2024-06-18 18:30:00' - interval `text` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `text` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -6861,11 +5268,7 @@ select '2024-06-18 18:30:00' - interval `text` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` hour to second from all_types_table;
-      ?column?       
----------------------
- 2016-09-10 19:19:15
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `text` hour_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -6873,11 +5276,7 @@ select '2024-06-18 18:30:00' - interval `text` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` hour to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `text` minute_second from all_types_table;
  ?column? 
 ----------
@@ -6885,11 +5284,7 @@ select '2024-06-18 18:30:00' - interval `text` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `text` minute_microsecond from all_types_table;
          ?column?          
 ---------------------------
@@ -6897,11 +5292,7 @@ select '2024-06-18 18:30:00' - interval `text` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` minute to microsecond from all_types_table;
-         ?column?          
----------------------------
- 2024-05-02 11:34:14.44455
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `text` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -6909,11 +5300,7 @@ select '2024-06-18 18:30:00' - interval `text` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `text` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` year from all_types_table;
       ?column?       
 ---------------------
@@ -6976,12 +5363,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -6990,12 +5372,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7004,12 +5381,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7018,12 +5390,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7032,12 +5399,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7046,12 +5408,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7060,12 +5417,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7074,12 +5426,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7088,12 +5435,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7102,12 +5444,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `enum_t` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7116,12 +5453,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `enum_t` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `set_t` year from all_types_table;
       ?column?       
 ---------------------
@@ -7183,11 +5515,7 @@ select '2024-06-18 18:30:00' - interval `set_t` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` year to month from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `set_t` day_hour from all_types_table;
       ?column?       
 ---------------------
@@ -7195,11 +5523,7 @@ select '2024-06-18 18:30:00' - interval `set_t` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` day to hour from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `set_t` day_minute from all_types_table;
       ?column?       
 ---------------------
@@ -7207,11 +5531,7 @@ select '2024-06-18 18:30:00' - interval `set_t` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` day to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `set_t` day_second from all_types_table;
       ?column?       
 ---------------------
@@ -7219,11 +5539,7 @@ select '2024-06-18 18:30:00' - interval `set_t` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` day to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `set_t` day_microsecond from all_types_table;
       ?column?       
 ---------------------
@@ -7231,11 +5547,7 @@ select '2024-06-18 18:30:00' - interval `set_t` day_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` day to microsecond from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `set_t` hour_minute from all_types_table;
       ?column?       
 ---------------------
@@ -7243,11 +5555,7 @@ select '2024-06-18 18:30:00' - interval `set_t` hour_minute from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` hour to minute from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `set_t` hour_second from all_types_table;
       ?column?       
 ---------------------
@@ -7255,11 +5563,7 @@ select '2024-06-18 18:30:00' - interval `set_t` hour_second from all_types_table
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` hour to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `set_t` hour_microsecond from all_types_table;
       ?column?       
 ---------------------
@@ -7267,11 +5571,7 @@ select '2024-06-18 18:30:00' - interval `set_t` hour_microsecond from all_types_
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` hour to microsecond from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `set_t` minute_second from all_types_table;
       ?column?       
 ---------------------
@@ -7279,11 +5579,7 @@ select '2024-06-18 18:30:00' - interval `set_t` minute_second from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` minute to second from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `set_t` minute_microsecond from all_types_table;
       ?column?       
 ---------------------
@@ -7291,11 +5587,7 @@ select '2024-06-18 18:30:00' - interval `set_t` minute_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` minute to microsecond from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `set_t` second_microsecond from all_types_table;
       ?column?       
 ---------------------
@@ -7303,11 +5595,7 @@ select '2024-06-18 18:30:00' - interval `set_t` second_microsecond from all_type
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `set_t` second to microsecond from all_types_table;
-      ?column?       
----------------------
- 2024-06-18 18:30:00
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `json` year from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7379,12 +5667,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` year to month from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `json` day_hour from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7393,12 +5676,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` day to hour from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `json` day_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7407,12 +5685,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` day to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `json` day_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7421,12 +5694,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` day to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `json` day_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7435,12 +5703,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` day to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `json` hour_minute from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7449,12 +5712,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` hour to minute from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `json` hour_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7463,12 +5721,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` hour to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `json` hour_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7477,12 +5730,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` hour to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `json` minute_second from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7491,12 +5739,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` minute to second from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `json` minute_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7505,12 +5748,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` minute to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `json` second_microsecond from all_types_table;
 WARNING:  invalid interval parameter
  ?column? 
@@ -7519,12 +5757,7 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `json` second to microsecond from all_types_table;
-WARNING:  invalid interval parameter
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `NULL` year from all_types_table;
  ?column? 
 ----------
@@ -7586,11 +5819,7 @@ select '2024-06-18 18:30:00' - interval `NULL` year_month from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` year to month from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `NULL` day_hour from all_types_table;
  ?column? 
 ----------
@@ -7598,11 +5827,7 @@ select '2024-06-18 18:30:00' - interval `NULL` day_hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` day to hour from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to hour is not supported
 select '2024-06-18 18:30:00' - interval `NULL` day_minute from all_types_table;
  ?column? 
 ----------
@@ -7610,11 +5835,7 @@ select '2024-06-18 18:30:00' - interval `NULL` day_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` day to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to minute is not supported
 select '2024-06-18 18:30:00' - interval `NULL` day_second from all_types_table;
  ?column? 
 ----------
@@ -7622,11 +5843,7 @@ select '2024-06-18 18:30:00' - interval `NULL` day_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` day to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to second is not supported
 select '2024-06-18 18:30:00' - interval `NULL` day_microsecond from all_types_table;
  ?column? 
 ----------
@@ -7634,11 +5851,7 @@ select '2024-06-18 18:30:00' - interval `NULL` day_microsecond from all_types_ta
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` day to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval day to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `NULL` hour_minute from all_types_table;
  ?column? 
 ----------
@@ -7646,11 +5859,7 @@ select '2024-06-18 18:30:00' - interval `NULL` hour_minute from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` hour to minute from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to minute is not supported
 select '2024-06-18 18:30:00' - interval `NULL` hour_second from all_types_table;
  ?column? 
 ----------
@@ -7658,11 +5867,7 @@ select '2024-06-18 18:30:00' - interval `NULL` hour_second from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` hour to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to second is not supported
 select '2024-06-18 18:30:00' - interval `NULL` hour_microsecond from all_types_table;
  ?column? 
 ----------
@@ -7670,11 +5875,7 @@ select '2024-06-18 18:30:00' - interval `NULL` hour_microsecond from all_types_t
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` hour to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval hour to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `NULL` minute_second from all_types_table;
  ?column? 
 ----------
@@ -7682,11 +5883,7 @@ select '2024-06-18 18:30:00' - interval `NULL` minute_second from all_types_tabl
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` minute to second from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to second is not supported
 select '2024-06-18 18:30:00' - interval `NULL` minute_microsecond from all_types_table;
  ?column? 
 ----------
@@ -7694,11 +5891,7 @@ select '2024-06-18 18:30:00' - interval `NULL` minute_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` minute to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval minute to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types_table;
  ?column? 
 ----------
@@ -7706,11 +5899,7 @@ select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `NULL` second to microsecond from all_types_table;
- ?column? 
-----------
- 
-(1 row)
-
+ERROR:  interval second to microsecond is not supported
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 NOTICE:  drop cascades to table t1

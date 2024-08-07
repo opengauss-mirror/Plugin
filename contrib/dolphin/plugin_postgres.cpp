@@ -1431,6 +1431,14 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+    DefineCustomBoolVariable("dolphin.support_interval_to",
+                             gettext_noop("This variable indicates supporting interval xxx to xxx"),
+                             NULL,
+                             &GetSessionContext()->support_interval_to,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 #endif
 
 }

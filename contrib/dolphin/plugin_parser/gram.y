@@ -33599,90 +33599,156 @@ interval_type:
 				}
 			| INTERVAL_TYPE_YEAR opt_precision TO MONTH_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
 												 INTERVAL_MASK(MONTH), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval year to month is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_DAY opt_precision TO HOUR_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to hour is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_DAY opt_precision TO MINUTE_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to minute is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_DAY opt_precision TO interval_second
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1));
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to second is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_DAY opt_precision TO MICROSECOND_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to microsecond is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_HOUR opt_precision TO MINUTE_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to minute is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_HOUR opt_precision TO interval_second
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1));
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to second is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_HOUR opt_precision TO MICROSECOND_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to microseond is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_MINUTE opt_precision TO interval_second
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1));
+												 INTERVAL_MASK(SECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval minute to second is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_MINUTE opt_precision TO MICROSECOND_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval minute to microsecond is not supported")));
+					}
 				}
 			| INTERVAL_TYPE_SECOND opt_precision TO MICROSECOND_P
 				{
-					$$ = SystemTypeName("interval");
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
 						$$->location = @1;
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
 												 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval second to microsecond is not supported")));
+					}
 				}
 			| INTERVAL '(' Iconst ')' interval_unit
 				{
@@ -33727,72 +33793,138 @@ interval_unit:
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
 			| YEAR_P opt_precision TO MONTH_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
-												 INTERVAL_MASK(MONTH), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+												 	 INTERVAL_MASK(MONTH), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval year to month is not supported")));
+					}
 				}
 			| DAY_P opt_precision TO HOUR_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 	 INTERVAL_MASK(HOUR), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to hour is not supported")));
+					}
 				}
 			| DAY_P opt_precision TO MINUTE_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													 INTERVAL_MASK(HOUR) |
+													 INTERVAL_MASK(MINUTE), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to minute is not supported")));
+					}
 				}
 			| DAY_P opt_precision TO interval_second
 				{
-					$$ = $4;
-					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
-												INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					if (GetSessionContext()->support_interval_to) {
+						$$ = $4;
+						linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
+													INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1);
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to second is not supported")));
+					}
 				}
 			| DAY_P opt_precision TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
-												 INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+													 INTERVAL_MASK(HOUR) |
+													 INTERVAL_MASK(MINUTE) |
+													 INTERVAL_MASK(SECOND) |
+													 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to microsecond is not supported")));
+					}
 				}
 			| HOUR_P opt_precision TO MINUTE_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 	 INTERVAL_MASK(MINUTE), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to minute is not supported")));
+					}
 				}
 			| HOUR_P opt_precision TO interval_second
 				{
-					$$ = $4;
-					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
-												INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					if (GetSessionContext()->support_interval_to) {
+						$$ = $4;
+						linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
+													INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1);
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to second is not supported")));
+					}
 				}
 			| HOUR_P opt_precision TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
-												 INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+													 INTERVAL_MASK(MINUTE) |
+													 INTERVAL_MASK(SECOND) |
+													 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval hour to microsecond is not supported")));
+					}
 				}
 			| MINUTE_P opt_precision TO interval_second
 				{
-					$$ = $4;
-					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
-												INTERVAL_MASK(SECOND), @1);
+					if (GetSessionContext()->support_interval_to) {
+						$$ = $4;
+						linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
+													INTERVAL_MASK(SECOND), @1);
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval minute to second is not supported")));
+					}
 				}
 			| MINUTE_P opt_precision TO MICROSECOND_P
 				{
-					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
-												 INTERVAL_MASK(SECOND) |
-												 INTERVAL_MASK(MICROSECOND), @1));
+					if (GetSessionContext()->support_interval_to) {
+						$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+													 INTERVAL_MASK(SECOND) |
+													 INTERVAL_MASK(MICROSECOND), @1));
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval minute to microsecond is not supported")));
+					}
 				}
 			| interval_second TO MICROSECOND_P
 				{
-					$$ = $1;
-					linitial($$) = makeIntConst(INTERVAL_MASK(SECOND) |
-												INTERVAL_MASK(MICROSECOND), @1);
+					if (GetSessionContext()->support_interval_to) {
+						$$ = $1;
+						linitial($$) = makeIntConst(INTERVAL_MASK(SECOND) |
+													INTERVAL_MASK(MICROSECOND), @1);
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval second to microsecond is not supported")));
+					}
 				}
 			| DAY_HOUR_P
 				{

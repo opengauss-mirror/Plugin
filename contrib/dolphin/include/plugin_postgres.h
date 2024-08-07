@@ -195,6 +195,7 @@ typedef struct BSqlPluginContext {
     char* last_insert_id; /* for select @@identity */
     conn_mysql_infoP_t Conn_Mysql_Info;
     bool use_const_value_as_colname;
+    bool support_interval_to;
 #endif
 } bSqlPluginContext;
 
