@@ -221,4 +221,11 @@ insert ignore into test_time select convert('中文123', time);
 select * from test_time;
 drop table if exists test_time;
 
+select 10 year;
+select 10 month;
+select 10 day;
+select 10 hour;
+select 10 minute;
+select 10 second;
+
 drop schema time_function_test cascade ;

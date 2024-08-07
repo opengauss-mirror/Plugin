@@ -1018,5 +1018,41 @@ select * from test_time;
 (6 rows)
 
 drop table if exists test_time;
+select 10 year;
+ year 
+------
+   10
+(1 row)
+
+select 10 month;
+ month 
+-------
+    10
+(1 row)
+
+select 10 day;
+ day 
+-----
+  10
+(1 row)
+
+select 10 hour;
+ hour 
+------
+   10
+(1 row)
+
+select 10 minute;
+ minute 
+--------
+     10
+(1 row)
+
+select 10 second;
+ second 
+--------
+     10
+(1 row)
+
 drop schema time_function_test cascade ;
 NOTICE:  drop cascades to table time_function_test.test_year
