@@ -985,6 +985,7 @@ replace_hypertable_insert_paths_forog(PlannerInfo *root,RelOptInfo *rel,
 	if (NULL == planner_hcaches){
 		return NIL;
 	}
+	
 	List *new_pathlist = NIL;
 	ListCell *lc;
 
@@ -1001,6 +1002,11 @@ replace_hypertable_insert_paths_forog(PlannerInfo *root,RelOptInfo *rel,
 	}
 	if(!ts_extension_is_loaded() || !ts_is_hypertable(table_relid))
 	return NIL;
+
+	if (operation == CMD_MERGE)
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("The hypertable currently does not support insert of merge statement.")));
 
 	root->processed_tlist = tlist;
     modifytable_path  =(Path *) create_modifytable_path(root, rel,
