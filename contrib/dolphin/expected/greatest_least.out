@@ -26,5 +26,88 @@ select LEAST(1,2);
      1
 (1 row)
 
+-- test: expect no errors
+select GREATEST(20010101, date '2005-05-05');
+  greatest  
+------------
+ 2005-05-05
+(1 row)
+
+SELECT GREATEST(date '2005-05-05', 20010101, 20040404, 20030303);
+  greatest  
+------------
+ 2005-05-05
+(1 row)
+
+SELECT GREATEST(date '2005-05-05', 20060101, 20040404, 20030303);
+ greatest 
+----------
+ 20060101
+(1 row)
+
+SELECT GREATEST(time '20:00:00', 120000);
+ greatest 
+----------
+ 20:00:00
+(1 row)
+
+CREATE TABLE t1 (a DATETIME, b BLOB);
+SELECT GREATEST(a, b) FROM t1;
+ greatest 
+----------
+(0 rows)
+
+DROP TABLE t1;
+DO GREATEST(RIGHT('11',1),1);
+select LEAST(20010101, date '2005-05-05');
+  least   
+----------
+ 20010101
+(1 row)
+
+SELECT LEAST(date '2005-05-05', 20010101, 20040404, 20030303);
+  least   
+----------
+ 20010101
+(1 row)
+
+SELECT LEAST(date '2000-05-05', 20010101, 20040404, 20030303);
+   least    
+------------
+ 2000-05-05
+(1 row)
+
+SELECT LEAST(time '20:00:00', 120000);
+ least  
+--------
+ 120000
+(1 row)
+
+CREATE TABLE t1 (a DATETIME, b BLOB);
+SELECT LEAST(a, b) FROM t1;
+ least 
+-------
+(0 rows)
+
+DROP TABLE t1;
+DO LEAST(RIGHT('11',1),1);
+SELECT LEAST(date '2005-05-05', time '20:00:00');
+        least        
+---------------------
+ 2005-05-05 00:00:00
+(1 row)
+
+SELECT GREATEST(date '2005-05-05', time '20:00:00');
+      greatest       
+---------------------
+--?.*
+(1 row)
+
+select GREATEST(20010101, timestamp '99991230121212');
+      greatest       
+---------------------
+ 9999-12-30 12:12:12
+(1 row)
+
 drop schema greatest_least cascade;
 reset current_schema;
