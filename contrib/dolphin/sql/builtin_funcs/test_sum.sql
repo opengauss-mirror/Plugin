@@ -86,6 +86,11 @@ insert into test_text values ('-999999999999999999999999999999999999999999999999
 insert into test_text values ('-9999999999999999999999999999999999999999999999999999999.99');
 select sum(c1) from test_text;
 
+
+create table test_empty_sum(c1 float4, c2 float8, c3 int,c4 tinyint,c5 smallint);
+select sum(c1),sum(c2),sum(c3),sum(c4),sum(c5) from test_empty_sum;
+drop table test_empty_sum;
+
 drop table test_text;
 drop table test_type_table;
 drop table test_sum;
