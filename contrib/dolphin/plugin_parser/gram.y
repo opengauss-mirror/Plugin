@@ -39430,6 +39430,7 @@ alias_name_unreserved_keyword_without_key:
 			| DATANODES
 			| DATATYPE_CL
 			| DATE_FORMAT_P
+			| DAY_P
 			| DBCOMPATIBILITY_P
 			| DEALLOCATE
 			| DATABASE
@@ -39518,6 +39519,7 @@ alias_name_unreserved_keyword_without_key:
 			| HEADER_P
 			| HOSTS
 			| HOLD
+			| HOUR_P
 			| IDENTIFIED
 			| IDENTITY_P
 			| IGNORE_EXTRA_DATA
@@ -39583,10 +39585,12 @@ alias_name_unreserved_keyword_without_key:
 			| MICROSECOND_P
 			| MIN_ROWS
 			| MINEXTENTS
+			| MINUTE_P
 			| MINVALUE
 			| MODE
 			| MODEL      // DB4AI
 			| MODIFIES
+			| MONTH_P
 			| MOVE
 			| MOVEMENT
 			| MYSQL_ERRNO
@@ -39704,6 +39708,7 @@ alias_name_unreserved_keyword_without_key:
 			| SCHEMA_NAME
 			| SCROLL
 			| SEARCH
+			| SECOND_P
 			| SECONDARY_ENGINE_ATTRIBUTE
 			| SECURITY
 			| SEQUENCE
@@ -39805,6 +39810,7 @@ alias_name_unreserved_keyword_without_key:
 			| WRAPPER
 			| XML_P
 			| YES_P
+			| YEAR_P %prec IDENT
 			| ZONE
 
 unreserved_keyword_without_key:
@@ -39821,7 +39827,6 @@ unreserved_keyword_without_key:
 			| CONTINUE_P
 			| CUBE
 			| CURSOR
-			| DAY_P
 			| DOUBLE_P
 			| DROP
 			| DUMPFILE
@@ -39836,7 +39841,6 @@ unreserved_keyword_without_key:
 			| GET
 			| HOUR_MICROSECOND_P
 			| HOUR_MINUTE_P
-			| HOUR_P
 			| HOUR_SECOND_P
 			| INCLUDE
 			| INSENSITIVE
@@ -39850,10 +39854,8 @@ unreserved_keyword_without_key:
 			| LOOP
 			| MATCH
 			| MINUTE_MICROSECOND_P
-			| MINUTE_P
 			| MINUTE_SECOND_P
 			| MOD
-			| MONTH_P
 			| NAME_P
 			| NO_WRITE_TO_BINLOG
 			| OF
@@ -39879,7 +39881,6 @@ unreserved_keyword_without_key:
 			| SCHEMA
 			| SCHEMAS
 			| SECOND_MICROSECOND_P
-			| SECOND_P
 			| SEPARATOR_P
 			| SET
 			| SHOW
@@ -39905,7 +39906,6 @@ unreserved_keyword_without_key:
 			| WITHOUT
 			| WRITE
 			| YEAR_MONTH_P
-			| YEAR_P %prec IDENT
 			| ZEROFILL
 		;
 
