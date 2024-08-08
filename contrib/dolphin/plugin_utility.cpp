@@ -5403,6 +5403,7 @@ ProcessUtilitySlow(Node *parse_tree,
                              * commands is consistent with the way they are
                              * executed here.
                              */
+                        EventTriggerAlterTableEnd();
                         processutility_context proutility_cxt;
                         proutility_cxt.parse_tree = stmt;
                         proutility_cxt.query_string = query_string;
@@ -5435,6 +5436,7 @@ ProcessUtilitySlow(Node *parse_tree,
                         exec_remote_query_4_seq(exec_nodes, drop_seq_string, INVALIDSEQUUID);
                     }
 #endif
+                    EventTriggerAlterTableEnd();
                 } else {
                     ereport(NOTICE, (errmsg("relation \"%s\" does not exist, skipping", atstmt->relation->relname)));
                 }
