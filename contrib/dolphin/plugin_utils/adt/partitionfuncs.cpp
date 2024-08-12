@@ -370,10 +370,9 @@ Datum RebuildPartitionExt(ArrayType* args_array)
 
 Datum AnalyzePartitionExt(ArrayType* args_array, const char* catalog, const char* schema)
 {
-    return DirectFunctionCall3(AnalyzePartitions, 
-        PointerGetDatum(args_array), 
-        catalog ? CStringGetTextDatum(catalog) : NULL, 
-        schema ? CStringGetTextDatum(schema) : NULL) ;
+    return DirectFunctionCall3(AnalyzePartitions, PointerGetDatum(args_array),
+                               catalog ? CStringGetTextDatum(catalog) : NULL,
+                               schema ? CStringGetTextDatum(schema) : NULL);
 }
 
 #endif

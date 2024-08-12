@@ -5204,9 +5204,8 @@ static void TransfromAlterTableDropIndexStmt(CreateStmtContext* cxt, AlterTableC
 
     dropStmt->removeType = OBJECT_INDEX;
     if (cxt && RelationIsValid(cxt->rel)) {
-        dropStmt->objects = list_make1(list_make2(
-            makeString(get_namespace_name(RelationGetNamespace(cxt->rel))), 
-            makeString(cmd->name)));
+        dropStmt->objects = list_make1(
+            list_make2(makeString(get_namespace_name(RelationGetNamespace(cxt->rel))), makeString(cmd->name)));
     } else {
         dropStmt->objects = list_make1(list_make1(makeString(cmd->name)));
     }

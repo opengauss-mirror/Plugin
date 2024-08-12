@@ -230,7 +230,8 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
 static bool NullsMinimalPolicy();
 
-static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub, ddl_deparse_context *context);
+static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub,
+    ddl_deparse_context *context);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -1821,24 +1822,12 @@ static bool NullsMinimalPolicy()
 
 
 /* preserved interface for future */
-static ObjTree *
-DeparseSimpleCommand(CollectedCommand *cmd, bool *include_owner)
+static ObjTree *DeparseSimpleCommand(CollectedCommand *cmd, bool *include_owner)
 {
     Node *parsetree = cmd->parsetree;
     Oid objectId = cmd->d.simple.address.objectId;
 
-    switch (nodeTag(parsetree)) {
-        // case T_CreateEventStmt:
-        //     return deparse_CreateEventStmt(objectId, parsetree);
-        // case T_AlterEventStmt:
-        //     return deparse_AlterEventStmt(objectId, parsetree);
-        // case T_DropEventStmt:
-        //     return deparse_DropEventStmt(objectId, parsetree);
-        default:
-            elog(INFO, "unrecognized node type in deparse command: %d",
-                 (int) nodeTag(parsetree));
-            break;
-    }
+    elog(INFO, "unrecognized node type in deparse command: %d", (int) nodeTag(parsetree));
     return NULL;
 }
 
@@ -1846,15 +1835,18 @@ static ObjTree* DeparseAlterRelationSubCmd(CollectedCommand *cmd, CollectedATSub
 {
     AlterTableCmd *subcmd = (AlterTableCmd *) sub->parsetree;
     ObjTree *tmp_obj = NULL;
+    int nvar = 0;
     switch (subcmd->subtype) {
         case AT_DropIndex:
-            tmp_obj = new_objtree_VA("DROP INDEX %{index_identity}I %{cascade}s", 3,
+            nvar = 3;
+            tmp_obj = new_objtree_VA("DROP INDEX %{index_identity}I %{cascade}s", nvar,
                 "type", ObjTypeString, "drop index",
                 "index_identity", ObjTypeString, subcmd->name,
                 "cascade", ObjTypeString, subcmd->behavior == DROP_CASCADE ? "CASCADE" : "");
             return tmp_obj;
         case AT_DropForeignKey:
-            tmp_obj = new_objtree_VA("DROP FOREIGN KEY %{fk_identity}I %{cascade}s", 3,
+            nvar = 3;
+            tmp_obj = new_objtree_VA("DROP FOREIGN KEY %{fk_identity}I %{cascade}s", nvar,
                 "type", ObjTypeString, "drop foreign key",
                 "fk_identity", ObjTypeString, subcmd->name,
                 "cascade", ObjTypeString, subcmd->behavior == DROP_CASCADE ? "CASCADE" : "");
@@ -1904,7 +1896,8 @@ static ObjTree* DeparseAlterRelationSubCmd(CollectedCommand *cmd, CollectedATSub
     return NULL;
 }
 
-static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub, ddl_deparse_context *context)
+static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub, 
+    ddl_deparse_context *context)
 {
     if (type == DEPARSE_SIMPLE_COMMAND) {
         return (void*)DeparseSimpleCommand(cmd, &context->include_owner);
