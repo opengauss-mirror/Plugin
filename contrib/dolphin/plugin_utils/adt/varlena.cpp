@@ -6324,17 +6324,17 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
     uint8 B[SHA256_DIGEST_LENGTH]  = { 0 };
     uint8 DP[SHA256_DIGEST_LENGTH] = { 0 };
     uint8 DS[SHA256_DIGEST_LENGTH] = { 0 };
-    char ctbuffer[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
-    uint64_t ctbufflen = CRYPT_MAX_PASSWORD_SIZE;
+    char ctbuffer[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    uint64_t ctbufflen = DOLPHIN_CRYPT_MAX_PASSWORD_SIZE;
     EVP_MD_CTX *ctxA = NULL, *ctxB = NULL, *ctxC = NULL, *ctxDP = NULL, *ctxDS = NULL;
 
-    char         digest[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    char         digest[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
     StringInfo   passwdbuffer = makeStringInfo();
     char* plaintext = PG_GETARG_CSTRING(ARG_0);
     size_t plaintext_len = strlen(plaintext);
     char* salt = PG_GETARG_CSTRING(ARG_1);
 
-    uint32    rounds = ROUNDS_DEFAULT;
+    uint32    rounds = DOLPHIN_ROUNDS_DEFAULT;
     int32 srounds       = 0;
     bool    custom_rounds = false;
     char *p = NULL, *P = NULL, *Pp = NULL, *S = NULL, *Sp = NULL;
@@ -6352,7 +6352,7 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
 
     srounds = getrounds(salt);
     if (srounds != 0) {
-        rounds        = MAX(ROUNDS_MIN, MIN(srounds, ROUNDS_MAX));
+        rounds        = MAX(DOLPHIN_ROUNDS_MIN, MIN(srounds, DOLPHIN_ROUNDS_MAX));
         custom_rounds = true;
         p             = strchr(salt, '$');
         if (p != NULL) {
@@ -6360,7 +6360,7 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
         }
     }
 
-    salt_len = MIN(strcspn(salt, "$"), CRYPT_SALT_LENGTH);
+    salt_len = MIN(strcspn(salt, "$"), DOLPHIN_CRYPT_SALT_LENGTH);
 
     /* 1. */
     EVP_DigestInit_ex(ctxA, EVP_sha256(), NULL);
@@ -6378,8 +6378,8 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
     EVP_DigestFinal_ex(ctxB, B, NULL);
 
     /* 9. - 10. */
-    for (i = plaintext_len; i > MIXCHARS; i -= MIXCHARS)
-        EVP_DigestUpdate(ctxA, B, MIXCHARS);
+    for (i = plaintext_len; i > DOLPHIN_MIXCHARS; i -= DOLPHIN_MIXCHARS)
+        EVP_DigestUpdate(ctxA, B, DOLPHIN_MIXCHARS);
     EVP_DigestUpdate(ctxA, B, i);
 
     /* 11. */
@@ -6387,7 +6387,7 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
     {
         if ((i & 1) != 0)
         {
-            EVP_DigestUpdate(ctxA, B, MIXCHARS);
+            EVP_DigestUpdate(ctxA, B, DOLPHIN_MIXCHARS);
         }
         else
         {
@@ -6405,11 +6405,11 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
 
     /* 16. */
     Pp = P = (char *)palloc(plaintext_len);
-    for (i = plaintext_len; i >= MIXCHARS; i -= MIXCHARS)
+    for (i = plaintext_len; i >= DOLPHIN_MIXCHARS; i -= DOLPHIN_MIXCHARS)
     {
-        rc = memcpy_s(Pp, MIXCHARS, DP, MIXCHARS);
+        rc = memcpy_s(Pp, DOLPHIN_MIXCHARS, DP, DOLPHIN_MIXCHARS);
         securec_check(rc, "\0", "\0");
-        Pp += MIXCHARS;
+        Pp += DOLPHIN_MIXCHARS;
     }
     rc = memcpy_s(Pp, i, DP, i);
     securec_check(rc, "\0", "\0");
@@ -6422,11 +6422,11 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
 
     /* 20. */
     Sp = S = (char *)palloc(salt_len);
-    for (i = salt_len; i >= MIXCHARS; i -= MIXCHARS)
+    for (i = salt_len; i >= DOLPHIN_MIXCHARS; i -= DOLPHIN_MIXCHARS)
     {
-        rc = memcpy_s(Sp, MIXCHARS, DS, MIXCHARS);
+        rc = memcpy_s(Sp, DOLPHIN_MIXCHARS, DS, DOLPHIN_MIXCHARS);
         securec_check(rc, "\0", "\0");
-        Sp += MIXCHARS;
+        Sp += DOLPHIN_MIXCHARS;
     }
     rc = memcpy_s(Sp, i, DS, i);
     securec_check(rc, "\0", "\0");
@@ -6443,9 +6443,9 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
         else
         {
             if (i == 0)
-                EVP_DigestUpdate(ctxC, A, MIXCHARS);
+                EVP_DigestUpdate(ctxC, A, DOLPHIN_MIXCHARS);
             else
-                EVP_DigestUpdate(ctxC, DP, MIXCHARS);
+                EVP_DigestUpdate(ctxC, DP, DOLPHIN_MIXCHARS);
         }
 
         if (i % 3 != 0)
@@ -6461,9 +6461,9 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
         if ((i & 1) != 0)
         {
             if (i == 0)
-                EVP_DigestUpdate(ctxC, A, MIXCHARS);
+                EVP_DigestUpdate(ctxC, A, DOLPHIN_MIXCHARS);
             else
-                EVP_DigestUpdate(ctxC, DP, MIXCHARS);
+                EVP_DigestUpdate(ctxC, DP, DOLPHIN_MIXCHARS);
         }
         else
         {
@@ -6521,7 +6521,7 @@ Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS)
     EVP_MD_CTX_destroy(ctxDS);
     ctxDS = NULL;
     
-    rc = strcpy_s(digest, CRYPT_MAX_PASSWORD_SIZE + 1, ctbuffer + (CRYPT_MAGIC_LENGTH + CRYPT_SALT_LENGTH + 1));
+    rc = strcpy_s(digest, DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1, ctbuffer + (DOLPHIN_CRYPT_MAGIC_LENGTH + DOLPHIN_CRYPT_SALT_LENGTH + 1));
     securec_check(rc, "\0", "\0");
     appendBinaryStringInfo(passwdbuffer, "$A$005$", strlen("$A$005$"));
     appendBinaryStringInfo(passwdbuffer, salt, strlen(salt));

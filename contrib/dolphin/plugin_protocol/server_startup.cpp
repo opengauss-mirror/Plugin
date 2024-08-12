@@ -476,7 +476,7 @@ UserCachedLinesHash* UserCachedLinesHashTableAccess(HASHACTION action, char* use
     result = (UserCachedLinesHash*)hash_search(b_UserCachedLinesHash, user_name, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
-        errno_t rc = strcpy_s(result->fastpasswd, CRYPT_MAX_PASSWORD_SIZE, fastpassword);
+        errno_t rc = strcpy_s(result->fastpasswd, DOLPHIN_CRYPT_MAX_PASSWORD_SIZE, fastpassword);
         securec_check(rc, "\0", "\0");
         return result;
     } else if (action == HASH_FIND) {

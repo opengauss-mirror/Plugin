@@ -33,17 +33,20 @@ bool tls_secure_initialize();
 int TlsSecureOpen(Port* port);
 
 extern Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS);
+extern void get_parent_directory(char* path);
 #define SHA256_DIGEST_LENGTH 32
 
-#define ROUNDS_DEFAULT          5000
-#define ROUNDS_MIN              ROUNDS_DEFAULT
-#define ROUNDS_MAX              (0xFFF * 1000)
-#define MIXCHARS                32
-#define CRYPT_SALT_LENGTH       20
-#define CRYPT_MAGIC_LENGTH      3
-#define CRYPT_PARAM_LENGTH      13
-#define SHA256_HASH_LENGTH      43
-#define CRYPT_MAX_PASSWORD_SIZE (CRYPT_SALT_LENGTH + SHA256_HASH_LENGTH + CRYPT_MAGIC_LENGTH + CRYPT_PARAM_LENGTH)
+#define DOLPHIN_ROUNDS_DEFAULT          5000
+#define DOLPHIN_ROUNDS_MIN              DOLPHIN_ROUNDS_DEFAULT
+#define DOLPHIN_ROUNDS_MAX              (0xFFF * 1000)
+#define DOLPHIN_MIXCHARS                32
+#define DOLPHIN_CRYPT_SALT_LENGTH       20
+#define DOLPHIN_CRYPT_MAGIC_LENGTH      3
+#define DOLPHIN_CRYPT_PARAM_LENGTH      13
+#define DOLPHIN_SHA256_HASH_LENGTH      43
+#define DOLPHIN_CRYPT_MAX_PASSWORD_SIZE                          \
+    (DOLPHIN_CRYPT_SALT_LENGTH + DOLPHIN_SHA256_HASH_LENGTH +    \
+    DOLPHIN_CRYPT_MAGIC_LENGTH + DOLPHIN_CRYPT_PARAM_LENGTH)
 #define MAX_PLAINTEXT_LENGTH    256
 
 #define CLIENT_PASSWORD_NATIVE_TOKEN_LEN        (20)
@@ -55,7 +58,7 @@ extern Datum make_scrambled_full_password_sha2(PG_FUNCTION_ARGS);
 
 typedef struct UserCachedLinesHash {
     char username[NAMEDATALEN];
-    char fastpasswd[CRYPT_MAX_PASSWORD_SIZE];
+    char fastpasswd[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE];
 } UserCachedLinesHash;
 
 UserCachedLinesHash* UserCachedLinesHashTableAccess(HASHACTION action, char* user_name, char* fastpassword);

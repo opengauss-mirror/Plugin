@@ -456,7 +456,7 @@ static bool search_cached(char *user, char **cachedpassword)
 
 static bool deserialize(const char*serialized_string, char*salt, char*digest, unsigned long *iterations)
 {
-    char parts[PARAMNUM_3][CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    char parts[PARAMNUM_3][DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
     int num_parts = 0;
     errno_t rc = 0;
     char *str_text = (char *)palloc(strlen(serialized_string) + 1);
@@ -464,20 +464,21 @@ static bool deserialize(const char*serialized_string, char*salt, char*digest, un
     securec_check(rc, "\0", "\0");
     char *token = strtok(str_text, "$");
     while (token != NULL && num_parts < PARAMNUM_3) {
-        rc = strncpy_s(parts[num_parts], CRYPT_MAX_PASSWORD_SIZE, token, strlen(token));
+        rc = strncpy_s(parts[num_parts], DOLPHIN_CRYPT_MAX_PASSWORD_SIZE, token, strlen(token));
         securec_check(rc, "\0", "\0");
         num_parts++;
         token = strtok(NULL, "$");
     }  
     *iterations = atol(parts[PARAMNUM_1]) * DEFAULTMULTIPLE;
-    rc = strncpy_s(salt, SHA1_HASH_SIZE + 1, parts[PARAMNUM_2], CRYPT_SALT_LENGTH);
+    rc = strncpy_s(salt, SHA1_HASH_SIZE + 1, parts[PARAMNUM_2], DOLPHIN_CRYPT_SALT_LENGTH);
     securec_check(rc, "\0", "\0");
-    rc = strncpy_s(digest, CRYPT_MAX_PASSWORD_SIZE + 1, (parts[PARAMNUM_3] + CRYPT_SALT_LENGTH), SHA256_HASH_LENGTH);
+    rc = strncpy_s(digest, DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1,
+                   (parts[PARAMNUM_2] + DOLPHIN_CRYPT_SALT_LENGTH), DOLPHIN_SHA256_HASH_LENGTH);
     securec_check(rc, "\0", "\0");
     int salt_len = strlen(salt);
     int digest_len = strlen(digest);
     pfree(str_text);
-    if (salt_len == CRYPT_SALT_LENGTH && digest_len == SHA256_HASH_LENGTH) {
+    if (salt_len == DOLPHIN_CRYPT_SALT_LENGTH && digest_len == DOLPHIN_SHA256_HASH_LENGTH) {
         return TRUE;
     }
     return FALSE;
@@ -487,8 +488,8 @@ static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Po
 {
     char        *fast_passwd = (char*)palloc(SHA2_HASH_SIZE * 2 + 1);
     char         salt[SHA1_HASH_SIZE + 1] = { 0 };
-    char         digest[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
-    char         store_digest[CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    char         digest[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+    char         store_digest[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
     unsigned long iterations = 0;
     char         *plaintext_passwd = NULL;
     StringInfo buf = makeStringInfo();
@@ -511,8 +512,9 @@ static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Po
     plaintext_passwd = dq_get_string_null(buf);
     char *full_passwd = TextDatumGetCString(DirectFunctionCall2(make_scrambled_full_password_sha2,
         PointerGetDatum(plaintext_passwd), PointerGetDatum(salt)));
-    rc = strcpy_s(digest, CRYPT_MAX_PASSWORD_SIZE + 1,
-                  full_passwd + (CRYPT_MAGIC_LENGTH + CRYPT_MAGIC_LENGTH + 1 + CRYPT_SALT_LENGTH));
+    rc = strcpy_s(digest, DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1,
+                  full_passwd +
+                  (DOLPHIN_CRYPT_MAGIC_LENGTH + DOLPHIN_CRYPT_MAGIC_LENGTH + 1 + DOLPHIN_CRYPT_SALT_LENGTH));
     securec_check(rc, "\0", "\0");
     if (memcmp(store_digest, (const uint8 *)digest, strlen(digest)) == 0) {
         //fast authentication
@@ -845,7 +847,7 @@ static bool tls_secure_ctx(SSL_CTX** ssl_ctx)
 
     int verify = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
     char file_path[MAXPGPATH] = {0};
-    char* data_path = pstrdup(t_thrd.proc_cxt.DataDir);
+    char* data_path = NULL;
 
     appendBinaryStringInfo(mtsql_cioher_list, tls_cipher_blocked, strlen(tls_cipher_blocked));
     appendBinaryStringInfo(mtsql_cioher_list, ":", strlen(":"));
@@ -861,49 +863,51 @@ static bool tls_secure_ctx(SSL_CTX** ssl_ctx)
             ereport(WARNING, (errmsg("SSL environment initialization failed,%s", SSLerrmessage())));
             break;
         }
-        rc = sprintf_s(file_path, MAXPGPATH, "%s/%s.cipher", data_path, g_proto_ctx.mysql_server_key);
+        if (is_absolute_path(g_proto_ctx.mysql_server_key)) {
+            data_path = pstrdup(g_proto_ctx.mysql_server_key);
+            get_parent_directory(data_path);
+        } else {
+            rc = sprintf_s(file_path, MAXPGPATH, "%s/%s", t_thrd.proc_cxt.DataDir, g_proto_ctx.mysql_server_key);
+            securec_check_ss(rc, "\0", "\0");
+            data_path = pstrdup(file_path);
+            get_parent_directory(data_path);
+        }
+        rc = sprintf_s(file_path, MAXPGPATH, "%s/server.key.cipher", data_path);
         securec_check_ss(rc, "\0", "\0");
         if (stat(file_path, &buf) < 0) {
             ereport(WARNING, (errmsg("could not open file \"%s\": No such file or directory", file_path)));
-            break;
+        } else {
+            decode_cipher_files(keymode, NULL, data_path, serverkey);
+            SSL_CTX_set_default_passwd_cb_userdata(*ssl_ctx, (char*)serverkey);
         }
-        decode_cipher_files(keymode, NULL, data_path, serverkey);
-        SSL_CTX_set_default_passwd_cb_userdata(*ssl_ctx, (char*)serverkey);
-        
         /* Specify encryption algorithm */
         if (SSL_CTX_set_cipher_list(*ssl_ctx, mtsql_cioher_list->data) == 0) {
             ereport(WARNING, (errmsg("Failed to specify encryption algorithm,%s", SSLerrmessage())));
             break;
         }
         /* Load CA certificate */
-        rc = sprintf_s(file_path, MAXPGPATH, "%s/%s", data_path, g_proto_ctx.mysql_ca);
-        securec_check_ss(rc, "\0", "\0");
-        if (stat(file_path, &buf) != 0) {
+        if (stat(g_proto_ctx.mysql_ca, &buf) != 0) {
             ereport(WARNING, (errmsg("could not open file \"%s\": No such file or directory", file_path)));
             break;
         }
-        if (SSL_CTX_load_verify_locations(*ssl_ctx, file_path, NULL) <= 0) {
+        if (SSL_CTX_load_verify_locations(*ssl_ctx, g_proto_ctx.mysql_ca, NULL) <= 0) {
             ereport(WARNING, (errmsg("Failed to load CA certificate,%s", SSLerrmessage())));
             break;
         }
         /* Load server certificate */
-        rc = sprintf_s(file_path, MAXPGPATH, "%s/%s", data_path, g_proto_ctx.mysql_server_cert);
-        securec_check_ss(rc, "\0", "\0");
-        if (stat(file_path, &buf) != 0) {
+        if (stat(g_proto_ctx.mysql_server_cert, &buf) != 0) {
             ereport(WARNING, (errmsg("could not open file \"%s\": No such file or directory", file_path)));
             break;
         }
-        if (SSL_CTX_use_certificate_file(*ssl_ctx, file_path, SSL_FILETYPE_PEM) <= 0) {
+        if (SSL_CTX_use_certificate_file(*ssl_ctx, g_proto_ctx.mysql_server_cert, SSL_FILETYPE_PEM) <= 0) {
             ereport(WARNING, (errmsg("Failed to load server certificate,%s", SSLerrmessage())));
             break;
         }
-        rc = sprintf_s(file_path, MAXPGPATH, "%s/%s", data_path, g_proto_ctx.mysql_server_key);
-        securec_check_ss(rc, "\0", "\0");
-        if (stat(file_path, &buf) != 0) {
+        if (stat(g_proto_ctx.mysql_server_key, &buf) != 0) {
             ereport(WARNING, (errmsg("could not open file \"%s\": No such file or directory", file_path)));
             break;
         }
-        if (SSL_CTX_use_PrivateKey_file(*ssl_ctx, file_path, SSL_FILETYPE_PEM) <= 0) {
+        if (SSL_CTX_use_PrivateKey_file(*ssl_ctx, g_proto_ctx.mysql_server_key, SSL_FILETYPE_PEM) <= 0) {
             ereport(WARNING, (errmsg("Failed to load server private key,%s", SSLerrmessage())));
             break;
         }
@@ -932,6 +936,7 @@ static bool tls_secure_ctx(SSL_CTX** ssl_ctx)
         SSL_CTX_set_verify(*ssl_ctx, verify, NULL);
         DestroyStringInfo(mtsql_cioher_list);
         Dophin_Flags = DOPHIN_DEFAULT_FLAGS | CLIENT_SSL;
+        ereport(LOG, (errmsg("Dolphin plugin successfully initialized SSL information !")));
         return TRUE;
     } while (0);
 
