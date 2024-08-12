@@ -140,7 +140,7 @@ extern Oid heap_create_with_catalog(const char *relname,
 						 List* ceLst = NULL,
 						 StorageType storage_type = HEAP_DISK,
 						 LOCKMODE partLockMode = AccessExclusiveLock,
-						 ObjectAddress *typaddress= NULL,
+						 ObjectAddress *typaddress = NULL,
 						 List* depend_extend = NIL,
 						 Oid relrewrite = InvalidOid);
 

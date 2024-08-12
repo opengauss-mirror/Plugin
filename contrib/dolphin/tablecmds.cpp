@@ -10463,7 +10463,6 @@ static void repl_update_addcolumn_default(AlteredTableInfo* tab, Relation oldrel
     rc = memset_s(repl, i * sizeof(bool), false, i * sizeof(bool));
     securec_check(rc, "\0", "\0");
 
-
     scan = tableam_scan_begin(newrel, SnapshotNow, 0, NULL);
     oldCxt = MemoryContextSwitchTo(GetPerTupleMemoryContext(estate));
 
