@@ -1,0 +1,11 @@
+create schema test111;
+set current_schema = test111;
+CREATE TABLE `user111` (
+  `ssl_type` enum('','ANY','X509','SPECIFIED') CHARACTER SET utf8 NOT NULL DEFAULT '',
+  id int primary key
+) DEFAULT CHARSET=utf8  COMMENT='Users and global privileges';
+copy `test111`.`user111`(`ssl_type`,`id`) from '@abs_builddir@/data/enum_empty_str_copy.csv' with NULL 'NULL' CSV QUOTE '"' DELIMITER ',' ESCAPE '"';
+select * from user111;
+drop table user111;
+reset current_schema;
+drop schema test111;
