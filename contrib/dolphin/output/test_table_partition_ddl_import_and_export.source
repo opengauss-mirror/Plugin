@@ -783,12 +783,6 @@ partition by range(col1)
 );
 alter table t_alter_table_partition_001 remove partitioning;
 NOTICE:  The table has no indexes
-CONTEXT:  referenced column: remove_partitioning
-     remove_partitioning     
------------------------------
- t_alter_table_partition_001
-(1 row)
-
 create table t_alter_table_partition_002(col1 int, col2 int)
 partition by list(col1)
 (
@@ -797,11 +791,6 @@ partition by list(col1)
         partition p3 values in (4000)
 );
 alter table t_alter_table_partition_002 rebuild partition p1;
-      rebuild_partition      
------------------------------
- t_alter_table_partition_002
-(1 row)
-
 create table t_alter_table_partition_003(col1 int, col2 int)
 partition by hash(col1)
 (
@@ -810,11 +799,6 @@ partition by hash(col1)
         partition p3
 );
 alter table t_alter_table_partition_003 rebuild partition all;
-      rebuild_partition      
------------------------------
- t_alter_table_partition_003
-(1 row)
-
 create table t_alter_table_partition_004(col1 int, col2 int)
 partition by range(col1)
 (
@@ -923,11 +907,6 @@ partition by range(col1)
         partition p3 values less than (4000)
 );
 alter table t_alter_table_partition_016 analyze partition p1;
-      analyze_partition      
------------------------------
- t_alter_table_partition_016
-(1 row)
-
 create table t_alter_table_partition_017(col1 int, col2 int)
 partition by range(col1)
 (
@@ -1061,12 +1040,6 @@ partition by range(col1) subpartition by range(col2)
 );
 alter table t_alter_table_partition_024 remove partitioning;
 NOTICE:  The table has no indexes
-CONTEXT:  referenced column: remove_partitioning
-     remove_partitioning     
------------------------------
- t_alter_table_partition_024
-(1 row)
-
 create table t_alter_table_partition_025(col1 int, col2 int)
 partition by list(col1) subpartition by range(col2)
 (

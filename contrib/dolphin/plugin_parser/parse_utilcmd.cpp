@@ -5203,7 +5203,12 @@ static void TransfromAlterTableDropIndexStmt(CreateStmtContext* cxt, AlterTableC
     DropStmt* dropStmt = makeNode(DropStmt);
 
     dropStmt->removeType = OBJECT_INDEX;
-    dropStmt->objects = list_make1(list_make1(makeString(cmd->name)));
+    if (cxt && RelationIsValid(cxt->rel)) {
+        dropStmt->objects = list_make1(
+            list_make2(makeString(get_namespace_name(RelationGetNamespace(cxt->rel))), makeString(cmd->name)));
+    } else {
+        dropStmt->objects = list_make1(list_make1(makeString(cmd->name)));
+    }
     dropStmt->missing_ok = FALSE;
     dropStmt->arguments = NIL;
     dropStmt->behavior = DROP_RESTRICT;
@@ -5217,7 +5222,11 @@ static void TransfromAlterTableRenameIndexStmt(CreateStmtContext* cxt, AlterTabl
     RenameStmt *renameStmt = makeNode(RenameStmt);
 
     renameStmt->renameType = OBJECT_INDEX;
-    renameStmt->relation = makeRangeVar(NULL, cmd->name, -1);
+    if (cxt && RelationIsValid(cxt->rel)) {
+        renameStmt->relation = makeRangeVar(get_namespace_name(RelationGetNamespace(cxt->rel)), cmd->name, -1);
+    } else {
+        renameStmt->relation = makeRangeVar(NULL, cmd->name, -1);
+    }
     renameStmt->subname = NULL;
     renameStmt->newname = strVal(cmd->def);
     renameStmt->missing_ok = false;
@@ -5640,6 +5649,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
 #ifdef DOLPHIN
             case AT_DropIndex:
                 TransfromAlterTableDropIndexStmt(&cxt, cmd);
+                newcmds = lappend(newcmds, cmd);
                 break;
 
             case AT_RenameIndex:
@@ -9190,6 +9200,7 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
         rename->subname = cmd->name;
         rename->newname = def->colname;
         rename->missing_ok = false;
+        rename->is_modifycolumn = true;
         cxt->blist = lappend(cxt->blist, rename);
     }
 }

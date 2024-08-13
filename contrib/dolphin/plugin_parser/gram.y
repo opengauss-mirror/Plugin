@@ -6756,63 +6756,41 @@ split_dest_rangesubpartition_define_list:
 AlterPartitionRebuildStmt:
 			ALTER TABLE dolphin_qualified_name REBUILD_PARTITION partition_name_list
 				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = list_make1(makeString("rebuild_partition"));
-					n->args = list_make1(makeAArrayExpr(lcons(makeStringConst($3->relname, @3), $5), @5));
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->location = @4;
-					n->call_func = false;
-					ResTarget* rtg = makeNode(ResTarget);
-					rtg->name = NULL;
-					rtg->indirection = NIL;
-					rtg->val = (Node *)n;
-					rtg->location = @3;
-					SelectStmt *sel = makeNode(SelectStmt);
-					sel->targetList = list_make1(rtg);
-					$$ = (Node *)sel;
+					AlterTableStmt *n = makeNode(AlterTableStmt);
+					AlterTableCmd *cmd = makeNode(AlterTableCmd);
+					cmd->subtype = AT_RebuildPartition;
+					cmd->name = $3->relname;
+					cmd->def = (Node*)$5;
+					n->relation = $3;
+					n->relkind = OBJECT_TABLE;
+					n->cmds = list_make1(cmd);
+					$$ = (Node *) n;
 				}
 			| ALTER TABLE dolphin_qualified_name REBUILD_PARTITION ALL
 				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = list_make1(makeString("rebuild_partition"));
-					n->args = list_make1(makeAArrayExpr(list_make1(makeStringConst($3->relname, @3)), @3));
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->location = @4;
-					n->call_func = false;
-					ResTarget* rtg = makeNode(ResTarget);
-					rtg->name = NULL;
-					rtg->indirection = NIL;
-					rtg->val = (Node *)n;
-					rtg->location = @3;
-					SelectStmt *sel = makeNode(SelectStmt);
-					sel->targetList = list_make1(rtg);
-					$$ = (Node *)sel;
+					AlterTableStmt *n = makeNode(AlterTableStmt);
+					AlterTableCmd *cmd = makeNode(AlterTableCmd);
+					cmd->subtype = AT_RebuildPartition;
+					cmd->name = $3->relname;
+					cmd->def = NULL;
+					n->relation = $3;
+					n->relkind = OBJECT_TABLE;
+					n->cmds = list_make1(cmd);
+					$$ = (Node *) n;
 				}
 		;
 
 AlterPartitionRemoveStmt:
 			ALTER TABLE dolphin_qualified_name REMOVE PARTITIONING
 				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = list_make1(makeString("remove_partitioning"));
-					n->args = list_make1(makeStringConst($3->relname, @3));
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->location = @4;
-					n->call_func = false;
-					ResTarget* rtg = makeNode(ResTarget);
-					rtg->name = NULL;
-					rtg->indirection = NIL;
-					rtg->val = (Node *)n;
-					rtg->location = @3;
-					SelectStmt *sel = makeNode(SelectStmt);
-					sel->targetList = list_make1(rtg);
-					$$ = (Node *)sel;
+					AlterTableStmt *n = makeNode(AlterTableStmt);
+					AlterTableCmd *cmd = makeNode(AlterTableCmd);
+					cmd->subtype = AT_RemovePartitioning;
+					cmd->name = $3->relname;
+					n->relation = $3;
+					n->relkind = OBJECT_TABLE;
+					n->cmds = list_make1(cmd);
+					$$ = (Node *) n;
 				}
 		;
 
@@ -6868,26 +6846,15 @@ AlterPartitionOptimizeStmt:
 AnalyzePartitionStmt:
 		ALTER TABLE dolphin_qualified_name analyze_keyword opt_verbose opt_name_list PARTITION partition_name_list
 			{
-				List* arglist = NIL;
-				arglist = lcons(makeStringConst($3->relname, @3), $8);
-				FuncCall *n = makeNode(FuncCall);
-				n->funcname = list_make1(makeString("analyze_partition"));
-				n->args = list_make1(makeAArrayExpr(arglist, @8));
-				n->args = lappend(n->args, makeStringConst($3->catalogname, -1));
-				n->args = lappend(n->args, makeStringConst($3->schemaname, -1));
-				n->agg_star = FALSE;
-				n->agg_distinct = FALSE;
-				n->func_variadic = FALSE;
-				n->location = @4;
-				n->call_func = false;
-				ResTarget* rtg = makeNode(ResTarget);
-				rtg->name = NULL;
-				rtg->indirection = NIL;
-				rtg->val = (Node *)n;
-				rtg->location = @3;
-				SelectStmt *sel = makeNode(SelectStmt);
-				sel->targetList = list_make1(rtg);
-				$$ = (Node *)sel;
+				AlterTableStmt *n = makeNode(AlterTableStmt);
+				AlterTableCmd *cmd = makeNode(AlterTableCmd);
+				cmd->subtype = AT_AnalyzePartition;
+				cmd->name = $3->schemaname;
+				cmd->def = (Node*)$8;
+				n->relation = $3;
+				n->relkind = OBJECT_TABLE;
+				n->cmds = list_make1(cmd);
+				$$ = (Node *) n;
 			}
 		| ALTER TABLE dolphin_qualified_name analyze_keyword opt_verbose opt_name_list PARTITION ALL
 			{
@@ -22968,6 +22935,7 @@ AlterProcedureStmt:
 			ALTER PROCEDURE function_with_argtypes alterfunc_opt_list opt_restrict
 				{
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					n->isProcedure = true;
 					n->func = $3;
 					n->actions = $4;
 					n->noargs = false;
@@ -22976,6 +22944,7 @@ AlterProcedureStmt:
 			| ALTER PROCEDURE func_name alterfunc_opt_list opt_restrict
 				{
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					n->isProcedure = true;
 					FuncWithArgs *narg = makeNode(FuncWithArgs);
 					narg->funcname = $3;
 					narg->funcargs = NIL;
