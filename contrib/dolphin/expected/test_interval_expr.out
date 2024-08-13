@@ -5900,7 +5900,55 @@ select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types
 
 select '2024-06-18 18:30:00' - interval `NULL` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
+set time zone '+8';
+create table t2(ts1 timestamp, ts2 interval);
+insert t2 values('1902-11-20 14:14:16.9999999', interval 2 minute);
+insert t2 values('09-09-14 23:59:59.9999999', interval 3 second);
+select ts1 - ts2 from t2;
+        ?column?        
+------------------------
+ 1902-11-20 14:12:17+08
+ 2009-09-14 23:59:57+08
+(2 rows)
+
+select ts1 + ts2 from t2;
+        ?column?        
+------------------------
+ 1902-11-20 14:16:17+08
+ 2009-09-15 00:00:03+08
+(2 rows)
+
+select ts1 - ts2 from t2;
+        ?column?        
+------------------------
+ 1902-11-20 14:12:17+08
+ 2009-09-14 23:59:57+08
+(2 rows)
+
+create table t3(c1 datetime);
+insert t3 values('2024-07-05'), ('2024-07-05 14:59:58');
+create view v1 as select c1 + interval 1 day as 'c1 + interval 1 day' from t3;
+select * from v1;
+ c1 + interval 1 day 
+---------------------
+ 2024-07-06 00:00:00
+ 2024-07-06 14:59:58
+(2 rows)
+
+create view v2 as select c1 - interval 1 day as 'c1 - interval 1 day' from t3;
+select * from v2;
+ c1 - interval 1 day 
+---------------------
+ 2024-07-04 00:00:00
+ 2024-07-04 14:59:58
+(2 rows)
+
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
-NOTICE:  drop cascades to table t1
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table t3
+drop cascades to view v1
+drop cascades to view v2
 reset current_schema;
