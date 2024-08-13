@@ -357,4 +357,22 @@ Datum AnalyzePartitions(PG_FUNCTION_ARGS)
     pfree_ext(vacstmt);
     PG_RETURN_TEXT_P(cstring_to_text(tableName));
 }
+
+Datum RemovePartitioningExt(const char* tabname)
+{
+    return DirectFunctionCall1(RemovePartitioning, CStringGetTextDatum(tabname));
+}
+
+Datum RebuildPartitionExt(ArrayType* args_array)
+{
+    return DirectFunctionCall1(RebuildPartition, PointerGetDatum(args_array));
+}
+
+Datum AnalyzePartitionExt(ArrayType* args_array, const char* catalog, const char* schema)
+{
+    return DirectFunctionCall3(AnalyzePartitions, PointerGetDatum(args_array),
+                               catalog ? CStringGetTextDatum(catalog) : NULL,
+                               schema ? CStringGetTextDatum(schema) : NULL);
+}
+
 #endif
