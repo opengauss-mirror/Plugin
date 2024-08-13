@@ -9612,10 +9612,11 @@ Datum convert_tz_time(PG_FUNCTION_ARGS)
  */
 bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result)
 {
-    span->month = -span->month;
-    span->day = -span->day;
-    span->time = -span->time;
-    return datetime_sub_interval(datetime, span, result, true);
+    Interval *itv = (Interval*)palloc0(sizeof(Interval));
+    itv->month = -span->month;
+    itv->day = -span->day;
+    itv->time = -span->time;
+    return datetime_sub_interval(datetime, itv, result, true);
 }
 
 /**
