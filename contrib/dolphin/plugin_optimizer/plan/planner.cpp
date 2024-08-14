@@ -449,6 +449,12 @@ bool queryIsReadOnly(Query* query)
             case CMD_INSERT:
             case CMD_DELETE:
             case CMD_MERGE: {
+                if (SS_STANDBY_MODE_WITH_REMOTE_EXECUTE && query->utilityStmt != NULL &&
+                    (query->utilityStmt->type == T_PrepareStmt || query->utilityStmt->type == T_ExecuteStmt ||
+                    query->utilityStmt->type == T_DeallocateStmt || query->utilityStmt->type == T_CopyStmt)) {
+                    return true;
+                }
+
                 if (SS_STANDBY_MODE_WITH_REMOTE_EXECUTE && get_redirect_manager()->state.transaction) {
                     get_redirect_manager()->ss_standby_state |= SS_STANDBY_REQ_WRITE_REDIRECT;
                 }
@@ -4972,7 +4978,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                 result_plan->targetlist = tlist;
                 expPlan2->extensible_plans = lappend(expPlan2->extensible_plans, result_plan);
             }
-            
+
         }
         return tsdbPlan;
     }

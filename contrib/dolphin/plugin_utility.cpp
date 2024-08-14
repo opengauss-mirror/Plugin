@@ -667,6 +667,7 @@ void PreventCommandDuringSSOndemandRedo(Node* parseTree)
         case T_CreateFunctionStmt: /* no need to adapt */
         case T_AlterFunctionStmt: /* no need to adapt */
         case T_CompileStmt:
+        case T_DoStmt:
         case T_RenameStmt:
         case T_TransactionStmt:
         case T_ViewStmt: /* no need to adapt */
@@ -6882,7 +6883,8 @@ ProcessUtilitySlow(Node *parse_tree,
             case T_DropEventStmt: /* DROP EVENT */
                 DropEventCommand((DropEventStmt*)parse_tree);
             break;
-            
+
+
             case T_TableOfTypeStmt: /* CREATE TYPE AS TABLE OF */
             {
                 TableOfTypeStmt* stmt = (TableOfTypeStmt*)parse_tree;

@@ -271,7 +271,7 @@ extern char* pg_get_trigger_whenclause(Form_pg_trigger trigrec,Node* whenClause,
 static char* pg_get_triggerdef_worker(Oid trigid, bool pretty);
 static void decompile_column_index_array(Datum column_index_array, Oid relId, StringInfo buf);
 static char* pg_get_ruledef_worker(Oid ruleoid, int prettyFlags);
-static char *pg_get_indexdef_worker(Oid indexrelid, int colno, const Oid *excludeOps, bool attrsOnly, bool showTblSpc,
+static char* pg_get_indexdef_worker(Oid indexrelid, int colno, const Oid* excludeOps, bool attrsOnly, bool showTblSpc,
     int prettyFlags, bool dumpSchemaOnly = false, bool showPartitionLocal = true, bool showSubpartitionLocal = true);
 void pg_get_indexdef_partitions(Oid indexrelid, Form_pg_index idxrec, bool showTblSpc, StringInfoData *buf,
     bool dumpSchemaOnly, bool showPartitionLocal, bool showSubpartitionLocal);
@@ -657,6 +657,7 @@ char* pg_get_viewdef_worker(Oid viewoid, int prettyFlags, int wrapColumn)
     SPI_STACK_LOG("finish", NULL, NULL);
     if (SPI_finish() != SPI_OK_FINISH)
         ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));
+
     return buf.data;
 }
 
@@ -4780,6 +4781,7 @@ Datum pg_get_functiondef(PG_FUNCTION_ARGS)
     tuple = heap_form_tuple(tupdesc, values, nulls);
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
+
 
 char* pg_get_functiondef_string(Oid funcid)
 {
