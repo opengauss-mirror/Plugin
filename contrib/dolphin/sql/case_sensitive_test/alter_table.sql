@@ -443,3 +443,11 @@ DROP TABLE T2;
 DROP TABLE T3;
 SET current_schema TO public;
 DROP SCHEMA test_rename CASCADE;
+
+-- test modify column type without constraints
+drop table if exists user;
+create table user(id int, user_name VARCHAR(255) NOT NULL);
+show create table user;
+ALTER TABLE user MODIFY user_name VARCHAR(45);
+show create table user;
+drop table user;
