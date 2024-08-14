@@ -694,6 +694,21 @@ CREATE OR REPLACE FUNCTION pg_catalog.op_text_sub_intr (text, interval) RETURNS 
 CREATE OR REPLACE FUNCTION pg_catalog.op_date_sub_intr (date, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_sub_intr (timestamp without time zone, interval) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_sub_intr (timestamptz, interval) RETURNS timestamptz AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_json_add_intr (json, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_json (interval, json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_json_sub_intr (json, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_blob_add_intr (blob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_blob (interval, blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_blob_sub_intr (blob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_lblob_add_intr (longblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_lblob (interval, longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_lblob_sub_intr (longblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_mblob_add_intr (mediumblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_mblob (interval, mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_mblob_sub_intr (mediumblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_tblob_add_intr (tinyblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_tblob (interval, tinyblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_tblob_sub_intr (tinyblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 
 CREATE OPERATOR pg_catalog.+ (leftarg = numeric, rightarg = interval, procedure = op_num_add_intr, commutator = operator(pg_catalog.+));
 CREATE OPERATOR pg_catalog.+ (leftarg = text, rightarg = interval, procedure = op_text_add_intr, commutator = operator(pg_catalog.+));
@@ -701,6 +716,22 @@ CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = numeric, procedure 
 CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = text, procedure = op_intr_add_text, commutator = operator(pg_catalog.+));
 CREATE OPERATOR pg_catalog.- (leftarg = numeric, rightarg = interval, procedure = op_num_sub_intr, commutator = operator(pg_catalog.-));
 CREATE OPERATOR pg_catalog.- (leftarg = text, rightarg = interval, procedure = op_text_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = json, rightarg = interval, procedure = op_json_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = json, procedure = op_intr_add_json, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = json, rightarg = interval, procedure = op_json_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = blob, rightarg = interval, procedure = op_blob_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = blob, procedure = op_intr_add_blob, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = blob, rightarg = interval, procedure = op_blob_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = longblob, rightarg = interval, procedure = op_lblob_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = longblob, procedure = op_intr_add_lblob, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = longblob, rightarg = interval, procedure = op_lblob_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = mediumblob, rightarg = interval, procedure = op_mblob_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = mediumblob, procedure = op_intr_add_mblob, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = mediumblob, rightarg = interval, procedure = op_mblob_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = tinyblob, rightarg = interval, procedure = op_tblob_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = tinyblob, procedure = op_intr_add_tblob, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = tinyblob, rightarg = interval, procedure = op_tblob_sub_intr, commutator = operator(pg_catalog.-));
+
 DO $$
 BEGIN
         update pg_catalog.pg_operator set oprresult = 'text'::regtype, oprcode = 'op_date_add_intr'::regproc

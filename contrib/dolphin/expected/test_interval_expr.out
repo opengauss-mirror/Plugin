@@ -292,6 +292,60 @@ select interval '1 2' second_microsecond;
 
 select interval '1 2' second to microsecond;
 ERROR:  interval second to microsecond is not supported
+create table k_1(a json,b blob,c longblob,d mediumblob,e tinyblob,f binary(20));
+insert k_1 values('"2024-01-11 11:49:25"','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25');
+select `a`+  interval 1 day,`b`+  interval 1 day,`c`+ interval 1 day,`d`+ interval 1 day,`e`+ interval 1 day,`f`+ interval 1 day from k_1;
+WARNING:  invalid input syntax for type numeric: ""2024-01-11 11:49:25""
+WARNING:  Incorrect datetime value: "0"
+ ?column? |      ?column?       |      ?column?       |      ?column?       |      ?column?       |      ?column?       
+----------+---------------------+---------------------+---------------------+---------------------+---------------------
+          | 2024-01-12 11:49:25 | 2024-01-12 11:49:25 | 2024-01-12 11:49:25 | 2024-01-12 11:49:25 | 2024-01-12 11:49:25
+(1 row)
+
+drop table k_1;
+select cast('1.23' as json) + (interval 1 day);
+WARNING:  Incorrect datetime value: "1.23"
+ ?column? 
+----------
+ 
+(1 row)
+
+select cast('1.23' as blob) + (interval 1 day);
+WARNING:  Incorrect datetime value: "1.23"
+CONTEXT:  referenced column: date_add
+SQL function "op_blob_add_intr" statement 1
+ ?column? 
+----------
+ 
+(1 row)
+
+select cast('1.23' as longblob) + (interval 1 day);
+WARNING:  Incorrect datetime value: "1.23"
+CONTEXT:  referenced column: date_add
+SQL function "op_lblob_add_intr" statement 1
+ ?column? 
+----------
+ 
+(1 row)
+
+select cast('1.23' as mediumblob) + (interval 1 day);
+WARNING:  Incorrect datetime value: "1.23"
+CONTEXT:  referenced column: date_add
+SQL function "op_mblob_add_intr" statement 1
+ ?column? 
+----------
+ 
+(1 row)
+
+select cast('1.23' as tinyblob) + (interval 1 day);
+WARNING:  Incorrect datetime value: "1.23"
+CONTEXT:  referenced column: date_add
+SQL function "op_tblob_add_intr" statement 1
+ ?column? 
+----------
+ 
+(1 row)
+
 -- 绑定参数
 prepare stmt as 'select ? + interval 1 + ? year';
 execute stmt('2024-06-18 18:30:00', 1);
