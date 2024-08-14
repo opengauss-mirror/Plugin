@@ -217,13 +217,12 @@ extern Oid GetFunctionNodeGroupByFuncid(Oid funcid);
 extern Oid GetFunctionNodeGroup(AlterFunctionStmt* stmt);
 
 /* commands/eventcmds.c */
-#ifdef DOLPHIN
 extern ObjectAddress CreateEventCommand(CreateEventStmt* stmt);
 extern ObjectAddress AlterEventCommand(AlterEventStmt* stmt);
 extern void DropEventCommand(DropEventStmt* stmt);
 extern char* parseIntervalExprString(Node *intervalNode);
 extern char* parseTimeExprString(Node* timeExpr);
-#endif
+
 #endif /* !FRONTEND_PARSER */
 extern DefElem* defWithOids(bool value);
 #endif /* DEFREM_H */

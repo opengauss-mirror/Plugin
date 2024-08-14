@@ -6882,7 +6882,8 @@ ProcessUtilitySlow(Node *parse_tree,
             case T_DropEventStmt: /* DROP EVENT */
                 DropEventCommand((DropEventStmt*)parse_tree);
             break;
-            
+
+
             case T_TableOfTypeStmt: /* CREATE TYPE AS TABLE OF */
             {
                 TableOfTypeStmt* stmt = (TableOfTypeStmt*)parse_tree;

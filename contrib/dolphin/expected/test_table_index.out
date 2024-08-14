@@ -122,7 +122,7 @@ ERROR:  access method "cbtree" does not support index expressions
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "test_ubtree_f1_f2_idx" ubtree (f1 DESC, f2) WITH (storage_type=USTORE) TABLESPACE pg_default
+    "test_ubtree_f1_f2_idx" ubtree (f1 DESC, f2) WITH (storage_type=ustore) TABLESPACE pg_default
 Has OIDs: no
 Options: orientation=row, storage_type=ustore, compression=no
 
