@@ -36,7 +36,7 @@ test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_inde
 
 test: test_enum_collation multi_delete join_using function_type_test join_commas_connect define_primary_key interval_units interval_expr_unit date_add_time_interval test_interval_expr
  
-test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3 test_straight_join
+test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3 test_straight_join enum_empty_str_copy
 
 test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_funcs/character_length builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format builtin_funcs/math_func builtin_funcs/ascii builtin_funcs/bit_func builtin_funcs/varlena_func builtin_funcs/b_compatibility_substr_func
 
