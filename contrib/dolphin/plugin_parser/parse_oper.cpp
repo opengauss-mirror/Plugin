@@ -1738,10 +1738,10 @@ static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
         if (strcmp("+", oprname) == 0 || strcmp("-", oprname) == 0 ||
             strcmp("*", oprname) == 0 || strcmp("/", oprname) == 0) {
             // + - * /
-            if (!IsNumericCatalogByOid(ltypeId)) {
+            if (!IsNumericCatalogByOid(ltypeId) && ltypeId != INTERVALOID) {
                 ltypeId = INT4OID;
             }
-            if (!IsNumericCatalogByOid(rtypeId)) {
+            if (!IsNumericCatalogByOid(rtypeId) && rtypeId != INTERVALOID) {
                 rtypeId = INT4OID;
             }
             transformed = true;

@@ -498,6 +498,21 @@ DROP OPERATOR IF EXISTS pg_catalog.+(number, interval);
 DROP OPERATOR IF EXISTS pg_catalog.+(interval, number);
 DROP OPERATOR IF EXISTS pg_catalog.-(text, interval);
 DROP OPERATOR IF EXISTS pg_catalog.-(number, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(json, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, json);
+DROP OPERATOR IF EXISTS pg_catalog.-(json, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(blob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, blob);
+DROP OPERATOR IF EXISTS pg_catalog.-(blob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(longblob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.-(longblob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(mediumblob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.-(mediumblob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(tinyblob, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.-(tinyblob, interval);
 do $$
 begin
         update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'date_pl_interval'::regproc
@@ -528,6 +543,22 @@ begin
             where oprname = '-' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;
 end
 $$;
+DROP FUNCTION IF EXISTS pg_catalog.op_json_add_intr (json, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_json (interval, json);
+DROP FUNCTION IF EXISTS pg_catalog.op_json_sub_intr (json, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_blob_add_intr (blob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_blob (interval, blob);
+DROP FUNCTION IF EXISTS pg_catalog.op_blob_sub_intr (blob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_lblob_add_intr (longblob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_lblob (interval, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.op_lblob_sub_intr (longblob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_mblob_add_intr (mediumblob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_mblob (interval, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.op_mblob_sub_intr (mediumblob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_tblob_add_intr (tinyblob, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_tblob (interval, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.op_tblob_sub_intr (tinyblob, interval);
+
 DROP FUNCTION IF EXISTS pg_catalog.op_num_add_intr (numeric, interval);
 DROP FUNCTION IF EXISTS pg_catalog.op_text_add_intr (text, interval);
 DROP FUNCTION IF EXISTS pg_catalog.op_date_add_intr (date, interval);

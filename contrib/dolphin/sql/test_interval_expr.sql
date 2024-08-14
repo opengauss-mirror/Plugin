@@ -68,6 +68,16 @@ select interval '1 2 3' minute to microsecond;
 select interval '1 2' second_microsecond;
 select interval '1 2' second to microsecond;
 
+create table k_1(a json,b blob,c longblob,d mediumblob,e tinyblob,f binary(20));
+insert k_1 values('"2024-01-11 11:49:25"','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25');
+select `a`+  interval 1 day,`b`+  interval 1 day,`c`+ interval 1 day,`d`+ interval 1 day,`e`+ interval 1 day,`f`+ interval 1 day from k_1;
+drop table k_1;
+select cast('1.23' as json) + (interval 1 day);
+select cast('1.23' as blob) + (interval 1 day);
+select cast('1.23' as longblob) + (interval 1 day);
+select cast('1.23' as mediumblob) + (interval 1 day);
+select cast('1.23' as tinyblob) + (interval 1 day);
+
 -- 绑定参数
 prepare stmt as 'select ? + interval 1 + ? year';
 execute stmt('2024-06-18 18:30:00', 1);
