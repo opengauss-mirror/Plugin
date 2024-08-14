@@ -5889,7 +5889,11 @@ bool IsTypeAcceptEmptyStr(Oid typeOid)
         case CHAROID:
             return true;
         default:
+#ifdef DOLPHIN
+            if (type_is_set(typeOid) || type_is_enum(typeOid)) {
+#else
             if (type_is_set(typeOid)) {
+#endif
                 return true;
             }
             return false;

@@ -235,7 +235,7 @@ Table "public.t_create_index_013"
 --------+------+-----------
  c      | text | 
 Indexes:
-    "index022" ubtree (c(2676)) WITH (storage_type=USTORE) TABLESPACE pg_default
+    "index022" ubtree (c(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
 
 --导入导出
 \! @abs_bindir@/gs_dump dump_index_db -p @portstring@ -f @abs_bindir@/dump_index.sql -F p >/dev/null 2>&1; echo $?
