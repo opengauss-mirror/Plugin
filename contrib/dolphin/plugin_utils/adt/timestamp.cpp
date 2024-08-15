@@ -180,8 +180,9 @@ static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, co
                              bool day_fix = false);
 #ifdef DOLPHIN
 Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time);
-Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time);
-Oid convert_cstring_to_datetime_time_internal(const char* str, Timestamp *datetime, TimeADT *time);
+Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time, Oid type);
+Oid convert_cstring_to_datetime_time_internal(const char* str, Timestamp *datetime, TimeADT *time,
+    bool* null_func_result = NULL);
 static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
@@ -7483,14 +7484,15 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     return TIMEOID;
 }
 
-Oid convert_cstring_to_datetime_time_internal(const char* str, Timestamp *datetime, TimeADT *time)
+Oid convert_cstring_to_datetime_time_internal(const char* str, Timestamp *datetime, TimeADT *time, bool* null_func_result)
 {
-        bool null_func_result = false;
         int fsec = 0, nano = 0, tm_type = DTK_NONE;
         struct pg_tm tt, *tm = &tt;
         bool warnings = false;
+        bool null_func_result_tmp = false;
+        null_func_result = null_func_result == NULL ? &null_func_result_tmp : null_func_result;
         /* Check whether the string is a full timestamp */
-        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings, &null_func_result);
+        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings, null_func_result);
         if (warnings && SQL_MODE_STRICT()) {
             ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("date/time field value out of range: \"%s\"", str)));
@@ -7519,12 +7521,14 @@ Oid convert_cstring_to_datetime_time_internal(const char* str, Timestamp *dateti
         }
         return InvalidOid;
 }
-Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time)
+
+Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time, Oid type)
 {
     size_t len = strlen(str);
     const char *start;
     const char *end = str + len;
-    Oid typid;
+    Oid typid = InvalidOid;
+    bool null_func_result = false;
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
@@ -7537,27 +7541,30 @@ Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     }
     /* Check whether the string is a full timestamp */
     if (len >= 12) {
-        typid = convert_cstring_to_datetime_time_internal(str, datetime, time);
-        if (typid != InvalidOid)
+        typid = convert_cstring_to_datetime_time_internal(str, datetime, time, &null_func_result);
+        if (typid != InvalidOid) {
+            if (null_func_result) {
+                return InvalidOid;
+            }
             return typid;
+        }
     }
 
-    /* Not a timestamp. Try to convert str to date/time*/
-    PG_TRY();
-    {
-        *datetime = DatumGetTimestamp(
-            DirectFunctionCall1(date_timestamp, DirectFunctionCall1(date_in, CStringGetDatum(start))));
-        typid = DATEOID;
-    }
-    PG_CATCH();
-    {
-        FlushErrorState();
+    if (type == DATEOID) {
+        Datum date = DirectFunctionCall1(date_in, CStringGetDatum(start));
+        if (DatumGetDateADT(date) >= B_FORMAT_DATEADT_MIN_VALUE && DatumGetDateADT(date) <= B_FORMAT_DATEADT_MAX_VALUE) {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(date_timestamp, date));
+            typid = DATEOID;
+        }
+    } else {
         *time = DatumGetTimeADT(
             DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-        check_b_format_time_range_with_ereport(*time);
-        typid = TIMEOID;
+        if (*time != B_FORMAT_TIME_INVALID_VALUE_TAG) {
+            check_b_format_time_range_with_ereport(*time);
+            typid = TIMEOID;
+        }
     }
-    PG_END_TRY();
+
     return typid;
 }
 
@@ -7812,7 +7819,8 @@ static bool get_time(Oid val_type, Datum value)
 
 Datum timediff(PG_FUNCTION_ARGS)
 {
-    TimeADT time1, time2;
+    TimeADT time1 = B_FORMAT_TIME_INVALID_VALUE_TAG;
+    TimeADT time2 = B_FORMAT_TIME_INVALID_VALUE_TAG;
     Timestamp datetime1, datetime2;
     Oid val_type1, val_type2;
     TimeADT result;
@@ -7826,14 +7834,20 @@ Datum timediff(PG_FUNCTION_ARGS)
     }
 
     if (val_type1 == UNKNOWNOID && val_type2 == DATEOID) {
-        val_type1 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(0)), &datetime1, &time1);
         val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+        val_type1 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(0)), &datetime1, &time1, val_type2);
     } else if (val_type1 == DATEOID && val_type2 == UNKNOWNOID) {
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
-        val_type2 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(1)), &datetime2, &time2);
+        val_type2 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(1)), &datetime2, &time2, val_type1);
     } else {
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
+        if (val_type1 == TIMEOID &&  time1 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
+            PG_RETURN_NULL();
+        }
         val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+        if (val_type2 == TIMEOID &&  time2 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
+            PG_RETURN_NULL();
+        }
     }
 
     if (val_type1 != val_type2) {

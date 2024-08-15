@@ -1092,6 +1092,73 @@ select timediff('2022-01-01',date'2022-01-02');
  -24:00:00
 (1 row)
 
+-- test timediff unknown入参结果错误
+select timediff(date'2022-12-12', 'asdcf');
+WARNING:  invalid input syntax for type date: "asdcf"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(time'11:11:11', 'asdcf');
+WARNING:  invalid input syntax for type time: "asdcf"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 11:11:11
+(1 row)
+
+select timediff('2022-12-12', '00:00:00'); 
+WARNING:  invalid input syntax for type time: "2022-12-12"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:20:22
+(1 row)
+
+select timediff('0000-00-00', time'00:00:01');
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+ timediff  
+-----------
+ -00:00:01
+(1 row)
+
+select timediff(time'00:00:01', '0000-00-00');
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:01
+(1 row)
+
+select timediff('0000-00-00', '00:00:00');
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
+select timediff('00:00:00', '0000-00-00');
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
+select timediff('0000-00-00', '0000-00-00');
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+WARNING:  invalid input syntax for type time: "0000-00-00"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
 -- 测试time_to_sec异常边界
 select time_to_sec(8385960);
 WARNING:  Truncated incorrect time value: "8385960"
