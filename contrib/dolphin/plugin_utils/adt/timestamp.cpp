@@ -7290,7 +7290,24 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
 {
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
         return false;
-    *result = timestamp_mi_interval(datetime, span);
+    
+    bool is_success = true;
+    PG_TRY();
+    {
+        Interval tspan;
+        tspan.month = -span->month;
+        tspan.day = -span->day;
+        tspan.time = -span->time;
+
+        *result = timestamp_pl_interval(datetime, &tspan);
+    }
+    PG_CATCH();
+    {
+        is_success = false;
+    }
+    PG_END_TRY();
+    if (!is_success)
+        return false;
 
     if (*result < B_FORMAT_TIMESTAMP_MIN_VALUE || *result > B_FORMAT_TIMESTAMP_MAX_VALUE)
         return false;

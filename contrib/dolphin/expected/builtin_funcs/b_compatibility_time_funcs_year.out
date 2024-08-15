@@ -130,7 +130,7 @@ CONTEXT:  referenced column: date_sub
 (1 row)
 
 SELECT timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724') as result;
-WARNING:  timestamp out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
  result 
 --------
@@ -187,7 +187,7 @@ insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
-WARNING:  timestamp out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
 WARNING:  interval out of range
@@ -245,7 +245,7 @@ insert into func_test(functionName, result) values('date_sub(cast(1901 as year),
 ERROR:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
-ERROR:  timestamp out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
 ERROR:  interval out of range
@@ -293,7 +293,7 @@ insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
-WARNING:  timestamp out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
 WARNING:  interval out of range
@@ -351,7 +351,7 @@ insert into func_test(functionName, result) values('date_sub(cast(1901 as year),
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
-WARNING:  timestamp out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
 WARNING:  interval out of range

@@ -6293,7 +6293,7 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
     }
     ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                errmsg("date/time field value out of range")));
+                errmsg("date/time field overflow")));
     PG_RETURN_NULL();
 }
 
@@ -6444,7 +6444,7 @@ Datum date_add_datetime_interval(PG_FUNCTION_ARGS)
     if (datetime_add_interval(datetime, span, &result)) {
         PG_RETURN_TIMESTAMP(result);
     }
-    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range")));
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field overflow")));
     PG_RETURN_NULL();
 }
 

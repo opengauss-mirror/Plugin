@@ -343,22 +343,22 @@ insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('1000
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 day)', adddate('9999-12-31', INTERVAL 1 day));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 month)', adddate('9999-12-31', INTERVAL 1 month));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 year)', adddate('9999-12-31', INTERVAL 1 year));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:59:59'', INTERVAL 1 second)', adddate('9999-12-31 23:59:59', INTERVAL 1 second));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:59:00'', INTERVAL 1 minute)', adddate('9999-12-31 23:59:00', INTERVAL 1 minute));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:00:00'', INTERVAL 1 hour)', adddate('9999-12-31 23:00:00', INTERVAL 1 hour));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(time''838:59:59'', INTERVAL 1 second)', adddate(time'838:59:59', INTERVAL 1 second));
 WARNING:  time field value out of range
@@ -375,22 +375,22 @@ insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('1000
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 day)', adddate('9999-12-31', INTERVAL 1 day));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 month)', adddate('9999-12-31', INTERVAL 1 month));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 year)', adddate('9999-12-31', INTERVAL 1 year));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:59:59'', INTERVAL 1 second)', adddate('9999-12-31 23:59:59', INTERVAL 1 second));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:59:00'', INTERVAL 1 minute)', adddate('9999-12-31 23:59:00', INTERVAL 1 minute));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(''9999-12-31 23:00:00'', INTERVAL 1 hour)', adddate('9999-12-31 23:00:00', INTERVAL 1 hour));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('adddate(time''838:59:59'', INTERVAL 1 second)', adddate(time'838:59:59', INTERVAL 1 second));
 ERROR:  time field value out of range
@@ -468,22 +468,22 @@ insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 day)', date_add('9999-12-31', INTERVAL 1 day));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 month)', date_add('9999-12-31', INTERVAL 1 month));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 year)', date_add('9999-12-31', INTERVAL 1 year));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:59:59'', INTERVAL 1 second)', date_add('9999-12-31 23:59:59', INTERVAL 1 second));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:59:00'', INTERVAL 1 minute)', date_add('9999-12-31 23:59:00', INTERVAL 1 minute));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:00:00'', INTERVAL 1 hour)', date_add('9999-12-31 23:00:00', INTERVAL 1 hour));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(time''838:59:59'', INTERVAL 1 second)', date_add(time'838:59:59', INTERVAL 1 second));
 WARNING:  time field value out of range
@@ -500,22 +500,22 @@ insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 day)', date_add('9999-12-31', INTERVAL 1 day));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 month)', date_add('9999-12-31', INTERVAL 1 month));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 year)', date_add('9999-12-31', INTERVAL 1 year));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:59:59'', INTERVAL 1 second)', date_add('9999-12-31 23:59:59', INTERVAL 1 second));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:59:00'', INTERVAL 1 minute)', date_add('9999-12-31 23:59:00', INTERVAL 1 minute));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(''9999-12-31 23:00:00'', INTERVAL 1 hour)', date_add('9999-12-31 23:00:00', INTERVAL 1 hour));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_add(time''838:59:59'', INTERVAL 1 second)', date_add(time'838:59:59', INTERVAL 1 second));
 ERROR:  time field value out of range
@@ -529,11 +529,11 @@ insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', d
 -- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 -- test date_sub(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
@@ -592,22 +592,22 @@ insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('100
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 day)', date_sub('9999-12-31', INTERVAL -1 day));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 month)', date_sub('9999-12-31', INTERVAL -1 month));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 year)', date_sub('9999-12-31', INTERVAL -1 year));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:59:59'', INTERVAL -1 second)', date_sub('9999-12-31 23:59:59', INTERVAL -1 second));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:59:00'', INTERVAL -1 minute)', date_sub('9999-12-31 23:59:00', INTERVAL -1 minute));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:00:00'', INTERVAL -1 hour)', date_sub('9999-12-31 23:00:00', INTERVAL -1 hour));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(time''838:59:59'', INTERVAL -1 second)', date_sub(time'838:59:59', INTERVAL -1 second));
 WARNING:  time field value out of range
@@ -624,22 +624,22 @@ insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('100
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 day)', date_sub('9999-12-31', INTERVAL -1 day));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 month)', date_sub('9999-12-31', INTERVAL -1 month));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 year)', date_sub('9999-12-31', INTERVAL -1 year));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:59:59'', INTERVAL -1 second)', date_sub('9999-12-31 23:59:59', INTERVAL -1 second));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:59:00'', INTERVAL -1 minute)', date_sub('9999-12-31 23:59:00', INTERVAL -1 minute));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''9999-12-31 23:00:00'', INTERVAL -1 hour)', date_sub('9999-12-31 23:00:00', INTERVAL -1 hour));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('date_sub(time''838:59:59'', INTERVAL -1 second)', date_sub(time'838:59:59', INTERVAL -1 second));
 ERROR:  time field value out of range
@@ -653,11 +653,11 @@ insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', da
 -- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
-ERROR:  date/time field value out of range
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 -- test addtime(datetime/time, time)
 -- 严格模式或者非严格模式都有值
