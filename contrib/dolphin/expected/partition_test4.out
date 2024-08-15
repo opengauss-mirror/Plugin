@@ -361,7 +361,7 @@ select pg_get_tabledef('test_part_ustore');
      PARTITION p4 VALUES LESS THAN (1200)                                                                                   +
  )                                                                                                                          +
  ENABLE ROW MOVEMENT;                                                                                                       +
- ALTER TABLE test_part_ustore ADD CONSTRAINT test_part_ustore_pkey PRIMARY KEY USING ubtree  (a) WITH (storage_type=USTORE);
+ ALTER TABLE test_part_ustore ADD CONSTRAINT test_part_ustore_pkey PRIMARY KEY USING ubtree  (a) WITH (storage_type=ustore);
 (1 row)
 
 select * from test_part_ustore partition(m2);
