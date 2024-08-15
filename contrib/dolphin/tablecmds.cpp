@@ -1386,7 +1386,7 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
             res = list_make2(def1, def2);
             if (g_instance.attr.attr_storage.enable_ustore && u_sess->attr.attr_sql.enable_default_ustore_table &&
                 relkind != RELKIND_MATVIEW && !IsSystemNamespace(relnamespace) && !assignedStorageType) {
-                DefElem* def3 = makeDefElem("storage_type", (Node*)makeString(TABLE_ACCESS_METHOD_USTORE));
+                DefElem* def3 = makeDefElem("storage_type", (Node*)makeString(TABLE_ACCESS_METHOD_USTORE_LOWER));
                 res = lappend(res, def3);
             }
         } else {
@@ -4697,6 +4697,7 @@ void ExecuteTruncate(TruncateStmt* stmt)
         }
 #endif
     }
+
     ExecuteTruncateGuts(rels, relids, relids_logged, rels_in_redis,
                         stmt->behavior, stmt->restart_seqs, stmt);
 
@@ -4708,6 +4709,7 @@ void ExecuteTruncate(TruncateStmt* stmt)
         heap_close(rel, NoLock);
     }
 }
+
 
 /*
  * ExecuteTruncateGuts
@@ -5061,10 +5063,10 @@ void ExecuteTruncateGuts(
 #ifdef ENABLE_MULTIPLE_NODES
     if (stmt) {
         /*
-        * In Postgres-XC, TRUNCATE needs to be launched to remote nodes before the
-        * AFTER triggers are launched. This insures that the triggers are being fired
-        * by correct events.
-        */
+         * In Postgres-XC, TRUNCATE needs to be launched to remote nodes before the
+         * AFTER triggers are launched. This insures that the triggers are being fired
+         * by correct events.
+         */
         if (IS_PGXC_COORDINATOR && !IsConnFromCoord()) {
             if (u_sess->attr.attr_sql.enable_parallel_ddl && !isFirstNode) {
                 bool is_temp = false;
@@ -8889,8 +8891,8 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
 #endif
         case AT_AlterColumnType: /* ALTER COLUMN TYPE */
             ATSimplePermissions(rel, ATT_TABLE | ATT_COMPOSITE_TYPE | ATT_FOREIGN_TABLE);
-            /* Performs own recursion */
             EventTriggerAlterTypeStart(cmd, rel);
+            /* Performs own recursion */
             ATPrepAlterColumnType(wqueue, tab, rel, recurse, recursing, cmd, lockmode);
             pass = AT_PASS_ALTER_TYPE;
             ATCheckDuplicateColumn(cmd, tab->subcmds[pass]);
@@ -10428,7 +10430,7 @@ static void repl_update_addcolumn_default(AlteredTableInfo* tab, Relation oldrel
     /* estate has been freed, prepare again */
     foreach (l, tab->constraints) {
         NewConstraint* con = (NewConstraint*)lfirst(l);
-        if (con->isdisable) 
+        if (con->isdisable)
             continue;
 
         switch (con->contype) {
@@ -10463,6 +10465,7 @@ static void repl_update_addcolumn_default(AlteredTableInfo* tab, Relation oldrel
     securec_check(rc, "\0", "\0");
     rc = memset_s(repl, i * sizeof(bool), false, i * sizeof(bool));
     securec_check(rc, "\0", "\0");
+
 
     scan = tableam_scan_begin(newrel, SnapshotNow, 0, NULL);
     oldCxt = MemoryContextSwitchTo(GetPerTupleMemoryContext(estate));
@@ -10503,7 +10506,6 @@ static void repl_update_addcolumn_default(AlteredTableInfo* tab, Relation oldrel
         }
 
         htup = heap_modify_tuple(tuple, newTupDesc, values, isnull, repl);
-        // simple_heap_update(newrel, &tuple->t_self, htup);
 
         /* Now check any constraints on the possibly-changed tuple */
         (void)ExecStoreTuple(htup, newslot, InvalidBuffer, false);
@@ -11017,12 +11019,13 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                             continue;
                         }
 
-                         if (repl_modify && ex->make_dml_change) {
+                        if (repl_modify && ex->make_dml_change) {
                             isnull[ex->attnum - 1] = true;
                         } else {
                             values[ex->attnum - 1] = ExecEvalExpr(ex->exprstate, econtext, &isnull[ex->attnum - 1]);
                         }
 
+                        
                         if (ex->is_autoinc) {
                             need_autoinc = (autoinc_attnum > 0);
                         }
@@ -13147,7 +13150,7 @@ static List* GetOriginalViewQuery(Oid rw_oid)
         evAction = (List *)stringToNode(evActionString);
     } else {
         elog(ERROR, "Cannot find the rewrite rule with oid %u.", rw_oid);
-            }
+    }
     systable_endscan(rewrite_scan);
     heap_close(rewrite_rel, RowExclusiveLock);
     return evAction;
@@ -13172,21 +13175,21 @@ List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid)
             query = parse_analyze(stmt->query, view_def, NULL, 0);
         } else {
             query = (Query*)stmt->query;
-            }
+        }
     } else if (IsA(stmtNode, CreateTableAsStmt)) {
         CreateTableAsStmt* stmt = (CreateTableAsStmt*)stmtNode;
         if (!IsA(stmt->query, Query)) {
             query = parse_analyze(stmt->query, view_def, NULL, 0);
         } else {
             query = (Query*)stmt->query;
-            }
-            }
+        }
+    }
     evAction = lappend(evAction, query);
     ReleaseSysCache(tup);
     pfree(view_def);
     list_free(raw_parsetree_list);
     return evAction;
-        }
+}
 
 void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
 {
@@ -13198,42 +13201,42 @@ void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
     HeapTuple rewrite_tup = systable_getnext(rewrite_scan);
     Form_pg_rewrite rewrite_form = (Form_pg_rewrite)GETSTRUCT(rewrite_tup);
     // update pg_rewrite
-        char* actiontree = nodeToString((Node*)evAction);
+    char* actiontree = nodeToString((Node*)evAction);
     Datum values[Natts_pg_rewrite] = { 0 };
     bool nulls[Natts_pg_rewrite] = { 0 };
     bool replaces[Natts_pg_rewrite] = { 0 };
-        HeapTuple new_dep_tuple;
-        values[Anum_pg_rewrite_ev_action - 1] = CStringGetTextDatum(actiontree);
-        replaces[Anum_pg_rewrite_ev_action - 1] = true;
-        new_dep_tuple = heap_modify_tuple(rewrite_tup, RelationGetDescr(rewrite_rel), values, nulls, replaces);
-        simple_heap_update(rewrite_rel, &new_dep_tuple->t_self, new_dep_tuple);
-        CatalogUpdateIndexes(rewrite_rel, new_dep_tuple);
-        CommandCounterIncrement();
+    HeapTuple new_dep_tuple;
+    values[Anum_pg_rewrite_ev_action - 1] = CStringGetTextDatum(actiontree);
+    replaces[Anum_pg_rewrite_ev_action - 1] = true;
+    new_dep_tuple = heap_modify_tuple(rewrite_tup, RelationGetDescr(rewrite_rel), values, nulls, replaces);
+    simple_heap_update(rewrite_rel, &new_dep_tuple->t_self, new_dep_tuple);
+    CatalogUpdateIndexes(rewrite_rel, new_dep_tuple);
+    CommandCounterIncrement();
     heap_freetuple_ext(new_dep_tuple);
     pfree_ext(actiontree);
     // get new_query_str from pg_rewrite
     Query* query = (Query*)linitial(evAction);
-        StringInfoData buf;
-        initStringInfo(&buf);
-        Relation ev_relation = heap_open(rewrite_form->ev_class, AccessShareLock);
-        get_query_def(query,
-            &buf,
-            NIL,
-            RelationGetDescr(ev_relation),
-            0,
-            -1,
-            0,
-            false,
-            false,
-            NULL,
-            false,
-            false);
-        appendStringInfo(&buf, ";");
-        ViewInfoForAdd * info = static_cast<ViewInfoForAdd *>(palloc(sizeof(ViewInfoForAdd)));
-        info->ev_class = rewrite_form->ev_class;
-        info->query_string = pstrdup(buf.data);
-        heap_close(ev_relation, AccessShareLock);
-        FreeStringInfo(&buf);
+    StringInfoData buf;
+    initStringInfo(&buf);
+    Relation ev_relation = heap_open(rewrite_form->ev_class, AccessShareLock);
+    get_query_def(query,
+        &buf,
+        NIL,
+        RelationGetDescr(ev_relation),
+        0,
+        -1,
+        0,
+        false,
+        false,
+        NULL,
+        false,
+        false);
+    appendStringInfo(&buf, ";");
+    ViewInfoForAdd * info = static_cast<ViewInfoForAdd *>(palloc(sizeof(ViewInfoForAdd)));
+    info->ev_class = rewrite_form->ev_class;
+    info->query_string = pstrdup(buf.data);
+    heap_close(ev_relation, AccessShareLock);
+    FreeStringInfo(&buf);
     new_query_str = lappend(new_query_str, info);
     *query_str = new_query_str;
     systable_endscan(rewrite_scan);
@@ -21142,24 +21145,28 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
 
             UnlockReleaseBuffer(buf);
         } else {
-            /*
-            * WAL-log the copied page. Unfortunately we don't know what kind of a
-            * page this is, so we have to log the full page including any unused
-            * space.
-            */
-            if (use_wal) {
-                log_newpage(&dst->smgr_rnode.node, forkNum, blkno, page, false, &tde_info);
-            }
-
-            if (RelationisEncryptEnable(rel)) {
-                bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+            if (RelationIsUstoreFormat(rel)) {
+                if (ExecuteUndoActionsPageForPartition(rel, dst, forkNum, blkno, blkno, ROLLBACK_OP_FOR_MOVE_TBLSPC)) {
+                    *dstptr = dst = smgropen(newFileNode, backendId);
+                    src = rel->rd_smgr;
+                }
             } else {
-                bufToWrite = page;
+                /*
+                * WAL-log the copied page. Unfortunately we don't know what kind of a
+                * page this is, so we have to log the full page including any unused
+                * space.
+                */
+                if (use_wal) {
+                    log_newpage(&dst->smgr_rnode.node, forkNum, blkno, page, false, &tde_info);
+                }
+                if (RelationisEncryptEnable(rel)) {
+                    bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+                } else {
+                    bufToWrite = page;
+                }
+                PageSetChecksumInplace((Page)bufToWrite, blkno);
+                smgrextend(dst, forkNum, blkno, bufToWrite, false);
             }
-
-            PageSetChecksumInplace((Page)bufToWrite, blkno);
-
-            smgrextend(dst, forkNum, blkno, bufToWrite, true);
         }
     }
 
@@ -21374,25 +21381,40 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
             MarkBufferDirty(buf);
             UnlockReleaseBuffer(buf);
         } else {
-            /*
-            * XLOG stuff
-            * Retry to open smgr in case it is cloesd when we process SI messages
-            */
             RelationOpenSmgr(dest);
-            if (use_wal) {
-                log_newpage(&dest->rd_smgr->smgr_rnode.node, forkNum, dest_blkno, page, true, &tde_info);
-            }
-
-            if (RelationisEncryptEnable(src)) {
-                bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+            if (RelationIsUstoreFormat(src)) {
+                PartitionToastInfo pToastInfo = {InvalidOid, InvalidOid, InvalidOid, InvalidOid, NULL, NULL};
+                if (OidIsValid(destToastOid)) {
+                    pToastInfo.srcPartTupleOid = srcToastOid;
+                    pToastInfo.destPartTupleOid = destToastOid;
+                    pToastInfo.tupDesc = srcTupleDesc;
+                    pToastInfo.chunkIdHashTable = chunkIdHashTable;
+                } else if (RelationIsToast(dest)) {
+                    pToastInfo.tupDesc = src->rd_att;
+                    pToastInfo.srcToastRelOid = src->rd_id;
+                    pToastInfo.destToastRelOid = dest->rd_id;
+                    pToastInfo.chunkIdHashTable = chunkIdHashTable;
+                }
+                if (ExecuteUndoActionsPageForPartition(src, dest->rd_smgr, forkNum, src_blkno, dest_blkno,
+                    ROLLBACK_OP_FOR_MERGE_PARTITION, &pToastInfo)) {
+                    RelationOpenSmgr(dest);
+                }
             } else {
-                bufToWrite = page;
+                if (use_wal) {
+                    log_newpage(&dest->rd_smgr->smgr_rnode.node, forkNum, dest_blkno, page, true, &tde_info);
+                }
+
+                if (RelationisEncryptEnable(src)) {
+                    bufToWrite = PageDataEncryptIfNeed(page, &tde_info, true);
+                } else {
+                    bufToWrite = page;
+                }
+
+                /* heap block mix in the block number to checksum. need recalculate */
+                PageSetChecksumInplace((Page)bufToWrite, dest_blkno);
+
+                smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, false);
             }
-
-            /* heap block mix in the block number to checksum. need recalculate */
-            PageSetChecksumInplace((Page)bufToWrite, dest_blkno);
-
-            smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, true);
         }
     }
 
@@ -27977,9 +27999,9 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
         ATExecCStoreMergePartition(partTableRel, cmd);
         return;
     }
-    /* Ustore tables do not support alter table merge partition operations in transaction blocks. */
+
     if (RelationIsUstoreFormat(partTableRel)) {
-        PreventTransactionChain(true, "ALTER TABLE MERGE PARTITION");
+        PreventTransactionChain(true, "ALTER TALBE MERGE PARITITON");
     }
 
     /* the source partitions, must be at least 2, to merge into 1 partition  */
@@ -28515,6 +28537,11 @@ static void ExecUndoActionsPageForRelation(Relation rel)
         RelationCloseSmgr(rel);
         return;
     } 
+
+    for (BlockNumber blkno = 0; blkno < srcHeapBlocks; blkno ++) {
+        ExecuteUndoActionsPageForPartition(rel, rel->rd_smgr, MAIN_FORKNUM, blkno, blkno,
+            ROLLBACK_OP_FOR_EXCHANGE_PARTITION);
+    }
 
     RelationCloseSmgr(rel);
 }
