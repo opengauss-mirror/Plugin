@@ -39323,18 +39323,21 @@ ColLabel:	normal_ident							{ $$ = $1; }
 				}
 		;
 
-DelimiterStmt: DELIMITER delimiter_str_names END_OF_INPUT
-			   {
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					setDelimiterName(yyscanner, $2, n);
-					$$ = (Node *)n;
-				}
-			|	DELIMITER delimiter_str_names END_OF_INPUT_COLON
+DelimiterStmt: DELIMITER {
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					yyextra->core_yy_extra.is_define_delimiter = true;
+				} delimiter_str_names all_end_of_input
 				{
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					yyextra->core_yy_extra.is_define_delimiter = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
-					setDelimiterName(yyscanner, $2, n);
+					setDelimiterName(yyscanner, $3, n);
 					$$ = (Node *)n;
 				}
+			;
+
+all_end_of_input: END_OF_INPUT
+				| END_OF_INPUT_COLON
 			;
 
 delimiter_str_names: delimiter_str_names delimiter_str_name
