@@ -372,6 +372,21 @@ alter table test_option1 add key ixd_at12 using btree (b) using aaa;
 alter table test_option1 add key ixd_at13 using btree (b) using aaa using btree;
 alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa using btree;
 
+create table child(TeaId int not null , TeaName varchar(20) not null, TeaAge  int, TeaAddress  varchar(50));
+insert into child values (1, 1, 1, 1);
+alter table child add constraint UN_1 unique(TeaName);
+alter table child add constraint UN_2 unique(TeaName);
+alter table child add constraint UN_3 unique(TeaName);
+ALTER TABLE child ADD CHECK (TeaName > 0);
+insert into child values (1, 1, 1, 1);
+ALTER TABLE child  DROP INDEX UN_1;
+\d+ child;
+ALTER TABLE child  DROP constraint UN_2;
+ALTER TABLE child  DROP INDEX UN_3;
+\d+ child;
+insert into child values (1, 1, 1, 1);
+drop table child;
+
 drop schema test_table_index cascade;
 reset current_schema;
 
