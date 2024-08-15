@@ -2011,6 +2011,68 @@ static void FetchSliceReftableOid(CreateStmt* stmt, Oid namespaceId)
     stmt->distributeby->referenceoid = refOid;
 }
 
+
+/* 
+ * mysql can delete the index directly when index is an unique index,
+ * but openguass cannot do it due to the constraint depent on index
+ * so here we use constraint oid replace index oid here
+ * only unique index will do the replace operation
+ */
+void delete_constraint_as_unique_index(ObjectAddress* object, ObjectAddress* dest)
+{
+    ScanKeyData key[3];
+    int nkeys;
+    SysScanDesc scan;
+    HeapTuple tup;
+    HeapTuple constrTup;
+    ObjectAddress otherObject;
+    Relation depRel;
+    Form_pg_constraint constrForm;
+
+    if (object == NULL || dest == NULL) {
+        return;
+    }
+    
+    depRel = heap_open(DependRelationId, AccessShareLock);
+
+    ScanKeyInit(&key[0], Anum_pg_depend_classid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(object->classId));
+    ScanKeyInit(&key[1], Anum_pg_depend_objid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(object->objectId));
+    if (object->objectSubId != 0) {
+        ScanKeyInit(
+            &key[2], Anum_pg_depend_objsubid, BTEqualStrategyNumber, F_INT4EQ, Int32GetDatum(object->objectSubId));
+        nkeys = 3;
+    } else {
+        nkeys = 2;
+    }
+
+    scan = systable_beginscan(depRel, DependDependerIndexId, true, NULL, nkeys, key);
+    while (HeapTupleIsValid(tup = systable_getnext(scan))) {
+        Form_pg_depend foundDep = (Form_pg_depend)GETSTRUCT(tup);
+        otherObject.classId = foundDep->refclassid;
+        otherObject.objectId = foundDep->refobjid;
+        otherObject.objectSubId = foundDep->refobjsubid;
+        if (otherObject.classId == ConstraintRelationId) {
+            constrTup = SearchSysCache1(CONSTROID, otherObject.objectId);
+            if (!HeapTupleIsValid(constrTup)) {
+                continue;
+            }
+            constrForm = (Form_pg_constraint) GETSTRUCT(constrTup);
+            if (CONSTRAINT_UNIQUE == constrForm->contype) {
+                dest->classId = otherObject.classId;
+                dest->objectId = otherObject.objectId;
+                dest->objectSubId = otherObject.objectSubId;
+                ReleaseSysCache(constrTup);
+                break;
+            } else {
+                ReleaseSysCache(constrTup);
+            }
+        }
+    }
+    systable_endscan(scan);
+    heap_close(depRel, AccessShareLock);
+}
+
+
 #ifdef ENABLE_MOT
 static void DetermineColumnCollationForMOTTable(Oid *collOid)
 {
@@ -3749,6 +3811,7 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
 #ifdef DOLPHIN
     int indrelid;
     Bitmapset* indreloids = NULL;
+    bool is_unique = false;
 #endif
     /* DROP CONCURRENTLY uses a weaker lock, and has some restrictions */
     if (drop->concurrent) {
@@ -4001,9 +4064,13 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
                 continue;
             }
             indrelid = ((Form_pg_index)GETSTRUCT(idx_tup))->indrelid;
+            is_unique = ((Form_pg_index)GETSTRUCT(idx_tup))->indisunique;
             ReleaseSysCache(idx_tup);
             if (indrelid > 0 && !bms_is_member(indrelid, indreloids)) {
                 indreloids = bms_add_member(indreloids, indrelid);
+            }
+            if (ENABLE_B_CMPT_MODE  && is_unique) {
+                delete_constraint_as_unique_index(&obj, objects->refs + objects->numrefs -1);
             }
         }
 #endif
