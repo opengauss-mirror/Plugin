@@ -731,9 +731,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) + interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
@@ -894,9 +894,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime(4)
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
@@ -1057,9 +1057,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) - interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
@@ -1127,9 +1127,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) + interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
@@ -1290,9 +1290,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime(4)
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
@@ -1453,9 +1453,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) - interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
@@ -2576,9 +2576,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) + interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
@@ -2739,9 +2739,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime(4)
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
@@ -2902,9 +2902,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) - interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day
@@ -2972,9 +2972,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: date + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) + interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp + interval 1 day
@@ -3135,9 +3135,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_add
 SQL function "date_add" statement 1
 referenced column: interval 1 day + date
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime(4)
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: interval 1 day + timestamp
@@ -3298,9 +3298,9 @@ WARNING:  Incorrect datetime value: "0000-00-00"
 CONTEXT:  referenced column: date_sub
 SQL function "date_sub" statement 1
 referenced column: date - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime(4) - interval 1 day
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp - interval 1 day

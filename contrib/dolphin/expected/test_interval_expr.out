@@ -2414,7 +2414,12 @@ select '2024-06-18 18:30:00' - interval `numeric` microsecond from all_types_tab
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `numeric` year_month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `numeric` year to month from all_types_table;
 ERROR:  interval year to month is not supported
 select '2024-06-18 18:30:00' - interval `numeric` day_hour from all_types_table;
@@ -2651,15 +2656,40 @@ WARNING:  invalid interval parameter
 select '2024-06-18 18:30:00' - interval `bit1` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `bit64` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `bit64` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `bit64` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `bit64` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `bit64` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `bit64` hour from all_types_table;
       ?column?       
 ---------------------
@@ -2937,17 +2967,42 @@ WARNING:  invalid interval parameter
 select '2024-06-18 18:30:00' - interval `boolean` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `date` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `date` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `date` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `date` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `date` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `date` hour from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
@@ -3060,13 +3115,28 @@ select '2024-06-18 18:30:00' - interval `date` second_microsecond from all_types
 select '2024-06-18 18:30:00' - interval `date` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time` week from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
@@ -3191,13 +3261,28 @@ select '2024-06-18 18:30:00' - interval `time` second_microsecond from all_types
 select '2024-06-18 18:30:00' - interval `time` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `time4` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time4` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time4` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `time4` week from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
@@ -3322,15 +3407,40 @@ select '2024-06-18 18:30:00' - interval `time4` second_microsecond from all_type
 select '2024-06-18 18:30:00' - interval `time4` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` hour from all_types_table;
          ?column?         
 --------------------------
@@ -3338,14 +3448,19 @@ select '2024-06-18 18:30:00' - interval `datetime` hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` minute from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime` second from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime` microsecond from all_types_table;
           ?column?          
 ----------------------------
@@ -3441,15 +3556,40 @@ select '2024-06-18 18:30:00' - interval `datetime` second_microsecond from all_t
 select '2024-06-18 18:30:00' - interval `datetime` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `datetime4` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` hour from all_types_table;
          ?column?         
 --------------------------
@@ -3457,14 +3597,19 @@ select '2024-06-18 18:30:00' - interval `datetime4` hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` minute from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `datetime4` second from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `datetime4` microsecond from all_types_table;
           ?column?          
 ----------------------------
@@ -3560,15 +3705,40 @@ select '2024-06-18 18:30:00' - interval `datetime4` second_microsecond from all_
 select '2024-06-18 18:30:00' - interval `datetime4` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` hour from all_types_table;
          ?column?         
 --------------------------
@@ -3576,14 +3746,19 @@ select '2024-06-18 18:30:00' - interval `timestamp` hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` minute from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp` second from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp` microsecond from all_types_table;
           ?column?          
 ----------------------------
@@ -3679,15 +3854,40 @@ select '2024-06-18 18:30:00' - interval `timestamp` second_microsecond from all_
 select '2024-06-18 18:30:00' - interval `timestamp` second to microsecond from all_types_table;
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `timestamp4` year from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` quarter from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` month from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` week from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` day from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` hour from all_types_table;
          ?column?         
 --------------------------
@@ -3695,14 +3895,19 @@ select '2024-06-18 18:30:00' - interval `timestamp4` hour from all_types_table;
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` minute from all_types_table;
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `timestamp4` second from all_types_table;
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `timestamp4` microsecond from all_types_table;
           ?column?          
 ----------------------------
@@ -5213,13 +5418,23 @@ select '2024-06-18 18:30:00' - interval `longblob` second to microsecond from al
 ERROR:  interval second to microsecond is not supported
 select '2024-06-18 18:30:00' - interval `text` year from all_types_table;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `text` quarter from all_types_table;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
-ERROR:  timestamp out of range
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
 select '2024-06-18 18:30:00' - interval `text` month from all_types_table;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
-WARNING:  date/time field value out of range
+WARNING:  date/time field overflow
  ?column? 
 ----------
  
@@ -5996,6 +6211,33 @@ select * from v2;
  2024-07-04 00:00:00
  2024-07-04 14:59:58
 (2 rows)
+
+select datetime'2024-06-11 14:29:25'+ interval datetime'2024-02-11 14:29:25' minute;
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
+select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
+
+select timestamp'9990-06-11 14:29:25' + interval 9 year;
+      ?column?       
+---------------------
+ 9999-06-11 14:29:25
+(1 row)
+
+select timestamp'9990-06-11 14:29:25' + interval 99 year;
+WARNING:  date/time field overflow
+ ?column? 
+----------
+ 
+(1 row)
 
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;

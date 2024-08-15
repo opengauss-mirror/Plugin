@@ -1387,6 +1387,10 @@ select * from v1;
 create view v2 as select c1 - interval 1 day as 'c1 - interval 1 day' from t3;
 select * from v2;
 
+select datetime'2024-06-11 14:29:25'+ interval datetime'2024-02-11 14:29:25' minute;
+select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
+select timestamp'9990-06-11 14:29:25' + interval 9 year;
+select timestamp'9990-06-11 14:29:25' + interval 99 year;
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 reset current_schema;
