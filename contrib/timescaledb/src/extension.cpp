@@ -52,8 +52,7 @@ static enum ExtensionState extstate = EXTENSION_STATE_UNKNOWN;
 
 static void local_extstate_gloabl()
 {
-    if(extstate == EXTENSION_STATE_UNKNOWN && global_extstate == EXTENSION_STATE_UNKNOWN)
-    {
+    if (extstate == EXTENSION_STATE_UNKNOWN && global_extstate == EXTENSION_STATE_UNKNOWN) {
         return;
     }
 
