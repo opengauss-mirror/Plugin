@@ -3212,5 +3212,23 @@ Datum DirectCall2WithNullArg(bool* isRetNull, PGFunction func, Oid collation, Da
     return result;
 }
 
+Datum DirectFunctionCall0(PGFunction func)
+{
+    FunctionCallInfoData fcinfo;
+    Datum result;
+
+    InitFunctionCallInfoData(fcinfo, NULL, 1, InvalidOid, NULL, NULL);
+
+    result = (*func)(&fcinfo);
+
+    /* Check for null result, since caller is clearly not expecting one */
+    if (fcinfo.isnull) {
+        ereport(ERROR, (errmodule(MOD_EXECUTOR), errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
+                errmsg("function returned NULL")));
+    }
+
+    return result;
+}
+
 #endif
 
