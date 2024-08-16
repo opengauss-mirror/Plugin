@@ -176,13 +176,12 @@ ALTER TABLE `Onek` DROP CONSTRAINT `onek_check_constraint_foo`;
 ALTER TABLE `Onek` ADD CONSTRAINT `onek_unique1_constraint` UNIQUE (`unique1`);
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "onek_unique1_constraint" for table "Onek"
 DROP INDEX `onek_unique1_constraint`;  -- to see whether it's there
-ERROR:  cannot drop index onek_unique1_constraint because constraint onek_unique1_constraint on table "Onek" requires it
-HINT:  You can drop constraint onek_unique1_constraint on table "Onek" instead.
 ALTER TABLE `Onek` RENAME CONSTRAINT `onek_unique1_constraint` TO `onek_unique1_constraint_foo`;
+ERROR:  constraint "onek_unique1_constraint" for table "Onek" does not exist
 DROP INDEX `onek_unique1_constraint_foo`;  -- to see whether it's there
-ERROR:  cannot drop index onek_unique1_constraint_foo because constraint onek_unique1_constraint_foo on table "Onek" requires it
-HINT:  You can drop constraint onek_unique1_constraint_foo on table "Onek" instead.
+ERROR:  index "onek_unique1_constraint_foo" does not exist
 ALTER TABLE `Onek` DROP CONSTRAINT `onek_unique1_constraint_foo`;
+ERROR:  constraint "onek_unique1_constraint_foo" of relation "Onek" does not exist
 -- renaming constraints vs. Inheritance
 CREATE TABLE `Constraint_Rename_Test` (`a` int CONSTRAINT `con1` CHECK (`a` > 0), `b` int, `c` int);
 \d "Constraint_Rename_Test"
