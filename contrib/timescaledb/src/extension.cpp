@@ -50,11 +50,14 @@
  */
 static enum ExtensionState extstate = EXTENSION_STATE_UNKNOWN;
 
-static void local_extstate2gloabl(){
-	if(extstate==EXTENSION_STATE_UNKNOWN && global_extstate == EXTENSION_STATE_UNKNOWN)
-		return;
-	
-	extstate = global_extstate;
+static void local_extstate_gloabl()
+{
+    if(extstate == EXTENSION_STATE_UNKNOWN && global_extstate == EXTENSION_STATE_UNKNOWN)
+    {
+        return;
+    }
+
+    extstate = global_extstate;
 }
 static bool
 extension_loader_present()
@@ -141,7 +144,7 @@ extension_set_state(enum ExtensionState newstate)
 			break;
 	}
 	extstate = newstate;
-	global_extstate = newstate;
+    global_extstate = newstate;
 	return true;
 }
 
@@ -217,7 +220,7 @@ bool
 ts_extension_invalidate(Oid relid)
 {
 	bool invalidate_all = false;
-	local_extstate2gloabl();
+    local_extstate_gloabl();
 	switch (extstate)
 	{
 		case EXTENSION_STATE_NOT_INSTALLED:
@@ -268,7 +271,7 @@ ts_extension_is_loaded(void)
 	 * See dumpDatabaseConfig in pg_dump.c. */
 	if (ts_guc_restoring || u_sess->proc_cxt.IsBinaryUpgrade)
 		return false;
-	local_extstate2gloabl();
+    local_extstate_gloabl();
 	if (EXTENSION_STATE_UNKNOWN == extstate || EXTENSION_STATE_TRANSITIONING == extstate)
 	{
 		/* status may have updated without a relcache invalidate event */

@@ -2420,7 +2420,7 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
 		psc->tsdb_loader_present = true;
 		psc->tsdb_NamedLWLockTrancheRequestsAllocated = 0;
 		psc->tsdb_lock_named_request_allowed = true;
-		psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
+        psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
 		return psc;
 	}
 	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) 
@@ -2499,7 +2499,7 @@ void init_session_vars(void)
 	psc->tsdb_ts_last_tune_time = NULL;
 	psc->tsdb_ts_last_tune_version = NULL;
 	psc->tsdb_ts_telemetry_cloud = NULL;
-	psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
+    psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
 	#ifdef TS_DEBUG
 	ts_shutdown_bgw = false;
 	ts_current_timestamp_mock = "";
