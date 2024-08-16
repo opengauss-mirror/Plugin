@@ -161,7 +161,7 @@ set_target_properties(dolphin PROPERTIES PREFIX "")
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin.control
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.0.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--1.0--1.1.sql
@@ -186,6 +186,12 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--3.0--4.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.0--3.0.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.0--5.0.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--4.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--2.0--2.0.1.sql
