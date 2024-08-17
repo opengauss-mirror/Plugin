@@ -142,6 +142,7 @@ typedef struct core_yy_extra_type {
     bool is_delimiter_name;
     bool is_last_colon;
     bool is_proc_end;
+    bool is_define_delimiter;
 } core_yy_extra_type;
 
 #ifdef FRONTEND_PARSER

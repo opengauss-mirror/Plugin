@@ -1,0 +1,16 @@
+set dolphin.sql_mode='';
+delimiter //
+select 1//
+ ?column? 
+----------
+        1
+(1 row)
+
+delimiter ;
+select 1;
+ ?column? 
+----------
+        1
+(1 row)
+
+set dolphin.sql_mode=default;
