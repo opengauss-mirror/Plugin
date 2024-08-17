@@ -232,12 +232,12 @@ HnswNewBuffer(Relation index, ForkNumber forkNum)
  * Init page
  */
 void
-HnswInitPage(Buffer buf, Page page)
+HnswInitPage(Buffer buf, Page page, uint8 pageType)
 {
     PageInit(page, BufferGetPageSize(buf), sizeof(HnswPageOpaqueData));
     HnswPageGetOpaque(page)->nextblkno = InvalidBlockNumber;
-    HnswPageGetOpaque(page)->pageType = HNSW_DEFAULT_PAGE_TYPE;
     HnswPageGetOpaque(page)->page_id = HNSW_PAGE_ID;
+    HnswPageGetOpaque(page)->pageType = pageType;
 }
 
 /*
