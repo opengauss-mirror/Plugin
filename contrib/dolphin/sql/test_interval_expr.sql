@@ -1372,6 +1372,10 @@ select '2024-06-18 18:30:00' - interval `NULL` minute to microsecond from all_ty
 select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types_table;
 select '2024-06-18 18:30:00' - interval `NULL` second to microsecond from all_types_table;
 
+select datetime'2024-06-11 14:29:25'+ interval datetime'2024-02-11 14:29:25' minute;
+select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
+select timestamp'9990-06-11 14:29:25' + interval 9 year;
+select timestamp'9990-06-11 14:29:25' + interval 99 year;
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 reset current_schema;
