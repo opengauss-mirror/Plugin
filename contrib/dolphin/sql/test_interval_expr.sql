@@ -209,6 +209,25 @@ select '2024-06-18 18:30:00' - interval 1 + c1 minute to microsecond from t1;
 select '2024-06-18 18:30:00' - interval 1 + c1 second_microsecond from t1;
 select '2024-06-18 18:30:00' - interval 1 + c1 second to microsecond from t1;
 
+-- 函数
+set dolphin.cmpt_version=8.0;
+select date_add(time'38:59:58', interval '5 4' year_month);
+select date_add(time'38:59:58', interval '5 4' day_minute);
+select date_add(time'38:59:58', interval '5:4' day_second);
+select date_add(time'38:59:58', interval '5:4' day_hour);
+select date_add(time'38:59:58', interval '5:4' hour_minute);
+select date_add(time'38:59:58', interval '5 4' hour_second);
+select date_add(time'38:59:58', interval '5 4' minute_second);
+select date_add(time'38:59:58', interval '5 4' week);
+select date_sub(time'38:59:58', interval '5 4' year_month);
+select date_sub(time'38:59:58', interval '5 4' day_minute);
+select date_sub(time'38:59:58', interval '5:4' day_second);
+select date_sub(time'38:59:58', interval '5:4' day_hour);
+select date_sub(time'38:59:58', interval '5:4' hour_minute);
+select date_sub(time'38:59:58', interval '5 4' hour_second);
+select date_sub(time'38:59:58', interval '5 4' minute_second);
+select date_sub(time'38:59:58', interval '5 4' week);
+set dolphin.cmpt_version=5.7;
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,

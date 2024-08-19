@@ -763,6 +763,21 @@ BEGIN
 END
 $$;
 
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(time, interval, boolean) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_add_explicit';
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(timestamp without time zone, interval, boolean) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(timestamptz, interval, boolean) RETURNS timestamptz AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(text, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(numeric, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(year, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_add(date, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(time, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2, $3)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(timestamp without time zone, interval, boolean) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(timestamptz, interval, boolean) RETURNS timestamptz AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(text, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(numeric, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(year, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub(date, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
+
 create or replace function pg_catalog.any2interval(anyelement, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
 create or replace function pg_catalog.any2interval(anyelement, integer, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
 
