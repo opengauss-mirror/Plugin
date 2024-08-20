@@ -742,7 +742,8 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             if (dterr == 0) {
                 if (nf == 1 && ftype[0] == DTK_NUMBER) {
                     /* for example, str = "301210054523", "301210054523.123" */
-                    dterr = NumberTimestamp(field[0], tm, &fsec);
+                    unsigned int date_flag = NO_ZERO_DATE_SET() ? TIME_NO_ZERO_DATE : 0;
+                    dterr = NumberTimestamp(field[0], tm, &fsec, date_flag);
                     dtype = DTK_DATE;
                 } else {
                     dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
@@ -1101,7 +1102,7 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     int dterr = 0;
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     if (ts < B_FORMAT_DATE_INT_MIN) {
-        if (ts != 0) {
+        if (ts != 0 || (ts == 0 && NO_ZERO_DATE_SET())) {
             ereport(level,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
         }
@@ -1109,7 +1110,7 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         return TIMESTAMP_ZERO;
     }
     /* find out how many digits in ts */
-    int cnt = 0;                                                                                                                                                        
+    int cnt = 0;
     int64 date = ts;
     int time = 0;
     int64 tmp = ts;
@@ -1175,7 +1176,7 @@ Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts, bool is_explici
 {
     TimeErrorType time_error_type = TIME_CORRECT;
     int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
-    if (is_explicit && time_error_type == TIME_INCORRECT && ts != 0) {
+    if (is_explicit && time_error_type == TIME_INCORRECT && ((ts != 0) || (ts == 0 && NO_ZERO_DATE_SET()))) {
         PG_RETURN_NULL();
     }
     PG_RETURN_TIMESTAMP(result);
