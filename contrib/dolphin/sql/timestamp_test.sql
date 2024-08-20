@@ -69,3 +69,53 @@ insert into t_set0004(c3, c4) values ('red,blue', '0,1,1.01314');
 select cast(c1 as date), cast(c2 as date), cast(c3 as date), cast(c4 as date) from t_set0004 order by 1,2,3,4;
 select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime) from t_set0004 order by 1,2,3,4;
 
+
+create table t_tinyint0003(
+    c1 tinyint,
+    c2 tinyint(1),
+    c3 tinyint(255),
+    c4 int1,
+    c5 tinyint,
+    c6 tinyint(1) default '0',
+    c7 tinyint(10) not null default '0',
+    c8 int1 default '0');
+insert into t_tinyint0003 values (0, 0, 0, 0, 0, 0, 0, 0);
+
+create table t_tinyint0004(
+    c1 int1,
+    c2 int2,
+    c3 int4,
+    c4 int8,
+	c5 uint1,
+    c6 uint2,
+    c7 uint4,
+    c8 uint8,
+	c9 float4,
+	c10 float8,
+	c11 numeric
+    );
+insert into t_tinyint0004 values (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+select cast(0 as datetime);
+select cast(0 as timestamp);
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime) from t_tinyint0003 order by 1;
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime)  from t_tinyint0004 order by 1;
+
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+select cast(0 as datetime);
+select cast(0 as timestamp);
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime) from t_tinyint0003 order by 1;
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime) from t_tinyint0004 order by 1;
+
+
+set dolphin.sql_mode = 'no_zero_date';
+select cast(0 as datetime);
+select cast(0 as timestamp);
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime) from t_tinyint0003 order by 1;
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime)  from t_tinyint0004 order by 1;
+
+
+drop table t_tinyint0003;
+drop table t_tinyint0004;
+reset dolphin.sql_mode;

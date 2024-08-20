@@ -82,6 +82,18 @@ CREATE TABLE test_multi_type SELECT
 `set_t` <=> day_of_week not like 'foo' as `set_t_not_like_enum`,
 `json` <=> day_of_week not like 'foo' as `json_not_like_enum`
 FROM test_multi_type_table, test_enum_table;
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime_like_enum
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime(4)_like_enum
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp_like_enum
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp(4)_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: char_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -613,9 +625,21 @@ UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_ty
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`time_like_enum` = test_multi_type_table.`time` <=> test_enum_table.day_of_week like 'foo';
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`time(4)_like_enum` = test_multi_type_table.`time(4)` <=> test_enum_table.day_of_week like 'foo';
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`datetime_like_enum` = test_multi_type_table.`datetime` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`datetime(4)_like_enum` = test_multi_type_table.`datetime(4)` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime(4)_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`timestamp_like_enum` = test_multi_type_table.`timestamp` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`timestamp(4)_like_enum` = test_multi_type_table.`timestamp(4)` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp(4)_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`year_like_enum` = test_multi_type_table.`year` <=> test_enum_table.day_of_week like 'foo';
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`char_like_enum` = test_multi_type_table.`char` <=> test_enum_table.day_of_week like 'foo';
 WARNING:  invalid input syntax for type double precision: "1.23a"

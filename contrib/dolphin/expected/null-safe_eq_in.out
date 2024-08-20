@@ -102,6 +102,18 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_in_varbinary
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_in_text
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime_not_in_datetime
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime(4)_not_in_datetime(4)
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp_not_in_timestamp
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp(4)_not_in_timestamp(4)
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: char_not_in_char
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -667,9 +679,21 @@ UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`date_not_in_d
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`time_not_in_time` = test_multi_type_table.`time` <=> `time` not in (select `time` from test_multi_type_table);
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`time(4)_not_in_time(4)` = test_multi_type_table.`time(4)` <=> `time(4)` not in (select `time(4)` from test_multi_type_table);
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`datetime_not_in_datetime` = test_multi_type_table.`datetime` <=> `datetime` not in (select `datetime` from test_multi_type_table);
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime_not_in_datetime
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`datetime(4)_not_in_datetime(4)` = test_multi_type_table.`datetime(4)` <=> `datetime(4)` not in (select `datetime(4)` from test_multi_type_table);
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "datetime_uint8_eq" statement 1
+referenced column: datetime(4)_not_in_datetime(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`timestamp_not_in_timestamp` = test_multi_type_table.`timestamp` <=> `timestamp` not in (select `timestamp` from test_multi_type_table);
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp_not_in_timestamp
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`timestamp(4)_not_in_timestamp(4)` = test_multi_type_table.`timestamp(4)` <=> `timestamp(4)` not in (select `timestamp(4)` from test_multi_type_table);
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
+referenced column: timestamp(4)_not_in_timestamp(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`year_not_in_year` = test_multi_type_table.`year` <=> `year` not in (select `year` from test_multi_type_table);
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_not_in_char` = test_multi_type_table.`char` <=> `char` not in (select `char` from test_multi_type_table);
 WARNING:  invalid input syntax for type double precision: "1.23a"
