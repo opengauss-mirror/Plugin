@@ -492,3 +492,186 @@ CONTEXT:  referenced column: c4
     | 2025-01-01 00:00:00 |    | 
 (12 rows)
 
+create table t_tinyint0003(
+    c1 tinyint,
+    c2 tinyint(1),
+    c3 tinyint(255),
+    c4 int1,
+    c5 tinyint,
+    c6 tinyint(1) default '0',
+    c7 tinyint(10) not null default '0',
+    c8 int1 default '0');
+insert into t_tinyint0003 values (0, 0, 0, 0, 0, 0, 0, 0);
+create table t_tinyint0004(
+    c1 int1,
+    c2 int2,
+    c3 int4,
+    c4 int8,
+	c5 uint1,
+    c6 uint2,
+    c7 uint4,
+    c8 uint8,
+	c9 float4,
+	c10 float8,
+	c11 numeric
+    );
+insert into t_tinyint0004 values (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+select cast(0 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(0 as timestamp);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime) from t_tinyint0003 order by 1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c2
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c5
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c6
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c7
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c8
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 
+----+----+----+----+----+----+----+----
+    |    |    |    |    |    |    | 
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime)  from t_tinyint0004 order by 1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c2
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c5
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c6
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c7
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c8
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c9
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c10
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c11
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 | c9 | c10 | c11 
+----+----+----+----+----+----+----+----+----+-----+-----
+    |    |    |    |    |    |    |    |    |     | 
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+select cast(0 as datetime);
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
+select cast(0 as timestamp);
+      timestamptz       
+------------------------
+ 0000-00-00 00:00:00-08
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime) from t_tinyint0003 order by 1;
+         c1          |         c2          |         c3          |         c4          |         c5          |         c6          |         c7          
+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------
+ 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime) from t_tinyint0004 order by 1;
+         c1          |         c2          |         c3          |         c4          |         c5          |         c6          |         c7          |         c8          |         c9          |         c10         |         c11         
+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------
+ 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00 | 0000-00-00 00:00:00
+(1 row)
+
+set dolphin.sql_mode = 'no_zero_date';
+select cast(0 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(0 as timestamp);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime) from t_tinyint0003 order by 1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c2
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c5
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c6
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c7
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 
+----+----+----+----+----+----+----
+    |    |    |    |    |    | 
+(1 row)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime),cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime), cast(c10 as datetime), cast(c11 as datetime)  from t_tinyint0004 order by 1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c2
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c5
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c6
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c7
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c8
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c9
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c10
+WARNING:  date/time field value out of range: "000000"
+CONTEXT:  referenced column: c11
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 | c9 | c10 | c11 
+----+----+----+----+----+----+----+----+----+-----+-----
+    |    |    |    |    |    |    |    |    |     | 
+(1 row)
+
+drop table t_tinyint0003;
+drop table t_tinyint0004;
+reset dolphin.sql_mode;
