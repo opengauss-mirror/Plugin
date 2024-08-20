@@ -25,25 +25,22 @@ static relopt_kind hnsw_relopt_kind;
 void
 HnswInit(void)
 {
-	hnsw_relopt_kind = add_reloption_kind();
-	add_int_reloption(hnsw_relopt_kind, "m", "Max number of connections",
-					  HNSW_DEFAULT_M, HNSW_MIN_M, HNSW_MAX_M
-#if PG_VERSION_NUM >= 130000
-					  ,AccessExclusiveLock
-#endif
-		);
-	add_int_reloption(hnsw_relopt_kind, "ef_construction", "Size of the dynamic candidate list for construction",
-					  HNSW_DEFAULT_EF_CONSTRUCTION, HNSW_MIN_EF_CONSTRUCTION, HNSW_MAX_EF_CONSTRUCTION
-#if PG_VERSION_NUM >= 130000
-					  ,AccessExclusiveLock
-#endif
-		);
+    hnsw_relopt_kind = add_reloption_kind();
+    add_int_reloption(hnsw_relopt_kind, "m", "Max number of connections",
+                      HNSW_DEFAULT_M, HNSW_MIN_M, HNSW_MAX_M);
+    add_int_reloption(hnsw_relopt_kind, "ef_construction", "Size of the dynamic candidate list for construction",
+                      HNSW_DEFAULT_EF_CONSTRUCTION, HNSW_MIN_EF_CONSTRUCTION, HNSW_MAX_EF_CONSTRUCTION);
+    add_int_reloption(hnsw_relopt_kind, "pq_m", "Number of PQ subquantizer",
+                      HNSW_DEFAULT_PQ_M, HNSW_MIN_PQ_M, HNSW_MAX_PQ_M);
+    add_int_reloption(hnsw_relopt_kind, "pq_ksub", "Number of centroids for each PQ subquantizer",
+                      HNSW_DEFAULT_PQ_KSUB, HNSW_MIN_PQ_KSUB, HNSW_MAX_PQ_KSUB);
+    add_bool_reloption(hnsw_relopt_kind, "enable_pq", "Whether to enable PQ", HNSW_DEFAULT_ENABLE_PQ);
 
-	DefineCustomIntVariable("hnsw.ef_search", "Sets the size of the dynamic candidate list for search",
-							"Valid range is 1..1000.", &hnsw_ef_search,
-							HNSW_DEFAULT_EF_SEARCH, HNSW_MIN_EF_SEARCH, HNSW_MAX_EF_SEARCH, PGC_USERSET, 0, NULL, NULL, NULL);
+    DefineCustomIntVariable("hnsw.ef_search", "Sets the size of the dynamic candidate list for search",
+                            "Valid range is 1..1000.", &hnsw_ef_search, HNSW_DEFAULT_EF_SEARCH,
+                            HNSW_MIN_EF_SEARCH, HNSW_MAX_EF_SEARCH, PGC_USERSET, 0, NULL, NULL, NULL);
 
-	MarkGUCPrefixReserved("hnsw");
+    MarkGUCPrefixReserved("hnsw");
 }
 
 /*
@@ -98,28 +95,31 @@ hnswcostestimate_internal(PlannerInfo *root, IndexPath *path, double loop_count,
 static bytea *
 hnswoptions_internal(Datum reloptions, bool validate)
 {
-	static const relopt_parse_elt tab[] = {
-		{"m", RELOPT_TYPE_INT, offsetof(HnswOptions, m)},
-		{"ef_construction", RELOPT_TYPE_INT, offsetof(HnswOptions, efConstruction)},
-		{"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
-	};
+    static const relopt_parse_elt tab[] = {
+        {"m", RELOPT_TYPE_INT, offsetof(HnswOptions, m)},
+        {"ef_construction", RELOPT_TYPE_INT, offsetof(HnswOptions, efConstruction)},
+        {"enable_pq", RELOPT_TYPE_BOOL, offsetof(HnswOptions, enablePQ)},
+        {"pq_m", RELOPT_TYPE_INT, offsetof(HnswOptions, pqM)},
+        {"pq_ksub", RELOPT_TYPE_INT, offsetof(HnswOptions, pqKsub)},
+        {"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
+    };
 
 #if PG_VERSION_NUM >= 130000
-	return (bytea *) build_reloptions(reloptions, validate,
-									  hnsw_relopt_kind,
-									  sizeof(HnswOptions),
-									  tab, lengthof(tab));
+    return (bytea *) build_reloptions(reloptions, validate,
+                                      hnsw_relopt_kind,
+                                      sizeof(HnswOptions),
+                                      tab, lengthof(tab));
 #else
-	relopt_value *options;
-	int			numoptions;
-	HnswOptions *rdopts;
+    relopt_value *options;
+    int numoptions;
+    HnswOptions *rdopts;
 
-	options = parseRelOptions(reloptions, validate, hnsw_relopt_kind, &numoptions);
-	rdopts = (HnswOptions *)allocateReloptStruct(sizeof(HnswOptions), options, numoptions);
-	fillRelOptions((void *) rdopts, sizeof(HnswOptions), options, numoptions,
-				   validate, tab, lengthof(tab));
+    options = parseRelOptions(reloptions, validate, hnsw_relopt_kind, &numoptions);
+    rdopts = (HnswOptions *)allocateReloptStruct(sizeof(HnswOptions), options, numoptions);
+    fillRelOptions((void *) rdopts, sizeof(HnswOptions), options, numoptions,
+                   validate, tab, lengthof(tab));
 
-	return (bytea *) rdopts;
+    return (bytea *) rdopts;
 #endif
 }
 
