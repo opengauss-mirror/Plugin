@@ -559,6 +559,7 @@ static inline List* MakeNotLikeOpList();
 static inline Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char* op, Node* subSelect, int location);
 /* null is the minimum value in sortby */
 static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule);
+static bool GreaterThanHour (List* int_type);
 %}
 
 %define api.pure
@@ -1233,7 +1234,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CURSOR_NAME CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_ADD_P DATE_FORMAT_P DATE_SUB_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DISK DIV
 /* PGXC_BEGIN */
 	DIAGNOSTICS DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P DUAL_P
@@ -36981,6 +36982,60 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| DATE_ADD_P '(' a_expr ',' INTERVAL a_expr interval_unit ')'
+				{
+					bool isGreatThanHour = GreaterThanHour($7);
+					FuncCall *n1 = makeNode(FuncCall);
+					n1->funcname = SystemFuncName("any2interval");
+					n1->args = lcons($6, $7);
+					n1->agg_order = NIL;
+					n1->agg_star = FALSE;
+					n1->agg_distinct = FALSE;
+					n1->func_variadic = FALSE;
+					n1->over = NULL;
+					n1->location = @5;
+					n1->call_func = false;
+
+					FuncCall *n2 = makeNode(FuncCall);
+					n2->funcname = SystemFuncName("date_add");
+					n2->args = list_make3($3, (Node *)n1, makeBoolAConst(isGreatThanHour, @7));
+					n2->agg_order = NIL;
+					n2->agg_star = FALSE;
+					n2->agg_distinct = FALSE;
+					n2->func_variadic = FALSE;
+					n2->over = NULL;
+					n2->location = @1;
+					n2->call_func = false;
+
+					$$ = (Node *)n2;
+				}
+			| DATE_SUB_P '(' a_expr ',' INTERVAL a_expr interval_unit ')'
+				{
+					bool isGreatThanHour = GreaterThanHour($7);
+					FuncCall *n1 = makeNode(FuncCall);
+					n1->funcname = SystemFuncName("any2interval");
+					n1->args = lcons($6, $7);
+					n1->agg_order = NIL;
+					n1->agg_star = FALSE;
+					n1->agg_distinct = FALSE;
+					n1->func_variadic = FALSE;
+					n1->over = NULL;
+					n1->location = @5;
+					n1->call_func = false;
+
+					FuncCall *n2 = makeNode(FuncCall);
+					n2->funcname = SystemFuncName("date_sub");
+					n2->args = list_make3($3, (Node *)n1, makeBoolAConst(isGreatThanHour, @7));
+					n2->agg_order = NIL;
+					n2->agg_star = FALSE;
+					n2->agg_distinct = FALSE;
+					n2->func_variadic = FALSE;
+					n2->over = NULL;
+					n2->location = @1;
+					n2->call_func = false;
+
+					$$ = (Node *)n2;
+				}
 		;
 
 
@@ -40031,6 +40086,8 @@ alias_name_col_name_keyword:
 	COALESCE
 	| CAST
 	| DATE_P %prec IDENT
+	| DATE_ADD_P
+	| DATE_SUB_P
 	| EXTRACT
 	| SYSDATE
 	| WEIGHT_STRING
@@ -43707,6 +43764,16 @@ static char* IdentResolveToChar(DolphinIdent* ident, core_yyscan_t yyscanner)
 	else
 	{
 		return ident->str;
+	}
+}
+
+static bool GreaterThanHour (List* argsList) {
+	A_Const *n = (A_Const *) linitial(argsList);
+	if ((n->val.val.ival & (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(QUARTER)
+		| INTERVAL_MASK(WEEK) | INTERVAL_MASK(DAY))) != 0) {
+        return true;
+	} else {
+		return false;
 	}
 }
 /*

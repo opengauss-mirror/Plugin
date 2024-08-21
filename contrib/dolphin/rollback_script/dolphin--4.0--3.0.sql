@@ -586,6 +586,21 @@ DROP FUNCTION IF EXISTS pg_catalog.date_add (timestamp without time zone, interv
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
 
+DROP FUNCTION IF EXISTS pg_catalog.date_add(time, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamp without time zone, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamptz, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(text, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(numeric, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(year, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(date, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(time, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(timestamp without time zone, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(timestamptz, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(text, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(numeric, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(year, interval, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(date, interval, boolean);
+
 DROP FUNCTION IF EXISTS pg_catalog.any2interval(anyelement, integer);
 DROP FUNCTION IF EXISTS pg_catalog.any2interval(anyelement, integer, integer);
 

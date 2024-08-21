@@ -862,6 +862,109 @@ select '2024-06-18 18:30:00' - interval 1 + c1 second_microsecond from t1;
 
 select '2024-06-18 18:30:00' - interval 1 + c1 second to microsecond from t1;
 ERROR:  interval second to microsecond is not supported
+-- 函数
+set dolphin.cmpt_version=8.0;
+select date_add(time'38:59:58', interval '5 4' year_month);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'38:59:58', interval '5 4' day_minute);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'38:59:58', interval '5:4' day_second);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'38:59:58', interval '5:4' day_hour);
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_add(time'38:59:58', interval '5:4' hour_minute);
+ date_add 
+----------
+ 44:03:58
+(1 row)
+
+select date_add(time'38:59:58', interval '5 4' hour_second);
+ date_add 
+----------
+ 39:05:02
+(1 row)
+
+select date_add(time'38:59:58', interval '5 4' minute_second);
+ date_add 
+----------
+ 39:05:02
+(1 row)
+
+select date_add(time'38:59:58', interval '5 4' week);
+WARNING:  invalid input syntax for type numeric: "5 4"
+CONTEXT:  referenced column: date_add
+      date_add       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'38:59:58', interval '5 4' year_month);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'38:59:58', interval '5 4' day_minute);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'38:59:58', interval '5:4' day_second);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'38:59:58', interval '5:4' day_hour);
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+select date_sub(time'38:59:58', interval '5:4' hour_minute);
+ date_sub 
+----------
+ 33:55:58
+(1 row)
+
+select date_sub(time'38:59:58', interval '5 4' hour_second);
+ date_sub 
+----------
+ 38:54:54
+(1 row)
+
+select date_sub(time'38:59:58', interval '5 4' minute_second);
+ date_sub 
+----------
+ 38:54:54
+(1 row)
+
+select date_sub(time'38:59:58', interval '5 4' week);
+WARNING:  invalid input syntax for type numeric: "5 4"
+CONTEXT:  referenced column: date_sub
+      date_sub       
+---------------------
+--?.*
+(1 row)
+
+set dolphin.cmpt_version=5.7;
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,
