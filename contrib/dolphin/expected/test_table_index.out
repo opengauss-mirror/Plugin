@@ -847,6 +847,52 @@ alter table test_option1 add key ixd_at13 using btree (b) using aaa using btree;
 ERROR:  access method "aaa" does not exist
 alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa using btree;
 ERROR:  access method "aaa" does not exist
+create table child(TeaId int not null , TeaName varchar(20) not null, TeaAge  int, TeaAddress  varchar(50));
+insert into child values (1, 1, 1, 1);
+alter table child add constraint UN_1 unique(TeaName);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "un_1" for table "child"
+alter table child add constraint UN_2 unique(TeaName);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "un_2" for table "child"
+alter table child add constraint UN_3 unique(TeaName);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "un_3" for table "child"
+ALTER TABLE child ADD CHECK (TeaName > 0);
+insert into child values (1, 1, 1, 1);
+ERROR:  duplicate key value violates unique constraint "un_1"
+DETAIL:  Key ("TeaName")=(1) already exists.
+ALTER TABLE child  DROP INDEX UN_1;
+\d+ child;
+                             Table "test_table_index.child"
+   Column   |         Type          | Modifiers | Storage  | Stats target | Description 
+------------+-----------------------+-----------+----------+--------------+-------------
+ TeaId      | integer               | not null  | plain    |              | 
+ TeaName    | character varying(20) | not null  | extended |              | 
+ TeaAge     | integer               |           | plain    |              | 
+ TeaAddress | character varying(50) |           | extended |              | 
+Indexes:
+    "un_2" UNIQUE CONSTRAINT, btree ("TeaName") TABLESPACE pg_default
+    "un_3" UNIQUE CONSTRAINT, btree ("TeaName") TABLESPACE pg_default
+Check constraints:
+    "child_TeaName_check" CHECK ("TeaName"::double precision > 0::double precision)
+Has OIDs: no
+Options: orientation=row, compression=no
+
+ALTER TABLE child  DROP constraint UN_2;
+ALTER TABLE child  DROP INDEX UN_3;
+\d+ child;
+                             Table "test_table_index.child"
+   Column   |         Type          | Modifiers | Storage  | Stats target | Description 
+------------+-----------------------+-----------+----------+--------------+-------------
+ TeaId      | integer               | not null  | plain    |              | 
+ TeaName    | character varying(20) | not null  | extended |              | 
+ TeaAge     | integer               |           | plain    |              | 
+ TeaAddress | character varying(50) |           | extended |              | 
+Check constraints:
+    "child_TeaName_check" CHECK ("TeaName"::double precision > 0::double precision)
+Has OIDs: no
+Options: orientation=row, compression=no
+
+insert into child values (1, 1, 1, 1);
+drop table child;
 drop schema test_table_index cascade;
 NOTICE:  drop cascades to 11 other objects
 DETAIL:  drop cascades to table test_option1
