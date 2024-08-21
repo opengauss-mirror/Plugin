@@ -317,6 +317,8 @@ extern "C" DLL_PUBLIC Datum date_add_datetime_interval(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(date_add_timestamp_interval);
 extern "C" DLL_PUBLIC Datum date_add_timestamp_interval(PG_FUNCTION_ARGS);
+
+extern Datum DirectFunctionCall0(PGFunction func);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -7885,6 +7887,57 @@ Datum dolphin_datenot(PG_FUNCTION_ARGS)
     }
     j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
     PG_RETURN_UINT64(~((uint64)date2int(tm)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_add_explicit);
+extern "C" DLL_PUBLIC Datum date_add_explicit(PG_FUNCTION_ARGS);
+/**
+ * date_add(time, INTERVAL expr UNIT)
+*/
+Datum date_add_explicit(PG_FUNCTION_ARGS)
+{
+    int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    bool isGreaterThanHour = PG_GETARG_BOOL(2);
+    int cmpt_version = GetSessionContext()->cmpt_version;
+    if (cmpt_version == MYSQL_VERSION_5_7) {
+        if (span->month != 0) {
+            ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
+            PG_RETURN_NULL();
+        }
+    } else if (cmpt_version == MYSQL_VERSION_8_0) {
+        if (span->month != 0 || span->day != 0 || isGreaterThanHour) {
+            // convert time to datetime, then call adddate_datetime_interval_t(datetime, interval)
+            bool isRetNull = false;
+            Datum timetxt = DirectFunctionCall1(time_text, time);
+            Datum curdt = DirectFunctionCall0(curdate);
+            Datum curdatetime = DirectFunctionCall1(date_timestamp, curdt);
+            Datum curdatetimetxt = DirectFunctionCall1(timestamp_text, curdatetime);
+            Datum datetime = DirectFunctionCall2(addtime_text, curdatetimetxt, timetxt);
+
+            Datum result = DirectCall2(&isRetNull, adddate_datetime_interval_t,
+                InvalidOid, datetime, PG_GETARG_DATUM(1));
+            if (isRetNull) {
+                PG_RETURN_NULL();
+            } else {
+                return result;
+            }
+        }
+    }
+
+    TimeADT time2 = span->time;
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC);
+#else
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE);
+#endif
+    time += time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        return DirectFunctionCall1(time_text, time);
+    }
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("time field value out of range")));
+    PG_RETURN_NULL();
 }
 #endif
 
