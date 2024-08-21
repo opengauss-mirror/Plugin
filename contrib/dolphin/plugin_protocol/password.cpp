@@ -235,7 +235,7 @@ bool check_password(HeapTuple tuple, text* role, text* input_password)
     if (stored_password[0] == '$') {
         char salt[SHA1_HASH_SIZE + 1] = { 0 };
         char* plaintext = text_to_cstring(input_password);
-        char parts[PARAMNUM_3][CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
+        char parts[PARAMNUM_3][DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
         int num_parts = 0;
         errno_t rc = 0;
         char *str_text = (char *)palloc(strlen(stored_password) + 1);
@@ -243,12 +243,12 @@ bool check_password(HeapTuple tuple, text* role, text* input_password)
         securec_check(rc, "\0", "\0");
         char *token = strtok(str_text, "$");
         while (token != NULL && num_parts < PARAMNUM_3) {
-            rc = strncpy_s(parts[num_parts], CRYPT_MAX_PASSWORD_SIZE, token, strlen(token));
+            rc = strncpy_s(parts[num_parts], DOLPHIN_CRYPT_MAX_PASSWORD_SIZE, token, strlen(token));
             securec_check(rc, "\0", "\0");
             num_parts++;
             token = strtok(NULL, "$");
         }  
-        rc = strncpy_s(salt, SHA1_HASH_SIZE + 1, parts[PARAMNUM_2], CRYPT_SALT_LENGTH);
+        rc = strncpy_s(salt, SHA1_HASH_SIZE + 1, parts[PARAMNUM_2], DOLPHIN_CRYPT_SALT_LENGTH);
         securec_check(rc, "\0", "\0");
         pfree(str_text);
         Datum sha2_password = DirectFunctionCall2(make_scrambled_full_password_sha2,
