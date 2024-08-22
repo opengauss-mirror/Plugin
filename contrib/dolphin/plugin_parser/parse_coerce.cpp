@@ -77,13 +77,15 @@ extern Node* makeAConst(Value* v, int location);
     (AssertMacro(sizeof(target) - 1 == strlen(target)), strncmp(context, target, sizeof(target) - 1) == 0)
 
 #ifdef DOLPHIN
-static const int convertFunctionsCount = 3;
+static const int convertFunctionsCount = 4;
 typedef bool(*doConvert)(Oid*, Oid*, TYPCATEGORY*, TYPCATEGORY*);
 static bool String2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
 static bool Date2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
 static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
+static bool Bool2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
 
-static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
+static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others,
+                                                                  &Numeric2Others, &Bool2Others};
 
 #define CAST_FUNCTION_ROW 13
 #define CAST_FUNCTION_COLUMN 4
@@ -2190,6 +2192,43 @@ static bool Date2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEG
     }
     return result;
 }
+
+
+static bool Bool2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory)
+{
+    TYPCATEGORY preferCategory = *pcategory;
+    Oid nextType = *ntype;
+    TYPCATEGORY nextCategory = *ncategory;
+    bool result = false;
+
+    if (preferCategory == TYPCATEGORY_BOOLEAN && nextCategory == TYPCATEGORY_NUMERIC) {
+        /* bool and number or string mix, will return number type*/
+        *ptype = nextType;
+        *pcategory = nextCategory;
+        result = true;
+    } else if (nextCategory == TYPCATEGORY_BOOLEAN && preferCategory == TYPCATEGORY_NUMERIC) {
+        /* bool and number or string mix, will return number type*/
+        result = true;
+    } else if ((preferCategory == TYPCATEGORY_BOOLEAN && nextCategory == TYPCATEGORY_DATETIME) ||
+        (nextCategory == TYPCATEGORY_BOOLEAN && preferCategory == TYPCATEGORY_DATETIME)) {
+        /* bool and datetime mix, will return varchar type*/
+        *ptype = VARCHAROID;
+        *pcategory = TYPCATEGORY_STRING;
+        result = true;
+    } else if (preferCategory == TYPCATEGORY_BOOLEAN &&
+        (nextCategory == TYPCATEGORY_STRING || nextCategory == TYPCATEGORY_UNKNOWN)) {
+        /* bool and string mix, will return string type*/
+        *ptype = nextType;
+        *pcategory = nextCategory;
+        result = true;
+    } else if (nextCategory == TYPCATEGORY_BOOLEAN &&
+        (preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN)) {
+        /* bool and string mix, will return string type*/
+        result = true;
+    }
+    return result;
+}
+
 #endif
 /* choose_specific_expr_type
  * Choose case when and coalesce return value type in C_FORMAT.
@@ -2740,6 +2779,13 @@ Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, co
     } else if (strcmp(context, "UNION") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
     } else if (strcmp(context, "COALESCE") == 0 &&
+        can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+        node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    } else if (strcmp(context, "CASE/WHEN") == 0 && (inputTypeId == BOOLOID) &&
+        can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+        node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    }
+    else if (strcmp(context, "CASE/ELSE") == 0 && (inputTypeId == BOOLOID) &&
         can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
 #endif
