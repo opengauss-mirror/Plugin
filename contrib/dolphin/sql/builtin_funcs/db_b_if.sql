@@ -4,8 +4,10 @@ set current_schema to 'db_b_if';
 
 select if(TRUE, 1, 2);
 select if(FALSE, 1, 2);
--- wrong type for first param
+-- string type for first param
 select if('abc', 1, 2);
+select if('ASD', 1, 2);
+select if('ASD', 1, 2);
 
 -- '2022-01-30' is text, date '2022-01-30' is date
 CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as date_type;
