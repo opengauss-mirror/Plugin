@@ -176,22 +176,25 @@ CONTEXT:  referenced column: a
 -- ERROR
 -- string to boolean
 select if (true, '2022-01-30', true) as a, if (false, '2022-01-30', true) as b;
-ERROR:  CASE types boolean and text cannot be matched
-LINE 1: select if (true, '2022-01-30', true) as a, if (false, '2022-...
-                         ^
-CONTEXT:  referenced column: a
+     a      | b 
+------------+---
+ 2022-01-30 | 1
+(1 row)
+
 -- float to boolean
 select if (true, 1.1::float8, true) as a, if (false, 1.1::float8, true) as b;
-ERROR:  CASE types boolean and double precision cannot be matched
-LINE 1: select if (true, 1.1::float8, true) as a, if (false, 1.1::fl...
-                         ^
-CONTEXT:  referenced column: a
+  a  | b 
+-----+---
+ 1.1 | 1
+(1 row)
+
 -- numeric to boolean
 select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
-ERROR:  CASE types boolean and number cannot be matched
-LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
-                         ^
-CONTEXT:  referenced column: a
+  a   | b 
+------+---
+ 2.20 | 1
+(1 row)
+
 -- int to connproc
 select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conversion limit 1;
  pg_typeof 
@@ -199,6 +202,212 @@ select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conve
  regproc
 (1 row)
 
+drop table if exists t_if_001;
+NOTICE:  table "t_if_001" does not exist, skipping
+create table t_if_001(c_01 int primary key,c_02 varchar(20),c_03 int,c_04 bool,c_05 date,c_06 float);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_if_001_pkey" for table "t_if_001"
+insert into t_if_001 values(1,null,2,true,null,12.3),
+(2,'abc',123,false,'2022-03-08',0.00),
+(3,'ADB',-123,false,'9999-12-31',1.005),
+(4,'aAzZ',12.3,false,'2022-03-08',-1.00),
+(5,'&*$#@',-2147483647,true,'2022-03-08',-12.6),
+(7,'',2147483647,true,'2022-03-08',-12.300);
+select if(c_02,c_03,c_04) from t_if_001 where c_01=2;
+WARNING:  Truncated incorrect DOUBLE value: abc
+CONTEXT:  referenced column: c_04
+ c_04 
+------
+    0
+(1 row)
+
+select if(c_02,c_03,c_04) from t_if_001 where c_01=3;
+WARNING:  Truncated incorrect DOUBLE value: ADB
+CONTEXT:  referenced column: c_04
+ c_04 
+------
+    0
+(1 row)
+
+select if(c_02,c_03,c_04) from t_if_001 where c_01=4;
+WARNING:  Truncated incorrect DOUBLE value: aAzZ
+CONTEXT:  referenced column: c_04
+ c_04 
+------
+    0
+(1 row)
+
+select if(1,c_03,c_04) from t_if_001;
+    c_04     
+-------------
+           2
+         123
+        -123
+          12
+ -2147483647
+  2147483647
+(6 rows)
+
+select if(1,c_04,c_03) from t_if_001;
+ c_03 
+------
+    1
+    0
+    0
+    0
+    1
+    1
+(6 rows)
+
+select if(0,c_03,c_04) from t_if_001;
+ c_04 
+------
+    1
+    0
+    0
+    0
+    1
+    1
+(6 rows)
+
+select if(0,c_04,c_03) from t_if_001;
+    c_03     
+-------------
+           2
+         123
+        -123
+          12
+ -2147483647
+  2147483647
+(6 rows)
+
+set dolphin.sql_mode = '';
+create table t_if_005_1(c_01 int,c_02 varchar(20),c_03 int,c_04 bool);
+insert into t_if_005_1 values(1,'leishuai',25,1),(2,'lizhuo',30,1),(3,'liyazhou',24,1),(4,'zhanghuan',18,0),(5,null,23,0),(6,null,null,1),(7,'ningjie',null,0);
+select c_02,c_03,c_04 from t_if_005_1 group by if(1,c_04,c_02);
+   c_02    | c_03 | c_04 
+-----------+------+------
+ leishuai  |   25 | t
+ zhanghuan |   18 | f
+(2 rows)
+
+select c_02,c_03,c_04 from t_if_005_1 group by if(0,c_04,c_02);
+   c_02    | c_03 | c_04 
+-----------+------+------
+ liyazhou  |   24 | t
+ ningjie   |      | f
+ leishuai  |   25 | t
+ lizhuo    |   30 | t
+ zhanghuan |   18 | f
+           |   23 | f
+(6 rows)
+
+select c_02,c_03,c_04 from t_if_005_1 group by if(1,c_02,c_04);
+   c_02    | c_03 | c_04 
+-----------+------+------
+ liyazhou  |   24 | t
+ ningjie   |      | f
+ leishuai  |   25 | t
+ lizhuo    |   30 | t
+ zhanghuan |   18 | f
+           |   23 | f
+(6 rows)
+
+select c_02,c_03,c_04 from t_if_005_1 group by if(0,c_02,c_04);
+   c_02    | c_03 | c_04 
+-----------+------+------
+ leishuai  |   25 | t
+ zhanghuan |   18 | f
+(2 rows)
+
+reset dolphin.sql_mode;
+select if(1, c_02, c_04) from t_if_005_1;
+   c_04    
+-----------
+ leishuai
+ lizhuo
+ liyazhou
+ zhanghuan
+ 
+ 
+ ningjie
+(7 rows)
+
+select if(1, c_02,c_04) from t_if_005_1;
+   c_04    
+-----------
+ leishuai
+ lizhuo
+ liyazhou
+ zhanghuan
+ 
+ 
+ ningjie
+(7 rows)
+
+select if(0, c_02,c_04) from t_if_005_1;
+ c_04 
+------
+ 1
+ 1
+ 1
+ 0
+ 0
+ 1
+ 0
+(7 rows)
+
+select if(0, c_04,c_02) from t_if_005_1;
+   c_02    
+-----------
+ leishuai
+ lizhuo
+ liyazhou
+ zhanghuan
+ 
+ 
+ ningjie
+(7 rows)
+
+create table test_datetime(c1 datetime, c2 bool);
+insert into test_datetime values ('2024-01-01 10:10:10', 0);
+insert into test_datetime values ('2024-01-02 10:10:10', 1);
+select if (1, c1, c2) from test_datetime;
+         c2          
+---------------------
+ 2024-01-01 10:10:10
+ 2024-01-02 10:10:10
+(2 rows)
+
+select if (0, c1, c2) from test_datetime;
+ c2 
+----
+ 0
+ 1
+(2 rows)
+
+select if (1, c2, c1) from test_datetime;
+ c1 
+----
+ 0
+ 1
+(2 rows)
+
+select if (0, c2, c1) from test_datetime;
+         c1          
+---------------------
+ 2024-01-01 10:10:10
+ 2024-01-02 10:10:10
+(2 rows)
+
+select if(1,5 <> 3.14 or 0.5 >= 4,2) result;
+ result 
+--------
+      1
+(1 row)
+
+drop table test_datetime;
+drop table t_if_005_1;
+drop table t_if_001;
 drop schema db_b_if cascade;
 NOTICE:  drop cascades to view test_view
 reset current_schema;
