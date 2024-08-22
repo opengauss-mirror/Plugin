@@ -1391,6 +1391,21 @@ select '2024-06-18 18:30:00' - interval `NULL` minute to microsecond from all_ty
 select '2024-06-18 18:30:00' - interval `NULL` second_microsecond from all_types_table;
 select '2024-06-18 18:30:00' - interval `NULL` second to microsecond from all_types_table;
 
+set time zone '+8';
+create table t2(ts1 timestamp, ts2 interval);
+insert t2 values('1902-11-20 14:14:16.9999999', interval 2 minute);
+insert t2 values('09-09-14 23:59:59.9999999', interval 3 second);
+select ts1 - ts2 from t2;
+select ts1 + ts2 from t2;
+select ts1 - ts2 from t2;
+
+create table t3(c1 datetime);
+insert t3 values('2024-07-05'), ('2024-07-05 14:59:58');
+create view v1 as select c1 + interval 1 day as 'c1 + interval 1 day' from t3;
+select * from v1;
+create view v2 as select c1 - interval 1 day as 'c1 - interval 1 day' from t3;
+select * from v2;
+
 select datetime'2024-06-11 14:29:25'+ interval datetime'2024-02-11 14:29:25' minute;
 select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
 select timestamp'9990-06-11 14:29:25' + interval 9 year;
