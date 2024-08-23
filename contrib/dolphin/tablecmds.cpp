@@ -885,6 +885,7 @@ Relation table_open(Oid relationId, LOCKMODE lockmode)
 
 	return r;
 }
+static bool ModifiedColumnIsPrimaryKey(AlteredTableInfo* tab, AttrNumber attrnum);
 
 #ifdef DOLPHIN
 static List* ATGetNonUniqueKeyList(Relation rel);
@@ -18583,6 +18584,14 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
 
     DelDependencONDataType(rel, depRel, attTup);
 
+#ifdef DOLPHIN
+    /* Primary key column must be not null. */
+    def->is_not_null = def->is_not_null ? def->is_not_null : ModifiedColumnIsPrimaryKey(tab, attnum);
+    if (!attTup->attnotnull && def->is_not_null) {
+        tab->new_notnull = true;
+    }
+#endif
+
     heap_close(depRel, RowExclusiveLock);
 
     if (tab->is_first_after) {
@@ -18601,6 +18610,9 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     attTup->attbyval = tform->typbyval;
     attTup->attalign = tform->typalign;
     attTup->attstorage = tform->typstorage;
+#ifdef DOLPHIN
+    attTup->attnotnull = def->is_not_null;
+#endif
 
     ReleaseSysCache(typeTuple);
 
