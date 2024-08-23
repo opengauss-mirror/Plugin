@@ -868,13 +868,6 @@ process_drop_chunk(ProcessUtilityArgs *args, DropStmt *stmt)
 				if (compressed_chunk != NULL)
 					ts_chunk_drop(compressed_chunk, stmt->behavior, DEBUG1);
 			}
-			#ifdef OG30
-			else
-			{
-				ts_chunk_drop(chunk, stmt->behavior, DEBUG1);
-				handle = true;
-			}
-			#endif
 		}
 	}
 	return handle;
@@ -937,13 +930,6 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 					ts_hypertable_drop(compressed_hypertable, DROP_CASCADE);
 					handled = true;
 				}
-				#ifdef OG30
-				if (!TS_HYPERTABLE_HAS_COMPRESSION(ht))
-				{
-					ts_hypertable_drop(ht, DROP_CASCADE);
-					handled = true;
-				}
-				#endif
 			}
 		}
 	}
@@ -1128,15 +1114,8 @@ process_drop_start(ProcessUtilityArgs *args)
 	switch (stmt->removeType)
 	{
 		case OBJECT_TABLE:
-			#ifdef OG30
-				handled = process_drop_hypertable(args, stmt);
-				if (!handled) /* If hypertable is dropped, don't need to drop the related chunks*/
-					handled = process_drop_chunk(args, stmt);
-			#else
-				process_drop_hypertable(args, stmt);
-				process_drop_chunk(args, stmt);
-			#endif
-
+            process_drop_hypertable(args, stmt);
+            process_drop_chunk(args, stmt);
 			break;
 		case OBJECT_INDEX:
 			process_drop_hypertable_index(args, stmt);
@@ -3609,7 +3588,22 @@ process_utility_xact_abort(XactEvent event, void *arg)
 {
 	switch (event)
 	{
+        case XACT_EVENT_PREROLLBACK_CLEANUP:
+        case XACT_EVENT_POST_COMMIT_CLEANUP:
+        case XACT_EVENT_RECORD_COMMIT:
+        case XACT_EVENT_START:
+        case XACT_EVENT_STMT_FINISH:
+            break;
+
 		case XACT_EVENT_ABORT:
+            /*
+             * Reset the expect_chunk_modification flag because it this is an
+             * internal safety flag that is set to true only temporarily
+             * during chunk operations. It should never remain true across
+             * transactions.
+             */
+            expect_chunk_modification = false;
+            break;
 		default:
 			break;
 	}
