@@ -217,7 +217,7 @@ select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conve
 
 drop table if exists t_if_001;
 NOTICE:  table "t_if_001" does not exist, skipping
-create table t_if_001(c_01 int primary key,c_02 varchar(20),c_03 int,c_04 bool,c_05 date,c_06 float);
+create table t_if_001(c_01 int primary key,c_02 text,c_03 int,c_04 bool,c_05 date,c_06 float);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_if_001_pkey" for table "t_if_001"
 insert into t_if_001 values(1,null,2,true,null,12.3),
 (2,'abc',123,false,'2022-03-08',0.00),
@@ -226,24 +226,18 @@ insert into t_if_001 values(1,null,2,true,null,12.3),
 (5,'&*$#@',-2147483647,true,'2022-03-08',-12.6),
 (7,'',2147483647,true,'2022-03-08',-12.300);
 select if(c_02,c_03,c_04) from t_if_001 where c_01=2;
-WARNING:  Truncated incorrect DOUBLE value: abc
-CONTEXT:  referenced column: c_04
  c_04 
 ------
     0
 (1 row)
 
 select if(c_02,c_03,c_04) from t_if_001 where c_01=3;
-WARNING:  Truncated incorrect DOUBLE value: ADB
-CONTEXT:  referenced column: c_04
  c_04 
 ------
     0
 (1 row)
 
 select if(c_02,c_03,c_04) from t_if_001 where c_01=4;
-WARNING:  Truncated incorrect DOUBLE value: aAzZ
-CONTEXT:  referenced column: c_04
  c_04 
 ------
     0
