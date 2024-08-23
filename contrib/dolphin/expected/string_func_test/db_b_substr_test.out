@@ -574,6 +574,78 @@ select c1, c2, substr(c1 for c2) from test_row order by c1;
  abcdefg | -2 | 
 (3 rows)
 
+select substring(b'11' from b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring(b'10010' from b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
+select substring('11'::bytea from b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring('10010'::bytea from b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
+select substring('11'::text from b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring('10010'::text from b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
+select substring(b'11', b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring(b'10010', b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
+select substring('11'::bytea, b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring('10010'::bytea, b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
+select substring('11'::text, b'10010');
+ substring 
+-----------
+ 
+(1 row)
+
+select substring('10010'::text, b'11');
+ substring 
+-----------
+ 010
+(1 row)
+
 drop schema db_b_substr_test cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table template_string
