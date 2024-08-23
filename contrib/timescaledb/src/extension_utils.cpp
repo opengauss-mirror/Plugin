@@ -35,39 +35,6 @@
 
 #define RENDEZVOUS_LOADER_PRESENT_NAME "timescaledb.loader_present"
 
-enum ExtensionState
-{
-	/*
-	 * NOT_INSTALLED means that this backend knows that the extension is not
-	 * present.  In this state we know that the proxy table is not present.
-	 * Thus, the only way to get out of this state is a RelCacheInvalidation
-	 * indicating that the proxy table was added. This is the state returned
-	 * during DROP EXTENSION.
-	 */
-	EXTENSION_STATE_NOT_INSTALLED,
-
-	/*
-	 * UNKNOWN state is used only if we cannot be sure what the state is. This
-	 * can happen in two cases: 1) at the start of a backend or 2) We got a
-	 * relcache event outside of a transaction and thus could not check the
-	 * cache for the presence/absence of the proxy table or extension.
-	 */
-	EXTENSION_STATE_UNKNOWN,
-
-	/*
-	 * TRANSITIONING only occurs in the middle of a CREATE EXTENSION or ALTER
-	 * EXTENSION UPDATE
-	 */
-	EXTENSION_STATE_TRANSITIONING,
-
-	/*
-	 * CREATED means we know the extension is loaded, metadata is up-to-date,
-	 * and we therefore do not need a full check until a RelCacheInvalidation
-	 * on the proxy table.
-	 */
-	EXTENSION_STATE_CREATED,
-};
-
 static char *
 extension_version(void)
 {

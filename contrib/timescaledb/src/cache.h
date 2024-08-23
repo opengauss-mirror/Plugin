@@ -28,6 +28,39 @@ typedef enum CacheQueryFlags
 	CACHE_FLAG_NOCREATE = 1 << 1,
 } CacheQueryFlags;
 
+enum ExtensionState
+{
+    /*
+     * NOT_INSTALLED means that this backend knows that the extension is not
+     * present.  In this state we know that the proxy table is not present.
+     * Thus, the only way to get out of this state is a RelCacheInvalidation
+     * indicating that the proxy table was added. This is the state returned
+     * during DROP EXTENSION.
+     */
+    EXTENSION_STATE_NOT_INSTALLED,
+
+    /*
+     * UNKNOWN state is used only if we cannot be sure what the state is. This
+     * can happen in two cases: 1) at the start of a backend or 2) We got a
+     * relcache event outside of a transaction and thus could not check the
+     * cache for the presence/absence of the proxy table or extension.
+     */
+    EXTENSION_STATE_UNKNOWN,
+
+    /*
+     * TRANSITIONING only occurs in the middle of a CREATE EXTENSION or ALTER
+     * EXTENSION UPDATE
+     */
+    EXTENSION_STATE_TRANSITIONING,
+
+    /*
+     * CREATED means we know the extension is loaded, metadata is up-to-date,
+     * and we therefore do not need a full check until a RelCacheInvalidation
+     * on the proxy table.
+     */
+    EXTENSION_STATE_CREATED,
+};
+
 #define CACHE_FLAG_CHECK (CACHE_FLAG_MISSING_OK | CACHE_FLAG_NOCREATE)
 
 typedef struct CacheQuery
@@ -129,13 +162,12 @@ typedef struct tsdb_session_context {
 	char *tsdb_ts_last_tune_time;
 	char *tsdb_ts_last_tune_version;
 	char *tsdb_ts_telemetry_cloud;
-
+    enum ExtensionState tsdb_global_extstate;
 	#ifdef TS_DEBUG
 	bool tsdb_ts_shutdown_bgw;
 	char *tsdb_ts_current_timestamp_mock;
 	#endif
 } tsdb_session_context; 
-
 
 
 extern void ts_cache_init(Cache *cache);

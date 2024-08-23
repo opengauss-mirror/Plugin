@@ -115,6 +115,8 @@
 #define ts_telemetry_cloud (get_session_context()->tsdb_ts_telemetry_cloud)
 
 #define ts_current_timestamp_mock (get_session_context()->tsdb_ts_current_timestamp_mock)
+#define global_extstate (get_session_context()->tsdb_global_extstate)
+
 #ifdef TS_DEBUG
 #define ts_shutdown_bgw (get_session_context()->tsdb_ts_shutdown_bgw)
 #else
