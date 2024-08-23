@@ -141,6 +141,52 @@ HnswGetEfConstruction(Relation index)
 }
 
 /*
+ * Get whether to enable PQ
+ */
+bool
+HnswGetEnablePQ(Relation index)
+{
+    HnswOptions *opts = (HnswOptions *) index->rd_options;
+
+    if (opts) {
+        return opts->enablePQ;
+    }
+
+    return HNSW_DEFAULT_ENABLE_PQ;
+}
+
+/*
+ * Get the number of subquantizer
+ */
+int
+HnswGetPqM(Relation index)
+{
+    HnswOptions *opts = (HnswOptions *) index->rd_options;
+
+    if (opts) {
+        return opts->pqM;
+    }
+
+    return HNSW_DEFAULT_PQ_M;
+}
+
+/*
+ * Get the number of centroids for each subquantizer
+ */
+int
+HnswGetPqKsub(Relation index)
+{
+    HnswOptions *opts = (HnswOptions *) index->rd_options;
+
+    if (opts) {
+        return opts->pqKsub;
+    }
+
+    return HNSW_DEFAULT_PQ_KSUB;
+}
+
+
+/*
  * Get proc
  */
 FmgrInfo *
@@ -362,6 +408,36 @@ HnswUpdateMetaPageInfo(Page page, int updateEntry, HnswElement entryPoint, Block
 }
 
 /*
+ * Update the append metapage info
+ */
+static void
+HnswUpdateAppendMetaPageInfo(Page page, int updateEntry, HnswElement entryPoint,
+                             BlockNumber eleInsertSlotStartPage, BlockNumber neiInsertSlotStartPage)
+{
+    HnswAppendMetaPage metap = HnswPageGetAppendMeta(page);
+
+    if (updateEntry) {
+        if (entryPoint == NULL) {
+            metap->entryBlkno = InvalidBlockNumber;
+            metap->entryOffno = InvalidOffsetNumber;
+            metap->entryLevel = -1;
+        } else if (entryPoint->level > metap->entryLevel || updateEntry == HNSW_UPDATE_ENTRY_ALWAYS) {
+            metap->entryBlkno = entryPoint->blkno;
+            metap->entryOffno = entryPoint->offno;
+            metap->entryLevel = entryPoint->level;
+        }
+    }
+
+    if (BlockNumberIsValid(eleInsertSlotStartPage)) {
+        metap->elementInsertSlot = eleInsertSlotStartPage;
+    }
+
+    if (BlockNumberIsValid(neiInsertSlotStartPage)) {
+        metap->neighborInsertSlot = neiInsertSlotStartPage;
+    }
+}
+
+/*
  * Update the metapage
  */
 void
@@ -391,6 +467,37 @@ HnswUpdateMetaPage(Relation index, int updateEntry, HnswElement entryPoint, Bloc
 	else
 		GenericXLogFinish(state);
 	UnlockReleaseBuffer(buf);
+}
+
+/*
+ * Update the append metapage
+ */
+void
+HnswUpdateAppendMetaPage(Relation index, int updateEntry, HnswElement entryPoint, BlockNumber eleInsertPage,
+                         BlockNumber neiInsertPage, ForkNumber forkNum, bool building)
+{
+    Buffer buf;
+    Page page;
+    GenericXLogState *state;
+
+    buf = ReadBufferExtended(index, forkNum, HNSW_METAPAGE_BLKNO, RBM_NORMAL, NULL);
+    LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
+    if (building) {
+        state = NULL;
+        page = BufferGetPage(buf);
+    } else {
+        state = GenericXLogStart(index);
+        page = GenericXLogRegisterBuffer(state, buf, 0);
+    }
+
+    HnswUpdateAppendMetaPageInfo(page, updateEntry, entryPoint, eleInsertPage, neiInsertPage);
+
+    if (building) {
+        MarkBufferDirty(buf);
+    } else {
+        GenericXLogFinish(state);
+    }
+    UnlockReleaseBuffer(buf);
 }
 
 /*

@@ -111,6 +111,65 @@ CreateMetaPage(HnswBuildState * buildstate)
 }
 
 /*
+ * Create the append metapage
+ */
+static void
+CreateAppendMetaPage(HnswBuildState *buildstate)
+{
+    Relation index = buildstate->index;
+    ForkNumber forkNum = buildstate->forkNum;
+    Buffer buf;
+    Page page;
+    HnswAppendMetaPage appMetap;
+    int slotTypeNum = 2;
+
+    buf = HnswNewBuffer(index, forkNum);
+    page = BufferGetPage(buf);
+    HnswInitPage(buf, page);
+
+    /* Set append metapage data */
+    appMetap = HnswPageGetAppendMeta(page);
+    appMetap->magicNumber = HNSW_MAGIC_NUMBER;
+    appMetap->version = HNSW_VERSION;
+    appMetap->dimensions = buildstate->dimensions;
+    appMetap->m = buildstate->m;
+    appMetap->efConstruction = buildstate->efConstruction;
+    appMetap->entryBlkno = InvalidBlockNumber;
+    appMetap->entryOffno = InvalidOffsetNumber;
+    appMetap->entryLevel = -1;
+
+    /* set PQ info */
+    appMetap->enablePQ = buildstate->enablePQ;
+    appMetap->pqM = buildstate->pqM;
+    appMetap->pqKsub = buildstate->pqKsub;
+    appMetap->pqcodeSize = buildstate->pqcodeSize;
+    if (buildstate->enablePQ) {
+        appMetap->centerTableSize = (uint32)buildstate->dimensions * sizeof(float);
+        appMetap->pqTableSize = (uint32)buildstate->dimensions * buildstate->pqKsub * sizeof(float);
+        appMetap->pqTableNblk = (uint16)((appMetap->pqTableSize + HNSW_PQTABLE_STORAGE_SIZE - 1) /
+                                HNSW_PQTABLE_STORAGE_SIZE);
+    } else {
+        appMetap->centerTableSize = 0;
+        appMetap->pqTableSize = 0;
+        appMetap->pqTableNblk = 0;
+    }
+
+    /* set slot info */
+    appMetap->npages = (HNSW_DEFAULT_NPAGES_PER_SLOT * slotTypeNum) <
+                       (g_instance.attr.attr_storage.NBuffers / HNSW_BUFFER_THRESHOLD) ? HNSW_DEFAULT_NPAGES_PER_SLOT :
+                       (g_instance.attr.attr_storage.NBuffers / (slotTypeNum * HNSW_BUFFER_THRESHOLD));
+    appMetap->slotStartBlkno = HNSW_PQTABLE_START_BLKNO + appMetap->pqTableNblk;
+    appMetap->elementInsertSlot = InvalidBlockNumber;
+    appMetap->neighborInsertSlot = InvalidBlockNumber;
+
+    ((PageHeader) page)->pd_lower =
+        ((char *) appMetap + sizeof(HnswAppendMetaPageData)) - (char *) page;
+
+    MarkBufferDirty(buf);
+    UnlockReleaseBuffer(buf);
+}
+
+/*
  * Add a new page
  */
 static void
@@ -673,55 +732,68 @@ HnswSharedMemoryAlloc(Size size, void *state)
 static void
 InitBuildState(HnswBuildState * buildstate, Relation heap, Relation index, IndexInfo *indexInfo, ForkNumber forkNum)
 {
-	buildstate->heap = heap;
-	buildstate->index = index;
-	buildstate->indexInfo = indexInfo;
-	buildstate->forkNum = forkNum;
-	buildstate->typeInfo = HnswGetTypeInfo(index);
+    buildstate->heap = heap;
+    buildstate->index = index;
+    buildstate->indexInfo = indexInfo;
+    buildstate->forkNum = forkNum;
+    buildstate->typeInfo = HnswGetTypeInfo(index);
 
-	buildstate->m = HnswGetM(index);
-	buildstate->efConstruction = HnswGetEfConstruction(index);
-	buildstate->dimensions = TupleDescAttr(index->rd_att, 0)->atttypmod;
+    buildstate->m = HnswGetM(index);
+    buildstate->efConstruction = HnswGetEfConstruction(index);
+    buildstate->dimensions = TupleDescAttr(index->rd_att, 0)->atttypmod;
 
-	/* Disallow varbit since require fixed dimensions */
-	if (TupleDescAttr(index->rd_att, 0)->atttypid == VARBITOID)
-		elog(ERROR, "type not supported for hnsw index");
+    /* Disallow varbit since require fixed dimensions */
+    if (TupleDescAttr(index->rd_att, 0)->atttypid == VARBITOID) {
+        elog(ERROR, "type not supported for hnsw index");
+    }
 
-	/* Require column to have dimensions to be indexed */
-	if (buildstate->dimensions < 0)
-		elog(ERROR, "column does not have dimensions");
+    /* Require column to have dimensions to be indexed */
+    if (buildstate->dimensions < 0) {
+        elog(ERROR, "column does not have dimensions");
+    }
 
-	if (buildstate->dimensions > buildstate->typeInfo->maxDimensions)
-		elog(ERROR, "column cannot have more than %d dimensions for hnsw index", buildstate->typeInfo->maxDimensions);
+    if (buildstate->dimensions > buildstate->typeInfo->maxDimensions) {
+        elog(ERROR, "column cannot have more than %d dimensions for hnsw index", buildstate->typeInfo->maxDimensions);
+    }
 
-	if (buildstate->efConstruction < 2 * buildstate->m)
-		elog(ERROR, "ef_construction must be greater than or equal to 2 * m");
+    if (buildstate->efConstruction < 2 * buildstate->m) {
+        elog(ERROR, "ef_construction must be greater than or equal to 2 * m");
+    }
 
-	buildstate->reltuples = 0;
-	buildstate->indtuples = 0;
+    buildstate->reltuples = 0;
+    buildstate->indtuples = 0;
 
-	/* Get support functions */
-	buildstate->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
-	buildstate->normprocinfo = HnswOptionalProcInfo(index, HNSW_NORM_PROC);
-	buildstate->collation = index->rd_indcollation[0];
+    /* Get support functions */
+    buildstate->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
+    buildstate->normprocinfo = HnswOptionalProcInfo(index, HNSW_NORM_PROC);
+    buildstate->collation = index->rd_indcollation[0];
 
-	InitGraph(&buildstate->graphData, NULL, u_sess->attr.attr_memory.maintenance_work_mem * 1024L);
-	buildstate->graph = &buildstate->graphData;
-	buildstate->ml = HnswGetMl(buildstate->m);
-	buildstate->maxLevel = HnswGetMaxLevel(buildstate->m);
+    InitGraph(&buildstate->graphData, NULL, u_sess->attr.attr_memory.maintenance_work_mem * 1024L);
+    buildstate->graph = &buildstate->graphData;
+    buildstate->ml = HnswGetMl(buildstate->m);
+    buildstate->maxLevel = HnswGetMaxLevel(buildstate->m);
 
-	buildstate->graphCtx = AllocSetContextCreate(CurrentMemoryContext,
-						     "Hnsw build graph context",
-						     ALLOCSET_DEFAULT_SIZES);
-	buildstate->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
-											   "Hnsw build temporary context",
-											   ALLOCSET_DEFAULT_SIZES);
+    buildstate->graphCtx = AllocSetContextCreate(CurrentMemoryContext,
+                                                 "Hnsw build graph context",
+                                                 ALLOCSET_DEFAULT_SIZES);
+    buildstate->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
+                                               "Hnsw build temporary context",
+                                               ALLOCSET_DEFAULT_SIZES);
 
-	InitAllocator(&buildstate->allocator, &HnswMemoryContextAlloc, buildstate);
+    InitAllocator(&buildstate->allocator, &HnswMemoryContextAlloc, buildstate);
 
-	buildstate->hnswleader = NULL;
-	buildstate->hnswshared = NULL;
-	buildstate->hnswarea = NULL;
+    buildstate->hnswleader = NULL;
+    buildstate->hnswshared = NULL;
+    buildstate->hnswarea = NULL;
+
+    buildstate->enablePQ = HnswGetEnablePQ(index);
+    buildstate->pqM = HnswGetPqM(index);
+    buildstate->pqKsub = HnswGetPqKsub(index);
+    buildstate->pqTable = NULL;
+    buildstate->centerTable = NULL;
+    buildstate->pqcodeSize = 0;
+
+    buildstate->isUStore = RelationIsUstoreFormat(buildstate->heap);
 }
 
 /*

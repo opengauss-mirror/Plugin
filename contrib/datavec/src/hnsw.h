@@ -24,6 +24,12 @@
 /* Preserved page numbers */
 #define HNSW_METAPAGE_BLKNO	0
 #define HNSW_HEAD_BLKNO		1	/* first element page */
+#define HNSW_PQTABLE_START_BLKNO 1 /* pqtable start page */
+#define HNSW_PQTABLE_STORAGE_SIZE (uint16)(6*1024) /* pqtable storage size in each page */
+
+/* Append page slot info */
+#define HNSW_DEFAULT_NPAGES_PER_SLOT 50
+#define HNSW_BUFFER_THRESHOLD 4
 
 /* Must correspond to page numbers since page lock is used */
 #define HNSW_UPDATE_LOCK 	0
@@ -39,10 +45,21 @@
 #define HNSW_DEFAULT_EF_SEARCH	40
 #define HNSW_MIN_EF_SEARCH		1
 #define HNSW_MAX_EF_SEARCH		1000
+#define HNSW_DEFAULT_ENABLE_PQ  false
+#define HNSW_DEFAULT_PQ_M  1
+#define HNSW_MIN_PQ_M	1
+#define HNSW_MAX_PQ_M 65535
+#define HNSW_DEFAULT_PQ_KSUB 1
+#define HNSW_MIN_PQ_KSUB 1
+#define HNSW_MAX_PQ_KSUB 65535
 
 /* Tuple types */
 #define HNSW_ELEMENT_TUPLE_TYPE  1
 #define HNSW_NEIGHBOR_TUPLE_TYPE 2
+
+/* page types */
+#define HNSW_ELEMENT_PAGE_TYPE 1
+#define HNSW_NEIGHBOR_PAGE_TYPE 2
 
 /* Make graph robust against non-HOT updates */
 #define HNSW_HEAPTIDS 10
@@ -64,6 +81,7 @@
 
 #define HnswPageGetOpaque(page)	((HnswPageOpaque) PageGetSpecialPointer(page))
 #define HnswPageGetMeta(page)	((HnswMetaPageData *) PageGetContents(page))
+#define HnswPageGetAppendMeta(page) ((HnswAppendMetaPageData *) PageGetContents(page))
 
 #if PG_VERSION_NUM >= 150000
 #define RandomDouble() pg_prng_double(&pg_global_prng_state)
@@ -224,6 +242,7 @@ struct HnswElementData
 	OffsetNumber neighborOffno;
 	BlockNumber neighborPage;
 	HnswDatumPtr	value;
+    uint8 *pqcodes;
 	LWLock		lock;
 };
 
@@ -252,10 +271,13 @@ typedef struct HnswPairingHeapNode
 /* HNSW index options */
 typedef struct HnswOptions
 {
-	int32		vl_len_;		/* varlena header (do not touch directly!) */
-	int			m;				/* number of connections */
-	int			efConstruction; /* size of dynamic candidate list */
-}			HnswOptions;
+    int32 vl_len_; /* varlena header (do not touch directly!) */
+    int m;	 /* number of connections */
+    int efConstruction; /* size of dynamic candidate list */
+    bool enablePQ;
+    int pqM; /* number of subquantizer */
+    int pqKsub; /* number of centroids for each subquantizer */
+} HnswOptions;
 
 typedef struct HnswGraph
 {
@@ -318,43 +340,54 @@ typedef struct HnswTypeInfo
 
 typedef struct HnswBuildState
 {
-	/* Info */
-	Relation	heap;
-	Relation	index;
-	IndexInfo  *indexInfo;
-	ForkNumber	forkNum;
-	const		HnswTypeInfo *typeInfo;
+    /* Info */
+    Relation heap;
+    Relation index;
+    IndexInfo *indexInfo;
+    ForkNumber forkNum;
+    const HnswTypeInfo *typeInfo;
 
-	/* Settings */
-	int			dimensions;
-	int			m;
-	int			efConstruction;
+    /* Settings */
+    int dimensions;
+    int m;
+    int efConstruction;
 
-	/* Statistics */
-	double		indtuples;
-	double		reltuples;
+    /* Statistics */
+    double indtuples;
+    double reltuples;
 
-	/* Support functions */
-	FmgrInfo   *procinfo;
-	FmgrInfo   *normprocinfo;
-	Oid			collation;
+    /* Support functions */
+    FmgrInfo *procinfo;
+    FmgrInfo *normprocinfo;
+    Oid collation;
 
-	/* Variables */
-	HnswGraph	graphData;
-	HnswGraph  *graph;
-	double		ml;
-	int			maxLevel;
+    /* Variables */
+    HnswGraph graphData;
+    HnswGraph *graph;
+    double ml;
+    int maxLevel;
 
-	/* Memory */
-	MemoryContext graphCtx;
-	MemoryContext tmpCtx;
-	HnswAllocator allocator;
+    /* Memory */
+    MemoryContext graphCtx;
+    MemoryContext tmpCtx;
+    HnswAllocator allocator;
 
-	/* Parallel builds */
-	HnswLeader *hnswleader;
-	HnswShared *hnswshared;
-	char	   *hnswarea;
-}			HnswBuildState;
+    /* Parallel builds */
+    HnswLeader *hnswleader;
+    HnswShared *hnswshared;
+    char *hnswarea;
+
+    /* PQ info */
+    bool enablePQ;
+    int pqM;
+    int pqKsub;
+    float *pqTable;
+    float *centerTable;
+    uint16 pqcodeSize;
+
+    /* storage page info */
+    bool isUStore; /* false means astore */
+} HnswBuildState;
 
 typedef struct HnswMetaPageData
 {
@@ -371,26 +404,56 @@ typedef struct HnswMetaPageData
 
 typedef HnswMetaPageData * HnswMetaPage;
 
+typedef struct HnswAppendMetaPageData
+{
+    uint32 magicNumber;
+    uint32 version;
+    uint32 dimensions;
+    uint16 m;
+    uint16 efConstruction;
+    BlockNumber entryBlkno;
+    OffsetNumber entryOffno;
+    int16 entryLevel;
+
+    /* PQ info */
+    bool enablePQ;
+    uint16 pqM; /* number of subquantizer */
+    uint16 pqKsub; /* number of centroids for each subquantizer */
+    uint16 pqcodeSize; /* number of bits per quantization index */
+    uint32 centerTableSize; /* dim * sizeof(float) */
+    uint32 pqTableSize; /* dim * pqKsub * sizeof(float) */
+    uint16 pqTableNblk; /* total number of blks pqtable */
+
+    /* slot info */
+    int npages; /* number of pages per slot */
+    BlockNumber slotStartBlkno;
+    BlockNumber elementInsertSlot; /* the first page of the element type to be inserted into the slot */
+    BlockNumber neighborInsertSlot; /* the first page of the neighbor type to be inserted into the slot */
+} HnswAppendMetaPageData;
+
+typedef HnswAppendMetaPageData *HnswAppendMetaPage;
+
 typedef struct HnswPageOpaqueData
 {
-	BlockNumber nextblkno;
-	uint16		unused;
-	uint16		page_id;		/* for identification of HNSW indexes */
-}			HnswPageOpaqueData;
+    BlockNumber nextblkno;
+    uint8 pageType; /* element or neighbor page */
+    uint8 unused;
+    uint16 page_id;		/* for identification of HNSW indexes */
+} HnswPageOpaqueData;
 
 typedef HnswPageOpaqueData * HnswPageOpaque;
 
 typedef struct HnswElementTupleData
 {
-	uint8		type;
-	uint8		level;
-	uint8		deleted;
-	uint8		unused;
-	ItemPointerData heaptids[HNSW_HEAPTIDS];
-	ItemPointerData neighbortid;
-	uint16		unused2;
-	Vector		data;
-}			HnswElementTupleData;
+    uint8 type;
+    uint8 level;
+    uint8 deleted;
+    uint8 unused;
+    ItemPointerData heaptids[HNSW_HEAPTIDS];
+    ItemPointerData neighbortid;
+    uint16 unused2;
+    Vector data;
+} HnswElementTupleData;
 
 typedef HnswElementTupleData * HnswElementTuple;
 
@@ -448,6 +511,9 @@ typedef struct HnswVacuumState
 /* Methods */
 int			HnswGetM(Relation index);
 int			HnswGetEfConstruction(Relation index);
+bool HnswGetEnablePQ(Relation index);
+int HnswGetPqM(Relation index);
+int HnswGetPqKsub(Relation index);
 FmgrInfo   *HnswOptionalProcInfo(Relation index, uint16 procnum);
 Datum		HnswNormValue(const HnswTypeInfo * typeInfo, Oid collation, Datum value);
 bool		HnswCheckNorm(FmgrInfo *procinfo, Oid collation, Datum value);
