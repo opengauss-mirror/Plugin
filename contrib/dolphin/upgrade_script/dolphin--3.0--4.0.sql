@@ -106,6 +106,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.microsecond (json) RETURNS int8 LANGUAGE S
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (integer) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (float) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
 
+DROP FUNCTION IF EXISTS pg_catalog.left(text, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.left(text, bit);
+CREATE OR REPLACE FUNCTION pg_catalog.left(text, numeric) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_left_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.left(text, bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1, cast($2 as numeric))';
+DROP FUNCTION IF EXISTS pg_catalog.right(text, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, bit);
+CREATE OR REPLACE FUNCTION pg_catalog.right(text, numeric) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_right_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.right(text, bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.right($1, cast($2 as numeric))';
+
 -- bit bool compare
 CREATE OR REPLACE FUNCTION pg_catalog.bool_bit_gt(boolean, bit) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int > $2::int)';
 CREATE OPERATOR pg_catalog.>(leftarg = boolean, rightarg = bit, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.bool_bit_gt);

@@ -122,6 +122,11 @@ DROP FUNCTION IF EXISTS pg_catalog.microsecond(json);
 DROP FUNCTION IF EXISTS pg_catalog.microsecond(integer);
 DROP FUNCTION IF EXISTS pg_catalog.microsecond(float);
 
+DROP FUNCTION IF EXISTS pg_catalog.left(text, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.left(text, bit);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, bit);
+
 DROP OPERATOR IF EXISTS pg_catalog.>(boolean, bit);
 DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, bit);
 DROP OPERATOR IF EXISTS pg_catalog.<(boolean, bit);
