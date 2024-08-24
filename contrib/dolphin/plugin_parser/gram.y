@@ -32466,9 +32466,21 @@ GenericType:
 				{
 					/* for B_FORMAT compatibility, float4(n) refers to float4 */
 					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
-						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+						if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+							$$ = makeTypeName("float4");
+							$$->location = @1;
+							if ($2 != NULL && list_length($2) >= 1) {
+								ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
+							}
+						} else {
+							$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+						}
 					} else if (($1 != NULL) && (strcmp($1, "double") == 0) && ($2 != NULL) && (list_length($2) == 2)) {
-						if ((*(A_Const*)list_nth($2, 1)).val.val.ival == 0) {
+						if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+							$$ = makeTypeName("float8");
+							$$->location = @1;
+							ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
+						} else if ((*(A_Const*)list_nth($2, 1)).val.val.ival == 0) {
 							$$ = parseFloatTypeByPrecision((*(A_Const*)list_nth($2, 0)).val.val.ival, @2, yyscanner, false);
 							$$->location = @1;
 						} else {
@@ -32847,11 +32859,16 @@ Numeric:	NumericNoConflict { $$ = $1; }
 
 dolphin_float: '(' Iconst ',' Iconst ')'
 				{
-					if ($4 == 0) {
-						$$ = parseFloatTypeByPrecision($2, @2, yyscanner, false);
+					if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+						$$ = makeTypeName("float4");
+						ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
 					} else {
-						$$ = SystemTypeName("numeric");
-						$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+						if ($4 == 0) {
+							$$ = parseFloatTypeByPrecision($2, @2, yyscanner, false);
+						} else {
+							$$ = SystemTypeName("numeric");
+							$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+						}
 					}
 				}
 		;

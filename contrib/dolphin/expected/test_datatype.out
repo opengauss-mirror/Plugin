@@ -509,5 +509,60 @@ select * from t_bit;
 
 drop table test_bit64;
 drop table t_bit;
+-- test treat_float_with_precision_as_float_type
+create table test_double(c1 double, c2 double(10, 0), c3 double(15, 3), c4 float, c5 float4, c6 float4(10, 0), c7 float4(7, 5), c8 float(10, 0), c9 float(7, 5), c10 float4(5));
+\d+ test_double;
+                     Table "b_datatype_test.test_double"
+ Column |       Type       | Modifiers | Storage | Stats target | Description 
+--------+------------------+-----------+---------+--------------+-------------
+ c1     | double precision |           | plain   |              | 
+ c2     | real             |           | plain   |              | 
+ c3     | numeric(15,3)    |           | main    |              | 
+ c4     | real             |           | plain   |              | 
+ c5     | real             |           | plain   |              | 
+ c6     | numeric(10,0)    |           | main    |              | 
+ c7     | numeric(7,5)     |           | main    |              | 
+ c8     | real             |           | plain   |              | 
+ c9     | numeric(7,5)     |           | main    |              | 
+ c10    | real             |           | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+drop table test_double;
+set dolphin.treat_float_with_precision_as_float_type = true;
+create table test_double(c1 double, c2 double(10, 0), c3 double(15, 3), c4 float, c5 float4, c6 float4(10, 0), c7 float4(7, 5), c8 float(10, 0), c9 float(7, 5), c10 float4(5));
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+NOTICE:  it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.
+\d+ test_double;
+                     Table "b_datatype_test.test_double"
+ Column |       Type       | Modifiers | Storage | Stats target | Description 
+--------+------------------+-----------+---------+--------------+-------------
+ c1     | double precision |           | plain   |              | 
+ c2     | double precision |           | plain   |              | 
+ c3     | double precision |           | plain   |              | 
+ c4     | real             |           | plain   |              | 
+ c5     | real             |           | plain   |              | 
+ c6     | real             |           | plain   |              | 
+ c7     | real             |           | plain   |              | 
+ c8     | real             |           | plain   |              | 
+ c9     | real             |           | plain   |              | 
+ c10    | real             |           | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+insert into test_double values (12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456);
+select * from test_double;
+   c1    |   c2    |   c3    |   c4    |   c5    |   c6    |   c7    |   c8    |   c9    |   c10   
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
+ 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456 | 12.3456
+(1 row)
+
+drop table test_double;
+reset dolphin.treat_float_with_precision_as_float_type;
 drop schema b_datatype_test cascade;
 reset current_schema;
