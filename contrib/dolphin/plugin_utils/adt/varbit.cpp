@@ -2619,9 +2619,24 @@ PG_FUNCTION_INFO_V1_PUBLIC(bittovarbinary);
 extern "C" DLL_PUBLIC Datum bittovarbinary(PG_FUNCTION_ARGS);
 Datum bittovarbinary(PG_FUNCTION_ARGS)
 {
-    Datum dec = bittobigint(PG_GETARG_VARBIT_P(0), true);
-    Datum str = DirectFunctionCall1(uint8out, dec);
-    PG_RETURN_DATUM(DirectFunctionCall1(byteain, str));
+    VarBit* bits = PG_GETARG_VARBIT_P(0);
+    int bytelen = VARBITBYTES(bits);
+    int charsperbyte = 2;
+    int bitcharlen = 4;
+    int strlen = bytelen * charsperbyte;
+    char* result = (char*)palloc(strlen + charsperbyte + 1);
+    char* str = result;
+    result[0] = '\\';
+    result[1] = 'x';
+    result[strlen + charsperbyte] = '\0';
+    result += charsperbyte;
+    do {
+        char s1 = char(bits->bit_dat[--bytelen] >> bitcharlen);
+        char s2 = char(bits->bit_dat[bytelen] & 0xf);
+        result[--strlen] = HEX_CHARS[s2];
+        result[--strlen] = HEX_CHARS[s1];
+    } while (bytelen > 0);
+    PG_RETURN_DATUM(DirectFunctionCall1(dolphin_binaryin, CStringGetDatum(str)));
 }
 
 Datum bit_bin_in(PG_FUNCTION_ARGS)
