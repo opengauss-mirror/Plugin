@@ -65,6 +65,7 @@
 #include "plugin_utils/varbit.h"
 #include "plugin_utils/timestamp.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/int16.h"
 #include "libpq/libpq-int.h"
 #include "plugin_utils/varlena.h"
 #include "catalog/pg_cast.h"
@@ -1708,13 +1709,13 @@ Datum text_substr_no_len(PG_FUNCTION_ARGS)
  *
  *	The result is always a freshly palloc'd datum.
  */
-text* text_substring(Datum str, int32 start, int32 length, bool length_not_specified)
+text* text_substring(Datum str, int64 start, int64 length, bool length_not_specified)
 {
-    int32 eml = pg_database_encoding_max_length();
-    int32 S = start; /* start position */
-    int32 S1;        /* adjusted start position */
-    int32 L1;        /* adjusted substring length */
-    int32 E;         /* end position */
+    int64 eml = pg_database_encoding_max_length();
+    int64 S = start; /* start position */
+    int64 S1;        /* adjusted start position */
+    int64 L1;        /* adjusted substring length */
+    int64 E;         /* end position */
 
     /*
      * SQL99 says S can be zero or negative, but we still must fetch from the
@@ -1733,7 +1734,7 @@ text* text_substring(Datum str, int32 start, int32 length, bool length_not_speci
             /* SQL99 says to throw an error for E < S, i.e., negative length */
             ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
             L1 = -1; /* silence stupider compilers */
-        } else if (pg_add_s32_overflow(S, length, &E)) {
+        } else if (pg_add_s64_overflow(S, length, &E)) {
             /*
              * L could be large enough for S + L to overflow, in which case
              * the substring must run to end of string.
@@ -1758,12 +1759,12 @@ text* text_substring(Datum str, int32 start, int32 length, bool length_not_speci
          * detoasting, so we'll grab a conservatively large slice now and go
          * back later to do the right thing
          */
-        int32 slice_start;
-        int32 slice_size;
-        int32 slice_strlen;
+        int64 slice_start;
+        int64 slice_size;
+        int64 slice_strlen;
         text* slice = NULL;
-        int32 E1;
-        int32 i;
+        int64 E1;
+        int64 i;
         char* p = NULL;
         char* s = NULL;
         text* ret = NULL;
@@ -1782,7 +1783,7 @@ text* text_substring(Datum str, int32 start, int32 length, bool length_not_speci
             /* SQL99 says to throw an error for E < S, i.e., negative length */
             ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
             slice_size = L1 = -1; /* silence stupider compilers */
-        } else if (pg_add_s32_overflow(S, length, &E)) {
+        } else if (pg_add_s64_overflow(S, length, &E)) {
             /*
              * L could be large enough for S + L to overflow, in which case
              * the substring must run to end of string.
@@ -1808,7 +1809,7 @@ text* text_substring(Datum str, int32 start, int32 length, bool length_not_speci
              * position plus substring length times the encoding max length.
              * If that overflows, we can just use -1.
              */
-            if (pg_mul_s32_overflow(E, eml, &slice_size)) {
+            if (pg_mul_s64_overflow(E, eml, &slice_size)) {
                 slice_size = -1;
             }
         }
@@ -7632,6 +7633,44 @@ Datum text_concat_ws(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
+Datum text_left_right_helper(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
+{
+    const char* p = VARDATA_ANY(str);
+    int64 len = VARSIZE_ANY_EXHDR(str);
+    int64 part_off = 0;
+    int64 off;
+    text* part_str = NULL;
+
+    if (n < 0) {
+#ifdef DOLPHIN
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+#else
+        n = isleft ? (pg_mbstrlen_with_len(p, len) + n) : -n;
+#endif
+    } else if (!isleft) {
+        n = pg_mbstrlen_with_len(p, len) - n;
+    }
+
+    if (n >= 0) {
+        part_str = text_substring(PointerGetDatum(str), (int64)1, (int64)n, false);
+        if (part_str != NULL) {
+            part_off = VARSIZE_ANY_EXHDR(part_str);
+            pfree_ext(part_str);
+        }
+    }
+#ifdef DOLPHIN
+    off = pg_mbcliplen(p, len, part_off);
+#else
+    off = pg_mbcharcliplen(p, len, part_off);
+#endif
+    if ((isleft && 0 == off || !isleft && 0 == (len - off)) &&
+         u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && !ACCEPT_EMPTY_STR) {
+        PG_RETURN_NULL();
+    }
+
+    PG_RETURN_TEXT_P((isleft ? cstring_to_text_with_len(p, off) : cstring_to_text_with_len(p + off, len - off)));
+}
+
 /*
  * Return first n characters in the string. When n is negative,
  * return all but last |n| characters.
@@ -7643,39 +7682,28 @@ Datum text_left(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("text_left could not support more than 1GB clob/blob data")));
     }
-    const char* p = VARDATA_ANY(str);
-    int len = VARSIZE_ANY_EXHDR(str);
     int n = PG_GETARG_INT32(1);
-    int part_off = 0;
-    int rlen;
-    text* part_str = NULL;
-
-    if (n < 0) {
-#ifdef DOLPHIN
-        PG_RETURN_TEXT_P(cstring_to_text(""));
-#else
-        n = pg_mbstrlen_with_len(p, len) + n;
-#endif
-    }
-
-    if (n >= 0) {
-        part_str = text_substring(PointerGetDatum(str), 1, n, false);
-        if (part_str != NULL) {
-            part_off = VARSIZE_ANY_EXHDR(part_str);
-            pfree_ext(part_str);
-        }
-    }
-#ifdef DOLPHIN
-    rlen = pg_mbcliplen(p, len, part_off);
-#else
-    rlen = pg_mbcharcliplen(p, len, part_off);
-#endif
-    if (0 == rlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && !ACCEPT_EMPTY_STR) {
-        PG_RETURN_NULL();
-    }
-
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(p, rlen));
+    return text_left_right_helper(str, n, true, fcinfo);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(text_left_numeric);
+extern "C" DLL_PUBLIC Datum text_left_numeric(PG_FUNCTION_ARGS);
+Datum text_left_numeric(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("text_left could not support more than 1GB clob/blob data")));
+    }
+    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    if (n > (int128)INT64_MAX) {
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+    }
+    return text_left_right_helper(str, (int64)n, true, fcinfo);
+}
+#endif
+
 /*
  * Return last n characters in the string. When n is negative,
  * return all but first |n| characters.
@@ -7687,40 +7715,27 @@ Datum text_right(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("text_right could not support more than 1GB clob/blob data")));
     }
-    const char* p = VARDATA_ANY(str);
-    int len = VARSIZE_ANY_EXHDR(str);
     int n = PG_GETARG_INT32(1);
-    int part_off = 0;
-    int off;
-    text* part_str = NULL;
-
-    if (n < 0)
-#ifdef DOLPHIN
-        PG_RETURN_TEXT_P(cstring_to_text(""));
-#else
-        n = -n;
-#endif
-    else
-        n = pg_mbstrlen_with_len(p, len) - n;
-
-    if (n >= 0) {
-        part_str = text_substring(PointerGetDatum(str), 1, n, false);
-        if (part_str != NULL) {
-            part_off = VARSIZE_ANY_EXHDR(part_str);
-            pfree_ext(part_str);
-        }
-    }
-#ifdef DOLPHIN
-    off = pg_mbcliplen(p, len, part_off);
-#else
-    off = pg_mbcharcliplen(p, len, part_off);
-#endif
-    if (0 == (len - off) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && !ACCEPT_EMPTY_STR) {
-        PG_RETURN_NULL();
-    }
-
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(p + off, len - off));
+    return text_left_right_helper(str, n, false, fcinfo);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(text_right_numeric);
+extern "C" DLL_PUBLIC Datum text_right_numeric(PG_FUNCTION_ARGS);
+Datum text_right_numeric(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("text_right could not support more than 1GB clob/blob data")));
+    }
+    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    if (n > (int128)INT64_MAX) {
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+    }
+    return text_left_right_helper(str, (int64)n, false, fcinfo);
+}
+#endif
 
 /*
  * Return reversed string
