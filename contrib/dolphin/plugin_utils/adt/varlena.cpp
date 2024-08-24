@@ -5896,6 +5896,38 @@ Datum to_hex64(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(ptr));
 }
 #ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_to_hex);
+extern "C" DLL_PUBLIC Datum uint1_to_hex(PG_FUNCTION_ARGS);
+Datum uint1_to_hex(PG_FUNCTION_ARGS)
+{
+    uint8 arg = PG_GETARG_UINT8(0);
+    PG_RETURN_DATUM(DirectFunctionCall1(int_to_hex, Int128GetDatum((int128)arg)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_to_hex);
+extern "C" DLL_PUBLIC Datum uint2_to_hex(PG_FUNCTION_ARGS);
+Datum uint2_to_hex(PG_FUNCTION_ARGS)
+{
+    uint16 arg = PG_GETARG_UINT16(0);
+    PG_RETURN_DATUM(DirectFunctionCall1(int_to_hex, Int128GetDatum((int128)arg)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_to_hex);
+extern "C" DLL_PUBLIC Datum uint4_to_hex(PG_FUNCTION_ARGS);
+Datum uint4_to_hex(PG_FUNCTION_ARGS)
+{
+    uint32 arg = PG_GETARG_UINT32(0);
+    PG_RETURN_DATUM(DirectFunctionCall1(int_to_hex, Int128GetDatum((int128)arg)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_to_hex);
+extern "C" DLL_PUBLIC Datum uint8_to_hex(PG_FUNCTION_ARGS);
+Datum uint8_to_hex(PG_FUNCTION_ARGS)
+{
+    uint64 arg = PG_GETARG_UINT64(0);
+    PG_RETURN_DATUM(DirectFunctionCall1(int_to_hex, Int128GetDatum((int128)arg)));
+}
+
 #define HEX_BUF_LEN 32
 /*
  * Convert an int128 to a string containing a base 16 (hex) representation of the input.
