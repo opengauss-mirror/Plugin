@@ -830,136 +830,129 @@ CountElement(char *base, HnswElement skipElement, HnswCandidate * hc)
 List *
 HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo, Oid collation, int m, bool inserting, HnswElement skipElement)
 {
-	List	   *w = NIL;
-	pairingheap *C = pairingheap_allocate(CompareNearestCandidates, NULL);
-	pairingheap *W = pairingheap_allocate(CompareFurthestCandidates, NULL);
-	int			wlen = 0;
-	visited_hash v;
-	ListCell   *lc2;
-	HnswNeighborArray *neighborhoodData = NULL;
-	Size		neighborhoodSize;
+    List	   *w = NIL;
+    pairingheap *C = pairingheap_allocate(CompareNearestCandidates, NULL);
+    pairingheap *W = pairingheap_allocate(CompareFurthestCandidates, NULL);
+    int			wlen = 0;
+    visited_hash v;
+    ListCell   *lc2;
+    HnswNeighborArray *neighborhoodData = NULL;
+    Size		neighborhoodSize;
 
-	InitVisited(base, &v, index, ef, m);
+    InitVisited(base, &v, index, ef, m);
 
-	/* Create local memory for neighborhood if needed */
-	if (index == NULL)
-	{
-		neighborhoodSize = HNSW_NEIGHBOR_ARRAY_SIZE(HnswGetLayerM(m, lc));
-		neighborhoodData = (HnswNeighborArray *)palloc(neighborhoodSize);
-	}
+    /* Create local memory for neighborhood if needed */
+    if (index == NULL) {
+        neighborhoodSize = HNSW_NEIGHBOR_ARRAY_SIZE(HnswGetLayerM(m, lc));
+        neighborhoodData = (HnswNeighborArray *)palloc(neighborhoodSize);
+    }
 
-	/* Add entry points to v, C, and W */
-	foreach(lc2, ep)
-	{
-		HnswCandidate *hc = (HnswCandidate *) lfirst(lc2);
-		bool		found;
+    /* Add entry points to v, C, and W */
+    foreach(lc2, ep) {
+        HnswCandidate *hc = (HnswCandidate *) lfirst(lc2);
+        bool		found;
 
-		AddToVisited(base, &v, hc, index, &found);
+        AddToVisited(base, &v, hc, index, &found);
 
-		pairingheap_add(C, &(CreatePairingHeapNode(hc)->ph_node));
-		pairingheap_add(W, &(CreatePairingHeapNode(hc)->ph_node));
+        pairingheap_add(C, &(CreatePairingHeapNode(hc)->ph_node));
+        pairingheap_add(W, &(CreatePairingHeapNode(hc)->ph_node));
 
-		/*
-		 * Do not count elements being deleted towards ef when vacuuming. It
-		 * would be ideal to do this for inserts as well, but this could
-		 * affect insert performance.
-		 */
-		if (CountElement(base, skipElement, hc))
-			wlen++;
-	}
+        /*
+         * Do not count elements being deleted towards ef when vacuuming. It
+         * would be ideal to do this for inserts as well, but this could
+         * affect insert performance.
+         */
+        if (CountElement(base, skipElement, hc))
+            wlen++;
+    }
 
-	while (!pairingheap_is_empty(C))
-	{
-		HnswNeighborArray *neighborhood;
-		HnswCandidate *c = ((HnswPairingHeapNode *) pairingheap_remove_first(C))->inner;
-		HnswCandidate *f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
-		HnswElement cElement;
+    while (!pairingheap_is_empty(C)) {
+        HnswNeighborArray *neighborhood;
+        HnswCandidate *c = ((HnswPairingHeapNode *) pairingheap_remove_first(C))->inner;
+        HnswCandidate *f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
+        HnswElement cElement;
 
-		if (c->distance > f->distance)
-			break;
+        if (c->distance > f->distance)
+            break;
 
-		cElement = (HnswElement)HnswPtrAccess(base, c->element);
+        cElement = (HnswElement)HnswPtrAccess(base, c->element);
 
-		if (HnswPtrIsNull(base, cElement->neighbors))
-			HnswLoadNeighbors(cElement, index, m);
+        if (HnswPtrIsNull(base, cElement->neighbors))
+            HnswLoadNeighbors(cElement, index, m);
 
-		/* Get the neighborhood at layer lc */
-		neighborhood = HnswGetNeighbors(base, cElement, lc);
+        /* Get the neighborhood at layer lc */
+        neighborhood = HnswGetNeighbors(base, cElement, lc);
 
-		/* Copy neighborhood to local memory if needed */
-		if (index == NULL)
-		{
-			LWLockAcquire(&cElement->lock, LW_SHARED);
-			memcpy(neighborhoodData, neighborhood, neighborhoodSize);
-			LWLockRelease(&cElement->lock);
-			neighborhood = neighborhoodData;
-		}
+        /* Copy neighborhood to local memory if needed */
+        if (index == NULL) {
+            LWLockAcquire(&cElement->lock, LW_SHARED);
+            memcpy(neighborhoodData, neighborhood, neighborhoodSize);
+            LWLockRelease(&cElement->lock);
+            neighborhood = neighborhoodData;
+        }
 
-		for (int i = 0; i < neighborhood->length; i++)
-		{
-			HnswCandidate *e = &neighborhood->items[i];
-			bool		visited;
+        for (int i = 0; i < neighborhood->length; i++) {
+            HnswCandidate *e = &neighborhood->items[i];
+            bool		visited;
 
-			AddToVisited(base, &v, e, index, &visited);
+            AddToVisited(base, &v, e, index, &visited);
 
-			if (!visited)
-			{
-				float		eDistance;
-				HnswElement eElement = (HnswElement)HnswPtrAccess(base, e->element);
-				bool		alwaysAdd = wlen < ef;
+            if (!visited) {
+                float		eDistance;
+                HnswElement eElement = (HnswElement)HnswPtrAccess(base, e->element);
+                bool		alwaysAdd = wlen < ef;
 
-				f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
+                f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
 
-				if (index == NULL)
-					eDistance = GetCandidateDistance(base, e, q, procinfo, collation);
-				else
-					HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting, alwaysAdd ? NULL : &f->distance);
+                if (index == NULL) {
+                    eDistance = GetCandidateDistance(base, e, q, procinfo, collation);
+                } else {
+                    HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting,
+                                    alwaysAdd ? NULL : &f->distance);
+                }
 
-				if (eDistance < f->distance || alwaysAdd)
-				{
-					HnswCandidate *ec;
+                if (eDistance < f->distance || alwaysAdd) {
+                    HnswCandidate *ec;
 
-					Assert(!eElement->deleted);
+                    Assert(!eElement->deleted);
 
-					/* Make robust to issues */
-					if (eElement->level < lc)
-						continue;
+                    /* Make robust to issues */
+                    if (eElement->level < lc)
+                        continue;
 
-					/* Copy e */
-					ec = (HnswCandidate *)palloc(sizeof(HnswCandidate));
-					HnswPtrStore(base, ec->element, eElement);
-					ec->distance = eDistance;
+                    /* Copy e */
+                    ec = (HnswCandidate *)palloc(sizeof(HnswCandidate));
+                    HnswPtrStore(base, ec->element, eElement);
+                    ec->distance = eDistance;
 
-					pairingheap_add(C, &(CreatePairingHeapNode(ec)->ph_node));
-					pairingheap_add(W, &(CreatePairingHeapNode(ec)->ph_node));
+                    pairingheap_add(C, &(CreatePairingHeapNode(ec)->ph_node));
+                    pairingheap_add(W, &(CreatePairingHeapNode(ec)->ph_node));
 
-					/*
-					 * Do not count elements being deleted towards ef when
-					 * vacuuming. It would be ideal to do this for inserts as
-					 * well, but this could affect insert performance.
-					 */
-					if (CountElement(base, skipElement, e))
-					{
-						wlen++;
+                    /*
+                     * Do not count elements being deleted towards ef when
+                     * vacuuming. It would be ideal to do this for inserts as
+                     * well, but this could affect insert performance.
+                     */
+                    if (CountElement(base, skipElement, e)) {
+                        wlen++;
 
-						/* No need to decrement wlen */
-						if (wlen > ef)
-							pairingheap_remove_first(W);
-					}
-				}
-			}
-		}
-	}
+                        /* No need to decrement wlen */
+                        if (wlen > ef)
+                            pairingheap_remove_first(W);
+                    }
+                }
+            }
+        }
+    }
 
-	/* Add each element of W to w */
-	while (!pairingheap_is_empty(W))
-	{
-		HnswCandidate *hc = ((HnswPairingHeapNode *) pairingheap_remove_first(W))->inner;
+    /* Add each element of W to w */
+    while (!pairingheap_is_empty(W)) {
+        HnswCandidate *hc = ((HnswPairingHeapNode *) pairingheap_remove_first(W))->inner;
 
-		w = lappend(w, hc);
-	}
+        w = lcons(hc, w);
+    }
 
-	return w;
+    return w;
 }
 
 /*
@@ -1064,105 +1057,112 @@ CheckElementCloser(char *base, HnswCandidate * e, List *r, FmgrInfo *procinfo, O
 static List *
 SelectNeighbors(char *base, List *c, int lm, int lc, FmgrInfo *procinfo, Oid collation, HnswElement e2, HnswCandidate * newCandidate, HnswCandidate * *pruned, bool sortCandidates)
 {
-	List	   *r = NIL;
-	List	   *w = list_copy(c);
-	HnswCandidate **wd;
-	int			wdlen = 0;
-	int			wdoff = 0;
-	HnswNeighborArray *neighbors = HnswGetNeighbors(base, e2, lc);
-	bool		mustCalculate = !neighbors->closerSet;
-	List	   *added = NIL;
-	bool		removedAny = false;
+    List	   *r = NIL;
+    List	   *w = list_copy(c);
+    HnswCandidate **wd;
+    int			wdlen = 0;
+    int			wdoff = 0;
+    HnswNeighborArray *neighbors = HnswGetNeighbors(base, e2, lc);
+    bool		mustCalculate = !neighbors->closerSet;
+    List	   *added = NIL;
+    bool		removedAny = false;
 
-	if (list_length(w) <= lm)
-		return w;
+    if (list_length(w) <= lm)
+        return w;
 
-	wd = (HnswCandidate **)palloc(sizeof(HnswCandidate *) * list_length(w));
+    wd = (HnswCandidate **)palloc(sizeof(HnswCandidate *) * list_length(w));
 
-	/* Ensure order of candidates is deterministic for closer caching */
-	if (sortCandidates)
-	{
-		if (base == NULL)
-			list_sort(w, CompareCandidateDistances);
-		else
-			list_sort(w, CompareCandidateDistancesOffset);
-	}
+    /* Ensure order of candidates is deterministic for closer caching */
+    if (sortCandidates)
+    {
+        if (base == NULL) {
+            list_sort(w, CompareCandidateDistances);
+        }
+        else {
+            list_sort(w, CompareCandidateDistancesOffset);
+        }
+    }
 
-	while (list_length(w) > 0 && list_length(r) < lm)
-	{
-		/* Assumes w is already ordered desc */
-		HnswCandidate *e = (HnswCandidate *)llast(w);
+    while (list_length(w) > 0 && list_length(r) < lm) {
+        /* Assumes w is already ordered desc */
+        HnswCandidate *e = (HnswCandidate *)linitial(w);
 
-		w = list_delete_last(w);
+        w = list_delete_first(w);
 
-		/* Use previous state of r and wd to skip work when possible */
-		if (mustCalculate)
-			e->closer = CheckElementCloser(base, e, r, procinfo, collation);
-		else if (list_length(added) > 0)
-		{
-			/* Keep Valgrind happy for in-memory, parallel builds */
-			if (base != NULL)
-				VALGRIND_MAKE_MEM_DEFINED(&e->closer, 1);
+        /* Use previous state of r and wd to skip work when possible */
+        if (mustCalculate) {
+            e->closer = CheckElementCloser(base, e, r, procinfo, collation);
+        }
+        else if (list_length(added) > 0) {
+            /* Keep Valgrind happy for in-memory, parallel builds */
+            if (base != NULL) {
+                VALGRIND_MAKE_MEM_DEFINED(&e->closer, 1);
+            }
 
-			/*
-			 * If the current candidate was closer, we only need to compare it
-			 * with the other candidates that we have added.
-			 */
-			if (e->closer)
-			{
-				e->closer = CheckElementCloser(base, e, added, procinfo, collation);
+            /*
+             * If the current candidate was closer, we only need to compare it
+             * with the other candidates that we have added.
+             */
+            if (e->closer) {
+                e->closer = CheckElementCloser(base, e, added, procinfo, collation);
 
-				if (!e->closer)
-					removedAny = true;
-			}
-			else
-			{
-				/*
-				 * If we have removed any candidates from closer, a candidate
-				 * that was not closer earlier might now be.
-				 */
-				if (removedAny)
-				{
-					e->closer = CheckElementCloser(base, e, r, procinfo, collation);
-					if (e->closer)
-						added = lappend(added, e);
-				}
-			}
-		}
-		else if (e == newCandidate)
-		{
-			e->closer = CheckElementCloser(base, e, r, procinfo, collation);
-			if (e->closer)
-				added = lappend(added, e);
-		}
+                if (!e->closer) {
+                    removedAny = true;
+                }
+            }
+            else {
+                /*
+                 * If we have removed any candidates from closer, a candidate
+                 * that was not closer earlier might now be.
+                 */
+                if (removedAny) {
+                    e->closer = CheckElementCloser(base, e, r, procinfo, collation);
+                    if (e->closer) {
+                        added = lappend(added, e);
+                    }
+                }
+            }
+        }
+        else if (e == newCandidate)
+        {
+            e->closer = CheckElementCloser(base, e, r, procinfo, collation);
+            if (e->closer) {
+                added = lappend(added, e);
+            }
+        }
 
-		/* Keep Valgrind happy for in-memory, parallel builds */
-		if (base != NULL)
-			VALGRIND_MAKE_MEM_DEFINED(&e->closer, 1);
+        /* Keep Valgrind happy for in-memory, parallel builds */
+        if (base != NULL) {
+            VALGRIND_MAKE_MEM_DEFINED(&e->closer, 1);
+        }
 
-		if (e->closer)
-			r = lappend(r, e);
-		else
-			wd[wdlen++] = e;
-	}
+        if (e->closer) {
+            r = lappend(r, e);
+        }
+        else {
+            wd[wdlen++] = e;
+        }
+    }
 
-	/* Cached value can only be used in future if sorted deterministically */
-	neighbors->closerSet = sortCandidates;
+    /* Cached value can only be used in future if sorted deterministically */
+    neighbors->closerSet = sortCandidates;
 
-	/* Keep pruned connections */
-	while (wdoff < wdlen && list_length(r) < lm)
-		r = lappend(r, wd[wdoff++]);
+    /* Keep pruned connections */
+    while (wdoff < wdlen && list_length(r) < lm) {
+        r = lappend(r, wd[wdoff++]);
+    }
 
-	/* Return pruned for update connections */
-	if (pruned != NULL)
-	{
-		if (wdoff < wdlen)
-			*pruned = wd[wdoff];
-		else
-			*pruned = (HnswCandidate *)linitial(w);
-	}
+    /* Return pruned for update connections */
+    if (pruned != NULL) {
+        if (wdoff < wdlen) {
+            *pruned = wd[wdoff];
+        }
+        else {
+            *pruned = (HnswCandidate *)linitial(w);
+        }
+    }
 
-	return r;
+    return r;
 }
 
 /*

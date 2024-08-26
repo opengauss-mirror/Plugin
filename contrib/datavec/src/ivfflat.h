@@ -79,9 +79,6 @@
 #define RandomInt() random()
 #endif
 
-/* Variables */
-extern int	ivfflat_probes;
-
 typedef struct VectorArrayData
 {
 	int			length;
