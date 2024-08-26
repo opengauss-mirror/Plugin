@@ -1447,6 +1447,15 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+    DefineCustomBoolVariable("dolphin.treat_float_with_precision_as_float_type",
+                             gettext_noop("This variable indicates treating a float type with precision as a float "
+                             "type without precision. it may cause the result in loss of precision."),
+                             NULL,
+                             &GetSessionContext()->treat_float_with_precision_as_float_type,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 #endif
 
 }
