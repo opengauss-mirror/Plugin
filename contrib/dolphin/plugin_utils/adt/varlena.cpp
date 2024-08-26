@@ -9294,6 +9294,55 @@ Datum bytea_right(PG_FUNCTION_ARGS)
     }
 }
 
+static Datum binary_right_numeric_interval(PG_FUNCTION_ARGS)
+{
+    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    if (n > (int128)INT64_MAX) {
+        PG_RETURN_NULL();
+    }
+    Datum txtResult = DirectFunctionCall2Coll(text_right_numeric, PG_GET_COLLATION(),
+                                              PG_GETARG_DATUM(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+    return DirectFunctionCall1Coll(texttoraw, PG_GET_COLLATION(), txtResult, fcinfo->can_ignore);
+}
+
+static Datum binary_left_numeric_interval(PG_FUNCTION_ARGS)
+{
+    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    if (n > (int128)INT64_MAX) {
+        PG_RETURN_NULL();
+    }
+    Datum txtResult = DirectFunctionCall2Coll(text_left_numeric, PG_GET_COLLATION(),
+                                              PG_GETARG_DATUM(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+    return DirectFunctionCall1Coll(texttoraw, PG_GET_COLLATION(), txtResult, fcinfo->can_ignore);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_right_numeric);
+extern "C" DLL_PUBLIC Datum bytea_right_numeric(PG_FUNCTION_ARGS);
+Datum bytea_right_numeric(PG_FUNCTION_ARGS)
+{
+    return binary_right_numeric_interval(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_right_numeric);
+extern "C" DLL_PUBLIC Datum blob_right_numeric(PG_FUNCTION_ARGS);
+Datum blob_right_numeric(PG_FUNCTION_ARGS)
+{
+    return binary_right_numeric_interval(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_left_numeric);
+extern "C" DLL_PUBLIC Datum bytea_left_numeric(PG_FUNCTION_ARGS);
+Datum bytea_left_numeric(PG_FUNCTION_ARGS)
+{
+    return binary_left_numeric_interval(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_left_numeric);
+extern "C" DLL_PUBLIC Datum blob_left_numeric(PG_FUNCTION_ARGS);
+Datum blob_left_numeric(PG_FUNCTION_ARGS)
+{
+    return binary_left_numeric_interval(fcinfo);
+}
 
 bool isNumeric(const char* str)
 {
