@@ -29,15 +29,15 @@ GetScanItems(IndexScanDesc scan, Datum q)
 	if (entryPoint == NULL)
 		return NIL;
 
-	ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false));
+	ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false, scan));
 
 	for (int lc = entryPoint->level; lc >= 1; lc--)
 	{
-		w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL);
+		w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL, scan);
 		ep = w;
 	}
 
-	return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL);
+	return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL, scan);
 }
 
 /*
@@ -85,6 +85,10 @@ hnswbeginscan_internal(Relation index, int nkeys, int norderbys)
 									   "Hnsw scan temporary context",
 									   ALLOCSET_DEFAULT_SIZES);
 
+	so->vs.buf = InvalidBuffer;
+	so->vs.lastSelfModifiedItup = NULL;
+	so->vs.lastSelfModifiedItupBufferSize = 0;
+
 	/* Set support functions */
 	so->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
 	so->normprocinfo = HnswOptionalProcInfo(index, HNSW_NORM_PROC);
@@ -102,6 +106,10 @@ void
 hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
 {
 	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+
+	if (so->vs.lastSelfModifiedItup) {
+		IndexTupleSetSize(((IndexTuple)(so->vs.lastSelfModifiedItup)), 0); /* clear */
+	}
 
 	so->first = true;
 	MemoryContextReset(so->tmpCtx);
@@ -199,6 +207,8 @@ void
 hnswendscan_internal(IndexScanDesc scan)
 {
 	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+
+	FREE_POINTER(so->vs.lastSelfModifiedItup);
 
 	MemoryContextDelete(so->tmpCtx);
 

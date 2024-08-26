@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "access/generic_xlog.h"
+#include "access/xact.h"
 #include "hnsw.h"
 #include "storage/buf/bufmgr.h"
 #include "storage/lmgr.h"
@@ -119,201 +120,213 @@ HnswInsertAppendPage(Relation index, Buffer *nbuf, Page *npage, GenericXLogState
 static void
 AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, BlockNumber *updatedInsertPage, bool building)
 {
-	Buffer		buf;
-	Page		page;
-	GenericXLogState *state;
-	Size		etupSize;
-	Size		ntupSize;
-	Size		combinedSize;
-	Size		maxSize;
-	Size		minCombinedSize;
-	HnswElementTuple etup;
-	BlockNumber currentPage = insertPage;
-	HnswNeighborTuple ntup;
-	Buffer		nbuf;
-	Page		npage;
-	OffsetNumber freeOffno = InvalidOffsetNumber;
-	OffsetNumber freeNeighborOffno = InvalidOffsetNumber;
-	BlockNumber newInsertPage = InvalidBlockNumber;
-	char	   *base = NULL;
+    Buffer buf;
+    Page page;
+    GenericXLogState *state;
+    Size etupSize;
+    Size ntupSize;
+    Size combinedSize;
+    Size maxSize;
+    Size minCombinedSize;
+    HnswElementTuple etup;
+    BlockNumber currentPage = insertPage;
+    HnswNeighborTuple ntup;
+    Buffer nbuf;
+    Page npage;
+    OffsetNumber freeOffno = InvalidOffsetNumber;
+    OffsetNumber freeNeighborOffno = InvalidOffsetNumber;
+    BlockNumber newInsertPage = InvalidBlockNumber;
+    char *base = NULL;
+    bool isUStore;
+    IndexTransInfo* idxXid;
 
-	/* Calculate sizes */
-	etupSize = HNSW_ELEMENT_TUPLE_SIZE(VARSIZE_ANY(HnswPtrAccess(base, e->value)));
-	ntupSize = HNSW_NEIGHBOR_TUPLE_SIZE(e->level, m);
-	combinedSize = etupSize + ntupSize + sizeof(ItemIdData);
-	maxSize = HNSW_MAX_SIZE;
-	minCombinedSize = etupSize + HNSW_NEIGHBOR_TUPLE_SIZE(0, m) + sizeof(ItemIdData);
+    /* Calculate sizes */
+    etupSize = HNSW_ELEMENT_TUPLE_SIZE(VARSIZE_ANY(HnswPtrAccess(base, e->value)));
+    ntupSize = HNSW_NEIGHBOR_TUPLE_SIZE(e->level, m);
+    combinedSize = etupSize + ntupSize + sizeof(ItemIdData);
+    maxSize = HNSW_MAX_SIZE;
+    minCombinedSize = etupSize + HNSW_NEIGHBOR_TUPLE_SIZE(0, m) + sizeof(ItemIdData);
 
-	/* Prepare element tuple */
-	etup = (HnswElementTuple)palloc0(etupSize);
-	HnswSetElementTuple(base, etup, e);
+    /* Prepare element tuple */
+    etup = (HnswElementTuple)palloc0(etupSize);
+    HnswSetElementTuple(base, etup, e);
 
-	/* Prepare neighbor tuple */
-	ntup = (HnswNeighborTuple)palloc0(ntupSize);
-	HnswSetNeighborTuple(base, ntup, e, m);
+    /* Prepare neighbor tuple */
+    ntup = (HnswNeighborTuple)palloc0(ntupSize);
+    HnswSetNeighborTuple(base, ntup, e, m);
 
-	/* Find a page (or two if needed) to insert the tuples */
-	for (;;)
-	{
-		buf = ReadBuffer(index, currentPage);
-		LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
+    /* Find a page (or two if needed) to insert the tuples */
+    for (;;) {
+        buf = ReadBuffer(index, currentPage);
+        LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
 
-		if (building)
-		{
-			state = NULL;
-			page = BufferGetPage(buf);
-		}
-		else
-		{
-			state = GenericXLogStart(index);
-			page = GenericXLogRegisterBuffer(state, buf, 0);
-		}
+        if (building) {
+            state = NULL;
+            page = BufferGetPage(buf);
+        } else  {
+            state = GenericXLogStart(index);
+            page = GenericXLogRegisterBuffer(state, buf, 0);
+        }
 
-		/* Keep track of first page where element at level 0 can fit */
-		if (!BlockNumberIsValid(newInsertPage) && PageGetFreeSpace(page) >= minCombinedSize)
-			newInsertPage = currentPage;
+		isUStore = HnswPageGetOpaque(page)->pageType == HNSW_USTORE_PAGE_TYPE;
+        /* Keep track of first page where element at level 0 can fit */
+        if (!BlockNumberIsValid(newInsertPage) && PageGetFreeSpace(page) >= minCombinedSize) {
+            newInsertPage = currentPage;
+        }
 
-		/* First, try the fastest path */
-		/* Space for both tuples on the current page */
-		/* This can split existing tuples in rare cases */
-		if (PageGetFreeSpace(page) >= combinedSize)
-		{
-			nbuf = buf;
-			npage = page;
-			break;
-		}
+        /* First, try the fastest path */
+        /* Space for both tuples on the current page */
+        /* This can split existing tuples in rare cases */
+        if (PageGetFreeSpace(page) >= combinedSize) {
+            nbuf = buf;
+            npage = page;
+            break;
+        }
 
-		/* Next, try space from a deleted element */
-		if (HnswFreeOffset(index, buf, page, e, ntupSize, &nbuf, &npage, &freeOffno, &freeNeighborOffno, &newInsertPage))
-		{
-			if (nbuf != buf)
-			{
-				if (building)
-					npage = BufferGetPage(nbuf);
-				else
-					npage = GenericXLogRegisterBuffer(state, nbuf, 0);
-			}
+        /* Next, try space from a deleted element */
+        if (HnswFreeOffset(index, buf, page, e, ntupSize, &nbuf, &npage, &freeOffno, &freeNeighborOffno, &newInsertPage)) {
+            if (nbuf != buf) {
+                if (building) {
+                    npage = BufferGetPage(nbuf);
+                } else {
+                    npage = GenericXLogRegisterBuffer(state, nbuf, 0);
+                }
+            }
 
-			break;
-		}
+            break;
+        }
 
-		/* Finally, try space for element only if last page */
-		/* Skip if both tuples can fit on the same page */
-		if (combinedSize > maxSize && PageGetFreeSpace(page) >= etupSize && !BlockNumberIsValid(HnswPageGetOpaque(page)->nextblkno))
-		{
-			HnswInsertAppendPage(index, &nbuf, &npage, state, page, building);
-			break;
-		}
+        /* Finally, try space for element only if last page */
+        /* Skip if both tuples can fit on the same page */
+        if (combinedSize > maxSize && PageGetFreeSpace(page) >= etupSize && !BlockNumberIsValid(HnswPageGetOpaque(page)->nextblkno)) {
+            HnswInsertAppendPage(index, &nbuf, &npage, state, page, building);
+                if (isUStore) {
+                    HnswPageGetOpaque(npage)->pageType = HNSW_USTORE_PAGE_TYPE;
+                }
+            break;
+        }
 
-		currentPage = HnswPageGetOpaque(page)->nextblkno;
+        currentPage = HnswPageGetOpaque(page)->nextblkno;
 
-		if (BlockNumberIsValid(currentPage))
-		{
-			/* Move to next page */
-			if (!building)
-				GenericXLogAbort(state);
-			UnlockReleaseBuffer(buf);
-		}
-		else
-		{
-			Buffer		newbuf;
-			Page		newpage;
+        if (BlockNumberIsValid(currentPage)) {
+            /* Move to next page */
+            if (!building)
+                GenericXLogAbort(state);
+            UnlockReleaseBuffer(buf);
+        } else {
+            Buffer        newbuf;
+            Page        newpage;
 
-			HnswInsertAppendPage(index, &newbuf, &newpage, state, page, building);
+            HnswInsertAppendPage(index, &newbuf, &newpage, state, page, building);
+            if (isUStore) {
+                HnswPageGetOpaque(npage)->pageType = HNSW_USTORE_PAGE_TYPE;
+            }
+            /* Commit */
+            if (building) {
+                MarkBufferDirty(buf);
+            } else {
+                GenericXLogFinish(state);
+            }
 
-			/* Commit */
-			if (building)
-				MarkBufferDirty(buf);
-			else
-				GenericXLogFinish(state);
+            /* Unlock previous buffer */
+            UnlockReleaseBuffer(buf);
 
-			/* Unlock previous buffer */
-			UnlockReleaseBuffer(buf);
+            /* Prepare new buffer */
+            buf = newbuf;
+            if (building) {
+                state = NULL;
+                page = BufferGetPage(buf);
+            } else {
+                state = GenericXLogStart(index);
+                page = GenericXLogRegisterBuffer(state, buf, 0);
+            }
 
-			/* Prepare new buffer */
-			buf = newbuf;
-			if (building)
-			{
-				state = NULL;
-				page = BufferGetPage(buf);
-			}
-			else
-			{
-				state = GenericXLogStart(index);
-				page = GenericXLogRegisterBuffer(state, buf, 0);
-			}
+            /* Create new page for neighbors if needed */
+            if (PageGetFreeSpace(page) < combinedSize) {
+                HnswInsertAppendPage(index, &nbuf, &npage, state, page, building);
+                if (isUStore) {
+                    HnswPageGetOpaque(npage)->pageType = HNSW_USTORE_PAGE_TYPE;
+                }
+            } else {
+                nbuf = buf;
+                npage = page;
+            }
 
-			/* Create new page for neighbors if needed */
-			if (PageGetFreeSpace(page) < combinedSize)
-				HnswInsertAppendPage(index, &nbuf, &npage, state, page, building);
-			else
-			{
-				nbuf = buf;
-				npage = page;
-			}
+            break;
+        }
+    }
 
-			break;
-		}
-	}
+    e->blkno = BufferGetBlockNumber(buf);
+    e->neighborPage = BufferGetBlockNumber(nbuf);
 
-	e->blkno = BufferGetBlockNumber(buf);
-	e->neighborPage = BufferGetBlockNumber(nbuf);
+    /* Added tuple to new page if newInsertPage is not set */
+    /* So can set to neighbor page instead of element page */
+    if (!BlockNumberIsValid(newInsertPage)) {
+        newInsertPage = e->neighborPage;
+    }
 
-	/* Added tuple to new page if newInsertPage is not set */
-	/* So can set to neighbor page instead of element page */
-	if (!BlockNumberIsValid(newInsertPage))
-		newInsertPage = e->neighborPage;
+    if (OffsetNumberIsValid(freeOffno)) {
+        e->offno = freeOffno;
+        e->neighborOffno = freeNeighborOffno;
+    } else {
+        e->offno = OffsetNumberNext(PageGetMaxOffsetNumber(page));
+        if (nbuf == buf) {
+            e->neighborOffno = OffsetNumberNext(e->offno);
+        } else {
+            e->neighborOffno = FirstOffsetNumber;
+        }
+    }
 
-	if (OffsetNumberIsValid(freeOffno))
-	{
-		e->offno = freeOffno;
-		e->neighborOffno = freeNeighborOffno;
-	}
-	else
-	{
-		e->offno = OffsetNumberNext(PageGetMaxOffsetNumber(page));
-		if (nbuf == buf)
-			e->neighborOffno = OffsetNumberNext(e->offno);
-		else
-			e->neighborOffno = FirstOffsetNumber;
-	}
+    ItemPointerSet(&etup->neighbortid, e->neighborPage, e->neighborOffno);
 
-	ItemPointerSet(&etup->neighbortid, e->neighborPage, e->neighborOffno);
+    /* Add element and neighbors */
+    if (OffsetNumberIsValid(freeOffno)) {
+        if (isUStore) {
+            ItemId item_id = PageGetItemId(page, e->offno);
+            Size aligned_size = MAXALIGN(ItemIdGetLength(item_id));
+            unsigned offset = ItemIdGetOffset(item_id);
+            idxXid = (IndexTransInfo*)((char*)page + offset + aligned_size);
+            idxXid->xmin = GetCurrentTransactionId();
+            idxXid->xmax = InvalidTransactionId;
+        }
+        if (!page_index_tuple_overwrite(page, e->offno, (Item) etup, etupSize)) {
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        }
 
-	/* Add element and neighbors */
-	if (OffsetNumberIsValid(freeOffno))
-	{
-		if (!page_index_tuple_overwrite(page, e->offno, (Item) etup, etupSize))
-			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        if (!page_index_tuple_overwrite(npage, e->neighborOffno, (Item) ntup, ntupSize)) {
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        }
+    } else {
+        if (isUStore) {
+            ((PageHeader)page)->pd_upper -= sizeof(IndexTransInfo);
+            idxXid = (IndexTransInfo*)(((char*)page) + ((PageHeader)page)->pd_upper);
+            idxXid->xmin = GetCurrentTransactionId();
+            idxXid->xmax = InvalidTransactionId;
+        }
+        if (PageAddItem(page, (Item) etup, etupSize, InvalidOffsetNumber, false, false) != e->offno) {
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        }
 
-		if (!page_index_tuple_overwrite(npage, e->neighborOffno, (Item) ntup, ntupSize))
-			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
-	}
-	else
-	{
-		if (PageAddItem(page, (Item) etup, etupSize, InvalidOffsetNumber, false, false) != e->offno)
-			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        if (PageAddItem(npage, (Item) ntup, ntupSize, InvalidOffsetNumber, false, false) != e->neighborOffno) {
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+        }
+    }
 
-		if (PageAddItem(npage, (Item) ntup, ntupSize, InvalidOffsetNumber, false, false) != e->neighborOffno)
-			elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
-	}
+    /* Commit */
+    if (building) {
+        MarkBufferDirty(buf);
+        if (nbuf != buf)
+            MarkBufferDirty(nbuf);
+    } else {
+        GenericXLogFinish(state);
+    }
+    UnlockReleaseBuffer(buf);
+    if (nbuf != buf)
+        UnlockReleaseBuffer(nbuf);
 
-	/* Commit */
-	if (building)
-	{
-		MarkBufferDirty(buf);
-		if (nbuf != buf)
-			MarkBufferDirty(nbuf);
-	}
-	else
-		GenericXLogFinish(state);
-	UnlockReleaseBuffer(buf);
-	if (nbuf != buf)
-		UnlockReleaseBuffer(nbuf);
-
-	/* Update the insert page */
-	if (BlockNumberIsValid(newInsertPage) && newInsertPage != insertPage)
-		*updatedInsertPage = newInsertPage;
+    /* Update the insert page */
+    if (BlockNumberIsValid(newInsertPage) && newInsertPage != insertPage)
+        *updatedInsertPage = newInsertPage;
 }
 
 /*

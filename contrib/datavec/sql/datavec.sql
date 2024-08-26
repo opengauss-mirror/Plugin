@@ -324,6 +324,9 @@ CREATE FUNCTION hnswgettuple(internal, internal) RETURNS boolean
 CREATE FUNCTION hnswendscan(internal) RETURNS void
 	AS 'MODULE_PATHNAME' LANGUAGE C;
 
+CREATE FUNCTION hnswdelete(internal, internal, internal, internal, internal) RETURNS boolean
+	AS 'MODULE_PATHNAME' LANGUAGE C;
+
 CREATE FUNCTION hnswhandler(internal) RETURNS index_am_handler
 	AS 'MODULE_PATHNAME' LANGUAGE C;
 

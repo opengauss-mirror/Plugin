@@ -25,7 +25,7 @@ static relopt_kind hnsw_relopt_kind;
 void
 HnswInit(void)
 {
-    hnsw_relopt_kind = add_reloption_kind();
+    hnsw_relopt_kind = RELOPT_KIND_DATAVEC;
     add_int_reloption(hnsw_relopt_kind, "m", "Max number of connections",
                       HNSW_DEFAULT_M, HNSW_MIN_M, HNSW_MAX_M);
     add_int_reloption(hnsw_relopt_kind, "ef_construction", "Size of the dynamic candidate list for construction",
@@ -101,7 +101,8 @@ hnswoptions_internal(Datum reloptions, bool validate)
         {"enable_pq", RELOPT_TYPE_BOOL, offsetof(HnswOptions, enablePQ)},
         {"pq_m", RELOPT_TYPE_INT, offsetof(HnswOptions, pqM)},
         {"pq_ksub", RELOPT_TYPE_INT, offsetof(HnswOptions, pqKsub)},
-        {"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
+        {"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)},
+        {"storage_type", RELOPT_TYPE_STRING, offsetof(HnswOptions, storage_type)}
     };
 
 #if PG_VERSION_NUM >= 130000
@@ -192,6 +193,8 @@ hnswhandler(PG_FUNCTION_ARGS)
 	rc = strcpy_s(amroutine->amgettuplefuncname, NAMEDATALEN, "hnswgettuple");
 	securec_check(rc, "\0", "\0");
 	rc = strcpy_s(amroutine->amendscanfuncname, NAMEDATALEN, "hnswendscan");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amdeletefuncname, NAMEDATALEN, "hnswdelete");
 	securec_check(rc, "\0", "\0");
 
 	PG_RETURN_POINTER(amroutine);
@@ -347,4 +350,19 @@ hnswendscan(PG_FUNCTION_ARGS)
 	hnswendscan_internal(scan);
 
 	PG_RETURN_VOID();
+}
+
+PGDLLEXPORT PG_FUNCTION_INFO_V1(hnswdelete);
+Datum
+hnswdelete(PG_FUNCTION_ARGS)
+{
+	Relation rel = (Relation)PG_GETARG_POINTER(0);
+	Datum *values = (Datum *)PG_GETARG_POINTER(1);
+	const bool* isnull = (const bool*)PG_GETARG_POINTER(2);
+	ItemPointer heapTCtid = (ItemPointer)PG_GETARG_POINTER(3);
+	bool isRollbackIndex = (bool)PG_GETARG_POINTER(4);
+
+	bool result = hnswdelete_internal(rel, values, isnull, heapTCtid, isRollbackIndex);
+
+	PG_RETURN_BOOL(result);
 }
