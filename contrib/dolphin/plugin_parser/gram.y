@@ -1321,7 +1321,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 
 	ZEROFILL ZONE
 
-	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
+	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_LSEG DB_B_PATH DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
 	WEIGHT_STRING REVERSE 
 
 %token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
@@ -1428,7 +1428,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
+%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_LSEG DB_B_PATH DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
@@ -38526,6 +38526,14 @@ DOLPHINIDENT: IDENT
 				{
 					$$ = CreateDolphinIdent(pstrdup($1), false);
 				}
+			| DB_B_LSEG
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_PATH
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
 			| DB_B_POLYGON
 				{
 					$$ = CreateDolphinIdent(pstrdup($1), false);
@@ -38714,6 +38722,18 @@ AexprConst_without_Sconst: Iconst
 			| DB_B_CIRCLE SCONST
 				{
 					TypeName * tmp = SystemTypeName("circle");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_LSEG SCONST
+				{
+					TypeName * tmp = SystemTypeName("lseg");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_PATH SCONST
+				{
+					TypeName * tmp = SystemTypeName("path");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
