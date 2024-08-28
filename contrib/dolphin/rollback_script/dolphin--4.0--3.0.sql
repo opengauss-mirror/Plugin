@@ -564,6 +564,20 @@ DROP FUNCTION IF EXISTS pg_catalog.op_tblob_add_intr (tinyblob, interval);
 DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_tblob (interval, tinyblob);
 DROP FUNCTION IF EXISTS pg_catalog.op_tblob_sub_intr (tinyblob, interval);
 
+DROP OPERATOR IF EXISTS pg_catalog.+ (anyenum, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+ (interval, anyenum);
+DROP OPERATOR IF EXISTS pg_catalog.- (anyenum, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+ (anyset, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+ (interval, anyset);
+DROP OPERATOR IF EXISTS pg_catalog.- (anyset, interval);
+
+DROP FUNCTION IF EXISTS pg_catalog.op_enum_add_intr (anyenum, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_enum (interval, anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.op_enum_sub_intr (anyenum, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_set_add_intr (anyset, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_set (interval, anyset);
+DROP FUNCTION IF EXISTS pg_catalog.op_set_sub_intr (anyset, interval);
+
 DROP FUNCTION IF EXISTS pg_catalog.op_num_add_intr (numeric, interval);
 DROP FUNCTION IF EXISTS pg_catalog.op_text_add_intr (text, interval);
 DROP FUNCTION IF EXISTS pg_catalog.op_date_add_intr (date, interval);
