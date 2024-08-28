@@ -48,7 +48,7 @@ else ()
 endif ()
 
 # Set project name, version, and language. Language needs to be set for compiler checks
-project(timescaledb VERSION ${VERSION} LANGUAGES C CXX)
+project(timescaledb VERSION ${VERSION} LANGUAGES CXX)
 
 if (NOT CMAKE_BUILD_TYPE)
   # Default to Release builds
@@ -77,54 +77,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 set(SUPPORTED_COMPILERS "GNU" "Clang" "AppleClang" "MSVC")
-
-# Check for a supported compiler
-if (NOT CMAKE_C_COMPILER_ID IN_LIST SUPPORTED_COMPILERS)
-   message(FATAL_ERROR "Unsupported compiler ${CMAKE_C_COMPILER_ID}. Supported compilers are: ${SUPPORTED_COMPILERS}")
-endif ()
-
-if(CMAKE_C_COMPILER_ID MATCHES "GNU|AppleClang|Clang")
-  # These two flags generate too many errors currently, but we
-  # probably want these optimizations enabled.
-
-  # TODO: -fdelete-null-pointer-checks -Wnull-dereference
-
-  # This flag avoid some subtle bugs related to standard conversions,
-  # but currently does not compile because we are using too many
-  # implicit conversions that potentially lose precision.
-
-  # TODO: -Wconversions
-  add_compile_options(-Wempty-body -Wvla)
-  if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER "7")
-    add_compile_options(-Wimplicit-fallthrough)
-  endif()
-
-  # Not sure when it was added to Clang, but it is mentioned in the
-  # release notes for Clang 3.3
-  if(CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER "3.3")
-    add_compile_options(-Wimplicit-fallthrough)
-  endif()
-
-endif()
-
-# Check for supported platforms and compiler flags
-if (WIN32)
-  if (NOT CMAKE_CONFIGURATION_TYPES)
-    # Default to only include Release builds so MSBuild.exe 'just works'
-    set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING "Semicolon separated list of supported configuration types, only supports Debug, Release, MinSizeRel, and RelWithDebInfo, anything else will be ignored." FORCE)
-  endif ()
-elseif (UNIX)
-  # On UNIX, the compiler needs to support -fvisibility=hidden to hide symbols by default
-  check_c_compiler_flag(-fvisibility=hidden CC_SUPPORTS_VISIBILITY_HIDDEN)
-
-  if (NOT CC_SUPPORTS_VISIBILITY_HIDDEN)
-    message(FATAL_ERROR "The compiler ${CMAKE_C_COMPILER_ID} does not support -fvisibility=hidden")
-  endif (NOT CC_SUPPORTS_VISIBILITY_HIDDEN)
-else ()
-  message(FATAL_ERROR "Unsupported platform")
-endif ()
-
-message(STATUS "Using compiler ${CMAKE_C_COMPILER_ID}")
 
 if (ENABLE_CODECOVERAGE)
   message(STATUS "Running code coverage")
