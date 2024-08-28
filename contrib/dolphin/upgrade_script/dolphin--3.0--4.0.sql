@@ -778,6 +778,20 @@ CREATE OR REPLACE FUNCTION pg_catalog.date_sub(numeric, interval, boolean) RETUR
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub(year, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub(date, interval, boolean) RETURNS text AS $$ SELECT pg_catalog.date_add($1, -$2)  $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION pg_catalog.op_enum_add_intr (anyenum, interval) RETURNS text AS $$ SELECT pg_catalog.op_text_add_intr($1::text, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_enum (interval, anyenum) RETURNS text AS $$ SELECT pg_catalog.op_intr_add_text($1, $2::text) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_enum_sub_intr (anyenum, interval) RETURNS text AS $$ SELECT pg_catalog.op_text_sub_intr($1::text, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_set_add_intr (anyset, interval) RETURNS text AS $$ SELECT pg_catalog.op_text_add_intr($1::text, $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_set (interval, anyset) RETURNS text AS $$ SELECT pg_catalog.op_intr_add_text($1, $2::text) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.op_set_sub_intr (anyset, interval) RETURNS text AS $$ SELECT pg_catalog.op_text_sub_intr($1::text, $2) $$ LANGUAGE SQL;
+
+CREATE OPERATOR pg_catalog.+ (leftarg = anyenum, rightarg = interval, procedure = op_enum_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = anyenum, procedure = op_intr_add_enum, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = anyenum, rightarg = interval, procedure = op_enum_sub_intr, commutator = operator(pg_catalog.-));
+CREATE OPERATOR pg_catalog.+ (leftarg = anyset, rightarg = interval, procedure = op_set_add_intr, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.+ (leftarg = interval, rightarg = anyset, procedure = op_intr_add_set, commutator = operator(pg_catalog.+));
+CREATE OPERATOR pg_catalog.- (leftarg = anyset, rightarg = interval, procedure = op_set_sub_intr, commutator = operator(pg_catalog.-));
+
 create or replace function pg_catalog.any2interval(anyelement, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
 create or replace function pg_catalog.any2interval(anyelement, integer, integer) returns interval LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','any2interval';
 
