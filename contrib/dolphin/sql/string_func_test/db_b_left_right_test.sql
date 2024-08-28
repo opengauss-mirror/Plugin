@@ -77,5 +77,14 @@ select left('abc',5/2);
 select right('abc',2.5);
 select right('abc',5/2);
 
+select left('dont!', b'10010');
+select right('dont!', b'10010');
+select left('dont!', X'FF');
+select right('dont!', X'FF');
+select left('dont!', '9223372036854775807');
+select right('dont!', '9223372036854775807');
+select right('dont!', 9223372036854775807);
+select right('dont!', 9223372036854775808);
+
 drop schema db_b_left_right_test cascade;
 reset current_schema;
