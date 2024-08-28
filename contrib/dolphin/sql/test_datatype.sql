@@ -186,5 +186,19 @@ select * from t_bit;
 drop table test_bit64;
 drop table t_bit;
 
+
+-- test treat_float_with_precision_as_float_type
+create table test_double(c1 double, c2 double(10, 0), c3 double(15, 3), c4 float, c5 float4, c6 float4(10, 0), c7 float4(7, 5), c8 float(10, 0), c9 float(7, 5), c10 float4(5));
+\d+ test_double;
+drop table test_double;
+set dolphin.treat_float_with_precision_as_float_type = true;
+create table test_double(c1 double, c2 double(10, 0), c3 double(15, 3), c4 float, c5 float4, c6 float4(10, 0), c7 float4(7, 5), c8 float(10, 0), c9 float(7, 5), c10 float4(5));
+\d+ test_double;
+insert into test_double values (12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456);
+select * from test_double;
+drop table test_double;
+
+reset dolphin.treat_float_with_precision_as_float_type;
+
 drop schema b_datatype_test cascade;
 reset current_schema;
