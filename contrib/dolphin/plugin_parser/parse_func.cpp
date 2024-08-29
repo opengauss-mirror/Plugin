@@ -1818,7 +1818,12 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
                 Node* arg1 = (Node*)linitial(fargs);
                 bool iscoercion = false;
 
-                if (sourceType == UNKNOWNOID && IsA(arg1, Const)) {
+                if (sourceType == UNKNOWNOID && IsA(arg1, Const)
+#ifdef DOLPHIN
+                    /* uuid(xxx) is not allow to be treated as coercion */
+                    && targetType != UUIDOID
+#endif
+                ) {
                     /* always treat typename('literal') as coercion */
                     iscoercion = true;
                 } else {
