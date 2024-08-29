@@ -32,6 +32,7 @@
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_target.h"
 #include "plugin_parser/parse_type.h"
+#include "plugin_parser/parse_oper.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
@@ -1663,6 +1664,10 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
         *rettype = INT8OID;
         *retset = false;
         return FUNCDETAIL_AGGREGATE;
+    }
+    if (strcmp(objname, "bit_and") == 0 &&
+        (IsIntType(*argtypes) || IsUnsignedIntType(*argtypes))) {
+        *argtypes = UINT8OID;
     }
 #endif
 

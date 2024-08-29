@@ -460,6 +460,17 @@ CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (date) RETURNS float8 LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 
+DROP FUNCTION IF EXISTS pg_catalog.hex(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.hex(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.hex(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.hex(uint8);
+
+-- binary
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_and(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_varbinary(binary) CASCADE;
+-- uint8
+drop aggregate if exists pg_catalog.bit_and(uint8);
 -- json
 DROP aggregate IF EXISTS pg_catalog.max(json);
 DROP aggregate IF EXISTS pg_catalog.min(json);
