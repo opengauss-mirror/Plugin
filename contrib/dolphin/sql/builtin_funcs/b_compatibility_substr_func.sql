@@ -217,6 +217,25 @@ select c1, mid(`char`, 3, 4), mid(`varchar`, 3, 4), mid(`binary`, 3, 4), mid(`va
 select c1, mid(`bit1`, 2), mid(`bit8`, 2), mid(`bit15`, 2), mid(`bit64`, 2) from t_bit order by c1;
 select c1, mid(`bit1`, 2, 2), mid(`bit8`, 2, 2), mid(`bit15`, 2, 2), mid(`bit64`, 2, 2) from t_bit order by c1;
 
+-- test mid pos、length is bit type
+select c1, mid(`int1`, b'11'), mid(`uint1`, b'11'), mid(`int2`, b'11'), mid(`uint2`, b'11'), mid(`int4`, b'11'), mid(`uint4`, b'11'), mid(`int8`, b'11'), mid(`uint8`, b'11'), mid(`float4`, b'11'), mid(`float8`, b'11'), mid(`boolean`, b'11') from t_number order by c1;
+select c1, mid(`int1`, b'11', 2), mid(`uint1`, b'11', 2), mid(`int2`, b'11', 2), mid(`uint2`, b'11', 2), mid(`int4`, b'11', 2), mid(`uint4`, b'11', 2), mid(`int8`, b'11', 2), mid(`uint8`, b'11', 2), mid(`float4`, b'11', 2), mid(`float8`, b'11', 2), mid(`boolean`, b'11', 2) from t_number order by c1;
+select c1, mid(`int1`, 2, b'11'), mid(`uint1`, 2, b'11'), mid(`int2`, 2, b'11'), mid(`uint2`, 2, b'11'), mid(`int4`, 2, b'11'), mid(`uint4`, 2, b'11'), mid(`int8`, 2, b'11'), mid(`uint8`, 2, b'11'), mid(`float4`, 2, b'11'), mid(`float8`, 2, b'11'), mid(`boolean`, 2, b'11') from t_number order by c1;
+select c1, mid(`int1`, b'11', b'11'), mid(`uint1`, b'11', b'11'), mid(`int2`, b'11', b'11'), mid(`uint2`, b'11', b'11'), mid(`int4`, b'11', b'11'), mid(`uint4`, b'11', b'11'), mid(`int8`, b'11', b'11'), mid(`uint8`, b'11', b'11'), mid(`float4`, b'11', b'11'), mid(`float8`, b'11', b'11'), mid(`boolean`, b'11', b'11') from t_number order by c1;
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero'; -- with pad_char_to_full_length
+select c1, mid(`char`, b'11'), mid(`varchar`, b'11'), mid(`binary`, b'11'), mid(`varbinary`, b'11'), mid(`text`, b'11') from t_str order by c1;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,auto_recompile_function,error_for_division_by_zero'; -- without pad_char_to_full_length
+select c1, mid(`char`, b'11'), mid(`varchar`, b'11'), mid(`binary`, b'11'), mid(`varbinary`, b'11'), mid(`text`, b'11') from t_str order by c1;
+select c1, mid(`char`, b'11', 4), mid(`varchar`, b'11', 4), mid(`binary`, b'11', 4), mid(`varbinary`, b'11', 4), mid(`text`, b'11', 4) from t_str order by c1;
+select c1, mid(`char`, 3, b'100'), mid(`varchar`, 3, b'100'), mid(`binary`, 3, b'100'), mid(`varbinary`, 3, b'100'), mid(`text`, 3, b'100') from t_str order by c1;
+select c1, mid(`char`, b'11', b'100'), mid(`varchar`, b'11', b'100'), mid(`binary`, b'11', b'100'), mid(`varbinary`, b'11', b'100'), mid(`text`, b'11', b'100') from t_str order by c1;
+
+select c1, mid(`bit1`, b'10'), mid(`bit8`, b'10'), mid(`bit15`, b'10'), mid(`bit64`, b'10') from t_bit order by c1;
+select c1, mid(`bit1`, b'10', 3), mid(`bit8`, b'10', 3), mid(`bit15`, b'10', 3), mid(`bit64`, b'10', 3) from t_bit order by c1;
+select c1, mid(`bit1`, 2, b'11'), mid(`bit8`, 2, b'11'), mid(`bit15`, 2, b'11'), mid(`bit64`, 2, b'11') from t_bit order by c1;
+select c1, mid(`bit1`, b'10', b'11'), mid(`bit8`, b'10', b'11'), mid(`bit15`, b'10', b'11'), mid(`bit64`, b'10', b'11') from t_bit order by c1;
+
 drop table t_number;
 drop table t_bit;
 drop table t_str;
