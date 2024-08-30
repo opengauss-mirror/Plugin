@@ -1,1 +1,1 @@
-./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF -DENABLE_BBOX=ON -DENABLE_MOT=ON 
+./contrib/timescaledb/bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF -DENABLE_BBOX=ON -DENABLE_MOT=ON --prefix=contrib/timescaledb
