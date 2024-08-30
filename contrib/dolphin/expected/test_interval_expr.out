@@ -6342,6 +6342,66 @@ WARNING:  date/time field overflow
  
 (1 row)
 
+select '2003-11-11 00:00:50'::blob + interval '2' second;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select interval '2' second + '2003-11-11 00:00:50'::blob;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select '2003-11-11 00:00:50'::longblob + interval '2' second;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select interval '2' second + '2003-11-11 00:00:50'::longblob;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select '2003-11-11 00:00:50'::mediumblob + interval '2' second;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select interval '2' second + '2003-11-11 00:00:50'::mediumblob;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select '2003-11-11 00:00:50'::tinyblob + interval '2' second;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select interval '2' second + '2003-11-11 00:00:50'::tinyblob;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select '20031111000050'::json + interval '2' second;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
+select interval '2' second + '20031111000050'::json;
+      ?column?       
+---------------------
+ 2003-11-11 00:00:52
+(1 row)
+
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 NOTICE:  drop cascades to 5 other objects
