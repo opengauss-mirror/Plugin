@@ -1410,6 +1410,18 @@ select datetime'2024-06-11 14:29:25'+ interval datetime'2024-02-11 14:29:25' min
 select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
 select timestamp'9990-06-11 14:29:25' + interval 9 year;
 select timestamp'9990-06-11 14:29:25' + interval 99 year;
+
+select '2003-11-11 00:00:50'::blob + interval '2' second;
+select interval '2' second + '2003-11-11 00:00:50'::blob;
+select '2003-11-11 00:00:50'::longblob + interval '2' second;
+select interval '2' second + '2003-11-11 00:00:50'::longblob;
+select '2003-11-11 00:00:50'::mediumblob + interval '2' second;
+select interval '2' second + '2003-11-11 00:00:50'::mediumblob;
+select '2003-11-11 00:00:50'::tinyblob + interval '2' second;
+select interval '2' second + '2003-11-11 00:00:50'::tinyblob;
+select '20031111000050'::json + interval '2' second;
+select interval '2' second + '20031111000050'::json;
+
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 reset current_schema;
