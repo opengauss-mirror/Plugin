@@ -719,19 +719,19 @@ CREATE OR REPLACE FUNCTION pg_catalog.op_date_sub_intr (date, interval) RETURNS 
 CREATE OR REPLACE FUNCTION pg_catalog.op_dttm_sub_intr (timestamp without time zone, interval) RETURNS timestamp without time zone AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_tmsp_sub_intr (timestamptz, interval) RETURNS timestamptz AS $$ SELECT pg_catalog.date_sub($1, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_json_add_intr (json, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_json (interval, json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_json (interval, json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($2 as text), $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_json_sub_intr (json, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_blob_add_intr (blob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_blob (interval, blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_blob (interval, blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($2 as text), $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_blob_sub_intr (blob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_lblob_add_intr (longblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_lblob (interval, longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_lblob (interval, longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($2 as text), $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_lblob_sub_intr (longblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_mblob_add_intr (mediumblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_mblob (interval, mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_mblob (interval, mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($2 as text), $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_mblob_sub_intr (mediumblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_tblob_add_intr (tinyblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($1 as text), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_tblob (interval, tinyblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add($1, cast($2 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_tblob (interval, tinyblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_add(cast($2 as text), $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.op_tblob_sub_intr (tinyblob, interval) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_sub(cast($1 as text), $2)';
 
 CREATE OPERATOR pg_catalog.+ (leftarg = numeric, rightarg = interval, procedure = op_num_add_intr, commutator = operator(pg_catalog.+));
