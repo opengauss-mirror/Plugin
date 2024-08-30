@@ -1,0 +1,38 @@
+create schema test_geometric_operator;
+set current_schema to 'test_geometric_operator';
+set dolphin.b_compatibility_mode to off;
+
+SELECT box '((0,0),(1,1))' + point '(2.0,0)' AS RESULT;
+SELECT box '((0,0),(1,1))' - point '(2.0,0)' AS RESULT;
+SELECT box '((0,0),(1,1))' * point '(2.0,0)' AS RESULT;
+SELECT box '((0,0),(2,2))' / point '(2.0,0)' AS RESULT;
+SELECT box '((1,-1),(-1,1))' # box '((1,1),(-2,-2))' AS RESULT;
+SELECT # path'((1,0),(0,1),(-1,0))' AS RESULT;
+SELECT @-@ path '((0,0),(1,0))' AS RESULT;
+SELECT @@ circle '((0,0),10)' AS RESULT;
+SELECT circle '((0,0),1)' <-> circle '((5,0),1)' AS RESULT;
+SELECT box '((0,0),(1,1))' && box '((0,0),(2,2))' AS RESULT;
+SELECT circle '((0,0),1)' << circle '((5,0),1)' AS RESULT;
+SELECT circle '((5,0),1)' >> circle '((0,0),1)' AS RESULT;
+SELECT box '((0,0),(1,1))' &< box '((0,0),(2,2))' AS RESULT;
+SELECT box '((0,0),(3,3))' &> box '((0,0),(2,2))' AS RESULT;
+SELECT box '((0,0),(3,3))' <<| box '((3,4),(5,5))' AS RESULT;
+SELECT box '((3,4),(5,5))' |>> box '((0,0),(3,3))' AS RESULT;
+SELECT box '((0,0),(1,1))' &<| box '((0,0),(2,2))' AS RESULT;
+SELECT box '((0,0),(3,3))' |&> box '((0,0),(2,2))' AS RESULT;
+SELECT box '((0,0),(-3,-3))' <^ box '((0,0),(2,2))' AS RESULT;
+SELECT box '((0,0),(2,2))' >^ box '((0,0),(-3,-3))'  AS RESULT;
+SELECT lseg '((-1,0),(1,0))' ?# box '((-2,-2),(2,2))' AS RESULT;
+SELECT ?- lseg '((-1,0),(1,0))' AS RESULT;
+SELECT point '(1,0)' ?- point '(0,0)' AS RESULT;
+SELECT ?| lseg '((-1,0),(1,0))' AS RESULT;
+SELECT point '(0,1)' ?| point '(0,0)' AS RESULT;
+SELECT lseg '((0,0),(0,1))' ?-| lseg '((0,0),(1,0))' AS RESULT;
+SELECT lseg '((-1,0),(1,0))' ?|| lseg '((-1,2),(1,2))' AS RESULT;
+SELECT circle '((0,0),2)' @> point '(1,1)' AS RESULT;
+SELECT point '(1,1)' <@ circle '((0,0),2)' AS RESULT;
+SELECT polygon '((0,0),(1,1))' ~= polygon '((1,1),(0,0))' AS RESULT;
+
+reset dolphin.b_compatibility_mode;
+drop schema test_geometric_operator cascade;
+reset current_schema;
