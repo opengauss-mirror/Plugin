@@ -228,6 +228,26 @@ drop table if exists test_ignore_normal;
 NOTICE:  table "test_ignore_normal" does not exist, skipping
 create table test_ignore_normal(c1 int, c2 text);
 insert ignore into test_ignore_normal values(1, 'a');
+-- test for keywords
+reset dolphin.sql_mode;
+CREATE TABLE allshortestpath_splitprovince (
+enprov varchar(50) NOT NULL,
+exprov varchar(50) NOT NULL,
+"version" varchar(50) NOT NULL,
+"index" varchar(50) NOT NULL,
+"now" varchar(50) NULL,
+count int4 NULL,
+"group" text NULL,
+m int8 NOT NULL,
+mver varchar(50) NULL,
+pver varchar(50) NULL,
+CONSTRAINT pk_allshortestpath_splitprovince PRIMARY KEY (enprov, exprov, version, "index")
+)
+WITH (
+orientation=row,
+compression=no
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pk_allshortestpath_splitprovince" for table "allshortestpath_splitprovince"
 drop table if exists test_ignore_invalid_input;
 NOTICE:  table "test_ignore_invalid_input" does not exist, skipping
 create table test_ignore_invalid_input(c1 int, c2 char(5), c3 timestamp, c4 bit(5), c5 boolean, c6 point, c7 uuid,
@@ -772,6 +792,12 @@ select * from test_ignore_normal;
   1 | a
 (1 row)
 
+-- test for keywords
+select * from allshortestpath_splitprovince;
+ enprov | exprov | version | index | now | count | group | m | mver | pver 
+--------+--------+---------+-------+-----+-------+-------+---+------+------
+(0 rows)
+
 /*
  * test for restore by gsql
  */
@@ -1280,6 +1306,12 @@ select * from test_ignore_normal;
 ----+----
   1 | a
 (1 row)
+
+-- test for keywords
+select * from allshortestpath_splitprovince;
+ enprov | exprov | version | index | now | count | group | m | mver | pver 
+--------+--------+---------+-------+-----+-------+-------+---+------+------
+(0 rows)
 
 /*
  * test for restore by gs_dumpall
@@ -1791,6 +1823,12 @@ select * from test_ignore_normal;
   1 | a
 (1 row)
 
+-- test for keywords
+select * from allshortestpath_splitprovince;
+ enprov | exprov | version | index | now | count | group | m | mver | pver 
+--------+--------+---------+-------+-----+-------+-------+---+------+------
+(0 rows)
+
 /*
  * test for quote-all-identifiers
  */
@@ -2298,6 +2336,12 @@ select * from test_ignore_normal;
 ----+----
   1 | a
 (1 row)
+
+-- test for keywords
+select * from allshortestpath_splitprovince;
+ enprov | exprov | version | index | now | count | group | m | mver | pver 
+--------+--------+---------+-------+-----+-------+-------+---+------+------
+(0 rows)
 
 \c postgres
 drop database if exists table_test;
