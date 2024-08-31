@@ -67,9 +67,9 @@ SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u W
 
 CREATE SCHEMA "Test_User";
 ALTER SCHEMA "Test_User" OWNER TO "Test_User";
-CREATE SCHEMA test_user2;
-ALTER SCHEMA test_user2 OWNER TO test_user2;
-CREATE DEFINER = "Root_Test" PROCEDURE pro_1107262(n int)  NOT SHIPPABLE
+CREATE SCHEMA "test_user2";
+ALTER SCHEMA "test_user2" OWNER TO "test_user2";
+CREATE DEFINER = "Root_Test" PROCEDURE "pro_1107262"(n int)  NOT SHIPPABLE
  AS  DECLARE begin
 repeat
 insert into tab_1107262 values(n,n*2);
@@ -77,23 +77,23 @@ n:=n+1;
 until n>10 end repeat;
 end;
 /
-ALTER PROCEDURE public.pro_1107262(n integer) OWNER TO "Root_Test";
-CREATE VIEW definer_test_view1(log) AS
-    SELECT log((10)::number, (1000)::number) AS log;
-ALTER VIEW public.definer_test_view1 OWNER TO "Root_Test";
-CREATE VIEW definer_test_view2(log) AS
-    SELECT log((10)::number, (100)::number) AS log;
-ALTER VIEW public.definer_test_view2 OWNER TO test_user2;
-CREATE VIEW definer_test_view3(log) AS
-    SELECT log((10)::number, (100)::number) AS log;
-ALTER VIEW public.definer_test_view3 OWNER TO "Test_User";
-CREATE TABLE tab_1107262 (
-    id integer,
-    c1 integer
+ALTER PROCEDURE "public"."pro_1107262"("n" integer) OWNER TO "Root_Test";
+CREATE VIEW "definer_test_view1"("log") AS
+    SELECT "log"((10)::number, (1000)::number) AS "log";
+ALTER VIEW "public"."definer_test_view1" OWNER TO "Root_Test";
+CREATE VIEW "definer_test_view2"("log") AS
+    SELECT "log"((10)::number, (100)::number) AS "log";
+ALTER VIEW "public"."definer_test_view2" OWNER TO "test_user2";
+CREATE VIEW "definer_test_view3"("log") AS
+    SELECT "log"((10)::number, (100)::number) AS "log";
+ALTER VIEW "public"."definer_test_view3" OWNER TO "Test_User";
+CREATE TABLE "tab_1107262" (
+    "id" integer,
+    "c1" integer
 )
 WITH (orientation=row, compression=no);
-ALTER TABLE public.tab_1107262 OWNER TO "Root_Test";
-COPY public.tab_1107262 (id, c1) FROM stdin;
+ALTER TABLE "public"."tab_1107262" OWNER TO "Root_Test";
+COPY public."tab_1107262" ("id", "c1") FROM stdin;
 \.
 ;
 \! @abs_bindir@/gs_dump test_db -p @portstring@ -F c -f @abs_bindir@/definer_view_dump.dmp --disable-progress
