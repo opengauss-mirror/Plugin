@@ -639,6 +639,21 @@ CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (year) RETURNS integer LANGUAGE
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (binary) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
 
+CREATE OR REPLACE FUNCTION pg_catalog.hex(uint1) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'uint1_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(uint2) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'uint2_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(uint4) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'uint4_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(uint8) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'uint8_to_hex';
+
+-- binary
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_and(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_varbinary(binary) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.binary_and(binary, binary) RETURNS binary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binaryand';
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary(binary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binary_varbinary';
+CREATE AGGREGATE pg_catalog.bit_and(binary) (SFUNC = pg_catalog.binary_and, STYPE = binary, FINALFUNC = binary_varbinary);
+-- uint8
+drop aggregate if exists pg_catalog.bit_and(uint8);
+create aggregate pg_catalog.bit_and(uint8) (SFUNC=uint8and, cFUNC = uint8and, STYPE= uint8, initcond = '18446744073709551615');
 -- json max/min
 CREATE OR REPLACE FUNCTION pg_catalog.json_larger(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_larger';
 CREATE OR REPLACE FUNCTION pg_catalog.json_smaller(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_smaller';
