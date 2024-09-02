@@ -43,6 +43,30 @@ DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, int, int);
 DROP FUNCTION IF EXISTS pg_catalog.mid(bit, int);
 DROP FUNCTION IF EXISTS pg_catalog.mid(bit, int, int);
 
+DROP FUNCTION IF EXISTS pg_catalog.mid(text, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, bit);
+
+DROP FUNCTION IF EXISTS pg_catalog.mid(text, bit, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, bit, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, bit, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, bit, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, bit, int);
+
+DROP FUNCTION IF EXISTS pg_catalog.mid(text, int, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, int, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, int, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, int, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, int, bit);
+
+DROP FUNCTION IF EXISTS pg_catalog.mid(text, bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, bit, bit);
+
 DROP FUNCTION IF EXISTS pg_catalog.log10(float8);
 CREATE OR REPLACE FUNCTION pg_catalog.log10(float8)
 RETURNS float8
