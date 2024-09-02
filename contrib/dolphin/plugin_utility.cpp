@@ -239,6 +239,10 @@ static void analyze_tmptbl_debug_cn(Oid rel_id, Oid main_relid, VacuumStmt* stmt
 #endif
 
 extern void begin_delta_merge(VacuumStmt* stmt);
+#ifdef DOLPHIN
+extern int dolphin_process_command(StringInfo buf);
+#endif
+
 #ifdef ENABLE_MULTIPLE_NODES
 static void set_dndistinct_coors(VacuumStmt* stmt, int attnum);
 #endif
@@ -3014,6 +3018,11 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
                     (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
                         errmsg("non-DECLARE CURSOR PlannedStmt passed to ProcessUtility")));
             }
+#ifdef DOLPHIN
+            if (u_sess->proc_cxt.MyProcPort->protocol_config->fn_process_command == dolphin_process_command) {
+                ereport(ERROR, (errmsg("non-procedure CURSOR is not supported by mysql protocol.")));
+            }
+#endif
             PerformCursorOpen(stmt, params, query_string, is_top_level);
         } break;
 
