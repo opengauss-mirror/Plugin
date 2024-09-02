@@ -104,6 +104,13 @@ mysql
 dolphin-server
 3
 postgres
+Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 select * from t3 order by id;
  id |      name      
 ----+----------------
@@ -197,6 +204,13 @@ mysql
 dolphin-server
 3
 postgres
+Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 select * from t3 order by id;
  id |      name      
 ----+----------------
@@ -289,6 +303,13 @@ mysql
 dolphin-server
 3
 postgres
+Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 select * from t3 order by id;
  id |      name      
 ----+----------------
@@ -381,6 +402,13 @@ mysql
 dolphin-server
 3
 postgres
+Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 select * from t3 order by id;
  id |      name      
 ----+----------------
