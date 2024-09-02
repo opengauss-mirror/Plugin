@@ -343,3 +343,17 @@ CREATE TYPE typenum AS ENUM ( 'a', 'a ');
 --expect success
 CREATE TYPE typenum AS ENUM ( 'a', ' a');
 DROP TYPE typenum;
+
+create table enum_test_table1(a enum('2024-07-05', '2024-07-05 14:59:58', '14:59:59'));
+insert enum_test_table1 values('2024-07-05'), ('2024-07-05 14:59:58'), ('14:59:59');
+select a + interval 1 day as 'a + interval 1 day' from enum_test_table1;
+select interval 1 day + a as 'interval 1 day + a' from enum_test_table1;
+select a - interval 1 day as 'a - interval 1 day' from enum_test_table1;
+drop table enum_test_table1;
+
+create table set_t(a set('2024-07-05', '2024-07-05 14:59:58', '14:59:59'));
+insert set_t values('2024-07-05'), ('2024-07-05 14:59:58'), ('14:59:59');
+select a + interval 1 day as 'a + interval 1 day' from set_t;
+select interval 1 day + a as 'interval 1 day + a' from set_t;
+select a - interval 1 day as 'a - interval 1 day' from set_t;
+drop table set_t;
