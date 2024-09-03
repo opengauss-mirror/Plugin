@@ -519,6 +519,41 @@ select test_function_030('aaa') is null;
 drop table if exists test_table_030;
 drop function if exists test_function_030;
 
+CREATE PROCEDURE p_log_job_info_bak()
+AS DECLARE
+begin
+	raise notice '1';
+    commit;
+END;
+/
+
+create procedure p_gen_rpt_init_self_recovery()
+AS
+DECLARE
+    temp_wtg_id                BIGINT;
+    CURSOR crs_ar FOR (SELECT wtg_id
+                   FROM temp_init_sr_previous
+                   ORDER BY 1);
+BEGIN
+  CREATE TEMPORARY TABLE temp_init_sr_previous(wtg_id BIGINT);
+  OPEN crs_ar;
+ar_loop:LOOP
+    FETCH crs_ar INTO temp_wtg_id;
+    IF NOT FOUND THEN
+      leave ar_loop;
+    END IF;
+  END LOOP;
+  CLOSE crs_ar;
+  DROP TEMPORARY TABLE temp_init_sr_previous;
+
+  CALL p_log_job_info_bak();
+END;
+/
+
+call p_gen_rpt_init_self_recovery();
+drop procedure p_log_job_info_bak;
+DROP PROCEDURE p_gen_rpt_init_self_recovery;
+
 -- expect error: there is no parameter $1, other error is wrong!!!
 select :lable;
 select :loop;
