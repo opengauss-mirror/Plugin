@@ -594,15 +594,17 @@ SELECT IF(-12,'A','B');
 (1 row)
 
 SELECT IF('12.35abc','A','B');
-ERROR:  invalid input syntax for type boolean: "12.35abc"
-LINE 1: SELECT IF('12.35abc','A','B');
-                  ^
-CONTEXT:  referenced column: case
+ case 
+------
+ A
+(1 row)
+
 SELECT IF('打上卡','A','B');
-ERROR:  invalid input syntax for type boolean: "打上卡"
-LINE 1: SELECT IF('打上卡','A','B');
-                  ^
-CONTEXT:  referenced column: case
+ case 
+------
+ B
+(1 row)
+
 SELECT IF(FALSE,'A','B');
  case 
 ------
@@ -628,15 +630,17 @@ SELECT IF(NULL,'A','B');
 (1 row)
 
 SELECT IF('','A','B');
-ERROR:  invalid input syntax for type boolean: ""
-LINE 1: SELECT IF('','A','B');
-                  ^
-CONTEXT:  referenced column: case
+ case 
+------
+ B
+(1 row)
+
 SELECT IF('12.25abc','A','B');
-ERROR:  invalid input syntax for type boolean: "12.25abc"
-LINE 1: SELECT IF('12.25abc','A','B');
-                  ^
-CONTEXT:  referenced column: case
+ case 
+------
+ A
+(1 row)
+
 --测试点：验证bit_length（返回位数）
 select * from pg_proc where proname in ('db_b_parser_bit_length');
  proname | pronamespace | proowner | prolang | procost | prorows | provariadic | protransform | proisagg | proiswindow | prosecdef | proleakproof | proisstrict | proretset | provolatile | pronargs | pronargdefaults | prorettype | proargtypes | proallargtypes | proargmodes | proargnames | proargdefaults | prosrc | probin | proconfig | proacl | prodefaultargpos | fencedmode | proshippable | propackage | prokind | proargsrc | propackageid | proisprivate | proargtypesext | prodefaultargposext | allargtypes | allargtypesext 
