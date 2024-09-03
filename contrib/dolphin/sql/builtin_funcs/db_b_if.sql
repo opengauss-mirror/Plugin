@@ -4,8 +4,10 @@ set current_schema to 'db_b_if';
 
 select if(TRUE, 1, 2);
 select if(FALSE, 1, 2);
--- wrong type for first param
+-- string type for first param
 select if('abc', 1, 2);
+select if('ASD', 1, 2);
+select if('ASD', 1, 2);
 
 -- '2022-01-30' is text, date '2022-01-30' is date
 CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as date_type;
@@ -82,7 +84,7 @@ select pg_typeof(case when conproc < 5000 then conproc else 0 end) from pg_conve
 
 
 drop table if exists t_if_001;
-create table t_if_001(c_01 int primary key,c_02 varchar(20),c_03 int,c_04 bool,c_05 date,c_06 float);
+create table t_if_001(c_01 int primary key,c_02 text,c_03 int,c_04 bool,c_05 date,c_06 float);
 insert into t_if_001 values(1,null,2,true,null,12.3),
 (2,'abc',123,false,'2022-03-08',0.00),
 (3,'ADB',-123,false,'9999-12-31',1.005),

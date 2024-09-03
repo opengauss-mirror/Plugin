@@ -37797,11 +37797,12 @@ case_expr:	CASE case_arg when_clause_list case_default END_P
 				}
 			| IF_P '(' a_expr ',' a_expr ',' a_expr ')'
 				{
+					Node *n = makeTypeCast($3, SystemTypeName("text"), @3);
 					CaseExpr *c = makeNode(CaseExpr);
 					c->casetype = InvalidOid; /* not analyzed yet */
 					c->arg = NULL;
 					CaseWhen *w = makeNode(CaseWhen);
-					w->expr = (Expr *) $3;
+					w->expr = (Expr *) n;
 					w->result = (Expr *) $5;
 					c->args = list_make1(w);
 					c->defresult = (Expr *) $7;
