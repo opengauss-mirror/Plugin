@@ -10,11 +10,6 @@
 #include "utils/selfuncs.h"
 #include "utils/spccache.h"
 
-#if PG_VERSION_NUM < 150000
-#define MarkGUCPrefixReserved(x) EmitWarningsOnPlaceholders(x)
-#endif
-
-int			ivfflat_probes;
 static relopt_kind ivfflat_relopt_kind;
 
 /*
@@ -30,12 +25,6 @@ IvfflatInit(void)
 					  ,AccessExclusiveLock
 #endif
 		);
-
-	DefineCustomIntVariable("ivfflat.probes", "Sets the number of probes",
-							"Valid range is 1..lists.", &ivfflat_probes,
-							IVFFLAT_DEFAULT_PROBES, IVFFLAT_MIN_LISTS, IVFFLAT_MAX_LISTS, PGC_USERSET, 0, NULL, NULL, NULL);
-
-	MarkGUCPrefixReserved("ivfflat");
 }
 
 /*
@@ -43,75 +32,74 @@ IvfflatInit(void)
  */
 static void
 ivfflatcostestimate_internal(PlannerInfo *root, IndexPath *path, double loop_count,
-					Cost *indexStartupCost, Cost *indexTotalCost,
-					Selectivity *indexSelectivity, double *indexCorrelation)
+                             Cost *indexStartupCost, Cost *indexTotalCost,
+                             Selectivity *indexSelectivity, double *indexCorrelation)
 {
-	GenericCosts costs;
-	int			lists;
-	double		ratio;
-	double		spc_seq_page_cost;
-	Relation	index;
+    GenericCosts costs;
+    int			lists;
+    double		ratio;
+    double		spc_seq_page_cost;
+    Relation	index;
+    double      half = 0.5;
 
-	/* Never use index without order */
-	if (path->indexorderbys == NULL)
-	{
-		*indexStartupCost = DBL_MAX;
-		*indexTotalCost = DBL_MAX;
-		*indexSelectivity = 0;
-		*indexCorrelation = 0;
-		return;
-	}
+    /* Never use index without order */
+    if (path->indexorderbys == NULL) {
+        *indexStartupCost = DBL_MAX;
+        *indexTotalCost = DBL_MAX;
+        *indexSelectivity = 0;
+        *indexCorrelation = 0;
+        return;
+    }
 
-	MemSet(&costs, 0, sizeof(costs));
+    MemSet(&costs, 0, sizeof(costs));
 
-	index = index_open(path->indexinfo->indexoid, NoLock);
-	IvfflatGetMetaPageInfo(index, &lists, NULL);
-	index_close(index, NoLock);
+    index = index_open(path->indexinfo->indexoid, NoLock);
+    IvfflatGetMetaPageInfo(index, &lists, NULL);
+    index_close(index, NoLock);
 
-	/* Get the ratio of lists that we need to visit */
-	ratio = ((double) ivfflat_probes) / lists;
-	if (ratio > 1.0)
-		ratio = 1.0;
+    /* Get the ratio of lists that we need to visit */
+    ratio = ((double) get_session_context()->ivfflat_probes) / lists;
+    if (ratio > 1.0) {
+        ratio = 1.0;
+    }
 
-	/*
-	 * This gives us the subset of tuples to visit. This value is passed into
-	 * the generic cost estimator to determine the number of pages to visit
-	 * during the index scan.
-	 */
-	costs.numIndexTuples = path->indexinfo->tuples * ratio;
+    /*
+     * This gives us the subset of tuples to visit. This value is passed into
+     * the generic cost estimator to determine the number of pages to visit
+     * during the index scan.
+     */
+    costs.numIndexTuples = path->indexinfo->tuples * ratio;
 
-	genericcostestimate(root, path, loop_count, costs.numIndexTuples, &costs.indexStartupCost,
-			&costs.indexTotalCost, &costs.indexSelectivity, &costs.indexCorrelation);
+    genericcostestimate(root, path, loop_count, costs.numIndexTuples, &costs.indexStartupCost,
+                        &costs.indexTotalCost, &costs.indexSelectivity, &costs.indexCorrelation);
 
-	get_tablespace_page_costs(path->indexinfo->reltablespace, NULL, &spc_seq_page_cost);
+    get_tablespace_page_costs(path->indexinfo->reltablespace, NULL, &spc_seq_page_cost);
 
-	/* Adjust cost if needed since TOAST not included in seq scan cost */
-	if (costs.numIndexPages > path->indexinfo->rel->pages && ratio < 0.5)
-	{
-		/* Change all page cost from random to sequential */
-		costs.indexTotalCost -= costs.numIndexPages * (costs.spc_random_page_cost - spc_seq_page_cost);
+    /* Adjust cost if needed since TOAST not included in seq scan cost */
+    if (costs.numIndexPages > path->indexinfo->rel->pages && ratio < half) {
+        /* Change all page cost from random to sequential */
+        costs.indexTotalCost -= costs.numIndexPages * (costs.spc_random_page_cost - spc_seq_page_cost);
 
-		/* Remove cost of extra pages */
-		costs.indexTotalCost -= (costs.numIndexPages - path->indexinfo->rel->pages) * spc_seq_page_cost;
-	}
-	else
-	{
-		/* Change some page cost from random to sequential */
-		costs.indexTotalCost -= 0.5 * costs.numIndexPages * (costs.spc_random_page_cost - spc_seq_page_cost);
-	}
+        /* Remove cost of extra pages */
+        costs.indexTotalCost -= (costs.numIndexPages - path->indexinfo->rel->pages) * spc_seq_page_cost;
+    } else {
+        /* Change some page cost from random to sequential */
+        costs.indexTotalCost -= half * costs.numIndexPages * (costs.spc_random_page_cost - spc_seq_page_cost);
+    }
 
-	/*
-	 * If the list selectivity is lower than what is returned from the generic
-	 * cost estimator, use that.
-	 */
-	if (ratio < costs.indexSelectivity)
-		costs.indexSelectivity = ratio;
+    /*
+     * If the list selectivity is lower than what is returned from the generic
+     * cost estimator, use that.
+     */
+    if (ratio < costs.indexSelectivity) {
+        costs.indexSelectivity = ratio;
+    }
 
-	/* Use total cost since most work happens before first tuple is returned */
-	*indexStartupCost = costs.indexTotalCost;
-	*indexTotalCost = costs.indexTotalCost;
-	*indexSelectivity = costs.indexSelectivity;
-	*indexCorrelation = costs.indexCorrelation;
+    /* Use total cost since most work happens before first tuple is returned */
+    *indexStartupCost = costs.indexTotalCost;
+    *indexTotalCost = costs.indexTotalCost;
+    *indexSelectivity = costs.indexSelectivity;
+    *indexCorrelation = costs.indexCorrelation;
 }
 
 /*

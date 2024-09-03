@@ -221,50 +221,55 @@ GetScanValue(IndexScanDesc scan)
 IndexScanDesc
 ivfflatbeginscan_internal(Relation index, int nkeys, int norderbys)
 {
-	IndexScanDesc scan;
-	IvfflatScanOpaque so;
-	int			lists;
-	int			dimensions;
-	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {FLOAT8LTOID};
-	Oid			sortCollations[] = {InvalidOid};
-	bool		nullsFirstFlags[] = {false};
-	int			probes = ivfflat_probes;
+    IndexScanDesc scan;
+    IvfflatScanOpaque so;
+    int			lists;
+    int			dimensions;
+    AttrNumber	attNums[] = {1};
+    Oid			sortOperators[] = {FLOAT8LTOID};
+    Oid			sortCollations[] = {InvalidOid};
+    bool		nullsFirstFlags[] = {false};
+    int			probes = get_session_context()->ivfflat_probes;
+    int         natts = 2;
+    int         attDistance = 1;
+    int         attHeaptid = 2;
 
-	scan = RelationGetIndexScan(index, nkeys, norderbys);
+    scan = RelationGetIndexScan(index, nkeys, norderbys);
 
-	/* Get lists and dimensions from metapage */
-	IvfflatGetMetaPageInfo(index, &lists, &dimensions);
+    /* Get lists and dimensions from metapage */
+    IvfflatGetMetaPageInfo(index, &lists, &dimensions);
 
-	if (probes > lists)
-		probes = lists;
+    if (probes > lists) {
+        probes = lists;
+    }
 
-	so = (IvfflatScanOpaque) palloc(offsetof(IvfflatScanOpaqueData, lists) + probes * sizeof(IvfflatScanList));
-	so->typeInfo = IvfflatGetTypeInfo(index);
-	so->first = true;
-	so->probes = probes;
-	so->dimensions = dimensions;
+    so = (IvfflatScanOpaque) palloc(offsetof(IvfflatScanOpaqueData, lists) + probes * sizeof(IvfflatScanList));
+    so->typeInfo = IvfflatGetTypeInfo(index);
+    so->first = true;
+    so->probes = probes;
+    so->dimensions = dimensions;
 
-	/* Set support functions */
-	so->procinfo = index_getprocinfo(index, 1, IVFFLAT_DISTANCE_PROC);
-	so->normprocinfo = IvfflatOptionalProcInfo(index, IVFFLAT_NORM_PROC);
-	so->collation = index->rd_indcollation[0];
+    /* Set support functions */
+    so->procinfo = index_getprocinfo(index, 1, IVFFLAT_DISTANCE_PROC);
+    so->normprocinfo = IvfflatOptionalProcInfo(index, IVFFLAT_NORM_PROC);
+    so->collation = index->rd_indcollation[0];
 
-	/* Create tuple description for sorting */
-	so->tupdesc = CreateTemplateTupleDesc(2, false);
-	TupleDescInitEntry(so->tupdesc, (AttrNumber) 1, "distance", FLOAT8OID, -1, 0);
-	TupleDescInitEntry(so->tupdesc, (AttrNumber) 2, "heaptid", TIDOID, -1, 0);
+    /* Create tuple description for sorting */
+    so->tupdesc = CreateTemplateTupleDesc(natts, false);
+    TupleDescInitEntry(so->tupdesc, (AttrNumber) attDistance, "distance", FLOAT8OID, -1, 0);
+    TupleDescInitEntry(so->tupdesc, (AttrNumber) attHeaptid, "heaptid", TIDOID, -1, 0);
 
-	/* Prep sort */
-	so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, u_sess->attr.attr_memory.work_mem, NULL, false);
+    /* Prep sort */
+    so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags,
+                                         u_sess->attr.attr_memory.work_mem, NULL, false);
 
-	so->slot = MakeSingleTupleTableSlot(so->tupdesc);
+    so->slot = MakeSingleTupleTableSlot(so->tupdesc);
 
-	so->listQueue = pairingheap_allocate(CompareLists, scan);
+    so->listQueue = pairingheap_allocate(CompareLists, scan);
 
-	scan->opaque = so;
+    scan->opaque = so;
 
-	return scan;
+    return scan;
 }
 
 /*
