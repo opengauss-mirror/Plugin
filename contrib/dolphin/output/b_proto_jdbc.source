@@ -104,6 +104,16 @@ mysql
 dolphin-server
 3
 postgres
+Exception in thread "main" java.sql.SQLException: non-procedure CURSOR is not supported by mysql protocol.
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 select * from t3 order by id;
  id |      name      
 ----+----------------
