@@ -1,5 +1,5 @@
 set(EXTENSION "datavec")
-set(EXTVERSION "0.7.2")
+set(EXTVERSION "1.0")
 
 file(GLOB_RECURSE TGT_datavec_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
