@@ -36620,7 +36620,8 @@ func_expr_common_subexpr:
 					 * substring(A, B, C) - thomas 2000-11-28
 					 */
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("substring");
+					/* under B compatibility, substring is same as substr */
+					n->funcname = SystemFuncName("substr");
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
