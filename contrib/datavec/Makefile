@@ -1,5 +1,5 @@
 EXTENSION = datavec
-EXTVERSION = 0.7.2
+EXTVERSION = 1.0
 
 MODULE_big = datavec
 DATA = sql/$(EXTENSION)--$(EXTVERSION).sql
