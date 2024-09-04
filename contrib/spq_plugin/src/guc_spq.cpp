@@ -1684,7 +1684,7 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
         MemoryContextSwitchTo(oldContext);
         return false;
     }
-    if (!SplitIdentifierString(rawname, ',', &nodelist)) {
+    if (!SplitIdentifierString(rawname, ',', &nodelist, false)) {
         pfree(rawname);
         /* syntax error in name list */
         GUC_check_errdetail("spq cluster map is invalid, name|ip|port,...");
@@ -1699,7 +1699,7 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
         List *itemlist;
         char *name, *ip, *port;
         char *nodestring = pstrdup((char *)lfirst(lnode));
-        (void)SplitIdentifierString(nodestring, '|', &itemlist);
+        (void)SplitIdentifierString(nodestring, '|', &itemlist, false);
         if (list_length(itemlist) != 3) {
             GUC_check_errdetail("spq cluster map is invalid, name|ip|port,...");
             pfree(rawname);
