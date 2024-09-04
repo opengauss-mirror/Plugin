@@ -202,5 +202,18 @@ select c1, c2, substr(c1 from c2) from test_row order by c1;
 select c1, c2, substr(c1 for c2) from test_column order by c1;
 select c1, c2, substr(c1 for c2) from test_row order by c1;
 
+select substring(b'11' from b'10010');
+select substring(b'10010' from b'11');
+select substring('11'::bytea from b'10010');
+select substring('10010'::bytea from b'11');
+select substring('11'::text from b'10010');
+select substring('10010'::text from b'11');
+select substring(b'11', b'10010');
+select substring(b'10010', b'11');
+select substring('11'::bytea, b'10010');
+select substring('10010'::bytea, b'11');
+select substring('11'::text, b'10010');
+select substring('10010'::text, b'11');
+
 drop schema db_b_substr_test cascade;
 reset current_schema;
