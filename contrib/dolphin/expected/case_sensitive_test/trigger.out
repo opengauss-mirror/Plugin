@@ -1,0 +1,43 @@
+\c table_name_test_db;
+set dolphin.lower_case_table_names to 0;
+create table t1(c1 int);
+create table t2(c1 int);
+create trigger tg_case_1 before insert on t1 for each row update t2 set c1 = c1 + 1;
+create trigger TG_CASE_1 before insert on t1 for each row update t2 set c1 = c1 + 1;
+create schema s1;
+create schema S1;
+create table s1.t1(c1 int);
+create table s1.t2(c1 int);
+create table S1.t1(c1 int);
+create table S1.t2(c1 int);
+create trigger s1.tg_case_2 before insert on s1.t1 for each row update s1.t2 set c1 = c1 + 1;
+create trigger s1.TG_CASE_2 before insert on s1.t1 for each row update s1.t2 set c1 = c1 + 1;
+create trigger S1.tg_case_3 before insert on S1.t1 for each row update S1.t2 set c1 = c1 + 1;
+create trigger S1.TG_CASE_3 before insert on S1.t1 for each row update S1.t2 set c1 = c1 + 1;
+select tgname from pg_trigger where lower(tgname) like 'tg_case_%' order by tgname asc;
+  tgname   
+-----------
+ TG_CASE_1
+ TG_CASE_2
+ TG_CASE_3
+ tg_case_1
+ tg_case_2
+ tg_case_3
+(6 rows)
+
+drop trigger tg_case_1;
+drop trigger TG_CASE_1;
+drop trigger s1.tg_case_2;
+drop trigger s1.TG_CASE_2;
+drop trigger S1.tg_case_3;
+drop trigger S1.TG_CASE_3;
+drop table t1;
+drop table t2;
+drop schema s1 cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table s1.t1
+drop cascades to table s1.t2
+drop schema S1 cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table "S1".t1
+drop cascades to table "S1".t2
