@@ -1404,9 +1404,11 @@ drop cast if exists ("binary" as char);
 CREATE CAST ("binary" AS varchar) WITH FUNCTION pg_catalog.Varlena2Varchar(anyelement) AS ASSIGNMENT;
 CREATE CAST ("binary" AS char) WITH FUNCTION pg_catalog.Varlena2Bpchar(anyelement) AS ASSIGNMENT;
 
-DROP FUNCTION IF EXISTS pg_catalog.substring(bit, bit);
-DROP FUNCTION IF EXISTS pg_catalog.substring(bytea, bit);
-DROP FUNCTION IF EXISTS pg_catalog.substring(text, bit);
+DROP FUNCTION IF EXISTS pg_catalog.substr(bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.substr(bytea, bit);
+DROP FUNCTION IF EXISTS pg_catalog.substr(text, bit);
+DROP FUNCTION IF EXISTS pg_catalog.substr(bit, int, int);
+DROP FUNCTION IF EXISTS pg_catalog.substr(bit, int);
 
 DROP FUNCTION IF EXISTS pg_catalog.set_native_password(text, text, text);
 DROP FUNCTION IF EXISTS pg_catalog.set_caching_sha2_password(text, text, text);
