@@ -197,6 +197,7 @@ typedef struct BSqlPluginContext {
     bool use_const_value_as_colname;
     bool support_interval_to;
     bool treat_float_with_precision_as_float_type;
+    bool is_set_stmt;
 #endif
 } bSqlPluginContext;
 

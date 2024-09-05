@@ -1053,6 +1053,7 @@ void init_session_vars(void)
     cxt->is_create_alter_stmt = false;
     cxt->isDoCopy = false;
     cxt->isInTransformSet = false;
+    cxt->is_set_stmt = false;
 
     if (temp_Conn_Mysql_Info) {
         cxt->Conn_Mysql_Info = (conn_mysql_infoP_t)MemoryContextAllocZero(u_sess->self_mem_cxt,
