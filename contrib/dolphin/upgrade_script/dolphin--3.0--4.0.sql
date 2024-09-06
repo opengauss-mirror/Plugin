@@ -1971,3 +1971,57 @@ drop cast if exists ("binary" as varchar);
 drop cast if exists ("binary" as char);
 CREATE CAST ("binary" AS varchar) WITH FUNCTION pg_catalog.Varlena2Varchar(anyelement) AS IMPLICIT;
 CREATE CAST ("binary" AS char) WITH FUNCTION pg_catalog.Varlena2Bpchar(anyelement) AS IMPLICIT;
+
+-- fix merge join
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cmp_uint1(int8, uint1)
+    RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_cmp_uint1';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cmp_uint2(int8, uint2)
+    RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_cmp_uint2';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cmp_uint4(int8, uint4)
+    RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_cmp_uint4';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cmp_uint8(int8, uint8)
+    RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_cmp_uint8';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int2_eq_uint1(int2, uint1)
+    RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int2_eq_uint1';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int4_eq_uint1(int4, uint1)
+    RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int4_eq_uint1';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_eq_uint1(int8, uint1)
+    RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_eq_uint1';
+
+CREATE OPERATOR pg_catalog.=(
+    leftarg = int2, rightarg = uint1,
+    procedure = pg_catalog.int2_eq_uint1, commutator = operator(pg_catalog.=),
+    restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE OPERATOR pg_catalog.=(
+    leftarg = int4, rightarg = uint1,
+    procedure = pg_catalog.int4_eq_uint1, commutator = operator(pg_catalog.=),
+    restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE OPERATOR pg_catalog.=(
+    leftarg = int8, rightarg = uint1,
+    procedure = pg_catalog.int8_eq_uint1, commutator = operator(pg_catalog.=),
+    restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE OPERATOR CLASS pg_catalog.int8_uint_bt_ops
+    FOR TYPE int8 USING btree FAMILY pg_catalog.integer_ops AS
+        OPERATOR        3       =(int8, uint1),
+        OPERATOR        3       =(int8, uint2),
+        OPERATOR        3       =(int8, uint4),
+        OPERATOR        3       =(int8, uint8),
+
+        FUNCTION        1       pg_catalog.int8_cmp_uint1(int8,uint1),
+        FUNCTION        1       pg_catalog.int8_cmp_uint2(int8,uint2),
+        FUNCTION        1       pg_catalog.int8_cmp_uint4(int8,uint4),
+        FUNCTION        1       pg_catalog.int8_cmp_uint8(int8,uint8);
+
+CREATE OPERATOR CLASS pg_catalog.int8_uint_hash_ops
+    FOR TYPE int8 USING hash family pg_catalog.integer_ops AS
+        OPERATOR        1       =(int8, uint1),
+        FUNCTION        1 (int8, uint1)  hashint8(int8);

@@ -5342,4 +5342,98 @@ Datum dolphin_enumnot(PG_FUNCTION_ARGS)
     ReleaseSysCache(tup);
     PG_RETURN_UINT64(~DatumGetUInt64(DirectFunctionCall1(f8_cast_ui8, Float8GetDatum(result))));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cmp_uint1);
+extern "C" DLL_PUBLIC Datum int8_cmp_uint1(PG_FUNCTION_ARGS);
+Datum int8_cmp_uint1(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    if (arg1 > arg2) {
+        PG_RETURN_INT32(1);
+    } else if (arg1 < arg2) {
+        PG_RETURN_INT32(-1);
+    } else {
+        PG_RETURN_INT32(0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cmp_uint2);
+extern "C" DLL_PUBLIC Datum int8_cmp_uint2(PG_FUNCTION_ARGS);
+Datum int8_cmp_uint2(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    if (arg1 > arg2) {
+        PG_RETURN_INT32(1);
+    } else if (arg1 < arg2) {
+        PG_RETURN_INT32(-1);
+    } else {
+        PG_RETURN_INT32(0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cmp_uint4);
+extern "C" DLL_PUBLIC Datum int8_cmp_uint4(PG_FUNCTION_ARGS);
+Datum int8_cmp_uint4(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    if (arg1 > arg2) {
+        PG_RETURN_INT32(1);
+    } else if (arg1 < arg2) {
+        PG_RETURN_INT32(-1);
+    } else {
+        PG_RETURN_INT32(0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cmp_uint8);
+extern "C" DLL_PUBLIC Datum int8_cmp_uint8(PG_FUNCTION_ARGS);
+Datum int8_cmp_uint8(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+    if (arg1 < 0 || (uint64)arg1 < arg2) {
+        PG_RETURN_INT32(-1);
+    } else if ((uint64)arg1 > arg2) {
+        PG_RETURN_INT32(1);
+    } else {
+        PG_RETURN_INT32(0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int2_eq_uint1);
+extern "C" DLL_PUBLIC Datum int2_eq_uint1(PG_FUNCTION_ARGS);
+Datum int2_eq_uint1(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT16(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int4_eq_uint1);
+extern "C" DLL_PUBLIC Datum int4_eq_uint1(PG_FUNCTION_ARGS);
+Datum int4_eq_uint1(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT32(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_eq_uint1);
+extern "C" DLL_PUBLIC Datum int8_eq_uint1(PG_FUNCTION_ARGS);
+Datum int8_eq_uint1(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
 #endif
