@@ -23,6 +23,7 @@ void		PrintVector(char *msg, Vector * vector);
 int			vector_cmp_internal(Vector * a, Vector * b);
 void log_newpage_range(Relation rel, ForkNumber forknum, BlockNumber startblk, BlockNumber endblk, bool page_std);
 int PlanCreateIndexWorkers(Relation heapRelation, IndexInfo *indexInfo);
+void InitRelOptions();
 
 extern "C" {
     PGDLLEXPORT Datum vector_in(PG_FUNCTION_ARGS);
@@ -72,5 +73,6 @@ typedef struct datavec_session_context {
 
 extern uint32 datavec_index;
 extern datavec_session_context* get_session_context();
+extern THR_LOCAL bool needInitialization;
 
 #endif
