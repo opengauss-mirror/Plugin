@@ -116,6 +116,19 @@ select format(1, 1, null);
 select format(null, null, 1);
 select format(null, null, null);
 
+-- test overflow
+select format(123123.456,100000000000);
+select format(123123.456,1000000000000);
+select format(123123.456,10000000000000);
+select format(123123.456,545634633746483465436546345635436587463);
+select format(123123.456,'513513413546587468514351345435413');
+
+select format(123123.456,100000000000,'de_DE');
+select format(123123.456,1000000000000,'de_DE');
+select format(123123.456,10000000000000,'de_DE');
+select format(123123.456,545634633746483465436546345635436587463,'de_DE');
+select format(123123.456,'513513413546587468514351345435413','de_DE');
+
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;
 select format(1234.456, 2);

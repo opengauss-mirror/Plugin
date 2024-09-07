@@ -1303,3 +1303,8 @@ CREATE OPERATOR CLASS pg_catalog.int8_uint_hash_ops
     FOR TYPE int8 USING hash family pg_catalog.integer_ops AS
         OPERATOR        1       =(int8, uint1),
         FUNCTION        1 (int8, uint1)  hashint8(int8);
+
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4, "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int8) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int8, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';

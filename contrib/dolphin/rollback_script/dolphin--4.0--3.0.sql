@@ -1063,3 +1063,8 @@ DROP FUNCTION IF EXISTS pg_catalog.int8_cmp_uint8(int8, uint8);
 DROP FUNCTION IF EXISTS pg_catalog.int2_eq_uint1(int2, uint1);
 DROP FUNCTION IF EXISTS pg_catalog.int4_eq_uint1(int4, uint1);
 DROP FUNCTION IF EXISTS pg_catalog.int8_eq_uint1(int8, uint1);
+
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int8) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int8, "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';
