@@ -1,0 +1,48 @@
+FROM openeuler-20.03-lts:latest
+
+COPY openGauss-Server-6.0.0-openEuler20.03-x86_64.tar.bz2 .
+COPY scws-1.2.3.tar.bz2 .
+COPY openEuler_x86_64.repo /etc/yum.repos.d/openeuler_x86_64.repo
+COPY gosu-amd64 /usr/local/bin/gosu
+ENV LANG en_US.utf8
+
+#RUN yum install -y epel-release
+
+RUN set -eux; \
+    yum install -y tar bzip2 bzip2-devel curl libaio gcc make readline readline-devel util-linux shadow && \
+    groupadd -g 70 omm;  \
+    useradd -u 70 -g omm -d /home/omm omm;  \
+    mkdir -p /var/lib/opengauss && \
+    mkdir -p /usr/local/opengauss && \
+    mkdir -p /var/run/opengauss  && \
+    mkdir /docker-entrypoint-initdb.d && \
+    tar -jxf openGauss-Server-6.0.0-openEuler20.03-x86_64.tar.bz2 -C /usr/local/opengauss && \
+    chown -R omm:omm /var/run/opengauss && chown -R omm:omm /usr/local/opengauss && chown -R omm:omm /var/lib/opengauss && \ chown -R omm:omm /docker-entrypoint-initdb.d && \
+    chmod 2777 /var/run/opengauss && \
+    rm -rf openGauss-Server-6.0.0-openEuler20.03-x86_64.tar.bz2 && yum clean all
+
+RUN set -eux; \
+    echo "export GAUSSHOME=/usr/local/opengauss"  >> /home/omm/.bashrc && \
+    echo "export PATH=\$GAUSSHOME/bin:\$PATH " >> /home/omm/.bashrc && \
+    echo "export LD_LIBRARY_PATH=\$GAUSSHOME/lib:\$LD_LIBRARY_PATH" >> /home/omm/.bashrc
+
+RUN set -eux; \
+    tar -jxf scws-1.2.3.tar.bz2 && cd scws-1.2.3 && ./configure && make -j install&& \
+    echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/local.conf && ldconfig && \
+    chmod 777 /usr/local/lib && cd .. && rm -rf scws-1.2.3.tar.bz2
+
+RUN ln -s /usr/lib64/libreadline.so.7  /usr/lib64/libreadline.so.8
+
+ENV GOSU_VERSION 1.12
+RUN set -eux; \
+     chmod +x /usr/local/bin/gosu
+
+ENV PGDATA /var/lib/opengauss/data
+
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod 755 /usr/local/bin/entrypoint.sh;ln -s /usr/local/bin/entrypoint.sh / # backwards compat
+
+ENTRYPOINT ["entrypoint.sh"]
+
+EXPOSE 5432
+CMD ["gaussdb"]
