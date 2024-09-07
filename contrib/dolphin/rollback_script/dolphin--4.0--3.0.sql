@@ -1412,3 +1412,17 @@ DROP FUNCTION IF EXISTS pg_catalog.substr(bit, int);
 
 DROP FUNCTION IF EXISTS pg_catalog.set_native_password(text, text, text);
 DROP FUNCTION IF EXISTS pg_catalog.set_caching_sha2_password(text, text, text);
+
+-- fix merge join
+DROP OPERATOR CLASS pg_catalog.int8_uint_bt_ops USING btree;
+DROP OPERATOR CLASS pg_catalog.int8_uint_hash_ops USING hash;
+DROP OPERATOR IF EXISTS pg_catalog.=(int2, uint1);
+DROP OPERATOR IF EXISTS pg_catalog.=(int4, uint1);
+DROP OPERATOR IF EXISTS pg_catalog.=(int8, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.int8_cmp_uint1(int8, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.int8_cmp_uint2(int8, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.int8_cmp_uint4(int8, uint4);
+DROP FUNCTION IF EXISTS pg_catalog.int8_cmp_uint8(int8, uint8);
+DROP FUNCTION IF EXISTS pg_catalog.int2_eq_uint1(int2, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.int4_eq_uint1(int4, uint1);
+DROP FUNCTION IF EXISTS pg_catalog.int8_eq_uint1(int8, uint1);
