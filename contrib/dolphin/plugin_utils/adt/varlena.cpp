@@ -8298,7 +8298,7 @@ Datum db_b_format_locale(PG_FUNCTION_ARGS)
     }
     Oid first_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid);
-    int precision = PG_GETARG_INT32(1);
+    int precision = (int)PG_GETARG_INT64(1);
 
     Oid third_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 2);
     if (PG_ARGISNULL(2)) {
@@ -8315,7 +8315,7 @@ Datum db_b_format(PG_FUNCTION_ARGS)
     }
     Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
-    int precision = PG_GETARG_INT32(1);
+    int precision = (int)PG_GETARG_INT64(1);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
 #endif
