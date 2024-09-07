@@ -2883,7 +2883,7 @@ stmt_perform	: K_PERFORM {u_sess->parser_cxt.isPerform = true;} expr_until_semi
                     }
                 ;
 
-stmt_assign		: assign_var assign_operator expr_until_semi
+stmt_assign		: assign_var assign_operator {GetSessionContext()->is_set_stmt = true;} expr_until_semi
                     {
                         PLpgSQL_stmt_assign *newp;
 
@@ -2891,8 +2891,9 @@ stmt_assign		: assign_var assign_operator expr_until_semi
                         newp->cmd_type = PLPGSQL_STMT_ASSIGN;
                         newp->lineno   = plpgsql_location_to_lineno(@1);
                         newp->varno = $1;
-                        newp->expr  = $3;
+                        newp->expr  = $4;
                         newp->sqlString = plpgsql_get_curline_query();
+                        GetSessionContext()->is_set_stmt = false;
 
                         $$ = (PLpgSQL_stmt *)newp;
                     }
@@ -6461,7 +6462,12 @@ expr_until_semi :
                                     plpgsql_pkg_add_unknown_var_to_namespace(wholeName);
                                 }
                             }
-                            expr = read_sql_expression(';', ";");
+                            if (GetSessionContext()->is_set_stmt) {
+                                int tok1;
+                                expr = read_sql_expression2(',', ';', ", or ;", &tok1);
+                            } else {
+                                expr = read_sql_expression(';', ";");
+                            }
 #ifndef ENABLE_MULTIPLE_NODES
                             if (enable_out_param_override() && PLSQL_COMPILE_OUTPARAM
                                 && !IsInitdb && IsNormalProcessingMode()) {
