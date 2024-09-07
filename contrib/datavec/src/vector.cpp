@@ -102,11 +102,11 @@ PGDLLEXPORT void _PG_init(void);
 void
 _PG_init(void)
 {
-	BitvecInit();
-	HalfvecInit();
-	if (needInitialization) {
-		InitRelOptions();
-	}
+    BitvecInit();
+    HalfvecInit();
+    if (needInitialization) {
+        InitRelOptions();
+    }
 }
 
 /*

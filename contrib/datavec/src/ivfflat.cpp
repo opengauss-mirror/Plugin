@@ -108,30 +108,30 @@ ivfflatcostestimate_internal(PlannerInfo *root, IndexPath *path, double loop_cou
 static bytea *
 ivfflatoptions_internal(Datum reloptions, bool validate)
 {
-	static const relopt_parse_elt tab[] = {
-		{"lists", RELOPT_TYPE_INT, offsetof(IvfflatOptions, lists)},
-		{"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
-	};
+    static const relopt_parse_elt tab[] = {
+        {"lists", RELOPT_TYPE_INT, offsetof(IvfflatOptions, lists)},
+        {"parallel_workers", RELOPT_TYPE_INT, offsetof(StdRdOptions, parallel_workers)}
+    };
 
 #if PG_VERSION_NUM >= 130000
-	return (bytea *) build_reloptions(reloptions, validate,
-									  ivfflat_relopt_kind,
-									  sizeof(IvfflatOptions),
-									  tab, lengthof(tab));
+    return (bytea *) build_reloptions(reloptions, validate,
+                                      ivfflat_relopt_kind,
+				      sizeof(IvfflatOptions),
+				      tab, lengthof(tab));
 #else
-	relopt_value *options;
-	int			numoptions;
-	IvfflatOptions *rdopts;
+    relopt_value *options;
+    int numoptions;
+    IvfflatOptions *rdopts;
 
-	if (needInitialization) {
-		InitRelOptions();
-	}
-	options = parseRelOptions(reloptions, validate, ivfflat_relopt_kind, &numoptions);
-	rdopts = (IvfflatOptions *)allocateReloptStruct(sizeof(IvfflatOptions), options, numoptions);
-	fillRelOptions((void *) rdopts, sizeof(IvfflatOptions), options, numoptions,
-				   validate, tab, lengthof(tab));
+    if (needInitialization) {
+        InitRelOptions();
+    }
+    options = parseRelOptions(reloptions, validate, ivfflat_relopt_kind, &numoptions);
+    rdopts = (IvfflatOptions *)allocateReloptStruct(sizeof(IvfflatOptions), options, numoptions);
+    fillRelOptions((void *) rdopts, sizeof(IvfflatOptions), options, numoptions,
+                   validate, tab, lengthof(tab));
 
-	return (bytea *) rdopts;
+    return (bytea *) rdopts;
 #endif
 }
 
