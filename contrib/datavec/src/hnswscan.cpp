@@ -13,31 +13,31 @@
 static List *
 GetScanItems(IndexScanDesc scan, Datum q)
 {
-	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
-	Relation	index = scan->indexRelation;
-	FmgrInfo   *procinfo = so->procinfo;
-	Oid			collation = so->collation;
-	List	   *ep;
-	List	   *w;
-	int			m;
-	HnswElement entryPoint;
-	char	   *base = NULL;
+    HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+    Relation	index = scan->indexRelation;
+    FmgrInfo   *procinfo = so->procinfo;
+    Oid			collation = so->collation;
+    List	   *ep;
+    List	   *w;
+    int			m;
+    HnswElement entryPoint;
+    char	   *base = NULL;
 
-	/* Get m and entry point */
-	HnswGetMetaPageInfo(index, &m, &entryPoint);
+    /* Get m and entry point */
+    HnswGetMetaPageInfo(index, &m, &entryPoint);
 
-	if (entryPoint == NULL)
-		return NIL;
+    if (entryPoint == NULL)
+        return NIL;
 
-	ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false, scan));
+    ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false, scan));
 
-	for (int lc = entryPoint->level; lc >= 1; lc--)
-	{
-		w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL, scan);
-		ep = w;
-	}
+    for (int lc = entryPoint->level; lc >= 1; lc--) {
+        w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL, scan);
+        ep = w;
+    }
 
-	return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL, scan);
+    int hnsw_ef_search = get_session_context()->hnsw_ef_search;
+    return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL, scan);
 }
 
 /*
@@ -127,77 +127,74 @@ hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderby
 bool
 hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 {
-	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
-	MemoryContext oldCtx = MemoryContextSwitchTo(so->tmpCtx);
+    HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+    MemoryContext oldCtx = MemoryContextSwitchTo(so->tmpCtx);
 
-	/*
-	 * Index can be used to scan backward, but Postgres doesn't support
-	 * backward scan on operators
-	 */
-	Assert(ScanDirectionIsForward(dir));
+    /*
+     * Index can be used to scan backward, but Postgres doesn't support
+     * backward scan on operators
+     */
+    Assert(ScanDirectionIsForward(dir));
 
-	if (so->first)
-	{
-		Datum		value;
+    if (so->first) {
+        Datum		value;
 
-		/* Count index scan for stats */
-		pgstat_count_index_scan(scan->indexRelation);
+        /* Count index scan for stats */
+        pgstat_count_index_scan(scan->indexRelation);
 
-		/* Safety check */
-		if (scan->orderByData == NULL)
-			elog(ERROR, "cannot scan hnsw index without order");
+        /* Safety check */
+        if (scan->orderByData == NULL)
+            elog(ERROR, "cannot scan hnsw index without order");
 
-		/* Requires MVCC-compliant snapshot as not able to maintain a pin */
-		/* https://www.postgresql.org/docs/current/index-locking.html */
-		if (!IsMVCCSnapshot(scan->xs_snapshot))
-			elog(ERROR, "non-MVCC snapshots are not supported with hnsw");
+        /* Requires MVCC-compliant snapshot as not able to maintain a pin */
+        /* https://www.postgresql.org/docs/current/index-locking.html */
+        if (!IsMVCCSnapshot(scan->xs_snapshot))
+            elog(ERROR, "non-MVCC snapshots are not supported with hnsw");
 
-		/* Get scan value */
-		value = GetScanValue(scan);
+        /* Get scan value */
+        value = GetScanValue(scan);
 
-		/*
-		 * Get a shared lock. This allows vacuum to ensure no in-flight scans
-		 * before marking tuples as deleted.
-		 */
-		LockPage(scan->indexRelation, HNSW_SCAN_LOCK, ShareLock);
+        /*
+         * Get a shared lock. This allows vacuum to ensure no in-flight scans
+         * before marking tuples as deleted.
+         */
+        LockPage(scan->indexRelation, HNSW_SCAN_LOCK, ShareLock);
 
-		so->w = GetScanItems(scan, value);
+        so->w = GetScanItems(scan, value);
 
-		/* Release shared lock */
-		UnlockPage(scan->indexRelation, HNSW_SCAN_LOCK, ShareLock);
+        /* Release shared lock */
+        UnlockPage(scan->indexRelation, HNSW_SCAN_LOCK, ShareLock);
 
-		so->first = false;
+        so->first = false;
 
 #if defined(HNSW_MEMORY) && PG_VERSION_NUM >= 130000
-		elog(INFO, "memory: %zu MB", MemoryContextMemAllocated(so->tmpCtx, false) / (1024 * 1024));
+        elog(INFO, "memory: %zu MB", MemoryContextMemAllocated(so->tmpCtx, false) / MEM_INFO_NUM);
 #endif
-	}
+    }
 
-	while (list_length(so->w) > 0)
-	{
-		char	   *base = NULL;
-		HnswCandidate *hc = (HnswCandidate *)llast(so->w);
-		HnswElement element = (HnswElement)HnswPtrAccess(base, hc->element);
-		ItemPointer heaptid;
+    while (list_length(so->w) > 0) {
+        char	   *base = NULL;
+        HnswCandidate *hc = (HnswCandidate *)linitial(so->w);
+        HnswElement element = (HnswElement)HnswPtrAccess(base, hc->element);
+        ItemPointer heaptid;
 
-		/* Move to next element if no valid heap TIDs */
-		if (element->heaptidsLength == 0)
-		{
-			so->w = list_delete_last(so->w);
-			continue;
-		}
+        /* Move to next element if no valid heap TIDs */
+        if (element->heaptidsLength == 0) {
+            so->w = list_delete_first(so->w);
+            continue;
+        }
 
-		heaptid = &element->heaptids[--element->heaptidsLength];
+        heaptid = &element->heaptids[--element->heaptidsLength];
 
-		MemoryContextSwitchTo(oldCtx);
+        MemoryContextSwitchTo(oldCtx);
 
-		scan->xs_ctup.t_self = *heaptid;
-		scan->xs_recheck = false;
-		return true;
-	}
+        scan->xs_ctup.t_self = *heaptid;
+        scan->xs_recheck = false;
+        return true;
+    }
 
-	MemoryContextSwitchTo(oldCtx);
-	return false;
+    MemoryContextSwitchTo(oldCtx);
+    return false;
 }
 
 /*

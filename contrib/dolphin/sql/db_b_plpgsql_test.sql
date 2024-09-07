@@ -144,5 +144,20 @@ end;
 /
 call proc_abort_050_02();
 
+delimiter //
+create or replace procedure test_set(out res int)
+begin
+declare a int;
+declare b int;
+declare c int;
+set a=1, b=2, c=3;
+set res=a+b+c;
+end;
+//
+delimiter ;
+
+call test_set(@res);
+drop procedure test_set;
+
 drop schema db_b_plpgsql_test cascade;
 reset current_schema;

@@ -125,13 +125,13 @@
         new_list = (List *) palloc(sizeof(List)); \
         new_list->type = list->type; \
         new_list->length = len; \
-        new_list->head = list_arr[0]; \
-        new_list->tail = list_arr[len - 1]; \
+        new_list->head = list_arr[len - 1]; \
+        new_list->tail = list_arr[0]; \
         \
-        for (i = 0; i < len - 1; i++) \
-            list_arr[i]->next = list_arr[i + 1]; \
+        for (i = len - 1; i > 0; i--) \
+            list_arr[i]->next = list_arr[i - 1]; \
         \
-        list_arr[len - 1]->next = NULL; \
+        list_arr[0]->next = NULL; \
         pfree(list_arr); \
         list = new_list; \
     } while (0)
@@ -166,7 +166,6 @@
 #define HnswPtrOffset(hp) relptr_offset((hp).relptr)
 
 /* Variables */
-extern int	hnsw_ef_search;
 extern int	hnsw_lock_tranche_id;
 
 typedef struct HnswElementData HnswElementData;

@@ -32,6 +32,7 @@
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_target.h"
 #include "plugin_parser/parse_type.h"
+#include "plugin_parser/parse_oper.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
@@ -1664,6 +1665,10 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
         *retset = false;
         return FUNCDETAIL_AGGREGATE;
     }
+    if (strcmp(objname, "bit_and") == 0 &&
+        (IsIntType(*argtypes) || IsUnsignedIntType(*argtypes))) {
+        *argtypes = UINT8OID;
+    }
 #endif
 
 #ifndef ENABLE_MULTIPLE_NODES
@@ -1813,7 +1818,12 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
                 Node* arg1 = (Node*)linitial(fargs);
                 bool iscoercion = false;
 
-                if (sourceType == UNKNOWNOID && IsA(arg1, Const)) {
+                if (sourceType == UNKNOWNOID && IsA(arg1, Const)
+#ifdef DOLPHIN
+                    /* uuid(xxx) is not allow to be treated as coercion */
+                    && targetType != UUIDOID
+#endif
+                ) {
                     /* always treat typename('literal') as coercion */
                     iscoercion = true;
                 } else {

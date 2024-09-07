@@ -11,7 +11,7 @@ select avg(a), avg(b) from u1;
 select bit_and(a), bit_and(b) from u1;
  bit_and | bit_and 
 ---------+---------
- 0       |       0
+ 0       | 0
 (1 row)
 
 select bit_or(a), bit_or(b) from u1;
@@ -177,11 +177,11 @@ explain(costs off, verbose) select bit_and(a) from smp_test;
                      QUERY PLAN                     
 ----------------------------------------------------
  Aggregate
-   Output: bit_and((bit_and(a)))
+   Output: bit_and((pg_catalog.bit_and(a)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (bit_and(a))
+         Output: (pg_catalog.bit_and(a))
          ->  Aggregate
-               Output: bit_and(a)
+               Output: pg_catalog.bit_and(a)
                ->  Seq Scan on tinyint_agg.smp_test
                      Output: a
 (8 rows)

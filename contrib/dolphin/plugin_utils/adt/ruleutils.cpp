@@ -9142,6 +9142,11 @@ static char* get_variable(
     schemaname = NULL; /* default assumptions */
     refname = rte->eref->aliasname;
 
+    if (NULL != rte->relname && u_sess->hook_cxt.forTsdbHook) {
+        rte->relname = get_rel_name(rte->relid);
+        rte->eref->aliasname = rte->relname;
+    }
+
     /* Exceptions occur only if the RTE is alias-less */
     if (rte->alias == NULL) {
         if (rte->rtekind == RTE_RELATION || no_alias) {
@@ -12217,32 +12222,39 @@ static void get_delete_from_partition_clause(RangeTblEntry* rte, StringInfo buf)
 
     appendStringInfo(buf, " PARTITION (");
 #ifdef DOLPHIN
-    ListCell *partNameCell = NULL;
-    ListCell *subpartNameCell = NULL;
+    ListCell *partNameCell = list_head(rte->partitionNameList);
+    ListCell *subpartNameCell = list_head(rte->subpartitionNameList);
     char *nameStr = NULL;
-    forfour(partCell, rte->partitionOidList, subpartCell, rte->subpartitionOidList,
-        partNameCell, rte->partitionNameList, subpartNameCell, rte->subpartitionNameList) {
-#else
     forboth(partCell, rte->partitionOidList, subpartCell, rte->subpartitionOidList) {
-#endif
         partitionOid = lfirst_oid(subpartCell);
         List *list = rte->subpartitionNameList;
-#ifdef DOLPHIN
-        nameStr = strVal(lfirst(subpartNameCell));
-#endif
+        if (unlikely(subpartNameCell != NULL)) {
+            nameStr = strVal(lfirst(subpartNameCell));
+        }
         if (!OidIsValid(partitionOid)) {
             /* InvalidOid means all subpartitions of this partition, just use partition oid. */
             partitionOid = lfirst_oid(partCell);
-#ifdef DOLPHIN
-            nameStr = strVal(lfirst(partNameCell));
-#endif
+            if (unlikely(partNameCell != NULL)) {
+                nameStr = strVal(lfirst(partNameCell));
+            }
         }
-#ifdef DOLPHIN
         name = getPartitionName(partitionOid, true);
         if (name == NULL) {
             name = nameStr;
         }
-#else 
+        if (unlikely(partNameCell != NULL)) {
+            partNameCell = lnext(partNameCell);
+        }
+        if (unlikely(subpartNameCell != NULL)) {
+            subpartNameCell = lnext(subpartNameCell);
+        }
+#else
+    forboth(partCell, rte->partitionOidList, subpartCell, rte->subpartitionOidList) {
+        partitionOid = lfirst_oid(subpartCell);
+        if (!OidIsValid(partitionOid)) {
+            /* InvalidOid means all subpartitions of this partition, just use partition oid. */
+            partitionOid = lfirst_oid(partCell);
+        }
         name = getPartitionName(partitionOid, false);
 #endif
         if (first) {

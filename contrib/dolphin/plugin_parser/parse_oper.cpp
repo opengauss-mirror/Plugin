@@ -589,6 +589,10 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             ltypeId = TEXTOID;
         } else if (ltypeId == INTERVALOID && rtypeId == UNKNOWNOID) {
             rtypeId = TEXTOID;
+        } else if (type_is_enum(ltypeId) && rtypeId == INTERVALOID) {
+            ltypeId = ANYENUMOID;
+        } else if (ltypeId == INTERVALOID && type_is_enum(rtypeId)) {
+            rtypeId = ANYENUMOID;
         }
     }
     /**

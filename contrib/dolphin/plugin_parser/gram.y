@@ -837,7 +837,7 @@ static bool GreaterThanHour (List* int_type);
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
-				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection opt_dolphin_indirection
+				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection case_sensitive_indirection opt_dolphin_indirection
 				reloption_list tblspc_option_list cfoption_list group_clause TriggerFuncArgs select_limit
 				opt_select_limit opt_delete_limit opclass_item_list opclass_drop_list
 				opclass_purpose opt_opfamily transaction_mode_list_or_empty
@@ -948,7 +948,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	columnDef columnOptions columnDefForTableElement
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
-                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el siblings_clause
+                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
                                 columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params func_table_with_table
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
@@ -1010,7 +1010,7 @@ static bool GreaterThanHour (List* int_type);
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
 %type <list>	var_list guc_value_extension_list schema_var_list
-%type <str>		ColId ColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
+%type <str>		ColId ColLabel CaseSensitiveColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 /* for keyword which could be a column/table alias name, use alias_name_xxxx*/
@@ -1322,7 +1322,7 @@ static bool GreaterThanHour (List* int_type);
 
 	ZEROFILL ZONE
 
-	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
+	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_LSEG DB_B_PATH DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
 	WEIGHT_STRING REVERSE 
 
 %token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
@@ -1429,7 +1429,7 @@ static bool GreaterThanHour (List* int_type);
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
+%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_LSEG DB_B_PATH DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
@@ -15592,11 +15592,11 @@ enable_trigger:
 		;
 
 qualified_trigger_name:
-			name
+			DolphinColColId
 				{
 					$$ = makeRangeVar(NULL, $1, @1);
 				}
-			| ColId indirection
+			| DolphinColColId case_sensitive_indirection
 				{
 					check_qualified_name($2, yyscanner);
 					$$ = makeRangeVar(NULL, NULL, @1);
@@ -20353,7 +20353,7 @@ callfunc_args:   func_arg_expr
 					n->end_time_expr = NULL;
 					n->interval_time = NULL;
 					n->complete_preserve = $12;
-					n->event_status = (EventStatus)$12;
+					n->event_status = (EventStatus)$13;
 					n->event_comment_str = $14;
 					n->event_query_str = $16;
 					$$ = (Node *)n;
@@ -32466,9 +32466,21 @@ GenericType:
 				{
 					/* for B_FORMAT compatibility, float4(n) refers to float4 */
 					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
-						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+						if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+							$$ = makeTypeName("float4");
+							$$->location = @1;
+							if ($2 != NULL && list_length($2) >= 1) {
+								ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
+							}
+						} else {
+							$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+						}
 					} else if (($1 != NULL) && (strcmp($1, "double") == 0) && ($2 != NULL) && (list_length($2) == 2)) {
-						if ((*(A_Const*)list_nth($2, 1)).val.val.ival == 0) {
+						if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+							$$ = makeTypeName("float8");
+							$$->location = @1;
+							ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
+						} else if ((*(A_Const*)list_nth($2, 1)).val.val.ival == 0) {
 							$$ = parseFloatTypeByPrecision((*(A_Const*)list_nth($2, 0)).val.val.ival, @2, yyscanner, false);
 							$$->location = @1;
 						} else {
@@ -32847,11 +32859,16 @@ Numeric:	NumericNoConflict { $$ = $1; }
 
 dolphin_float: '(' Iconst ',' Iconst ')'
 				{
-					if ($4 == 0) {
-						$$ = parseFloatTypeByPrecision($2, @2, yyscanner, false);
+					if (GetSessionContext()->treat_float_with_precision_as_float_type) {
+						$$ = makeTypeName("float4");
+						ereport(NOTICE, (errmsg("it may cause the result in loss of precision when using float4 or float8 with precision and dolphin.treat_float_with_precision_as_float_type is on.")));
 					} else {
-						$$ = SystemTypeName("numeric");
-						$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+						if ($4 == 0) {
+							$$ = parseFloatTypeByPrecision($2, @2, yyscanner, false);
+						} else {
+							$$ = SystemTypeName("numeric");
+							$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+						}
 					}
 				}
 		;
@@ -36603,7 +36620,8 @@ func_expr_common_subexpr:
 					 * substring(A, B, C) - thomas 2000-11-28
 					 */
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("substring");
+					/* under B compatibility, substring is same as substr */
+					n->funcname = SystemFuncName("substr");
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -38036,6 +38054,47 @@ indirection:
 			| indirection indirection_el			{ $$ = lappend($1, $2); }
 		;
 
+case_sensitive_indirection_el:
+			'.' CaseSensitiveColLabel
+				{
+					$$ = (Node *) makeString($2);
+				}
+			| ORA_JOINOP
+				{
+					$$ = (Node *) makeString("(+)");
+				}
+			| '.' '*'
+				{
+					$$ = (Node *) makeNode(A_Star);
+				}
+			| '[' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = NULL;
+					ai->uidx = $2;
+					$$ = (Node *) ai;
+				}
+			| '[' a_expr ':' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = (Node *) ai;
+				}
+			| '[' a_expr ',' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = (Node *) ai;
+				}
+		;
+
+case_sensitive_indirection:
+			case_sensitive_indirection_el										{ $$ = list_make1($1); }
+			| case_sensitive_indirection case_sensitive_indirection_el			{ $$ = lappend($1, $2); }
+		;
+
 dolphin_indirection:
 			dolphin_indirection_el									{ $$ = list_make1($1); }
 			| dolphin_indirection dolphin_indirection_el			{ $$ = lappend($1, $2); }
@@ -38582,6 +38641,14 @@ DOLPHINIDENT: IDENT
 				{
 					$$ = CreateDolphinIdent(pstrdup($1), false);
 				}
+			| DB_B_LSEG
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_PATH
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
 			| DB_B_POLYGON
 				{
 					$$ = CreateDolphinIdent(pstrdup($1), false);
@@ -38770,6 +38837,18 @@ AexprConst_without_Sconst: Iconst
 			| DB_B_CIRCLE SCONST
 				{
 					TypeName * tmp = SystemTypeName("circle");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_LSEG SCONST
+				{
+					TypeName * tmp = SystemTypeName("lseg");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_PATH SCONST
+				{
+					TypeName * tmp = SystemTypeName("path");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
@@ -39377,6 +39456,15 @@ ColLabel:	normal_ident							{ $$ = $1; }
 				{
 					$$ = downcase_str(pstrdup($1), false);
 				}
+		;
+
+CaseSensitiveColLabel:
+			DOLPHINIDENT							{ $$ = $1->str; }
+			| '\''DOLPHINIDENT'\''					{ $$ = $2->str; }
+			| unreserved_keyword					{ $$ = pstrdup($1); }
+			| col_name_keyword						{ $$ = pstrdup($1); }
+			| type_func_name_keyword				{ $$ = pstrdup($1); }
+			| reserved_keyword						{ $$ = pstrdup($1); }
 		;
 
 DelimiterStmt: DELIMITER {

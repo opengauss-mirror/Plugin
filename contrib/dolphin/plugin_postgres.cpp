@@ -1053,6 +1053,7 @@ void init_session_vars(void)
     cxt->is_create_alter_stmt = false;
     cxt->isDoCopy = false;
     cxt->isInTransformSet = false;
+    cxt->is_set_stmt = false;
 
     if (temp_Conn_Mysql_Info) {
         cxt->Conn_Mysql_Info = (conn_mysql_infoP_t)MemoryContextAllocZero(u_sess->self_mem_cxt,
@@ -1443,6 +1444,15 @@ void init_session_vars(void)
                              gettext_noop("This variable indicates supporting interval xxx to xxx"),
                              NULL,
                              &GetSessionContext()->support_interval_to,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
+    DefineCustomBoolVariable("dolphin.treat_float_with_precision_as_float_type",
+                             gettext_noop("This variable indicates treating a float type with precision as a float "
+                             "type without precision. it may cause the result in loss of precision."),
+                             NULL,
+                             &GetSessionContext()->treat_float_with_precision_as_float_type,
                              false,
                              PGC_USERSET,
                              0,

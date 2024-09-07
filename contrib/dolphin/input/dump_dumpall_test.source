@@ -145,6 +145,27 @@ update ignore test_ignore_unique set c1 = 1 where c1 =2;
 drop table if exists test_ignore_normal;
 create table test_ignore_normal(c1 int, c2 text);
 insert ignore into test_ignore_normal values(1, 'a');
+
+-- test for keywords
+reset dolphin.sql_mode;
+CREATE TABLE allshortestpath_splitprovince (
+enprov varchar(50) NOT NULL,
+exprov varchar(50) NOT NULL,
+"version" varchar(50) NOT NULL,
+"index" varchar(50) NOT NULL,
+"now" varchar(50) NULL,
+count int4 NULL,
+"group" text NULL,
+m int8 NOT NULL,
+mver varchar(50) NULL,
+pver varchar(50) NULL,
+CONSTRAINT pk_allshortestpath_splitprovince PRIMARY KEY (enprov, exprov, version, "index")
+)
+WITH (
+orientation=row,
+compression=no
+);
+
 drop table if exists test_ignore_invalid_input;
 create table test_ignore_invalid_input(c1 int, c2 char(5), c3 timestamp, c4 bit(5), c5 boolean, c6 point, c7 uuid,
                                          c8 json, c9 jsonb, c10 xml);
@@ -271,6 +292,9 @@ select * from test_ignore_not_null;
 select * from test_ignore_unique;
 select * from test_ignore_normal;
 
+-- test for keywords
+select * from allshortestpath_splitprovince;
+
 /*
  * test for restore by gsql
  */
@@ -389,6 +413,9 @@ select * from test_insert_empty_value_types_3;
 select * from test_ignore_not_null;
 select * from test_ignore_unique;
 select * from test_ignore_normal;
+
+-- test for keywords
+select * from allshortestpath_splitprovince;
 
 /*
  * test for restore by gs_dumpall
@@ -509,6 +536,131 @@ select * from test_insert_empty_value_types_3;
 select * from test_ignore_not_null;
 select * from test_ignore_unique;
 select * from test_ignore_normal;
+
+-- test for keywords
+select * from allshortestpath_splitprovince;
+
+/*
+ * test for quote-all-identifiers
+ */
+drop database if exists table_test_gsql;
+create database table_test_gsql dbcompatibility 'B';
+\! @abs_bindir@/gs_dump table_test --quote-all-identifiers -p @portstring@ -f @abs_bindir@/gsql_table_test.sql >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gsql -d table_test_gsql -p @portstring@ -f @abs_bindir@/gsql_table_test.sql >/dev/null 2>&1; echo $?
+\c table_test_gsql
+
+-- test for table created by like
+select * from table_like_test_2;
+
+-- test for table created with index
+\d table_created_with_index_test
+select count(*) from pg_indexes where indexname = 'create_table_idx_1' and tablename = 'table_created_with_index_test';
+
+-- test for create table with compression option
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_zstd';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_none';
+
+-- test for create list partition table with VALUES IN
+select * from table_list_partition_values_in;
+\d+ table_list_partition_values_in
+
+-- test for create table timestamp column with on update current_timestamp
+\d+ table_timestamp_on_update
+
+-- test for view created with definer
+SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;
+
+-- test for functionality of select distinctrow on
+select distinctrow on (c1 % 2) * from normal_test_table;
+select distinctrow on (c1, c2) * from normal_test_table;
+
+-- test for functionality of functions
+select log(10);
+select log(10, 100);
+select log10(100);
+select log2(16);
+select mod(16, 7);
+select mod(0.0::float8, 0.0::numeric);
+select sqrt(64::numeric);
+select sqrt(b'10000');
+select ascii('你');
+select instr(null,'bc');
+select instr('abcd12abc',null);
+select instr('abcd12abc','bc');
+select instr('abcd12abc','bc', 2);
+select instr('abcd12abc','bc', 2, 2);
+select left('abcdefg', 3);
+select left('abcdefg', -3);
+select right('abcdefg', 3);
+select right('abcdefg', -3);
+select locate('test','testgood');
+select locate('','testgood');
+select locate(NULL,'testgood');
+select locate(true,'testgood');
+select locate(false,'testgood');
+select ltrim('') is null;
+select ltrim('ab', 'ab') is null;
+select mid(E'\\xDEADBEEF'::bytea,2,10);
+select mid(E'\\xDEADBEEF'::bytea,2,0);
+select mid(E'\\xDEADBEEF'::bytea,2,-1);
+select quote('O\hello');
+SELECT right('abcdefg', 3);
+SELECT right('abcdefg', -3);
+select rtrim('ab  ');
+select rtrim('ab', 'ab') is null;
+select rtrim('') is null;
+select substr(E'\\xDEADBEEF'::bytea,2,-1);
+select substr(E'\\xDEADBEEF'::bytea,2,2);
+select hex(-1);
+select hex(9223372036854775807);
+set dolphin.b_compatibility_mode = 1;
+select format(1234.456, 2);
+set dolphin.b_compatibility_mode = 0;
+select format('%1s %1s!', 'Hello', 'world');
+select uuid();
+select if(true,'A','B');
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_cidr;
+select min(c) as min_ip_addr from table_cidr;
+
+-- test for comments
+select description
+from pg_description
+where objoid in (select relfilenode
+                 from pg_class
+                 where relnamespace in (select oid from pg_catalog.pg_namespace where nspname = 'test_b_comments'))
+order by description;
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_procedure';
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_function';
+
+-- test for drop index .. on table
+\d test_drop_index_on_table
+
+-- test for insert statement with no INTO
+select * from test_insert_no_into;
+
+-- test for insert statement with VALUE
+select * from test_insert_value;
+
+-- test for insert with empty value list
+select * from test_insert_empty_value_with_not_null;
+select * from test_insert_empty_value_with_unique;
+select * from test_insert_value_with_no_constraint;
+select * from test_insert_empty_value_types_1;
+select * from test_insert_empty_value_types_2;
+select * from test_insert_empty_value_types_3;
+
+-- test for IGNORE
+select * from test_ignore_not_null;
+select * from test_ignore_unique;
+select * from test_ignore_normal;
+
+-- test for keywords
+select * from allshortestpath_splitprovince;
 
 \c postgres
 drop database if exists table_test;

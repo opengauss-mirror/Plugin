@@ -310,5 +310,6186 @@ select right('abc',5/2);
  abc
 (1 row)
 
+select left('dont!', b'10010');
+ left  
+-------
+ dont!
+(1 row)
+
+select right('dont!', b'10010');
+ right 
+-------
+ dont!
+(1 row)
+
+select left('dont!', X'FF');
+ left  
+-------
+ dont!
+(1 row)
+
+select right('dont!', X'FF');
+ right 
+-------
+ dont!
+(1 row)
+
+select left('dont!', '9223372036854775807');
+ left  
+-------
+ dont!
+(1 row)
+
+select right('dont!', '9223372036854775807');
+ right 
+-------
+ dont!
+(1 row)
+
+select right('dont!', 9223372036854775807);
+ right 
+-------
+ dont!
+(1 row)
+
+select right('dont!', 9223372036854775808);
+ right 
+-------
+ 
+(1 row)
+
+\x
+CREATE TABLE test_type_table
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `date` date,
+    `time` time,
+    `time(4)` time(4),
+    `datetime` datetime,
+    `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+    `timestamp` timestamp,
+    `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+    `year` year,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `text` text,
+    `enum_t` enum('a', 'b', 'c'),
+    `set_t` set('a', 'b', 'c'),
+    `json` json
+);
+NOTICE:  CREATE TABLE will create implicit set "test_type_table_set_t_set" for column "test_type_table.set_t"
+insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2));
+select
+right(`int1`,`int1`),
+right(`int1`,`uint1`),
+right(`int1`,`int2`),
+right(`int1`,`uint2`),
+right(`int1`,`int4`),
+right(`int1`,`uint4`),
+right(`int1`,`int8`),
+right(`int1`,`uint8`),
+right(`int1`,`float4`),
+right(`int1`,`float8`),
+right(`int1`,`numeric`),
+right(`int1`,`bit1`),
+right(`int1`,`bit64`),
+right(`int1`,`boolean`),
+right(`int1`,`date`),
+right(`int1`,`time`),
+right(`int1`,`time(4)`),
+right(`int1`,`datetime`),
+right(`int1`,`datetime(4)`),
+right(`int1`,`timestamp`),
+right(`int1`,`timestamp(4)`),
+right(`int1`,`year`),
+right(`int1`,`char`),
+right(`int1`,`varchar`),
+right(`int1`,`binary`),
+right(`int1`,`varbinary`),
+right(`int1`,`tinyblob`),
+right(`int1`,`blob`),
+right(`int1`,`mediumblob`),
+right(`int1`,`longblob`),
+right(`int1`,`text`),
+right(`int1`,`enum_t`),
+right(`int1`,`set_t`),
+right(`int1`,`json`),
+right(`uint1`,`int1`),
+right(`uint1`,`uint1`),
+right(`uint1`,`int2`),
+right(`uint1`,`uint2`),
+right(`uint1`,`int4`),
+right(`uint1`,`uint4`),
+right(`uint1`,`int8`),
+right(`uint1`,`uint8`),
+right(`uint1`,`float4`),
+right(`uint1`,`float8`),
+right(`uint1`,`numeric`),
+right(`uint1`,`bit1`),
+right(`uint1`,`bit64`),
+right(`uint1`,`boolean`),
+right(`uint1`,`date`),
+right(`uint1`,`time`),
+right(`uint1`,`time(4)`),
+right(`uint1`,`datetime`),
+right(`uint1`,`datetime(4)`),
+right(`uint1`,`timestamp`),
+right(`uint1`,`timestamp(4)`),
+right(`uint1`,`year`),
+right(`uint1`,`char`),
+right(`uint1`,`varchar`),
+right(`uint1`,`binary`),
+right(`uint1`,`varbinary`),
+right(`uint1`,`tinyblob`),
+right(`uint1`,`blob`),
+right(`uint1`,`mediumblob`),
+right(`uint1`,`longblob`),
+right(`uint1`,`text`),
+right(`uint1`,`enum_t`),
+right(`uint1`,`set_t`),
+right(`uint1`,`json`),
+right(`int2`,`int1`),
+right(`int2`,`uint1`),
+right(`int2`,`int2`),
+right(`int2`,`uint2`),
+right(`int2`,`int4`),
+right(`int2`,`uint4`),
+right(`int2`,`int8`),
+right(`int2`,`uint8`),
+right(`int2`,`float4`),
+right(`int2`,`float8`),
+right(`int2`,`numeric`),
+right(`int2`,`bit1`),
+right(`int2`,`bit64`),
+right(`int2`,`boolean`),
+right(`int2`,`date`),
+right(`int2`,`time`),
+right(`int2`,`time(4)`),
+right(`int2`,`datetime`),
+right(`int2`,`datetime(4)`),
+right(`int2`,`timestamp`),
+right(`int2`,`timestamp(4)`),
+right(`int2`,`year`),
+right(`int2`,`char`),
+right(`int2`,`varchar`),
+right(`int2`,`binary`),
+right(`int2`,`varbinary`),
+right(`int2`,`tinyblob`),
+right(`int2`,`blob`),
+right(`int2`,`mediumblob`),
+right(`int2`,`longblob`),
+right(`int2`,`text`),
+right(`int2`,`enum_t`),
+right(`int2`,`set_t`),
+right(`int2`,`json`),
+right(`uint2`,`int1`),
+right(`uint2`,`uint1`),
+right(`uint2`,`int2`),
+right(`uint2`,`uint2`),
+right(`uint2`,`int4`),
+right(`uint2`,`uint4`),
+right(`uint2`,`int8`),
+right(`uint2`,`uint8`),
+right(`uint2`,`float4`),
+right(`uint2`,`float8`),
+right(`uint2`,`numeric`),
+right(`uint2`,`bit1`),
+right(`uint2`,`bit64`),
+right(`uint2`,`boolean`),
+right(`uint2`,`date`),
+right(`uint2`,`time`),
+right(`uint2`,`time(4)`),
+right(`uint2`,`datetime`),
+right(`uint2`,`datetime(4)`),
+right(`uint2`,`timestamp`),
+right(`uint2`,`timestamp(4)`),
+right(`uint2`,`year`),
+right(`uint2`,`char`),
+right(`uint2`,`varchar`),
+right(`uint2`,`binary`),
+right(`uint2`,`varbinary`),
+right(`uint2`,`tinyblob`),
+right(`uint2`,`blob`),
+right(`uint2`,`mediumblob`),
+right(`uint2`,`longblob`),
+right(`uint2`,`text`),
+right(`uint2`,`enum_t`),
+right(`uint2`,`set_t`),
+right(`uint2`,`json`),
+right(`int4`,`int1`),
+right(`int4`,`uint1`),
+right(`int4`,`int2`),
+right(`int4`,`uint2`),
+right(`int4`,`int4`),
+right(`int4`,`uint4`),
+right(`int4`,`int8`),
+right(`int4`,`uint8`),
+right(`int4`,`float4`),
+right(`int4`,`float8`),
+right(`int4`,`numeric`),
+right(`int4`,`bit1`),
+right(`int4`,`bit64`),
+right(`int4`,`boolean`),
+right(`int4`,`date`),
+right(`int4`,`time`),
+right(`int4`,`time(4)`),
+right(`int4`,`datetime`),
+right(`int4`,`datetime(4)`),
+right(`int4`,`timestamp`),
+right(`int4`,`timestamp(4)`),
+right(`int4`,`year`),
+right(`int4`,`char`),
+right(`int4`,`varchar`),
+right(`int4`,`binary`),
+right(`int4`,`varbinary`),
+right(`int4`,`tinyblob`),
+right(`int4`,`blob`),
+right(`int4`,`mediumblob`),
+right(`int4`,`longblob`),
+right(`int4`,`text`),
+right(`int4`,`enum_t`),
+right(`int4`,`set_t`),
+right(`int4`,`json`),
+right(`uint4`,`int1`),
+right(`uint4`,`uint1`),
+right(`uint4`,`int2`),
+right(`uint4`,`uint2`),
+right(`uint4`,`int4`),
+right(`uint4`,`uint4`),
+right(`uint4`,`int8`),
+right(`uint4`,`uint8`),
+right(`uint4`,`float4`),
+right(`uint4`,`float8`),
+right(`uint4`,`numeric`),
+right(`uint4`,`bit1`),
+right(`uint4`,`bit64`),
+right(`uint4`,`boolean`),
+right(`uint4`,`date`),
+right(`uint4`,`time`),
+right(`uint4`,`time(4)`),
+right(`uint4`,`datetime`),
+right(`uint4`,`datetime(4)`),
+right(`uint4`,`timestamp`),
+right(`uint4`,`timestamp(4)`),
+right(`uint4`,`year`),
+right(`uint4`,`char`),
+right(`uint4`,`varchar`),
+right(`uint4`,`binary`),
+right(`uint4`,`varbinary`),
+right(`uint4`,`tinyblob`),
+right(`uint4`,`blob`),
+right(`uint4`,`mediumblob`),
+right(`uint4`,`longblob`),
+right(`uint4`,`text`),
+right(`uint4`,`enum_t`),
+right(`uint4`,`set_t`),
+right(`uint4`,`json`),
+right(`int8`,`int1`),
+right(`int8`,`uint1`),
+right(`int8`,`int2`),
+right(`int8`,`uint2`),
+right(`int8`,`int4`),
+right(`int8`,`uint4`),
+right(`int8`,`int8`),
+right(`int8`,`uint8`),
+right(`int8`,`float4`),
+right(`int8`,`float8`),
+right(`int8`,`numeric`),
+right(`int8`,`bit1`),
+right(`int8`,`bit64`),
+right(`int8`,`boolean`),
+right(`int8`,`date`),
+right(`int8`,`time`),
+right(`int8`,`time(4)`),
+right(`int8`,`datetime`),
+right(`int8`,`datetime(4)`),
+right(`int8`,`timestamp`),
+right(`int8`,`timestamp(4)`),
+right(`int8`,`year`),
+right(`int8`,`char`),
+right(`int8`,`varchar`),
+right(`int8`,`binary`),
+right(`int8`,`varbinary`),
+right(`int8`,`tinyblob`),
+right(`int8`,`blob`),
+right(`int8`,`mediumblob`),
+right(`int8`,`longblob`),
+right(`int8`,`text`),
+right(`int8`,`enum_t`),
+right(`int8`,`set_t`),
+right(`int8`,`json`),
+right(`uint8`,`int1`),
+right(`uint8`,`uint1`),
+right(`uint8`,`int2`),
+right(`uint8`,`uint2`),
+right(`uint8`,`int4`),
+right(`uint8`,`uint4`),
+right(`uint8`,`int8`),
+right(`uint8`,`uint8`),
+right(`uint8`,`float4`),
+right(`uint8`,`float8`),
+right(`uint8`,`numeric`),
+right(`uint8`,`bit1`),
+right(`uint8`,`bit64`),
+right(`uint8`,`boolean`),
+right(`uint8`,`date`),
+right(`uint8`,`time`),
+right(`uint8`,`time(4)`),
+right(`uint8`,`datetime`),
+right(`uint8`,`datetime(4)`),
+right(`uint8`,`timestamp`),
+right(`uint8`,`timestamp(4)`),
+right(`uint8`,`year`),
+right(`uint8`,`char`),
+right(`uint8`,`varchar`),
+right(`uint8`,`binary`),
+right(`uint8`,`varbinary`),
+right(`uint8`,`tinyblob`),
+right(`uint8`,`blob`),
+right(`uint8`,`mediumblob`),
+right(`uint8`,`longblob`),
+right(`uint8`,`text`),
+right(`uint8`,`enum_t`),
+right(`uint8`,`set_t`),
+right(`uint8`,`json`),
+right(`float4`,`int1`),
+right(`float4`,`uint1`),
+right(`float4`,`int2`),
+right(`float4`,`uint2`),
+right(`float4`,`int4`),
+right(`float4`,`uint4`),
+right(`float4`,`int8`),
+right(`float4`,`uint8`),
+right(`float4`,`float4`),
+right(`float4`,`float8`),
+right(`float4`,`numeric`),
+right(`float4`,`bit1`),
+right(`float4`,`bit64`),
+right(`float4`,`boolean`),
+right(`float4`,`date`),
+right(`float4`,`time`),
+right(`float4`,`time(4)`),
+right(`float4`,`datetime`),
+right(`float4`,`datetime(4)`),
+right(`float4`,`timestamp`),
+right(`float4`,`timestamp(4)`),
+right(`float4`,`year`),
+right(`float4`,`char`),
+right(`float4`,`varchar`),
+right(`float4`,`binary`),
+right(`float4`,`varbinary`),
+right(`float4`,`tinyblob`),
+right(`float4`,`blob`),
+right(`float4`,`mediumblob`),
+right(`float4`,`longblob`),
+right(`float4`,`text`),
+right(`float4`,`enum_t`),
+right(`float4`,`set_t`),
+right(`float4`,`json`),
+right(`float8`,`int1`),
+right(`float8`,`uint1`),
+right(`float8`,`int2`),
+right(`float8`,`uint2`),
+right(`float8`,`int4`),
+right(`float8`,`uint4`),
+right(`float8`,`int8`),
+right(`float8`,`uint8`),
+right(`float8`,`float4`),
+right(`float8`,`float8`),
+right(`float8`,`numeric`),
+right(`float8`,`bit1`),
+right(`float8`,`bit64`),
+right(`float8`,`boolean`),
+right(`float8`,`date`),
+right(`float8`,`time`),
+right(`float8`,`time(4)`),
+right(`float8`,`datetime`),
+right(`float8`,`datetime(4)`),
+right(`float8`,`timestamp`),
+right(`float8`,`timestamp(4)`),
+right(`float8`,`year`),
+right(`float8`,`char`),
+right(`float8`,`varchar`),
+right(`float8`,`binary`),
+right(`float8`,`varbinary`),
+right(`float8`,`tinyblob`),
+right(`float8`,`blob`),
+right(`float8`,`mediumblob`),
+right(`float8`,`longblob`),
+right(`float8`,`text`),
+right(`float8`,`enum_t`),
+right(`float8`,`set_t`),
+right(`float8`,`json`),
+right(`numeric`,`int1`),
+right(`numeric`,`uint1`),
+right(`numeric`,`int2`),
+right(`numeric`,`uint2`),
+right(`numeric`,`int4`),
+right(`numeric`,`uint4`),
+right(`numeric`,`int8`),
+right(`numeric`,`uint8`),
+right(`numeric`,`float4`),
+right(`numeric`,`float8`),
+right(`numeric`,`numeric`),
+right(`numeric`,`bit1`),
+right(`numeric`,`bit64`),
+right(`numeric`,`boolean`),
+right(`numeric`,`date`),
+right(`numeric`,`time`),
+right(`numeric`,`time(4)`),
+right(`numeric`,`datetime`),
+right(`numeric`,`datetime(4)`),
+right(`numeric`,`timestamp`),
+right(`numeric`,`timestamp(4)`),
+right(`numeric`,`year`),
+right(`numeric`,`char`),
+right(`numeric`,`varchar`),
+right(`numeric`,`binary`),
+right(`numeric`,`varbinary`),
+right(`numeric`,`tinyblob`),
+right(`numeric`,`blob`),
+right(`numeric`,`mediumblob`),
+right(`numeric`,`longblob`),
+right(`numeric`,`text`),
+right(`numeric`,`enum_t`),
+right(`numeric`,`set_t`),
+right(`numeric`,`json`),
+right(`bit1`,`int1`),
+right(`bit1`,`uint1`),
+right(`bit1`,`int2`),
+right(`bit1`,`uint2`),
+right(`bit1`,`int4`),
+right(`bit1`,`uint4`),
+right(`bit1`,`int8`),
+right(`bit1`,`uint8`),
+right(`bit1`,`float4`),
+right(`bit1`,`float8`),
+right(`bit1`,`numeric`),
+right(`bit1`,`bit1`),
+right(`bit1`,`bit64`),
+right(`bit1`,`boolean`),
+right(`bit1`,`date`),
+right(`bit1`,`time`),
+right(`bit1`,`time(4)`),
+right(`bit1`,`datetime`),
+right(`bit1`,`datetime(4)`),
+right(`bit1`,`timestamp`),
+right(`bit1`,`timestamp(4)`),
+right(`bit1`,`year`),
+right(`bit1`,`char`),
+right(`bit1`,`varchar`),
+right(`bit1`,`binary`),
+right(`bit1`,`varbinary`),
+right(`bit1`,`tinyblob`),
+right(`bit1`,`blob`),
+right(`bit1`,`mediumblob`),
+right(`bit1`,`longblob`),
+right(`bit1`,`text`),
+right(`bit1`,`enum_t`),
+right(`bit1`,`set_t`),
+right(`bit1`,`json`),
+right(`bit64`,`int1`),
+right(`bit64`,`uint1`),
+right(`bit64`,`int2`),
+right(`bit64`,`uint2`),
+right(`bit64`,`int4`),
+right(`bit64`,`uint4`),
+right(`bit64`,`int8`),
+right(`bit64`,`uint8`),
+right(`bit64`,`float4`),
+right(`bit64`,`float8`),
+right(`bit64`,`numeric`),
+right(`bit64`,`bit1`),
+right(`bit64`,`bit64`),
+right(`bit64`,`boolean`),
+right(`bit64`,`date`),
+right(`bit64`,`time`),
+right(`bit64`,`time(4)`),
+right(`bit64`,`datetime`),
+right(`bit64`,`datetime(4)`),
+right(`bit64`,`timestamp`),
+right(`bit64`,`timestamp(4)`),
+right(`bit64`,`year`),
+right(`bit64`,`char`),
+right(`bit64`,`varchar`),
+right(`bit64`,`binary`),
+right(`bit64`,`varbinary`),
+right(`bit64`,`tinyblob`),
+right(`bit64`,`blob`),
+right(`bit64`,`mediumblob`),
+right(`bit64`,`longblob`),
+right(`bit64`,`text`),
+right(`bit64`,`enum_t`),
+right(`bit64`,`set_t`),
+right(`bit64`,`json`),
+right(`boolean`,`int1`),
+right(`boolean`,`uint1`),
+right(`boolean`,`int2`),
+right(`boolean`,`uint2`),
+right(`boolean`,`int4`),
+right(`boolean`,`uint4`),
+right(`boolean`,`int8`),
+right(`boolean`,`uint8`),
+right(`boolean`,`float4`),
+right(`boolean`,`float8`),
+right(`boolean`,`numeric`),
+right(`boolean`,`bit1`),
+right(`boolean`,`bit64`),
+right(`boolean`,`boolean`),
+right(`boolean`,`date`),
+right(`boolean`,`time`),
+right(`boolean`,`time(4)`),
+right(`boolean`,`datetime`),
+right(`boolean`,`datetime(4)`),
+right(`boolean`,`timestamp`),
+right(`boolean`,`timestamp(4)`),
+right(`boolean`,`year`),
+right(`boolean`,`char`),
+right(`boolean`,`varchar`),
+right(`boolean`,`binary`),
+right(`boolean`,`varbinary`),
+right(`boolean`,`tinyblob`),
+right(`boolean`,`blob`),
+right(`boolean`,`mediumblob`),
+right(`boolean`,`longblob`),
+right(`boolean`,`text`),
+right(`boolean`,`enum_t`),
+right(`boolean`,`set_t`),
+right(`boolean`,`json`),
+right(`date`,`int1`),
+right(`date`,`uint1`),
+right(`date`,`int2`),
+right(`date`,`uint2`),
+right(`date`,`int4`),
+right(`date`,`uint4`),
+right(`date`,`int8`),
+right(`date`,`uint8`),
+right(`date`,`float4`),
+right(`date`,`float8`),
+right(`date`,`numeric`),
+right(`date`,`bit1`),
+right(`date`,`bit64`),
+right(`date`,`boolean`),
+right(`date`,`date`),
+right(`date`,`time`),
+right(`date`,`time(4)`),
+right(`date`,`datetime`),
+right(`date`,`datetime(4)`),
+right(`date`,`timestamp`),
+right(`date`,`timestamp(4)`),
+right(`date`,`year`),
+right(`date`,`char`),
+right(`date`,`varchar`),
+right(`date`,`binary`),
+right(`date`,`varbinary`),
+right(`date`,`tinyblob`),
+right(`date`,`blob`),
+right(`date`,`mediumblob`),
+right(`date`,`longblob`),
+right(`date`,`text`),
+right(`date`,`enum_t`),
+right(`date`,`set_t`),
+right(`date`,`json`),
+right(`time`,`int1`),
+right(`time`,`uint1`),
+right(`time`,`int2`),
+right(`time`,`uint2`),
+right(`time`,`int4`),
+right(`time`,`uint4`),
+right(`time`,`int8`),
+right(`time`,`uint8`),
+right(`time`,`float4`),
+right(`time`,`float8`),
+right(`time`,`numeric`),
+right(`time`,`bit1`),
+right(`time`,`bit64`),
+right(`time`,`boolean`),
+right(`time`,`date`),
+right(`time`,`time`),
+right(`time`,`time(4)`),
+right(`time`,`datetime`),
+right(`time`,`datetime(4)`),
+right(`time`,`timestamp`),
+right(`time`,`timestamp(4)`),
+right(`time`,`year`),
+right(`time`,`char`),
+right(`time`,`varchar`),
+right(`time`,`binary`),
+right(`time`,`varbinary`),
+right(`time`,`tinyblob`),
+right(`time`,`blob`),
+right(`time`,`mediumblob`),
+right(`time`,`longblob`),
+right(`time`,`text`),
+right(`time`,`enum_t`),
+right(`time`,`set_t`),
+right(`time`,`json`),
+right(`time(4)`,`int1`),
+right(`time(4)`,`uint1`),
+right(`time(4)`,`int2`),
+right(`time(4)`,`uint2`),
+right(`time(4)`,`int4`),
+right(`time(4)`,`uint4`),
+right(`time(4)`,`int8`),
+right(`time(4)`,`uint8`),
+right(`time(4)`,`float4`),
+right(`time(4)`,`float8`),
+right(`time(4)`,`numeric`),
+right(`time(4)`,`bit1`),
+right(`time(4)`,`bit64`),
+right(`time(4)`,`boolean`),
+right(`time(4)`,`date`),
+right(`time(4)`,`time`),
+right(`time(4)`,`time(4)`),
+right(`time(4)`,`datetime`),
+right(`time(4)`,`datetime(4)`),
+right(`time(4)`,`timestamp`),
+right(`time(4)`,`timestamp(4)`),
+right(`time(4)`,`year`),
+right(`time(4)`,`char`),
+right(`time(4)`,`varchar`),
+right(`time(4)`,`binary`),
+right(`time(4)`,`varbinary`),
+right(`time(4)`,`tinyblob`),
+right(`time(4)`,`blob`),
+right(`time(4)`,`mediumblob`),
+right(`time(4)`,`longblob`),
+right(`time(4)`,`text`),
+right(`time(4)`,`enum_t`),
+right(`time(4)`,`set_t`),
+right(`time(4)`,`json`),
+right(`datetime`,`int1`),
+right(`datetime`,`uint1`),
+right(`datetime`,`int2`),
+right(`datetime`,`uint2`),
+right(`datetime`,`int4`),
+right(`datetime`,`uint4`),
+right(`datetime`,`int8`),
+right(`datetime`,`uint8`),
+right(`datetime`,`float4`),
+right(`datetime`,`float8`),
+right(`datetime`,`numeric`),
+right(`datetime`,`bit1`),
+right(`datetime`,`bit64`),
+right(`datetime`,`boolean`),
+right(`datetime`,`date`),
+right(`datetime`,`time`),
+right(`datetime`,`time(4)`),
+right(`datetime`,`datetime`),
+right(`datetime`,`datetime(4)`),
+right(`datetime`,`timestamp`),
+right(`datetime`,`timestamp(4)`),
+right(`datetime`,`year`),
+right(`datetime`,`char`),
+right(`datetime`,`varchar`),
+right(`datetime`,`binary`),
+right(`datetime`,`varbinary`),
+right(`datetime`,`tinyblob`),
+right(`datetime`,`blob`),
+right(`datetime`,`mediumblob`),
+right(`datetime`,`longblob`),
+right(`datetime`,`text`),
+right(`datetime`,`enum_t`),
+right(`datetime`,`set_t`),
+right(`datetime`,`json`),
+right(`datetime(4)`,`int1`),
+right(`datetime(4)`,`uint1`),
+right(`datetime(4)`,`int2`),
+right(`datetime(4)`,`uint2`),
+right(`datetime(4)`,`int4`),
+right(`datetime(4)`,`uint4`),
+right(`datetime(4)`,`int8`),
+right(`datetime(4)`,`uint8`),
+right(`datetime(4)`,`float4`),
+right(`datetime(4)`,`float8`),
+right(`datetime(4)`,`numeric`),
+right(`datetime(4)`,`bit1`),
+right(`datetime(4)`,`bit64`),
+right(`datetime(4)`,`boolean`),
+right(`datetime(4)`,`date`),
+right(`datetime(4)`,`time`),
+right(`datetime(4)`,`time(4)`),
+right(`datetime(4)`,`datetime`),
+right(`datetime(4)`,`datetime(4)`),
+right(`datetime(4)`,`timestamp`),
+right(`datetime(4)`,`timestamp(4)`),
+right(`datetime(4)`,`year`),
+right(`datetime(4)`,`char`),
+right(`datetime(4)`,`varchar`),
+right(`datetime(4)`,`binary`),
+right(`datetime(4)`,`varbinary`),
+right(`datetime(4)`,`tinyblob`),
+right(`datetime(4)`,`blob`),
+right(`datetime(4)`,`mediumblob`),
+right(`datetime(4)`,`longblob`),
+right(`datetime(4)`,`text`),
+right(`datetime(4)`,`enum_t`),
+right(`datetime(4)`,`set_t`),
+right(`datetime(4)`,`json`),
+right(`timestamp`,`int1`),
+right(`timestamp`,`uint1`),
+right(`timestamp`,`int2`),
+right(`timestamp`,`uint2`),
+right(`timestamp`,`int4`),
+right(`timestamp`,`uint4`),
+right(`timestamp`,`int8`),
+right(`timestamp`,`uint8`),
+right(`timestamp`,`float4`),
+right(`timestamp`,`float8`),
+right(`timestamp`,`numeric`),
+right(`timestamp`,`bit1`),
+right(`timestamp`,`bit64`),
+right(`timestamp`,`boolean`),
+right(`timestamp`,`date`),
+right(`timestamp`,`time`),
+right(`timestamp`,`time(4)`),
+right(`timestamp`,`datetime`),
+right(`timestamp`,`datetime(4)`),
+right(`timestamp`,`timestamp`),
+right(`timestamp`,`timestamp(4)`),
+right(`timestamp`,`year`),
+right(`timestamp`,`char`),
+right(`timestamp`,`varchar`),
+right(`timestamp`,`binary`),
+right(`timestamp`,`varbinary`),
+right(`timestamp`,`tinyblob`),
+right(`timestamp`,`blob`),
+right(`timestamp`,`mediumblob`),
+right(`timestamp`,`longblob`),
+right(`timestamp`,`text`),
+right(`timestamp`,`enum_t`),
+right(`timestamp`,`set_t`),
+right(`timestamp`,`json`),
+right(`timestamp(4)`,`int1`),
+right(`timestamp(4)`,`uint1`),
+right(`timestamp(4)`,`int2`),
+right(`timestamp(4)`,`uint2`),
+right(`timestamp(4)`,`int4`),
+right(`timestamp(4)`,`uint4`),
+right(`timestamp(4)`,`int8`),
+right(`timestamp(4)`,`uint8`),
+right(`timestamp(4)`,`float4`),
+right(`timestamp(4)`,`float8`),
+right(`timestamp(4)`,`numeric`),
+right(`timestamp(4)`,`bit1`),
+right(`timestamp(4)`,`bit64`),
+right(`timestamp(4)`,`boolean`),
+right(`timestamp(4)`,`date`),
+right(`timestamp(4)`,`time`),
+right(`timestamp(4)`,`time(4)`),
+right(`timestamp(4)`,`datetime`),
+right(`timestamp(4)`,`datetime(4)`),
+right(`timestamp(4)`,`timestamp`),
+right(`timestamp(4)`,`timestamp(4)`),
+right(`timestamp(4)`,`year`),
+right(`timestamp(4)`,`char`),
+right(`timestamp(4)`,`varchar`),
+right(`timestamp(4)`,`binary`),
+right(`timestamp(4)`,`varbinary`),
+right(`timestamp(4)`,`tinyblob`),
+right(`timestamp(4)`,`blob`),
+right(`timestamp(4)`,`mediumblob`),
+right(`timestamp(4)`,`longblob`),
+right(`timestamp(4)`,`text`),
+right(`timestamp(4)`,`enum_t`),
+right(`timestamp(4)`,`set_t`),
+right(`timestamp(4)`,`json`),
+right(`year`,`int1`),
+right(`year`,`uint1`),
+right(`year`,`int2`),
+right(`year`,`uint2`),
+right(`year`,`int4`),
+right(`year`,`uint4`),
+right(`year`,`int8`),
+right(`year`,`uint8`),
+right(`year`,`float4`),
+right(`year`,`float8`),
+right(`year`,`numeric`),
+right(`year`,`bit1`),
+right(`year`,`bit64`),
+right(`year`,`boolean`),
+right(`year`,`date`),
+right(`year`,`time`),
+right(`year`,`time(4)`),
+right(`year`,`datetime`),
+right(`year`,`datetime(4)`),
+right(`year`,`timestamp`),
+right(`year`,`timestamp(4)`),
+right(`year`,`year`),
+right(`year`,`char`),
+right(`year`,`varchar`),
+right(`year`,`binary`),
+right(`year`,`varbinary`),
+right(`year`,`tinyblob`),
+right(`year`,`blob`),
+right(`year`,`mediumblob`),
+right(`year`,`longblob`),
+right(`year`,`text`),
+right(`year`,`enum_t`),
+right(`year`,`set_t`),
+right(`year`,`json`),
+right(`char`,`int1`),
+right(`char`,`uint1`),
+right(`char`,`int2`),
+right(`char`,`uint2`),
+right(`char`,`int4`),
+right(`char`,`uint4`),
+right(`char`,`int8`),
+right(`char`,`uint8`),
+right(`char`,`float4`),
+right(`char`,`float8`),
+right(`char`,`numeric`),
+right(`char`,`bit1`),
+right(`char`,`bit64`),
+right(`char`,`boolean`),
+right(`char`,`date`),
+right(`char`,`time`),
+right(`char`,`time(4)`),
+right(`char`,`datetime`),
+right(`char`,`datetime(4)`),
+right(`char`,`timestamp`),
+right(`char`,`timestamp(4)`),
+right(`char`,`year`),
+right(`char`,`char`),
+right(`char`,`varchar`),
+right(`char`,`binary`),
+right(`char`,`varbinary`),
+right(`char`,`tinyblob`),
+right(`char`,`blob`),
+right(`char`,`mediumblob`),
+right(`char`,`longblob`),
+right(`char`,`text`),
+right(`char`,`enum_t`),
+right(`char`,`set_t`),
+right(`char`,`json`),
+right(`varchar`,`int1`),
+right(`varchar`,`uint1`),
+right(`varchar`,`int2`),
+right(`varchar`,`uint2`),
+right(`varchar`,`int4`),
+right(`varchar`,`uint4`),
+right(`varchar`,`int8`),
+right(`varchar`,`uint8`),
+right(`varchar`,`float4`),
+right(`varchar`,`float8`),
+right(`varchar`,`numeric`),
+right(`varchar`,`bit1`),
+right(`varchar`,`bit64`),
+right(`varchar`,`boolean`),
+right(`varchar`,`date`),
+right(`varchar`,`time`),
+right(`varchar`,`time(4)`),
+right(`varchar`,`datetime`),
+right(`varchar`,`datetime(4)`),
+right(`varchar`,`timestamp`),
+right(`varchar`,`timestamp(4)`),
+right(`varchar`,`year`),
+right(`varchar`,`char`),
+right(`varchar`,`varchar`),
+right(`varchar`,`binary`),
+right(`varchar`,`varbinary`),
+right(`varchar`,`tinyblob`),
+right(`varchar`,`blob`),
+right(`varchar`,`mediumblob`),
+right(`varchar`,`longblob`),
+right(`varchar`,`text`),
+right(`varchar`,`enum_t`),
+right(`varchar`,`set_t`),
+right(`varchar`,`json`),
+right(`binary`,`int1`),
+right(`binary`,`uint1`),
+right(`binary`,`int2`),
+right(`binary`,`uint2`),
+right(`binary`,`int4`),
+right(`binary`,`uint4`),
+right(`binary`,`int8`),
+right(`binary`,`uint8`),
+right(`binary`,`float4`),
+right(`binary`,`float8`),
+right(`binary`,`numeric`),
+right(`binary`,`bit1`),
+right(`binary`,`bit64`),
+right(`binary`,`boolean`),
+right(`binary`,`date`),
+right(`binary`,`time`),
+right(`binary`,`time(4)`),
+right(`binary`,`datetime`),
+right(`binary`,`datetime(4)`),
+right(`binary`,`timestamp`),
+right(`binary`,`timestamp(4)`),
+right(`binary`,`year`),
+right(`binary`,`char`),
+right(`binary`,`varchar`),
+right(`binary`,`binary`),
+right(`binary`,`varbinary`),
+right(`binary`,`tinyblob`),
+right(`binary`,`blob`),
+right(`binary`,`mediumblob`),
+right(`binary`,`longblob`),
+right(`binary`,`text`),
+right(`binary`,`enum_t`),
+right(`binary`,`set_t`),
+right(`binary`,`json`),
+right(`varbinary`,`int1`),
+right(`varbinary`,`uint1`),
+right(`varbinary`,`int2`),
+right(`varbinary`,`uint2`),
+right(`varbinary`,`int4`),
+right(`varbinary`,`uint4`),
+right(`varbinary`,`int8`),
+right(`varbinary`,`uint8`),
+right(`varbinary`,`float4`),
+right(`varbinary`,`float8`),
+right(`varbinary`,`numeric`),
+right(`varbinary`,`bit1`),
+right(`varbinary`,`bit64`),
+right(`varbinary`,`boolean`),
+right(`varbinary`,`date`),
+right(`varbinary`,`time`),
+right(`varbinary`,`time(4)`),
+right(`varbinary`,`datetime`),
+right(`varbinary`,`datetime(4)`),
+right(`varbinary`,`timestamp`),
+right(`varbinary`,`timestamp(4)`),
+right(`varbinary`,`year`),
+right(`varbinary`,`char`),
+right(`varbinary`,`varchar`),
+right(`varbinary`,`binary`),
+right(`varbinary`,`varbinary`),
+right(`varbinary`,`tinyblob`),
+right(`varbinary`,`blob`),
+right(`varbinary`,`mediumblob`),
+right(`varbinary`,`longblob`),
+right(`varbinary`,`text`),
+right(`varbinary`,`enum_t`),
+right(`varbinary`,`set_t`),
+right(`varbinary`,`json`),
+right(`tinyblob`,`int1`),
+right(`tinyblob`,`uint1`),
+right(`tinyblob`,`int2`),
+right(`tinyblob`,`uint2`),
+right(`tinyblob`,`int4`),
+right(`tinyblob`,`uint4`),
+right(`tinyblob`,`int8`),
+right(`tinyblob`,`uint8`),
+right(`tinyblob`,`float4`),
+right(`tinyblob`,`float8`),
+right(`tinyblob`,`numeric`),
+right(`tinyblob`,`bit1`),
+right(`tinyblob`,`bit64`),
+right(`tinyblob`,`boolean`),
+right(`tinyblob`,`date`),
+right(`tinyblob`,`time`),
+right(`tinyblob`,`time(4)`),
+right(`tinyblob`,`datetime`),
+right(`tinyblob`,`datetime(4)`),
+right(`tinyblob`,`timestamp`),
+right(`tinyblob`,`timestamp(4)`),
+right(`tinyblob`,`year`),
+right(`tinyblob`,`char`),
+right(`tinyblob`,`varchar`),
+right(`tinyblob`,`binary`),
+right(`tinyblob`,`varbinary`),
+right(`tinyblob`,`tinyblob`),
+right(`tinyblob`,`blob`),
+right(`tinyblob`,`mediumblob`),
+right(`tinyblob`,`longblob`),
+right(`tinyblob`,`text`),
+right(`tinyblob`,`enum_t`),
+right(`tinyblob`,`set_t`),
+right(`tinyblob`,`json`),
+right(`blob`,`int1`),
+right(`blob`,`uint1`),
+right(`blob`,`int2`),
+right(`blob`,`uint2`),
+right(`blob`,`int4`),
+right(`blob`,`uint4`),
+right(`blob`,`int8`),
+right(`blob`,`uint8`),
+right(`blob`,`float4`),
+right(`blob`,`float8`),
+right(`blob`,`numeric`),
+right(`blob`,`bit1`),
+right(`blob`,`bit64`),
+right(`blob`,`boolean`),
+right(`blob`,`date`),
+right(`blob`,`time`),
+right(`blob`,`time(4)`),
+right(`blob`,`datetime`),
+right(`blob`,`datetime(4)`),
+right(`blob`,`timestamp`),
+right(`blob`,`timestamp(4)`),
+right(`blob`,`year`),
+right(`blob`,`char`),
+right(`blob`,`varchar`),
+right(`blob`,`binary`),
+right(`blob`,`varbinary`),
+right(`blob`,`tinyblob`),
+right(`blob`,`blob`),
+right(`blob`,`mediumblob`),
+right(`blob`,`longblob`),
+right(`blob`,`text`),
+right(`blob`,`enum_t`),
+right(`blob`,`set_t`),
+right(`blob`,`json`),
+right(`mediumblob`,`int1`),
+right(`mediumblob`,`uint1`),
+right(`mediumblob`,`int2`),
+right(`mediumblob`,`uint2`),
+right(`mediumblob`,`int4`),
+right(`mediumblob`,`uint4`),
+right(`mediumblob`,`int8`),
+right(`mediumblob`,`uint8`),
+right(`mediumblob`,`float4`),
+right(`mediumblob`,`float8`),
+right(`mediumblob`,`numeric`),
+right(`mediumblob`,`bit1`),
+right(`mediumblob`,`bit64`),
+right(`mediumblob`,`boolean`),
+right(`mediumblob`,`date`),
+right(`mediumblob`,`time`),
+right(`mediumblob`,`time(4)`),
+right(`mediumblob`,`datetime`),
+right(`mediumblob`,`datetime(4)`),
+right(`mediumblob`,`timestamp`),
+right(`mediumblob`,`timestamp(4)`),
+right(`mediumblob`,`year`),
+right(`mediumblob`,`char`),
+right(`mediumblob`,`varchar`),
+right(`mediumblob`,`binary`),
+right(`mediumblob`,`varbinary`),
+right(`mediumblob`,`tinyblob`),
+right(`mediumblob`,`blob`),
+right(`mediumblob`,`mediumblob`),
+right(`mediumblob`,`longblob`),
+right(`mediumblob`,`text`),
+right(`mediumblob`,`enum_t`),
+right(`mediumblob`,`set_t`),
+right(`mediumblob`,`json`),
+right(`longblob`,`int1`),
+right(`longblob`,`uint1`),
+right(`longblob`,`int2`),
+right(`longblob`,`uint2`),
+right(`longblob`,`int4`),
+right(`longblob`,`uint4`),
+right(`longblob`,`int8`),
+right(`longblob`,`uint8`),
+right(`longblob`,`float4`),
+right(`longblob`,`float8`),
+right(`longblob`,`numeric`),
+right(`longblob`,`bit1`),
+right(`longblob`,`bit64`),
+right(`longblob`,`boolean`),
+right(`longblob`,`date`),
+right(`longblob`,`time`),
+right(`longblob`,`time(4)`),
+right(`longblob`,`datetime`),
+right(`longblob`,`datetime(4)`),
+right(`longblob`,`timestamp`),
+right(`longblob`,`timestamp(4)`),
+right(`longblob`,`year`),
+right(`longblob`,`char`),
+right(`longblob`,`varchar`),
+right(`longblob`,`binary`),
+right(`longblob`,`varbinary`),
+right(`longblob`,`tinyblob`),
+right(`longblob`,`blob`),
+right(`longblob`,`mediumblob`),
+right(`longblob`,`longblob`),
+right(`longblob`,`text`),
+right(`longblob`,`enum_t`),
+right(`longblob`,`set_t`),
+right(`longblob`,`json`),
+right(`text`,`int1`),
+right(`text`,`uint1`),
+right(`text`,`int2`),
+right(`text`,`uint2`),
+right(`text`,`int4`),
+right(`text`,`uint4`),
+right(`text`,`int8`),
+right(`text`,`uint8`),
+right(`text`,`float4`),
+right(`text`,`float8`),
+right(`text`,`numeric`),
+right(`text`,`bit1`),
+right(`text`,`bit64`),
+right(`text`,`boolean`),
+right(`text`,`date`),
+right(`text`,`time`),
+right(`text`,`time(4)`),
+right(`text`,`datetime`),
+right(`text`,`datetime(4)`),
+right(`text`,`timestamp`),
+right(`text`,`timestamp(4)`),
+right(`text`,`year`),
+right(`text`,`char`),
+right(`text`,`varchar`),
+right(`text`,`binary`),
+right(`text`,`varbinary`),
+right(`text`,`tinyblob`),
+right(`text`,`blob`),
+right(`text`,`mediumblob`),
+right(`text`,`longblob`),
+right(`text`,`text`),
+right(`text`,`enum_t`),
+right(`text`,`set_t`),
+right(`text`,`json`),
+right(`enum_t`,`int1`),
+right(`enum_t`,`uint1`),
+right(`enum_t`,`int2`),
+right(`enum_t`,`uint2`),
+right(`enum_t`,`int4`),
+right(`enum_t`,`uint4`),
+right(`enum_t`,`int8`),
+right(`enum_t`,`uint8`),
+right(`enum_t`,`float4`),
+right(`enum_t`,`float8`),
+right(`enum_t`,`numeric`),
+right(`enum_t`,`bit1`),
+right(`enum_t`,`bit64`),
+right(`enum_t`,`boolean`),
+right(`enum_t`,`date`),
+right(`enum_t`,`time`),
+right(`enum_t`,`time(4)`),
+right(`enum_t`,`datetime`),
+right(`enum_t`,`datetime(4)`),
+right(`enum_t`,`timestamp`),
+right(`enum_t`,`timestamp(4)`),
+right(`enum_t`,`year`),
+right(`enum_t`,`char`),
+right(`enum_t`,`varchar`),
+right(`enum_t`,`binary`),
+right(`enum_t`,`varbinary`),
+right(`enum_t`,`tinyblob`),
+right(`enum_t`,`blob`),
+right(`enum_t`,`mediumblob`),
+right(`enum_t`,`longblob`),
+right(`enum_t`,`text`),
+right(`enum_t`,`enum_t`),
+right(`enum_t`,`set_t`),
+right(`enum_t`,`json`),
+right(`set_t`,`int1`),
+right(`set_t`,`uint1`),
+right(`set_t`,`int2`),
+right(`set_t`,`uint2`),
+right(`set_t`,`int4`),
+right(`set_t`,`uint4`),
+right(`set_t`,`int8`),
+right(`set_t`,`uint8`),
+right(`set_t`,`float4`),
+right(`set_t`,`float8`),
+right(`set_t`,`numeric`),
+right(`set_t`,`bit1`),
+right(`set_t`,`bit64`),
+right(`set_t`,`boolean`),
+right(`set_t`,`date`),
+right(`set_t`,`time`),
+right(`set_t`,`time(4)`),
+right(`set_t`,`datetime`),
+right(`set_t`,`datetime(4)`),
+right(`set_t`,`timestamp`),
+right(`set_t`,`timestamp(4)`),
+right(`set_t`,`year`),
+right(`set_t`,`char`),
+right(`set_t`,`varchar`),
+right(`set_t`,`binary`),
+right(`set_t`,`varbinary`),
+right(`set_t`,`tinyblob`),
+right(`set_t`,`blob`),
+right(`set_t`,`mediumblob`),
+right(`set_t`,`longblob`),
+right(`set_t`,`text`),
+right(`set_t`,`enum_t`),
+right(`set_t`,`set_t`),
+right(`set_t`,`json`),
+right(`json`,`int1`),
+right(`json`,`uint1`),
+right(`json`,`int2`),
+right(`json`,`uint2`),
+right(`json`,`int4`),
+right(`json`,`uint4`),
+right(`json`,`int8`),
+right(`json`,`uint8`),
+right(`json`,`float4`),
+right(`json`,`float8`),
+right(`json`,`numeric`),
+right(`json`,`bit1`),
+right(`json`,`bit64`),
+right(`json`,`boolean`),
+right(`json`,`date`),
+right(`json`,`time`),
+right(`json`,`time(4)`),
+right(`json`,`datetime`),
+right(`json`,`datetime(4)`),
+right(`json`,`timestamp`),
+right(`json`,`timestamp(4)`),
+right(`json`,`year`),
+right(`json`,`char`),
+right(`json`,`varchar`),
+right(`json`,`binary`),
+right(`json`,`varbinary`),
+right(`json`,`tinyblob`),
+right(`json`,`blob`),
+right(`json`,`mediumblob`),
+right(`json`,`longblob`),
+right(`json`,`text`),
+right(`json`,`enum_t`),
+right(`json`,`set_t`),
+right(`json`,`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+-[ RECORD 1 ]-----------------------------------------------------------------------------------------------
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | .000000
+right | 0
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 1.000000
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 00000
+right | 
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | \001
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 1
+right | 
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 3-02-05
+right | 5
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 2023-02-05
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 5
+right | 02-05
+right | 
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 9:10:50
+right | 0
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 19:10:50
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 10:50
+right | 
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 50.3456
+right | 6
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 19:10:50.3456
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | .3456
+right | 
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 9:10:50
+right | 0
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 2023-02-05 19:10:50
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 0
+right | 10:50
+right | 
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | :50.456
+right | 6
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 2023-02-05 19:10:50.456
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 6
+right | 0.456
+right | 
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 0:50-08
+right | 8
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 2023-02-05 19:10:50-08
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 50-08
+right | 
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | .456-08
+right | 8
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 2023-02-05 19:10:50.456-08
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 8
+right | 56-08
+right | 
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 2023
+right | 3
+right | 2023
+right | 2023
+right | 2023
+right | 2023
+right | 2023
+right | 2023
+right | 2023
+right | 2023
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 3
+right | 2023
+right | 
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |        
+right |  
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right | 1.23a                                                                                               
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |  
+right |      
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | 
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | a,c
+right | c
+right | a,c
+right | a,c
+right | a,c
+right | a,c
+right | a,c
+right | a,c
+right | a,c
+right | a,c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | c
+right | a,c
+right | 
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | "b": 2}
+right | }
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | {"a": 1, "b": 2}
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | }
+right | ": 2}
+right | 
+
+select
+left(`int1`,`int1`),
+left(`int1`,`uint1`),
+left(`int1`,`int2`),
+left(`int1`,`uint2`),
+left(`int1`,`int4`),
+left(`int1`,`uint4`),
+left(`int1`,`int8`),
+left(`int1`,`uint8`),
+left(`int1`,`float4`),
+left(`int1`,`float8`),
+left(`int1`,`numeric`),
+left(`int1`,`bit1`),
+left(`int1`,`bit64`),
+left(`int1`,`boolean`),
+left(`int1`,`date`),
+left(`int1`,`time`),
+left(`int1`,`time(4)`),
+left(`int1`,`datetime`),
+left(`int1`,`datetime(4)`),
+left(`int1`,`timestamp`),
+left(`int1`,`timestamp(4)`),
+left(`int1`,`year`),
+left(`int1`,`char`),
+left(`int1`,`varchar`),
+left(`int1`,`binary`),
+left(`int1`,`varbinary`),
+left(`int1`,`tinyblob`),
+left(`int1`,`blob`),
+left(`int1`,`mediumblob`),
+left(`int1`,`longblob`),
+left(`int1`,`text`),
+left(`int1`,`enum_t`),
+left(`int1`,`set_t`),
+left(`int1`,`json`),
+left(`uint1`,`int1`),
+left(`uint1`,`uint1`),
+left(`uint1`,`int2`),
+left(`uint1`,`uint2`),
+left(`uint1`,`int4`),
+left(`uint1`,`uint4`),
+left(`uint1`,`int8`),
+left(`uint1`,`uint8`),
+left(`uint1`,`float4`),
+left(`uint1`,`float8`),
+left(`uint1`,`numeric`),
+left(`uint1`,`bit1`),
+left(`uint1`,`bit64`),
+left(`uint1`,`boolean`),
+left(`uint1`,`date`),
+left(`uint1`,`time`),
+left(`uint1`,`time(4)`),
+left(`uint1`,`datetime`),
+left(`uint1`,`datetime(4)`),
+left(`uint1`,`timestamp`),
+left(`uint1`,`timestamp(4)`),
+left(`uint1`,`year`),
+left(`uint1`,`char`),
+left(`uint1`,`varchar`),
+left(`uint1`,`binary`),
+left(`uint1`,`varbinary`),
+left(`uint1`,`tinyblob`),
+left(`uint1`,`blob`),
+left(`uint1`,`mediumblob`),
+left(`uint1`,`longblob`),
+left(`uint1`,`text`),
+left(`uint1`,`enum_t`),
+left(`uint1`,`set_t`),
+left(`uint1`,`json`),
+left(`int2`,`int1`),
+left(`int2`,`uint1`),
+left(`int2`,`int2`),
+left(`int2`,`uint2`),
+left(`int2`,`int4`),
+left(`int2`,`uint4`),
+left(`int2`,`int8`),
+left(`int2`,`uint8`),
+left(`int2`,`float4`),
+left(`int2`,`float8`),
+left(`int2`,`numeric`),
+left(`int2`,`bit1`),
+left(`int2`,`bit64`),
+left(`int2`,`boolean`),
+left(`int2`,`date`),
+left(`int2`,`time`),
+left(`int2`,`time(4)`),
+left(`int2`,`datetime`),
+left(`int2`,`datetime(4)`),
+left(`int2`,`timestamp`),
+left(`int2`,`timestamp(4)`),
+left(`int2`,`year`),
+left(`int2`,`char`),
+left(`int2`,`varchar`),
+left(`int2`,`binary`),
+left(`int2`,`varbinary`),
+left(`int2`,`tinyblob`),
+left(`int2`,`blob`),
+left(`int2`,`mediumblob`),
+left(`int2`,`longblob`),
+left(`int2`,`text`),
+left(`int2`,`enum_t`),
+left(`int2`,`set_t`),
+left(`int2`,`json`),
+left(`uint2`,`int1`),
+left(`uint2`,`uint1`),
+left(`uint2`,`int2`),
+left(`uint2`,`uint2`),
+left(`uint2`,`int4`),
+left(`uint2`,`uint4`),
+left(`uint2`,`int8`),
+left(`uint2`,`uint8`),
+left(`uint2`,`float4`),
+left(`uint2`,`float8`),
+left(`uint2`,`numeric`),
+left(`uint2`,`bit1`),
+left(`uint2`,`bit64`),
+left(`uint2`,`boolean`),
+left(`uint2`,`date`),
+left(`uint2`,`time`),
+left(`uint2`,`time(4)`),
+left(`uint2`,`datetime`),
+left(`uint2`,`datetime(4)`),
+left(`uint2`,`timestamp`),
+left(`uint2`,`timestamp(4)`),
+left(`uint2`,`year`),
+left(`uint2`,`char`),
+left(`uint2`,`varchar`),
+left(`uint2`,`binary`),
+left(`uint2`,`varbinary`),
+left(`uint2`,`tinyblob`),
+left(`uint2`,`blob`),
+left(`uint2`,`mediumblob`),
+left(`uint2`,`longblob`),
+left(`uint2`,`text`),
+left(`uint2`,`enum_t`),
+left(`uint2`,`set_t`),
+left(`uint2`,`json`),
+left(`int4`,`int1`),
+left(`int4`,`uint1`),
+left(`int4`,`int2`),
+left(`int4`,`uint2`),
+left(`int4`,`int4`),
+left(`int4`,`uint4`),
+left(`int4`,`int8`),
+left(`int4`,`uint8`),
+left(`int4`,`float4`),
+left(`int4`,`float8`),
+left(`int4`,`numeric`),
+left(`int4`,`bit1`),
+left(`int4`,`bit64`),
+left(`int4`,`boolean`),
+left(`int4`,`date`),
+left(`int4`,`time`),
+left(`int4`,`time(4)`),
+left(`int4`,`datetime`),
+left(`int4`,`datetime(4)`),
+left(`int4`,`timestamp`),
+left(`int4`,`timestamp(4)`),
+left(`int4`,`year`),
+left(`int4`,`char`),
+left(`int4`,`varchar`),
+left(`int4`,`binary`),
+left(`int4`,`varbinary`),
+left(`int4`,`tinyblob`),
+left(`int4`,`blob`),
+left(`int4`,`mediumblob`),
+left(`int4`,`longblob`),
+left(`int4`,`text`),
+left(`int4`,`enum_t`),
+left(`int4`,`set_t`),
+left(`int4`,`json`),
+left(`uint4`,`int1`),
+left(`uint4`,`uint1`),
+left(`uint4`,`int2`),
+left(`uint4`,`uint2`),
+left(`uint4`,`int4`),
+left(`uint4`,`uint4`),
+left(`uint4`,`int8`),
+left(`uint4`,`uint8`),
+left(`uint4`,`float4`),
+left(`uint4`,`float8`),
+left(`uint4`,`numeric`),
+left(`uint4`,`bit1`),
+left(`uint4`,`bit64`),
+left(`uint4`,`boolean`),
+left(`uint4`,`date`),
+left(`uint4`,`time`),
+left(`uint4`,`time(4)`),
+left(`uint4`,`datetime`),
+left(`uint4`,`datetime(4)`),
+left(`uint4`,`timestamp`),
+left(`uint4`,`timestamp(4)`),
+left(`uint4`,`year`),
+left(`uint4`,`char`),
+left(`uint4`,`varchar`),
+left(`uint4`,`binary`),
+left(`uint4`,`varbinary`),
+left(`uint4`,`tinyblob`),
+left(`uint4`,`blob`),
+left(`uint4`,`mediumblob`),
+left(`uint4`,`longblob`),
+left(`uint4`,`text`),
+left(`uint4`,`enum_t`),
+left(`uint4`,`set_t`),
+left(`uint4`,`json`),
+left(`int8`,`int1`),
+left(`int8`,`uint1`),
+left(`int8`,`int2`),
+left(`int8`,`uint2`),
+left(`int8`,`int4`),
+left(`int8`,`uint4`),
+left(`int8`,`int8`),
+left(`int8`,`uint8`),
+left(`int8`,`float4`),
+left(`int8`,`float8`),
+left(`int8`,`numeric`),
+left(`int8`,`bit1`),
+left(`int8`,`bit64`),
+left(`int8`,`boolean`),
+left(`int8`,`date`),
+left(`int8`,`time`),
+left(`int8`,`time(4)`),
+left(`int8`,`datetime`),
+left(`int8`,`datetime(4)`),
+left(`int8`,`timestamp`),
+left(`int8`,`timestamp(4)`),
+left(`int8`,`year`),
+left(`int8`,`char`),
+left(`int8`,`varchar`),
+left(`int8`,`binary`),
+left(`int8`,`varbinary`),
+left(`int8`,`tinyblob`),
+left(`int8`,`blob`),
+left(`int8`,`mediumblob`),
+left(`int8`,`longblob`),
+left(`int8`,`text`),
+left(`int8`,`enum_t`),
+left(`int8`,`set_t`),
+left(`int8`,`json`),
+left(`uint8`,`int1`),
+left(`uint8`,`uint1`),
+left(`uint8`,`int2`),
+left(`uint8`,`uint2`),
+left(`uint8`,`int4`),
+left(`uint8`,`uint4`),
+left(`uint8`,`int8`),
+left(`uint8`,`uint8`),
+left(`uint8`,`float4`),
+left(`uint8`,`float8`),
+left(`uint8`,`numeric`),
+left(`uint8`,`bit1`),
+left(`uint8`,`bit64`),
+left(`uint8`,`boolean`),
+left(`uint8`,`date`),
+left(`uint8`,`time`),
+left(`uint8`,`time(4)`),
+left(`uint8`,`datetime`),
+left(`uint8`,`datetime(4)`),
+left(`uint8`,`timestamp`),
+left(`uint8`,`timestamp(4)`),
+left(`uint8`,`year`),
+left(`uint8`,`char`),
+left(`uint8`,`varchar`),
+left(`uint8`,`binary`),
+left(`uint8`,`varbinary`),
+left(`uint8`,`tinyblob`),
+left(`uint8`,`blob`),
+left(`uint8`,`mediumblob`),
+left(`uint8`,`longblob`),
+left(`uint8`,`text`),
+left(`uint8`,`enum_t`),
+left(`uint8`,`set_t`),
+left(`uint8`,`json`),
+left(`float4`,`int1`),
+left(`float4`,`uint1`),
+left(`float4`,`int2`),
+left(`float4`,`uint2`),
+left(`float4`,`int4`),
+left(`float4`,`uint4`),
+left(`float4`,`int8`),
+left(`float4`,`uint8`),
+left(`float4`,`float4`),
+left(`float4`,`float8`),
+left(`float4`,`numeric`),
+left(`float4`,`bit1`),
+left(`float4`,`bit64`),
+left(`float4`,`boolean`),
+left(`float4`,`date`),
+left(`float4`,`time`),
+left(`float4`,`time(4)`),
+left(`float4`,`datetime`),
+left(`float4`,`datetime(4)`),
+left(`float4`,`timestamp`),
+left(`float4`,`timestamp(4)`),
+left(`float4`,`year`),
+left(`float4`,`char`),
+left(`float4`,`varchar`),
+left(`float4`,`binary`),
+left(`float4`,`varbinary`),
+left(`float4`,`tinyblob`),
+left(`float4`,`blob`),
+left(`float4`,`mediumblob`),
+left(`float4`,`longblob`),
+left(`float4`,`text`),
+left(`float4`,`enum_t`),
+left(`float4`,`set_t`),
+left(`float4`,`json`),
+left(`float8`,`int1`),
+left(`float8`,`uint1`),
+left(`float8`,`int2`),
+left(`float8`,`uint2`),
+left(`float8`,`int4`),
+left(`float8`,`uint4`),
+left(`float8`,`int8`),
+left(`float8`,`uint8`),
+left(`float8`,`float4`),
+left(`float8`,`float8`),
+left(`float8`,`numeric`),
+left(`float8`,`bit1`),
+left(`float8`,`bit64`),
+left(`float8`,`boolean`),
+left(`float8`,`date`),
+left(`float8`,`time`),
+left(`float8`,`time(4)`),
+left(`float8`,`datetime`),
+left(`float8`,`datetime(4)`),
+left(`float8`,`timestamp`),
+left(`float8`,`timestamp(4)`),
+left(`float8`,`year`),
+left(`float8`,`char`),
+left(`float8`,`varchar`),
+left(`float8`,`binary`),
+left(`float8`,`varbinary`),
+left(`float8`,`tinyblob`),
+left(`float8`,`blob`),
+left(`float8`,`mediumblob`),
+left(`float8`,`longblob`),
+left(`float8`,`text`),
+left(`float8`,`enum_t`),
+left(`float8`,`set_t`),
+left(`float8`,`json`),
+left(`numeric`,`int1`),
+left(`numeric`,`uint1`),
+left(`numeric`,`int2`),
+left(`numeric`,`uint2`),
+left(`numeric`,`int4`),
+left(`numeric`,`uint4`),
+left(`numeric`,`int8`),
+left(`numeric`,`uint8`),
+left(`numeric`,`float4`),
+left(`numeric`,`float8`),
+left(`numeric`,`numeric`),
+left(`numeric`,`bit1`),
+left(`numeric`,`bit64`),
+left(`numeric`,`boolean`),
+left(`numeric`,`date`),
+left(`numeric`,`time`),
+left(`numeric`,`time(4)`),
+left(`numeric`,`datetime`),
+left(`numeric`,`datetime(4)`),
+left(`numeric`,`timestamp`),
+left(`numeric`,`timestamp(4)`),
+left(`numeric`,`year`),
+left(`numeric`,`char`),
+left(`numeric`,`varchar`),
+left(`numeric`,`binary`),
+left(`numeric`,`varbinary`),
+left(`numeric`,`tinyblob`),
+left(`numeric`,`blob`),
+left(`numeric`,`mediumblob`),
+left(`numeric`,`longblob`),
+left(`numeric`,`text`),
+left(`numeric`,`enum_t`),
+left(`numeric`,`set_t`),
+left(`numeric`,`json`),
+left(`bit1`,`int1`),
+left(`bit1`,`uint1`),
+left(`bit1`,`int2`),
+left(`bit1`,`uint2`),
+left(`bit1`,`int4`),
+left(`bit1`,`uint4`),
+left(`bit1`,`int8`),
+left(`bit1`,`uint8`),
+left(`bit1`,`float4`),
+left(`bit1`,`float8`),
+left(`bit1`,`numeric`),
+left(`bit1`,`bit1`),
+left(`bit1`,`bit64`),
+left(`bit1`,`boolean`),
+left(`bit1`,`date`),
+left(`bit1`,`time`),
+left(`bit1`,`time(4)`),
+left(`bit1`,`datetime`),
+left(`bit1`,`datetime(4)`),
+left(`bit1`,`timestamp`),
+left(`bit1`,`timestamp(4)`),
+left(`bit1`,`year`),
+left(`bit1`,`char`),
+left(`bit1`,`varchar`),
+left(`bit1`,`binary`),
+left(`bit1`,`varbinary`),
+left(`bit1`,`tinyblob`),
+left(`bit1`,`blob`),
+left(`bit1`,`mediumblob`),
+left(`bit1`,`longblob`),
+left(`bit1`,`text`),
+left(`bit1`,`enum_t`),
+left(`bit1`,`set_t`),
+left(`bit1`,`json`),
+left(`bit64`,`int1`),
+left(`bit64`,`uint1`),
+left(`bit64`,`int2`),
+left(`bit64`,`uint2`),
+left(`bit64`,`int4`),
+left(`bit64`,`uint4`),
+left(`bit64`,`int8`),
+left(`bit64`,`uint8`),
+left(`bit64`,`float4`),
+left(`bit64`,`float8`),
+left(`bit64`,`numeric`),
+left(`bit64`,`bit1`),
+left(`bit64`,`bit64`),
+left(`bit64`,`boolean`),
+left(`bit64`,`date`),
+left(`bit64`,`time`),
+left(`bit64`,`time(4)`),
+left(`bit64`,`datetime`),
+left(`bit64`,`datetime(4)`),
+left(`bit64`,`timestamp`),
+left(`bit64`,`timestamp(4)`),
+left(`bit64`,`year`),
+left(`bit64`,`char`),
+left(`bit64`,`varchar`),
+left(`bit64`,`binary`),
+left(`bit64`,`varbinary`),
+left(`bit64`,`tinyblob`),
+left(`bit64`,`blob`),
+left(`bit64`,`mediumblob`),
+left(`bit64`,`longblob`),
+left(`bit64`,`text`),
+left(`bit64`,`enum_t`),
+left(`bit64`,`set_t`),
+left(`bit64`,`json`),
+left(`boolean`,`int1`),
+left(`boolean`,`uint1`),
+left(`boolean`,`int2`),
+left(`boolean`,`uint2`),
+left(`boolean`,`int4`),
+left(`boolean`,`uint4`),
+left(`boolean`,`int8`),
+left(`boolean`,`uint8`),
+left(`boolean`,`float4`),
+left(`boolean`,`float8`),
+left(`boolean`,`numeric`),
+left(`boolean`,`bit1`),
+left(`boolean`,`bit64`),
+left(`boolean`,`boolean`),
+left(`boolean`,`date`),
+left(`boolean`,`time`),
+left(`boolean`,`time(4)`),
+left(`boolean`,`datetime`),
+left(`boolean`,`datetime(4)`),
+left(`boolean`,`timestamp`),
+left(`boolean`,`timestamp(4)`),
+left(`boolean`,`year`),
+left(`boolean`,`char`),
+left(`boolean`,`varchar`),
+left(`boolean`,`binary`),
+left(`boolean`,`varbinary`),
+left(`boolean`,`tinyblob`),
+left(`boolean`,`blob`),
+left(`boolean`,`mediumblob`),
+left(`boolean`,`longblob`),
+left(`boolean`,`text`),
+left(`boolean`,`enum_t`),
+left(`boolean`,`set_t`),
+left(`boolean`,`json`),
+left(`date`,`int1`),
+left(`date`,`uint1`),
+left(`date`,`int2`),
+left(`date`,`uint2`),
+left(`date`,`int4`),
+left(`date`,`uint4`),
+left(`date`,`int8`),
+left(`date`,`uint8`),
+left(`date`,`float4`),
+left(`date`,`float8`),
+left(`date`,`numeric`),
+left(`date`,`bit1`),
+left(`date`,`bit64`),
+left(`date`,`boolean`),
+left(`date`,`date`),
+left(`date`,`time`),
+left(`date`,`time(4)`),
+left(`date`,`datetime`),
+left(`date`,`datetime(4)`),
+left(`date`,`timestamp`),
+left(`date`,`timestamp(4)`),
+left(`date`,`year`),
+left(`date`,`char`),
+left(`date`,`varchar`),
+left(`date`,`binary`),
+left(`date`,`varbinary`),
+left(`date`,`tinyblob`),
+left(`date`,`blob`),
+left(`date`,`mediumblob`),
+left(`date`,`longblob`),
+left(`date`,`text`),
+left(`date`,`enum_t`),
+left(`date`,`set_t`),
+left(`date`,`json`),
+left(`time`,`int1`),
+left(`time`,`uint1`),
+left(`time`,`int2`),
+left(`time`,`uint2`),
+left(`time`,`int4`),
+left(`time`,`uint4`),
+left(`time`,`int8`),
+left(`time`,`uint8`),
+left(`time`,`float4`),
+left(`time`,`float8`),
+left(`time`,`numeric`),
+left(`time`,`bit1`),
+left(`time`,`bit64`),
+left(`time`,`boolean`),
+left(`time`,`date`),
+left(`time`,`time`),
+left(`time`,`time(4)`),
+left(`time`,`datetime`),
+left(`time`,`datetime(4)`),
+left(`time`,`timestamp`),
+left(`time`,`timestamp(4)`),
+left(`time`,`year`),
+left(`time`,`char`),
+left(`time`,`varchar`),
+left(`time`,`binary`),
+left(`time`,`varbinary`),
+left(`time`,`tinyblob`),
+left(`time`,`blob`),
+left(`time`,`mediumblob`),
+left(`time`,`longblob`),
+left(`time`,`text`),
+left(`time`,`enum_t`),
+left(`time`,`set_t`),
+left(`time`,`json`),
+left(`time(4)`,`int1`),
+left(`time(4)`,`uint1`),
+left(`time(4)`,`int2`),
+left(`time(4)`,`uint2`),
+left(`time(4)`,`int4`),
+left(`time(4)`,`uint4`),
+left(`time(4)`,`int8`),
+left(`time(4)`,`uint8`),
+left(`time(4)`,`float4`),
+left(`time(4)`,`float8`),
+left(`time(4)`,`numeric`),
+left(`time(4)`,`bit1`),
+left(`time(4)`,`bit64`),
+left(`time(4)`,`boolean`),
+left(`time(4)`,`date`),
+left(`time(4)`,`time`),
+left(`time(4)`,`time(4)`),
+left(`time(4)`,`datetime`),
+left(`time(4)`,`datetime(4)`),
+left(`time(4)`,`timestamp`),
+left(`time(4)`,`timestamp(4)`),
+left(`time(4)`,`year`),
+left(`time(4)`,`char`),
+left(`time(4)`,`varchar`),
+left(`time(4)`,`binary`),
+left(`time(4)`,`varbinary`),
+left(`time(4)`,`tinyblob`),
+left(`time(4)`,`blob`),
+left(`time(4)`,`mediumblob`),
+left(`time(4)`,`longblob`),
+left(`time(4)`,`text`),
+left(`time(4)`,`enum_t`),
+left(`time(4)`,`set_t`),
+left(`time(4)`,`json`),
+left(`datetime`,`int1`),
+left(`datetime`,`uint1`),
+left(`datetime`,`int2`),
+left(`datetime`,`uint2`),
+left(`datetime`,`int4`),
+left(`datetime`,`uint4`),
+left(`datetime`,`int8`),
+left(`datetime`,`uint8`),
+left(`datetime`,`float4`),
+left(`datetime`,`float8`),
+left(`datetime`,`numeric`),
+left(`datetime`,`bit1`),
+left(`datetime`,`bit64`),
+left(`datetime`,`boolean`),
+left(`datetime`,`date`),
+left(`datetime`,`time`),
+left(`datetime`,`time(4)`),
+left(`datetime`,`datetime`),
+left(`datetime`,`datetime(4)`),
+left(`datetime`,`timestamp`),
+left(`datetime`,`timestamp(4)`),
+left(`datetime`,`year`),
+left(`datetime`,`char`),
+left(`datetime`,`varchar`),
+left(`datetime`,`binary`),
+left(`datetime`,`varbinary`),
+left(`datetime`,`tinyblob`),
+left(`datetime`,`blob`),
+left(`datetime`,`mediumblob`),
+left(`datetime`,`longblob`),
+left(`datetime`,`text`),
+left(`datetime`,`enum_t`),
+left(`datetime`,`set_t`),
+left(`datetime`,`json`),
+left(`datetime(4)`,`int1`),
+left(`datetime(4)`,`uint1`),
+left(`datetime(4)`,`int2`),
+left(`datetime(4)`,`uint2`),
+left(`datetime(4)`,`int4`),
+left(`datetime(4)`,`uint4`),
+left(`datetime(4)`,`int8`),
+left(`datetime(4)`,`uint8`),
+left(`datetime(4)`,`float4`),
+left(`datetime(4)`,`float8`),
+left(`datetime(4)`,`numeric`),
+left(`datetime(4)`,`bit1`),
+left(`datetime(4)`,`bit64`),
+left(`datetime(4)`,`boolean`),
+left(`datetime(4)`,`date`),
+left(`datetime(4)`,`time`),
+left(`datetime(4)`,`time(4)`),
+left(`datetime(4)`,`datetime`),
+left(`datetime(4)`,`datetime(4)`),
+left(`datetime(4)`,`timestamp`),
+left(`datetime(4)`,`timestamp(4)`),
+left(`datetime(4)`,`year`),
+left(`datetime(4)`,`char`),
+left(`datetime(4)`,`varchar`),
+left(`datetime(4)`,`binary`),
+left(`datetime(4)`,`varbinary`),
+left(`datetime(4)`,`tinyblob`),
+left(`datetime(4)`,`blob`),
+left(`datetime(4)`,`mediumblob`),
+left(`datetime(4)`,`longblob`),
+left(`datetime(4)`,`text`),
+left(`datetime(4)`,`enum_t`),
+left(`datetime(4)`,`set_t`),
+left(`datetime(4)`,`json`),
+left(`timestamp`,`int1`),
+left(`timestamp`,`uint1`),
+left(`timestamp`,`int2`),
+left(`timestamp`,`uint2`),
+left(`timestamp`,`int4`),
+left(`timestamp`,`uint4`),
+left(`timestamp`,`int8`),
+left(`timestamp`,`uint8`),
+left(`timestamp`,`float4`),
+left(`timestamp`,`float8`),
+left(`timestamp`,`numeric`),
+left(`timestamp`,`bit1`),
+left(`timestamp`,`bit64`),
+left(`timestamp`,`boolean`),
+left(`timestamp`,`date`),
+left(`timestamp`,`time`),
+left(`timestamp`,`time(4)`),
+left(`timestamp`,`datetime`),
+left(`timestamp`,`datetime(4)`),
+left(`timestamp`,`timestamp`),
+left(`timestamp`,`timestamp(4)`),
+left(`timestamp`,`year`),
+left(`timestamp`,`char`),
+left(`timestamp`,`varchar`),
+left(`timestamp`,`binary`),
+left(`timestamp`,`varbinary`),
+left(`timestamp`,`tinyblob`),
+left(`timestamp`,`blob`),
+left(`timestamp`,`mediumblob`),
+left(`timestamp`,`longblob`),
+left(`timestamp`,`text`),
+left(`timestamp`,`enum_t`),
+left(`timestamp`,`set_t`),
+left(`timestamp`,`json`),
+left(`timestamp(4)`,`int1`),
+left(`timestamp(4)`,`uint1`),
+left(`timestamp(4)`,`int2`),
+left(`timestamp(4)`,`uint2`),
+left(`timestamp(4)`,`int4`),
+left(`timestamp(4)`,`uint4`),
+left(`timestamp(4)`,`int8`),
+left(`timestamp(4)`,`uint8`),
+left(`timestamp(4)`,`float4`),
+left(`timestamp(4)`,`float8`),
+left(`timestamp(4)`,`numeric`),
+left(`timestamp(4)`,`bit1`),
+left(`timestamp(4)`,`bit64`),
+left(`timestamp(4)`,`boolean`),
+left(`timestamp(4)`,`date`),
+left(`timestamp(4)`,`time`),
+left(`timestamp(4)`,`time(4)`),
+left(`timestamp(4)`,`datetime`),
+left(`timestamp(4)`,`datetime(4)`),
+left(`timestamp(4)`,`timestamp`),
+left(`timestamp(4)`,`timestamp(4)`),
+left(`timestamp(4)`,`year`),
+left(`timestamp(4)`,`char`),
+left(`timestamp(4)`,`varchar`),
+left(`timestamp(4)`,`binary`),
+left(`timestamp(4)`,`varbinary`),
+left(`timestamp(4)`,`tinyblob`),
+left(`timestamp(4)`,`blob`),
+left(`timestamp(4)`,`mediumblob`),
+left(`timestamp(4)`,`longblob`),
+left(`timestamp(4)`,`text`),
+left(`timestamp(4)`,`enum_t`),
+left(`timestamp(4)`,`set_t`),
+left(`timestamp(4)`,`json`),
+left(`year`,`int1`),
+left(`year`,`uint1`),
+left(`year`,`int2`),
+left(`year`,`uint2`),
+left(`year`,`int4`),
+left(`year`,`uint4`),
+left(`year`,`int8`),
+left(`year`,`uint8`),
+left(`year`,`float4`),
+left(`year`,`float8`),
+left(`year`,`numeric`),
+left(`year`,`bit1`),
+left(`year`,`bit64`),
+left(`year`,`boolean`),
+left(`year`,`date`),
+left(`year`,`time`),
+left(`year`,`time(4)`),
+left(`year`,`datetime`),
+left(`year`,`datetime(4)`),
+left(`year`,`timestamp`),
+left(`year`,`timestamp(4)`),
+left(`year`,`year`),
+left(`year`,`char`),
+left(`year`,`varchar`),
+left(`year`,`binary`),
+left(`year`,`varbinary`),
+left(`year`,`tinyblob`),
+left(`year`,`blob`),
+left(`year`,`mediumblob`),
+left(`year`,`longblob`),
+left(`year`,`text`),
+left(`year`,`enum_t`),
+left(`year`,`set_t`),
+left(`year`,`json`),
+left(`char`,`int1`),
+left(`char`,`uint1`),
+left(`char`,`int2`),
+left(`char`,`uint2`),
+left(`char`,`int4`),
+left(`char`,`uint4`),
+left(`char`,`int8`),
+left(`char`,`uint8`),
+left(`char`,`float4`),
+left(`char`,`float8`),
+left(`char`,`numeric`),
+left(`char`,`bit1`),
+left(`char`,`bit64`),
+left(`char`,`boolean`),
+left(`char`,`date`),
+left(`char`,`time`),
+left(`char`,`time(4)`),
+left(`char`,`datetime`),
+left(`char`,`datetime(4)`),
+left(`char`,`timestamp`),
+left(`char`,`timestamp(4)`),
+left(`char`,`year`),
+left(`char`,`char`),
+left(`char`,`varchar`),
+left(`char`,`binary`),
+left(`char`,`varbinary`),
+left(`char`,`tinyblob`),
+left(`char`,`blob`),
+left(`char`,`mediumblob`),
+left(`char`,`longblob`),
+left(`char`,`text`),
+left(`char`,`enum_t`),
+left(`char`,`set_t`),
+left(`char`,`json`),
+left(`varchar`,`int1`),
+left(`varchar`,`uint1`),
+left(`varchar`,`int2`),
+left(`varchar`,`uint2`),
+left(`varchar`,`int4`),
+left(`varchar`,`uint4`),
+left(`varchar`,`int8`),
+left(`varchar`,`uint8`),
+left(`varchar`,`float4`),
+left(`varchar`,`float8`),
+left(`varchar`,`numeric`),
+left(`varchar`,`bit1`),
+left(`varchar`,`bit64`),
+left(`varchar`,`boolean`),
+left(`varchar`,`date`),
+left(`varchar`,`time`),
+left(`varchar`,`time(4)`),
+left(`varchar`,`datetime`),
+left(`varchar`,`datetime(4)`),
+left(`varchar`,`timestamp`),
+left(`varchar`,`timestamp(4)`),
+left(`varchar`,`year`),
+left(`varchar`,`char`),
+left(`varchar`,`varchar`),
+left(`varchar`,`binary`),
+left(`varchar`,`varbinary`),
+left(`varchar`,`tinyblob`),
+left(`varchar`,`blob`),
+left(`varchar`,`mediumblob`),
+left(`varchar`,`longblob`),
+left(`varchar`,`text`),
+left(`varchar`,`enum_t`),
+left(`varchar`,`set_t`),
+left(`varchar`,`json`),
+left(`binary`,`int1`),
+left(`binary`,`uint1`),
+left(`binary`,`int2`),
+left(`binary`,`uint2`),
+left(`binary`,`int4`),
+left(`binary`,`uint4`),
+left(`binary`,`int8`),
+left(`binary`,`uint8`),
+left(`binary`,`float4`),
+left(`binary`,`float8`),
+left(`binary`,`numeric`),
+left(`binary`,`bit1`),
+left(`binary`,`bit64`),
+left(`binary`,`boolean`),
+left(`binary`,`date`),
+left(`binary`,`time`),
+left(`binary`,`time(4)`),
+left(`binary`,`datetime`),
+left(`binary`,`datetime(4)`),
+left(`binary`,`timestamp`),
+left(`binary`,`timestamp(4)`),
+left(`binary`,`year`),
+left(`binary`,`char`),
+left(`binary`,`varchar`),
+left(`binary`,`binary`),
+left(`binary`,`varbinary`),
+left(`binary`,`tinyblob`),
+left(`binary`,`blob`),
+left(`binary`,`mediumblob`),
+left(`binary`,`longblob`),
+left(`binary`,`text`),
+left(`binary`,`enum_t`),
+left(`binary`,`set_t`),
+left(`binary`,`json`),
+left(`varbinary`,`int1`),
+left(`varbinary`,`uint1`),
+left(`varbinary`,`int2`),
+left(`varbinary`,`uint2`),
+left(`varbinary`,`int4`),
+left(`varbinary`,`uint4`),
+left(`varbinary`,`int8`),
+left(`varbinary`,`uint8`),
+left(`varbinary`,`float4`),
+left(`varbinary`,`float8`),
+left(`varbinary`,`numeric`),
+left(`varbinary`,`bit1`),
+left(`varbinary`,`bit64`),
+left(`varbinary`,`boolean`),
+left(`varbinary`,`date`),
+left(`varbinary`,`time`),
+left(`varbinary`,`time(4)`),
+left(`varbinary`,`datetime`),
+left(`varbinary`,`datetime(4)`),
+left(`varbinary`,`timestamp`),
+left(`varbinary`,`timestamp(4)`),
+left(`varbinary`,`year`),
+left(`varbinary`,`char`),
+left(`varbinary`,`varchar`),
+left(`varbinary`,`binary`),
+left(`varbinary`,`varbinary`),
+left(`varbinary`,`tinyblob`),
+left(`varbinary`,`blob`),
+left(`varbinary`,`mediumblob`),
+left(`varbinary`,`longblob`),
+left(`varbinary`,`text`),
+left(`varbinary`,`enum_t`),
+left(`varbinary`,`set_t`),
+left(`varbinary`,`json`),
+left(`tinyblob`,`int1`),
+left(`tinyblob`,`uint1`),
+left(`tinyblob`,`int2`),
+left(`tinyblob`,`uint2`),
+left(`tinyblob`,`int4`),
+left(`tinyblob`,`uint4`),
+left(`tinyblob`,`int8`),
+left(`tinyblob`,`uint8`),
+left(`tinyblob`,`float4`),
+left(`tinyblob`,`float8`),
+left(`tinyblob`,`numeric`),
+left(`tinyblob`,`bit1`),
+left(`tinyblob`,`bit64`),
+left(`tinyblob`,`boolean`),
+left(`tinyblob`,`date`),
+left(`tinyblob`,`time`),
+left(`tinyblob`,`time(4)`),
+left(`tinyblob`,`datetime`),
+left(`tinyblob`,`datetime(4)`),
+left(`tinyblob`,`timestamp`),
+left(`tinyblob`,`timestamp(4)`),
+left(`tinyblob`,`year`),
+left(`tinyblob`,`char`),
+left(`tinyblob`,`varchar`),
+left(`tinyblob`,`binary`),
+left(`tinyblob`,`varbinary`),
+left(`tinyblob`,`tinyblob`),
+left(`tinyblob`,`blob`),
+left(`tinyblob`,`mediumblob`),
+left(`tinyblob`,`longblob`),
+left(`tinyblob`,`text`),
+left(`tinyblob`,`enum_t`),
+left(`tinyblob`,`set_t`),
+left(`tinyblob`,`json`),
+left(`blob`,`int1`),
+left(`blob`,`uint1`),
+left(`blob`,`int2`),
+left(`blob`,`uint2`),
+left(`blob`,`int4`),
+left(`blob`,`uint4`),
+left(`blob`,`int8`),
+left(`blob`,`uint8`),
+left(`blob`,`float4`),
+left(`blob`,`float8`),
+left(`blob`,`numeric`),
+left(`blob`,`bit1`),
+left(`blob`,`bit64`),
+left(`blob`,`boolean`),
+left(`blob`,`date`),
+left(`blob`,`time`),
+left(`blob`,`time(4)`),
+left(`blob`,`datetime`),
+left(`blob`,`datetime(4)`),
+left(`blob`,`timestamp`),
+left(`blob`,`timestamp(4)`),
+left(`blob`,`year`),
+left(`blob`,`char`),
+left(`blob`,`varchar`),
+left(`blob`,`binary`),
+left(`blob`,`varbinary`),
+left(`blob`,`tinyblob`),
+left(`blob`,`blob`),
+left(`blob`,`mediumblob`),
+left(`blob`,`longblob`),
+left(`blob`,`text`),
+left(`blob`,`enum_t`),
+left(`blob`,`set_t`),
+left(`blob`,`json`),
+left(`mediumblob`,`int1`),
+left(`mediumblob`,`uint1`),
+left(`mediumblob`,`int2`),
+left(`mediumblob`,`uint2`),
+left(`mediumblob`,`int4`),
+left(`mediumblob`,`uint4`),
+left(`mediumblob`,`int8`),
+left(`mediumblob`,`uint8`),
+left(`mediumblob`,`float4`),
+left(`mediumblob`,`float8`),
+left(`mediumblob`,`numeric`),
+left(`mediumblob`,`bit1`),
+left(`mediumblob`,`bit64`),
+left(`mediumblob`,`boolean`),
+left(`mediumblob`,`date`),
+left(`mediumblob`,`time`),
+left(`mediumblob`,`time(4)`),
+left(`mediumblob`,`datetime`),
+left(`mediumblob`,`datetime(4)`),
+left(`mediumblob`,`timestamp`),
+left(`mediumblob`,`timestamp(4)`),
+left(`mediumblob`,`year`),
+left(`mediumblob`,`char`),
+left(`mediumblob`,`varchar`),
+left(`mediumblob`,`binary`),
+left(`mediumblob`,`varbinary`),
+left(`mediumblob`,`tinyblob`),
+left(`mediumblob`,`blob`),
+left(`mediumblob`,`mediumblob`),
+left(`mediumblob`,`longblob`),
+left(`mediumblob`,`text`),
+left(`mediumblob`,`enum_t`),
+left(`mediumblob`,`set_t`),
+left(`mediumblob`,`json`),
+left(`longblob`,`int1`),
+left(`longblob`,`uint1`),
+left(`longblob`,`int2`),
+left(`longblob`,`uint2`),
+left(`longblob`,`int4`),
+left(`longblob`,`uint4`),
+left(`longblob`,`int8`),
+left(`longblob`,`uint8`),
+left(`longblob`,`float4`),
+left(`longblob`,`float8`),
+left(`longblob`,`numeric`),
+left(`longblob`,`bit1`),
+left(`longblob`,`bit64`),
+left(`longblob`,`boolean`),
+left(`longblob`,`date`),
+left(`longblob`,`time`),
+left(`longblob`,`time(4)`),
+left(`longblob`,`datetime`),
+left(`longblob`,`datetime(4)`),
+left(`longblob`,`timestamp`),
+left(`longblob`,`timestamp(4)`),
+left(`longblob`,`year`),
+left(`longblob`,`char`),
+left(`longblob`,`varchar`),
+left(`longblob`,`binary`),
+left(`longblob`,`varbinary`),
+left(`longblob`,`tinyblob`),
+left(`longblob`,`blob`),
+left(`longblob`,`mediumblob`),
+left(`longblob`,`longblob`),
+left(`longblob`,`text`),
+left(`longblob`,`enum_t`),
+left(`longblob`,`set_t`),
+left(`longblob`,`json`),
+left(`text`,`int1`),
+left(`text`,`uint1`),
+left(`text`,`int2`),
+left(`text`,`uint2`),
+left(`text`,`int4`),
+left(`text`,`uint4`),
+left(`text`,`int8`),
+left(`text`,`uint8`),
+left(`text`,`float4`),
+left(`text`,`float8`),
+left(`text`,`numeric`),
+left(`text`,`bit1`),
+left(`text`,`bit64`),
+left(`text`,`boolean`),
+left(`text`,`date`),
+left(`text`,`time`),
+left(`text`,`time(4)`),
+left(`text`,`datetime`),
+left(`text`,`datetime(4)`),
+left(`text`,`timestamp`),
+left(`text`,`timestamp(4)`),
+left(`text`,`year`),
+left(`text`,`char`),
+left(`text`,`varchar`),
+left(`text`,`binary`),
+left(`text`,`varbinary`),
+left(`text`,`tinyblob`),
+left(`text`,`blob`),
+left(`text`,`mediumblob`),
+left(`text`,`longblob`),
+left(`text`,`text`),
+left(`text`,`enum_t`),
+left(`text`,`set_t`),
+left(`text`,`json`),
+left(`enum_t`,`int1`),
+left(`enum_t`,`uint1`),
+left(`enum_t`,`int2`),
+left(`enum_t`,`uint2`),
+left(`enum_t`,`int4`),
+left(`enum_t`,`uint4`),
+left(`enum_t`,`int8`),
+left(`enum_t`,`uint8`),
+left(`enum_t`,`float4`),
+left(`enum_t`,`float8`),
+left(`enum_t`,`numeric`),
+left(`enum_t`,`bit1`),
+left(`enum_t`,`bit64`),
+left(`enum_t`,`boolean`),
+left(`enum_t`,`date`),
+left(`enum_t`,`time`),
+left(`enum_t`,`time(4)`),
+left(`enum_t`,`datetime`),
+left(`enum_t`,`datetime(4)`),
+left(`enum_t`,`timestamp`),
+left(`enum_t`,`timestamp(4)`),
+left(`enum_t`,`year`),
+left(`enum_t`,`char`),
+left(`enum_t`,`varchar`),
+left(`enum_t`,`binary`),
+left(`enum_t`,`varbinary`),
+left(`enum_t`,`tinyblob`),
+left(`enum_t`,`blob`),
+left(`enum_t`,`mediumblob`),
+left(`enum_t`,`longblob`),
+left(`enum_t`,`text`),
+left(`enum_t`,`enum_t`),
+left(`enum_t`,`set_t`),
+left(`enum_t`,`json`),
+left(`set_t`,`int1`),
+left(`set_t`,`uint1`),
+left(`set_t`,`int2`),
+left(`set_t`,`uint2`),
+left(`set_t`,`int4`),
+left(`set_t`,`uint4`),
+left(`set_t`,`int8`),
+left(`set_t`,`uint8`),
+left(`set_t`,`float4`),
+left(`set_t`,`float8`),
+left(`set_t`,`numeric`),
+left(`set_t`,`bit1`),
+left(`set_t`,`bit64`),
+left(`set_t`,`boolean`),
+left(`set_t`,`date`),
+left(`set_t`,`time`),
+left(`set_t`,`time(4)`),
+left(`set_t`,`datetime`),
+left(`set_t`,`datetime(4)`),
+left(`set_t`,`timestamp`),
+left(`set_t`,`timestamp(4)`),
+left(`set_t`,`year`),
+left(`set_t`,`char`),
+left(`set_t`,`varchar`),
+left(`set_t`,`binary`),
+left(`set_t`,`varbinary`),
+left(`set_t`,`tinyblob`),
+left(`set_t`,`blob`),
+left(`set_t`,`mediumblob`),
+left(`set_t`,`longblob`),
+left(`set_t`,`text`),
+left(`set_t`,`enum_t`),
+left(`set_t`,`set_t`),
+left(`set_t`,`json`),
+left(`json`,`int1`),
+left(`json`,`uint1`),
+left(`json`,`int2`),
+left(`json`,`uint2`),
+left(`json`,`int4`),
+left(`json`,`uint4`),
+left(`json`,`int8`),
+left(`json`,`uint8`),
+left(`json`,`float4`),
+left(`json`,`float8`),
+left(`json`,`numeric`),
+left(`json`,`bit1`),
+left(`json`,`bit64`),
+left(`json`,`boolean`),
+left(`json`,`date`),
+left(`json`,`time`),
+left(`json`,`time(4)`),
+left(`json`,`datetime`),
+left(`json`,`datetime(4)`),
+left(`json`,`timestamp`),
+left(`json`,`timestamp(4)`),
+left(`json`,`year`),
+left(`json`,`char`),
+left(`json`,`varchar`),
+left(`json`,`binary`),
+left(`json`,`varbinary`),
+left(`json`,`tinyblob`),
+left(`json`,`blob`),
+left(`json`,`mediumblob`),
+left(`json`,`longblob`),
+left(`json`,`text`),
+left(`json`,`enum_t`),
+left(`json`,`set_t`),
+left(`json`,`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+-[ RECORD 1 ]----------------------------------------------------------------------------------------------
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.00000
+left | 1
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1.000000
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.000
+left | 
+left | \200
+left | \200
+left | \200
+left | \200
+left | \001
+left | \200
+left | \200
+left | \200
+left | \200
+left | \200
+left | \200
+left | \001
+left | \001
+left | \200
+left | \001
+left | \200
+left | \200
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \001
+left | \200
+left | \200
+left | 
+left | 
+left | 
+left | 
+left | 
+left | \000
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-02
+left | 2
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2023-02-05
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 19:10:5
+left | 1
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 19:10:50
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 19:10
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 19:10:5
+left | 1
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 19:10:50.3456
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 19:10
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-02
+left | 2
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2023-02-05 19:10:50
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-02
+left | 2
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2023-02-05 19:10:50.456
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-02
+left | 2
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2023-02-05 19:10:50-08
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-02
+left | 2
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2023-02-05 19:10:50.456-08
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023-
+left | 
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023
+left | 2
+left | 2023
+left | 2023
+left | 2023
+left | 2023
+left | 2023
+left | 2023
+left | 2023
+left | 2023
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2
+left | 2023
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a  
+left | 1
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1.23a                                                                                               
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 1
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1
+left | 1.23a
+left | 
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | 
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a,c
+left | a
+left | a,c
+left | a,c
+left | a,c
+left | a,c
+left | a,c
+left | a,c
+left | a,c
+left | a,c
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a
+left | a,c
+left | 
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {"a": 1
+left | {
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {"a": 1, "b": 2}
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {
+left | {"a":
+left | 
+
+drop table test_type_table;
+select right('2022-12-12',b'1010');
+-[ RECORD 1 ]-----
+right | 2022-12-12
+
+select right(b'1001010','2022-12-12');
+WARNING:  invalid input syntax for type numeric: "2022-12-12"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+-[ RECORD 1 ]
+right | J
+
+select right(false,2);
+-[ RECORD 1 ]
+right | 0
+
+select left('2022-12-12',b'1010');
+-[ RECORD 1 ]----
+left | 2022-12-12
+
 drop schema db_b_left_right_test cascade;
 reset current_schema;

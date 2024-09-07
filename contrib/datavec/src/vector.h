@@ -2,6 +2,7 @@
 #define VECTOR_H
 
 #define VECTOR_MAX_DIM 16000
+#define MEM_INFO_NUM (1024 * 1024)
 
 #define VECTOR_SIZE(_dim)		(offsetof(Vector, x) + sizeof(float)*(_dim))
 #define DatumGetVector(x)		((Vector *) PG_DETOAST_DATUM(x))
@@ -22,6 +23,7 @@ void		PrintVector(char *msg, Vector * vector);
 int			vector_cmp_internal(Vector * a, Vector * b);
 void log_newpage_range(Relation rel, ForkNumber forknum, BlockNumber startblk, BlockNumber endblk, bool page_std);
 int PlanCreateIndexWorkers(Relation heapRelation, IndexInfo *indexInfo);
+void InitRelOptions();
 
 extern "C" {
     PGDLLEXPORT Datum vector_in(PG_FUNCTION_ARGS);
@@ -60,6 +62,17 @@ extern "C" {
     PGDLLEXPORT Datum vector_concat(PG_FUNCTION_ARGS);
     PGDLLEXPORT Datum halfvec_l2_normalize(PG_FUNCTION_ARGS);
     PGDLLEXPORT Datum sparsevec_l2_normalize(PG_FUNCTION_ARGS);
+    PGDLLEXPORT void set_extension_index(uint32 index);
+    PGDLLEXPORT void init_session_vars(void);
 }
+
+typedef struct datavec_session_context {
+    int hnsw_ef_search;
+    int ivfflat_probes;
+} datavec_session_context;
+
+extern uint32 datavec_index;
+extern datavec_session_context* get_session_context();
+extern THR_LOCAL bool needInitialization;
 
 #endif

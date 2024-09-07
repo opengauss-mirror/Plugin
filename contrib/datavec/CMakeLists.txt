@@ -1,5 +1,5 @@
 set(EXTENSION "datavec")
-set(EXTVERSION "0.7.2")
+set(EXTVERSION "1.0")
 
 file(GLOB_RECURSE TGT_datavec_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
@@ -10,8 +10,16 @@ SET(TGT_datavec_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+if ((APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm") OR CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64*")
+    set(datavec_OPTFLAGS "")
+else ()
+    set(datavec_OPTFLAGS "-march=native")
+endif ()
+
+set(datavec_OPTFLAGS ${datavec_OPTFLAGS} -ftree-vectorize -fassociative-math -fno-signed-zeros -fno-trapping-math)
+
 set(datavec_DEF_OPTIONS ${MACRO_OPTIONS})
-set(datavec_COMPILE_OPTIONS ${OPTIMIZE_OPTIONS} ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${LIB_SECURE_OPTIONS} ${CHECK_OPTIONS})
+set(datavec_COMPILE_OPTIONS ${OPTIMIZE_OPTIONS} ${datavec_OPTFLAGS} ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${LIB_SECURE_OPTIONS} ${CHECK_OPTIONS})
 set(datavec_LINK_OPTIONS ${LIB_LINK_OPTIONS})
 
 add_shared_libtarget(datavec TGT_datavec_SRC TGT_datavec_INC "${datavec_DEF_OPTIONS}" "${datavec_COMPILE_OPTIONS}" "${datavec_LINK_OPTIONS}")

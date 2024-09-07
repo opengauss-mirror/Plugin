@@ -1,5 +1,5 @@
 EXTENSION = datavec
-EXTVERSION = 0.7.2
+EXTVERSION = 1.0
 
 MODULE_big = datavec
 DATA = sql/$(EXTENSION)--$(EXTVERSION).sql
@@ -55,8 +55,8 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
-override CXXFLAGS :=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC
-override CPPFLAGS +=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC
+override CXXFLAGS :=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC $(PG_CFLAGS)
+override CPPFLAGS +=$(filter-out -fstack-protector,  $(CFLAGS)) -fstack-protector-all -Wl,-z,relro,-z,now -fPIC $(PG_CFLAGS)
 
 # for Mac
 ifeq ($(PROVE),)
