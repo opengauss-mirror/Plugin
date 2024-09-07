@@ -139,6 +139,9 @@ public class MySQLJdbcTest {
                     System.out.println(resultSet.getObject(i));
                 }
             }
+            statement.executeQuery("START TRANSACTION;");
+            statement.executeQuery("CURSOR cursor2 FOR VALUES(1,2),(0,3) ORDER BY 1;");
+            statement.executeQuery("END;");
         }
     }
 }
