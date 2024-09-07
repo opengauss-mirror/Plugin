@@ -48,6 +48,7 @@
 PG_MODULE_MAGIC;
 
 uint32 datavec_index;
+THR_LOCAL bool needInitialization = true;
 
 void set_extension_index(uint32 index)
 {
@@ -87,6 +88,13 @@ void init_session_vars(void)
     MarkGUCPrefixReserved("ivfflat");
 }
 
+void InitRelOptions()
+{
+    HnswInit();
+    IvfflatInit();
+    needInitialization = false;
+}
+
 /*
  * Initialize index options and variables
  */
@@ -96,8 +104,9 @@ _PG_init(void)
 {
 	BitvecInit();
 	HalfvecInit();
-	HnswInit();
-	IvfflatInit();
+	if (needInitialization) {
+		InitRelOptions();
+	}
 }
 
 /*

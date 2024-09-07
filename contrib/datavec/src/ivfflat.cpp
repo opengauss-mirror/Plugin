@@ -123,6 +123,9 @@ ivfflatoptions_internal(Datum reloptions, bool validate)
 	int			numoptions;
 	IvfflatOptions *rdopts;
 
+	if (needInitialization) {
+		InitRelOptions();
+	}
 	options = parseRelOptions(reloptions, validate, ivfflat_relopt_kind, &numoptions);
 	rdopts = (IvfflatOptions *)allocateReloptStruct(sizeof(IvfflatOptions), options, numoptions);
 	fillRelOptions((void *) rdopts, sizeof(IvfflatOptions), options, numoptions,

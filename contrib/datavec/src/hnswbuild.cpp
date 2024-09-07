@@ -793,7 +793,7 @@ InitBuildState(HnswBuildState * buildstate, Relation heap, Relation index, Index
     buildstate->centerTable = NULL;
     buildstate->pqcodeSize = 0;
 
-    buildstate->isUStore = RelationIsUstoreFormat(buildstate->heap);
+    buildstate->isUStore = buildstate->heap ? RelationIsUstoreFormat(buildstate->heap) : false;
 }
 
 /*
