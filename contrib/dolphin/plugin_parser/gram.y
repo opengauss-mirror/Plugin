@@ -837,7 +837,7 @@ static bool GreaterThanHour (List* int_type);
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
-				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection opt_dolphin_indirection
+				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection case_sensitive_indirection opt_dolphin_indirection
 				reloption_list tblspc_option_list cfoption_list group_clause TriggerFuncArgs select_limit
 				opt_select_limit opt_delete_limit opclass_item_list opclass_drop_list
 				opclass_purpose opt_opfamily transaction_mode_list_or_empty
@@ -948,7 +948,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	columnDef columnOptions columnDefForTableElement
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
-                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el siblings_clause
+                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
                                 columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params func_table_with_table
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
@@ -1010,7 +1010,7 @@ static bool GreaterThanHour (List* int_type);
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
 %type <list>	var_list guc_value_extension_list schema_var_list
-%type <str>		ColId ColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
+%type <str>		ColId ColLabel CaseSensitiveColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 /* for keyword which could be a column/table alias name, use alias_name_xxxx*/
@@ -15592,11 +15592,11 @@ enable_trigger:
 		;
 
 qualified_trigger_name:
-			name
+			DolphinColColId
 				{
 					$$ = makeRangeVar(NULL, $1, @1);
 				}
-			| ColId indirection
+			| DolphinColColId case_sensitive_indirection
 				{
 					check_qualified_name($2, yyscanner);
 					$$ = makeRangeVar(NULL, NULL, @1);
@@ -38053,6 +38053,47 @@ indirection:
 			| indirection indirection_el			{ $$ = lappend($1, $2); }
 		;
 
+case_sensitive_indirection_el:
+			'.' CaseSensitiveColLabel
+				{
+					$$ = (Node *) makeString($2);
+				}
+			| ORA_JOINOP
+				{
+					$$ = (Node *) makeString("(+)");
+				}
+			| '.' '*'
+				{
+					$$ = (Node *) makeNode(A_Star);
+				}
+			| '[' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = NULL;
+					ai->uidx = $2;
+					$$ = (Node *) ai;
+				}
+			| '[' a_expr ':' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = (Node *) ai;
+				}
+			| '[' a_expr ',' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = (Node *) ai;
+				}
+		;
+
+case_sensitive_indirection:
+			case_sensitive_indirection_el										{ $$ = list_make1($1); }
+			| case_sensitive_indirection case_sensitive_indirection_el			{ $$ = lappend($1, $2); }
+		;
+
 dolphin_indirection:
 			dolphin_indirection_el									{ $$ = list_make1($1); }
 			| dolphin_indirection dolphin_indirection_el			{ $$ = lappend($1, $2); }
@@ -39414,6 +39455,15 @@ ColLabel:	normal_ident							{ $$ = $1; }
 				{
 					$$ = downcase_str(pstrdup($1), false);
 				}
+		;
+
+CaseSensitiveColLabel:
+			DOLPHINIDENT							{ $$ = $1->str; }
+			| '\''DOLPHINIDENT'\''					{ $$ = $2->str; }
+			| unreserved_keyword					{ $$ = pstrdup($1); }
+			| col_name_keyword						{ $$ = pstrdup($1); }
+			| type_func_name_keyword				{ $$ = pstrdup($1); }
+			| reserved_keyword						{ $$ = pstrdup($1); }
 		;
 
 DelimiterStmt: DELIMITER delimiter_str_names END_OF_INPUT
