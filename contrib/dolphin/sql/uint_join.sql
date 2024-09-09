@@ -49,3 +49,87 @@ select * from scott.emp natural join scott.dept;
 
 drop schema scott cascade;
 reset current_schema;
+
+-- test merge join
+set enable_hashjoin to off;
+set enable_nestloop to off;
+set enable_mergejoin to on;
+drop table if exists business_order;
+drop table if exists statement;
+drop table if exists user_invoice_account;
+
+create table business_order (id bigint NOT NULL);
+create table statement (business_order_id bigint NOT NULL, user_invoice_account_id UINT1);
+create table user_invoice_account (id bigint NOT NULL);
+insert into business_order values(generate_series(-2, 3));
+insert into statement values(generate_series(-1, 3), generate_series(2, 5));
+insert into user_invoice_account values(generate_series(-3, 4));
+explain (costs off) select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+
+drop table if exists business_order;
+drop table if exists statement;
+drop table if exists user_invoice_account;
+create table business_order (id bigint NOT NULL);
+create table statement (business_order_id bigint NOT NULL, user_invoice_account_id uint2);
+create table user_invoice_account (id bigint NOT NULL);
+insert into business_order values(generate_series(-2, 3));
+insert into statement values(generate_series(-1, 3), generate_series(2, 5));
+insert into user_invoice_account values(generate_series(-3, 4));
+explain (costs off) select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+
+drop table if exists business_order;
+drop table if exists statement;
+drop table if exists user_invoice_account;
+create table business_order (id bigint NOT NULL);
+create table statement (business_order_id bigint NOT NULL, user_invoice_account_id UINT4);
+create table user_invoice_account (id bigint NOT NULL);
+insert into business_order values(generate_series(-2, 3));
+insert into statement values(generate_series(-1, 3), generate_series(2, 5));
+insert into user_invoice_account values(generate_series(-3, 4));
+explain (costs off) select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+
+drop table if exists business_order;
+drop table if exists statement;
+drop table if exists user_invoice_account;
+create table business_order (id bigint NOT NULL);
+create table statement (business_order_id bigint NOT NULL, user_invoice_account_id UINT8);
+create table user_invoice_account (id bigint NOT NULL);
+insert into business_order values(generate_series(-2, 3));
+insert into statement values(generate_series(-1, 3), generate_series(2, 5));
+insert into user_invoice_account values(generate_series(-3, 4));
+explain (costs off) select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+select * from business_order bo
+    left join statement s on bo.id = s.business_order_id
+    left join user_invoice_account uia on s.user_invoice_account_id = uia.id
+    order by bo.id, business_order_id, user_invoice_account_id, uia.id;
+
+reset enable_hashjoin;
+reset enable_nestloop;
+reset enable_mergejoin;
+drop table if exists business_order;
+drop table if exists statement;
+drop table if exists user_invoice_account;
