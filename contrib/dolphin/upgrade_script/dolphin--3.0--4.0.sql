@@ -1322,6 +1322,16 @@ CREATE OPERATOR CLASS pg_catalog.uint8_ops
         FUNCTION        1       pg_catalog.uint8_int8cmp(uint8, int8),
         FUNCTION        2       pg_catalog.uint8_sortsupport(internal);
 
+CREATE OPERATOR CLASS pg_catalog.year_ops
+    DEFAULT FOR TYPE year USING ubtree AS
+        OPERATOR        1       < ,
+        OPERATOR        2       <= ,
+        OPERATOR        3       = ,
+        OPERATOR        4       >= ,
+        OPERATOR        5       > ,
+        FUNCTION        1       year_cmp(year, year),
+        FUNCTION        2       year_sortsupport(internal);
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
