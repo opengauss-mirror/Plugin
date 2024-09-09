@@ -2937,13 +2937,14 @@ static bool ri_PerformCheck(RI_QueryKey* qkey, SPIPlanPtr qplan, Relation fk_rel
     if (spi_result < 0)
         ereport(ERROR, (errcode(ERRCODE_SPI_EXECUTE_FAILURE), errmsg("SPI_execute_snapshot returned %d", spi_result)));
 
-    if (expect_OK >= 0 && spi_result != expect_OK)
+    if (expect_OK >= 0 && spi_result != expect_OK && u_sess->attr.attr_common.foreign_key_checks)
         ri_ReportViolation(
             qkey, constrname ? constrname : "", pk_rel, fk_rel, new_tuple ? new_tuple : old_tuple, NULL, true);
 
     /* XXX wouldn't it be clearer to do this part at the caller? */
     if (constrname != NULL && expect_OK == SPI_OK_SELECT &&
-        (SPI_processed == 0) == (qkey->constr_queryno == RI_PLAN_CHECK_LOOKUPPK))
+        (SPI_processed == 0) == (qkey->constr_queryno == RI_PLAN_CHECK_LOOKUPPK) &&
+        u_sess->attr.attr_common.foreign_key_checks)
         ri_ReportViolation(qkey, constrname, pk_rel, fk_rel, new_tuple ? new_tuple : old_tuple, NULL, false);
 
     return SPI_processed != 0;
