@@ -368,5 +368,20 @@ insert into RangePartionLevel1_IntegerTypes values (1,2);
 insert into RangePartionLevel1_IntegerTypes values (1,65535);
 drop table RangePartionLevel1_IntegerTypes;
 
+
+create table t_select_0019(col01 int,col02 varchar(255))
+partition by list(col01) (
+partition p1 values in (1000),
+partition p2 values in (2000),
+partition p3 values in (3000),
+partition p4 values in (4000),
+partition p5 values in (5000),
+partition p6 values in (6000)
+);
+select * into t_select_0019_p1 from t_select_0019 partition (p1, p3, p5, p6);
+select * from t_select_0019_p1;
+drop table t_select_0019;
+drop table t_select_0019_p1; 
+
 drop schema partition_test1 cascade;
 reset current_schema;
