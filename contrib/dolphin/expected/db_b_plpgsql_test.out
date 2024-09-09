@@ -171,6 +171,24 @@ call proc_abort_050_02();
 ERROR:  only support commit/rollback transaction statements.
 HINT:  Use a BEGIN block with an EXCEPTION clause instead of begin/end transaction.
 CONTEXT:  PL/pgSQL function proc_abort_050_02() line 3 at SQL statement
+delimiter //
+create or replace procedure test_set(out res int)
+begin
+declare a int;
+declare b int;
+declare c int;
+set a=1, b=2, c=3;
+set res=a+b+c;
+end;
+//
+delimiter ;
+call test_set(@res);
+ res 
+-----
+   6
+(1 row)
+
+drop procedure test_set;
 drop schema db_b_plpgsql_test cascade;
 NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to table tb_b_grammar_0038
