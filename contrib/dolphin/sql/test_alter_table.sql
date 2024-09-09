@@ -223,5 +223,13 @@ and relnamespace != (select oid from pg_namespace where nspname = 'pg_catalog')
 and c.relname != 'my_locks'
 group by c.relname;
 
+-- test column table with alter table drop index
+drop table if exists t_grammar0029;
+create table t_grammar0029(id int unique, sex text)
+with(orientation=column);
+drop index if exists id_grammar0029;
+create index id_grammar0029 on t_grammar0029 using psort(id) tablespace pg_default;
+alter table t_grammar0029 drop key id_grammar0029;
+
 drop schema db_alter_table cascade;
 reset current_schema;
