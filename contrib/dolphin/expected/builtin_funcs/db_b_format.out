@@ -478,6 +478,79 @@ select format(null, null, null);
  
 (1 row)
 
+-- test overflow
+select format(123123.456,100000000000);
+                  format                  
+------------------------------------------
+ 123,123.45600000000000000000000000000000
+(1 row)
+
+select format(123123.456,1000000000000);
+ format  
+---------
+ 123,123
+(1 row)
+
+select format(123123.456,10000000000000);
+                  format                  
+------------------------------------------
+ 123,123.45600000000000000000000000000000
+(1 row)
+
+select format(123123.456,545634633746483465436546345635436587463);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: format
+ format  
+---------
+ 123,123
+(1 row)
+
+select format(123123.456,'513513413546587468514351345435413');
+WARNING:  value "513513413546587468514351345435413" is out of range for type bigint
+LINE 1: select format(123123.456,'513513413546587468514351345435413'...
+                                 ^
+CONTEXT:  referenced column: format
+ format  
+---------
+ 123,123
+(1 row)
+
+select format(123123.456,100000000000,'de_DE');
+                  format                  
+------------------------------------------
+ 123.123,45600000000000000000000000000000
+(1 row)
+
+select format(123123.456,1000000000000,'de_DE');
+ format  
+---------
+ 123.123
+(1 row)
+
+select format(123123.456,10000000000000,'de_DE');
+                  format                  
+------------------------------------------
+ 123.123,45600000000000000000000000000000
+(1 row)
+
+select format(123123.456,545634633746483465436546345635436587463,'de_DE');
+WARNING:  bigint out of range
+CONTEXT:  referenced column: format
+ format  
+---------
+ 123.123
+(1 row)
+
+select format(123123.456,'513513413546587468514351345435413','de_DE');
+WARNING:  value "513513413546587468514351345435413" is out of range for type bigint
+LINE 1: select format(123123.456,'513513413546587468514351345435413'...
+                                 ^
+CONTEXT:  referenced column: format
+ format  
+---------
+ 123.123
+(1 row)
+
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;
 select format(1234.456, 2);
