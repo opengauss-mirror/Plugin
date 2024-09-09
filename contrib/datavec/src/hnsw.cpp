@@ -134,62 +134,62 @@ PGDLLEXPORT PG_FUNCTION_INFO_V1(hnswhandler);
 Datum
 hnswhandler(PG_FUNCTION_ARGS)
 {
-	IndexAmRoutine *amroutine = makeNode(IndexAmRoutine);
+    IndexAmRoutine *amroutine = makeNode(IndexAmRoutine);
 
-	amroutine->amstrategies = 0;
-	amroutine->amsupport = 3;
+    amroutine->amstrategies = 0;
+    amroutine->amsupport = 3;
 #if PG_VERSION_NUM >= 130000
-	amroutine->amoptsprocnum = 0;
+    amroutine->amoptsprocnum = 0;
 #endif
-	amroutine->amcanorder = false;
-	amroutine->amcanorderbyop = true;
-	amroutine->amcanbackward = false;	/* can change direction mid-scan */
-	amroutine->amcanunique = false;
-	amroutine->amcanmulticol = false;
-	amroutine->amoptionalkey = true;
-	amroutine->amsearcharray = false;
-	amroutine->amsearchnulls = false;
-	amroutine->amstorage = false;
-	amroutine->amclusterable = false;
-	amroutine->ampredlocks = false;
-	amroutine->amcanparallel = false;
-	amroutine->amcaninclude = false;
+    amroutine->amcanorder = false;
+    amroutine->amcanorderbyop = true;
+    amroutine->amcanbackward = false;    /* can change direction mid-scan */
+    amroutine->amcanunique = false;
+    amroutine->amcanmulticol = false;
+    amroutine->amoptionalkey = true;
+    amroutine->amsearcharray = false;
+    amroutine->amsearchnulls = false;
+    amroutine->amstorage = false;
+    amroutine->amclusterable = false;
+    amroutine->ampredlocks = false;
+    amroutine->amcanparallel = false;
+    amroutine->amcaninclude = false;
 #if PG_VERSION_NUM >= 130000
-	amroutine->amusemaintenanceworkmem = false; /* not used during VACUUM */
-	amroutine->amparallelvacuumoptions = VACUUM_OPTION_PARALLEL_BULKDEL;
+    amroutine->amusemaintenanceworkmem = false; /* not used during VACUUM */
+    amroutine->amparallelvacuumoptions = VACUUM_OPTION_PARALLEL_BULKDEL;
 #endif
-	amroutine->amkeytype = InvalidOid;
+    amroutine->amkeytype = InvalidOid;
 
-	/* Interface functions */
-	errno_t rc;
-	rc = strcpy_s(amroutine->ambuildfuncname, NAMEDATALEN, "hnswbuild");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->ambuildemptyfuncname, NAMEDATALEN, "hnswbuildempty");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->aminsertfuncname, NAMEDATALEN, "hnswinsert");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->ambulkdeletefuncname, NAMEDATALEN, "hnswbulkdelete");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amvacuumcleanupfuncname, NAMEDATALEN, "hnswvacuumcleanup");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amcostestimatefuncname, NAMEDATALEN, "hnswcostestimate");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amoptionsfuncname, NAMEDATALEN, "hnswoptions");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amvalidatefuncname, NAMEDATALEN, "hnswvalidate");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->ambeginscanfuncname, NAMEDATALEN, "hnswbeginscan");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amrescanfuncname, NAMEDATALEN, "hnswrescan");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amgettuplefuncname, NAMEDATALEN, "hnswgettuple");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amendscanfuncname, NAMEDATALEN, "hnswendscan");
-	securec_check(rc, "\0", "\0");
-	rc = strcpy_s(amroutine->amdeletefuncname, NAMEDATALEN, "hnswdelete");
-	securec_check(rc, "\0", "\0");
+    /* Interface functions */
+    errno_t rc = 0;
+    rc = strcpy_s(amroutine->ambuildfuncname, NAMEDATALEN, "hnswbuild");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->ambuildemptyfuncname, NAMEDATALEN, "hnswbuildempty");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->aminsertfuncname, NAMEDATALEN, "hnswinsert");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->ambulkdeletefuncname, NAMEDATALEN, "hnswbulkdelete");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amvacuumcleanupfuncname, NAMEDATALEN, "hnswvacuumcleanup");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amcostestimatefuncname, NAMEDATALEN, "hnswcostestimate");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amoptionsfuncname, NAMEDATALEN, "hnswoptions");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amvalidatefuncname, NAMEDATALEN, "hnswvalidate");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->ambeginscanfuncname, NAMEDATALEN, "hnswbeginscan");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amrescanfuncname, NAMEDATALEN, "hnswrescan");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amgettuplefuncname, NAMEDATALEN, "hnswgettuple");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amendscanfuncname, NAMEDATALEN, "hnswendscan");
+    securec_check(rc, "\0", "\0");
+    rc = strcpy_s(amroutine->amdeletefuncname, NAMEDATALEN, "hnswdelete");
+    securec_check(rc, "\0", "\0");
 
-	PG_RETURN_POINTER(amroutine);
+    PG_RETURN_POINTER(amroutine);
 }
 
 PGDLLEXPORT PG_FUNCTION_INFO_V1(hnswbuild);
@@ -348,13 +348,13 @@ PGDLLEXPORT PG_FUNCTION_INFO_V1(hnswdelete);
 Datum
 hnswdelete(PG_FUNCTION_ARGS)
 {
-	Relation rel = (Relation)PG_GETARG_POINTER(0);
-	Datum *values = (Datum *)PG_GETARG_POINTER(1);
-	const bool* isnull = (const bool*)PG_GETARG_POINTER(2);
-	ItemPointer heapTCtid = (ItemPointer)PG_GETARG_POINTER(3);
-	bool isRollbackIndex = (bool)PG_GETARG_POINTER(4);
+    Relation rel = (Relation)PG_GETARG_POINTER(0);
+    Datum *values = (Datum *)PG_GETARG_POINTER(1);
+    const bool* isnull = (const bool*)PG_GETARG_POINTER(2);
+    ItemPointer heapTCtid = (ItemPointer)PG_GETARG_POINTER(3);
+    bool isRollbackIndex = (bool)PG_GETARG_POINTER(4);
 
-	bool result = hnswdelete_internal(rel, values, isnull, heapTCtid, isRollbackIndex);
+    bool result = hnswdelete_internal(rel, values, isnull, heapTCtid, isRollbackIndex);
 
-	PG_RETURN_BOOL(result);
+    PG_RETURN_BOOL(result);
 }

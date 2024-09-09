@@ -533,14 +533,16 @@ bool		HnswCheckNorm(FmgrInfo *procinfo, Oid collation, Datum value);
 Buffer		HnswNewBuffer(Relation index, ForkNumber forkNum);
 void		HnswInitPage(Buffer buf, Page page);
 void		HnswInit(void);
-List	   *HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo, Oid collation, int m, bool inserting, HnswElement skipElement, IndexScanDesc scan = NULL);
+List       *HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo,
+                            Oid collation, int m, bool inserting, HnswElement skipElement, IndexScanDesc scan = NULL);
 HnswElement HnswGetEntryPoint(Relation index);
 void		HnswGetMetaPageInfo(Relation index, int *m, HnswElement * entryPoint);
 void	   *HnswAlloc(HnswAllocator * allocator, Size size);
 HnswElement HnswInitElement(char *base, ItemPointer tid, int m, double ml, int maxLevel, HnswAllocator * alloc);
 HnswElement HnswInitElementFromBlock(BlockNumber blkno, OffsetNumber offno);
 void		HnswFindElementNeighbors(char *base, HnswElement element, HnswElement entryPoint, Relation index, FmgrInfo *procinfo, Oid collation, int m, int efConstruction, bool existing);
-HnswCandidate *HnswEntryCandidate(char *base, HnswElement em, Datum q, Relation rel, FmgrInfo *procinfo, Oid collation, bool loadVec, IndexScanDesc scan = NULL);
+HnswCandidate *HnswEntryCandidate(char *base, HnswElement em, Datum q, Relation rel, FmgrInfo *procinfo,
+                                  Oid collation, bool loadVec, IndexScanDesc scan = NULL);
 void		HnswUpdateMetaPage(Relation index, int updateEntry, HnswElement entryPoint, BlockNumber insertPage, ForkNumber forkNum, bool building);
 void		HnswSetNeighborTuple(char *base, HnswNeighborTuple ntup, HnswElement e, int m);
 void		HnswAddHeapTid(HnswElement element, ItemPointer heaptid);
@@ -548,7 +550,8 @@ void		HnswInitNeighbors(char *base, HnswElement element, int m, HnswAllocator * 
 bool		HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, const bool *isnull, ItemPointer heap_tid, bool building);
 void		HnswUpdateNeighborsOnDisk(Relation index, FmgrInfo *procinfo, Oid collation, HnswElement e, int m, bool checkExisting, bool building);
 void		HnswLoadElementFromTuple(HnswElement element, HnswElementTuple etup, bool loadHeaptids, bool loadVec);
-bool		HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo, Oid collation, bool loadVec, float *maxDistance, IndexScanDesc scan = NULL);
+bool        HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo,
+                            Oid collation, bool loadVec, float *maxDistance, IndexScanDesc scan = NULL);
 void		HnswSetElementTuple(char *base, HnswElementTuple etup, HnswElement element);
 void		HnswUpdateConnection(char *base, HnswElement element, HnswCandidate * hc, int lm, int lc, int *updateIdx, Relation index, FmgrInfo *procinfo, Oid collation);
 void		HnswLoadNeighbors(HnswElement element, Relation index, int m);
@@ -585,7 +588,8 @@ IndexScanDesc hnswbeginscan_internal(Relation index, int nkeys, int norderbys);
 void		hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
 bool		hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir);
 void		hnswendscan_internal(IndexScanDesc scan);
-bool hnswdelete_internal(Relation index, Datum* values, const bool* isnull, ItemPointer heapTCtid, bool isRollbackIndex);
+bool hnswdelete_internal(Relation index, Datum* values, const bool* isnull, ItemPointer heapTCtid,
+                         bool isRollbackIndex);
 
 static inline HnswNeighborArray *
 HnswGetNeighbors(char *base, HnswElement element, int lc)

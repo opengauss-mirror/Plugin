@@ -1013,7 +1013,7 @@ BuildGraph(HnswBuildState * buildstate, ForkNumber forkNum)
         if (!buildstate->hnswleader) {
 serial_build:
             buildstate->reltuples = tableam_index_build_scan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-                                                           true, BuildCallback, (void *) buildstate, NULL);
+                                                             true, BuildCallback, (void *) buildstate, NULL);
         } else {
             int nruns;
             buildstate->reltuples = ParallelHeapScan(buildstate, &nruns);

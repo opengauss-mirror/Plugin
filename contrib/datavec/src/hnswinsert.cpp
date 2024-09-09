@@ -168,7 +168,7 @@ AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, B
             page = GenericXLogRegisterBuffer(state, buf, 0);
         }
 
-		isUStore = HnswPageGetOpaque(page)->pageType == HNSW_USTORE_PAGE_TYPE;
+        isUStore = HnswPageGetOpaque(page)->pageType == HNSW_USTORE_PAGE_TYPE;
         /* Keep track of first page where element at level 0 can fit */
         if (!BlockNumberIsValid(newInsertPage) && PageGetFreeSpace(page) >= minCombinedSize) {
             newInsertPage = currentPage;
@@ -184,7 +184,8 @@ AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, B
         }
 
         /* Next, try space from a deleted element */
-        if (HnswFreeOffset(index, buf, page, e, ntupSize, &nbuf, &npage, &freeOffno, &freeNeighborOffno, &newInsertPage)) {
+        if (HnswFreeOffset(index, buf, page, e, ntupSize, &nbuf, &npage, &freeOffno,
+                           &freeNeighborOffno, &newInsertPage)) {
             if (nbuf != buf) {
                 if (building) {
                     npage = BufferGetPage(nbuf);
@@ -198,7 +199,8 @@ AddElementOnDisk(Relation index, HnswElement e, int m, BlockNumber insertPage, B
 
         /* Finally, try space for element only if last page */
         /* Skip if both tuples can fit on the same page */
-        if (combinedSize > maxSize && PageGetFreeSpace(page) >= etupSize && !BlockNumberIsValid(HnswPageGetOpaque(page)->nextblkno)) {
+        if (combinedSize > maxSize && PageGetFreeSpace(page) >= etupSize &&
+            !BlockNumberIsValid(HnswPageGetOpaque(page)->nextblkno)) {
             HnswInsertAppendPage(index, &nbuf, &npage, state, page, building);
                 if (isUStore) {
                     HnswPageGetOpaque(npage)->pageType = HNSW_USTORE_PAGE_TYPE;

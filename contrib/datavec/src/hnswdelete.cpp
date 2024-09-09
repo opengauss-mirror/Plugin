@@ -28,14 +28,11 @@ bool HnswIsETUPEqual(HnswElementTuple etup1, HnswElementTuple etup2)
     if (etup1 == NULL || etup2 == NULL) {
         return false;
     }
-
     Size len1 = MAXALIGN(VARSIZE_ANY(&etup1->data));
     Size len2 = MAXALIGN(VARSIZE_ANY(&etup2->data));
-
     if (len1 == 0 || len2 == 0 || len1 != len2) {
         return false;
     }
-
     return memcmp(&etup1->data, &etup2->data, len1) == 0;
 }
 
@@ -59,7 +56,6 @@ OffsetNumber HnswFindDeleteLocation(Relation index, Buffer buf, HnswElementTuple
         HnswElementTuple tup;
 
         iid = PageGetItemId(page, off);
-
         if (!ItemIdIsDead(iid)) {
             tup = (HnswElementTuple)PageGetItem(page, iid);
             if (!HnswIsTIDEquals(etup->heaptids, tup->heaptids)) {
@@ -72,8 +68,8 @@ OffsetNumber HnswFindDeleteLocation(Relation index, Buffer buf, HnswElementTuple
 
             bool xminCommitted = false;
             bool xmaxCommitted = false;
-            bool isDead = VecItupGetXminXmax(page, off, InvalidTransactionId, &xmin, &xmax, &xminCommitted, &xmaxCommitted, RelationGetNamespace(index) == PG_TOAST_NAMESPACE);
-
+            bool isDead = VecItupGetXminXmax(page, off, InvalidTransactionId, &xmin, &xmax, &xminCommitted,
+                                             &xmaxCommitted, RelationGetNamespace(index) == PG_TOAST_NAMESPACE);
             if (!isDead && !TransactionIdIsValid(xmax)) {
                 return off;
             }
@@ -110,7 +106,6 @@ bool IsHnswEntryPoint(Relation index, BlockNumber blkno, OffsetNumber offno)
     LockBuffer(buf, BUFFER_LOCK_SHARE);
     page = BufferGetPage(buf);
     metap = HnswPageGetMeta(page);
-
     if (blkno == metap->entryBlkno && offno == metap->entryOffno) {
         res = true;
     }
@@ -157,7 +152,6 @@ bool HnswDeleteIndex(Relation index, HnswElementTuple etup)
         buf = ReadBuffer(index, blkno);
         LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
         offset = HnswFindDeleteLocation(index, buf, etup);
-
         if (offset != InvalidOffsetNumber && ! IsHnswEntryPoint(index, blkno, offset)) {
             HnswDeleteOnPage(index, buf, offset);
             UnlockReleaseBuffer(buf);
@@ -172,7 +166,8 @@ bool HnswDeleteIndex(Relation index, HnswElementTuple etup)
     return found;
 }
 
-HnswElementTuple IndexFormHnswElementTuple(TupleDesc tupleDesc, Datum* values, const bool* isnull, ItemPointer heapTCtid)
+HnswElementTuple IndexFormHnswElementTuple(TupleDesc tupleDesc, Datum* values, const bool* isnull,
+                                           ItemPointer heapTCtid)
 {
     Datum value;
     HnswElementTuple etup;

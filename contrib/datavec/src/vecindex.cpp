@@ -175,10 +175,11 @@ static bool VecVisibilityCheckCid(IndexScanDesc scan, IndexTuple itup, bool *nee
     /* Step1: Check that the buffer space is large enough. */
     size_t maxItemSize = VecDefaultMaxItemSize(scan);
     uint newSize = 0;
+    int multiSize = 2;
     if (vs->lastSelfModifiedItup == NULL) {
         newSize = IndexTupleSize(itup);
     } else if (vs->lastSelfModifiedItupBufferSize < IndexTupleSize(itup)) {
-        newSize = MAX(vs->lastSelfModifiedItupBufferSize * 2, IndexTupleSize(itup));
+        newSize = MAX(vs->lastSelfModifiedItupBufferSize * multiSize, IndexTupleSize(itup));
         newSize = MIN(newSize, maxItemSize);
         pfree(vs->lastSelfModifiedItup);
     }
@@ -188,8 +189,9 @@ static bool VecVisibilityCheckCid(IndexScanDesc scan, IndexTuple itup, bool *nee
         vs->lastSelfModifiedItupBufferSize = newSize;
     }
     /* Step3: Save the current IndexTuple. */
-    errno_t rc = memcpy_s(vs->lastSelfModifiedItup, maxItemSize, itup, IndexTupleSize(itup));
-    securec_check(rc, "", "");
+    errno_t rc = 0;
+    rc = memcpy_s(vs->lastSelfModifiedItup, maxItemSize, itup, IndexTupleSize(itup));
+    securec_check(rc, "\0", "\0");
 
     *needRecheck = true;
     return true; /* treat as visible, but need recheck */
@@ -199,10 +201,12 @@ static bool VecXidSatisfiesMVCC(TransactionId xid, bool committed, Snapshot snap
 {
     TransactionIdStatus ignore;
 
-    if (!TransactionIdIsValid(xid))
+    if (!TransactionIdIsValid(xid)) {
         return false; /* invisible */
-    if (xid == FrozenTransactionId)
+    }
+    if (xid == FrozenTransactionId) {
         return true; /* frozen */
+    }
 
     /*
      * We can use snapshot's xmin/xmax as fast bypass after they become valid again.
@@ -259,8 +263,8 @@ bool VecVisibilityCheck(IndexScanDesc scan, Page page, OffsetNumber offnum, bool
     bool xminCommitted = false;
     bool xmaxCommitted = false;
     bool isDead = VecItupGetXminXmax(page, offnum, InvalidTransactionId,
-                                        &xmin, &xmax, &xminCommitted, &xmaxCommitted,
-                                        RelationGetNamespace(scan->indexRelation) == PG_TOAST_NAMESPACE);
+                                     &xmin, &xmax, &xminCommitted, &xmaxCommitted,
+                                     RelationGetNamespace(scan->indexRelation) == PG_TOAST_NAMESPACE);
 
     if (needRecheck == NULL) {
         *needRecheck = false;
