@@ -241,74 +241,74 @@ SELECT SUBSTR(b FOR -1) FROM template_string;
 (1 row)
 
 SELECT SUBSTRING(a FROM 1) FROM template_string;
-         substring          
+           substr           
 ----------------------------
  abcdefghijklmnopqrstuvwxyz
 (1 row)
 
 SELECT SUBSTRING(a FROM 0) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 SELECT SUBSTRING(a FROM -1) FROM template_string;
- substring 
------------
+ substr 
+--------
  z
 (1 row)
 
 SELECT SUBSTRING(a FOR 1) FROM template_string;
- substring 
------------
+ substr 
+--------
  a
 (1 row)
 
 SELECT SUBSTRING(a FOR 0) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 SELECT SUBSTRING(a FOR -1) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 SELECT SUBSTRING(b FROM 1) FROM template_string;
-         substring          
+           substr           
 ----------------------------
  abcdefghijklmnopqrstuvwxyz
 (1 row)
 
 SELECT SUBSTRING(b FROM 0) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 SELECT SUBSTRING(b FROM -1) FROM template_string;
- substring 
------------
+ substr 
+--------
  z
 (1 row)
 
 SELECT SUBSTRING(b FOR 1) FROM template_string;
- substring 
------------
+ substr 
+--------
  a
 (1 row)
 
 SELECT SUBSTRING(b FOR 0) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 SELECT SUBSTRING(b FOR -1) FROM template_string;
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
@@ -398,38 +398,38 @@ SELECT MID(b FOR -1) FROM template_string;
 
 -- The input is in hexadecimal format. Two hexadecimal digits are one byte. The substring is obtained by byte.
 select substring(E'\\xDEADBEEF'::bytea,2);
-  substring   
+    substr    
 --------------
  \255\276\357
 (1 row)
 
 select substring(E'\\xDEADBEEF'::bytea,2,2);
- substring 
------------
+  substr  
+----------
  \255\276
 (1 row)
 
 select substring(E'\\xDEADBEEF'::bytea,2,8);
-  substring   
+    substr    
 --------------
  \255\276\357
 (1 row)
 
 select substring(E'\\xDEADBEEF'::bytea,2,10);
-  substring   
+    substr    
 --------------
  \255\276\357
 (1 row)
 
 select substring(E'\\xDEADBEEF'::bytea,2,0);
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring(E'\\xDEADBEEF'::bytea,2,-1);
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
@@ -511,32 +511,32 @@ create table test_row (c1 text, c2 int);
 insert into test_column values('abcdefg', 2), ('abcdefg', 0), ('abcdefg', -2);
 insert into test_row(c1, c2) select c1, c2 from test_column;
 select c1, c2, substring(c1 from c2) from test_column order by c1;
-   c1    | c2 | substring 
----------+----+-----------
+   c1    | c2 | substr 
+---------+----+--------
  abcdefg |  2 | bcdefg
  abcdefg |  0 | 
  abcdefg | -2 | fg
 (3 rows)
 
 select c1, c2, substring(c1 from c2) from test_row order by c1;
-   c1    | c2 | substring 
----------+----+-----------
+   c1    | c2 | substr 
+---------+----+--------
  abcdefg |  2 | bcdefg
  abcdefg |  0 | 
  abcdefg | -2 | fg
 (3 rows)
 
 select c1, c2, substring(c1 for c2) from test_column order by c1;
-   c1    | c2 | substring 
----------+----+-----------
+   c1    | c2 | substr 
+---------+----+--------
  abcdefg |  2 | ab
  abcdefg |  0 | 
  abcdefg | -2 | 
 (3 rows)
 
 select c1, c2, substring(c1 for c2) from test_row order by c1;
-   c1    | c2 | substring 
----------+----+-----------
+   c1    | c2 | substr 
+---------+----+--------
  abcdefg |  2 | ab
  abcdefg |  0 | 
  abcdefg | -2 | 
@@ -575,77 +575,98 @@ select c1, c2, substr(c1 for c2) from test_row order by c1;
 (3 rows)
 
 select substring(b'11' from b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring(b'10010' from b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
 select substring('11'::bytea from b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring('10010'::bytea from b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
 select substring('11'::text from b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring('10010'::text from b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
 select substring(b'11', b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring(b'10010', b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
 select substring('11'::bytea, b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring('10010'::bytea, b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
 select substring('11'::text, b'10010');
- substring 
------------
+ substr 
+--------
  
 (1 row)
 
 select substring('10010'::text, b'11');
- substring 
------------
+ substr 
+--------
  010
 (1 row)
 
+select substr('abcd', '2', '3');
+ substr 
+--------
+ bcd
+(1 row)
+
+drop table if exists t_substring_0033;
+NOTICE:  table "t_substring_0033" does not exist, skipping
+create table t_substring_0033 (c1 text ,c2 varchar(20),c3 text);
+insert t_substring_0033 value('0/8',b'010','22cc');
+select substring(c1,c2,c3) from t_substring_0033;
+--?WARNING:  invalid input syntax for type bigint.*
+CONTEXT:  referenced column: substr
+WARNING:  invalid input syntax for type bigint: "22cc"
+CONTEXT:  referenced column: substr
+ substr 
+--------
+ 
+(1 row)
+
+drop table t_substring_0033;
 drop schema db_b_substr_test cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table template_string

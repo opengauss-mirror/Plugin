@@ -1251,9 +1251,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.round(timestamp without time zone) RETURNS
 CREATE OR REPLACE FUNCTION pg_catalog.round(anyenum) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
 CREATE OR REPLACE FUNCTION pg_catalog.round(anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as double precision))::double precision';
 
-CREATE OR REPLACE FUNCTION pg_catalog.substring(bit, bit) RETURNS bit LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
-CREATE OR REPLACE FUNCTION pg_catalog.substring(bytea, bit) RETURNS bytea LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
-CREATE OR REPLACE FUNCTION pg_catalog.substring(text, bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
+CREATE OR REPLACE FUNCTION pg_catalog.substr(bit, bit) RETURNS bit LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
+CREATE OR REPLACE FUNCTION pg_catalog.substr(bytea, bit) RETURNS bytea LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
+CREATE OR REPLACE FUNCTION pg_catalog.substr(text, bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2::integer)';
+CREATE OR REPLACE FUNCTION pg_catalog.substr(bit, int, int) RETURNS bit LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2, $3)';
+CREATE OR REPLACE FUNCTION pg_catalog.substr(bit, int) RETURNS bit LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substring($1, $2)';
 
 drop cast if exists ("binary" as varchar);
 drop cast if exists ("binary" as char);

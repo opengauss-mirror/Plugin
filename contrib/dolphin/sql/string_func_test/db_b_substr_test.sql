@@ -215,5 +215,13 @@ select substring('10010'::bytea, b'11');
 select substring('11'::text, b'10010');
 select substring('10010'::text, b'11');
 
+select substr('abcd', '2', '3');
+
+drop table if exists t_substring_0033;
+create table t_substring_0033 (c1 text ,c2 varchar(20),c3 text);
+insert t_substring_0033 value('0/8',b'010','22cc');
+select substring(c1,c2,c3) from t_substring_0033;
+drop table t_substring_0033;
+
 drop schema db_b_substr_test cascade;
 reset current_schema;
