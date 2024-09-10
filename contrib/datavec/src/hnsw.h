@@ -8,6 +8,7 @@
 #include "nodes/execnodes.h"
 #include "port.h"				/* for random() */
 #include "vector.h"
+#include "vecindex.h"
 
 #define HNSW_MAX_DIM 2000
 #define HNSW_MAX_NNZ 1000
@@ -58,8 +59,10 @@
 #define HNSW_NEIGHBOR_TUPLE_TYPE 2
 
 /* page types */
+#define HNSW_DEFAULT_PAGE_TYPE 0
 #define HNSW_ELEMENT_PAGE_TYPE 1
 #define HNSW_NEIGHBOR_PAGE_TYPE 2
+#define HNSW_USTORE_PAGE_TYPE 3
 
 /* Make graph robust against non-HOT updates */
 #define HNSW_HEAPTIDS 10
@@ -82,6 +85,13 @@
 #define HnswPageGetOpaque(page)	((HnswPageOpaque) PageGetSpecialPointer(page))
 #define HnswPageGetMeta(page)	((HnswMetaPageData *) PageGetContents(page))
 #define HnswPageGetAppendMeta(page) ((HnswAppendMetaPageData *) PageGetContents(page))
+
+#define HnswDefaultMaxItemSize \
+    MAXALIGN_DOWN((BLCKSZ - \
+                   MAXALIGN(SizeOfPageHeaderData + \
+                            sizeof(ItemIdData) + \
+                            sizeof(ItemPointerData)) - \
+                   MAXALIGN(sizeof(HnswPageOpaqueData))))
 
 #if PG_VERSION_NUM >= 150000
 #define RandomDouble() pg_prng_double(&pg_global_prng_state)
@@ -276,6 +286,7 @@ typedef struct HnswOptions
     bool enablePQ;
     int pqM; /* number of subquantizer */
     int pqKsub; /* number of centroids for each subquantizer */
+    char* storage_type; /* table access method kind */
 } HnswOptions;
 
 typedef struct HnswGraph
@@ -477,6 +488,9 @@ typedef struct HnswScanOpaqueData
 	FmgrInfo   *procinfo;
 	FmgrInfo   *normprocinfo;
 	Oid			collation;
+
+    /* used in ustore only */
+    VectorScanData vs;
 }			HnswScanOpaqueData;
 
 typedef HnswScanOpaqueData * HnswScanOpaque;
@@ -519,14 +533,16 @@ bool		HnswCheckNorm(FmgrInfo *procinfo, Oid collation, Datum value);
 Buffer		HnswNewBuffer(Relation index, ForkNumber forkNum);
 void		HnswInitPage(Buffer buf, Page page);
 void		HnswInit(void);
-List	   *HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo, Oid collation, int m, bool inserting, HnswElement skipElement);
+List       *HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo,
+                            Oid collation, int m, bool inserting, HnswElement skipElement, IndexScanDesc scan = NULL);
 HnswElement HnswGetEntryPoint(Relation index);
 void		HnswGetMetaPageInfo(Relation index, int *m, HnswElement * entryPoint);
 void	   *HnswAlloc(HnswAllocator * allocator, Size size);
 HnswElement HnswInitElement(char *base, ItemPointer tid, int m, double ml, int maxLevel, HnswAllocator * alloc);
 HnswElement HnswInitElementFromBlock(BlockNumber blkno, OffsetNumber offno);
 void		HnswFindElementNeighbors(char *base, HnswElement element, HnswElement entryPoint, Relation index, FmgrInfo *procinfo, Oid collation, int m, int efConstruction, bool existing);
-HnswCandidate *HnswEntryCandidate(char *base, HnswElement em, Datum q, Relation rel, FmgrInfo *procinfo, Oid collation, bool loadVec);
+HnswCandidate *HnswEntryCandidate(char *base, HnswElement em, Datum q, Relation rel, FmgrInfo *procinfo,
+                                  Oid collation, bool loadVec, IndexScanDesc scan = NULL);
 void		HnswUpdateMetaPage(Relation index, int updateEntry, HnswElement entryPoint, BlockNumber insertPage, ForkNumber forkNum, bool building);
 void		HnswSetNeighborTuple(char *base, HnswNeighborTuple ntup, HnswElement e, int m);
 void		HnswAddHeapTid(HnswElement element, ItemPointer heaptid);
@@ -534,11 +550,13 @@ void		HnswInitNeighbors(char *base, HnswElement element, int m, HnswAllocator * 
 bool		HnswInsertTupleOnDisk(Relation index, Datum value, Datum *values, const bool *isnull, ItemPointer heap_tid, bool building);
 void		HnswUpdateNeighborsOnDisk(Relation index, FmgrInfo *procinfo, Oid collation, HnswElement e, int m, bool checkExisting, bool building);
 void		HnswLoadElementFromTuple(HnswElement element, HnswElementTuple etup, bool loadHeaptids, bool loadVec);
-void		HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo, Oid collation, bool loadVec, float *maxDistance);
+bool        HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo,
+                            Oid collation, bool loadVec, float *maxDistance, IndexScanDesc scan = NULL);
 void		HnswSetElementTuple(char *base, HnswElementTuple etup, HnswElement element);
 void		HnswUpdateConnection(char *base, HnswElement element, HnswCandidate * hc, int lm, int lc, int *updateIdx, Relation index, FmgrInfo *procinfo, Oid collation);
 void		HnswLoadNeighbors(HnswElement element, Relation index, int m);
 const		HnswTypeInfo *HnswGetTypeInfo(Relation index);
+bool HnswDelete(Relation index, Datum* values, const bool* isnull, ItemPointer heapTCtid, bool isRollbackIndex);
 
 extern "C" {
     Datum hnswhandler(PG_FUNCTION_ARGS);
@@ -554,6 +572,7 @@ extern "C" {
     Datum hnswrescan(PG_FUNCTION_ARGS);
     Datum hnswgettuple(PG_FUNCTION_ARGS);
     Datum hnswendscan(PG_FUNCTION_ARGS);
+    Datum hnswdelete(PG_FUNCTION_ARGS);
     Datum hnsw_halfvec_support(PG_FUNCTION_ARGS);
     Datum hnsw_bit_support(PG_FUNCTION_ARGS);
     Datum hnsw_sparsevec_support(PG_FUNCTION_ARGS);
@@ -569,6 +588,8 @@ IndexScanDesc hnswbeginscan_internal(Relation index, int nkeys, int norderbys);
 void		hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
 bool		hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir);
 void		hnswendscan_internal(IndexScanDesc scan);
+bool hnswdelete_internal(Relation index, Datum* values, const bool* isnull, ItemPointer heapTCtid,
+                         bool isRollbackIndex);
 
 static inline HnswNeighborArray *
 HnswGetNeighbors(char *base, HnswElement element, int lc)

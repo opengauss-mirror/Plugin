@@ -29,15 +29,15 @@ GetScanItems(IndexScanDesc scan, Datum q)
     if (entryPoint == NULL)
         return NIL;
 
-    ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false));
+    ep = list_make1(HnswEntryCandidate(base, entryPoint, q, index, procinfo, collation, false, scan));
 
     for (int lc = entryPoint->level; lc >= 1; lc--) {
-        w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL);
+        w = HnswSearchLayer(base, q, ep, 1, lc, index, procinfo, collation, m, false, NULL, scan);
         ep = w;
     }
 
     int hnsw_ef_search = get_session_context()->hnsw_ef_search;
-    return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL);
+    return HnswSearchLayer(base, q, ep, hnsw_ef_search, 0, index, procinfo, collation, m, false, NULL, scan);
 }
 
 /*
@@ -73,26 +73,30 @@ GetScanValue(IndexScanDesc scan)
 IndexScanDesc
 hnswbeginscan_internal(Relation index, int nkeys, int norderbys)
 {
-	IndexScanDesc scan;
-	HnswScanOpaque so;
+    IndexScanDesc scan;
+    HnswScanOpaque so;
 
-	scan = RelationGetIndexScan(index, nkeys, norderbys);
+    scan = RelationGetIndexScan(index, nkeys, norderbys);
 
-	so = (HnswScanOpaque) palloc(sizeof(HnswScanOpaqueData));
-	so->typeInfo = HnswGetTypeInfo(index);
-	so->first = true;
-	so->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
-									   "Hnsw scan temporary context",
-									   ALLOCSET_DEFAULT_SIZES);
+    so = (HnswScanOpaque) palloc(sizeof(HnswScanOpaqueData));
+    so->typeInfo = HnswGetTypeInfo(index);
+    so->first = true;
+    so->tmpCtx = AllocSetContextCreate(CurrentMemoryContext,
+                                       "Hnsw scan temporary context",
+                                       ALLOCSET_DEFAULT_SIZES);
 
-	/* Set support functions */
-	so->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
-	so->normprocinfo = HnswOptionalProcInfo(index, HNSW_NORM_PROC);
-	so->collation = index->rd_indcollation[0];
+    so->vs.buf = InvalidBuffer;
+    so->vs.lastSelfModifiedItup = NULL;
+    so->vs.lastSelfModifiedItupBufferSize = 0;
 
-	scan->opaque = so;
+    /* Set support functions */
+    so->procinfo = index_getprocinfo(index, 1, HNSW_DISTANCE_PROC);
+    so->normprocinfo = HnswOptionalProcInfo(index, HNSW_NORM_PROC);
+    so->collation = index->rd_indcollation[0];
 
-	return scan;
+    scan->opaque = so;
+
+    return scan;
 }
 
 /*
@@ -101,16 +105,20 @@ hnswbeginscan_internal(Relation index, int nkeys, int norderbys)
 void
 hnswrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
 {
-	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+    HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
 
-	so->first = true;
-	MemoryContextReset(so->tmpCtx);
+    if (so->vs.lastSelfModifiedItup) {
+        IndexTupleSetSize(((IndexTuple)(so->vs.lastSelfModifiedItup)), 0); /* clear */
+    }
 
-	if (keys && scan->numberOfKeys > 0)
-		memmove(scan->keyData, keys, scan->numberOfKeys * sizeof(ScanKeyData));
+    so->first = true;
+    MemoryContextReset(so->tmpCtx);
 
-	if (orderbys && scan->numberOfOrderBys > 0)
-		memmove(scan->orderByData, orderbys, scan->numberOfOrderBys * sizeof(ScanKeyData));
+    if (keys && scan->numberOfKeys > 0)
+        memmove(scan->keyData, keys, scan->numberOfKeys * sizeof(ScanKeyData));
+
+    if (orderbys && scan->numberOfOrderBys > 0)
+        memmove(scan->orderByData, orderbys, scan->numberOfOrderBys * sizeof(ScanKeyData));
 }
 
 /*
@@ -195,10 +203,12 @@ hnswgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 void
 hnswendscan_internal(IndexScanDesc scan)
 {
-	HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
+    HnswScanOpaque so = (HnswScanOpaque) scan->opaque;
 
-	MemoryContextDelete(so->tmpCtx);
+    FREE_POINTER(so->vs.lastSelfModifiedItup);
 
-	pfree(so);
-	scan->opaque = NULL;
+    MemoryContextDelete(so->tmpCtx);
+
+    pfree(so);
+    scan->opaque = NULL;
 }

@@ -234,9 +234,10 @@ HnswNewBuffer(Relation index, ForkNumber forkNum)
 void
 HnswInitPage(Buffer buf, Page page)
 {
-	PageInit(page, BufferGetPageSize(buf), sizeof(HnswPageOpaqueData));
-	HnswPageGetOpaque(page)->nextblkno = InvalidBlockNumber;
-	HnswPageGetOpaque(page)->page_id = HNSW_PAGE_ID;
+    PageInit(page, BufferGetPageSize(buf), sizeof(HnswPageOpaqueData));
+    HnswPageGetOpaque(page)->nextblkno = InvalidBlockNumber;
+    HnswPageGetOpaque(page)->pageType = HNSW_DEFAULT_PAGE_TYPE;
+    HnswPageGetOpaque(page)->page_id = HNSW_PAGE_ID;
 }
 
 /*
@@ -654,36 +655,47 @@ HnswLoadElementFromTuple(HnswElement element, HnswElementTuple etup, bool loadHe
 /*
  * Load an element and optionally get its distance from q
  */
-void
-HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo, Oid collation, bool loadVec, float *maxDistance)
+bool
+HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, FmgrInfo *procinfo,
+                Oid collation, bool loadVec, float *maxDistance, IndexScanDesc scan)
 {
-	Buffer		buf;
-	Page		page;
-	HnswElementTuple etup;
+    Buffer buf;
+    Page page;
+    HnswElementTuple etup;
+    bool needRecheck = false;
+    bool isVisible = true;
 
-	/* Read vector */
-	buf = ReadBuffer(index, element->blkno);
-	LockBuffer(buf, BUFFER_LOCK_SHARE);
-	page = BufferGetPage(buf);
+    /* Read vector */
+    buf = ReadBuffer(index, element->blkno);
+    LockBuffer(buf, BUFFER_LOCK_SHARE);
+    page = BufferGetPage(buf);
+    if (scan != NULL && HnswPageGetOpaque(page)->pageType == HNSW_USTORE_PAGE_TYPE) {
+        HnswScanOpaque so = (HnswScanOpaque)scan->opaque;
+        so->vs.buf = buf;
+        isVisible = VecVisibilityCheck(scan, page, element->offno, &needRecheck);
+    }
 
-	etup = (HnswElementTuple) PageGetItem(page, PageGetItemId(page, element->offno));
+    etup = (HnswElementTuple) PageGetItem(page, PageGetItemId(page, element->offno));
 
-	Assert(HnswIsElementTuple(etup));
+    Assert(HnswIsElementTuple(etup));
 
-	/* Calculate distance */
-	if (distance != NULL)
-	{
-		if (DatumGetPointer(*q) == NULL)
-			*distance = 0;
-		else
-			*distance = (float) DatumGetFloat8(FunctionCall2Coll(procinfo, collation, *q, PointerGetDatum(&etup->data)));
-	}
+    /* Calculate distance */
+    if (distance != NULL) {
+        if (DatumGetPointer(*q) == NULL) {
+            *distance = 0;
+        } else {
+            *distance = (float) DatumGetFloat8(FunctionCall2Coll(procinfo, collation, *q,
+                                                                 PointerGetDatum(&etup->data)));
+        }
+    }
 
-	/* Load element */
-	if (distance == NULL || maxDistance == NULL || *distance < *maxDistance)
-		HnswLoadElementFromTuple(element, etup, true, loadVec);
+    /* Load element */
+    if (distance == NULL || maxDistance == NULL || *distance < *maxDistance) {
+        HnswLoadElementFromTuple(element, etup, true, loadVec);
+    }
 
-	UnlockReleaseBuffer(buf);
+    UnlockReleaseBuffer(buf);
+    return isVisible;
 }
 
 /*
@@ -702,16 +714,22 @@ GetCandidateDistance(char *base, HnswCandidate * hc, Datum q, FmgrInfo *procinfo
  * Create a candidate for the entry point
  */
 HnswCandidate *
-HnswEntryCandidate(char *base, HnswElement entryPoint, Datum q, Relation index, FmgrInfo *procinfo, Oid collation, bool loadVec)
+HnswEntryCandidate(char *base, HnswElement entryPoint, Datum q, Relation index, FmgrInfo *procinfo,
+                   Oid collation, bool loadVec, IndexScanDesc scan)
 {
-	HnswCandidate *hc = (HnswCandidate *)palloc(sizeof(HnswCandidate));
+    HnswCandidate *hc = (HnswCandidate *)palloc(sizeof(HnswCandidate));
 
-	HnswPtrStore(base, hc->element, entryPoint);
-	if (index == NULL)
-		hc->distance = GetCandidateDistance(base, hc, q, procinfo, collation);
-	else
-		HnswLoadElement(entryPoint, &hc->distance, &q, index, procinfo, collation, loadVec, NULL);
-	return hc;
+    HnswPtrStore(base, hc->element, entryPoint);
+    if (index == NULL) {
+        hc->distance = GetCandidateDistance(base, hc, q, procinfo, collation);
+    } else {
+        bool isVisible = HnswLoadElement(entryPoint, &hc->distance, &q, index, procinfo,
+                                         collation, loadVec, NULL, scan);
+        if (!isVisible) {
+            elog(ERROR, "hnsw entryPoint is invisible\n");
+        }
+    }
+    return hc;
 }
 
 /*
@@ -828,7 +846,8 @@ CountElement(char *base, HnswElement skipElement, HnswCandidate * hc)
  * Algorithm 2 from paper
  */
 List *
-HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo, Oid collation, int m, bool inserting, HnswElement skipElement)
+HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo,
+                Oid collation, int m, bool inserting, HnswElement skipElement, IndexScanDesc scan)
 {
     List	   *w = NIL;
     pairingheap *C = pairingheap_allocate(CompareNearestCandidates, NULL);
@@ -838,6 +857,7 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
     ListCell   *lc2;
     HnswNeighborArray *neighborhoodData = NULL;
     Size		neighborhoodSize;
+    bool isVisible = true;
 
     InitVisited(base, &v, index, ef, m);
 
@@ -907,8 +927,11 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
                 if (index == NULL) {
                     eDistance = GetCandidateDistance(base, e, q, procinfo, collation);
                 } else {
-                    HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting,
-                                    alwaysAdd ? NULL : &f->distance);
+                    isVisible = HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting,
+                                                alwaysAdd ? NULL : &f->distance, scan);
+                }
+                if (!isVisible) {
+                    continue;
                 }
 
                 if (eDistance < f->distance || alwaysAdd) {
