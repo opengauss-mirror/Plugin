@@ -943,6 +943,7 @@ inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
         case AT_VisibleIndexDirect:
 #ifdef DOLPHIN
         case AT_RebuildIndex:
+        case AT_DropIndex:
 #endif
             ret = true;
             break;
