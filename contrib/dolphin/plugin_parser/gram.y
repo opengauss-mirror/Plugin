@@ -42812,7 +42812,7 @@ static void checkDeleteRelationError()
 }
 
 #ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
-#define MAX_SUPPORTED_FUNC_FOR_PART_EXPR 25
+#define MAX_SUPPORTED_FUNC_FOR_PART_EXPR 26
 #endif
 static void CheckPartitionExpr(Node* expr, int* colCount)
 {
@@ -42829,7 +42829,7 @@ static void CheckPartitionExpr(Node* expr, int* colCount)
 		CheckPartitionExpr(a_expr->lexpr, colCount);
 		CheckPartitionExpr(a_expr->rexpr, colCount);
 	} else if (expr->type == T_FuncCall) {
-		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","floor","hour",
+		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","b_extract","floor","hour",
 		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek","date_part","div"};
 		char* funcname = strVal(llast(((FuncCall*)expr)->funcname));
 		int count = 0;
