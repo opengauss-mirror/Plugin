@@ -101,7 +101,7 @@ desc res_view;
  float4 + interval 1 day       | text                        | YES  |     | NULL    | 
  float8 + interval 1 day       | text                        | YES  |     | NULL    | 
  numeric + interval 1 day      | text                        | YES  |     | NULL    | 
- date + interval 1 day         | text                        | YES  |     | NULL    | 
+ date + interval 1 day         | date                        | YES  |     | NULL    | 
  time + interval 1 day         | text                        | YES  |     | NULL    | 
  time(4) + interval 1 day      | text                        | YES  |     | NULL    | 
  datetime + interval 1 day     | timestamp without time zone | YES  |     | NULL    | 
@@ -180,7 +180,7 @@ desc res_view;
  interval 1 day + float4       | text                        | YES  |     | NULL    | 
  interval 1 day + float8       | text                        | YES  |     | NULL    | 
  interval 1 day + numeric      | text                        | YES  |     | NULL    | 
- interval 1 day + date         | text                        | YES  |     | NULL    | 
+ interval 1 day + date         | date                        | YES  |     | NULL    | 
  interval 1 day + time         | text                        | YES  |     | NULL    | 
  interval 1 day + time(4)      | text                        | YES  |     | NULL    | 
  interval 1 day + datetime     | timestamp without time zone | YES  |     | NULL    | 
@@ -259,7 +259,7 @@ desc res_view;
  float4 - interval 1 day       | text                        | YES  |     | NULL    | 
  float8 - interval 1 day       | text                        | YES  |     | NULL    | 
  numeric - interval 1 day      | text                        | YES  |     | NULL    | 
- date - interval 1 day         | text                        | YES  |     | NULL    | 
+ date - interval 1 day         | date                        | YES  |     | NULL    | 
  time - interval 1 day         | text                        | YES  |     | NULL    | 
  time(4) - interval 1 day      | text                        | YES  |     | NULL    | 
  datetime - interval 1 day     | timestamp without time zone | YES  |     | NULL    | 
@@ -281,11 +281,11 @@ create table test_def_interval_pl(
   c datetime default ('2020-01-01 00:00:00' - interval 1 day)
 );
 desc test_def_interval_pl;
- Field |              Type              | Null | Key |                      Default                       | Extra 
--------+--------------------------------+------+-----+----------------------------------------------------+-------
- a     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::text + any2interval(1, 8)) | 
- b     | timestamp(0) without time zone | YES  |     | (any2interval(1, 8) + '2020-01-01 00:00:00'::text) | 
- c     | timestamp(0) without time zone | YES  |     | ('2020-01-01 00:00:00'::text - any2interval(1, 8)) | 
+ Field |              Type              | Null | Key |                                             Default                                              | Extra 
+-------+--------------------------------+------+-----+--------------------------------------------------------------------------------------------------+-------
+ a     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone + any2interval(1, 8)) | 
+ b     | timestamp(0) without time zone | YES  |     | (any2interval(1, 8) + ('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone) | 
+ c     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone - any2interval(1, 8)) | 
 (3 rows)
 
 insert into test_def_interval_pl values(default, default, default);
@@ -411,7 +411,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -534,7 +534,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -657,7 +657,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric - interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date - interval 1 day         | text                           | YES  |     | NULL    | 
+ date - interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time - interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -727,10 +727,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: float8 + interval 1 day
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: numeric + interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: date + interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date + interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
 WARNING:  date/time field overflow
@@ -820,7 +818,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -890,10 +888,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: interval 1 day + float8
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: interval 1 day + numeric
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: interval 1 day + date
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: interval 1 day + date
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
 WARNING:  date/time field overflow
@@ -983,7 +979,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1053,10 +1049,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: float8 - interval 1 day
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: numeric - interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_sub
-SQL function "date_sub" statement 1
-referenced column: date - interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date - interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
 WARNING:  date/time field overflow
@@ -1123,10 +1117,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: float8 + interval 1 day
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: numeric + interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: date + interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date + interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
 WARNING:  date/time field overflow
@@ -1216,7 +1208,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1286,10 +1278,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: interval 1 day + float8
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: interval 1 day + numeric
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: interval 1 day + date
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: interval 1 day + date
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
 WARNING:  date/time field overflow
@@ -1379,7 +1369,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1449,10 +1439,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: float8 - interval 1 day
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: numeric - interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_sub
-SQL function "date_sub" statement 1
-referenced column: date - interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date - interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
 WARNING:  date/time field overflow
@@ -1542,7 +1530,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric - interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date - interval 1 day         | text                           | YES  |     | NULL    | 
+ date - interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time - interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1668,7 +1656,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1791,7 +1779,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -1914,7 +1902,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric - interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date - interval 1 day         | text                           | YES  |     | NULL    | 
+ date - interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time - interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2256,7 +2244,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2379,7 +2367,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2502,7 +2490,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric - interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date - interval 1 day         | text                           | YES  |     | NULL    | 
+ date - interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time - interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2572,10 +2560,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: float8 + interval 1 day
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: numeric + interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: date + interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date + interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
 WARNING:  date/time field overflow
@@ -2665,7 +2651,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2735,10 +2721,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: interval 1 day + float8
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: interval 1 day + numeric
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: interval 1 day + date
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: interval 1 day + date
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
 WARNING:  date/time field overflow
@@ -2828,7 +2812,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -2898,10 +2882,8 @@ WARNING:  Incorrect datetime value: "0"
 CONTEXT:  referenced column: float8 - interval 1 day
 WARNING:  Incorrect datetime value: "0.000000"
 CONTEXT:  referenced column: numeric - interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_sub
-SQL function "date_sub" statement 1
-referenced column: date - interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date - interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
 WARNING:  date/time field overflow
@@ -2968,10 +2950,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: float8 + interval 1 day
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: numeric + interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: date + interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date + interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime + interval 1 day
 WARNING:  date/time field overflow
@@ -3061,7 +3041,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric + interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date + interval 1 day         | text                           | YES  |     | NULL    | 
+ date + interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time + interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -3131,10 +3111,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: interval 1 day + float8
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: interval 1 day + numeric
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_add
-SQL function "date_add" statement 1
-referenced column: interval 1 day + date
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: interval 1 day + date
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: interval 1 day + datetime
 WARNING:  date/time field overflow
@@ -3224,7 +3202,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  interval 1 day + numeric      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- interval 1 day + date         | text                           | YES  |     | NULL    | 
+ interval 1 day + date         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  interval 1 day + time         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
@@ -3294,10 +3272,8 @@ WARNING:  Incorrect datetime value: "-1"
 CONTEXT:  referenced column: float8 - interval 1 day
 WARNING:  Incorrect datetime value: "-1.000000"
 CONTEXT:  referenced column: numeric - interval 1 day
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_sub
-SQL function "date_sub" statement 1
-referenced column: date - interval 1 day
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: date - interval 1 day
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: datetime - interval 1 day
 WARNING:  date/time field overflow
@@ -3387,7 +3363,7 @@ desc res_tab;
  numeric                       | numeric(20,6)                  | YES  |     | NULL    | 
  numeric - interval 1 day      | text                           | YES  |     | NULL    | 
  date                          | date                           | YES  |     | NULL    | 
- date - interval 1 day         | text                           | YES  |     | NULL    | 
+ date - interval 1 day         | date                           | YES  |     | NULL    | 
  time                          | time(0) without time zone      | YES  |     | NULL    | 
  time - interval 1 day         | text                           | YES  |     | NULL    | 
  time(4)                       | time(4) without time zone      | YES  |     | NULL    | 
