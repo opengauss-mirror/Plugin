@@ -1572,6 +1572,24 @@ select * from t_select_0019_p1;
 
 drop table t_select_0019;
 drop table t_select_0019_p1; 
+-- extract
+create table t_partition_range_0181_1( id int not null, ename varchar(30), hired date not null default '1970-01-01', separated date not null default '9999-12-31', job varchar(30) not null, store_id int not null ) partition by range(extract(year from separated))( partition p0 values less than (1995), partition p1 values less than (2000), partition p2 values less than (2005));
+create table t_partition_range_0181_2( id int, purchased date ) partition by range(year(purchased)) subpartition by hash(id)( partition p0 values less than (1990) ( subpartition s0, subpartition s1), partition p1 values less than (2000) ( subpartition s2, subpartition s3), partition p2 values less than (maxvalue) ( subpartition s4, subpartition s5));
+select relname, parttype, partstrategy, boundaries,reltablespace,intervaltablespace,`interval`,transit from pg_partition where parentid in (select oid from pg_class where relname like 't_partition_range_0181%');
+         relname          | parttype | partstrategy | boundaries | reltablespace | intervaltablespace | interval | transit 
+--------------------------+----------+--------------+------------+---------------+--------------------+----------+---------
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(8 rows)
+
+drop table t_partition_range_0181_1;
+drop table t_partition_range_0181_2;
 drop schema partition_test1 cascade;
 NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to table test_part_list
