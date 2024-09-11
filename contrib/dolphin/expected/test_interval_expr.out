@@ -965,6 +965,187 @@ CONTEXT:  referenced column: date_sub
 (1 row)
 
 set dolphin.cmpt_version=5.7;
+-- 运算
+select '2024-07-05 14:25:59' + interval 1 minute + 1;
+    ?column?    
+----------------
+ 20240705142660
+(1 row)
+
+select '2024-07-05' + interval 1 minute + 1;
+    ?column?    
+----------------
+ 20240705000101
+(1 row)
+
+select '2024-07-05 14:25:59' + interval 1 year + 1;
+    ?column?    
+----------------
+ 20250705142560
+(1 row)
+
+select '2024-07-05' + interval 1 year + 1;
+ ?column? 
+----------
+ 20250706
+(1 row)
+
+select '2024-07-05 14:25:59' + interval 1 day + 1;
+    ?column?    
+----------------
+ 20240706142560
+(1 row)
+
+select '2024-07-05' + interval 1 day + 1;
+ ?column? 
+----------
+ 20240707
+(1 row)
+
+select '2024-07-05 14:25:59' + interval 1 year_month + 1;
+    ?column?    
+----------------
+ 20240805142560
+(1 row)
+
+select '2024-07-05' + interval 1 year_month + 1;
+ ?column? 
+----------
+ 20240806
+(1 row)
+
+select '2024-07-05 14:25:59' + interval 1 day_hour + 1;
+    ?column?    
+----------------
+ 20240705152560
+(1 row)
+
+select '2024-07-05' + interval 1 day_hour + 1;
+    ?column?    
+----------------
+ 20240705010001
+(1 row)
+
+select interval 1 minute + '2024-07-05 14:25:59' + 1;
+    ?column?    
+----------------
+ 20240705142660
+(1 row)
+
+select interval 1 minute + '2024-07-05' + 1;
+    ?column?    
+----------------
+ 20240705000101
+(1 row)
+
+select interval 1 year +'2024-07-05 14:25:59' + 1;
+    ?column?    
+----------------
+ 20250705142560
+(1 row)
+
+select interval 1 year + '2024-07-05' + 1;
+ ?column? 
+----------
+ 20250706
+(1 row)
+
+select interval 1 day + '2024-07-05 14:25:59' + 1;
+    ?column?    
+----------------
+ 20240706142560
+(1 row)
+
+select interval 1 day + '2024-07-05' + 1;
+ ?column? 
+----------
+ 20240707
+(1 row)
+
+select interval 1 year_month + '2024-07-05 14:25:59' + 1;
+    ?column?    
+----------------
+ 20240805142560
+(1 row)
+
+select interval 1 year_month + '2024-07-05' + interval 1 year_month + 1;
+ ?column? 
+----------
+ 20240906
+(1 row)
+
+select interval 1 day_hour + '2024-07-05 14:25:59' + 1;
+    ?column?    
+----------------
+ 20240705152560
+(1 row)
+
+select interval 1 day_hour + '2024-07-05' + 1;
+    ?column?    
+----------------
+ 20240705010001
+(1 row)
+
+select '2024-07-05 14:25:59' - interval 1 minute + 1;
+    ?column?    
+----------------
+ 20240705142460
+(1 row)
+
+select '2024-07-05' - interval 1 minute + 1;
+    ?column?    
+----------------
+ 20240704235901
+(1 row)
+
+select '2024-07-05 14:25:59' - interval 1 year + 1;
+    ?column?    
+----------------
+ 20230705142560
+(1 row)
+
+select '2024-07-05' - interval 1 year + 1;
+ ?column? 
+----------
+ 20230706
+(1 row)
+
+select '2024-07-05 14:25:59' - interval 1 day + 1;
+    ?column?    
+----------------
+ 20240704142560
+(1 row)
+
+select '2024-07-05' - interval 1 day + 1;
+ ?column? 
+----------
+ 20240705
+(1 row)
+
+select '2024-07-05 14:25:59' - interval 1 year_month + 1;
+    ?column?    
+----------------
+ 20240605142560
+(1 row)
+
+select '2024-07-05' - interval 1 year_month + 1;
+ ?column? 
+----------
+ 20240606
+(1 row)
+
+select '2024-07-05 14:25:59' - interval 1 day_hour + 1;
+    ?column?    
+----------------
+ 20240705132560
+(1 row)
+
+select '2024-07-05' - interval 1 day_hour + 1;
+    ?column?    
+----------------
+ 20240704230001
+(1 row)
+
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,

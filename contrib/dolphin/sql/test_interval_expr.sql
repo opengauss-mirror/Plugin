@@ -228,6 +228,38 @@ select date_sub(time'38:59:58', interval '5 4' hour_second);
 select date_sub(time'38:59:58', interval '5 4' minute_second);
 select date_sub(time'38:59:58', interval '5 4' week);
 set dolphin.cmpt_version=5.7;
+
+-- 运算
+select '2024-07-05 14:25:59' + interval 1 minute + 1;
+select '2024-07-05' + interval 1 minute + 1;
+select '2024-07-05 14:25:59' + interval 1 year + 1;
+select '2024-07-05' + interval 1 year + 1;
+select '2024-07-05 14:25:59' + interval 1 day + 1;
+select '2024-07-05' + interval 1 day + 1;
+select '2024-07-05 14:25:59' + interval 1 year_month + 1;
+select '2024-07-05' + interval 1 year_month + 1;
+select '2024-07-05 14:25:59' + interval 1 day_hour + 1;
+select '2024-07-05' + interval 1 day_hour + 1;
+select interval 1 minute + '2024-07-05 14:25:59' + 1;
+select interval 1 minute + '2024-07-05' + 1;
+select interval 1 year +'2024-07-05 14:25:59' + 1;
+select interval 1 year + '2024-07-05' + 1;
+select interval 1 day + '2024-07-05 14:25:59' + 1;
+select interval 1 day + '2024-07-05' + 1;
+select interval 1 year_month + '2024-07-05 14:25:59' + 1;
+select interval 1 year_month + '2024-07-05' + interval 1 year_month + 1;
+select interval 1 day_hour + '2024-07-05 14:25:59' + 1;
+select interval 1 day_hour + '2024-07-05' + 1;
+select '2024-07-05 14:25:59' - interval 1 minute + 1;
+select '2024-07-05' - interval 1 minute + 1;
+select '2024-07-05 14:25:59' - interval 1 year + 1;
+select '2024-07-05' - interval 1 year + 1;
+select '2024-07-05 14:25:59' - interval 1 day + 1;
+select '2024-07-05' - interval 1 day + 1;
+select '2024-07-05 14:25:59' - interval 1 year_month + 1;
+select '2024-07-05' - interval 1 year_month + 1;
+select '2024-07-05 14:25:59' - interval 1 day_hour + 1;
+select '2024-07-05' - interval 1 day_hour + 1;
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,
