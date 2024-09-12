@@ -96,6 +96,12 @@ drop role test_proxy_u1;
 drop role test_proxy_u2;
 drop role test_proxy_u3;
 
+-- test PROXY as colname
+create table t1 (proxy int);
+insert into t1 values (1);
+select proxy from t1;
+drop table t1;
+
 drop schema db_proxy cascade;
 drop schema tst_schema1 cascade;
 reset current_schema;
