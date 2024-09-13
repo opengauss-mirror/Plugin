@@ -540,4 +540,28 @@ create index bmu1 on t1(a);
 explain (costs off) select count(a) from t1 ignore index(bdx);
 explain (costs off) select count(a) from t1 ignore index(bmu);
 explain (costs off) select count(a) from t1 ignore index(bm);
+
+-- with rollup
+
+create table table_json_a(SITE_NAME_I18N json);
+insert into table_json_a values('{"i18nValue": {"en_US": "测试字符串-en", "es_ES": "测试字符串01-es", "ja_JP": "PDC测试字符串01-jp", "zh_CN": "PDC测试字符串01-zh"}, "defaultValue": "PDC测试字符串01"}');
+insert into table_json_a values ('{"i18nValue": {"en_US": "WF001-大熊猫-EN", "es_ES": "", "ja_JP": "", "zh_CN": ""}, "defaultValue": "WF001-大熊猫"}');
+insert into table_json_a values ('{"i18nValue": {"en_US": "WF001-10-us", "es_ES": "WF001-10-es", "ja_JP": "WF001-10-jp", "zh_CN": "WF001-10-cn"}, "defaultValue": "WF001-10"}');
+insert into table_json_a values ('{"i18nValue": {"en_US": "WF001一期-en", "es_ES": "WF001一期-ES", "ja_JP": "WF001一期-JP", "zh_CN": "WF001一期-zh"}, "defaultValue": "WF001一期"}');
+
+
+CREATE TABLE table_json_b (name_i18n json);
+insert into table_json_b values('{"i18nValue": {"en_US": "测试字符串-en", "es_ES": "测试字符串01-es", "ja_JP": "PDC测试字符串01-jp", "zh_CN": "PDC测试字符串01-zh"}, "defaultValue": "PDC测试字符串01"}');
+insert into table_json_b values ('{"i18nValue": {"en_US": "WF001-大熊猫-EN", "es_ES": "", "ja_JP": "", "zh_CN": ""}, "defaultValue": "WF001-大熊猫"}');
+insert into table_json_b values ('{"i18nValue": {"en_US": "WF001-10-us", "es_ES": "WF001-10-es", "ja_JP": "WF001-10-jp", "zh_CN": "WF001-10-cn"}, "defaultValue": "WF001-10"}');
+insert into table_json_b values ('{"i18nValue": {"en_US": "WF001一期-en", "es_ES": "WF001一期-ES", "ja_JP": "WF001一期-JP", "zh_CN": "WF001一期-zh"}, "defaultValue": "WF001一期"}');
+
+
+select count(*) from table_json_a,table_json_b group by
+  coalesce(table_json_b.NAME_I18N->>'$.i18nValue.zh_CN',  table_json_b.NAME_I18N->>'$.defaultValue'),
+  coalesce(table_json_a.SITE_NAME_I18N->>'$.i18nValue.zh_CN', table_json_a.SITE_NAME_I18N->>'$.defaultValue') with rollup;
+
+drop table table_json_a;
+drop table table_json_b;
+
 drop table t1;

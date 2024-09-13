@@ -43378,6 +43378,9 @@ static List* GetNameListFromDolphinString(List* dolphinStringList)
  */
 static void with_rollup_check_elems_count(Node* expr)
 {
+	if (IsA(expr, CoalesceExpr)) {
+		return;
+	}
 	/* check if expr has multiple column with parenthesis */
 	if (!IsA(expr, ColumnRef)) {
 		if (IsA(expr, RowExpr)) {
