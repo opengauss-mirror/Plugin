@@ -63,6 +63,8 @@
 #include "plugin_utils/varlena.h"
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_utils/varlena.h"
+#include "plugin_utils/datetime.h"
+#include "plugin_utils/timestamp.h"
 #endif
 #include "tcop/tcopprot.h"
 
@@ -199,6 +201,62 @@ void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
             *rexpr = coerce_to_target_type(
                 *pstate, *rexpr, rightType, FLOAT8OID, rightTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         }
+    }
+}
+
+/* Get result oid of interval operation when dealling with UNKNOWN*/
+Oid GetIntervalOpOid(Node* lexpr, Node* rexpr)
+{
+    if (!ENABLE_B_CMPT_MODE || lexpr->type != T_Const || ((Const*)lexpr)->constisnull || rexpr->type != T_FuncExpr) {
+        return UNKNOWNOID;
+    }
+
+    Const* cons = (Const*)lexpr;
+    char* timeval = DatumGetCString(cons->constvalue);
+    FuncExpr* func = (FuncExpr*)rexpr;
+
+    if (list_length(func->args) < 2) {
+        return UNKNOWNOID;
+    }
+    
+    Node* arg = (Node *)lsecond(func->args);
+    Const* const_type = (Const*)arg;
+    int int_type = DatumGetInt32(const_type->constvalue);
+
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tm_type = DTK_NONE;
+
+    if (!cstring_to_tm(timeval, tm, fsec, tm_type)) {
+        return UNKNOWNOID;
+    }
+
+    if (tm_type == DTK_DATE && (int_type & (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)
+        | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) == 0) {
+        return DATEOID;
+    } else {
+        return TIMESTAMPOID;
+    }
+}
+
+void DealWithIntervalType(ParseState** pstate, Node** lexpr, Node** rexpr, char* opername)
+{
+    
+    Oid leftType = exprType(*lexpr);
+    Oid rightType = exprType(*rexpr);
+
+    if (leftType == UNKNOWNOID && rightType == INTERVALOID && strcmp(opername, "+") == 0) {
+        *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
+            GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    }
+    if (rightType == UNKNOWNOID && leftType == INTERVALOID && strcmp(opername, "+") == 0) {
+        *rexpr = coerce_to_target_type(*pstate, *rexpr, UNKNOWNOID,
+            GetIntervalOpOid(*rexpr, *lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    }
+    if (leftType == UNKNOWNOID && rightType == INTERVALOID && strcmp(opername, "-") == 0) {
+        *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
+            GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
     }
 }
 
@@ -1632,6 +1690,7 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
         if (strcmp(strVal(linitial(a->name)), "=") == 0) {
             DealWithBoolType(&pstate, &lexpr, &rexpr);
         }
+        DealWithIntervalType(&pstate, &lexpr, &rexpr, strVal(linitial(a->name)));
         CoerceConstToTargetType(&pstate, &lexpr, &rexpr, a, strVal(linitial(a->name)));
 #endif
         result = (Node*)make_op(pstate, a->name, lexpr, rexpr, last_srf, a->location);

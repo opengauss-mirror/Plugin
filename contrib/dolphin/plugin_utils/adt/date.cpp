@@ -318,6 +318,9 @@ extern "C" DLL_PUBLIC Datum date_add_datetime_interval(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_add_timestamp_interval);
 extern "C" DLL_PUBLIC Datum date_add_timestamp_interval(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(date_add_date_interval);
+extern "C" DLL_PUBLIC Datum date_add_date_interval(PG_FUNCTION_ARGS);
+
 extern Datum DirectFunctionCall0(PGFunction func);
 #endif
 /* common code for timetypmodin and timetztypmodin */
@@ -6463,6 +6466,24 @@ Datum date_add_timestamp_interval(PG_FUNCTION_ARGS)
     Timestamp result;
     if (datetime_add_interval(datetime, span, &result)) {
         return DirectFunctionCall1Coll(timestamp_timestamptz, InvalidOid, result, fcinfo->can_ignore);
+    }
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * date_add(date, INTERVAL expr UNIT)
+*/
+Datum date_add_date_interval(PG_FUNCTION_ARGS)
+{
+    int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
+    DateADT date = PG_GETARG_DATEADT(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    Timestamp datetime = DatumGetTimestamp(DirectFunctionCall1Coll(date_timestamp, InvalidOid,
+                                                                   date, fcinfo->can_ignore));
+    Timestamp result;
+    if (datetime_add_interval(datetime, span, &result)) {
+        return DirectFunctionCall1Coll(timestamp_date, InvalidOid, result, fcinfo->can_ignore);
     }
     ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
