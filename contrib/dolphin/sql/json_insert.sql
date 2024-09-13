@@ -76,5 +76,24 @@ insert into test values
 (JSON_INSERT('{"a": 43, "b": {"c": true}}', '$.b[4]', 'Test'));
 select * from test;
 
+
+create table t_json(c1 json);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::text);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::varchar);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::char(30));
+insert into t_json values ('{"k1":"v1","k2"}'::text);
+insert into t_json values ('{"k1":"v1","k2"}'::varchar);
+insert into t_json values ('{"k1":"v1","k2"}'::char(30));
+select * from t_json;
+update t_json set c1 = '{"k1":"v1","k3":"v3"}'::text;
+update t_json set c1 = '{"k1":"v1","k4":"v4"}'::varchar;
+update t_json set c1 = '{"k1":"v1","k4":"v4"}'::char(30);
+select * from t_json;
+
+insert ignore into t_json values ('{"k1":"v1","k2"}'::text);
+insert ignore into t_json values ('{"k1":"v1","k2"}'::varchar);
+insert ignore into t_json values ('{"k1":"v1","k2"}'::char(30));
+
+drop table t_json;
 drop schema test_json_insert cascade;
 reset current_schema;

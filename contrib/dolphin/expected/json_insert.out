@@ -210,5 +210,59 @@ select * from test;
  {"a": 43, "b": [{"c": true}, "Test"]}
 (5 rows)
 
+create table t_json(c1 json);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::text);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::varchar);
+insert into t_json values ('{"k1":"v1","k2":"v2"}'::char(30));
+insert into t_json values ('{"k1":"v1","k2"}'::text);
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+insert into t_json values ('{"k1":"v1","k2"}'::varchar);
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+insert into t_json values ('{"k1":"v1","k2"}'::char(30));
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+select * from t_json;
+          c1           
+-----------------------
+ {"k1":"v1","k2":"v2"}
+ {"k1":"v1","k2":"v2"}
+ {"k1":"v1","k2":"v2"}
+(3 rows)
+
+update t_json set c1 = '{"k1":"v1","k3":"v3"}'::text;
+update t_json set c1 = '{"k1":"v1","k4":"v4"}'::varchar;
+update t_json set c1 = '{"k1":"v1","k4":"v4"}'::char(30);
+select * from t_json;
+          c1           
+-----------------------
+ {"k1":"v1","k4":"v4"}
+ {"k1":"v1","k4":"v4"}
+ {"k1":"v1","k4":"v4"}
+(3 rows)
+
+insert ignore into t_json values ('{"k1":"v1","k2"}'::text);
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+insert ignore into t_json values ('{"k1":"v1","k2"}'::varchar);
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+insert ignore into t_json values ('{"k1":"v1","k2"}'::char(30));
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"k1":"v1","k2"}
+referenced column: c1
+drop table t_json;
 drop schema test_json_insert cascade;
 reset current_schema;

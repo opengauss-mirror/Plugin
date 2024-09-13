@@ -2965,4 +2965,28 @@ Datum cast_json(PG_FUNCTION_ARGS)
     datum_to_json(val, false, result, tcategory, typoutput, false);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_json);
+extern "C" DLL_PUBLIC Datum text_json(PG_FUNCTION_ARGS);
+Datum text_json(PG_FUNCTION_ARGS)
+{
+    text* input = PG_GETARG_TEXT_P(0);
+    char* str = TextDatumGetCString(input);
+    // error will not be ignored in mysql for json type
+    return DirectFunctionCall1(json_in, CStringGetDatum(str));
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_json);
+extern "C" DLL_PUBLIC Datum varchar_json(PG_FUNCTION_ARGS);
+Datum varchar_json(PG_FUNCTION_ARGS)
+{
+    Datum input = PG_GETARG_DATUM(0);
+    char* str = NULL;
+    str = DatumGetCString(DirectFunctionCall1(varcharout, input));
+    // error will not be ignored in mysql for json type
+    return DirectFunctionCall1(json_in, CStringGetDatum(str));
+}
+
 #endif

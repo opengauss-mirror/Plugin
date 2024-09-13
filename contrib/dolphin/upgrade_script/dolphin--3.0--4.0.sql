@@ -2044,3 +2044,10 @@ DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4, "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int8) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int8, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';
+
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_json(varchar) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varchar_json';
+CREATE CAST (varchar as json) WITH FUNCTION pg_catalog.varchar_json(varchar) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_json(text) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_json';
+CREATE CAST (text as json) WITH FUNCTION pg_catalog.varchar_json(text) AS ASSIGNMENT;
+
