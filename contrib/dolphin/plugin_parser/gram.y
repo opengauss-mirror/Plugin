@@ -10225,6 +10225,7 @@ TypedTableElement:
 ColIdForTableElement:	DOLPHINIDENT				{ $$ = $1->str; }
 			| unreserved_keyword_without_key		{ $$ = pstrdup($1); }
 			| col_name_keyword				{ $$ = pstrdup($1); }
+			| PROXY							{ $$ = pstrdup($1); }
 		;
 
 columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList
