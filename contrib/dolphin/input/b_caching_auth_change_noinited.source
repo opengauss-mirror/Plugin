@@ -1,0 +1,30 @@
+-- bug #IAN93O test,change password without initializing plugin
+--begin:close enable_dolphin_proto
+\! @abs_bindir@/gs_guc set -D @abs_srcdir@/tmp_check/datanode1/ -c "enable_dolphin_proto=off" > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl stop -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl start -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! sleep 5
+--end
+
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "create database dbmysql with dbcompatibility 'B'";
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "DROP USER IF EXISTS caching_user";
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "CREATE USER caching_user WITH PASSWORD 'Gauss@123'";
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "GRANT ALL PRIVILEGES TO caching_user";
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "GRANT ALL ON SCHEMA dbe_perf TO caching_user";
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "SET ROLE caching_user PASSWORD 'Gauss@123'";
+
+-- set password for caching_sha2_password authentication first
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "select replace(set_caching_sha2_password('caching_user', 'Gauss@123', ''),E'\n','X')";
+
+-- change password for caching_sha2_password authentication
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "select replace(set_caching_sha2_password('caching_user', 'Gauss@admin', 'Gauss@123'),E'\n','X')";
+
+-- change password for caching_sha2_password authentication
+\! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "select replace(set_caching_sha2_password('caching_user', 'Gauss@123', 'Gauss@admin'),E'\n','X')";
+
+--begin:open enable_dolphin_proto
+\! @abs_bindir@/gs_guc set -D @abs_srcdir@/tmp_check/datanode1/ -c "enable_dolphin_proto=on" > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl stop -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl start -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! sleep 5
+--end
