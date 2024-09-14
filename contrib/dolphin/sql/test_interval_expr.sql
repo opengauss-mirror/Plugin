@@ -67,6 +67,12 @@ select interval '1 2 3' minute_microsecond;
 select interval '1 2 3' minute to microsecond;
 select interval '1 2' second_microsecond;
 select interval '1 2' second to microsecond;
+select interval 1 year year;
+select interval 1 month month;
+select interval 1 day day;
+select interval 1 hour hour;
+select interval 1 minute minute;
+select interval 1 second second;
 
 create table k_1(a json,b blob,c longblob,d mediumblob,e tinyblob,f binary(20));
 insert k_1 values('"2024-01-11 11:49:25"','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25');
@@ -229,6 +235,14 @@ select date_sub(time'38:59:58', interval '5 4' minute_second);
 select date_sub(time'38:59:58', interval '5 4' week);
 set dolphin.cmpt_version=5.7;
 
+select date_add('2022-06-10 15:15:15', -10::interval year ) as updated_date;
+select date_sub('2022-06-10 15:15:15', -10::interval year ) as updated_date;
+select date_add('2022-06-10 15:15:15', -10::interval hour ) as updated_date;
+select date_sub('2022-06-10 15:15:15', -10::interval hour ) as updated_date;
+select date_add('2022-06-10 15:15:15', 10::interval year ) as updated_date;
+select date_sub('2022-06-10 15:15:15', 10::interval year ) as updated_date;
+select date_add('2022-06-10 15:15:15', 10::interval hour ) as updated_date;
+select date_sub('2022-06-10 15:15:15', 10::interval hour ) as updated_date;
 -- 运算
 select '2024-07-05 14:25:59' + interval 1 minute + 1;
 select '2024-07-05' + interval 1 minute + 1;

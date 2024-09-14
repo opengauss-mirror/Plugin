@@ -948,7 +948,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	columnDef columnOptions columnDefForTableElement
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
-                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
+                                a_expr a_expr_without_interval a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
                                 columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params func_table_with_table
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
@@ -20493,7 +20493,7 @@ interval_list: opt_interval_cell						{ $$ = $1; }
 opt_interval_cell: interval_cell
 			| /* EMPTY */ 				{ $$ = NULL; }
 
-interval_cell:  INTERVAL a_expr interval_unit
+interval_cell:  INTERVAL a_expr_without_interval interval_unit
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("any2interval");
@@ -34032,7 +34032,10 @@ client_logic_type:
  * c_expr is all the productions that are common to a_expr and b_expr;
  * it's factored out just to eliminate redundant coding.
  */
-a_expr:		a_expr_without_sconst 	{ $$ = $1; }
+a_expr:		a_expr_without_interval 	{ $$ = $1; }
+			| interval_cell
+		;
+a_expr_without_interval:		a_expr_without_sconst 	{ $$ = $1; }
 			/* Sconst precedence should lower than SCONST, so when we meet SCONST, we will try to do shift, to read more SCONST as possible */
 			|	Sconst %prec TEXT_P { $$ = makeStringConst($1, @1); }
 		;
@@ -34109,7 +34112,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| a_expr '=' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-			| interval_cell
+
 			| a_expr '@' a_expr
 				 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| a_expr CmpNullOp a_expr    	%prec CmpNullOp
@@ -37001,7 +37004,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| DATE_ADD_P '(' a_expr ',' INTERVAL a_expr interval_unit ')'
+			| DATE_ADD_P '(' a_expr ',' INTERVAL a_expr_without_interval interval_unit ')'
 				{
 					bool isGreatThanHour = GreaterThanHour($7);
 					FuncCall *n1 = makeNode(FuncCall);
@@ -37028,7 +37031,22 @@ func_expr_common_subexpr:
 
 					$$ = (Node *)n2;
 				}
-			| DATE_SUB_P '(' a_expr ',' INTERVAL a_expr interval_unit ')'
+			| DATE_ADD_P '(' a_expr ',' a_expr_without_interval ')'
+				{
+					FuncCall *n2 = makeNode(FuncCall);
+					n2->funcname = SystemFuncName("date_add");
+					n2->args = list_make2($3, $5);
+					n2->agg_order = NIL;
+					n2->agg_star = FALSE;
+					n2->agg_distinct = FALSE;
+					n2->func_variadic = FALSE;
+					n2->over = NULL;
+					n2->location = @1;
+					n2->call_func = false;
+
+					$$ = (Node *)n2;
+				}
+			| DATE_SUB_P '(' a_expr ',' INTERVAL a_expr_without_interval interval_unit ')'
 				{
 					bool isGreatThanHour = GreaterThanHour($7);
 					FuncCall *n1 = makeNode(FuncCall);
@@ -37045,6 +37063,21 @@ func_expr_common_subexpr:
 					FuncCall *n2 = makeNode(FuncCall);
 					n2->funcname = SystemFuncName("date_sub");
 					n2->args = list_make3($3, (Node *)n1, makeBoolAConst(isGreatThanHour, @7));
+					n2->agg_order = NIL;
+					n2->agg_star = FALSE;
+					n2->agg_distinct = FALSE;
+					n2->func_variadic = FALSE;
+					n2->over = NULL;
+					n2->location = @1;
+					n2->call_func = false;
+
+					$$ = (Node *)n2;
+				}
+			| DATE_SUB_P '(' a_expr ',' a_expr_without_interval ')'
+				{
+					FuncCall *n2 = makeNode(FuncCall);
+					n2->funcname = SystemFuncName("date_sub");
+					n2->args = list_make2($3, $5);
 					n2->agg_order = NIL;
 					n2->agg_star = FALSE;
 					n2->agg_distinct = FALSE;
@@ -38337,6 +38370,22 @@ target_el:	a_expr AS DolphinColLabel
                                 {
                                         $$ = (ResTarget*) $1;
                                 }
+			| interval_cell
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = pstrdup("interval");
+					$$->indirection = NIL;
+					$$->val = (Node *)$1;
+					$$->location = @1;
+				}
+			| interval_cell SCONST
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = $2;
+					$$->indirection = NIL;
+					$$->val = (Node *)$1;
+					$$->location = @1;
+				}
 		;
 
 connect_by_root_expr:   a_expr normal_ident '.' normal_ident
