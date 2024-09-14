@@ -248,7 +248,7 @@ void server_listen_init(void)
         AutoMutexLock UserCachedLinesHashLock(&gUserCachedLinesHashLock);
         UserCachedLinesHashLock.lock();
         if (b_UserCachedLinesHash == NULL) {
-        InitUserCachedLinesHashTable();
+            InitUserCachedLinesHashTable();
         }
         UserCachedLinesHashLock.unLock();
     }
@@ -471,6 +471,11 @@ UserCachedLinesHash* UserCachedLinesHashTableAccess(HASHACTION action, char* use
 
     if (!user_name) {
         ereport(ERROR, (errmsg("the user name is NULL")));
+    }
+    
+    // Ensure that the hash table can be accessed even without initializing the plugin
+    if (b_UserCachedLinesHash == NULL) {
+        InitUserCachedLinesHashTable();
     }
 
     result = (UserCachedLinesHash*)hash_search(b_UserCachedLinesHash, user_name, action, &found);
