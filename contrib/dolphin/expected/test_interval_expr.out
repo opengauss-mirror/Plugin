@@ -292,6 +292,42 @@ select interval '1 2' second_microsecond;
 
 select interval '1 2' second to microsecond;
 ERROR:  interval second to microsecond is not supported
+select interval 1 year year;
+   year   
+----------
+ @ 1 year
+(1 row)
+
+select interval 1 month month;
+  month  
+---------
+ @ 1 mon
+(1 row)
+
+select interval 1 day day;
+   day   
+---------
+ @ 1 day
+(1 row)
+
+select interval 1 hour hour;
+   hour   
+----------
+ @ 1 hour
+(1 row)
+
+select interval 1 minute minute;
+ minute  
+---------
+ @ 1 min
+(1 row)
+
+select interval 1 second second;
+ second  
+---------
+ @ 1 sec
+(1 row)
+
 create table k_1(a json,b blob,c longblob,d mediumblob,e tinyblob,f binary(20));
 insert k_1 values('"2024-01-11 11:49:25"','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25');
 select `a`+  interval 1 day,`b`+  interval 1 day,`c`+ interval 1 day,`d`+ interval 1 day,`e`+ interval 1 day,`f`+ interval 1 day from k_1;
@@ -965,6 +1001,54 @@ CONTEXT:  referenced column: date_sub
 (1 row)
 
 set dolphin.cmpt_version=5.7;
+select date_add('2022-06-10 15:15:15', -10::interval year ) as updated_date;
+    updated_date     
+---------------------
+ 2012-06-10 15:15:15
+(1 row)
+
+select date_sub('2022-06-10 15:15:15', -10::interval year ) as updated_date;
+    updated_date     
+---------------------
+ 2032-06-10 15:15:15
+(1 row)
+
+select date_add('2022-06-10 15:15:15', -10::interval hour ) as updated_date;
+    updated_date     
+---------------------
+ 2022-06-10 05:15:15
+(1 row)
+
+select date_sub('2022-06-10 15:15:15', -10::interval hour ) as updated_date;
+    updated_date     
+---------------------
+ 2022-06-11 01:15:15
+(1 row)
+
+select date_add('2022-06-10 15:15:15', 10::interval year ) as updated_date;
+    updated_date     
+---------------------
+ 2032-06-10 15:15:15
+(1 row)
+
+select date_sub('2022-06-10 15:15:15', 10::interval year ) as updated_date;
+    updated_date     
+---------------------
+ 2012-06-10 15:15:15
+(1 row)
+
+select date_add('2022-06-10 15:15:15', 10::interval hour ) as updated_date;
+    updated_date     
+---------------------
+ 2022-06-11 01:15:15
+(1 row)
+
+select date_sub('2022-06-10 15:15:15', 10::interval hour ) as updated_date;
+    updated_date     
+---------------------
+ 2022-06-10 05:15:15
+(1 row)
+
 -- 运算
 select '2024-07-05 14:25:59' + interval 1 minute + 1;
     ?column?    
