@@ -64,6 +64,10 @@ message(STATUS "Install method is '${PROJECT_INSTALL_METHOD}'")
 
 option(TS_COVERAGE_ONLY "run in debug mode with assertions disabled to provide more accurate test-coverage info")
 
+# add security compilation options
+add_compile_options(-fstack-protector-strong)
+add_link_options(-Wl,-z,relro,-z,now)
+
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   # CMAKE_BUILD_TYPE is set at CMake configuration type. But usage of CMAKE_C_FLAGS_DEBUG is
   # determined at build time by running cmake --build . --config Debug (at least on Windows).
