@@ -319,8 +319,8 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
             }
         } else {
             coll_tup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, 0);
-#ifndef DOLPHIN
             charset = ((Form_pg_collation)GETSTRUCT(coll_tup))->collencoding;
+#ifndef DOLPHIN
             if (!is_attr && charset == PG_INVALID_ENCODING) {
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("collation \"%s\" have no corresponding encoding", collate)));
