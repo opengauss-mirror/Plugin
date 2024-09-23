@@ -2830,7 +2830,8 @@ bool plpgsql_parse_dblword(char* word1, char* word2, PLwdatum* wdatum, PLcword* 
                             }
                         }
                         if (!exist) {
-                            break;
+                            ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_UNDEFINED_COLUMN),
+                                            errmsg("record \"%s\" has no field \"%s\"", rec->refname, word2)));
                         }
                     }
                 }
@@ -3916,6 +3917,7 @@ PLpgSQL_variable* plpgsql_build_variable(const char* refname, int lineno, PLpgSQ
         }
         case PLPGSQL_TTYPE_CURSORROW: {
             PLpgSQL_rec* rec = (PLpgSQL_rec*)palloc0(sizeof(PLpgSQL_rec));
+            rec->field_need_check = NIL;
             rec->dtype = PLPGSQL_DTYPE_CURSORROW;
             rec->refname = pstrdup(refname);
             rec->lineno = lineno;
@@ -3942,8 +3944,9 @@ PLpgSQL_variable* plpgsql_build_variable(const char* refname, int lineno, PLpgSQ
                                       rec->tupdesc->natts * sizeof(bool));
                         securec_check(rc, "\0", "\0");
                         rec->tup = (HeapTuple)tableam_tops_form_tuple(rec->tupdesc, NULL, nulls);
-                        rec->freetupdesc = (rec->tupdesc != NULL) ? true : false;
-                        rec->freetup = (rec->tup != NULL) ? true : false;
+                        /* compile_tmp_cx will automatically free, there is no need to set free mark. */
+                        rec->freetupdesc = false;
+                        rec->freetup = false;
                         pfree_ext(nulls);
                     }
 
