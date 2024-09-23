@@ -141,7 +141,7 @@ int dophin_conn_handshake(Port* port)
     pq_flush();
 
     // read user login request packet
-    if (dq_getmessage(buf, 0) != STATUS_OK) {
+    if (dq_special_getmessage(buf, port) != STATUS_OK) {
         return EOF;
     }
     
