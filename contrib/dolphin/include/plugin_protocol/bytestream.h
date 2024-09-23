@@ -24,6 +24,7 @@
 
 #include "postgres.h"
 #include "lib/stringinfo.h"
+#include "libpq/libpq-be.h"
 
 #define MAX_LEN_ENCODE_BYTE 251
 #define MAX_LEN_ENCODE_2_BYTE 65536
