@@ -608,6 +608,12 @@ CTranslatorRelcacheToDXL::RetrieveRel(CMemoryPool *mp, CMDAccessor *md_accessor,
 		SPQOS_RAISE(spqdxl::ExmaMD, spqdxl::ExmiMDObjUnsupported,
 				   SPQOS_WSZ_LIT("Foreign Data"));
 	}
+	if (RelationIsPartitioned(rel))
+	{
+		spqdb::CloseRelation(rel);
+		SPQOS_RAISE(spqdxl::ExmaMD, spqdxl::ExmiMDObjUnsupported,
+				   SPQOS_WSZ_LIT("Partition Table"));
+	}
 	/*if (NULL != rel->rd_cdbpolicy &&
 		spqdb::GetSPQSegmentCount() != rel->rd_cdbpolicy->numsegments)
 	{

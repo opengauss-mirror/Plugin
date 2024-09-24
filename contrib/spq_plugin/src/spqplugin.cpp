@@ -43,22 +43,40 @@ typedef struct SpqDirectReadWalkerContext {
     std::unordered_map<Oid, SpqDirectReadEntry>* directMap;
 } SpqDirectReadWalkerContext;
 
-static bool check_rangetbl_support(List* rtable)
+static bool check_rangetbl_support(List *rtable)
 {
     if (rtable == NULL)
         return false;
- 
-    ListCell* lc = NULL;
+
+    ListCell *lc = NULL;
     foreach (lc, rtable) {
-        RangeTblEntry* rte = (RangeTblEntry*)lfirst(lc);
+        RangeTblEntry *rte = (RangeTblEntry *)lfirst(lc);
         Assert(IsA(rte, RangeTblEntry));
         if (rte->rtekind == RTE_FUNCTION || rte->ispartrel) {
             return false;
         } else if (rte->rtekind == RTE_SUBQUERY) {
             Assert(rte->subquery != NULL);
-            return check_rangetbl_support(rte->subquery->rtable);
+            if (!check_rangetbl_support(rte->subquery->rtable))
+                return false;
         }
     }
+    return true;
+}
+
+static bool check_ctetbl_support(List *cteList)
+{
+    if (cteList == NULL)
+        return true;
+
+    ListCell *lc = NULL;
+    foreach (lc, cteList) {
+        CommonTableExpr *cte = (CommonTableExpr *)lfirst(lc);
+        Assert(cte->ctequery != NULL);
+        Query *ctequery = (Query *)cte->ctequery;
+        if (!check_rangetbl_support(ctequery->rtable))
+            return false;
+    }
+
     return true;
 }
 
@@ -229,11 +247,20 @@ static bool should_spq_planner(Query *parse)
     }
 
     if (!u_sess->attr.attr_spq.spq_enable_transaction && IsTransactionBlock()) {
-        elog(DEBUG1, "sql in transaction can`t run on spq node");
+        elog(DEBUG1, "sql in transaction can not run on spq node");
         return false;
     }
- 
+
+    if (t_thrd.postgres_cxt.cur_command_tag == T_CreateStmt) {
+        elog(DEBUG1, "sql with creation command can not run on spq node");
+        return false;
+    }
+
     if (!check_rangetbl_support(parse->rtable)) {
+        return false;
+    }
+
+    if (!check_ctetbl_support(parse->cteList)) {
         return false;
     }
 
