@@ -3254,8 +3254,17 @@ static char* pg_get_triggerdef_worker(Oid trigid, bool pretty)
             appendStringInfo(&buf, "CREATE TRIGGER %s ", quote_identifier(tgname));
         }
     } else {
-        appendStringInfo(&buf, "CREATE %sTRIGGER %s ", OidIsValid(trigrec->tgconstraint) ? "CONSTRAINT " : "",
-                         quote_identifier(tgname));
+        if (OidIsValid(trigrec->tgconstraint)) {
+            appendStringInfo(&buf, "CREATE CONSTRAINT TRIGGER %s ", quote_identifier(tgname));
+        } else {
+            value = fastgetattr(ht_trig, Anum_pg_trigger_tgowner, tgrel->rd_att, &isnull);
+            if (DatumGetObjectId(value) != GetUserId()) {
+                appendStringInfo(&buf, "CREATE DEFINER = %s TRIGGER %s ", GetUserNameFromId(DatumGetObjectId(value)),
+                                quote_identifier(tgname));
+            } else {
+                appendStringInfo(&buf, "CREATE TRIGGER %s ", quote_identifier(tgname));
+            }
+        }
     }
 
     if (TRIGGER_FOR_BEFORE(trigrec->tgtype))
@@ -9139,12 +9148,13 @@ static char* get_variable(
 
     /* Identify names to use */
     schemaname = NULL; /* default assumptions */
-    refname = rte->eref->aliasname;
 
     if (NULL != rte->relname && u_sess->hook_cxt.forTsdbHook) {
         rte->relname = get_rel_name(rte->relid);
         rte->eref->aliasname = rte->relname;
     }
+
+    refname = rte->eref->aliasname;
 
     /* Exceptions occur only if the RTE is alias-less */
     if (rte->alias == NULL) {
@@ -11051,6 +11061,16 @@ static void get_rule_expr(Node* node, deparse_context* context, bool showimplici
         case T_CursorExpression: {
             CursorExpression* stmt = (CursorExpression*) node;
             appendStringInfo(buf, "CURSOR(%s)", stmt->raw_query_str);
+        } break;
+
+        case T_TypeCast: {
+            TypeCast* tc = (TypeCast*) node;
+             if (showimplicit) {
+                get_coercion_expr(tc->arg, context, tc->typname->typeOid, -1, node);
+            } else {
+                /* don't show the implicit cast */
+                get_rule_expr_paren(tc->arg, context, false, node, no_alias);
+            }
         } break;
 
 #ifdef USE_SPQ
