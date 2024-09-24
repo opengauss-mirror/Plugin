@@ -58,6 +58,7 @@ ERROR:  syntax error at or near ""test_quotes_2""
 LINE 1: CREATE TABLE "test_quotes_2" (a text);
                      ^
 CREATE TABLE test_quotes_2 (a text) compression = "pglz";    -- success
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 -- test desc
 desc test_quotes_2;
  Field | Type | Null | Key | Default | Extra 

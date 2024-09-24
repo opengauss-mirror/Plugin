@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS test_engine_type_table2_1 OF test_engine_type2_1 engi
 CREATE TABLE test_engine_as engine = InnoDB as select a from test_engine_1;
 -- CREATE TABLE COMPRESSION test
 CREATE TABLE test_compression_1_pglz (a int) COMPRESSION = pglz;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_1_pglz
          Table "db_b_new_gram_test.test_compression_1_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -27,6 +28,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=1
 
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_pglz (a int) COMPRESSION = pglz;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_create_2_pglz
       Table "db_b_new_gram_test.test_compression_create_2_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -36,6 +38,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_type_table_1_pglz OF test_engine_type1 COMPRESSION = pglz;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_type_table_1_pglz
     Table "db_b_new_gram_test.test_compression_type_table_1_pglz"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
@@ -47,6 +50,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=1
 
 CREATE TABLE IF NOT EXISTS test_compression_create_type_table_2_pglz OF test_engine_type2 COMPRESSION = pglz;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_create_type_table_2_pglz
  Table "db_b_new_gram_test.test_compression_create_type_table_2_pglz"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
@@ -58,6 +62,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_as_pglz COMPRESSION = pglz as select a from test_compression_1_pglz;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_as_pglz
          Table "db_b_new_gram_test.test_compression_as_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -67,6 +72,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_1_zstd (a int) COMPRESSION = zstd;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_1_zstd
          Table "db_b_new_gram_test.test_compression_1_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -76,6 +82,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=2
 
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_zstd (a int) COMPRESSION = zstd;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_create_2_zstd
       Table "db_b_new_gram_test.test_compression_create_2_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -85,6 +92,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=2
 
 CREATE TABLE test_compression_type_table_1_zstd OF test_engine_type1 COMPRESSION = zstd;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_type_table_1_zstd
     Table "db_b_new_gram_test.test_compression_type_table_1_zstd"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
@@ -96,6 +104,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=2
 
 CREATE TABLE IF NOT EXISTS test_compression_create_type_table_2_zstd OF test_engine_type2 COMPRESSION = zstd;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_create_type_table_2_zstd
  Table "db_b_new_gram_test.test_compression_create_type_table_2_zstd"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
@@ -107,6 +116,7 @@ Has OIDs: no
 Options: orientation=row, compresstype=2
 
 CREATE TABLE test_compression_as_zstd COMPRESSION = zstd as select a from test_compression_1_zstd;
+WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 \d+ test_compression_as_zstd
          Table "db_b_new_gram_test.test_compression_as_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
