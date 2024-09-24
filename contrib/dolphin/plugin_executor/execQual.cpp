@@ -1438,7 +1438,7 @@ static Datum ExecEvalParamExtern(ExprState* exprstate, ExprContext* econtext, bo
 
            *isNull = prm->isnull;
             if (prm->tabInfo && prm->tabInfo->isnestedtable && plpgsql_estate) {
-                plpgsql_estate->curr_nested_table_type = prm->ptype;
+                plpgsql_estate->curr_nested_table_type = prm->tabInfo->tableOfIndexType;
                 plpgsql_estate->curr_nested_table_layers = prm->tabInfo->tableOfLayers;
             }
            /* copy cursor option from param to econtext */
@@ -2207,14 +2207,8 @@ static void tupledesc_match(TupleDesc dst_tupdesc, TupleDesc src_tupdesc)
    }
 }
 
-void set_result_for_plpgsql_language_function_with_outparam(FuncExprState *fcache, Datum *result, bool *isNull)
+void set_result_for_plpgsql_language_function_with_outparam(Datum *result, bool *isNull)
 {
-    if (!IsA(fcache->xprstate.expr, FuncExpr)) {
-        return;
-    }
-    if (!fcache->is_plpgsql_func_with_outparam) {
-        return;
-    }
     HeapTupleHeader td = DatumGetHeapTupleHeader(*result);
     TupleDesc tupdesc;
     PG_TRY();
@@ -2244,6 +2238,18 @@ void set_result_for_plpgsql_language_function_with_outparam(FuncExprState *fcach
     pfree(values);
     pfree(nulls);
 }
+
+void set_result_for_plpgsql_language_function_with_outparam(FuncExprState *fcache, Datum *result, bool *isNull)
+{
+    if (!IsA(fcache->xprstate.expr, FuncExpr)) {
+        return;
+    }
+    if (!fcache->is_plpgsql_func_with_outparam) {
+        return;
+    }
+    return set_result_for_plpgsql_language_function_with_outparam(result, isNull);
+}
+
 
 bool ExecSetArgIsByValue(FunctionCallInfo fcinfo)
 {

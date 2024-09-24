@@ -1352,6 +1352,7 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
                         errmsg("There is a conflict caused by storage_type and orientation")));
     }
+
     bool noSupportTable = segment || isCStore || isTsStore || relkind != RELKIND_RELATION ||
                           stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED ||
                           stmt->relation->relpersistence == RELPERSISTENCE_TEMP ||
@@ -14312,6 +14313,7 @@ static ObjectAddress ATExecDropNotNull(Relation rel, const char* colName, LOCKMO
     List* indexoidlist = NIL;
     ListCell* indexoidscan = NULL;
     ObjectAddress address;
+    Oid replidindex;
 
     /*
      * lookup the attribute
@@ -14338,6 +14340,9 @@ static ObjectAddress ATExecDropNotNull(Relation rel, const char* colName, LOCKMO
      */
     /* Loop over all indexes on the relation */
     indexoidlist = RelationGetIndexList(rel);
+
+    /* replica identity index */
+    replidindex = rel->rd_replidindex;
 
     foreach (indexoidscan, indexoidlist) {
         Oid indexoid = lfirst_oid(indexoidscan);
@@ -14366,6 +14371,16 @@ static ObjectAddress ATExecDropNotNull(Relation rel, const char* colName, LOCKMO
                     ereport(ERROR,
                         (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
                             errmsg("column \"%s\" is in a primary key", colName)));
+            }
+        }
+
+        /* REPLICA IDENTIFY can't drop not null */
+        if (replidindex == indexoid) {
+            for (i = 0; i < indnkeyatts; i++) {
+                if (indexStruct->indkey.values[i] == attnum)
+                    ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
+                            errmsg("column \"%s\" used as replica identity can't drop not null", colName)));
             }
         }
 
@@ -20242,6 +20257,18 @@ bool static transformCompressedOptions(Relation rel, bytea* relOption, List* def
     /* If delist doesn't contains compressed options, return false. */
     if (!relOption || defList == NULL || !CheckDefListContainsCompressedOptions(defList)) {
         return false;
+    }
+
+    if (g_instance.attr.attr_common.support_extended_features) {
+        ereport(WARNING,
+               (errmsg("The compressed relation you are using is an unofficial supported extended feature."))
+	);
+    } else {
+        ereport(ERROR,
+               (errmsg("The compressed relation you are trying to create or alter "
+                       "is an unofficial supported extended feature."),
+                errhint("Turn on GUC 'support_extended_features' to enable it."))
+        );
     }
 
     /* If the relkind doesn't support compressed options, check if delist contains compressed options.
@@ -26740,8 +26767,8 @@ void ATExecSetIndexVisibleState(Oid objOid, bool newState)
         if (dirty) {
             HeapTuple newitup = NULL;
             Datum values[Natts_pg_index];
-            bool nulls[Natts_pg_class];
-            bool replaces[Natts_pg_class];
+            bool nulls[Natts_pg_index];
+            bool replaces[Natts_pg_index];
             errno_t rc;
             rc = memset_s(values, sizeof(values), 0, sizeof(values));
             securec_check(rc, "\0", "\0");
@@ -34515,7 +34542,8 @@ void CheckRelAutoIncrementIndex(Oid relid, LOCKMODE lockmode)
         Relation idxrel = index_open(lfirst_oid(l), AccessShareLock);
         Form_pg_index index = idxrel->rd_index;
 
-        if (IndexIsValid(index) &&
+        /* auto_increment column in dolphin support non-unique/primary index */
+        if (IndexIsValid(index) && (u_sess->attr.attr_sql.dolphin || index->indisunique || index->indisprimary) &&
 #ifndef DOLPHIN
             (index->indisunique || index->indisprimary) &&
 #endif

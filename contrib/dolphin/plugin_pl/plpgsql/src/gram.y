@@ -2259,6 +2259,15 @@ record_attr		: attr_name decl_datatype decl_notnull decl_rec_defval
                         attr->attrname = $1;
 
                         PLpgSQL_type *var_type = ((PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$2])->datatype;
+                        PLpgSQL_var *varray_type = (PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$2];
+
+                        if (varray_type->nest_table != NULL) {
+                            ereport(errstate,
+                                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("nested table of type is not supported as record type attribute"),
+                                parser_errposition(@3)));
+                                u_sess->plsql_cxt.have_error = true;
+                        }
                         PLpgSQL_type *new_var_type = build_array_type_from_elemtype(var_type);
                         new_var_type->collectionType = var_type->collectionType;
                         new_var_type->tableOfIndexType = var_type->tableOfIndexType;
@@ -2287,7 +2296,7 @@ record_attr		: attr_name decl_datatype decl_notnull decl_rec_defval
 
                         $$ = attr;
                     }
-                        | attr_name table_var decl_notnull decl_rec_defval
+            | attr_name table_var decl_notnull decl_rec_defval
                   {
                         PLpgSQL_rec_attr        *attr = NULL;
 
@@ -7334,7 +7343,9 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
             InsertErrorMessage(message, plpgsql_yylloc);
             ereport(errstate,
             (errcode(ERRCODE_DUPLICATE_FUNCTION),
-             errmsg("function \"%s\" isn't exclusive ", sqlstart)));
+             errmsg("function \"%s\" isn't exclusive ", sqlstart),
+             errdetail("The overload function must be package function or function with PACKAGE keyword.And do not mix overload functions of O style and PG style."),
+             errcause("The overload function must be package function.")));
         }
     }
 
@@ -8773,6 +8784,11 @@ read_sql_construct6(int until,
     int					loc = 0;
     int					curloc = 0;
     int					brack_cnt = 0;
+    int					nest_layers = 0;
+    int					left_brace_count = 0;
+    int					right_brace_count = 0;
+    bool					stop_count = false;
+    int					stop_tok;
      /* mark if there are 2 table of index by var call functions in an expr */
     int tableof_func_dno = -1;
     int tableof_var_dno = -1;
@@ -8801,6 +8817,14 @@ read_sql_construct6(int until,
     {
         prev_tok = tok;
         tok = yylex();
+        if (tok == '\"' || tok == '\'') {
+            if (stop_count && stop_tok == tok) {
+                stop_count = false;
+            } else {
+                stop_count = true;
+                stop_tok = tok;
+            }
+        }
         tokenstack = push_token_stack(tok, tokenstack);
         loc = yylloc;
         if (startlocation < 0)			/* remember loc of first token */
@@ -8908,13 +8932,18 @@ read_sql_construct6(int until,
                 ds_changed = true;
                 break;
             case T_VARRAY_VAR:
+            {
                 idents = yylval.wdatum.idents;
+                PLpgSQL_var* var = (PLpgSQL_var*)(yylval.wdatum.datum);
                 if (idents == NIL) {
                     AddNamespaceIfPkgVar(yylval.wdatum.ident, save_IdentifierLookup);
                 }
                 tok = yylex();
                 if (tok == '(' || tok == '[') {
                     push_array_parse_stack(&context, parenlevel, ARRAY_ACCESS);
+                } else if (OidIsValid(var->datatype->tableOfIndexType) && 
+                    (',' == tok || ')' == tok || ';' == tok)) {
+                    is_have_tableof_index_var = true;
                 }
                 curloc = yylloc;
                 plpgsql_push_back_token(tok);
@@ -8927,6 +8956,7 @@ read_sql_construct6(int until,
                     ds_changed = true;
                     break;
                 }
+            }
             case T_ARRAY_FIRST:
             {
                 Oid indexType = get_table_index_type(yylval.wdatum.datum, &tableof_func_dno);
@@ -9091,6 +9121,8 @@ read_sql_construct6(int until,
                 brack_cnt--;
                 /* fall through */
             case ')':
+                if (!stop_count)
+                    right_brace_count++;
                 if (context.list_right_bracket && context.list_right_bracket->length
                     && linitial_int(context.list_right_bracket) == parenlevel) {
                     /* append bracket instead of parentheses */
@@ -9148,6 +9180,8 @@ read_sql_construct6(int until,
                 brack_cnt++;
                 /* fall through */
             case '(':
+                if (!stop_count)
+                    left_brace_count++;
                 if (context.list_left_bracket && context.list_left_bracket->length
                     && linitial_int(context.list_left_bracket) == parenlevel - 1) {
                     appendStringInfoString(&ds, left_bracket);
@@ -9359,6 +9393,10 @@ read_sql_construct6(int until,
                     yylval = temptokendata->lval;
                     u_sess->plsql_cxt.curr_compile_context->plpgsql_yyleng = temptokendata->leng;
                 }
+                if (left_brace_count == 0)
+                {
+                    nest_layers = var->nest_layers;
+                }
                 ds_changed = construct_array_start(&ds, &context, var->datatype, &tok, parenlevel, loc);
                 break;
             }
@@ -9380,22 +9418,35 @@ read_sql_construct6(int until,
                 }
                 int dno = yylval.wdatum.datum->dno;
                 PLpgSQL_var *var = (PLpgSQL_var *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[dno];
+                if (left_brace_count == 0)
+                {
+                    nest_layers = var->nest_layers;
+                }
                 ds_changed = construct_array_start(&ds, &context, var->datatype, &tok, parenlevel, loc);
                 break;
             }
             case T_DATUM:
-                idents = yylval.wdatum.idents;
-                if(prev_tok != '.' && list_length(idents) >= 3) {
-                    plpgsql_cast_reference_list(idents, &ds, false);
-                    ds_changed = true;
-                    break;
-                } else {
-                    tok = yylex();
-                    curloc = yylloc;
-                    plpgsql_push_back_token(tok);
-                    plpgsql_append_source_text(&ds, loc, curloc);
-                    ds_changed = true;
-                    break;
+                {
+                    idents = yylval.wdatum.idents;
+                    int dno = yylval.wdatum.datum->dno;
+                    PLpgSQL_datum *datum = (PLpgSQL_datum *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[dno];
+                    if (datum->dtype == PLPGSQL_DTYPE_RECFIELD) {
+                        PLpgSQL_recfield *rec_field = (PLpgSQL_recfield *)datum;
+                        PLpgSQL_rec *rec = (PLpgSQL_rec *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[rec_field->recparentno];
+                        rec->field_need_check = lappend_int(rec->field_need_check, dno);
+                    }
+                    if(prev_tok != '.' && list_length(idents) >= 3) {
+                        plpgsql_cast_reference_list(idents, &ds, false);
+                        ds_changed = true;
+                        break;
+                    } else {
+                        tok = yylex();
+                        curloc = yylloc;
+                        plpgsql_push_back_token(tok);
+                        plpgsql_append_source_text(&ds, loc, curloc);
+                        ds_changed = true;
+                        break;
+                    }
                 }
             case T_WORD:
                 AddNamespaceIfPkgVar(yylval.word.ident, save_IdentifierLookup);
@@ -9448,7 +9499,9 @@ read_sql_construct6(int until,
         if (IS_ARRAY_STATE(context.list_array_state, ARRAY_COERCE)) {
             /* always append right parentheses at end of each element */
             appendStringInfoString(&ds, right_parentheses);
-            plpgsql_append_object_typename(&ds, (PLpgSQL_type *)linitial(context.list_datatype));
+            if ((left_brace_count - right_brace_count) > nest_layers) {
+                plpgsql_append_object_typename(&ds, (PLpgSQL_type *)linitial(context.list_datatype));
+            }
             SET_ARRAY_STATE(context.list_array_state, ARRAY_SEPERATOR);
         }
     }
