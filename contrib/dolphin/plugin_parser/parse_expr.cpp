@@ -240,23 +240,62 @@ Oid GetIntervalOpOid(Node* lexpr, Node* rexpr)
     }
 }
 
+Oid GetDateIntervalOpOid(Node* expr)
+{
+    if (expr->type != T_FuncExpr) {
+        return DATEOID;
+    }
+
+    FuncExpr* func = (FuncExpr*)expr;
+
+    if (list_length(func->args) < 2) {
+        return DATEOID;
+    }
+    
+    Node* arg = (Node *)lsecond(func->args);
+    Const* const_type = (Const*)arg;
+    int int_type = DatumGetInt32(const_type->constvalue);
+
+    if ((int_type & (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)
+        | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) == 0) {
+        return DATEOID;
+    } else {
+        return TIMESTAMPOID;
+    }
+}
+
 void DealWithIntervalType(ParseState** pstate, Node** lexpr, Node** rexpr, char* opername)
 {
     
     Oid leftType = exprType(*lexpr);
     Oid rightType = exprType(*rexpr);
+    if ((leftType != INTERVALOID && rightType != INTERVALOID) ||
+        (strcmp(opername, "+") != 0 && strcmp(opername, "-") != 0)) {
+            return;
+        }
 
-    if (leftType == UNKNOWNOID && rightType == INTERVALOID && strcmp(opername, "+") == 0) {
-        *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
-            GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
-    }
-    if (rightType == UNKNOWNOID && leftType == INTERVALOID && strcmp(opername, "+") == 0) {
-        *rexpr = coerce_to_target_type(*pstate, *rexpr, UNKNOWNOID,
-            GetIntervalOpOid(*rexpr, *lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
-    }
-    if (leftType == UNKNOWNOID && rightType == INTERVALOID && strcmp(opername, "-") == 0) {
-        *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
-            GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    if (strcmp(opername, "+") == 0) {
+        if (leftType == UNKNOWNOID && rightType == INTERVALOID) {
+            *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
+                GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        } else if (rightType == UNKNOWNOID && leftType == INTERVALOID) {
+            *rexpr = coerce_to_target_type(*pstate, *rexpr, UNKNOWNOID,
+                GetIntervalOpOid(*rexpr, *lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        } else if (leftType == DATEOID && rightType == INTERVALOID) {
+            *lexpr = coerce_to_target_type(*pstate, *lexpr, DATEOID,
+                GetDateIntervalOpOid(*rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        } else if (rightType == DATEOID && leftType == INTERVALOID) {
+            *rexpr = coerce_to_target_type(*pstate, *rexpr, DATEOID,
+                GetDateIntervalOpOid(*lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        }
+    } else {
+        if (leftType == UNKNOWNOID && rightType == INTERVALOID) {
+            *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
+                GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        } else if (leftType == DATEOID && rightType == INTERVALOID) {
+            *lexpr = coerce_to_target_type(*pstate, *lexpr, DATEOID,
+                GetDateIntervalOpOid(*rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        }
     }
 }
 

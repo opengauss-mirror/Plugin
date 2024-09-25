@@ -328,6 +328,96 @@ select interval 1 second second;
  @ 1 sec
 (1 row)
 
+select date'20020304' + interval 1 hour;
+      ?column?       
+---------------------
+ 2002-03-04 01:00:00
+(1 row)
+
+select interval 1 hour + date'20020304';
+      ?column?       
+---------------------
+ 2002-03-04 01:00:00
+(1 row)
+
+select date'20020304' - interval 1 hour;
+      ?column?       
+---------------------
+ 2002-03-03 23:00:00
+(1 row)
+
+select date'20020304' + interval 1 minute;
+      ?column?       
+---------------------
+ 2002-03-04 00:01:00
+(1 row)
+
+select interval 1 minute + date'20020304';
+      ?column?       
+---------------------
+ 2002-03-04 00:01:00
+(1 row)
+
+select date'20020304' - interval 1 minute;
+      ?column?       
+---------------------
+ 2002-03-03 23:59:00
+(1 row)
+
+select date'20020304' + interval 1 second;
+      ?column?       
+---------------------
+ 2002-03-04 00:00:01
+(1 row)
+
+select interval 1 second + date'20020304';
+      ?column?       
+---------------------
+ 2002-03-04 00:00:01
+(1 row)
+
+select date'20020304' - interval 1 second;
+      ?column?       
+---------------------
+ 2002-03-03 23:59:59
+(1 row)
+
+select date'20020304' * interval 1 hour;
+       ?column?        
+-----------------------
+ @ 834179 days 8 hours
+(1 row)
+
+select date'20020304' / interval 1 hour;
+     ?column?      
+-------------------
+ 480487295999999.6
+(1 row)
+
+select date'20020304' * interval 1 minute;
+           ?column?            
+-------------------------------
+ @ 13902 days 23 hours 44 mins
+(1 row)
+
+select date'20020304' / interval 1 minute;
+       ?column?        
+-----------------------
+ 2.882923776000002e+16
+(1 row)
+
+select date'20020304' * interval 1 second;
+              ?column?               
+-------------------------------------
+ @ 231 days 17 hours 11 mins 44 secs
+(1 row)
+
+select date'20020304' / interval 1 second;
+       ?column?        
+-----------------------
+ 1.729754265599996e+18
+(1 row)
+
 create table k_1(a json,b blob,c longblob,d mediumblob,e tinyblob,f binary(20));
 insert k_1 values('"2024-01-11 11:49:25"','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25','2024-01-11 11:49:25');
 select `a`+  interval 1 day,`b`+  interval 1 day,`c`+ interval 1 day,`d`+ interval 1 day,`e`+ interval 1 day,`f`+ interval 1 day from k_1;
