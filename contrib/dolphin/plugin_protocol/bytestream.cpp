@@ -60,6 +60,59 @@ fail:
     return EOF;
 }
 
+int dq_special_getmessage(StringInfo buf, Port* port)
+{
+    uint32  nDataLen = 0;
+    int     nSizeRecved = 0;
+    int     nSizeRecvedTemp = 0;
+    int		loopTimes = 0;
+    uint8   ser_num = 0;
+
+    resetStringInfo(buf);
+    enlargeStringInfo(buf, PROTO_PAYLOAD_LEN);
+    // Read packet length
+    nSizeRecved = recv(port->sock, buf->data, PROTO_PAYLOAD_LEN, 0);
+    if (PROTO_PAYLOAD_LEN > nSizeRecved) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Failed to receive data")));
+        return EOF;
+    }
+    buf->len = PROTO_PAYLOAD_LEN;
+    dq_get_payload_len(buf, &nDataLen);
+    //Disconnect and report an error when the received data length exceeds the required upper limit
+    if (PROTO_RECV_BUFFER_SIZE < nDataLen) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
+        return EOF;
+    }
+    nSizeRecved = recv(port->sock, (char *)&ser_num, 1, 0);
+    if (ser_num != 1) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
+        return EOF;
+    }
+    next_seqid = ser_num;
+    resetStringInfo(buf);
+    enlargeStringInfo(buf, nDataLen);
+    // read data
+    nSizeRecved = 0;
+    while (nSizeRecved < nDataLen) {
+        loopTimes++;
+        nSizeRecvedTemp = recv(port->sock, buf->data + nSizeRecved, nDataLen - nSizeRecved, 0);
+        if (nSizeRecvedTemp <= 0 || loopTimes > nDataLen) {
+            break;
+        } else {
+            nSizeRecved += nSizeRecvedTemp;
+        }
+    }
+    if (nSizeRecved != nDataLen) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
+        return EOF;
+    }
+
+    buf->len = nDataLen;
+    buf->cursor = 0;
+    buf->data[nSizeRecved] = '\0';
+    return 0;
+}
+
 int dq_getmessage(StringInfo buf, uint32 maxlen)
 {
     uint32 len;

@@ -49,6 +49,7 @@
 #define PROTO_TIME_LEN 8
 #define PROTE_TIMESTATMP_LEN 12
 
+#define PACKETOFFSET_4 4
 #define PACKETOFFSET_8 8
 
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
@@ -147,9 +148,12 @@ network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
 {
     network_mysqld_auth_request *auth = (network_mysqld_auth_request*) palloc0(sizeof(network_mysqld_auth_request));
     dq_get_int4(buf, &auth->client_capabilities);
-    dq_get_int4(buf, &auth->max_packet_size);
-    dq_get_int1(buf, &auth->charset);
-
+    if (buf->len != PACKETOFFSET_4) {
+        dq_get_int4(buf, &auth->max_packet_size);
+        dq_get_int1(buf, &auth->charset);
+    } else {
+        auth->max_packet_size = 0xfffff;
+    }
     if ((auth->client_capabilities & CLIENT_SSL)) {
         uint8 ssl_charset_code = 0;
         if (TlsSecureOpen(port)) {
