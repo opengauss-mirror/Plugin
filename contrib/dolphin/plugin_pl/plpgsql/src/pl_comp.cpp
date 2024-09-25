@@ -2830,7 +2830,8 @@ bool plpgsql_parse_dblword(char* word1, char* word2, PLwdatum* wdatum, PLcword* 
                             }
                         }
                         if (!exist) {
-                            break;
+                            ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_UNDEFINED_COLUMN),
+                                            errmsg("record \"%s\" has no field \"%s\"", rec->refname, word2)));
                         }
                     }
                 }
