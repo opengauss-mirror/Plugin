@@ -1,0 +1,22 @@
+create schema b_rowtype;
+create table t_Compare_Case0017(first_name varchar(100), last_name varchar(100));
+set behavior_compat_options='allow_procedure_compile_check';
+create table t_CurRowtype_PLObject_Case0017(first_name varchar(100), last_name varchar(100));
+insert into t_CurRowtype_PLObject_Case0017 values('Jason','Statham');
+create trigger tri_CurRowtype_PLObject_Case0017 before insert on t_CurRowtype_PLObject_Case0017 for each row
+declare
+  cursor cur_1 is select * from t_CurRowtype_PLObject_Case0017;
+  source cur_1%rowtype;
+begin
+   source.first_name:=new.first_name;
+   source.last_name:=new.last_name;
+   insert into t_Compare_Case0017 values (source.first_name,source.last_name);
+   return new;
+end;
+/
+insert into t_CurRowtype_PLObject_Case0017 values('Jason_New','Statham_New');
+reset behavior_compat_options;
+drop trigger tri_CurRowtype_PLObject_Case0017;
+drop table t_Compare_Case0017;
+drop table t_CurRowtype_PLObject_Case0017;
+drop schema b_rowtype cascade;
