@@ -99,7 +99,7 @@
 #define DISPLACEMENTS_VALUE 32
 #define MAX_DURATION_TIME 60
 #define DSS_IO_STAT_COLUMN_NUM 3
-#define ONDEMAND_RECOVERY_STAT_COLUMN_NUM 10
+#define ONDEMAND_RECOVERY_STAT_COLUMN_NUM 12
 
 const uint32 INDEX_STATUS_VIEW_COL_NUM = 3;
 
@@ -8723,6 +8723,9 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
         TupleDescInitEntry(tupledesc, (AttrNumber)10, "isvalid", BOOLOID, -1, 0);
         TupleDescInitEntry(tupledesc, (AttrNumber)11, "usage_count", INT2OID, -1, 0);
         TupleDescInitEntry(tupledesc, (AttrNumber)12, "pinning_backends", INT4OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)13, "segfileno", INT4OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)14, "segblockno", OIDOID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)15, "aio_in_process", BOOLOID, -1, 0);
 
         fctx->tupdesc = BlessTupleDesc(tupledesc);
 
@@ -8769,6 +8772,8 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
             fctx->record[i].blocknum = bufHdr->tag.blockNum;
             fctx->record[i].usagecount = BUF_STATE_GET_USAGECOUNT(buf_state);
             fctx->record[i].pinning_backends = BUF_STATE_GET_REFCOUNT(buf_state);
+            fctx->record[i].segfileno = bufHdr->extra->seg_fileno;
+            fctx->record[i].segblockno = bufHdr->extra->seg_blockno;
 
             if (buf_state & BM_DIRTY)
                 fctx->record[i].isdirty = true;
@@ -8780,6 +8785,12 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
                 fctx->record[i].isvalid = true;
             else
                 fctx->record[i].isvalid = false;
+
+            if (bufHdr->extra->aio_in_progress) {
+                fctx->record[i].aio_in_process = true;
+            } else {
+                fctx->record[i].aio_in_process = false;
+            }
 
             UnlockBufHdr(bufHdr, buf_state);
         }
@@ -8825,6 +8836,9 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
             nulls[9] = false;
             nulls[10] = true;
             nulls[11] = true;
+            nulls[12] = true;
+            nulls[13] = true;
+            nulls[14] = true;
         } else {
             values[1] = ObjectIdGetDatum(fctx->record[i].relfilenode);
             nulls[1] = false;
@@ -8848,6 +8862,12 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
             nulls[10] = false;
             values[11] = Int32GetDatum(fctx->record[i].pinning_backends);
             nulls[11] = false;
+            values[12] = Int32GetDatum(fctx->record[i].segfileno);
+            nulls[12] = false;
+            values[13] = ObjectIdGetDatum((int64)fctx->record[i].segblockno);
+            nulls[13] = false;
+            values[14] = BoolGetDatum(fctx->record[i].aio_in_process);
+            nulls[14] = false;
         }
 
         /* Build and return the tuple. */
@@ -14793,6 +14813,8 @@ Datum get_ondemand_recovery_status(PG_FUNCTION_ARGS)
     TupleDescInitEntry(tupdesc, (AttrNumber)i++, "ondemand_recovery_status", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)i++, "realtime_build_status", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)i++, "recovery_pause_status", TEXTOID, -1, 0);
+    TupleDescInitEntry(tupdesc, (AttrNumber)i++, "record_item_num", OIDOID, -1, 0);
+    TupleDescInitEntry(tupdesc, (AttrNumber)i++, "record_item_mbytes", OIDOID, -1, 0);
 
     tupdesc = BlessTupleDesc(tupdesc);
 
@@ -14856,24 +14878,27 @@ Datum get_ondemand_recovery_status(PG_FUNCTION_ARGS)
 
     switch (stat.recoveryPauseStatus) {
         case NOT_PAUSE:
-            values[i] = CStringGetTextDatum("NOT PAUSE");
+            values[i++] = CStringGetTextDatum("NOT PAUSE");
             break;
         case PAUSE_FOR_SYNC_REDO:
-            values[i] = CStringGetTextDatum("PAUSE(for sync record)");
+            values[i++] = CStringGetTextDatum("PAUSE(for sync record)");
             break;
         case PAUSE_FOR_PRUNE_HASHMAP:
-            values[i] = CStringGetTextDatum("PAUSE(for hashmap full)");
+            values[i++] = CStringGetTextDatum("PAUSE(for hashmap full)");
             break;
         case PAUSE_FOR_PRUNE_TRXN_QUEUE:
-            values[i] = CStringGetTextDatum("PAUSE(for trxn queue full)");
+            values[i++] = CStringGetTextDatum("PAUSE(for trxn queue full)");
             break;
         case PAUSE_FOR_PRUNE_SEG_QUEUE:
-            values[i] = CStringGetTextDatum("PAUSE(for seg queue full)");
+            values[i++] = CStringGetTextDatum("PAUSE(for seg queue full)");
             break;
         default:
             ereport(ERROR, (errmsg("Invalid recovery pause status.")));
             break;
     }
+    uint32 recordItemMemUsedInMB = stat.recordItemMemUsed / 1024 / 1024;
+    values[i++] = UInt32GetDatum(stat.recordItemNum);
+    values[i++] = UInt32GetDatum(recordItemMemUsedInMB);
 
     HeapTuple heap_tuple = heap_form_tuple(tupdesc, values, nulls);
     result = HeapTupleGetDatum(heap_tuple);
