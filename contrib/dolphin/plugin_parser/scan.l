@@ -865,6 +865,9 @@ other			.
 										yyextra->literallen,
 										false);
 						yylval->str = litbufdup(yyscanner);
+						if (yyextra->is_define_delimiter) {
+							set_is_delimiter_name(yylval->str, yyscanner);
+						}
 						yyextra->is_hint_str = false;
 						return SCONST;
 					}
@@ -1751,6 +1754,7 @@ scanner_init(const char *str,
 	yyext->is_last_colon = false;
 	yyext->is_proc_end = false;
 #ifdef DOLPHIN
+	yyext->is_define_delimiter = false;
 	GetSessionContext()->paramIdx = 0;
 	GetSessionContext()->dolphin_kw_mask = 0;
 	GetSessionContext()->is_first_lable = false;
