@@ -146,6 +146,17 @@ WARNING:  Invalid collation for column c1 detected. default value set
 create table test_collate5(c1 text collate 'aaa', c2 text collate 'utf8mb4_bin', c3 text)collate 'aaa';
 WARNING:  Invalid collation for column c1 detected. default value set
 WARNING:  Invalid collation detected. default value set
+-- different charset
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+create table test_collate6(a text) charset gbk;
+ERROR:  difference between the charset and the database encoding has not supported
+create table test_collate6(a text) collate gbk_bin;
+ERROR:  difference between the charset and the database encoding has not supported
 -- invalid schema collate
 create schema test1 charset 'aaa';
 WARNING:  aaa is not a valid encoding name. default value set
