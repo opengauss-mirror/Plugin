@@ -14,6 +14,7 @@
 #include "utils/memutils.h"
 #include "vector.h"
 #include "postmaster/bgworker.h"
+#include "commands/vacuum.h"
 
 #if PG_VERSION_NUM >= 140000
 #include "utils/backend_progress.h"
@@ -36,6 +37,96 @@
 #define PARALLEL_KEY_TUPLESORT			UINT64CONST(0xA000000000000002)
 #define PARALLEL_KEY_IVFFLAT_CENTERS	UINT64CONST(0xA000000000000003)
 #define PARALLEL_KEY_QUERY_TEXT			UINT64CONST(0xA000000000000004)
+
+/*
+ * Add sample
+ */
+static void
+AddSample(Datum *values, IvfflatBuildState *buildstate)
+{
+    VectorArray samples = buildstate->samples;
+    int targsamples = samples->maxlen;
+
+    /* Detoast once for all calls */
+    Datum value = PointerGetDatum(PG_DETOAST_DATUM(values[0]));
+
+    /*
+     * Normalize with KMEANS_NORM_PROC since spherical distance function
+     * expects unit vectors
+     */
+    if (buildstate->kmeansnormprocinfo != NULL) {
+        if (!IvfflatCheckNorm(buildstate->kmeansnormprocinfo, buildstate->collation, value)) {
+            return;
+        }
+
+        value = IvfflatNormValue(buildstate->typeInfo, buildstate->collation, value);
+    }
+
+    if (samples->length < targsamples) {
+        VectorArraySet(samples, samples->length, DatumGetPointer(value));
+        samples->length++;
+    } else {
+        if (buildstate->rowstoskip < 0) {
+            buildstate->rowstoskip = anl_get_next_S(samples->length, targsamples, &buildstate->rstate);
+        }
+
+        if (buildstate->rowstoskip <= 0) {
+            int k = (int) (targsamples * anl_random_fract());
+            Assert(k >= 0 && k < targsamples);
+            VectorArraySet(samples, k, DatumGetPointer(value));
+        }
+
+        buildstate->rowstoskip -= 1;
+    }
+}
+
+/*
+ * Callback for sampling
+ */
+static void
+SampleCallback(Relation index, CALLBACK_ITEM_POINTER, Datum *values,
+               const bool *isnull, bool tupleIsAlive, void *state)
+{
+    IvfflatBuildState *buildstate = (IvfflatBuildState *) state;
+    MemoryContext oldCtx;
+
+    /* Skip nulls */
+    if (isnull[0]) {
+        return;
+    }
+
+    /* Use memory context since detoast can allocate */
+    oldCtx = MemoryContextSwitchTo(buildstate->tmpCtx);
+
+    /* Add sample */
+    AddSample(values, buildstate);
+
+    /* Reset memory context */
+    MemoryContextSwitchTo(oldCtx);
+    MemoryContextReset(buildstate->tmpCtx);
+}
+
+/*
+ * Sample rows with same logic as ANALYZE
+ */
+static void
+SampleRows(IvfflatBuildState *buildstate)
+{
+    int targsamples = buildstate->samples->maxlen;
+    BlockNumber totalblocks = RelationGetNumberOfBlocks(buildstate->heap);
+
+    buildstate->rowstoskip = -1;
+
+    BlockSampler_Init(&buildstate->bs, totalblocks, targsamples);
+
+    buildstate->rstate = anl_init_selection_state(targsamples);
+    while (BlockSampler_HasMore(&buildstate->bs)) {
+        BlockNumber targblock = BlockSampler_Next(&buildstate->bs);
+
+        tableam_index_build_scan(buildstate->heap, buildstate->index, buildstate->indexInfo,
+                                 false, SampleCallback, (void *) buildstate, NULL, targblock, 1);
+    }
+}
 
 /*
  * Add tuple to sort
@@ -294,39 +385,41 @@ FreeBuildState(IvfflatBuildState * buildstate)
  * Compute centers
  */
 static void
-ComputeCenters(IvfflatBuildState * buildstate)
+ComputeCenters(IvfflatBuildState *buildstate)
 {
-	int			numSamples;
+    int numSamples;
 
-	/* Target 50 samples per list, with at least 10000 samples */
-	/* The number of samples has a large effect on index build time */
-	numSamples = buildstate->lists * 50;
-	if (numSamples < 10000)
-		numSamples = 10000;
+    /* Target 50 samples per list, with at least 10000 samples */
+    /* The number of samples has a large effect on index build time */
+    numSamples = buildstate->lists * 50;
+    if (numSamples < 10000) {
+        numSamples = 10000;
+    }
 
-	/* Skip samples for unlogged table */
-	if (buildstate->heap == NULL)
-		numSamples = 1;
+    /* Skip samples for unlogged table */
+    if (buildstate->heap == NULL) {
+        numSamples = 1;
+    }
 
-	/* Sample rows */
-	/* TODO Ensure within maintenance_work_mem */
-	buildstate->samples = VectorArrayInit(numSamples, buildstate->dimensions, buildstate->centers->itemsize);
-	if (buildstate->heap != NULL)
-	{
-		if (buildstate->samples->length < buildstate->lists)
-		{
-			ereport(NOTICE,
-					(errmsg("ivfflat index created with little data"),
-					 errdetail("This will cause low recall."),
-					 errhint("Drop the index until the table has more data.")));
-		}
-	}
+    /* Sample rows */
+    /* TODO Ensure within maintenance_work_mem */
+    buildstate->samples = VectorArrayInit(numSamples, buildstate->dimensions, buildstate->centers->itemsize);
+    if (buildstate->heap != NULL) {
+        SampleRows(buildstate);
+        if (buildstate->samples->length < buildstate->lists) {
+            ereport(NOTICE,
+                (errmsg("ivfflat index created with little data"),
+                 errdetail("This will cause low recall."),
+                 errhint("Drop the index until the table has more data.")));
+        }
+    }
 
-	/* Calculate centers */
-	IvfflatBench("k-means", IvfflatKmeans(buildstate->index, buildstate->samples, buildstate->centers, buildstate->typeInfo));
+    /* Calculate centers */
+    IvfflatBench("k-means", IvfflatKmeans(buildstate->index, buildstate->samples,
+                                          buildstate->centers, buildstate->typeInfo));
 
-	/* Free samples before we allocate more memory */
-	VectorArrayFree(buildstate->samples);
+    /* Free samples before we allocate more memory */
+    VectorArrayFree(buildstate->samples);
 }
 
 /*

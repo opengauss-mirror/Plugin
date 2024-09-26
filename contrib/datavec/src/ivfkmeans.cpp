@@ -316,7 +316,7 @@ ElkanKmeans(Relation index, VectorArray samples, VectorArray centers, const Ivff
 	agg = (float *)palloc(aggSize);
 	centerCounts = (int *)palloc(centerCountsSize);
 	closestCenters = (int *)palloc(closestCentersSize);
-	lowerBound = (float *)palloc_extended(lowerBoundSize, MCXT_ALLOC_HUGE);
+    lowerBound = (float *)MemoryContextAllocExtended(CurrentMemoryContext, lowerBoundSize, MCXT_ALLOC_HUGE);
 	upperBound = (float *)palloc(upperBoundSize);
 	s = (float *)palloc(sSize);
 	halfcdist = (float *)palloc_extended(halfcdistSize, MCXT_ALLOC_HUGE);
