@@ -528,6 +528,16 @@ drop table test;
 select timediff(date'2022-01-01','2022-01-02');
 select timediff('2022-01-01',date'2022-01-02');
 
+-- test timediff unknown入参结果错误
+select timediff(date'2022-12-12', 'asdcf');
+select timediff(time'11:11:11', 'asdcf');
+select timediff('2022-12-12', '00:00:00'); 
+select timediff('0000-00-00', time'00:00:01');
+select timediff(time'00:00:01', '0000-00-00');
+select timediff('0000-00-00', '00:00:00');
+select timediff('00:00:00', '0000-00-00');
+select timediff('0000-00-00', '0000-00-00');
+
 -- 测试time_to_sec异常边界
 select time_to_sec(8385960);
 select time_to_sec(8385959);
