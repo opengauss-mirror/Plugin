@@ -669,9 +669,18 @@ show create function functest_A_1;
 (1 row)
 
 show create function test_get_def.functest_A_1;
-ERROR:  FUNCTION functest_A_1 does not exist
+   Function   |                                 Create Function                                 |              sql_mode               | character_set_client | collation_connection | Database Collation 
+--------------+---------------------------------------------------------------------------------+-------------------------------------+----------------------+----------------------+--------------------
+ functest_a_1 | CREATE DEFINER = test_showcreate FUNCTION test_get_def.functest_a_1(text, date)+| sql_mode_strict,sql_mode_full_group | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+              |  RETURNS boolean                                                               +|                                     |                      |                      | 
+              |  LANGUAGE sql                                                                  +|                                     |                      |                      | 
+              |  NOT FENCED NOT SHIPPABLE                                                      +|                                     |                      |                      | 
+              | AS $function$SELECT $1 = 'abcd' AND $2 > '2001-01-01'$function$;               +|                                     |                      |                      | 
+              |                                                                                 |                                     |                      |                      | 
+(1 row)
+
 show create function test_get_def.test_get_def.functest_A_1;
-ERROR:  improper func name (too many dotted names): test_get_def.test_get_def.functest_A_1
+ERROR:  improper func name (too many dotted names): test_get_def.test_get_def.functest_a_1
 LINE 1: show create function test_get_def.test_get_def.functest_A_1;
         ^
 show create function functest_A_2;

@@ -1010,7 +1010,7 @@ static bool GreaterThanHour (List* int_type);
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
 %type <list>	var_list guc_value_extension_list schema_var_list
-%type <str>		ColId ColLabel ColLabel_with_rownum CaseSensitiveColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
+%type <str>		ColId ColLabel CaseSensitiveColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 /* for keyword which could be a column/table alias name, use alias_name_xxxx*/
@@ -38599,7 +38599,7 @@ database_name:
 access_method:
 			ColId									{ $$ = $1; };
 
-attr_name:	ColLabel_with_rownum					{ $$ = $1; };
+attr_name:	ColLabel								{ $$ = $1; };
 
 index_name: ColId									{ $$ = $1; };
 
@@ -39506,20 +39506,6 @@ ColLabel:	normal_ident							{ $$ = $1; }
 			| reserved_keyword
 				{
 					$$ = downcase_str(pstrdup($1), false);
-				}
-		;
-
-ColLabel_with_rownum:	IDENT
-				{
-					$$ = IdentResolveToChar($1, yyscanner);
-				}
-			| '\''IDENT'\''							{ $$ = $2->str; }
-			| unreserved_keyword					{ $$ = pstrdup($1); }
-			| col_name_keyword						{ $$ = pstrdup($1); }
-			| type_func_name_keyword				{ $$ = pstrdup($1); }
-			| reserved_keyword
-				{
-					$$ = pstrdup($1);
 				}
 		;
 
