@@ -1261,7 +1261,9 @@ const struct ignore_keyword_opt_data ignore_keywords[] = {
     {"interval", INTERVAL},
     {"binary_double_infinity", BINARY_DOUBLE_INF},
     {"binary_double_nan", BINARY_DOUBLE_NAN},
-    {"straight_join", STRAIGHT_JOIN}
+    {"straight_join", STRAIGHT_JOIN},
+    {"binary", BINARY},
+    {"prior", PRIOR}
 };
 #define INGORE_KEYWORDS_LEN (sizeof(ignore_keywords) / sizeof(struct ignore_keyword_opt_data))
 
