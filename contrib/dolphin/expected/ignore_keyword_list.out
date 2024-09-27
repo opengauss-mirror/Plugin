@@ -1,7 +1,7 @@
 create schema ignore_keyword_list;
 set current_schema to 'ignore_keyword_list';
 select 1 interval; --error
-ERROR:  syntax error at or near "interval"
+ERROR:  syntax error at or near "interval;"
 LINE 1: select 1 interval;
                  ^
 set disable_keyword_options = 'interval';
@@ -22,7 +22,22 @@ select 1 interval; --ok
 
 reset disable_keyword_options;
 select 1 interval; --error
-ERROR:  syntax error at or near "interval"
+ERROR:  syntax error at or near "interval;"
 LINE 1: select 1 interval;
                  ^
+create table t1 (binary int);
+ERROR:  syntax error at or near "binary"
+LINE 1: create table t1 (binary int);
+                         ^
+create table t2 (prior int);
+ERROR:  syntax error at or near "prior"
+LINE 1: create table t2 (prior int);
+                         ^
+set disable_keyword_options ='prior,binary';
+create table t1 (binary int);
+create table t2 (prior int);
+reset current_schema;
 drop schema ignore_keyword_list cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table ignore_keyword_list.t1
+drop cascades to table ignore_keyword_list.t2
