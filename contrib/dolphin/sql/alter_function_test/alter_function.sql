@@ -87,7 +87,7 @@ end;
 $$ LANGUAGE PLPGSQL;
 
 alter FUNCTION f5 no sql;
-
+alter FUNCTION f5() set query_dop = 2;
 
 create table t1 (a int);
 

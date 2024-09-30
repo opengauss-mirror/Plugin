@@ -874,7 +874,7 @@ static bool GreaterThanHour (List* int_type);
 %type <range>	OptTempTableName
 %type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target opt_into_clause
 
-%type <defelt>	createfunc_opt_item createproc_opt_item common_func_opt_item dostmt_opt_item
+%type <defelt>	createfunc_opt_item createproc_opt_item common_func_opt_item alter_function_common_func_opt_item create_function_common_func_opt_item dostmt_opt_item
 %type <fun_param> func_arg func_arg_with_default table_func_column
 %type <fun_param_mode> arg_class
 %type <typnam>	func_return func_type
@@ -22173,6 +22173,30 @@ opt_createproc_opt_list:
 /*
  * Options common to both CREATE FUNCTION and ALTER FUNCTION
  */
+create_function_common_func_opt_item:
+			common_func_opt_item
+				{
+					$$ = $1;
+				}
+			| FunctionSetResetClause %prec '(' ')'
+				{
+					/* we abuse the normal content of a DefElem here */
+					$$ = makeDefElem("set", (Node *)$1);
+				}
+	;
+
+alter_function_common_func_opt_item:
+			common_func_opt_item
+				{
+					$$ = $1;
+				}
+			| FunctionSetResetClause
+				{
+					/* we abuse the normal content of a DefElem here */
+					$$ = makeDefElem("set", (Node *)$1);
+				}
+	;
+
 common_func_opt_item:
 			CALLED ON NULL_P INPUT_P
 				{
@@ -22253,11 +22277,6 @@ common_func_opt_item:
 			| ROWS NumericOnly
 				{
 					$$ = makeDefElem("rows", (Node *)$2);
-				}
-			| FunctionSetResetClause %prec '(' ')'
-				{
-					/* we abuse the normal content of a DefElem here */
-					$$ = makeDefElem("set", (Node *)$1);
 				}
 			| FENCED
 				{
@@ -22368,7 +22387,7 @@ createfunc_opt_item:
 				{
 					$$ = makeDefElem("pipelined", (Node *)makeInteger(TRUE));
 				}
-			| common_func_opt_item
+			| create_function_common_func_opt_item
 				{
 					$$ = $1;
 				}
@@ -22376,7 +22395,7 @@ createfunc_opt_item:
 
 
 createproc_opt_item:
-			common_func_opt_item
+			create_function_common_func_opt_item
 				{
 					$$ = $1;
 				}
@@ -22961,8 +22980,8 @@ AlterProcedureStmt:
 
 alterfunc_opt_list:
 			/* At least one option must be specified */
-			common_func_opt_item					{ $$ = list_make1($1); }
-			| alterfunc_opt_list common_func_opt_item { $$ = lappend($1, $2); }
+			alter_function_common_func_opt_item					{ $$ = list_make1($1); }
+			| alterfunc_opt_list alter_function_common_func_opt_item { $$ = lappend($1, $2); }
 		;
 
 /* Ignored, merely for SQL compliance */

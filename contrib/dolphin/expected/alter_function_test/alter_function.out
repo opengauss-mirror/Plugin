@@ -74,6 +74,7 @@ end;
 $$ LANGUAGE PLPGSQL;
 alter FUNCTION f5 no sql;
 ERROR:  more than one function named "f5"
+alter FUNCTION f5() set query_dop = 2;
 create table t1 (a int);
 select  f5(1);
  f5 
