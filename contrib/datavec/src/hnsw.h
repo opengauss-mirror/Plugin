@@ -63,6 +63,7 @@
 #define HNSW_ELEMENT_PAGE_TYPE 1
 #define HNSW_NEIGHBOR_PAGE_TYPE 2
 #define HNSW_USTORE_PAGE_TYPE 3
+#define HNSW_APPEND_META_PAGE_TYPE 4
 
 /* Make graph robust against non-HOT updates */
 #define HNSW_HEAPTIDS 10
@@ -531,7 +532,7 @@ FmgrInfo   *HnswOptionalProcInfo(Relation index, uint16 procnum);
 Datum		HnswNormValue(const HnswTypeInfo * typeInfo, Oid collation, Datum value);
 bool		HnswCheckNorm(FmgrInfo *procinfo, Oid collation, Datum value);
 Buffer		HnswNewBuffer(Relation index, ForkNumber forkNum);
-void		HnswInitPage(Buffer buf, Page page);
+void		HnswInitPage(Buffer buf, Page page, uint8 pageType);
 void		HnswInit(void);
 List       *HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, FmgrInfo *procinfo,
                             Oid collation, int m, bool inserting, HnswElement skipElement, IndexScanDesc scan = NULL);
@@ -544,6 +545,8 @@ void		HnswFindElementNeighbors(char *base, HnswElement element, HnswElement entr
 HnswCandidate *HnswEntryCandidate(char *base, HnswElement em, Datum q, Relation rel, FmgrInfo *procinfo,
                                   Oid collation, bool loadVec, IndexScanDesc scan = NULL);
 void		HnswUpdateMetaPage(Relation index, int updateEntry, HnswElement entryPoint, BlockNumber insertPage, ForkNumber forkNum, bool building);
+void HnswUpdateAppendMetaPage(Relation index, int updateEntry, HnswElement entryPoint, BlockNumber eleInsertPage,
+                              BlockNumber neiInsertPage, ForkNumber forkNum, bool building);
 void		HnswSetNeighborTuple(char *base, HnswNeighborTuple ntup, HnswElement e, int m);
 void		HnswAddHeapTid(HnswElement element, ItemPointer heaptid);
 void		HnswInitNeighbors(char *base, HnswElement element, int m, HnswAllocator * alloc);

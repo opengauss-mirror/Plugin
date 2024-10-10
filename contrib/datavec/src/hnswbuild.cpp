@@ -90,11 +90,7 @@ CreateMetaPage(HnswBuildState * buildstate)
 
     buf = HnswNewBuffer(index, forkNum);
     page = BufferGetPage(buf);
-    HnswInitPage(buf, page);
-
-    if (buildstate->isUStore) {
-        HnswPageGetOpaque(page)->pageType = HNSW_USTORE_PAGE_TYPE;
-    }
+    HnswInitPage(buf, page, HNSW_USTORE_PAGE_TYPE);
 
     /* Set metapage data */
     metap = HnswPageGetMeta(page);
@@ -129,7 +125,7 @@ CreateAppendMetaPage(HnswBuildState *buildstate)
 
     buf = HnswNewBuffer(index, forkNum);
     page = BufferGetPage(buf);
-    HnswInitPage(buf, page);
+    HnswInitPage(buf, page, HNSW_APPEND_META_PAGE_TYPE);
 
     /* Set append metapage data */
     appMetap = HnswPageGetAppendMeta(page);
@@ -179,26 +175,29 @@ CreateAppendMetaPage(HnswBuildState *buildstate)
 static void
 HnswBuildAppendPage(Relation index, Buffer *buf, Page *page, ForkNumber forkNum)
 {
-	/* Add a new page */
-	Buffer		newbuf = HnswNewBuffer(index, forkNum);
+    /* Add a new page */
+    Buffer newbuf = HnswNewBuffer(index, forkNum);
 
-	/* Update previous page */
-	HnswPageGetOpaque(*page)->nextblkno = BufferGetBlockNumber(newbuf);
+    /* Update previous page */
+    HnswPageGetOpaque(*page)->nextblkno = BufferGetBlockNumber(newbuf);
 
-	/* Commit */
-	MarkBufferDirty(*buf);
-	UnlockReleaseBuffer(*buf);
+    /* Store page type */
+    uint8 pageType = HnswPageGetOpaque(page)->pageType;
 
-	/* Can take a while, so ensure we can interrupt */
-	/* Needs to be called when no buffer locks are held */
-	LockBuffer(newbuf, BUFFER_LOCK_UNLOCK);
-	CHECK_FOR_INTERRUPTS();
-	LockBuffer(newbuf, BUFFER_LOCK_EXCLUSIVE);
+    /* Commit */
+    MarkBufferDirty(*buf);
+    UnlockReleaseBuffer(*buf);
 
-	/* Prepare new page */
-	*buf = newbuf;
-	*page = BufferGetPage(*buf);
-	HnswInitPage(*buf, *page);
+    /* Can take a while, so ensure we can interrupt */
+    /* Needs to be called when no buffer locks are held */
+    LockBuffer(newbuf, BUFFER_LOCK_UNLOCK);
+    CHECK_FOR_INTERRUPTS();
+    LockBuffer(newbuf, BUFFER_LOCK_EXCLUSIVE);
+
+    /* Prepare new page */
+    *buf = newbuf;
+    *page = BufferGetPage(*buf);
+    HnswInitPage(*buf, *page, pageType);
 }
 
 /*
@@ -218,7 +217,7 @@ CreateGraphPages(HnswBuildState * buildstate)
     Page page;
     HnswElementPtr iter = buildstate->graph->head;
     char *base = buildstate->hnswarea;
-    IndexTransInfo* idxXid;
+    IndexTransInfo *idxXid;
 
     /* Calculate sizes */
     maxSize = HNSW_MAX_SIZE;
@@ -230,11 +229,7 @@ CreateGraphPages(HnswBuildState * buildstate)
     /* Prepare first page */
     buf = HnswNewBuffer(index, forkNum);
     page = BufferGetPage(buf);
-    HnswInitPage(buf, page);
-
-    if (buildstate->isUStore) {
-        HnswPageGetOpaque(page)->pageType = HNSW_USTORE_PAGE_TYPE;
-    }
+    HnswInitPage(buf, page, HNSW_USTORE_PAGE_TYPE);
 
     while (!HnswPtrIsNull(base, iter)) {
         HnswElement element = (HnswElement)HnswPtrAccess(base, iter);
@@ -268,9 +263,6 @@ CreateGraphPages(HnswBuildState * buildstate)
         /* Keep element and neighbors on the same page if possible */
         if (PageGetFreeSpace(page) < etupSize || (combinedSize <= maxSize && PageGetFreeSpace(page) < combinedSize)) {
             HnswBuildAppendPage(index, &buf, &page, forkNum);
-            if (buildstate->isUStore) {
-                HnswPageGetOpaque(page)->pageType = HNSW_USTORE_PAGE_TYPE;
-            }
         }
 
         /* Calculate offsets */
@@ -288,25 +280,22 @@ CreateGraphPages(HnswBuildState * buildstate)
 
         if (buildstate->isUStore) {
             ((PageHeader)page)->pd_upper -= sizeof(IndexTransInfo);
-            idxXid = (IndexTransInfo*)(((char*)page) + ((PageHeader)page)->pd_upper);
+            idxXid = (IndexTransInfo *)(((char *)page) + ((PageHeader)page)->pd_upper);
             idxXid->xmin = FrozenTransactionId;
             idxXid->xmax = InvalidTransactionId;
         }
 
         /* Add element */
-        if (PageAddItem(page, (Item) etup, etupSize, InvalidOffsetNumber, false, false) != element->offno) {
+        if (PageAddItem(page, (Item)etup, etupSize, InvalidOffsetNumber, false, false) != element->offno) {
             elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
         }
 
         /* Add new page if needed */
         if (PageGetFreeSpace(page) < ntupSize) {
             HnswBuildAppendPage(index, &buf, &page, forkNum);
-            if (buildstate->isUStore) {
-                HnswPageGetOpaque(page)->pageType = HNSW_USTORE_PAGE_TYPE;
-            }
         }
         /* Add placeholder for neighbors */
-        if (PageAddItem(page, (Item) ntup, ntupSize, InvalidOffsetNumber, false, false) != element->neighborOffno) {
+        if (PageAddItem(page, (Item)ntup, ntupSize, InvalidOffsetNumber, false, false) != element->neighborOffno) {
             elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
         }
     }
@@ -319,6 +308,105 @@ CreateGraphPages(HnswBuildState * buildstate)
 
     entryPoint = (HnswElement)HnswPtrAccess(base, buildstate->graph->entryPoint);
     HnswUpdateMetaPage(index, HNSW_UPDATE_ENTRY_ALWAYS, entryPoint, insertPage, forkNum, true);
+
+    pfree(etup);
+    pfree(ntup);
+}
+
+/*
+ * Create element & neighbor pages
+ */
+static void
+CreateElementNeighborPages(HnswBuildState * buildstate)
+{
+    Relation index = buildstate->index;
+    ForkNumber forkNum = buildstate->forkNum;
+    HnswElementTuple etup;
+    HnswNeighborTuple ntup;
+    BlockNumber elementInsertSlot;
+    BlockNumber neighborInsertSlot;
+    HnswElement entryPoint;
+    Buffer buf;
+    Page page;
+    Buffer nbuf;
+    Page npage;
+
+    HnswElementPtr iter = buildstate->graph->head;
+    char *base = buildstate->hnswarea;
+
+    /* Allocate once */
+    etup = (HnswElementTuple)palloc0(HNSW_TUPLE_ALLOC_SIZE);
+    ntup = (HnswNeighborTuple)palloc0(HNSW_TUPLE_ALLOC_SIZE);
+
+    /* Prepare first page */
+    buf = HnswNewBuffer(index, forkNum);
+    page = BufferGetPage(buf);
+    HnswInitPage(buf, page, HNSW_ELEMENT_PAGE_TYPE);
+
+    nbuf = HnswNewBuffer(index, forkNum);
+    npage = BufferGetPage(nbuf);
+    HnswInitPage(nbuf, npage, HNSW_NEIGHBOR_PAGE_TYPE);
+
+    while (!HnswPtrIsNull(base, iter)) {
+        HnswElement element = (HnswElement)HnswPtrAccess(base, iter);
+        Size etupSize;
+        Size ntupSize;
+        Pointer valuePtr = (Pointer)HnswPtrAccess(base, element->value);
+
+        /* Update iterator */
+        iter = element->next;
+
+        /* Zero memory for each element */
+        MemSet(etup, 0, HNSW_TUPLE_ALLOC_SIZE);
+
+        /* Calculate sizes */
+        etupSize = HNSW_ELEMENT_TUPLE_SIZE(VARSIZE_ANY(valuePtr));
+        ntupSize = HNSW_NEIGHBOR_TUPLE_SIZE(element->level, buildstate->m);
+
+        /* Initial size check */
+        if (etupSize > HNSW_TUPLE_ALLOC_SIZE)
+            elog(ERROR, "index element tuple too large");
+
+        HnswSetElementTuple(base, etup, element);
+
+        /* Add new page if needed */
+        if (PageGetFreeSpace(page) < etupSize)
+            HnswBuildAppendPage(index, &buf, &page, forkNum);
+
+        if (PageGetFreeSpace(npage) < ntupSize) {
+            HnswBuildAppendPage(index, &nbuf, &npage, forkNum);
+        }
+
+        /* Calculate offsets */
+        element->blkno = BufferGetBlockNumber(buf);
+        element->offno = OffsetNumberNext(PageGetMaxOffsetNumber(page));
+        element->neighborPage = BufferGetBlockNumber(nbuf);
+        element->neighborOffno = OffsetNumberNext(PageGetMaxOffsetNumber(npage));
+
+        ItemPointerSet(&etup->neighbortid, element->neighborPage, element->neighborOffno);
+
+        /* Add element */
+        if (PageAddItem(page, (Item)etup, etupSize, InvalidOffsetNumber, false, false) != element->offno)
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+
+        /* Add neighbors */
+        if (PageAddItem(npage, (Item)ntup, ntupSize, InvalidOffsetNumber, false, false) != element->neighborOffno)
+            elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(index));
+    }
+
+    elementInsertSlot = BufferGetBlockNumber(buf);
+    neighborInsertSlot = BufferGetBlockNumber(nbuf);
+
+    /* Commit */
+    MarkBufferDirty(buf);
+    UnlockReleaseBuffer(buf);
+
+    MarkBufferDirty(nbuf);
+    UnlockReleaseBuffer(nbuf);
+
+    entryPoint = (HnswElement)HnswPtrAccess(base, buildstate->graph->entryPoint);
+    HnswUpdateAppendMetaPage(index, HNSW_UPDATE_ENTRY_ALWAYS, entryPoint, elementInsertSlot, neighborInsertSlot,
+                             forkNum, true);
 
     pfree(etup);
     pfree(ntup);
@@ -381,15 +469,20 @@ static void
 FlushPages(HnswBuildState * buildstate)
 {
 #ifdef HNSW_MEMORY
-	elog(INFO, "memory: %zu MB", buildstate->graph->memoryUsed / (1024 * 1024));
+    elog(INFO, "memory: %zu MB", buildstate->graph->memoryUsed / (1024 * 1024));
 #endif
 
-	CreateMetaPage(buildstate);
-	CreateGraphPages(buildstate);
-	WriteNeighborTuples(buildstate);
+    if (buildstate->isUStore) {
+        CreateMetaPage(buildstate);
+        CreateGraphPages(buildstate);
+    } else {
+        CreateAppendMetaPage(buildstate);
+        CreateElementNeighborPages(buildstate);
+    }
+    WriteNeighborTuples(buildstate);
 
-	buildstate->graph->flushed = true;
-	MemoryContextReset(buildstate->graphCtx);
+    buildstate->graph->flushed = true;
+    MemoryContextReset(buildstate->graphCtx);
 }
 
 /*
