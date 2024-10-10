@@ -6390,6 +6390,14 @@ ProcessUtilitySlow(Node *parse_tree,
                 PG_END_TRY();
                 EventTriggerUndoInhibitCommandCollection();
             } break;
+
+            case T_CreateMatViewLogStmt:
+                address = CreateMatViewLog((CreateMatViewLogStmt*)parse_tree);
+                break;
+            
+            case T_DropMatViewLogStmt:
+                DropMatViewLog((DropMatViewLogStmt*)parse_tree);
+                break;
  
             case T_CreateTrigStmt: 
 #ifdef DOLPHIN
@@ -9314,6 +9322,14 @@ const char* CreateCommandTag(Node* parse_tree)
             
         case T_RefreshMatViewStmt:
             tag = "REFRESH MATERIALIZED VIEW";
+            break;
+
+        case T_CreateMatViewLogStmt:
+            tag = "CREATE MATERIALIZED VIEW LOG";
+            break;
+        
+        case T_DropMatViewLogStmt:
+            tag = "DROP MATERIALIZED VIEW LOG";
             break;
 
 #ifndef ENABLE_MULTIPLE_NODES
