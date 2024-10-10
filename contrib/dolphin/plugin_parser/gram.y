@@ -689,7 +689,7 @@ static bool GreaterThanHour (List* int_type);
 		CreateResourcePoolStmt AlterResourcePoolStmt DropResourcePoolStmt
 		CreateWorkloadGroupStmt AlterWorkloadGroupStmt DropWorkloadGroupStmt
 		CreateAppWorkloadGroupMappingStmt AlterAppWorkloadGroupMappingStmt DropAppWorkloadGroupMappingStmt
-		MergeStmt PurgeStmt CreateMatViewStmt RefreshMatViewStmt CreateAmStmt
+		MergeStmt PurgeStmt CreateMatViewStmt RefreshMatViewStmt CreateMatViewLogStmt DropMatViewLogStmt CreateAmStmt
 		CreateWeakPasswordDictionaryStmt DropWeakPasswordDictionaryStmt
 		AlterGlobalConfigStmt DropGlobalConfigStmt
 		CreatePublicationStmt AlterPublicationStmt
@@ -1175,6 +1175,9 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	condition_number
 %type <list>	condition_information statement_information
 
+/* MATVIEW */
+%type <boolean> build_deferred
+
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
@@ -1222,7 +1225,7 @@ static bool GreaterThanHour (List* int_type);
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_DOUBLE_INF BINARY_DOUBLE_NAN BINARY_INTEGER BIT BLANKS
-	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
+	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUILD BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHANNEL CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLASS_ORIGIN CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
@@ -1267,7 +1270,7 @@ static bool GreaterThanHour (List* int_type);
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
+	LOCATE LOCATION LOCK_P LOCKED LOG_ON LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT METHOD MICROSECOND_P MID MIN_ROWS MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
 	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
 	MOD MODIFIES MAX_ROWS
@@ -1639,6 +1642,8 @@ stmt :
 			| CreatePackageBodyStmt
 			| CreateGroupStmt
 			| CreateMatViewStmt
+			| CreateMatViewLogStmt
+			| DropMatViewLogStmt
 			| CreateModelStmt  // DB4AI
 			| CreateNodeStmt
 			| CreateOpClassStmt
@@ -12993,7 +12998,7 @@ OptSnapshotStratify:
  *****************************************************************************/
 
 CreateMatViewStmt:
-	   CREATE OptNoLog opt_incremental MATERIALIZED VIEW create_mv_target AS SelectStmt opt_with_data
+	   CREATE OptNoLog INCREMENTAL MATERIALIZED VIEW create_mv_target AS SelectStmt opt_with_data
 			   {
 				   CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
 				   ctas->query = $8;
@@ -13003,14 +13008,8 @@ CreateMatViewStmt:
 				   /* cram additional flags into the IntoClause */
 				   $6->rel->relpersistence = $2;
 				   $6->skipData = !($9);
-				   if ($6->skipData) {
-        				const char* message = "WITH NO DATA for materialized views not yet supported";
-    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-				        ereport(errstate,
-				            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-				                errmsg("WITH NO DATA for materialized views not yet supported")));
-                   }
-                   if ($3 && $6->options) {
+				   $6->ivm = true;
+                   if ($6->options) {
         				const char* message = "options for incremental materialized views not yet supported";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
                         ereport(errstate,
@@ -13018,7 +13017,7 @@ CreateMatViewStmt:
                                 errmsg("options for incremental materialized views not yet supported")));
                    }
 #ifndef ENABLE_MULTIPLE_NODES
-                   if ($3 && $6->distributeby) {
+                   if ($6->distributeby) {
         				const char* message = "It's not supported to specify distribute key on incremental materialized views";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
                         ereport(errstate,
@@ -13030,10 +13029,47 @@ CreateMatViewStmt:
                         ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                             errmsg("matview is not supported while DMS and DSS enabled.")));
                    }
-                    
-				   $6->ivm = $3;
+
 				   $$ = (Node *) ctas;
 			   }
+		| CREATE MATERIALIZED VIEW create_mv_target build_deferred AS SelectStmt
+				{
+					CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
+					ctas->query = $7;
+					ctas->into = $4;
+					ctas->relkind = OBJECT_MATVIEW;
+					ctas->is_select_into = false;
+					/* cram additional flags into the IntoClause */
+					$4->rel->relpersistence = RELPERSISTENCE_PERMANENT;
+					$4->skipData = $5;
+					$4->ivm = false;
+
+					if (ENABLE_DMS) {
+						ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("matview is not supported while DMS and DSS enabled.")));
+					}
+
+					$$ = (Node *) ctas;
+				}
+		| CREATE MATERIALIZED VIEW create_mv_target AS SelectStmt opt_with_data
+				{
+					CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
+					ctas->query = $6;
+					ctas->into = $4;
+					ctas->relkind = OBJECT_MATVIEW;
+					ctas->is_select_into = false;
+					/* cram additional flags into the IntoClause */
+					$4->rel->relpersistence = RELPERSISTENCE_PERMANENT;
+					$4->skipData = !($7);
+					$4->ivm = false;
+
+					if (ENABLE_DMS) {
+						ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("matview is not supported while DMS and DSS enabled.")));
+					}
+
+					$$ = (Node *) ctas;
+				}
 	   ;
 
 create_mv_target:
@@ -13067,6 +13103,10 @@ opt_incremental:
 			| /*EMPTY*/							{ $$ = FALSE; }
 		;
 
+build_deferred:
+			BUILD DEFERRED						{ $$ = TRUE; }
+			| BUILD IMMEDIATE					{ $$ = FALSE; }
+		;
 
 /*****************************************************************************
  *
@@ -13093,6 +13133,23 @@ RefreshMatViewStmt:
                }
        ;
 
+CreateMatViewLogStmt:
+			CREATE MATERIALIZED VIEW LOG_ON qualified_name
+				{
+					CreateMatViewLogStmt* stmt = makeNode(CreateMatViewLogStmt);
+					stmt->relation = $5;
+					$$ = (Node*)stmt;
+				}
+		;
+
+DropMatViewLogStmt:
+			DROP MATERIALIZED VIEW LOG_ON qualified_name
+				{
+					DropMatViewLogStmt* stmt = makeNode(DropMatViewLogStmt);
+					stmt->relation = $5;
+					$$ = (Node*)stmt;
+				}
+		;
 
 /*****************************************************************************
  *
@@ -39683,6 +39740,7 @@ alias_name_unreserved_keyword_without_key:
 			| BLANKS
 			| BLOCKCHAIN
 			| BODY_P
+			| BUILD
 			| CACHE
 			| CALLED
 			| CANCELABLE

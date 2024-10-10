@@ -1233,10 +1233,17 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
 
     if (partstrategy == PART_STRATEGY_INTERVAL) {
         resetStringInfo(query);
-        appendStringInfo(query,
-            "SELECT p.`interval`[1] AS `interval` FROM pg_partition p "
-            "WHERE p.parentid = %u AND p.parttype = '%c' AND p.partstrategy = '%c'",
-            tableoid, PART_OBJ_TYPE_PARTED_TABLE, PART_STRATEGY_INTERVAL);
+        if (!u_sess->attr.attr_sql.dolphin) {
+            appendStringInfo(query,
+                "SELECT p.interval[1] AS interval FROM pg_partition p "
+                "WHERE p.parentid = %u AND p.parttype = '%c' AND p.partstrategy = '%c'",
+                tableoid, PART_OBJ_TYPE_PARTED_TABLE, PART_STRATEGY_INTERVAL);
+        } else {
+            appendStringInfo(query,
+                "SELECT p.`interval`[1] AS `interval` FROM pg_partition p "
+                "WHERE p.parentid = %u AND p.parttype = '%c' AND p.partstrategy = '%c'",
+                tableoid, PART_OBJ_TYPE_PARTED_TABLE, PART_STRATEGY_INTERVAL);
+        }
         (void)SPI_execute(query->data, true, INT_MAX);
         Assert(SPI_processed == 1);
 
@@ -9149,12 +9156,13 @@ static char* get_variable(
 
     /* Identify names to use */
     schemaname = NULL; /* default assumptions */
-    refname = rte->eref->aliasname;
 
     if (NULL != rte->relname && u_sess->hook_cxt.forTsdbHook) {
         rte->relname = get_rel_name(rte->relid);
         rte->eref->aliasname = rte->relname;
     }
+
+    refname = rte->eref->aliasname;
 
     /* Exceptions occur only if the RTE is alias-less */
     if (rte->alias == NULL) {
