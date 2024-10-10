@@ -305,9 +305,11 @@ dolqinside		[^$]+
  */
 dquote			\"
 xdstart			{dquote}
+xdescape		[\\]{dquote}
 xdstop			{dquote}
 xddouble		{dquote}{dquote}
-xdinside		[^"]+
+xdinside		[^"\\]+
+xdinside2		[\\][^"]
 
 /* backquote quote
  * Allows embedded spaces and other special characters into identifiers.
@@ -828,6 +830,14 @@ other			.
 					BEGIN(xbq);
 					startlit();
 				}
+<xd>{xdescape}	{
+					if (SQL_MODE_ESCAPE_QUOTES()) {
+						addlitchar('"', yyscanner);
+					} else {
+						addlitchar('\\', yyscanner);
+						yyless(1);
+					}
+				}
 <xd>{xdstop}	{
 #ifdef DOLPHIN
 					if (SQL_MODE_ANSI_QUOTES()) {
@@ -944,6 +954,9 @@ other			.
 					addlitchar('"', yyscanner);
 				}
 <xd,xui>{xdinside}	{
+					addlit(yytext, yyleng, yyscanner);
+				}
+<xd,xui>{xdinside2}	{
 					addlit(yytext, yyleng, yyscanner);
 				}
 <xbq>{xbqinside}	{

@@ -118,6 +118,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO},
     {"treat_bxconst_as_binary", OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY},
     {"not_escape_zero_in_binary", OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY},
+    {"escape_quotes", OPT_SQL_MODE_ESCAPE_QUOTES},
 };
 
 #define DOLPHIN_TYPES_NUM 12
