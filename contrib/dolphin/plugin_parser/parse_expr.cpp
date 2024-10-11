@@ -277,24 +277,24 @@ void DealWithIntervalType(ParseState** pstate, Node** lexpr, Node** rexpr, char*
     if (strcmp(opername, "+") == 0) {
         if (leftType == UNKNOWNOID && rightType == INTERVALOID) {
             *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
-                GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetIntervalOpOid(*lexpr, *rexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         } else if (rightType == UNKNOWNOID && leftType == INTERVALOID) {
             *rexpr = coerce_to_target_type(*pstate, *rexpr, UNKNOWNOID,
-                GetIntervalOpOid(*rexpr, *lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetIntervalOpOid(*rexpr, *lexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         } else if (leftType == DATEOID && rightType == INTERVALOID) {
             *lexpr = coerce_to_target_type(*pstate, *lexpr, DATEOID,
-                GetDateIntervalOpOid(*rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetDateIntervalOpOid(*rexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         } else if (rightType == DATEOID && leftType == INTERVALOID) {
             *rexpr = coerce_to_target_type(*pstate, *rexpr, DATEOID,
-                GetDateIntervalOpOid(*lexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetDateIntervalOpOid(*lexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         }
     } else {
         if (leftType == UNKNOWNOID && rightType == INTERVALOID) {
             *lexpr = coerce_to_target_type(*pstate, *lexpr, UNKNOWNOID,
-                GetIntervalOpOid(*lexpr, *rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetIntervalOpOid(*lexpr, *rexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         } else if (leftType == DATEOID && rightType == INTERVALOID) {
             *lexpr = coerce_to_target_type(*pstate, *lexpr, DATEOID,
-                GetDateIntervalOpOid(*rexpr), 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                GetDateIntervalOpOid(*rexpr), MAX_INTERVAL_PRECISION, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         }
     }
 }
