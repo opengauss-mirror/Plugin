@@ -40,7 +40,8 @@ show databases;
  pg_catalog
  public
  sqladvisor
-(12 rows)
+ xmltype
+(13 rows)
 
 drop database db1;
 NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.
@@ -74,5 +75,6 @@ show databases;
  public
  snapshot
  sqladvisor
-(17 rows)
+ xmltype
+(18 rows)
 

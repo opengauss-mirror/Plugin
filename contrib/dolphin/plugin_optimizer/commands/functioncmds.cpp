@@ -744,7 +744,7 @@ static bool compute_b_attribute(DefElem* defel)
  * Dissect the list of options assembled in gram.y into function
  * attributes.
  */
-static List* compute_attributes_sql_style(const List* options, List** as, char** language, bool* windowfunc_p,
+List* compute_attributes_sql_style(const List* options, List** as, char** language, bool* windowfunc_p,
     char* volatility_p, bool* strict_p, bool* security_definer, bool* leakproof_p, ArrayType** proconfig,
     float4* procost, float4* prorows, bool* fenced, bool* shippable, bool* package, bool* is_pipelined,
     FunctionPartitionInfo** partInfo)
@@ -1070,7 +1070,7 @@ extern HeapTuple SearchUserHostName(const char* userName, Oid* oid);
  * CreateFunction
  *	 Execute a CREATE FUNCTION utility statement.
  */
-ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, Oid pkg_oid)
+ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, Oid pkg_oid, Oid type_oid)
 {
     char* probin_str = NULL;
     char* prosrc_str = NULL;
@@ -1146,9 +1146,9 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
      */
     bool isalter = false;
     /* Convert list of names to a name and namespace */
-    if (!OidIsValid(pkg_oid)) {
+    if (!OidIsValid(pkg_oid) && !OidIsValid(type_oid)) {
         namespaceId = QualifiedNameGetCreationNamespace(stmt->funcname, &funcname);
-    } else {
+    } else if (OidIsValid(pkg_oid)) {
         char *schemaname = NULL;
         DeconstructQualifiedName(stmt->funcname, &schemaname, &funcname);
         HeapTuple tuple = SearchSysCache1(PACKAGEOID, ObjectIdGetDatum(pkg_oid));
@@ -1164,6 +1164,17 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
             }
         } else {
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_PACKAGE), errmsg("package not found")));
+        }
+        ReleaseSysCache(tuple);
+    } else {
+        char *schemaname = NULL;
+        DeconstructQualifiedName(stmt->funcname, &schemaname, &funcname);
+        HeapTuple tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(type_oid));
+        if (HeapTupleIsValid(tuple)) {
+            Form_pg_type typform = (Form_pg_type)GETSTRUCT(tuple);
+            namespaceId = typform->typnamespace;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_PACKAGE), errmsg("object type not found")));
         }
         ReleaseSysCache(tuple);
     }
@@ -1439,7 +1450,10 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
         ret_type_depend_ext,
         stmt,
         isPipelined,
-        partInfo);
+        partInfo,
+        type_oid,
+        stmt->typfunckind,
+        stmt->isfinal);
 
     CreateFunctionComment(address.objectId, functionOptions);
     pfree_ext(param_type_depend_ext);
@@ -3112,6 +3126,10 @@ ObjectAddress CreateCast(CreateCastStmt* stmt)
          * You can always work around that by writing a cast function.
          */
         if (sourcetyptype == TYPTYPE_COMPOSITE || targettyptype == TYPTYPE_COMPOSITE)
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_OBJECT_DEFINITION), errmsg("composite data types are not binary-compatible")));
+
+        if (sourcetyptype == TYPTYPE_ABSTRACT_OBJECT || targettyptype == TYPTYPE_ABSTRACT_OBJECT)
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_OBJECT_DEFINITION), errmsg("composite data types are not binary-compatible")));
 
