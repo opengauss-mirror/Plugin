@@ -1068,7 +1068,7 @@ drop cascades to table cypher_match.e2
 drop cascades to table cypher_match.v3
 drop cascades to table cypher_match.e3
 drop cascades to table cypher_match.loop
-drop cascades to table cypher_match.self
+drop cascades to table cypher_match."self"
 drop cascades to table cypher_match.duplicate
 drop cascades to table cypher_match.dup_edge
 drop cascades to table cypher_match.other_v

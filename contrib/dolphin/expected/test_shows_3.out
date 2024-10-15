@@ -22,7 +22,8 @@ show databases;
  sc
  snapshot
  sqladvisor
-(19 rows)
+ xmltype
+(20 rows)
 
 create schema aa1;
 create schema aa2;
@@ -77,7 +78,8 @@ show databases;
  public
  sqladvisor
  u1
-(11 rows)
+ xmltype
+(12 rows)
 
 set role u2 password 'abc@1234';
 show databases;
@@ -94,7 +96,8 @@ show databases;
  public
  sqladvisor
  u2
-(11 rows)
+ xmltype
+(12 rows)
 
 \c contrib_regression
 drop user u1;
