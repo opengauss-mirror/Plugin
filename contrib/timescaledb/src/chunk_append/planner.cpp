@@ -99,6 +99,10 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *
 	cscan->methods = &chunk_append_plan_methods;
 	cscan->scan.scanrelid = rel->relid;
 
+    if (!((Path *) path)->pathtarget)
+        ((Path *) path)->pathtarget = rel->reltarget;
+    
+    tlist = ts_build_path_tlist(root, (Path *) path);
 	cscan->extensible_plan_tlist = tlist;
 	cscan->scan.plan.targetlist = tlist;
 

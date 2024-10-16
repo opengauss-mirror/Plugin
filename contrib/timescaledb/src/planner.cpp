@@ -339,7 +339,7 @@ get_parent_rte(const PlannerInfo *root, Index rti)
 {
 	ListCell *lc;
 
-#if PG11_GE
+#if PG11_GE || OG30
 	/* Fast path when arrays are setup */
 	if (root->append_rel_array != NULL && root->append_rel_array[rti] != NULL)
 	{

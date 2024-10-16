@@ -603,7 +603,7 @@ AppendRelInfo *
 ts_get_appendrelinfo(PlannerInfo *root, Index rti, bool missing_ok)
 {
 	ListCell *lc;
-#if PG11_GE
+#if PG11_GE || OG30
 	/* use append_rel_array if it has been setup */
 	if (root->append_rel_array)
 	{
