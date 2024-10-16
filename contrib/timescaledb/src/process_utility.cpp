@@ -2255,9 +2255,10 @@ process_cluster_start(ProcessUtilityArgs *args)
 			CommitTransactionCommand();
 		}
 
-		hcache->release_on_commit = true;
 		/* Start a new transaction for the cleanup work. */
 		StartTransactionCommand();
+
+		hcache->release_on_commit = true;
 
 		/* Clean up working storage */
 		MemoryContextDelete(mcxt);
