@@ -64,7 +64,7 @@ c8:CHAR
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
-c12:TINYINT
+c12:BIT
 c13:CHAR
 c14:CHAR
 c15:VARCHAR
@@ -164,7 +164,7 @@ c8:CHAR
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
-c12:TINYINT
+c12:BIT
 c13:CHAR
 c14:CHAR
 c15:VARCHAR
@@ -263,7 +263,7 @@ c8:CHAR
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
-c12:TINYINT
+c12:BIT
 c13:CHAR
 c14:CHAR
 c15:VARCHAR
@@ -362,7 +362,7 @@ c8:CHAR
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
-c12:TINYINT
+c12:BIT
 c13:CHAR
 c14:CHAR
 c15:VARCHAR
@@ -444,6 +444,15 @@ id
 ID
 VAL
 ID2
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTinyInt1IsBitTest localhost $dp db_jdbc proto_user Gauss@123
+1
+1
+0
+0
+true
+1
+false
+0
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 \! rm @abs_builddir@/proto_jdbc/class/*.class

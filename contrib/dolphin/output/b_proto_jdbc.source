@@ -435,6 +435,15 @@ select * from t3;
   1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | \x626c6f62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a   | c   | openGauss name
 (1 row)
 
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTinyInt1IsBitTest localhost $dp db_jdbc proto_user Gauss@123
+1
+1
+0
+0
+true
+1
+false
+0
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123
 select relname from pg_class where relname like '%autocommit_test%' order by relname;
      relname      
