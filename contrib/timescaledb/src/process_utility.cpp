@@ -2505,7 +2505,9 @@ process_altertable_start_table(ProcessUtilityArgs *args)
 	if (!OidIsValid(relid))
 		return false;
 
+	ts_process_utility_set_expect_chunk_modification(true);
 	check_chunk_alter_table_operation_allowed(relid, stmt);
+	ts_process_utility_set_expect_chunk_modification(false);
 
 	ht = ts_hypertable_cache_get_cache_and_entry(relid, CACHE_FLAG_MISSING_OK, &hcache);
 	if (ht != NULL)
