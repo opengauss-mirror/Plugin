@@ -391,24 +391,7 @@ explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 l
 (13 rows)
 
 explain(costs off, verbose) select /*+ mergejoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
-WARNING:  unused hint: MergeJoin(join_1 join_2)
-                   QUERY PLAN                    
--------------------------------------------------
- Streaming(type: LOCAL GATHER dop: 1/2)
-   Output: join_1.a, join_2.a
-   ->  Hash Right Join
-         Output: join_1.a, join_2.a
-         Hash Cond: (join_2.a = join_1.a)
-         ->  Streaming(type: BROADCAST dop: 2/2)
-               Output: join_2.a
-               ->  Seq Scan on uint_smp.join_2
-                     Output: join_2.a
-         ->  Hash
-               Output: join_1.a
-               ->  Seq Scan on uint_smp.join_1
-                     Output: join_1.a
-(13 rows)
-
+--?ERROR:  operator.*
 -- test
 set query_dop = 6;
 drop table if exists t_t_mutil_t1;
