@@ -224,7 +224,6 @@ explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 l
 (17 rows)
 
 explain(costs off, verbose) select /*+ mergejoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
-WARNING:  unused hint: MergeJoin(join_1 join_2)
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Streaming(type: LOCAL GATHER dop: 1/2)

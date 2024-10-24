@@ -210,6 +210,7 @@ do {                                                                            
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);
+extern Datum new_time(PG_FUNCTION_ARGS);
 
 
 #endif // !FRONTEND_PARSER
