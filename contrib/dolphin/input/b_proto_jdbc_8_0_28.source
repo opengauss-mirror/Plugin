@@ -97,6 +97,8 @@ select * from autocommit_test6;
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTinyInt1IsBitTest localhost $dp db_jdbc proto_user Gauss@123
 
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcUseOldAliasMetadataBehaviorTest localhost $dp db_jdbc proto_user Gauss@123
+
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 
