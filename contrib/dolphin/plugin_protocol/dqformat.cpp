@@ -324,13 +324,15 @@ dolphin_column_definition* make_dolphin_column_definition(const char *name, char
     return field;
 } 
 
-dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName)
+dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr,
+                                                          char *tableName, char *oriColName)
 {
     // FIELD packet
     dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
 
     // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = attr->attname.data;
+    field->org_name = oriColName;
     const TypeItem* item = GetItemByTypeOid(attr->atttypid);
     switch (item->dolphin_type_id) {
         // since mysql-jdbc 5.1.47 don't support enum and set.
