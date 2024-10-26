@@ -41,6 +41,8 @@ select relname from pg_class where relname like '%autocommit_test%' order by rel
 
 select * from autocommit_test6;
 
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAllowMultiQueryTest localhost $dp db_jdbc proto_user Gauss@123
+
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-native-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoIncrementTest $dp db_uds $USER
 
 RESET ROLE;
