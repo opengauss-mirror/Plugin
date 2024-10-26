@@ -6049,6 +6049,11 @@ static Node* transformCursorOuterVarAsParam(ParseState* pstate, ColumnRef* cref,
     }
 
     pstate_temp = pstate_temp->parentParseState;
+
+    if (pstate_temp == NULL || pstate_temp->is_outer_parse_state == false) {
+        return node;
+    }
+    
     List* para_var = pstate_temp->cursor_expression_para_var;
     pstate_temp->cursor_expression_para_var = lappend(para_var, (void*)(Var*)copyObject(node));
 
@@ -6118,7 +6123,7 @@ static Node* transformCursorExpression(ParseState* pstate, CursorExpression* cur
             nParamExec = list_length(parse_state_temp->cursor_expression_para_var);
         }
         
-        plan_tree->nParamExec = nParamExec;
+        plan_tree->nParamExec += nParamExec;
         newm->plan = (Node*)plan_tree;
         newm->options = cursor_expression->options;
         newm->raw_query_str = queryString;

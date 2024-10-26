@@ -1232,7 +1232,7 @@ static bool GreaterThanHour (List* int_type);
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND APPLY ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_DOUBLE_INF BINARY_DOUBLE_NAN BINARY_INTEGER BIT BLANKS
@@ -1279,7 +1279,7 @@ static bool GreaterThanHour (List* int_type);
 
 	KEY KEY_BLOCK_SIZE KEYS KILL KEY_PATH KEY_STORE
 
-	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
+	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LATERAL_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_ON LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT METHOD MICROSECOND_P MID MIN_ROWS MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
@@ -1317,7 +1317,7 @@ static bool GreaterThanHour (List* int_type);
 	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRAIGHT_JOIN STRATIFY STREAM STRICT_P STRIP_P SUBCLASS_ORIGIN SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR STARTING SQL_P
 
-	TABLE TABLE_NAME TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
+	TABLE TABLE_NAME TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TIMEZONE_HOUR_P TIMEZONE_MINUTE_P TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
@@ -1369,6 +1369,7 @@ static bool GreaterThanHour (List* int_type);
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
 			FORCE_INDEX USE_INDEX IGNORE_INDEX
 			CURSOR_EXPR
+			LATERAL_EXPR
 			LOCK_TABLES
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 			STORAGE_DISK STORAGE_MEMORY
@@ -1416,6 +1417,7 @@ static bool GreaterThanHour (List* int_type);
 %nonassoc   FULL_OUTER
 %nonassoc   ROTATE
 %nonassoc   higher_than_rotate
+%nonassoc   LATERAL_P
 %left       ','
 /*
  * To support target_el without AS, we must give IDENT an explicit priority
@@ -1473,7 +1475,7 @@ static bool GreaterThanHour (List* int_type);
  * They wouldn't be given a precedence at all, were it not that we need
  * left-associativity among the JOIN rules themselves.
  */
-%left		JOIN CROSS LEFT FULL RIGHT INNER_P NATURAL ENCRYPTED STRAIGHT_JOIN
+%left		JOIN CROSS LEFT FULL RIGHT INNER_P NATURAL ENCRYPTED STRAIGHT_JOIN APPLY OUTER_P
 /* kluge to keep xml_whitespace_option from causing shift/reduce conflicts */
 %right		PRESERVE STRIP_P
 %token <keyword> CONSTRUCTOR FINAL MAP MEMBER RESULT SELF STATIC_P UNDER
@@ -21186,6 +21188,41 @@ CreateFunctionStmt:
 
 CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
 					{
+						if ($3 != NULL) {
+							ListCell* l = list_head($2);
+							Node* name = (Node*)lfirst(l);
+							if (IsA(name, String) && (strcmp(strVal(name), "gms_lob") == 0)) {
+								ListCell* lc = list_head($3);
+								Node* n1  = (Node*)lfirst(lc);
+								if (IsA(n1, ColumnRef)) {
+									char* lobname = strVal(linitial(((ColumnRef*)n1)->fields));
+									Node* funcname = (Node*)lfirst(list_tail($2));
+									if (strcmp(strVal(funcname), "createtemporary") == 0) {
+										if (list_length($3) == 2) {
+											$3 = lappend($3, makeIntConst(10, -1));
+										}
+									}
+									$3 = lappend($3, makeStringConst(lobname, -1));
+								} else if (IsA(n1, NamedArgExpr)) {
+									Node* n2 = ((Node*)((NamedArgExpr*)n1)->arg);
+									if (IsA(n2, ColumnRef)) {
+										char* lobname = strVal(linitial(((ColumnRef*)n2)->fields));
+										Node* funcname = (Node*)lfirst(list_tail($2));
+										if (strcmp(strVal(funcname), "createtemporary") == 0) {
+											if (list_length($3) == 2) {
+												$3 = lappend($3, makeIntConst(10, -1));
+											}
+										}
+										NamedArgExpr *na = makeNode(NamedArgExpr);
+										na->name = pstrdup("lobname");
+										na->arg = (Expr *)makeStringConst(lobname, -1);
+										na->argnumber = -1;		/* until determined */
+										na->location = @1;
+										$3 = lappend($3, (Node *) na);
+									}
+								}
+							}
+						}
 #ifndef ENABLE_MULTIPLE_NODES
 						$$ = makeCallFuncStmt($2, $3, enable_out_param_override());
 #else
@@ -32391,6 +32428,15 @@ table_ref_for_no_table_function:		single_table
 				{
 					$$ = $1;
 				}
+			| LATERAL_EXPR func_table alias_clause
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					n->funccallnode = $2;
+					n->alias = $3;
+					n->coldeflist = NIL;
+					n->lateral = true;
+					$$ = (Node *) n;
+				}
 			| func_table		%prec UMINUS
 				{
 					RangeFunction *n = makeNode(RangeFunction);
@@ -32479,6 +32525,35 @@ table_ref_for_no_table_function:		single_table
 					RangeSubselect *n = makeNode(RangeSubselect);
 					n->subquery = $1;
 					n->alias = $2;
+					$$ = (Node *) n;
+				}
+
+			| LATERAL_P select_with_parens opt_alias_clause  %prec LATERAL_P
+				{
+					RangeSubselect *n = makeNode(RangeSubselect);
+
+					n->lateral = true;
+					n->subquery = $2;
+					n->alias = $3;
+					/* same comment as above */
+					if ($3 == NULL)
+					{
+						if (IsA($2, SelectStmt) &&
+							((SelectStmt *) $2)->valuesLists)
+						{
+							ereport(ERROR,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("VALUES in FROM must have an alias"),
+									 errhint("For example, FROM (VALUES ...) [AS] foo."),
+									 parser_errposition(@2)));
+						}
+						else
+						{
+							Alias *a = makeNode(Alias);
+							a->aliasname = pstrdup("__unnamed_subquery__");
+							n->alias = a;
+						}
+					}
 					$$ = (Node *) n;
 				}
 			| joined_table
@@ -32615,6 +32690,38 @@ joined_table:
 					n->rarg = $5;
 					n->usingClause = NIL; /* figure out which columns later... */
 					n->quals = NULL; /* fill later */
+					$$ = n;
+				}
+			| table_ref CROSS APPLY table_ref
+				{
+					/* CROSS JOIN is same as unqualified inner join */
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = FALSE;
+					n->is_apply_join = TRUE;
+					n->larg = $1;
+					n->rarg = $4;
+					if (IsA(n->rarg, RangeSubselect)) {
+						((RangeSubselect*)n->rarg)->lateral = true;
+					}
+					n->usingClause = NIL;
+					n->quals = NULL;
+					$$ = n;
+				}
+			| table_ref OUTER_P APPLY table_ref
+				{
+					/* CROSS JOIN is same as unqualified inner join */
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_LEFT;
+					n->isNatural = FALSE;
+					n->is_apply_join = TRUE;
+					n->larg = $1;
+					n->rarg = $4;
+					if (IsA(n->rarg, RangeSubselect)) {
+						((RangeSubselect*)n->rarg)->lateral = true;
+					}
+					n->usingClause = NIL;
+					n->quals = NULL;
 					$$ = n;
 				}
 		;
@@ -36533,6 +36640,7 @@ func_expr:	func_application within_group_clause over_clause
 func_application:	dolphin_func_name '(' func_arg_list opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
+					ListCell* l = list_head($1);
 					n->funcname = $1;
 					n->args = $3;
 					n->agg_order = $4;
@@ -36542,6 +36650,38 @@ func_application:	dolphin_func_name '(' func_arg_list opt_sort_clause ')'
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;
+					Node* name = (Node*)lfirst(l);
+					if (IsA(name, String) && (strcmp(strVal(name), "gms_lob") == 0)) {
+						ListCell* lc = list_head($3);
+						Node* n1  = (Node*)lfirst(lc);
+						if (IsA(n1, ColumnRef)) {
+							char* lobname = lobname = strVal(linitial(((ColumnRef*)n1)->fields));
+							Node* funcname = (Node*)lfirst(list_tail($1));
+							if (strcmp(strVal(funcname), "createtemporary") == 0) {
+								if (list_length($4) == 2) {
+									n->args = lappend(n->args, makeIntConst(10, -1));
+								};
+							}
+							n->args = lappend(n->args, makeStringConst(lobname, -1));
+						} else if (IsA(n1, NamedArgExpr)) {
+							Node* n2 = ((Node*)((NamedArgExpr*)n1)->arg);
+							if (IsA(n2, ColumnRef)) {
+								char* lobname = strVal(linitial(((ColumnRef*)$1)->fields));
+								Node* funcname = (Node*)lfirst(list_tail($1));
+								if (strcmp(strVal(funcname), "createtemporary") == 0) {
+									if (list_length(n->args) == 2) {
+										n->args = lappend(n->args, makeIntConst(10, -1));
+									}
+								}
+								NamedArgExpr *na = makeNode(NamedArgExpr);
+								na->name = pstrdup("lobname");
+								na->arg = (Expr *)makeStringConst(lobname, -1);
+								na->argnumber = -1;		/* until determined */
+								na->location = @1;
+								n->args = lappend(n->args, (Node *) na);
+							}
+						}
+					}
 					$$ = (Node *)n;
 				}
 			| func_application_special { $$ = $1; }
@@ -37472,6 +37612,15 @@ func_expr_common_subexpr:
 					n->funcname = SystemFuncName("extract_internal");
 					n->args = $3;
 #endif
+					if (list_length($3) > 0) {
+						ListCell *lc = list_head($3);
+						Node *firstElement = (Node *)lfirst(lc);
+						A_Const* con = (A_Const*)firstElement;
+						char *firstElementStr = strVal(&con->val);
+						if (strcmp(firstElementStr, "timezone_abbr") == 0 || strcmp(firstElementStr, "timezone_region") == 0) {
+							n->funcname = SystemFuncName("timezone_extract");
+						}
+					}
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -38678,6 +38827,8 @@ extract_arg:
 			| HOUR_P								{ $$ = "hour"; }
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
+			| TIMEZONE_HOUR_P						{ $$ = "timezone_hour"; }
+			| TIMEZONE_MINUTE_P						{ $$ = "timezone_minute"; }
 			| QUARTER_P								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
 			| WEEK_P								{ $$ = "week"; }
@@ -40878,6 +41029,7 @@ alias_name_unreserved_keyword_without_key:
 			| LANGUAGE
 			| LARGE_P
 			| LAST_P
+			| LATERAL_P
 			| LC_COLLATE_P
 			| LC_CTYPE_P
 			| LEAKPROOF
@@ -42993,7 +43145,8 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	if (clist->next)
 	{
 		has_overload_func = true;
-		if (IsPackageFunction(funcname) == false && IsPackageSchemaOid(SchemaNameGetSchemaOid(schemaname, true)) == false)
+        if (IsPackageFunction(funcname) == false && IsPackageSchemaOid(SchemaNameGetSchemaOid(schemaname, true)) == false &&
+			(schemaname == NULL || strncmp(schemaname, "gms_lob", strlen("gms_lob")))) 
 		{
 			const char* message = "function isn't exclusive ";
 			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -43105,7 +43258,6 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 					}
 				}
 			}
-
 			i++;
 		}
 

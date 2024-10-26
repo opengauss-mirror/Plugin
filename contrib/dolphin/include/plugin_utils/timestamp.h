@@ -210,6 +210,13 @@ do {                                                                            
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);
+
+extern Datum timestamp_extract_zone(PG_FUNCTION_ARGS);
+extern Datum interval_extract_zone(PG_FUNCTION_ARGS);
+extern Datum time_extract_zone(PG_FUNCTION_ARGS);
+extern Datum timestamptz_extract_zone(PG_FUNCTION_ARGS);
+extern Datum timetz_extract_zone(PG_FUNCTION_ARGS);
+
 extern Datum new_time(PG_FUNCTION_ARGS);
 
 
