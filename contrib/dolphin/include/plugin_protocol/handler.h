@@ -32,5 +32,6 @@ extern void dophin_send_message(ErrorData *edata);
 extern int dophin_read_command(StringInfo buf);
 extern void dolphin_end_command(const char *completionTag);
 extern int dolphin_process_command(StringInfo buf);
+extern void dolphin_comm_reset(void);
 
 #endif  /* handler.h */
