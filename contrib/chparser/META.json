@@ -1,0 +1,51 @@
+{
+   "name": "chparser",
+   "abstract": "a parser for full-text search of Chinese",
+   "description": "chparser is a PostgreSQL extension for full-text search of Chinese.It implements a Chinese parser base on the Simple Chinese Word Segmentation(SCWS)",
+   "version": "0.2.0",
+   "maintainer": [
+      "Jov <amutu@amutu.com>"
+   ],
+   "license": "postgresql",
+   "prereqs": {
+      "runtime": {
+         "requires": {
+            "PostgreSQL": "9.2.0"
+         },
+         "recommends": {
+            "PostgreSQL": "9.6.0"
+         }
+      }
+   },
+   "provides": {
+      "chparser": {
+         "abstract": "a parser for full-text search of Chinese",
+         "file": "chparser--1.0.sql",
+         "docfile": "README.md",
+         "version": "0.2.0"
+      }
+   },
+   "resources": {
+      "homepage": "http://amutu.com/blog/chparser/",
+      "bugtracker": {
+         "web": "http://github.com/amutu/chparser/issues/"
+      },
+      "repository": {
+        "url":  "git://github.com/amutu/chparser.git",
+        "web":  "http://github.com/amutu/chparser/",
+        "type": "git"
+      }
+   },
+   "generated_by": "Jov",
+   "meta-spec": {
+      "version": "1.0.0",
+      "url": "http://pgxn.org/meta/spec.txt"
+   },
+   "release_status": "stable",
+   "tags": [
+      "parser",
+      "full text search",
+      "Chinese",
+      "dictionary"
+   ]
+}
