@@ -43,8 +43,7 @@
 #include "lib/ilist.h"
 #include "miscadmin.h"
 
-#include "tsdb_dsm.h"
-
+#include "extension.h"
 #include "tsdb.h"
 #include "storage/smgr/fd.h"
 #include "storage/ipc.h"
@@ -53,7 +52,8 @@
 #include "storage/pg_shmem.h"
 #include "utils/guc.h"
 #include "utils/memutils.h"
-#include "postmaster/postmaster.h" 
+#include "postmaster/postmaster.h"
+#include "tsdb_dsm.h"
 
 #define PG_DYNSHMEM_CONTROL_MAGIC		0x9a503d32
 
@@ -401,6 +401,9 @@ dsm_postmaster_shutdown(int code, Datum arg)
 static void
 dsm_backend_startup(void)
 {
+    if (!ts_extension_is_loaded()) {
+        return;
+    }
 	/* If dynamic shared memory is disabled, reject this. */
 	if (dynamic_shared_memory_type == DSM_IMPL_NONE)
 		ereport(ERROR,
