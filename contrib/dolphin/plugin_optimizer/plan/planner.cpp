@@ -3613,7 +3613,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     (u_sess->attr.attr_sql.enable_vector_engine && 
                      u_sess->attr.attr_sql.vectorEngineStrategy != OFF_VECTOR_ENGINE && 
                      u_sess->attr.attr_sql.enable_vector_targetlist))
-                    disuse_physical_tlist(result_plan, best_path);
+                    disuse_physical_tlist(root, result_plan, best_path);
 
                 locate_grouping_columns(root, tlist, result_plan->targetlist, groupColIdx);
             }
