@@ -999,6 +999,42 @@ ts_plan_expand_timebucket_annotate(PlannerInfo *root, RelOptInfo *rel)
 		propagate_join_quals(root, rel, &ctx);
 }
 
+/*
+ * setup_append_rel_array
+ *		Populate the append_rel_array to allow direct lookups of
+ *		AppendRelInfos by child relid.
+ *
+ * The array remains unallocated if there are no AppendRelInfos.
+ */
+void
+setup_append_rel_array(PlannerInfo *root)
+{
+    ListCell *lc;
+    int size = list_length(root->parse->rtable) + 1;
+
+    if (root->append_rel_list == NIL) {
+        root->append_rel_array = NULL;
+        return;
+    }
+
+    root->append_rel_array = (AppendRelInfo **)
+        palloc0(size * sizeof(AppendRelInfo *));
+
+    foreach(lc, root->append_rel_list)
+    {
+        AppendRelInfo *appinfo = lfirst_node(AppendRelInfo, lc);
+        int child_relid = appinfo->child_relid;
+
+        /* Sanity check */
+        Assert(child_relid < size);
+
+        if (root->append_rel_array[child_relid])
+            elog(ERROR, "child relation already exists");
+
+        root->append_rel_array[child_relid] = appinfo;
+    }
+}
+
 /* Inspired by expand_inherited_rtentry but expands
  * a hypertable chunks into an append relationship */
 void
@@ -1156,12 +1192,12 @@ ts_plan_expand_hypertable_chunks(Hypertable *ht, PlannerInfo *root, RelOptInfo *
 
 	root->append_rel_list = list_concat(root->append_rel_list, appinfos);
 
-#if PG11_GE
+#if PG11_GE || OG30
 	/*
 	 * PG11 introduces a separate array to make looking up children faster, see:
 	 * https://github.com/postgres/postgres/commit/7d872c91a3f9d49b56117557cdbb0c3d4c620687.
 	 */
-	setup_append_rel_array(root);
+    setup_append_rel_array(root);
 #endif
 
 #if PG12_GE
