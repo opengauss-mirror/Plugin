@@ -353,14 +353,14 @@ proargtypesext:CHAR:null
 prodefaultargposext:CHAR:null
 allargtypes:CHAR:23 25 23 25 26
 allargtypesext:CHAR:null
-oid:INT UNSIGNED:13349
+oid:INT UNSIGNED:13357
 relname:CHAR:replication_slots
 relnamespace:INT UNSIGNED:4988
-reltype:INT UNSIGNED:13350
+reltype:INT UNSIGNED:13358
 reloftype:INT UNSIGNED:0
 relowner:INT UNSIGNED:10
 relam:INT UNSIGNED:0
-relfilenode:INT UNSIGNED:13349
+relfilenode:INT UNSIGNED:13357
 reltablespace:INT UNSIGNED:0
 relpages:DOUBLE:0.0
 reltuples:DOUBLE:0.0
