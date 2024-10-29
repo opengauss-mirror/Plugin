@@ -692,17 +692,14 @@ apply_optimizations(PlannerInfo *root, TsRelType reltype, RelOptInfo *rel, Range
 			{
 				case T_AppendPath:
 				case T_MergeAppendPath:
-					if (should_chunk_append(root, rel, *pathptr, ordered, order_attno))
-						*pathptr = ts_chunk_append_path_create(root,
-															   rel,
-															   ht,
-															   *pathptr,
-															   false,
-															   ordered,
-															   nested_oids);
-					else if (ts_constraint_aware_append_possible(*pathptr))
-						*pathptr = ts_constraint_aware_append_path_create(root, ht, *pathptr);
-					break;
+                    if (should_chunk_append(root, rel, *pathptr, ordered, order_attno)) {
+                        *pathptr = ts_chunk_append_path_create(root,
+                            rel, ht, *pathptr, false, ordered, nested_oids);
+                        rel->cheapest_total_path = rel->pathlist;
+                    } else if (ts_constraint_aware_append_possible(*pathptr)) {
+                        *pathptr = ts_constraint_aware_append_path_create(root, ht, *pathptr);
+                    }
+                    break;
 				default:
 					break;
 			}
