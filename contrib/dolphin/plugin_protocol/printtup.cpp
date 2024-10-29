@@ -165,7 +165,7 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
     int natts = typeinfo->natts;
     int i;
     ListCell *tlist_item = list_head(targetlist);
-    TargetEntry *tle;
+    TargetEntry *tle = NULL;
 
     // FIELD_COUNT packet
     send_field_count_packet(buf, natts);
@@ -175,9 +175,6 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
     }
 
     for (i = 0; i < natts; ++i) {
-        // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
-
         while (tlist_item && ((TargetEntry *)lfirst(tlist_item))->resjunk) {
             tlist_item = lnext(tlist_item);
         }
@@ -185,9 +182,25 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
         if (tlist_item != NULL) {
             tle = (TargetEntry *)lfirst(tlist_item);
             tlist_item = lnext(tlist_item);
-        } 
+        }
+
+        char* oriColName = NULL;
+        if (tle != NULL && strcmp(tle->resname, attrs[i].attname.data) == 0 &&
+            OidIsValid(tle->resorigtbl) && tle->resorigcol > 0) {
+            HeapTuple tuple;
+            Form_pg_attribute attForm;
+            tuple = SearchSysCache2(ATTNUM, ObjectIdGetDatum(tle->resorigtbl), Int16GetDatum(tle->resorigcol));
+            if (HeapTupleIsValid(tuple)) {
+                attForm = (Form_pg_attribute)GETSTRUCT(tuple);
+                oriColName = pstrdup(attForm->attname.data);
+                ReleaseSysCache(tuple);
+            }
+        }
         
+        // FIELD packet
+        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i], NULL, oriColName);
         send_column_definition41_packet(buf, field);
+        pfree_ext(oriColName);
         pfree(field);
     }
     
