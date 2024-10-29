@@ -319,26 +319,7 @@ enqueue_message_wait_for_ack(MessageQueue *queue, BgwMessage *message,
 extern bool
 ts_bgw_message_send_and_wait(BgwMessageType message_type, Oid db_oid)
 {
-	shm_mq *ack_queue;
-	dsm_segment *seg;
-	shm_mq_handle *ack_queue_handle;
-	BgwMessage *message;
-	bool ack_received = false;
-
-	message = bgw_message_create(message_type, db_oid);
-
-	seg = dsm_find_mapping(message->ack_dsm_handle);
-	if (seg == NULL)
-		ereport(ERROR,
-				(errmsg("TimescaleDB background worker dynamic shared memory segment not mapped")));
-	ack_queue = shm_mq_create(dsm_segment_address(seg), BGW_ACK_QUEUE_SIZE);
-	shm_mq_set_receiver(ack_queue, t_thrd.proc);
-	ack_queue_handle = shm_mq_attach(ack_queue, seg, NULL);
-	if (ack_queue_handle != NULL)
-		ack_received = enqueue_message_wait_for_ack(mq, message, ack_queue_handle);
-	dsm_detach(seg); /* Queue detach happens in dsm detach callback */
-	pfree(message);
-	return ack_received;
+    return true;
 }
 
 /*
