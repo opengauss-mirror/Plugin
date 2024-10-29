@@ -607,6 +607,7 @@ static bool GreaterThanHour (List* int_type);
 	DefElem				*defelt;
 	SortBy				*sortby;
 	WindowDef			*windef;
+        KeepClause                      *keep;
 	JoinExpr			*jexpr;
 	IndexElem			*ielem;
 	Alias				*alias;
@@ -772,7 +773,7 @@ static bool GreaterThanHour (List* int_type);
 %type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option opt_do_language
 %type <ival>	opt_lock lock_type cast_context opt_wait compile_pkg_opt opt_lock_for_b kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
-%type <boolean>	opt_check opt_force opt_or_replace
+%type <boolean>	opt_check opt_force opt_or_replace opt_public
 				opt_grant_grant_option opt_grant_admin_option
 				opt_nowait opt_if_exists opt_with_data opt_large_seq opt_cancelable
 %type <ival>	opt_nowait_or_skip
@@ -1069,6 +1070,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	func_application func_with_separator func_expr_common_subexpr index_functional_expr_key func_application_special functime_app
 %type <node>	func_expr func_expr_windowless
 %type <node>	common_table_expr
+%type <keep>    keep_clause
 %type <with>	with_clause opt_with_clause
 %type <list>	cte_list
 
@@ -1260,7 +1262,7 @@ static bool GreaterThanHour (List* int_type);
 	SHRINK
 
 	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_ADD_P DATE_FORMAT_P DATE_SUB_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DISK DIV
+	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DENSE_RANK DESC DESCRIBE DETERMINISTIC DISK DIV
 /* PGXC_BEGIN */
 	DIAGNOSTICS DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P DUAL_P
 /* PGXC_END */
@@ -1288,7 +1290,7 @@ static bool GreaterThanHour (List* int_type);
 
 	JOIN
 
-	KEY KEY_BLOCK_SIZE KEYS KILL KEY_PATH KEY_STORE
+	KEEP KEY KEY_BLOCK_SIZE KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LATERAL_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
@@ -15018,12 +15020,20 @@ row_level_security_cmd:
  *****************************************************************************/
 
 CreateSynonymStmt:
-			CREATE opt_or_replace SYNONYM any_name FOR any_name
+			CREATE opt_or_replace opt_public SYNONYM any_name FOR any_name
 				{
+					bool isPublic = $3;
+					if (isPublic && list_length($5) != 1) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("missing or invalid synonym identifier")));
+					}
 					CreateSynonymStmt *n = makeNode(CreateSynonymStmt);
+					List *anyname = $5;
 					n->replace = $2;
-					n->synName = $4;
-					n->objName = $6;
+					n->isPublic = isPublic;
+					n->synName = $5;
+					n->objName = $7;
 					$$ = (Node *)n;
 				}
 		;
@@ -15036,23 +15046,54 @@ CreateSynonymStmt:
  *****************************************************************************/
 
 DropSynonymStmt:
-			DROP SYNONYM any_name  opt_drop_behavior
+			DROP opt_public SYNONYM any_name  opt_drop_behavior
 				{
+					bool isPublic = $3;
+					List *synName = $4;
+					if (isPublic && list_length(synName) != 1) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("missing or invalid synonym identifier")));
+					}
 					DropSynonymStmt *n = makeNode(DropSynonymStmt);
-					n->synName = $3;
-					n->behavior = $4;
+					n->isPublic = $2;
+					n->synName = synName;
+					n->behavior = $5;
 					n->missing = false;
 					$$ = (Node *) n;
 				}
-			| DROP SYNONYM IF_P EXISTS any_name  opt_drop_behavior
+			| DROP opt_public SYNONYM IF_P EXISTS any_name  opt_drop_behavior
 				{
+					bool isPublic = $2;
+					List *synName = $6;
+					if (isPublic && list_length(synName) != 1) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("missing or invalid synonym identifier")));
+					}
+					
 					DropSynonymStmt *n = makeNode(DropSynonymStmt);
-					n->synName = $5;
-					n->behavior = $6;
+					n->isPublic = isPublic;
+					n->synName = synName;
+					n->behavior = $7;
 					n->missing = true;
 					$$ = (Node *) n;
 				}
 		;
+
+
+opt_public:
+		DOLPHINIDENT
+		{
+			if (strcasecmp(IdentResolveToChar($1, yyscanner), "public") == 0) {
+				$$ = true;
+			} else {
+				yychar = IDENT;
+				$$ = false;
+			}
+		}
+		| /*EMPTY*/								{ $$ = false; }
+	;
 
 
 /*****************************************************************************
@@ -19136,6 +19177,30 @@ db_privilege: CREATE ANY TABLE
                 n->db_priv_name = pstrdup("drop any synonym");
                 $$ = n;
             }
+            | CREATE DOLPHINIDENT SYNONYM
+            {
+                if (strcasecmp(IdentResolveToChar($2, yyscanner), "public") == 0) {
+                    DbPriv *n = makeNode(DbPriv);
+                    n->db_priv_name = pstrdup("create public synonym");
+                    $$ = n;
+                } else {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_SYNTAX_ERROR),
+                            errmsg("Syntax error at or near \"%s\"", $2), parser_errposition(@2)));
+                }
+            }
+            | DROP DOLPHINIDENT SYNONYM
+            {
+                if (strcasecmp(IdentResolveToChar($2, yyscanner), "public") == 0) {
+                    DbPriv *n = makeNode(DbPriv);
+                    n->db_priv_name = pstrdup("drop public synonym");
+                    $$ = n;
+                } else {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_SYNTAX_ERROR),
+                            errmsg("Syntax error at or near \"%s\"", $2), parser_errposition(@2)));
+                }
+                }
             | CREATE ANY TRIGGER
             {
                 DbPriv *n = makeNode(DbPriv);
@@ -38445,6 +38510,39 @@ xmlexists_argument:
 				}
 		;
 
+keep_clause:
+                        KEEP '(' DENSE_RANK FIRST_P sort_clause ')'
+                                {
+                                        if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+                                               ereport(ERROR,
+                                                       (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                                               errmsg("keep clause is supported only in A_FORMAT database.")));
+                                        KeepClause *n = makeNode(KeepClause);
+                                        n->rank_first = true;
+                                        n->keep_order =$5;
+                                        n->location = @1;
+ 
+                                        $$ = n; 
+                                }
+                        | KEEP '(' DENSE_RANK LAST_P sort_clause ')'
+                                {
+                                        if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+                                               ereport(ERROR,
+                                                       (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                                               errmsg("keep clause is supported only in A_FORMAT database.")));
+                                        KeepClause *n = makeNode(KeepClause);
+                                        n->rank_first = false;
+                                        n->keep_order =$5;
+                                        n->location = @1;
+                                        
+                                        $$ = n; 
+                                }
+                        | /*EMPTY*/
+                                { 
+                                        $$ = NULL; 
+                                }
+                ;
+
 /*
  * Aggregate decoration clauses
  */
@@ -40958,6 +41056,7 @@ alias_name_unreserved_keyword_without_key:
 			| DETERMINISTIC
 			| DICTIONARY
 			| DELTA
+			| DENSE_RANK
 			| DIAGNOSTICS
 			| DEFAULTS		
 			| DEFERRED
@@ -41060,6 +41159,7 @@ alias_name_unreserved_keyword_without_key:
 			| INVOKER
 			| IP
 			| ISOLATION
+			| KEEP
 			| KEY_BLOCK_SIZE
 			| KEY_PATH
 			| KEY_STORE

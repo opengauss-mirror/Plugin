@@ -1747,6 +1747,14 @@ typedef struct CommonTableExpr {
     StartWithOptions    *swoptions; /* START WITH CONNECT BY options */
 } CommonTableExpr;
 
+typedef struct KeepClause
+{
+    NodeTag type;
+    bool rank_first;
+    List *keep_order;
+    int location;
+} KeepClause;
+
 /*
  * FuncCall - a function or aggregate invocation
  *
@@ -1764,6 +1772,7 @@ typedef struct FuncCall {
     List *args;      /* the arguments (list of exprs) */
     List *agg_order; /* ORDER BY (list of SortBy) */
     Node *agg_filter;
+    KeepClause *aggKeep;
     bool agg_within_group;
     bool agg_star;          /* argument was really '*' */
     bool agg_distinct;      /* arguments were labeled DISTINCT */
