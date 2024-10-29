@@ -4338,6 +4338,7 @@ void plpgsql_build_synonym(char* typname, char* basetypname)
 {
     CreateSynonymStmt stmt;
     stmt.replace = true;
+    stmt.isPublic = false;
     Node* lc = NULL;
     List* synList = NIL;
     List* objList = NIL;
