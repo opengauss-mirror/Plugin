@@ -228,13 +228,23 @@ void send_general_ok_packet()
     DestroyStringInfo(buf);
 }
 
+/* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
+static void sendServerStatus(StringInfo buf)
+{
+    if (u_sess->proc_cxt.nextQuery) {
+        dq_append_int2(buf, SERVER_STATUS_AUTOCOMMIT | SERVER_MORE_RESULTS_EXISTS);
+    } else {
+        dq_append_int2(buf, SERVER_STATUS_AUTOCOMMIT);
+    }
+}
+
 void send_network_eof_packet(StringInfo buf)
 {
     resetStringInfo(buf);
 
     dq_append_int1(buf, 0xfe); 
     dq_append_int2(buf, 0x00);       /* warning count */
-    dq_append_int2(buf, 0x02);      /* status flags */
+    sendServerStatus(buf);
     
     dq_putmessage(buf->data, buf->len);
 }
@@ -250,10 +260,10 @@ void send_new_eof_packet(StringInfo buf)
     dq_append_int_lenenc(buf, 0);   //affected rows
     dq_append_int_lenenc(buf, 0);   //last insert-id
     if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_PROTOCOL_41) {
-        dq_append_int2(buf, 0x02);      /* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
+        sendServerStatus(buf);
         dq_append_int2(buf, 0x00);       /* warning count *int<2>	warnings	number of warnings*/
     } else if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_TRANSACTIONS) {
-        dq_append_int2(buf, 0x02);      //int<2>	status_flags	SERVER_STATUS_flags_enum
+        sendServerStatus(buf);
     }
     if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_SESSION_TRACK) {
         dq_append_string_lenenc(buf, "", -1);        // string<lenenc>	info	human readable status information

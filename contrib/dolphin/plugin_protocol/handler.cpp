@@ -192,6 +192,14 @@ int dolphin_process_command(StringInfo buf)
     return 0;
 }
 
+void dolphin_comm_reset(void)
+{
+    if (temp_Conn_Mysql_Info) {
+        pfree(temp_Conn_Mysql_Info);
+        temp_Conn_Mysql_Info = NULL;
+    }
+}
+
 #define CHARSET_251         251
 #define CHARSET_252         252
 #define CHARSET_253         253

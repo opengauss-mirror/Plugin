@@ -30,6 +30,7 @@
 #include "utils/guc.h"
 #include "miscadmin.h"
 #include "catalog/pg_namespace.h"
+#include "plugin_protocol/proto_com.h"
 
 #ifdef DOLPHIN
 #define ASCII_COMMA 44
@@ -136,6 +137,11 @@ List* raw_parser(const char* str, List** query_string_locationlist)
             (size_t)lfirst_int(list_tail(*query_string_locationlist)) < (strlen(str) - 1)) {
             *query_string_locationlist = lappend_int(*query_string_locationlist, strlen(str));
         }
+    }
+
+    if (list_length(yyextra.parsetree) > 1 && GetSessionContext()->Conn_Mysql_Info != NULL &&
+        !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_MULTI_STATEMENTS)) {
+        ereport(ERROR, (errmsg("Multi-statement is not allowed. Please connect with allowMultiQueries=true")));
     }
 
     return yyextra.parsetree;
