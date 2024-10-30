@@ -180,3 +180,4 @@ test: column_quote_alias sconst_sconst sqlmode_strict test_view_table_depend tes
 test: test_row_in test_std test_var_pop b_database_subquery test_lag_lead builtin_funcs/max_min escape_char delimiter
 
 test: ignore_keyword_list
+test: autoinc_sql_mode

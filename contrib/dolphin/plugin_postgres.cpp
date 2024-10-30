@@ -119,6 +119,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"treat_bxconst_as_binary", OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY},
     {"not_escape_zero_in_binary", OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY},
     {"escape_quotes", OPT_SQL_MODE_ESCAPE_QUOTES},
+    {"no_auto_value_on_zero", OPT_SQL_MODE_NO_AUTO_VALUE_ON_ZERO},
 };
 
 #define DOLPHIN_TYPES_NUM 12
@@ -229,6 +230,7 @@ static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
 static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
+static bool NoAutoValueOnZero();
 static bool NullsMinimalPolicy();
 
 static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub,
@@ -367,6 +369,7 @@ void init_plugin_object()
         u_sess->proc_cxt.MyProcPort->protocol_config->fn_printtup_create_DR = dophin_default_printtup_create_DR;
     }
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
+    u_sess->hook_cxt.noAutoValueOnZeroHook = (void*)NoAutoValueOnZero;
     u_sess->hook_cxt.nullsMinimalPolicyHook = (void*)NullsMinimalPolicy;
     u_sess->hook_cxt.getIgnoreKeywordTokenHook = (void*)semtc_get_ignore_keyword_token;
     u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
@@ -1825,6 +1828,11 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
 static bool ReplaceNullOrNot()
 {
     return !(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT);
+}
+
+static bool NoAutoValueOnZero()
+{
+    return (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NO_AUTO_VALUE_ON_ZERO);
 }
 
 static bool NullsMinimalPolicy()

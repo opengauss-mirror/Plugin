@@ -1,0 +1,62 @@
+create schema autoinc_sql_mode;
+set current_schema to 'autoinc_sql_mode';
+set dolphin.sql_mode = '';
+create table auto_inc1(id int);
+insert into auto_inc1 values(0),(1),(2);
+select * from auto_inc1;
+ id 
+----
+  0
+  1
+  2
+(3 rows)
+
+alter table auto_inc1 modify id INT AUTO_INCREMENT PRIMARY KEY;
+NOTICE:  ALTER TABLE will create implicit sequence "auto_inc1_id_seq" for serial column "auto_inc1.id"
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "auto_inc1_pkey" for table "auto_inc1"
+ERROR:  could not create unique index "auto_inc1_pkey"
+DETAIL:  Key (id)=(1) is duplicated.
+set dolphin.sql_mode='no_auto_value_on_zero';
+alter table auto_inc1 modify id INT AUTO_INCREMENT PRIMARY KEY;
+NOTICE:  ALTER TABLE will create implicit sequence "auto_inc1_id_seq" for serial column "auto_inc1.id"
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "auto_inc1_pkey" for table "auto_inc1"
+select * from auto_inc1;
+ id 
+----
+  0
+  1
+  2
+(3 rows)
+
+set dolphin.sql_mode='';
+insert into auto_inc1 values(0);
+insert into auto_inc1 values(NULL);
+select * from auto_inc1;
+ id 
+----
+  0
+  1
+  2
+  3
+  4
+(5 rows)
+
+set dolphin.sql_mode='no_auto_value_on_zero';
+insert into auto_inc1 values(0);
+ERROR:  duplicate key value violates unique constraint "auto_inc1_pkey"
+DETAIL:  Key (id)=(0) already exists.
+insert into auto_inc1 values(NULL);
+select * from auto_inc1;
+ id 
+----
+  0
+  1
+  2
+  3
+  4
+  5
+(6 rows)
+
+drop schema autoinc_sql_mode cascade;
+NOTICE:  drop cascades to table auto_inc1
+reset current_schema;
