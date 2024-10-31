@@ -3460,7 +3460,7 @@ select CURRENT_DATE = time'00:00:00';
 select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') = time'11:11:11';
  ?column? 
 ----------
- f
+ t
 (1 row)
 
 select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') = time'11:11:11';
@@ -3484,7 +3484,7 @@ select CURRENT_DATE <> time'00:00:00';
 select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') <> time'11:11:11';
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') <> time'11:11:11';
@@ -3508,7 +3508,7 @@ select CURRENT_DATE < time'00:00:00';
 select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') < time'11:11:11';
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') < time'11:11:11';
@@ -3580,7 +3580,7 @@ select CURRENT_DATE >= time'00:00:00';
 select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') >= time'11:11:11';
  ?column? 
 ----------
- f
+ t
 (1 row)
 
 select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') >= time'11:11:11';

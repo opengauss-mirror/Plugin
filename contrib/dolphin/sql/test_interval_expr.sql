@@ -334,6 +334,16 @@ select '2023-02-28 14:25:59.999999' - interval 1 hour;
 select '2023-02-28 14:25:59.999999' - interval 1 minute;
 select '2023-02-28 14:25:59.999999' - interval 1 second;
 
+select date '20010928' + interval '1 hour' as result;
+select date '20010928' + interval '1 day' as result;
+select date '20010928' + interval '1 day 1 hour' as result;
+select interval '1 hour' + date '20010928' as result;
+select interval '1 day' + date '20010928' as result;
+select interval '1 day 1 hour' + date '20010928' as result;
+select date '2001-09-28' - interval '1 hour' as result;
+select date '2001-09-28' - interval '1 day' as result;
+select date '2001-09-28' - interval '1 day 1 hour' as result;
+
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,
