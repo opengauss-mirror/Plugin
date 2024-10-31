@@ -348,6 +348,11 @@ dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute 
     field->charsetnr = item->charset_flag;
     if (attr->atttypid != BLOBOID) {
         field->length = attr->attalign;
+        if (attr->atttypid == BITOID || attr->atttypid == INT1OID) {
+            field->length = attr->atttypmod;
+        } else if (attr->atttypid == BOOLOID) {
+            field->length = attr->attlen;
+        }
     } else {
         field->length = DOLPHIN_BLOB_LENGTH;
     }

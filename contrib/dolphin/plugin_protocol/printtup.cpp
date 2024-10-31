@@ -42,6 +42,7 @@
 #endif
 
 #define DOLPHIN_BLOB_LENGTH 65535
+#define BITS_PER_BYTE 8
 
 static void printtup_startup(DestReceiver *self, int operation, TupleDesc typeinfo);
 static void printtup_shutdown(DestReceiver *self);
@@ -206,6 +207,32 @@ inline MemoryContext changeToTmpContext(DestReceiver *self)
     return old_context;
 }
 
+static void convertBitsToBytes(char* bitStr, StringInfo buf)
+{
+    int bitlen = strlen(bitStr);
+    int bytelen = (bitlen + BITS_PER_BYTE - 1) / BITS_PER_BYTE;
+    uint8 bytes[bytelen];
+    errno_t rc = memset_sp(bytes, bytelen, 0, bytelen);
+    securec_check(rc, "\0", "\0");
+    
+    int bitindex = 0;
+    int byteindex = bytelen - 1;
+    for (int i = bitlen - 1; i >= 0; --i) {
+        if (bitStr[i] == '1') {
+            bytes[byteindex] |= (1 << bitindex);
+        }
+        bitindex++;
+        if (byteindex > 0 && bitindex == BITS_PER_BYTE) {
+            bitindex = 0;
+            byteindex--;
+        }
+    }
+    dq_append_int_lenenc(buf, bytelen);
+    for (int i = 0; i < bytelen; ++i) {
+        dq_append_int1(buf, bytes[i]);
+    }
+}
+
 static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
      /*
@@ -237,7 +264,11 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
             dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
         } else {
             outputstr = OutputFunctionCall(&thisState->finfo, attr);
-            dq_append_string_lenenc(buf, outputstr);
+            if (typeOid == BITOID) {
+                convertBitsToBytes(outputstr, buf);
+            } else {
+                dq_append_string_lenenc(buf, outputstr);
+            }
 
             pfree(outputstr);
         }
