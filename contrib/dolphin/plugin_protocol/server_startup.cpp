@@ -121,7 +121,7 @@ static ProtocolExtensionConfig dolphin_protocol_config = {
     dophin_client_authentication, /* fn_authenticate */
     dophin_send_message,  /* fn_send_message */
     NULL,
-    NULL,
+    dolphin_comm_reset,  /* fn_comm_reset */
     dophin_send_ready_for_query, /* fn_send_ready_for_query */
     dophin_read_command, /* fn_read_command*/
     dolphin_end_command,               /* fn_end_command */
