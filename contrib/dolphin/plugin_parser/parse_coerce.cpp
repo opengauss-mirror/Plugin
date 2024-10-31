@@ -4343,6 +4343,30 @@ Node *transferConstToAconst(Node *node)
     return result;
 }
 
+#ifdef DOLPHIN
+struct XactIsoValForBCmptEntry {
+    char* rawvalue;
+    char* bcmptvalue;
+};
+
+static const struct XactIsoValForBCmptEntry XactIsoValForBCmptOptions[] = {{"read uncommitted", "READ-UNCOMMITTED"},
+    {"read committed", "READ-COMMITTED"},
+    {"repeatable read", "REPEATABLE-READ"},
+    {"serializable", "SERIALIZABLE"}};
+
+static char* GetXactIsoValForBCmpt(const char* rawval)
+{
+    for (int i = 0; i < sizeof(XactIsoValForBCmptOptions) / sizeof(XactIsoValForBCmptEntry); i++) {
+        if (strcmp(rawval, XactIsoValForBCmptOptions[i].rawvalue) == 0) {
+            return XactIsoValForBCmptOptions[i].bcmptvalue;
+        }
+    }
+
+    /* handle "DEFAULT" case */
+    return XactIsoValForBCmptOptions[u_sess->attr.attr_common.DefaultXactIsoLevel].bcmptvalue;
+}
+#endif
+
 Const* setValueToConstExpr(SetVariableExpr* set)
 {
     Const* result = NULL;
@@ -4406,7 +4430,13 @@ Const* setValueToConstExpr(SetVariableExpr* set)
                     typid = UINT8OID;
                     typelen = sizeof(uint64);
                     typebyval = true;
-                } else 
+                } else if (strcasecmp(record->name, "transaction_isolation") == 0) {
+                    value = makeString(GetXactIsoValForBCmpt(variable_str));
+                    val = CStringGetDatum(strVal(value));
+                    typid = UNKNOWNOID; /* will be coerced later */
+                    typelen = -2;       /* cstring-style varwidth type */
+                    typebyval = false;
+                } else
 #endif
                 {
                     value = makeString(variable_str);
