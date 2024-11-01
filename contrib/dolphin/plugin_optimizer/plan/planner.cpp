@@ -9124,6 +9124,9 @@ static bool has_column_store_relation(Plan* top_plan)
         case T_CStoreIndexScan:
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
+#ifdef ENABLE_HTAP
+        case T_IMCStoreScan:
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */
@@ -10250,6 +10253,9 @@ static Plan* fallback_plan(Plan* result_plan)
         case T_CStoreIndexScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexCtidScan:
+#ifdef ENABLE_HTAP
+        case T_IMCStoreScan:
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */
@@ -10388,6 +10394,9 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexScan:
+#ifdef ENABLE_HTAP
+        case T_IMCStoreScan:
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */
@@ -10646,6 +10655,9 @@ static Plan* build_vector_plan(Plan* plan)
         case T_CStoreIndexCtidScan:
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexScan:
+#ifdef ENABLE_HTAP
+        case T_IMCStoreScan:
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */

@@ -2990,3 +2990,10 @@ Datum varchar_json(PG_FUNCTION_ARGS)
 }
 
 #endif
+
+extern int json_typeof_internal(text* json)
+{
+    JsonLexContext *lex = makeJsonLexContext(json, false);
+    json_lex(lex);
+    return lex_peek(lex);
+}

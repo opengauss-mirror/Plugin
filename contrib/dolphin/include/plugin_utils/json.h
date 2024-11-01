@@ -14,9 +14,18 @@
 
 #ifndef PLUGIN_JSON_H
 #define PLUGIN_JSON_H
+
+#include "fmgr.h"
+#include "lib/stringinfo.h"
+
 #define VALTYPE_IS_JSON(v) \
     ((v) == UNKNOWNOID || (v) == JSONOID || (v) == JSONBOID || (v) == CSTRINGOID || (v) == TEXTOID || \
      (v) == CHAROID || (v) == VARCHAROID || (v) == BPCHAROID)
 
 extern void get_keys_order(char **a, int l, int r, int pos[]);
+extern Datum json_path_exists(PG_FUNCTION_ARGS);
+extern Datum json_textcontains(PG_FUNCTION_ARGS);
+
+extern int json_typeof_internal(text* json);
+
 #endif   /* PLUGIN_JSON_H */

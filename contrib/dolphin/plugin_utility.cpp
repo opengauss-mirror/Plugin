@@ -150,6 +150,9 @@
 #include "workload/workload.h"
 #include "streaming/init.h"
 #include "replication/archive_walreceiver.h"
+#ifdef ENABLE_HTAP
+#include "access/htap/imcs_ctlg.h"
+#endif
 
 /* local function declarations */
 static void ProcessUtilitySlow(Node *parsetree,
@@ -419,24 +422,30 @@ bool CommandIsReadOnly(Node* parse_tree)
 {
     if (IsA(parse_tree, PlannedStmt)) {
         PlannedStmt* stmt = (PlannedStmt*)parse_tree;
+        return CommandIsReadOnly(stmt);
+    }
+    /* For now, treat all utility commands as read/write */
+    return false;
+}
 
-        switch (stmt->commandType) {
-            case CMD_SELECT:
-                if (stmt->rowMarks != NIL)
-                    return false; /* SELECT FOR [KEY] UPDATE/SHARE */
-                else if (stmt->hasModifyingCTE)
-                    return false; /* data-modifying CTE */
-                else
-                    return true;
-            case CMD_UPDATE:
-            case CMD_INSERT:
-            case CMD_DELETE:
-            case CMD_MERGE:
+bool CommandIsReadOnly(PlannedStmt *stmt)
+{
+    switch (stmt->commandType) {
+        case CMD_SELECT:
+            if (stmt->rowMarks != NIL)
+                return false; /* SELECT FOR [KEY] UPDATE/SHARE */
+            else if (stmt->hasModifyingCTE)
+                return false; /* data-modifying CTE */
+            else
+                return true;
+        case CMD_UPDATE:
+        case CMD_INSERT:
+        case CMD_DELETE:
+        case CMD_MERGE:
                 return false;
-            default:
-                elog(WARNING, "unrecognized commandType: %d", (int)stmt->commandType);
-                break;
-        }
+        default:
+            elog(WARNING, "unrecognized commandType: %d", (int)stmt->commandType);
+            break;
     }
     /* For now, treat all utility commands as read/write */
     return false;
@@ -7706,6 +7715,14 @@ static ObjectAddress doRenameStmt(RenameStmt*parse_tree, const char* query_strin
                             errmsg("Un-support feature"),
                             errdetail("RENAME operation is not supported for DFS table.")));
                 }
+#ifdef ENABLE_HTAP
+                if (RelHasImcs(rel_id)) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("Un-support feature"),
+                            errdetail("RENAME operation is not supported for IMCS table. please unimcs first.")));
+                }
+#endif
                 relation_close(rel, NoLock);
 
                 UnlockRelationOid(rel_id, AccessShareLock);
@@ -7776,7 +7793,15 @@ static ObjectAddress doRenameStmt(RenameStmt*parse_tree, const char* query_strin
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("Un-support feature"),
 								errdetail("internal relation doesn't allow ALTER")));
-			
+
+#ifdef ENABLE_HTAP
+                    if (RelHasImcs(rel_id)) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("Un-support feature"),
+                                errdetail("RENAME operation is not supported for IMCS table. please unimcs first.")));
+                    }
+#endif
                     relation_close(rel, NoLock);
                     UnlockRelationOid(rel_id, AccessShareLock);
                 }
@@ -9952,6 +9977,12 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
             break;
         case AT_RebuildAllIndexOnPartition:
             tag = "REBUILD ALL INDEX ON PARTITION";
+            break;
+        case AT_DisableIndex:
+            tag = "DISABLE INDEX";
+            break;
+        case AT_EnableIndex:
+            tag = "ENABLE INDEX";
             break;
         case AT_EnableTrig:
             tag = "ENABLE TRIGGER";

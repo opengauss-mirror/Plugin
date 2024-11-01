@@ -924,6 +924,8 @@ typedef enum AlterTableType {
     AT_RebuildIndex,
     AT_RebuildIndexPartition,
     AT_RebuildAllIndexOnPartition,
+    AT_DisableIndex,
+    AT_EnableIndex,
     AT_EnableTrig,        /* ENABLE TRIGGER name */
     AT_EnableAlwaysTrig,  /* ENABLE ALWAYS TRIGGER name */
     AT_EnableReplicaTrig, /* ENABLE REPLICA TRIGGER name */
@@ -975,7 +977,11 @@ typedef enum AlterTableType {
     AT_ModifyColumn,
     AT_SetCharsetCollate,
     AT_ConvertCharset,
-    AT_ResetPartitionno
+    AT_ResetPartitionno,
+    AT_Imcstored,
+    AT_UnImcstored,
+    AT_ModifyPartitionImcstored,
+    AT_ModifyPartitionUnImcstored
 #ifdef DOLPHIN
     ,
     AT_DropIndex,
