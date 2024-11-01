@@ -2,6 +2,12 @@
 
 #include <math.h>
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
+#include <immintrin.h>
+#endif
+
 #include "bitutils.h"
 #include "bitvec.h"
 #include "catalog/pg_type.h"
@@ -619,6 +625,118 @@ halfvec_to_vector(PG_FUNCTION_ARGS)
 	PG_RETURN_POINTER(result);
 }
 
+inline void prefetch_L1(const void *address)
+{
+#if defined(__SSE2__)
+    _mm_prefetch((const char*)address, _MM_HINT_T0);
+#elif defined(__aarch64__)
+    asm volatile("prfm PLDL1KEEP, [%0]" : : "r"(address));
+#else
+    __builtin_prefetch(address, 0, 3); // L3 cache
+#endif
+}
+
+#ifdef __aarch64__
+VECTOR_TARGET_CLONES static float
+VectorL2SquaredDistance(int size, float *a, float *b)
+{
+    float32x4_t sum = vdupq_n_f32(0.0f);
+    int prefetch_len = 8;
+    int batch_num = 4;
+    int i;
+    for (i = 0; i < size - (size % batch_num); i += batch_num) {
+        prefetch_L1(a + i + prefetch_len);
+        prefetch_L1(b + i + prefetch_len);
+        float32x4_t va = vld1q_f32(a + i);
+        float32x4_t vb = vld1q_f32(b + i);
+        float32x4_t diff = vsubq_f32(va, vb);
+        sum = vfmaq_f32(sum, diff, diff);
+    }
+
+    float scalar_sum = 0.0f;
+    if (size % batch_num > 0) {
+        int remaining_size = size % batch_num;
+        for (int j = 0; j < remaining_size; ++j) {
+            prefetch_L1(a + i + j);
+            prefetch_L1(b + i + j);
+            float value_a = a[i + j];
+            float value_b = b[i + j];
+            float diff = value_a - value_b;
+            float sq_diff = diff * diff;
+            scalar_sum += sq_diff;
+        }
+    }
+
+    sum = vpaddq_f32(sum, sum);
+    sum = vpaddq_f32(sum, sum);
+    float res = vgetq_lane_f32(sum, 0);
+    return res + scalar_sum;
+}
+#elif defined(__x86_64__)
+static inline __m128 masked_read(int d, const float *x)
+{
+    __attribute__((__aligned__(16))) float buf[4];
+
+    Assert(0 <= d && d < 4); /* reads 0 <= d < 4 floats as __m128 */
+    memset((void*)buf, 0, sizeof(buf));
+    switch (d) {
+        case 3:
+            buf[2] = x[2];
+        case 2:
+            buf[1] = x[1];
+        case 1:
+            buf[0] = x[0];
+        default:
+            break;
+    }
+    return _mm_load_ps(buf);
+}
+VECTOR_TARGET_CLONES static float
+VectorL2SquaredDistance(int dim, float *ax, float *bx)
+{
+    float* x = (float*)ax;
+    float* y = (float*)bx;
+    size_t d = (size_t)dim;
+    int batch_num1 = 8;
+    int batch_num2 = 4;
+    __m256 msum1 = _mm256_setzero_ps();
+
+    while (d >= batch_num1) {
+        __m256 mx = _mm256_loadu_ps(x);
+        x += batch_num1;
+        __m256 my = _mm256_loadu_ps(y);
+        y += batch_num1;
+        const __m256 a_m_b1 = mx - my;
+        msum1 += a_m_b1 * a_m_b1;
+        d -= batch_num1;
+    }
+
+    __m128 msum2 = _mm256_extractf128_ps(msum1, 1);
+    msum2 += _mm256_extractf128_ps(msum1, 0);
+
+    if (d >= batch_num2) {
+        __m128 mx = _mm_loadu_ps(x);
+        x += batch_num2;
+        __m128 my = _mm_loadu_ps(y);
+        y += batch_num2;
+        const __m128 a_m_b1 = mx - my;
+        msum2 += a_m_b1 * a_m_b1;
+        d -= batch_num2;
+    }
+
+    if (d > 0) {
+        __m128 mx = masked_read(d, x);
+        __m128 my = masked_read(d, y);
+        __m128 a_m_b1 = mx - my;
+        msum2 += a_m_b1 * a_m_b1;
+    }
+
+    msum2 = _mm_hadd_ps(msum2, msum2);
+    msum2 = _mm_hadd_ps(msum2, msum2);
+
+    return _mm_cvtss_f32(msum2);
+}
+#else
 VECTOR_TARGET_CLONES static float
 VectorL2SquaredDistance(int dim, float *ax, float *bx)
 {
@@ -634,6 +752,7 @@ VectorL2SquaredDistance(int dim, float *ax, float *bx)
 
 	return distance;
 }
+#endif
 
 /*
  * Get the L2 distance between vectors
@@ -666,6 +785,35 @@ vector_l2_squared_distance(PG_FUNCTION_ARGS)
 	PG_RETURN_FLOAT8((double) VectorL2SquaredDistance(a->dim, a->x, b->x));
 }
 
+#ifdef __aarch64__
+VECTOR_TARGET_CLONES static float
+VectorInnerProduct(int dim, float *ax, float *bx)
+{
+    float dis = 0.0f;
+    float32x4_t sum = vdupq_n_f32(0.0f);
+    float *pta = ax;
+    float *ptb = bx;
+
+    int i = 0;
+    int prefetch_len = 8;
+    int batch_num = 4;
+    for (; i + batch_num <= dim; i += batch_num) {
+        prefetch_L1(pta + prefetch_len);
+        prefetch_L1(ptb + prefetch_len);
+        float32x4_t sub_a = vld1q_f32(pta);
+        float32x4_t sub_b = vld1q_f32(ptb);
+        sum = vmlaq_f32(sum, sub_a, sub_b);
+        pta += batch_num;
+        ptb += batch_num;
+    }
+
+    dis = vaddvq_f32(sum);
+    for (; i < dim; ++i) {
+        dis += ax[i] * bx[i];
+    }
+    return dis;
+}
+#else
 VECTOR_TARGET_CLONES static float
 VectorInnerProduct(int dim, float *ax, float *bx)
 {
@@ -677,6 +825,7 @@ VectorInnerProduct(int dim, float *ax, float *bx)
 
 	return distance;
 }
+#endif
 
 /*
  * Get the inner product of two vectors

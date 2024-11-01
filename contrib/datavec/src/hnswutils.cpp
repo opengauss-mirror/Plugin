@@ -702,12 +702,11 @@ HnswLoadElement(HnswElement element, float *distance, Datum *q, Relation index, 
  * Get the distance for a candidate
  */
 static float
-GetCandidateDistance(char *base, HnswCandidate * hc, Datum q, FmgrInfo *procinfo, Oid collation)
+GetCandidateDistance(char *base, HnswElement element, Datum q, FmgrInfo *procinfo, Oid collation)
 {
-	HnswElement hce = (HnswElement)HnswPtrAccess(base, hc->element);
-	Datum		value = HnswGetValue(base, hce);
+    Datum value = HnswGetValue(base, element);
 
-	return DatumGetFloat8(FunctionCall2Coll(procinfo, collation, q, value));
+    return DatumGetFloat8(FunctionCall2Coll(procinfo, collation, q, value));
 }
 
 /*
@@ -721,7 +720,7 @@ HnswEntryCandidate(char *base, HnswElement entryPoint, Datum q, Relation index, 
 
     HnswPtrStore(base, hc->element, entryPoint);
     if (index == NULL) {
-        hc->distance = GetCandidateDistance(base, hc, q, procinfo, collation);
+        hc->distance = GetCandidateDistance(base, entryPoint, q, procinfo, collation);
     } else {
         bool isVisible = HnswLoadElement(entryPoint, &hc->distance, &q, index, procinfo,
                                          collation, loadVec, NULL, scan);
@@ -732,19 +731,25 @@ HnswEntryCandidate(char *base, HnswElement entryPoint, Datum q, Relation index, 
     return hc;
 }
 
+#define HnswGetPairingHeapCandidate(membername, ptr) \
+(pairingheap_container(HnswPairingHeapNode, membername, ptr)->inner)
+#define HnswGetPairingHeapCandidateConst(membername, ptr) \
+(pairingheap_const_container(HnswPairingHeapNode, membername, ptr)->inner)
+
 /*
  * Compare candidate distances
  */
 static int
 CompareNearestCandidates(const pairingheap_node *a, const pairingheap_node *b, void *arg)
 {
-	if (((const HnswPairingHeapNode *) a)->inner->distance < ((const HnswPairingHeapNode *) b)->inner->distance)
-		return 1;
+    if (HnswGetPairingHeapCandidateConst(c_node, a)->distance < HnswGetPairingHeapCandidateConst(c_node, b)->distance) {
+        return 1;
+    }
+    if (HnswGetPairingHeapCandidateConst(c_node, a)->distance > HnswGetPairingHeapCandidateConst(c_node, b)->distance) {
+        return -1;
+    }
 
-	if (((const HnswPairingHeapNode *) a)->inner->distance > ((const HnswPairingHeapNode *) b)->inner->distance)
-		return -1;
-
-	return 0;
+    return 0;
 }
 
 /*
@@ -753,13 +758,14 @@ CompareNearestCandidates(const pairingheap_node *a, const pairingheap_node *b, v
 static int
 CompareFurthestCandidates(const pairingheap_node *a, const pairingheap_node *b, void *arg)
 {
-	if (((const HnswPairingHeapNode *) a)->inner->distance < ((const HnswPairingHeapNode *) b)->inner->distance)
-		return -1;
+    if (HnswGetPairingHeapCandidateConst(w_node, a)->distance < HnswGetPairingHeapCandidateConst(w_node, b)->distance) {
+        return -1;
+    }
+    if (HnswGetPairingHeapCandidateConst(w_node, a)->distance > HnswGetPairingHeapCandidateConst(w_node, b)->distance) {
+        return 1;
+    }
 
-	if (((const HnswPairingHeapNode *) a)->inner->distance > ((const HnswPairingHeapNode *) b)->inner->distance)
-		return 1;
-
-	return 0;
+    return 0;
 }
 
 /*
@@ -828,18 +834,89 @@ AddToVisited(char *base, visited_hash * v, HnswCandidate * hc, Relation index, b
  * Count element towards ef
  */
 static inline bool
-CountElement(char *base, HnswElement skipElement, HnswCandidate * hc)
+CountElement(char *base, HnswElement skipElement, HnswElement e)
 {
-	HnswElement e;
-
 	if (skipElement == NULL)
 		return true;
 
 	/* Ensure does not access heaptidsLength during in-memory build */
 	pg_memory_barrier();
 
-	e = (HnswElement)HnswPtrAccess(base, hc->element);
 	return e->heaptidsLength != 0;
+}
+
+/*
+ * Load unvisited neighbors from memory
+ */
+static void
+HnswLoadUnvisitedFromMemory(char *base, HnswElement element, HnswElement *unvisited, int *unvisitedLength,
+                            visited_hash *v, int lc, HnswNeighborArray *neighborhoodData, Size neighborhoodSize)
+{
+    /* Get the neighborhood at layer lc */
+    HnswNeighborArray *neighborhood = HnswGetNeighbors(base, element, lc);
+
+    /* Copy neighborhood to local memory */
+    LWLockAcquire(&element->lock, LW_SHARED);
+    memcpy(neighborhoodData, neighborhood, neighborhoodSize);
+    LWLockRelease(&element->lock);
+    neighborhood = neighborhoodData;
+
+    *unvisitedLength = 0;
+
+    for (int i = 0; i < neighborhood->length; i++) {
+        HnswCandidate *hc = &neighborhood->items[i];
+        bool found;
+
+        AddToVisited(base, v, hc, NULL, &found);
+
+        if (!found) {
+            unvisited[(*unvisitedLength)++] = (HnswElement)HnswPtrAccess(base, hc->element);
+        }
+    }
+}
+
+/*
+ * Load unvisited neighbors from disk
+ */
+static void
+HnswLoadUnvisitedFromDisk(HnswElement element, HnswElement *unvisited, int *unvisitedLength,
+                          visited_hash *v, Relation index, int m, int lm, int lc)
+{
+    Buffer buf;
+    Page page;
+    HnswNeighborTuple ntup;
+    int start;
+    ItemPointerData indextids[HNSW_MAX_M * 2];
+
+    buf = ReadBuffer(index, element->neighborPage);
+    LockBuffer(buf, BUFFER_LOCK_SHARE);
+    page = BufferGetPage(buf);
+
+    ntup = (HnswNeighborTuple)PageGetItem(page, PageGetItemId(page, element->neighborOffno));
+    start = (element->level - lc) * m;
+
+    /* Copy to minimize lock time */
+    memcpy(&indextids, ntup->indextids + start, lm * sizeof(ItemPointerData));
+
+    UnlockReleaseBuffer(buf);
+
+    *unvisitedLength = 0;
+
+    for (int i = 0; i < lm; i++) {
+        ItemPointer indextid = &indextids[i];
+        bool found;
+
+        if (!ItemPointerIsValid(indextid)) {
+            break;
+        }
+
+        tidhash_insert(v->tids, *indextid, &found);
+
+        if (!found) {
+            unvisited[(*unvisitedLength)++] = HnswInitElementFromBlock(ItemPointerGetBlockNumber(indextid),
+                                                                       ItemPointerGetOffsetNumber(indextid));
+        }
+    }
 }
 
 /*
@@ -858,12 +935,15 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
     HnswNeighborArray *neighborhoodData = NULL;
     Size		neighborhoodSize;
     bool isVisible = true;
+    int lm = HnswGetLayerM(m, lc);
+    HnswElement *unvisited = (HnswElementData**)palloc(lm * sizeof(HnswElement));
+    int unvisitedLength;
 
     InitVisited(base, &v, index, ef, m);
 
     /* Create local memory for neighborhood if needed */
     if (index == NULL) {
-        neighborhoodSize = HNSW_NEIGHBOR_ARRAY_SIZE(HnswGetLayerM(m, lc));
+        neighborhoodSize = HNSW_NEIGHBOR_ARRAY_SIZE(lm);
         neighborhoodData = (HnswNeighborArray *)palloc(neighborhoodSize);
     }
 
@@ -871,25 +951,27 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
     foreach(lc2, ep) {
         HnswCandidate *hc = (HnswCandidate *) lfirst(lc2);
         bool		found;
+        HnswPairingHeapNode *node;
 
         AddToVisited(base, &v, hc, index, &found);
 
-        pairingheap_add(C, &(CreatePairingHeapNode(hc)->ph_node));
-        pairingheap_add(W, &(CreatePairingHeapNode(hc)->ph_node));
+        node = CreatePairingHeapNode(hc);
+        pairingheap_add(C, &node->c_node);
+        pairingheap_add(W, &node->w_node);
 
         /*
          * Do not count elements being deleted towards ef when vacuuming. It
          * would be ideal to do this for inserts as well, but this could
          * affect insert performance.
          */
-        if (CountElement(base, skipElement, hc))
+        if (CountElement(base, skipElement, (HnswElement)HnswPtrAccess(base, hc->element))) {
             wlen++;
+        }
     }
 
     while (!pairingheap_is_empty(C)) {
-        HnswNeighborArray *neighborhood;
-        HnswCandidate *c = ((HnswPairingHeapNode *) pairingheap_remove_first(C))->inner;
-        HnswCandidate *f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
+        HnswCandidate *c = HnswGetPairingHeapCandidate(c_node, pairingheap_remove_first(C));
+        HnswCandidate *f = HnswGetPairingHeapCandidate(w_node, pairingheap_first(W));
         HnswElement cElement;
 
         if (c->distance > f->distance)
@@ -897,72 +979,58 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
 
         cElement = (HnswElement)HnswPtrAccess(base, c->element);
 
-        if (HnswPtrIsNull(base, cElement->neighbors))
-            HnswLoadNeighbors(cElement, index, m);
-
-        /* Get the neighborhood at layer lc */
-        neighborhood = HnswGetNeighbors(base, cElement, lc);
-
-        /* Copy neighborhood to local memory if needed */
         if (index == NULL) {
-            LWLockAcquire(&cElement->lock, LW_SHARED);
-            memcpy(neighborhoodData, neighborhood, neighborhoodSize);
-            LWLockRelease(&cElement->lock);
-            neighborhood = neighborhoodData;
+            HnswLoadUnvisitedFromMemory(base, cElement, unvisited, &unvisitedLength, &v,
+                                        lc, neighborhoodData, neighborhoodSize);
+        } else {
+            HnswLoadUnvisitedFromDisk(cElement, unvisited, &unvisitedLength, &v, index, m, lm, lc);
         }
 
-        for (int i = 0; i < neighborhood->length; i++) {
-            HnswCandidate *e = &neighborhood->items[i];
-            bool		visited;
+        for (int i = 0; i < unvisitedLength; i++) {
+            HnswElement eElement = unvisited[i];
+            float eDistance;
+            bool alwaysAdd = wlen < ef;
 
-            AddToVisited(base, &v, e, index, &visited);
+            f = HnswGetPairingHeapCandidate(w_node, pairingheap_first(W));
 
-            if (!visited) {
-                float		eDistance;
-                HnswElement eElement = (HnswElement)HnswPtrAccess(base, e->element);
-                bool		alwaysAdd = wlen < ef;
+            if (index == NULL) {
+                eDistance = GetCandidateDistance(base, eElement, q, procinfo, collation);
+            } else {
+                HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting,
+                                alwaysAdd ? NULL : &f->distance);
+            }
 
-                f = ((HnswPairingHeapNode *) pairingheap_first(W))->inner;
+            if (eDistance < f->distance || alwaysAdd) {
+                HnswCandidate *e;
+                HnswPairingHeapNode *node;
 
-                if (index == NULL) {
-                    eDistance = GetCandidateDistance(base, e, q, procinfo, collation);
-                } else {
-                    isVisible = HnswLoadElement(eElement, &eDistance, &q, index, procinfo, collation, inserting,
-                                                alwaysAdd ? NULL : &f->distance, scan);
-                }
-                if (!isVisible) {
+                Assert(!eElement->deleted);
+
+                /* Make robust to issues */
+                if (eElement->level < lc) {
                     continue;
                 }
 
-                if (eDistance < f->distance || alwaysAdd) {
-                    HnswCandidate *ec;
+                /* Create a new candidate */
+                e = (HnswCandidate *)palloc(sizeof(HnswCandidate));
+                HnswPtrStore(base, e->element, eElement);
+                e->distance = eDistance;
 
-                    Assert(!eElement->deleted);
+                node = CreatePairingHeapNode(e);
+                pairingheap_add(C, &node->c_node);
+                pairingheap_add(W, &node->w_node);
 
-                    /* Make robust to issues */
-                    if (eElement->level < lc)
-                        continue;
+                /*
+                 * Do not count elements being deleted towards ef when
+                 * vacuuming. It would be ideal to do this for inserts as
+                 * well, but this could affect insert performance.
+                 */
+                if (CountElement(base, skipElement, eElement)) {
+                    wlen++;
 
-                    /* Copy e */
-                    ec = (HnswCandidate *)palloc(sizeof(HnswCandidate));
-                    HnswPtrStore(base, ec->element, eElement);
-                    ec->distance = eDistance;
-
-                    pairingheap_add(C, &(CreatePairingHeapNode(ec)->ph_node));
-                    pairingheap_add(W, &(CreatePairingHeapNode(ec)->ph_node));
-
-                    /*
-                     * Do not count elements being deleted towards ef when
-                     * vacuuming. It would be ideal to do this for inserts as
-                     * well, but this could affect insert performance.
-                     */
-                    if (CountElement(base, skipElement, e)) {
-                        wlen++;
-
-                        /* No need to decrement wlen */
-                        if (wlen > ef)
-                            pairingheap_remove_first(W);
-                    }
+                    /* No need to decrement wlen */
+                    if (wlen > ef)
+                        pairingheap_remove_first(W);
                 }
             }
         }
@@ -970,7 +1038,7 @@ HnswSearchLayer(char *base, Datum q, List *ep, int ef, int lc, Relation index, F
 
     /* Add each element of W to w */
     while (!pairingheap_is_empty(W)) {
-        HnswCandidate *hc = ((HnswPairingHeapNode *) pairingheap_remove_first(W))->inner;
+        HnswCandidate *hc = HnswGetPairingHeapCandidate(w_node, pairingheap_remove_first(W));
 
         w = lcons(hc, w);
     }
@@ -1240,7 +1308,7 @@ HnswUpdateConnection(char *base, HnswElement element, HnswCandidate * hc, int lm
 				if (HnswPtrIsNull(base, hc3Element->value))
 					HnswLoadElement(hc3Element, &hc3->distance, &q, index, procinfo, collation, true, NULL);
 				else
-					hc3->distance = GetCandidateDistance(base, hc3, q, procinfo, collation);
+                    hc3->distance = GetCandidateDistance(base, hc3Element, q, procinfo, collation);
 
 				/* Prune element if being deleted */
 				if (hc3Element->heaptidsLength == 0)
