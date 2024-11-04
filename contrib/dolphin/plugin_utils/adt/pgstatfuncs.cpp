@@ -418,7 +418,8 @@ static const char* WaitStateDesc[] = {
     "gtm set consistency point",     // STATE_GTM_SET_CONSISTENCY_POINT
     "wait sync bgworkers",           // STATE_WAIT_SYNC_BGWORKERS
     "stanby read recovery conflict", // STATE_STANDBY_READ_RECOVERY_CONFLICT
-    "standby get snapshot"           // STATE_STANDBY_GET_SNAPSHOT
+    "standby get snapshot",          // STATE_STANDBY_GET_SNAPSHOT
+    "wait dms"                       // STATE_WAIT_DMS
 };
 
 // description for WaitStatePhase enums.

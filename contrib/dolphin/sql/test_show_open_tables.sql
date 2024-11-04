@@ -1,3 +1,5 @@
+alter system set enable_stmt_track=off;
+select pg_sleep(1);
 -- init
 create user user1 with sysadmin password 'Show@123';
 create user user2 password 'Show@456';
@@ -108,3 +110,5 @@ create database show_open_tables_nb;
 SHOW OPEN TABLES;
 SHOW OPEN TABLES IN show_open_tables_scm;
 SHOW OPEN TABLES FROM show_open_tables_scm;
+alter system set enable_stmt_track=on;
+select pg_sleep(1);
