@@ -1328,6 +1328,14 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
 #endif
         popToOldCompileContext(save_compile_context);
         CompileStatusSwtichTo(save_compile_status);
+
+#ifdef ENABLE_MOT
+        if (needSPIFinish) {
+#endif
+            (void)SPI_finish();
+#ifdef ENABLE_MOT
+        }
+#endif
         PG_RE_THROW();
     }
     PG_END_TRY();
@@ -1420,6 +1428,14 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
         if (u_sess->SPI_cxt._connected == 0) {
             plpgsql_hashtable_clear_invalid_obj();
         }
+
+#ifdef ENABLE_MOT
+        if (needSPIFinish) {
+#endif
+            (void)SPI_finish();
+#ifdef ENABLE_MOT
+        }
+#endif
         PG_RE_THROW();
     }
     PG_END_TRY();

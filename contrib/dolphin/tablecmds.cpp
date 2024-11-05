@@ -219,6 +219,11 @@
 #include "utils/pl_package.h"
 #endif
 
+#ifdef ENABLE_HTAP
+#include "access/htap/imcucache_mgr.h"
+#include "access/htap/imcs_ctlg.h"
+#endif
+
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
 #include "plugin_utils/partitionfuncs.h"
@@ -739,6 +744,7 @@ static void ATExecUnusableIndexPartition(Relation rel, const char* partition_nam
 static void ATExecUnusableIndex(Relation rel, bool needChangeCsn);
 static void ATUnusableGlobalIndex(Relation rel);
 static void ATExecUnusableAllIndexOnPartition(Relation rel, const char* partition_name);
+static void ATExecEnableIndex(Relation rel, bool enable);
 static void ATExecVisibleIndex(Relation rel, char* index_name, bool visible);
 static void ATExecVisibleIndexDirect(Relation rel, bool visible);
 static void ATExecModifyRowMovement(Relation rel, bool rowMovement);
@@ -817,6 +823,12 @@ static void ATPrepSplitPartition(Relation rel);
 static void ATPrepSplitSubPartition(Relation rel);
 static void ATPrepResetPartitionno(Relation rel);
 static void ATExecResetPartitionno(Relation rel);
+#ifdef ENABLE_HTAP
+static void ATExecIMCSTORED(Relation rel, List* colList);
+static void ATExecUNIMCSTORED(Relation rel);
+static void ATExecModifyPartitionIMCSTORED(Relation rel, const char* partName, List* colList);
+static void ATExecModifyPartitionUNIMCSTORED(Relation rel, const char* partName);
+#endif
 static void replaceRepeatChunkId(HTAB* chunkIdHashTable, List* srcPartToastRels);
 static bool checkChunkIdRepeat(List* srcPartToastRels, int index, Oid chunkId);
 static void addCudescTableForNewPartition(Relation relation, Oid newPartId);
@@ -941,6 +953,8 @@ inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
         case AT_InvisibleIndex:
         case AT_InvisibleIndexDirect:
         case AT_VisibleIndexDirect:
+        case AT_DisableIndex:
+        case AT_EnableIndex:
 #ifdef DOLPHIN
         case AT_RebuildIndex:
         case AT_DropIndex:
@@ -3991,6 +4005,14 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
             continue;
         }
 
+#ifdef ENABLE_HTAP
+        if (relkind == RELKIND_RELATION && CheckIsInTrans() && RelHasImcs(relOid)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("Dropping Rel: %d which enabled imcstore in transation, please unpopulate first.", relOid)));
+        }
+#endif
+
 #ifdef ENABLE_MULTIPLE_NODES
         /* check if the rel is timeseries rel, if so, remove jobs */
         if (relkind == RELKIND_RELATION) {
@@ -5301,7 +5323,14 @@ void truncate_check_rel(Relation rel)
         ereport(ERROR,
                 (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                         errmsg("It is not supported to truncate non-table \"%s\"", RelationGetRelationName(rel))));
+#ifdef ENABLE_HTAP
+    } else if (rel->rd_rel->relkind == RELKIND_RELATION && RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR, (errcode(ERRCODE_WARNING),
+             errmsg("Truncating table \"%s\" with HTAP, please unpopulate first", RelationGetRelationName(rel))));
     }
+#else
+    }
+#endif
 
     if (is_ledger_related_rel(rel)) {
         ereport(ERROR,
@@ -9066,6 +9095,13 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             /* No command-specific prep needed */
             pass = AT_PASS_MISC;
             break;
+        case AT_DisableIndex:
+        case AT_EnableIndex:
+            ATSimplePermissions(rel, ATT_INDEX);
+            /* This command never recurses */
+            /* No command-specific prep needed */
+            pass = AT_PASS_MISC;
+            break;
         case AT_AddInherit: /* INHERIT */
             ATSimplePermissions(rel, ATT_TABLE);
             /* This command never recurses */
@@ -9205,6 +9241,24 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             pass = AT_PASS_ALTER_TYPE;
             ATAlterCheckModifiyColumnRepeatedly(cmd, tab->subcmds[pass]);
             break;
+#ifdef ENABLE_HTAP
+        case AT_Imcstored:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_ADD_CONSTR;
+            break;
+        case AT_UnImcstored:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_DROP;
+            break;
+        case AT_ModifyPartitionImcstored:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_ADD_CONSTR;
+            break;
+        case AT_ModifyPartitionUnImcstored:
+            ATSimplePermissions(rel, ATT_TABLE);
+            pass = AT_PASS_DROP;
+            break;
+#endif
 #ifdef PGXC
         case AT_DistributeBy:
         case AT_SubCluster:
@@ -9789,6 +9843,12 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_VisibleIndexDirect:
             ATExecVisibleIndexDirect(rel, true);
             break;
+        case AT_DisableIndex:
+            ATExecEnableIndex(rel, false);
+            break;
+        case AT_EnableIndex:
+            ATExecEnableIndex(rel, true);
+            break;  
         case AT_AddIndex: /* ADD INDEX */
             address = ATExecAddIndex(tab, rel, (IndexStmt*)cmd->def, false, lockmode);
             break;
@@ -10045,7 +10105,20 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_ConvertCharset: /* CONVERT TO CHARACTER SET */
             sqlcmd_alter_exec_convert_charset(tab, rel, (CharsetCollateOptions*)cmd->def, lockmode);
             break;
-
+#ifdef ENABLE_HTAP
+        case AT_Imcstored:
+            ATExecIMCSTORED(rel, (List*)cmd->def);
+            break;
+        case AT_UnImcstored:
+            ATExecUNIMCSTORED(rel);
+            break;
+        case AT_ModifyPartitionImcstored:
+            ATExecModifyPartitionIMCSTORED(rel, cmd->name, (List*)cmd->def);
+            break;
+        case AT_ModifyPartitionUnImcstored:
+            ATExecModifyPartitionUNIMCSTORED(rel, cmd->name);
+            break;
+#endif
 #ifdef PGXC
         case AT_DistributeBy:
             AtExecDistributeBy(rel, (DistributeBy*)cmd->def);
@@ -11810,7 +11883,16 @@ static void ATPrepAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
                     errmsg("type \"%s\" is not supported in timeseries store",
                     format_type_with_typemod(typeOid, typmod))));
         }
+#ifdef ENABLE_HTAP
+    } else if (RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-support feature"),
+                errdetail("AddColumn operation is not supported for HTAP table. please unpopulate first.")));
     }
+#else
+}
+#endif
 
     if (rel->rd_rel->relkind == RELKIND_COMPOSITE_TYPE)
         ATTypedTableRecursion(wqueue, rel, cmd, lockmode);
@@ -14885,6 +14967,14 @@ static ObjectAddress ATExecSetStorage(Relation rel, const char* colName, Node* n
 static void ATPrepDropColumn(
     List** wqueue, Relation rel, bool recurse, bool recursing, AlterTableCmd* cmd, LOCKMODE lockmode)
 {
+
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The rel enable imcstore, please unimcstore if want to drop column.")));
+    }
+#endif
+
     if (rel->rd_rel->reloftype && !recursing)
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("cannot drop column from typed table")));
 
@@ -17543,6 +17633,14 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
                 errmsg("type \"%s\" is not supported in column store",
                     format_type_with_typemod(targettype, targettypmod))));
     }
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-support feature"),
+                errdetail("AlterColumnType operation is not supported for HTAP table. please unpopulate first.")));
+    }
+#endif
 
     aclresult = pg_type_aclcheck(targettype, GetUserId(), ACL_USAGE);
     if (aclresult != ACLCHECK_OK)
@@ -22606,9 +22704,9 @@ static void relation_mark_replica_identity(Relation rel, char ri_type, Oid index
 
         if (dirty) {
             HeapTuple newitup = NULL;
-            Datum values[Natts_pg_class];
-            bool nulls[Natts_pg_class];
-            bool replaces[Natts_pg_class];
+            Datum values[Natts_pg_index];
+            bool nulls[Natts_pg_index];
+            bool replaces[Natts_pg_index];
             errno_t rc;
             rc = memset_s(values, sizeof(values), 0, sizeof(values));
             securec_check(rc, "\0", "\0");
@@ -22846,6 +22944,137 @@ static void ATExecGenericOptions(Relation rel, List* options)
 
     tableam_tops_free_tuple(tuple);
 }
+
+ #ifdef ENABLE_HTAP
+/*
+ * ALTER TABLE <name> IMCSTORED(...)
+ */
+static void ATExecIMCSTORED(Relation rel, List* colList) 
+{
+    Oid relOid = RelationGetRelid(rel);
+    int2vector* imcsAtts = NULL;
+    List* colNames = NIL;
+    int imcsNatts = 0;
+    int nameLength = 0;
+
+    CheckForEnableImcs(rel, colList, imcsAtts, &imcsNatts);
+    /* standbynode populate */
+    if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+        GetColNamesForStandBy(rel, imcsAtts, imcsNatts, colNames, &nameLength);
+        CreateImcsDescForPrimaryNode(rel, imcsAtts, imcsNatts);
+        SendImcstoredRequest(relOid, InvalidOid, colNames, nameLength, TYPE_IMCSTORED);
+    } else {
+        AlterTableEnableImcstore(rel, imcsAtts, imcsNatts);
+    }
+    pfree_ext(imcsAtts);
+}
+
+/*
+ * ALTER TABLE <name> UNIMCSTORED
+ */
+static void ATExecUNIMCSTORED(Relation rel) 
+{
+    Oid relOid = RelationGetRelid(rel);
+    if (!RelHasImcs(relOid)) {
+        ereport(ERROR, (errmsg("rel not populated, no need to be unpopulate.")));
+    }
+
+    if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+        SendUnImcstoredRequest(relOid, InvalidOid, TYPE_UNIMCSTORED);
+    }
+    AlterTableDisableImcstore(rel);
+}
+
+/*
+ * ALTER TABLE <name> MODIFY PARTITION <part_name> IMCSTORED
+ */
+static void ATExecModifyPartitionIMCSTORED(Relation rel, const char* partName, List* colList)
+{
+    Oid partOid = InvalidOid;
+    Oid relOid = RelationGetRelid(rel);
+    int2vector* imcsAtts = NULL;
+    List* colNames = NIL;
+    int imcsNatts = 0;
+    int nameLength = 0;
+
+    partOid = ImcsPartNameGetPartOid(relOid, partName);
+    CheckForEnableImcs(rel, colList, imcsAtts, &imcsNatts, partOid);
+
+    /* check if other partitions of partitioned table populated */
+    if (IMCU_CACHE->GetImcsDesc(relOid) == NULL) {
+        // first partitition to populate, create imcsdesc for partitioned table
+        // In case of specify partition, different table may have different imcs cols,
+        // do not remember imcs cols for partitioned table */
+        IMCU_CACHE->CreateImcsDesc(rel, NULL, 0);
+    }
+
+    /* start populate partition */
+    Partition part = partitionOpen(rel, partOid, AccessExclusiveLock);
+    Relation partRel = partitionGetRelation(rel, part);
+    PG_TRY();
+    {
+        /* populate on standbynode */
+        if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+            GetColNamesForStandBy(partRel, imcsAtts, imcsNatts, colNames, &nameLength);
+            CreateImcsDescForPrimaryNode(partRel, imcsAtts, imcsNatts);
+            SendImcstoredRequest(relOid, partOid, colNames, nameLength, TYPE_PARTITION_IMCSTORED);
+        } else {
+            /* populate on currrent node */
+            AlterTableEnableImcstore(partRel, imcsAtts, imcsNatts);
+            IMCU_CACHE->UpdateImcsStatus(RelationGetRelid(rel), IMCS_POPULATE_COMPLETE);
+        }
+    }
+    PG_CATCH();
+    {
+        releaseDummyRelation(&partRel);
+        partitionClose(rel, part, AccessExclusiveLock);
+        pfree_ext(imcsAtts);
+        IMCU_CACHE->UpdateImcsStatus(RelationGetRelid(rel), IMCS_POPULATE_ERROR);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+    releaseDummyRelation(&partRel);
+    partitionClose(rel, part, AccessExclusiveLock);
+    pfree_ext(imcsAtts);
+}
+
+/*
+ * ALTER TABLE <name> MODIFY PARTITION <part_name> UNIMCSTORED
+ */
+static void ATExecModifyPartitionUNIMCSTORED(Relation rel, const char* partName)
+{
+    Oid partOid = InvalidOid;
+    Oid relOid = RelationGetRelid(rel);
+    partOid = ImcsPartNameGetPartOid(relOid, partName);
+
+    if (!RelHasImcs(relOid) || !RelHasImcs(partOid)) {
+        ereport(ERROR, (errmsg("partition %d of rel %d not populated", partOid, relOid)));
+    }
+
+    /* start unpopulate partition */
+    Partition part = partitionOpen(rel, partOid, AccessExclusiveLock);
+    Relation partRel = partitionGetRelation(rel, part);
+    PG_TRY();
+    {
+        /* unpopulate partition on standby node */
+        if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+            SendUnImcstoredRequest(relOid, partOid, TYPE_PARTITION_UNIMCSTORED);
+        }
+        /* unpopulate partition on current node */
+        AlterTableDisableImcstore(partRel);
+        /* drop imcs for rel if all partition unpopulated */
+        DropImcsForPartitionedRelIfNeed(rel);
+    }
+    PG_CATCH();
+    {
+        releaseDummyRelation(&partRel);
+        partitionClose(rel, part, AccessExclusiveLock);
+    }
+    PG_END_TRY();
+    releaseDummyRelation(&partRel);
+    partitionClose(rel, part, AccessExclusiveLock);
+}
+#endif
 
 #ifdef PGXC
 /*
@@ -25993,6 +26222,13 @@ static void CheckForAddPartition(Relation rel, List *partDefStateList)
 {
     Assert(RELATION_IS_PARTITIONED(rel));
 
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The rel enable imcstore, please unimcstore if want to add partition.")));
+    }
+#endif
+
     /* check 1: tablespace privileges */
     CheckTablespaceForAddPartition(rel, partDefStateList);
 
@@ -26051,6 +26287,13 @@ static void CheckForAddSubPartition(Relation rel, Relation partrel, List *subpar
 {
     Assert(RELATION_IS_PARTITIONED(rel));
     Assert(RELATION_IS_PARTITIONED(partrel));
+
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(RelationGetRelid(partrel))) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The part rel enable imcstore, please unimcstore if want to add subpartition.")));
+    }
+#endif
 
     /* check 1: tablespace privileges */
     CheckTablespaceForAddPartition(rel, subpartDefStateList);
@@ -26464,6 +26707,13 @@ static void ATExecDropPartition(Relation rel, AlterTableCmd *cmd)
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("The partition number is invalid or out-of-range")));
     }
 
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(partOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The part rel enable imcstore, please unimcstore if want to drop it.")));
+    }
+#endif
+
     /* get subpartOidList if is subpartition, and lock subpartition */
     if (RelationIsSubPartitioned(rel)) {
         part = partitionOpen(rel, partOid, NoLock);
@@ -26544,6 +26794,13 @@ static void ATExecDropSubPartition(Relation rel, AlterTableCmd *cmd)
             errcause("Wrong or invalid value for DROP SUBPARTITION"),
             erraction("Please check DDL syntax for \"DROP SUBPARTITION\"")));
     }
+
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(partOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The subpart rel enable imcstore, please unimcstore if want to drop it.")));
+    }
+#endif
 
     Partition part = partitionOpen(rel, partOid, NoLock);
     Relation partrel = partitionGetRelation(rel, part);
@@ -26754,6 +27011,93 @@ void ATExecSetIndexUsableState(Oid objclassOid, Oid objOid, bool newState)
     if (dirty) {
         CommandCounterIncrement();
     }
+}
+
+template <typename T>
+void ATExecSetIndexValues(Datum *values, unsigned attribute, T new_state) {
+    Assert(!"not supported");
+}
+
+template <>
+void ATExecSetIndexValues(Datum *values, unsigned attribute, bool new_state) {
+    values[attribute - 1] = DatumGetBool(new_state);
+}
+
+template <typename T>
+void ATExecSetIndexState(Oid obj_oid, unsigned attribute, T new_state) {
+    if (attribute > Natts_pg_index) {
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                errmsg("attribute %d is greater than Natts_pg_index(%d)",
+                attribute, Natts_pg_index)));
+        return;
+    }
+
+    bool dirty = false;
+    Relation sys_table = NULL;
+    HeapTuple sys_tuple = NULL;
+    bool is_null = false;
+
+    sys_table = relation_open(IndexRelationId, RowExclusiveLock);
+
+    // update the indisvisible field
+    sys_tuple = SearchSysCacheCopy1(INDEXRELID, ObjectIdGetDatum(obj_oid));
+    if (sys_tuple) {
+        Datum old_state = heap_getattr(sys_tuple, attribute, RelationGetDescr(sys_table), &is_null);
+        dirty = (is_null || BoolGetDatum(old_state) != new_state);
+
+        /* Keep the system catalog indexes current. */
+        if (dirty) {
+            HeapTuple newitup = NULL;
+            Datum values[Natts_pg_index];
+            bool nulls[Natts_pg_index];
+            bool replaces[Natts_pg_index];
+            errno_t rc;
+            rc = memset_s(values, sizeof(values), 0, sizeof(values));
+            securec_check(rc, "\0", "\0");
+            rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
+            securec_check(rc, "\0", "\0");
+            rc = memset_s(replaces, sizeof(replaces), false, sizeof(replaces));
+            securec_check(rc, "\0", "\0");
+
+            replaces[attribute - 1] = true;
+            ATExecSetIndexValues(values, attribute, new_state);
+
+            newitup =
+                (HeapTuple)tableam_tops_modify_tuple(sys_tuple, RelationGetDescr(sys_table), values, nulls, replaces);
+            simple_heap_update(sys_table, &(sys_tuple->t_self), newitup);
+            CatalogUpdateIndexes(sys_table, newitup);
+            tableam_tops_free_tuple(newitup);
+        }
+        tableam_tops_free_tuple(sys_tuple);
+    }
+    relation_close(sys_table, RowExclusiveLock);
+}
+
+void ATExecSetIndexEnableState(Oid obj_oid, bool new_state) {
+    ATExecSetIndexState(obj_oid, Anum_pg_index_indisenable, new_state);
+}
+
+static void ATExecEnableIndex(Relation rel, bool enable) {
+    if (!RelationIsIndex(rel) || !OidIsValid(rel->rd_id)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                errmsg("can not set enable/disable index for relation %s, as it is not a index",
+                    RelationGetRelationName(rel))));
+    }
+
+    auto index_tuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(rel->rd_id));
+    if(!HeapTupleIsValid(index_tuple))
+        elog(ERROR, "cache lookup failed for index %u", rel->rd_id);
+    if (heap_attisnull(index_tuple, Anum_pg_index_indexprs, NULL)) {
+        ReleaseSysCache(index_tuple);
+        ereport(ERROR,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                errmsg("can not set enable/disable index for relation %s, as it is not a function based index",
+                    RelationGetRelationName(rel))));
+    }
+    ReleaseSysCache(index_tuple);
+
+    ATExecSetIndexEnableState(rel->rd_id, enable);
 }
 
 void ATExecSetIndexVisibleState(Oid objOid, bool newState)
@@ -27419,6 +27763,13 @@ static void ATExecTruncatePartition(Relation rel, AlterTableCmd* cmd)
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("The partition number is invalid or out-of-range")));
     }
 
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(partOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The part rel enable imcstore, please unimcstore if want to truncate it.")));
+    }
+#endif
+
     /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
     if (RELATION_IS_INTERVAL_PARTITIONED(rel)) {
         LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
@@ -27514,6 +27865,13 @@ static void ATExecTruncateSubPartition(Relation rel, AlterTableCmd* cmd)
     if (!OidIsValid(subPartOid)) {
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("The subpartition name is invalid")));
     }
+
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(subPartOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The subpart rel enable imcstore, please unimcstore if want to truncate it.")));
+    }
+#endif
 
     Partition part = partitionOpen(rel, partOid, NoLock);
     Relation partRel = partitionGetRelation(rel, part);
@@ -28165,6 +28523,13 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
                     errhint("please reindex the unusable index first.")));
         }
 
+#ifdef ENABLE_HTAP
+        if (RelHasImcs(srcPartOid)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                    errmsg("The part rel %s enable imcstore, please unimcstore if want to merge it.", partName)));
+        }
+#endif
+
         /* from partitionoid to partition sequence */
         curPartIndex = partOidGetPartSequence(partTableRel, srcPartOid) - 1;
 
@@ -28703,6 +29068,13 @@ static void ATExecExchangePartition(Relation partTableRel, AlterTableCmd* cmd)
     }
 
     Assert(OidIsValid(ordTableOid));
+
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(partOid) || RelHasImcs(ordTableOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("ExchangePartition not support for rel enabled imcstore, please unimcstore first.")));
+    }
+#endif
 
     ordTableRel = heap_open(ordTableOid, NoLock);
 
@@ -30617,6 +30989,13 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
                     : errmsg("split partition does not exist.")));
     }
 
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(srcPartOid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The part rel enable imcstore, please unimcstore if want to split it.")));
+    }
+#endif
+
     /* check local index 'usable' state */
     if (!checkRelationLocalIndexesUsable(partTableRel)) {
         ereport(ERROR,
@@ -31062,6 +31441,13 @@ static void ATExecSplitSubPartition(Relation partTableRel, AlterTableCmd* cmd)
                                 ? errmsg("split subpartition \"%s\" does not exist.", splitSubPart->src_partition_name)
                                 : errmsg("split subpartition does not exist.")));
         }
+
+#ifdef ENABLE_HTAP
+        if (RelHasImcs(srcSubPartOid)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                    errmsg("The subpart rel enable imcstore, please unimcstore if want to split it.")));
+        }
+#endif
 
         // check src subpartition is default subpartition
         CheckSrcListSubPartitionForSplit(partTableRel, partOid, srcSubPartOid);
@@ -33517,6 +33903,13 @@ static void PSortChangeTableSpace(Oid psortOid, Oid newTableSpace, LOCKMODE lock
  */
 static void ExecChangeTableSpaceForRowTable(AlteredTableInfo* tab, LOCKMODE lockmode)
 {
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(tab->relid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The rel enable imcstore, please unimcstore if want to exchange tablespace.")));
+    }
+#endif
+
     ATExecSetTableSpace(tab->relid, tab->newTableSpace, lockmode);
 
     /* handle a special index type: PSORT index */
@@ -33681,6 +34074,13 @@ static void ExecChangeTableSpaceForCStoreTable(AlteredTableInfo* tab, LOCKMODE l
  */
 static void ExecChangeTableSpaceForRowPartition(AlteredTableInfo* tab, LOCKMODE lockmode)
 {
+#ifdef ENABLE_HTAP
+    if (RelHasImcs(tab->relid)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The part rel enable imcstore, please unimcstore if want to exchange tablespace.")));
+    }
+#endif
+
     ForbidToChangeTableSpaceOfPartitionedTable(tab);
 
     /* input lockmode is the lock mode of patitioned table, which is >= AccessShareLock.

@@ -740,7 +740,7 @@ static bool GreaterThanHour (List* int_type);
 %type <str>	unique_name
 
 %type <node>	alter_table_cmd alter_table_option alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
-				modify_column_cmd reset_partition_cmd
+				modify_column_cmd reset_partition_cmd modify_partition_cmd
 				replica_identity add_column_first_after event_from_clause 
 %type <list>	alter_table_cmds alter_table_option_list alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
@@ -802,7 +802,7 @@ static bool GreaterThanHour (List* int_type);
 
 %type <str>		copy_file_name definer_opt user ev_body ev_where_body event_where_clause
 				database_name access_method_clause access_method access_method_clause_without_keyword attr_name
-				name namedata_string fdwName cursor_name file_name
+				name namedata_string fdwName cursor_name file_name imcs_partition_name
 				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
 				application_name password_string hint_string dolphin_force_index_name
@@ -976,7 +976,7 @@ static bool GreaterThanHour (List* int_type);
 				ExclusionWhereClause fulltext_match_params func_table_with_table
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
-%type <node>	func_arg_expr
+%type <node>	func_arg_expr on_error_clause opt_on_error_clause
 %type <list>	row explicit_row implicit_row type_list array_expr_list
 %type <node>	case_expr case_arg when_clause case_default
 %type <list>	when_clause_list
@@ -1202,6 +1202,9 @@ static bool GreaterThanHour (List* int_type);
 /* MATVIEW */
 %type <boolean> build_deferred
 
+/* IMCS */
+%type <node>    imcstored_clause
+
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
@@ -1280,7 +1283,7 @@ static bool GreaterThanHour (List* int_type);
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
-	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
+	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE IMCSTORED
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INFINITE_P INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPLACE INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
@@ -1288,7 +1291,7 @@ static bool GreaterThanHour (List* int_type);
 	INTERVAL_TYPE_SECOND INTERVAL_TYPE_MICROSECOND INTERVAL_TYPE_YEAR_MONTH INTERVAL_TYPE_DAY_HOUR INTERVAL_TYPE_DAY_MINUTE INTERVAL_TYPE_DAY_SECOND INTERVAL_TYPE_DAY_MICROSECOND INTERVAL_TYPE_HOUR_MINUTE INTERVAL_TYPE_HOUR_SECOND INTERVAL_TYPE_HOUR_MICROSECOND INTERVAL_TYPE_MINUTE_SECOND INTERVAL_TYPE_MINUTE_MICROSECOND INTERVAL_TYPE_SECOND_MICROSECOND
 	INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
 
-	JOIN
+	JOIN JSON_EXISTS
 
 	KEEP KEY KEY_BLOCK_SIZE KEYS KILL KEY_PATH KEY_STORE
 
@@ -1334,7 +1337,7 @@ static bool GreaterThanHour (List* int_type);
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
-	UNBOUNDED UNCOMMITTED UNDEFINED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
+	UNBOUNDED UNCOMMITTED UNDEFINED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNIMCSTORED UNSIGNED
 	UNTIL UNUSABLE UPDATE USE USEEOF USER USING UTC_DATE UTC_TIME UTC_TIMESTAMP
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
@@ -1383,6 +1386,7 @@ static bool GreaterThanHour (List* int_type);
 			FORCE_INDEX USE_INDEX IGNORE_INDEX
 			CURSOR_EXPR
 			LATERAL_EXPR
+			FALSE_ON_ERROR TRUE_ON_ERROR ERROR_ON_ERROR
 			LOCK_TABLES
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 			STORAGE_DISK STORAGE_MEMORY
@@ -5054,6 +5058,7 @@ alter_partition_cmds:
 			| move_partition_cmd                           { $$ = list_make1($1); }
 			| exchange_partition_cmd                       { $$ = list_make1($1); }
 			| reset_partition_cmd                          { $$ = list_make1($1); }
+			| modify_partition_cmd                         { $$ = list_make1($1); }
 			| exchange_partition_cmd_for_bdatabase             { $$ = list_make1($1); }
 		;
 
@@ -5359,6 +5364,32 @@ alter_partition_cmd:
 			}
 		;
 
+modify_partition_cmd:
+		/* ALTER TABLE <name> MODIFY PARTITION <part_name> IMCSTORED */
+		MODIFY_PARTITION imcs_partition_name IMCSTORED
+		{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ModifyPartitionImcstored;
+				n->name = $2;
+				$$ = (Node *)n;
+			}
+		| MODIFY_PARTITION imcs_partition_name IMCSTORED '(' name_list ')'
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ModifyPartitionImcstored;
+				n->name = $2;
+				n->def = (Node *)$5;
+				$$ = (Node *)n;
+			}
+		| MODIFY_PARTITION imcs_partition_name UNIMCSTORED
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ModifyPartitionUnImcstored;
+				n->name = $2;
+				$$ = (Node *)n;
+			}
+		;
+
 move_partition_cmd:
 		/* ALTER TABLE <name> MOVE PARTITION <part_name> TABLESPACE <tablespacename> */
 		MOVE PARTITION partition_name TABLESPACE name
@@ -5537,6 +5568,22 @@ alter_table_cmd:
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_VisibleIndex;
 					n->name = $3;
+					$$ = (Node *)n;
+				}
+			|
+			/*ALTER INDEX index_name DISABLE*/
+			DISABLE_P
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DisableIndex;
+					$$ = (Node *)n;
+				}
+			|
+			/*ALTER INDEX index_name ENABLE*/
+			ENABLE_P
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_EnableIndex;
 					$$ = (Node *)n;
 				}
 			|
@@ -6147,6 +6194,11 @@ alter_table_cmd:
 					n->def = (Node *)$1;
 					$$ = (Node *) n;
 				}
+				| imcstored_clause
+				{
+					$$ = $1;
+				}
+
 /* PGXC_BEGIN */
 			/* ALTER TABLE <name> DISTRIBUTE BY ... */
 			| OptDistributeByInternal
@@ -36969,6 +37021,25 @@ func_application_special:	dolphin_func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| JSON_EXISTS '(' func_arg_list opt_on_error_clause ')'
+				{
+					FuncCall* n = makeNode(FuncCall);
+					Node* onError;
+					n->funcname = list_make1(makeString("json_exists"));
+					if ($4 == NULL)
+						onError = makeIntConst(0, @4);
+					else
+						onError = $4;
+					n->args = lappend($3, onError);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = FALSE;
+					$$ = (Node *)n;
+				}
 		;
 
 
@@ -36983,6 +37054,13 @@ opt_default_nls_clause:
                 $$ = $2;
             }
 	;
+
+opt_on_error_clause: /* EMPTY */ { $$ = NULL; }
+				   | on_error_clause { $$ = $1; };
+
+on_error_clause:	ERROR_ON_ERROR { $$ = makeIntConst(2, @1); }
+				| TRUE_ON_ERROR { $$ = makeIntConst(1, @1); }
+				| FALSE_ON_ERROR { $$ = makeIntConst(0, @1); };
 
 /*
  * Function with SEPARATOR keword arguments;
@@ -39736,6 +39814,33 @@ connect_by_root_expr:   a_expr normal_ident '.' normal_ident
 
 /*****************************************************************************
  *
+ *	ALTER TALBE FOR IMCSTORE
+ *
+ *****************************************************************************/
+imcstored_clause:
+			IMCSTORED
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_Imcstored;
+					$$ = (Node *) n;
+				}
+			| IMCSTORED '(' name_list ')'
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_Imcstored;
+					n->def = (Node *)$3;
+					$$ = (Node *) n;
+				}
+			| UNIMCSTORED
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UnImcstored;
+					$$ = (Node *) n;
+				}
+		;
+
+/*****************************************************************************
+ *
  *	Names and constants
  *
  *****************************************************************************/
@@ -39904,6 +40009,9 @@ dolphin_schema_name_list:	DolphinColId
 name:		ColId									{ $$ = $1; };
 
 database_name:
+			ColId									{ $$ = $1; };
+
+imcs_partition_name:
 			ColId									{ $$ = $1; };
 
 access_method:
@@ -41576,6 +41684,7 @@ alias_name_col_name_keyword:
 	| SUBSTR
 	| SUBSTRING
 	| LAST_DAY_FUNC
+	| JSON_EXISTS
 	| LEAST
 	| LOCATE
 	| MID
@@ -41796,6 +41905,7 @@ reserved_keyword:
 			| GRANT
 			| GROUP_P
 			| HAVING
+			| IMCSTORED
 			| IN_P
 			| INTERSECT
 			| INTO
@@ -41824,6 +41934,7 @@ reserved_keyword:
 			| TO
 			| TRAILING
 			| TRUE_P
+			| UNIMCSTORED
 			| UNION
 			| UNIQUE
 			| USING
