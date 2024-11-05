@@ -1759,13 +1759,11 @@ static Query *transform_cypher_return(cypher_parsestate *cpstate,
 		self->order_by = NIL;
 		self->skip = NULL;
 		self->limit = NULL;
-		RangeTblEntry * rte = transform_prev_cypher_clause(cpstate,  clause,true);
+		query = transform_cypher_clause(cpstate,  clause);
 		self->distinct = distinct;
 		self->order_by = order_by;
 		self->skip = skip;
 		self->limit = limit;
-
-        query->targetList = makeTargetListFromRTE(pstate, rte);
 
         // ORDER BY
         query->sortClause = transform_cypher_order_by(cpstate, self->order_by,
@@ -1861,6 +1859,22 @@ static TargetEntry *find_target_list_entry(cypher_parsestate *cpstate,
     Node *expr;
     ListCell *lt;
     TargetEntry *te;
+    
+    if (IsA(node, ColumnRef)) {
+        ColumnRef *cref = (ColumnRef *)node;
+        
+	    int	 nfields = list_length(cref->fields);
+        Node* field1 = (Node*)linitial(cref->fields);
+	    if (nfields == 1) {
+            char*  col = strVal(field1);
+            foreach (lt, *target_list) {
+                te = (TargetEntry*)lfirst(lt);
+                if (strcmp(col, te->resname) == 0) {
+                    return te;
+                }
+            }
+        }
+    }
 
     expr = transform_cypher_expr(cpstate, node, expr_kind);
 

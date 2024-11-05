@@ -927,7 +927,14 @@ SELECT * FROM cypher('cypher_match', $$
     RETURN u.name as u, type(m), l.name as l
     ORDER BY u, m, l
 $$) AS (u agtype, m agtype, l agtype);
-ERROR:  could not find attribute 4 in subquery targetlist
+     u      |       m       |     l      
+------------+---------------+------------
+ "anybody"  | "opt_match_e" | "nobody"
+ "nobody"   | "opt_match_e" | "anybody"
+ "somebody" | "opt_match_e" | "someone"
+ "someone"  | "opt_match_e" | "somebody"
+(4 rows)
+
 SELECT * FROM cypher('cypher_match', $$
     OPTIONAL MATCH (n:opt_match_v)-[r]->(p), (m:opt_match_v)-[s]->(q)
     WHERE id(n) <> id(m)

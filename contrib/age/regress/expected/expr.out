@@ -5461,13 +5461,37 @@ SELECT * FROM cypher('order_by', $$
 	RETURN u.i
 	ORDER BY u.i
 $$) AS (i agtype);
-ERROR:  could not find attribute 2 in subquery targetlist
+        i         
+------------------
+ {"key": "value"}
+ [1]
+ "1"
+ false
+ true
+ 1::numeric
+ 1
+ 1.0
+ 
+(9 rows)
+
 SELECT * FROM cypher('order_by', $$
 	MATCH (u)
 	RETURN u.i
 	ORDER BY u.i DESC
 $$) AS (i agtype);
-ERROR:  could not find attribute 2 in subquery targetlist
+        i         
+------------------
+ 
+ 1
+ 1.0
+ 1::numeric
+ true
+ false
+ "1"
+ [1]
+ {"key": "value"}
+(9 rows)
+
 --CASE
 SELECT create_graph('case_statement');
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
