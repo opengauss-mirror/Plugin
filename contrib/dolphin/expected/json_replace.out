@@ -247,5 +247,28 @@ CONTEXT:  referenced column: json_replace
 SELECT JSON_REPLACE('x',2,2);
 ERROR:  Invalid JSON text in argument 1 to function json_replace.
 CONTEXT:  referenced column: json_replace
+-- replace function for json
+select replace(cast('{"key1":"values1"}' as json),'"','');
+    replace     
+----------------
+ {key1:values1}
+(1 row)
+
+select replace(cast('{"key1"}' as json),'"','');
+ERROR:  invalid input syntax for type json
+LINE 1: select replace(cast('{"key1"}' as json),'"','');
+                            ^
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"key1"}
+referenced column: replace
+create table test1(attr_json json);
+insert into test1 values('{"key1":"values1","description":"value1"}');
+select  REPLACE (a.attr_json-> '$.description','"','') from test1 a;
+ replace 
+---------
+ value1
+(1 row)
+
+drop table test1;
 drop schema test_json_replace cascade;
 reset current_schema;

@@ -70,5 +70,15 @@ SELECT JSON_REPLACE('x','a',3,true);
 -- test for invalid json document
 SELECT JSON_REPLACE('x',2,2);
 
+
+-- replace function for json
+select replace(cast('{"key1":"values1"}' as json),'"','');
+select replace(cast('{"key1"}' as json),'"','');
+
+create table test1(attr_json json);
+insert into test1 values('{"key1":"values1","description":"value1"}');
+select  REPLACE (a.attr_json-> '$.description','"','') from test1 a;
+drop table test1;
+
 drop schema test_json_replace cascade;
 reset current_schema;
