@@ -196,6 +196,7 @@ typedef struct FetchLimit
 	Node *limitCount;
 	bool isPercent;
 	bool isWithTies;
+	bool isFetch;
 } FetchLimit;
 
 typedef struct CreateTableOptions {
@@ -15100,7 +15101,7 @@ CreateSynonymStmt:
 DropSynonymStmt:
 			DROP opt_public SYNONYM any_name  opt_drop_behavior
 				{
-					bool isPublic = $3;
+					bool isPublic = $2;
 					List *synName = $4;
 					if (isPublic && list_length(synName) != 1) {
 						ereport(errstate,
@@ -31816,6 +31817,7 @@ limit_clause:
 				{
 					FetchLimit *result = (FetchLimit *)palloc0(sizeof(FetchLimit));
 					result->limitCount = $2;
+					result->isFetch = false;
 					$$ = result;
 				}
 			/* SQL:2008 syntax */
@@ -31826,6 +31828,7 @@ limit_clause:
 					result->limitCount = $3;
 					result->isPercent = $4;
 					result->isWithTies = $6;
+					result->isFetch = true;
 					$$ = result;
 				}
 		;
@@ -42421,6 +42424,7 @@ insertSelectOptions(SelectStmt *stmt,
 			}
 			stmt->limitCount = limitCount;
 		}
+		stmt->isFetch = limitClause->isFetch;
 	}
 	stmt->limitIsPercent = limitClause && limitClause->isPercent;
 	stmt->limitWithTies = limitClause && limitClause->isWithTies;

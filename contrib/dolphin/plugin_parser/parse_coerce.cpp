@@ -2481,6 +2481,16 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
                 if (context == NULL)
                     return InvalidOid;
 #endif
+                /*
+                 * Skip the check only when the parameter is true 
+                 * and the expression is WITIN GROUP
+                 * This processing is to solve the aggregate function's 
+                 * (cume_dist,rank,dense_rank,percent_rank)
+                 * direct args and hypothetical args type is not match.
+                 */
+                else if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT ||
+                        !(u_sess->attr.attr_common.enable_aggr_coerce_type &&
+                        CHECK_PARSE_PHRASE(context, "WITHIN GROUP")));
                 else
                     ereport(ERROR,
                         (errcode(ERRCODE_DATATYPE_MISMATCH),
