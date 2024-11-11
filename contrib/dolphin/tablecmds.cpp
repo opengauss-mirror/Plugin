@@ -27102,45 +27102,7 @@ static void ATExecEnableIndex(Relation rel, bool enable) {
 
 void ATExecSetIndexVisibleState(Oid objOid, bool newState)
 {
-    bool dirty = false;
-    Relation sys_table = NULL;
-    HeapTuple sys_tuple = NULL;
-    bool isNull = false;
-
-    sys_table = relation_open(IndexRelationId, RowExclusiveLock);
-
-    // update the indisvisible field
-    sys_tuple = SearchSysCacheCopy1(INDEXRELID, ObjectIdGetDatum(objOid));
-    if (sys_tuple) {
-        Datum oldState = heap_getattr(sys_tuple, Anum_pg_index_indisvisible, RelationGetDescr(sys_table), &isNull);
-        dirty = (isNull || BoolGetDatum(oldState) != newState);
-
-        /* Keep the system catalog indexes current. */
-        if (dirty) {
-            HeapTuple newitup = NULL;
-            Datum values[Natts_pg_index];
-            bool nulls[Natts_pg_index];
-            bool replaces[Natts_pg_index];
-            errno_t rc;
-            rc = memset_s(values, sizeof(values), 0, sizeof(values));
-            securec_check(rc, "\0", "\0");
-            rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
-            securec_check(rc, "\0", "\0");
-            rc = memset_s(replaces, sizeof(replaces), false, sizeof(replaces));
-            securec_check(rc, "\0", "\0");
-
-            replaces[Anum_pg_index_indisvisible - 1] = true;
-            values[Anum_pg_index_indisvisible - 1] = DatumGetBool(newState);
-
-            newitup =
-                (HeapTuple)tableam_tops_modify_tuple(sys_tuple, RelationGetDescr(sys_table), values, nulls, replaces);
-            simple_heap_update(sys_table, &(sys_tuple->t_self), newitup);
-            CatalogUpdateIndexes(sys_table, newitup);
-            tableam_tops_free_tuple(newitup);
-        }
-        tableam_tops_free_tuple(sys_tuple);
-    }
-    relation_close(sys_table, RowExclusiveLock);
+    ATExecSetIndexState(objOid, Anum_pg_index_indisvisible, newState);
 }
 
 /*
@@ -34849,8 +34811,11 @@ static int128 EvaluateAutoIncrement(Relation rel, TupleDesc desc, AttrNumber att
         autoinc = datum2autoinc(cons_autoinc, *value);
         modify_value = (autoinc == 0);
     }
-    /* When datum is NULL/0, auto increase */
-    if (autoinc == 0) {
+     /*
+      * By default, when datum is NULL/0, auto increase;
+      * If NO_AUTO_VALUE_ON_ZERO is set, auto increase only when datum is NULL.
+      */
+    if (*is_null || (autoinc == 0 && !CheckPluginNoAutoValueOnZero())) {
         if (rel->rd_rel->relpersistence == RELPERSISTENCE_TEMP) {
             autoinc = tmptable_autoinc_nextval(rel->rd_rel->relfilenode, cons_autoinc->next);
         } else {
