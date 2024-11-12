@@ -593,22 +593,29 @@ bool exec_mysql_password_auth(Port *port)
         }
         ret = true;
     } else {
-        StringInfo buf = makeStringInfo();
-        char *auth_response = NULL;
-        send_auth_switch_packet(buf, temp_Conn_Mysql_Info->conn_scramble);
-        // flush send buffer data to client
-        pq_flush();
-        // read user login request packet
-        if (dq_getmessage(buf, 0) != STATUS_OK) {
-            return EOF;
+        if ((Dophin_Flags & CLIENT_PLUGIN_AUTH) && (temp_Conn_Mysql_Info->client_capabilities & CLIENT_PLUGIN_AUTH)) {
+            StringInfo buf = makeStringInfo();
+            char *auth_response = NULL;
+            send_auth_switch_packet(buf, temp_Conn_Mysql_Info->conn_scramble);
+            // flush send buffer data to client
+            pq_flush();
+            // read user login request packet
+            if (dq_getmessage(buf, 0) != STATUS_OK) {
+                return EOF;
+            }
+            auth_response = read_switch_response(buf);
+            rc = memcpy_s(temp_Conn_Mysql_Info->conn_native_token, CLIENT_PASSWORD_NATIVE_TOKEN_LEN + 1,
+                auth_response, CLIENT_PASSWORD_NATIVE_TOKEN_LEN);
+            securec_check(rc, "\0", "\0");
+            temp_Conn_Mysql_Info->conn_native_token[CLIENT_PASSWORD_NATIVE_TOKEN_LEN] = 0x00;
+            pfree(auth_response);
+            DestroyStringInfo(buf);
+        } else {
+            rc = memcpy_s(temp_Conn_Mysql_Info->conn_native_token, CLIENT_PASSWORD_NATIVE_TOKEN_LEN + 1,
+                temp_Conn_Mysql_Info->conn_sha256_token, CLIENT_PASSWORD_NATIVE_TOKEN_LEN);
+            securec_check(rc, "\0", "\0");
+            temp_Conn_Mysql_Info->conn_native_token[CLIENT_PASSWORD_NATIVE_TOKEN_LEN] = 0x00;
         }
-        auth_response =  read_switch_response(buf);
-        rc = memcpy_s(temp_Conn_Mysql_Info->conn_native_token, CLIENT_PASSWORD_NATIVE_TOKEN_LEN + 1,
-                      auth_response, CLIENT_PASSWORD_NATIVE_TOKEN_LEN);
-        securec_check(rc, "\0", "\0");
-        temp_Conn_Mysql_Info->conn_native_token[CLIENT_PASSWORD_NATIVE_TOKEN_LEN] = 0x00;
-        pfree(auth_response);
-        DestroyStringInfo(buf);
 
         char stored_password_bytes[SHA_DIGEST_LENGTH + 1];
         sha1_hex_to_bytes(stored_password, stored_password_bytes);
