@@ -52,6 +52,7 @@
 #include "nodes/makefuncs.h"
 #include "plugin_commands/mysqlmode.h"
 #include "utils/varbit.h"
+#include "plugin_utils/year.h"
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
 #define DIG_PER_DEC1 9
@@ -370,6 +371,15 @@ PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
 PG_FUNCTION_INFO_V1_PUBLIC(oct_str);
 PG_FUNCTION_INFO_V1_PUBLIC(oct_num);
 PG_FUNCTION_INFO_V1_PUBLIC(crc32);
+PG_FUNCTION_INFO_V1_PUBLIC(tinyint_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(smallint_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(int_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(year_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(text_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(set_sum_ext);
+PG_FUNCTION_INFO_V1_PUBLIC(float_sum_ext);
+
+
 
 extern "C" DLL_PUBLIC Datum numeric_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_uint2(PG_FUNCTION_ARGS);
@@ -408,6 +418,14 @@ extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum oct_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum tinyint_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum smallint_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum year_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum text_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum set_sum_ext(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float_sum_ext(PG_FUNCTION_ARGS);
 
 
 #define CHECKFLOATVAL(val, inf_is_valid, zero_is_valid)                                                             \
@@ -21513,6 +21531,230 @@ Datum uint8_sum(PG_FUNCTION_ARGS)
     newval = DirectFunctionCall1(uint8_numeric, PG_GETARG_DATUM(1));
 
     PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+
+Datum tinyint_sum_ext(PG_FUNCTION_ARGS)
+{
+    Numeric oldsum;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = DirectFunctionCall1(int1_numeric, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+    }
+
+    /*
+     * Note that we cannot special-case the aggregate case here, as we do for
+     * int2_sum and int4_sum: numeric is of variable size, so we cannot modify
+     * our first parameter in-place.
+     */
+
+    oldsum = PG_GETARG_NUMERIC(0);
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NUMERIC(oldsum);
+
+    /* OK to do the addition. */
+    newval = DirectFunctionCall1(int1_numeric, PG_GETARG_DATUM(1));
+
+    PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+
+Datum smallint_sum_ext(PG_FUNCTION_ARGS)
+{
+    Numeric oldsum;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = DirectFunctionCall1(int2_numeric, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+    }
+
+    /*
+     * Note that we cannot special-case the aggregate case here, as we do for
+     * int2_sum and int4_sum: numeric is of variable size, so we cannot modify
+     * our first parameter in-place.
+     */
+
+    oldsum = PG_GETARG_NUMERIC(0);
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NUMERIC(oldsum);
+
+    /* OK to do the addition. */
+    newval = DirectFunctionCall1(int2_numeric, PG_GETARG_DATUM(1));
+
+    PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+
+Datum int_sum_ext(PG_FUNCTION_ARGS)
+{
+    Numeric oldsum;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = DirectFunctionCall1(int4_numeric, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+    }
+
+    /*
+     * Note that we cannot special-case the aggregate case here, as we do for
+     * int2_sum and int4_sum: numeric is of variable size, so we cannot modify
+     * our first parameter in-place.
+     */
+
+    oldsum = PG_GETARG_NUMERIC(0);
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NUMERIC(oldsum);
+
+    /* OK to do the addition. */
+    newval = DirectFunctionCall1(int4_numeric, PG_GETARG_DATUM(1));
+
+    PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+Datum year_sum_ext(PG_FUNCTION_ARGS)
+{
+    Numeric oldsum;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        return DirectFunctionCall1(int4_numeric, DirectFunctionCall1(year_integer, PG_GETARG_DATUM(1)));
+    }
+
+    /*
+     * Note that we cannot special-case the aggregate case here, as we do for
+     * int2_sum and int4_sum: numeric is of variable size, so we cannot modify
+     * our first parameter in-place.
+     */
+
+    oldsum = PG_GETARG_NUMERIC(0);
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NUMERIC(oldsum);
+
+    /* OK to do the addition. */
+    newval = DirectFunctionCall1(int4_numeric, DirectFunctionCall1(year_integer, PG_GETARG_DATUM(1)));
+
+    PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+
+
+Datum text_sum_ext(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = 0;
+    float8 arg2 = 0;
+    float8 result;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); 
+
+        newval = DirectFunctionCall1(text_float8, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+
+    }
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_DATUM(PG_GETARG_DATUM(0));
+
+    arg1 = PG_GETARG_FLOAT8(0);
+    arg2 = DatumGetFloat8(DirectFunctionCall1(text_float8, PG_GETARG_DATUM(1)));
+    result = arg1 + arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+
+    PG_RETURN_FLOAT8(result);
+
+}
+
+
+Datum set_sum_ext(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = 0;
+    float8 arg2 = 0;
+    float8 result;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); 
+
+        newval = DirectFunctionCall1(settod, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+
+    }
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_DATUM(PG_GETARG_DATUM(0));
+
+    arg1 = PG_GETARG_FLOAT8(0);
+    arg2 = DatumGetFloat8(DirectFunctionCall1(settod, PG_GETARG_DATUM(1)));
+    result = arg1 + arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+
+    PG_RETURN_FLOAT8(result);
+
+}
+
+
+Datum float_sum_ext(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = 0;
+    float8 arg2 = 0;
+    float8 result;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); 
+        
+        PG_RETURN_FLOAT8((float8)PG_GETARG_FLOAT4(1));
+
+    }
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_DATUM(PG_GETARG_DATUM(0));
+
+    arg1 = PG_GETARG_FLOAT8(0);
+    arg2 = (float8)PG_GETARG_FLOAT4(1);
+
+    result = arg1 + arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+
+    PG_RETURN_FLOAT8(result);
+
 }
 
 

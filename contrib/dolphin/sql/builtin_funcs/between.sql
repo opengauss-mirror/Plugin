@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set timezone to 'PRC';
 select 2 between 2 and 23;
 select 2.1 between 2.1 and 12.3;
 select true between false and true;
@@ -226,5 +227,6 @@ select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /*
 select * from test where date between datetime and timestamp; /* exptected 1 */
 select * from test where datetime between date and timestamp; /* exptected 1 */
 
+reset timezone;
 drop schema db_between cascade;
 reset current_schema;

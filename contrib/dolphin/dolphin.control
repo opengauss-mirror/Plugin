@@ -1,5 +1,5 @@
 # dolphin extension
 comment = 'sql engine'
-default_version = '4.0'
+default_version = '4.1'
 module_pathname = '$libdir/dolphin'
 relocatable = false
