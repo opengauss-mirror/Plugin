@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set timezone to 'PRC';
 select 2 between 2 and 23;
  b_between_and 
 ---------------
@@ -792,7 +793,7 @@ explain (costs off) select * from test where timetz between '12:00:00' and '12:0
 -------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timetz_idx on test
-   Index Cond: ((timetz >= '12:00:00-07'::time with time zone) AND (timetz <= '12:00:00-07'::time with time zone))
+   Index Cond: ((timetz >= '12:00:00+08'::time with time zone) AND (timetz <= '12:00:00+08'::time with time zone))
 (3 rows)
 
 explain (costs off) select * from test where date between '2024-12-12' and '2024-12-12';
@@ -816,7 +817,7 @@ explain (costs off) select * from test where timestamp between '2024-12-12' and 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timestamp_idx on test
-   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-12 00:00:00-08'::timestamp with time zone))
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND ("timestamp" <= '2024-12-12 00:00:00+08'::timestamp with time zone))
 (3 rows)
 
 explain (costs off) select * from test where time between '12:00:00'::text and '12:00:00'::text; -- N
@@ -858,7 +859,7 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::tex
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timestamp_idx on test
-   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00+08'::timestamp with time zone))
 (3 rows)
 
 explain (costs off) select * from test where time between '12:00:00'::char(100) and '12:00:00'::char(100); -- N
@@ -891,7 +892,7 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::cha
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timestamp_idx on test
-   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00+08'::timestamp with time zone))
 (3 rows)
 
 /* all no index. */
@@ -909,7 +910,7 @@ explain (costs off) select * from test where date between '2024-12-12'::blob and
                                                                                               QUERY PLAN                                                                                               
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Seq Scan on test
-   Filter: ((("date")::timestamp with time zone >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND (("date")::timestamp with time zone <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+   Filter: ((("date")::timestamp with time zone >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND (("date")::timestamp with time zone <= '2024-12-13 00:00:00+08'::timestamp with time zone))
 (2 rows)
 
 explain (costs off) select * from test where datetime between '2024-12-12'::blob and '2024-12-13'::blob;
@@ -925,7 +926,7 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::blo
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timestamp_idx on test
-   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00+08'::timestamp with time zone))
 (3 rows)
 
 /*  all no index. */
@@ -963,25 +964,25 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::VAR
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timestamp_idx on test
-   Index Cond: (("timestamp" >= '2024-12-12 00:00:00-08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00-08'::timestamp with time zone))
+   Index Cond: (("timestamp" >= '2024-12-12 00:00:00+08'::timestamp with time zone) AND ("timestamp" <= '2024-12-13 00:00:00+08'::timestamp with time zone))
 (3 rows)
 
 select * from test where time between '12:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
 select * from test where time between '11:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
 select * from test where timetz between '12:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
 select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /* exptected 0 */
@@ -992,21 +993,22 @@ select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /*
 select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
 select * from test where date between datetime and timestamp; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
 select * from test where datetime between date and timestamp; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00+08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00+08
 (1 row)
 
+reset timezone;
 drop schema db_between cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t_between_and_0007
