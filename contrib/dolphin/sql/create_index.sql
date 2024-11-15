@@ -107,3 +107,40 @@ drop table t2;
 
 drop schema create_index cascade;
 reset current_schema;
+
+set dolphin.b_compatibility_mode to on;
+create database db_ind dbcompatibility 'B';
+\c db_ind
+
+set enable_default_local_index to off;
+drop table if exists t_part1;
+create table t_part1 (c1 int, c2 text)
+partition by range (c1)  (
+	partition t_part1_p1 values less than(200),
+    partition t_part1_p2 values less than(400),
+    partition t_part1_p3 values less than(600),
+    partition t_part1_p6 values less than(maxvalue)
+);
+create index t_part1_c1_idx on t_part1(c1);
+insert into t_part1 values (generate_series(1, 800), 'GLOBAL INDEX');
+explain (costs off) select c1, c2 from t_part1 where c1 = 312;
+select count(*) from pg_partition where parentid = 't_part1_c1_idx'::regclass;
+
+set enable_default_local_index to on;
+drop table if exists t_part2;
+create table t_part2 (c1 int, c2 text)
+partition by range (c1)  (
+	partition t_part2_p1 values less than(200),
+    partition t_part2_p2 values less than(400),
+    partition t_part2_p3 values less than(600),
+    partition t_part2_p6 values less than(maxvalue)
+);
+create index t_part2_c1_idx on t_part2(c1);
+insert into t_part2 values (generate_series(1, 800), 'LOCAL INDEX');
+explain (costs off) select c1, c2 from t_part2 where c1 = 312;
+select count(*) from pg_partition where parentid = 't_part2_c1_idx'::regclass;
+
+drop table t_part1;
+drop table t_part2;
+reset enable_default_local_index;
+reset dolphin.b_compatibility_mode;
