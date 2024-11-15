@@ -996,6 +996,47 @@ execute s0 using 1;
 (9 rows)
 
 deallocate s0;
+--prepare with insert and execute in procedure
+drop table if exists t_prepare_010;
+NOTICE:  table "t_prepare_010" does not exist, skipping
+create table t_prepare_010(c1 int);
+prepare test_prepare_010 as 'insert into t_prepare_010 values(1)';
+drop procedure if exists p_prepare_010a();
+NOTICE:  function p_prepare_010a() does not exist, skipping
+CREATE OR REPLACE PROCEDURE p_prepare_010a() AS 
+BEGIN 
+     execute test_prepare_010;
+END;
+/
+select p_prepare_010a();
+ERROR:  column "test_prepare_010" does not exist
+LINE 1: SELECT test_prepare_010
+               ^
+QUERY:  SELECT test_prepare_010
+CONTEXT:  referenced column: test_prepare_010
+PL/pgSQL function p_prepare_010a() line 2 at EXECUTE statement
+referenced column: p_prepare_010a
+select * from t_prepare_010;
+ c1 
+----
+(0 rows)
+
+set dolphin.enable_procedure_executestmt = on;
+select p_prepare_010a();
+ p_prepare_010a 
+----------------
+ 
+(1 row)
+
+select * from t_prepare_010;
+ c1 
+----
+  1
+(1 row)
+
+drop procedure p_prepare_010a();
+drop table t_prepare_010;
+reset dolphin.enable_procedure_executestmt;
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
 drop schema test_mysql_prepare cascade;

@@ -8,6 +8,8 @@
 
 #define ENABLE_B_CMPT_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enableBCmptMode)
 #define ENABLE_NULLS_MINIMAL_POLICY_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enable_nulls_minimal_policy)
+#define ENABLE_PROCEDURE_EXECUTEMENT (!u_sess->attr.attr_common.IsInplaceUpgrade && \
+                                      GetSessionContext()->enable_procedure_executestmt)
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL
@@ -124,6 +126,7 @@ extern THR_LOCAL conn_mysql_infoP_t temp_Conn_Mysql_Info;
 typedef struct BSqlPluginContext {
     bool enableBCmptMode;
     bool enable_nulls_minimal_policy;
+    bool enable_procedure_executestmt;
     char* sqlModeString;
     unsigned int sqlModeFlags;
     List* lockNameList;
