@@ -230,6 +230,7 @@ static void InitDolphinOperator(BSqlPluginContext* cxt);
 static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
 static bool NullsMinimalPolicy();
+static bool enableProcedureExecutement();
 
 static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub,
     ddl_deparse_context *context);
@@ -368,6 +369,7 @@ void init_plugin_object()
     }
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
     u_sess->hook_cxt.nullsMinimalPolicyHook = (void*)NullsMinimalPolicy;
+    u_sess->hook_cxt.enableProcedureExecutementHook = (void*)enableProcedureExecutement;
     u_sess->hook_cxt.getIgnoreKeywordTokenHook = (void*)semtc_get_ignore_keyword_token;
     u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
     u_sess->hook_cxt.isBinaryType = (void*)IsBinaryType;
@@ -1084,6 +1086,15 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              CheckNullsMinimalPolicy, NULL, NULL);
+
+    DefineCustomBoolVariable("dolphin.enable_procedure_executestmt",
+                             "Enable mysql EXECUTE statement behavior in procedures.",
+                             NULL,
+                             &GetSessionContext()->enable_procedure_executestmt,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 
     DefineCustomStringVariable("dolphin.sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
@@ -1830,6 +1841,11 @@ static bool ReplaceNullOrNot()
 static bool NullsMinimalPolicy()
 {
     return ENABLE_B_CMPT_MODE && ENABLE_NULLS_MINIMAL_POLICY_MODE;
+}
+
+static bool enableProcedureExecutement()
+{
+    return ENABLE_B_CMPT_MODE && ENABLE_PROCEDURE_EXECUTEMENT;
 }
 
 
