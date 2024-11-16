@@ -292,6 +292,12 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(false, ''%T|%r
 insert into func_test2(functionName, result) values(' TIME_FORMAT(date''5874897-12-31'', ''%t|%r|%h|%h'')', TIME_FORMAT(date'5874897-12-31', '%t|%r|%h|%h'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(date''10000-1-1'', date''9999-12-31'')', TIME_FORMAT(date'10000-1-1', date'9999-12-31'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(datetime''294277-1-9 4:00:54.775806'', ''%T|%r|%h|%h'')', TIME_FORMAT(datetime'294277-1-9 4:00:54.775806', '%T|%r|%h|%h'));
+-- test for invalid format character
+select time_format('2024-11-18 11:12:35', 'qwerqwerqwer');
+select time_format('2024-11-18 11:12:35', 'qwerqwerqwer%Y-%m-%d %H:%i:%s');
+select time_format('2024-10-19 23:30:50', 'qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwer');
+select time_format('2024-10-19 23:30:50', 'qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqw%Y-%m-%d %H:%i:%serqwerqwerqwerqwerqwer');
+select time_format('2024-10-19 23:30:50', 'SELECT i.namespace, (SELECT tc.relname FROM pg_class tc WHERE (tc.oid = i.indrelid)) AS \"table\", (NOT i.indisunique) AS non_unique, c.relname AS key_name, i.seq_in_index, a.attname AS column_name, a.atttypid AS column_type, a.attstattarget AS column_stattarget, a.attlen AS column_len, a.attnum AS column_num, a.attcacheoff, a.atttypmod AS column_typmod, a.attbval, a.atthasdef, a.attisdropped, a.attislocal AS column_isdropped, a.attcmprmode AS column_cmprmode, a.attinhcount, a.attcollation AS column_collation, a.attacl AS column_acl, a.attoptions AS column_options, a.attfdwoptions AS column_fdwoptions, a.attinitdefval AS column_initdefval, a.attkvtype AS column_kvtype, a.attdroppedname AS column_droppedname, c.relname, c.relnamespace, c.reltype, c.reloftype, c.relowner, c.relam, c.relfilenode, c.reltablespace, c.relpages, c.reltuples, c.relallvisible, c.reltoastrelid, c.reltoastidxid, c.reldeltarelid, c.reldeltaidx, c.relcudescrelid, c.relcudescidx, c.relhasindex, c.relisshared, c.relpersistence, c.relkind, c.relnatts, c.relchecks, c.relhasoids, c.relhaspkey, c.relhasrules, c.relhastriggers, c.relhassubclass, c.relcmprs, c.relhasclusterkey, c.relrowmovement, c.parttype, c.relfrozenxid, c.relacl, c.reloptions, c.relreplident, c.relfrozenxid64, c.relbucket, c.relbucketkey, c.relminmxid FROM pg_class c join pg_index i on c.Oid = i.attrelid join pg_attribute a on c.Oid = a.indexrelid;');
 
 -- TIMESTAMP(expr)
 -- 特异参数
