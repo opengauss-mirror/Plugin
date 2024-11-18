@@ -88,7 +88,7 @@ int dq_special_getmessage(StringInfo buf, Port* port)
         ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
         return EOF;
     }
-    next_seqid = ser_num;
+    next_seqid = ++ser_num;
     resetStringInfo(buf);
     enlargeStringInfo(buf, nDataLen);
     // read data
