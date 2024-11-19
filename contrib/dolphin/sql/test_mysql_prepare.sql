@@ -245,6 +245,28 @@ prepare s0 as select * from t1_xc_fqs t1 full join t2_xc_fqs t2 on t1.id1=t2.id1
 execute s0 using 1;
 deallocate s0;
 
+--prepare with insert and execute in procedure
+drop table if exists t_prepare_010;
+create table t_prepare_010(c1 int);
+prepare test_prepare_010 as 'insert into t_prepare_010 values(1)';
+
+drop procedure if exists p_prepare_010a();
+CREATE OR REPLACE PROCEDURE p_prepare_010a() AS 
+BEGIN 
+     execute test_prepare_010;
+END;
+/
+
+select p_prepare_010a();
+select * from t_prepare_010;
+
+set dolphin.enable_procedure_executestmt = on;
+select p_prepare_010a();
+select * from t_prepare_010;
+drop procedure p_prepare_010a();
+drop table t_prepare_010;
+
+reset dolphin.enable_procedure_executestmt;
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
 drop schema test_mysql_prepare cascade;
