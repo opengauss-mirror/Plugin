@@ -272,6 +272,7 @@ option(SEND_TELEMETRY_DEFAULT "The default value for whether to send telemetry" 
 option(REGRESS_CHECKS "PostgreSQL regress checks through installcheck" ON)
 option(ENABLE_BBOX "enable bbox,the old is --enable-bbox" OFF)
 option(ENABLE_MOT "enable mot in single_node mode,the old is --enable-mot" OFF)
+option(ENABLE_HTAP "enable HTAP in single/distribute mode,the old is --enable-htap" OFF)
 
 # Check if PostgreSQL has OpenSSL enabled by inspecting pg_config --configure.
 # Right now, a Postgres header will redefine an OpenSSL function if Postgres is not installed --with-openssl,
@@ -352,6 +353,11 @@ endif()
 if(ENABLE_MOT)
   add_definitions(-DENABLE_MOT)
   message(STATUS "ENABLE_MOT feature is enabled")
+endif()
+
+if(ENABLE_HTAP)
+  add_definitions(-DENABLE_HTAP)
+  message(STATUS "HTAP feature is enabled")
 endif()
 include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR} ${Third_party_library})
 

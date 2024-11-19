@@ -1010,11 +1010,33 @@ ts_prepare_sort_from_pathkeys(Plan *lefttree, List *pathkeys, Relids relids,
 List *
 ts_build_path_tlist(PlannerInfo *root, Path *path)
 {
-	List *tlist = NIL;
-	Index *sortgrouprefs = 0;
-	int resno = 1;
-	ListCell *v;
-	return tlist;
+    List *tlist = NIL;
+    Index *sortgrouprefs = path->pathtarget->sortgrouprefs;
+    int resno = 1;
+    ListCell *v;
+
+    foreach (v, path->pathtarget->exprs)
+    {
+        Node *node = (Node *) lfirst(v);
+        TargetEntry *tle;
+
+        /*
+            * If it's a parameterized path, there might be lateral references in
+            * the tlist, which need to be replaced with Params.  There's no need
+            * to remake the TargetEntry nodes, so apply this to each list item
+            * separately.
+            */
+        if (path->param_info)
+                node = replace_nestloop_params(root, node);
+
+        tle = makeTargetEntry((Expr *) node, resno, NULL, false);
+        if (sortgrouprefs)
+                tle->ressortgroupref = sortgrouprefs[resno - 1];
+
+        tlist = lappend(tlist, tle);
+        resno++;
+    }
+    return tlist;
 }
 
 /*

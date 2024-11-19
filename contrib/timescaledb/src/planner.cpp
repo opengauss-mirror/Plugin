@@ -1018,6 +1018,7 @@ replace_hypertable_insert_paths_forog(PlannerInfo *root,RelOptInfo *rel,
 										rowMarks,
 										epqParam
 										);
+    modifytable_path->pathtarget = make_pathtarget_from_tlist(root->parse->targetList);
 	pathlist= lappend(pathlist,modifytable_path);
 
 	foreach (lc, pathlist)
@@ -1039,6 +1040,8 @@ replace_hypertable_insert_paths_forog(PlannerInfo *root,RelOptInfo *rel,
 		ListCell *l1;
 		foreach(l1,path1->extensible_paths){
 			path2 = (ModifyTablePath *) lfirst(l1);
+            Path *first_path_ext = (Path *) linitial(path2->subpaths);
+            first_path_ext->pathtarget = ((Path *) path2)->pathtarget;
 			break;
 		}
 		path1->extensible_paths = path2->subpaths;
