@@ -94,6 +94,18 @@ show warnings;
  Error | 0A000 | RESIGNAL when handler not active
 (1 row)
 
+show count(*) warnings;
+ count 
+-------
+     1
+(1 row)
+
+show count(*) errors;
+ count 
+-------
+     1
+(1 row)
+
 drop schema b_signal_resignal cascade;
 NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to function p_resignal1()
