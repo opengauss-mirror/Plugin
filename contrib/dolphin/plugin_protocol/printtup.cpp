@@ -777,11 +777,6 @@ bool is_req_from_gsql()
     return strcmp(u_sess->attr.attr_common.application_name, "gsql") == 0;
 }
 
-bool is_req_from_jdbc()
-{
-    return strcmp(u_sess->attr.attr_common.application_name, "PostgreSQL JDBC Driver") == 0;
-}
-
 bool inline is_type_support_not_escape_zero(Oid type)
 {
     return BINARYOID == type;

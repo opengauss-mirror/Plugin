@@ -54,16 +54,16 @@ View definition:
 
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 create table t2 (c1 int);
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 drop table t2;
 create table t1 (c2 int);
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 drop table t1;
 create table t1 (c1 int);
 insert into t1 values(1);
@@ -197,7 +197,7 @@ create table t1 (c2 int);
 insert into t1 values(2);
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d v1;
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
@@ -304,10 +304,10 @@ View definition:
 
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 select * from v2;
 ERROR:  The view v2 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 create table t1 (c1 varchar);
 insert into t1 values('a');
 select * from v1;
@@ -439,10 +439,10 @@ View definition:
 
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 select * from v2;
 ERROR:  The view v2 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 create table t1 (c1 int);
 insert into t1 values(1);
 select * from v1;
@@ -535,7 +535,7 @@ View definition:
 
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 create table t1 (c1 int);
 insert into t1 values(1);
 select * from v1;
@@ -609,7 +609,7 @@ View definition:
 
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 create table t1 (c1 int);
 insert into t1 values(1);
 select * from v1;
@@ -658,7 +658,7 @@ View definition:
 drop table t1;
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ v1;
 WARNING:  View v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -710,7 +710,7 @@ View definition:
 drop table t1;
 select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ v1;
 WARNING:  View v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -769,7 +769,7 @@ View definition:
 drop table partition_t1;
 select * from partition_v1;
 ERROR:  The view partition_v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v1
 WARNING:  View partition_v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -959,7 +959,7 @@ View definition:
 drop table partition_t1;
 select * from partition_v1;
 ERROR:  The view partition_v1 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v1
 WARNING:  View partition_v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -976,7 +976,7 @@ View definition:
 
 select * from partition_v2;
 ERROR:  The view partition_v2 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v2
 WARNING:  View partition_v2 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -993,7 +993,7 @@ View definition:
 
 select * from partition_v3;
 ERROR:  The view partition_v3 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v3
 WARNING:  View partition_v3 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -1010,7 +1010,7 @@ View definition:
 
 select * from partition_v4;
 ERROR:  The view partition_v4 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v4
 WARNING:  View partition_v4 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -1027,7 +1027,7 @@ View definition:
 
 select * from partition_v5;
 ERROR:  The view partition_v5 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v5
 WARNING:  View partition_v5 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
@@ -1247,7 +1247,7 @@ View definition:
 
 select * from partition_v5;
 ERROR:  The view partition_v5 is invalid, please make it valid before operation.
-HINT:  Please recreate table or re-add missing table fields.
+HINT:  Please re-add missing table fields.
 \d+ partition_v5
 WARNING:  View partition_v5 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
