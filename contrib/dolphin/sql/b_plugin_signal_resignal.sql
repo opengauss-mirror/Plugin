@@ -44,6 +44,8 @@ create procedure p_signal4() resignal sqlstate '42000' set MESSAGE_TEXT = 'this 
         COLUMN_NAME = 'column name', CURSOR_NAME = 'cursor name';;
 call p_signal4();
 show warnings;
+show count(*) warnings;
+show count(*) errors;
 
 drop schema b_signal_resignal cascade;
 reset current_schema;

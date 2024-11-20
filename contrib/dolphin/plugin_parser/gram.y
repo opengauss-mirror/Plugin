@@ -3889,6 +3889,21 @@ VariableShowStmt:
 					}
 #endif
 				}
+			| SHOW COUNT '(' '*' ')' WARNINGS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) warnings feature is unsupported on distributed mode.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings_count";
+						$$ = (Node *) n;
+					}
+				}
 			| SHOW_ERRORS
 				{
 #ifdef ENABLE_MULTIPLE_NODES
@@ -3965,6 +3980,21 @@ VariableShowStmt:
 						$$ = (Node *) n;
 					}
 #endif
+				}
+			| SHOW COUNT '(' '*' ')' ERRORS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) errors feature is unsupported on distributed mode.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors_count";
+						$$ = (Node *) n;
+					}
 				}
 			| SHOW var_name
 			{
