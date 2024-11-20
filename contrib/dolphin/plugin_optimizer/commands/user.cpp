@@ -3836,6 +3836,12 @@ static void AddRoleMems(
         bool new_record_nulls[Natts_pg_auth_members] = {false};
         bool new_record_repl[Natts_pg_auth_members] = {false};
 
+#ifdef DOLPHIN
+        if (roleid == memberid) {
+            ereport(NOTICE, (errmsg("the role granted is the same as the role of grantee: \"%s\"", rolename)));
+            continue;
+        }
+#else
         /*
          * Refuse creation of membership loops, including the trivial case
          * where a role is made a member of itself.  We do this by checking to
@@ -3847,6 +3853,7 @@ static void AddRoleMems(
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_GRANT_OPERATION),
                     (errmsg("role \"%s\" is a member of role \"%s\"", rolename, membername))));
+#endif
 
         /*
          * Check if entry for this role/member already exists; if so, give
@@ -3972,6 +3979,12 @@ static void DelRoleMems(const char* rolename, Oid roleid, const List* memberName
         const char* membername = strVal(lfirst(nameitem));
         Oid memberid = lfirst_oid(iditem);
 
+#ifdef DOLPHIN
+        if (roleid == memberid) {
+            ereport(NOTICE, (errmsg("the role revoked is the same as the role of the revoked: \"%s\"", rolename)));
+            continue;
+        }
+#endif
         /*
          * Find entry for this role/member
          */

@@ -20,3 +20,76 @@ select system_user();
 
 drop schema test_system_user cascade;
 reset current_schema;
+-- test grant/revoke itself
+drop user if exists user_revoke_001;
+NOTICE:  role "user_revoke_001" does not exist, skipping
+create user user_revoke_001 password 'Test_123';
+--?.*
+grant proxy on user_revoke_001 to user_revoke_001;
+NOTICE:  the role granted is the same as the role of grantee: "user_revoke_001"
+\du user_revoke_001
+              List of roles
+    Role name    | Attributes | Member of 
+-----------------+------------+-----------
+ user_revoke_001 |            | {}
+
+revoke proxy on user_revoke_001 from user_revoke_001;
+NOTICE:  the role revoked is the same as the role of the revoked: "user_revoke_001"
+\du user_revoke_001
+              List of roles
+    Role name    | Attributes | Member of 
+-----------------+------------+-----------
+ user_revoke_001 |            | {}
+
+drop user if exists user_revoke_001;
+-- test grant/revoke recursion
+drop user if exists user001;
+NOTICE:  role "user001" does not exist, skipping
+drop user if exists user002;
+NOTICE:  role "user002" does not exist, skipping
+create user user001 password 'Test_123';
+--?.*
+create user user002 password 'Test_123';
+--?.*
+\du user001
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user001   |            | {}
+
+\du user002
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user002   |            | {}
+
+grant proxy on user001 to user002 with grant option;
+grant proxy on user002 to user001;
+\du user001
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user001   |            | {user002}
+
+\du user002
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user002   |            | {user001}
+
+revoke proxy on user001 from user002;
+revoke proxy on user002 from user001;
+\du user001
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user001   |            | {}
+
+\du user002
+           List of roles
+ Role name | Attributes | Member of 
+-----------+------------+-----------
+ user002   |            | {}
+
+drop user if exists user001;
+drop user if exists user002;
