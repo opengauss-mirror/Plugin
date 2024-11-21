@@ -61,77 +61,37 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: float8_sum
-SQL function "text_sum" statement 1
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 select * from test_sum;
  sum1 | sum2 | sum3 | sum4 | sum5 | sum6 | sum7 | sum8 | sum9 | sum10 |  sum11   | sum12 | sum13 | sum14 |  sum15   | sum16  |     sum17     |     sum18      |         sum19         |     sum20      |         sum21         | sum22 | sum23 | sum24 | sum25 | sum26 | sum27 | sum28 | sum29 | sum30 | sum31 | sum32 | sum33 
 ------+------+------+------+------+------+------+------+------+-------+----------+-------+-------+-------+----------+--------+---------------+----------------+-----------------------+----------------+-----------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
