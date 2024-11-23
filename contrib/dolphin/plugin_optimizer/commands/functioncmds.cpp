@@ -40,6 +40,7 @@
 #include "plugin_optimizer/clauses.h"
 #include "nodes/makefuncs.h"
 #include "utils/typcache.h"
+#include "plugin_parser/parse_type.h"
 #endif
 #include "access/genam.h"
 #include "access/heapam.h"
@@ -75,7 +76,6 @@
 #include "plugin_parser/parse_collate.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_func.h"
-#include "plugin_parser/parse_type.h"
 #include "storage/tcap.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
@@ -1065,6 +1065,83 @@ void CheckCreateFunctionPrivilege(Oid namespaceId, const char* funcname)
     }
 }
 
+#ifdef DOLPHIN
+char* makeEnumTypeNameForFunc(const char* funcName, const char *paramName, Oid namespaceId)
+{
+    char* enumName = NULL;
+    char modlabel[NAMEDATALEN] = {0};
+    errno_t rc = EOK;
+
+    rc = sprintf_s(modlabel, NAMEDATALEN, "%u_anonymous_enum", namespaceId);
+    securec_check_ss(rc, "", "");
+
+    enumName = makeObjectName(funcName, paramName, modlabel);
+    return enumName;
+}
+
+static List* HandleEnumTypeForFunction(List* parameters, Oid namespaceId, char* funcName)
+{
+    ListCell* lc = NULL;
+    Relation pg_type_desc = heap_open(TypeRelationId, AccessExclusiveLock);
+    List* oids = NIL;
+    int i = 0;
+    char param[NODEIDLEN];
+
+    foreach (lc, parameters) {
+        i++;
+
+        FunctionParameter* fp = (FunctionParameter*)lfirst(lc);
+        TypeName* t = fp->argType;
+        Oid typeOid = InvalidOid;
+
+        if (strcmp(strVal(llast(t->names)), "enum") == 0) {
+            pg_ltoa(i, param);
+            char* enumTypeName = makeEnumTypeNameForFunc(funcName, param, namespaceId);
+
+            t->names = lcons(makeString(get_namespace_name(namespaceId)), t->names);
+            strVal(llast(t->names)) = enumTypeName;
+
+            /* if enumTypename exists, skip create */
+            typeOid = GetSysCacheOid2(TYPENAMENSP, CStringGetDatum(enumTypeName), ObjectIdGetDatum(namespaceId));
+            if (OidIsValid(typeOid)) {
+                /* create or replace scene: in order not to drop type accroding pg_depend */
+                deleteDependencyRecordsForClass(TypeRelationId, typeOid, ProcedureRelationId, DEPENDENCY_AUTO);
+
+                list_free_ext(t->typmods);
+                t->typmods = NULL;
+            } else {
+                typeOid = DefineAnonymousEnum(t, DEFAULT_COLLATION_OID);
+            }
+
+            oids = lappend_oid(oids, typeOid);
+        }
+    }
+    heap_close(pg_type_desc, AccessExclusiveLock);
+
+    return oids;
+}
+
+static void RecordDependencyForEnum(List* enumOids, Oid funcId)
+{
+    ListCell* lc = NULL;
+    ObjectAddress depender;
+    ObjectAddress referencer;
+
+    referencer.classId = ProcedureRelationId;
+    referencer.objectId = funcId;
+    referencer.objectSubId = 0;
+
+    depender.classId = TypeRelationId;
+    depender.objectSubId = 0;
+
+    foreach (lc, enumOids) {
+        depender.objectId = lfirst_oid(lc);
+
+        recordMultipleDependencies(&depender, &referencer, 1, DEPENDENCY_AUTO);
+    }
+}
+#endif
+
 extern HeapTuple SearchUserHostName(const char* userName, Oid* oid);
 /*
  * CreateFunction
@@ -1110,6 +1187,9 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
     bool package = false;
     FunctionPartitionInfo* partInfo = NULL;
     bool proIsProcedure = stmt->isProcedure;
+#ifdef DOLPHIN
+    List* enumOids = NIL;
+#endif
     if (!OidIsValid(pkg_oid)) {
         u_sess->plsql_cxt.debug_query_string = pstrdup(queryString);
     }
@@ -1302,6 +1382,9 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
     {
         set_create_plsql_type_not_check_nsp_oid();
         u_sess->plsql_cxt.curr_object_nspoid = namespaceId;
+#ifdef DOLPHIN
+        enumOids = HandleEnumTypeForFunction(stmt->parameters, namespaceId, funcname);
+#endif
         examine_parameter_list(stmt->parameters, languageOid, queryString, &parameterTypes, &param_type_depend_ext, &allParameterTypes,
             &parameterModes, &parameterNames, &parameterDefaults, &requiredResultType, &defargpos, fenced);
 
@@ -1442,6 +1525,10 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
         partInfo);
 
     CreateFunctionComment(address.objectId, functionOptions);
+#ifdef DOLPHIN
+    /* record depend for dropping type when drop function */
+    RecordDependencyForEnum(enumOids, address.objectId);
+#endif
     pfree_ext(param_type_depend_ext);
     pfree_ext(ret_type_depend_ext);
     u_sess->plsql_cxt.procedure_start_line = 0;

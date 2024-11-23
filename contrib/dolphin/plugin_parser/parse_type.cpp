@@ -1961,7 +1961,7 @@ TypeTupStatus GetTypeTupStatus(Type typ)
  * DefineAnonymousEnum
  *		Registers a new anoymous enum without an array type, using the given name.
  */
-void DefineAnonymousEnum(TypeName * typname, Oid collations)
+Oid DefineAnonymousEnum(TypeName* typname, Oid collations)
 {
     char* enumName = NULL;
     Oid enumNamespace;
@@ -2051,6 +2051,8 @@ void DefineAnonymousEnum(TypeName * typname, Oid collations)
      * visible to the type checking step.
      */
     CommandCounterIncrement();
+
+    return enumTypeAddr.objectId;
 }
 
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname) 
