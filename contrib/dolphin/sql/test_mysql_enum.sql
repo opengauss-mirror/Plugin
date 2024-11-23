@@ -357,3 +357,48 @@ select a + interval 1 day as 'a + interval 1 day' from set_t;
 select interval 1 day + a as 'interval 1 day + a' from set_t;
 select a - interval 1 day as 'a - interval 1 day' from set_t;
 drop table set_t;
+
+reset dolphin.sql_mode;
+CREATE TABLE staff (
+name VARCHAR(40),
+gender ENUM('male', 'female'),
+age ENUM('young', 'old')
+);
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE insert_data1(param1 CHAR(20), param2 ENUM('male', 'female'), param3 ENUM('young', 'old'))
+BEGIN
+INSERT INTO staff (name, gender, age) VALUES (param1,param2, param3);
+END 
+//
+DELIMITER ;
+
+select insert_data1('aaa', 'yyy', 'xxx'); -- should fail
+select insert_data1('aaa', 'female', 'old');
+select * from staff;
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE insert_data1(param1 CHAR(20), param2 ENUM('male', 'female'), param3 ENUM('young', 'old'))
+BEGIN
+INSERT INTO staff (name, gender, age) VALUES (param1,param2, param3);
+END 
+//
+DELIMITER ;
+
+drop procedure insert_data1;
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE insert_data1(CHAR(20), ENUM('male', 'female'), ENUM('young', 'old'))
+BEGIN
+INSERT INTO staff (name, gender, age) VALUES ($1, $2, $3);
+END 
+//
+DELIMITER ;
+
+select insert_data1('bbb', 'male', 'old');
+select * from staff;
+
+drop procedure insert_data1;
+select count(*) from pg_type where typname like '%insert_data1%';
+
+drop table staff;
