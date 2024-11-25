@@ -125,6 +125,10 @@ SELECT time_bucket('15 minutes', time) AS fifteen_min,
   ORDER BY fifteen_min DESC, max_temp DESC;
 ```
 
+## **2.4.** 将test文件夹中的函数编译到.so中 (可选)
+
+**条件：** 需要在编译timescaledb的时候设置debug编译选项 `-DCMAKE_BUILD_TYPE="Debug"`，之后test文件夹中的函数会自动编译到.so中
+
 
 # **3.** TimescaleDB可用接口
 | 序号 | 接口名称                                                     | 说明                                                         |
