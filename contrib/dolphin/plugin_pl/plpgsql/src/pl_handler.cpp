@@ -799,7 +799,6 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
     int pkgDatumsNumber = 0;
     bool savedisAllowCommitRollback = true;
     bool enableProcCoverage = u_sess->attr.attr_common.enable_proc_coverage;
-
     
     /* Check if type body exists if using type method */
     HeapTuple proc_tup = NULL;
@@ -1071,7 +1070,12 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
             /* debug finished, close debug resource */
             if (func->debug) {
                 /* if debuger is waiting for end msg, send end */
-                server_send_end_msg(func->debug);
+                PlDebuggerComm* debug_comm = &g_instance.pldebug_cxt.debug_comm[func->debug->comm->comm_idx];
+                if (debug_comm->isGmsRunning()) {
+                    server_send_gms_end_msg(func->debug);
+                } else {
+                    server_send_end_msg(func->debug);
+                }
                 /* pass opt to upper debug function */
                 server_pass_upper_debug_opt(func->debug);
                 clean_up_debug_server(func->debug, false, true);
@@ -1107,7 +1111,13 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
         /* debug finished, close debug resource */
         if (func->debug) {
             /* if debuger is waiting for end msg, send end */
-            server_send_end_msg(func->debug);
+            PlDebuggerComm* debug_comm = &g_instance.pldebug_cxt.debug_comm[func->debug->comm->comm_idx];
+            /* if debuger is waiting for end msg, send end */
+            if (debug_comm->isGmsRunning()) {
+                server_send_gms_end_msg(func->debug);
+            } else {
+                server_send_end_msg(func->debug);
+            }
             /* pass opt to upper debug function */
             server_pass_upper_debug_opt(func->debug);
             clean_up_debug_server(func->debug, false, true);
@@ -1398,6 +1408,7 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
 #ifndef ENABLE_MULTIPLE_NODES
         /* debug finished, close debug resource */
         if (func->debug) {
+            PlDebuggerComm* debug_comm = &g_instance.pldebug_cxt.debug_comm[func->debug->comm->comm_idx];
             /* if debuger is waiting for end msg, send end */
             server_send_end_msg(func->debug);
             /* pass opt to upper debug function */
@@ -1444,7 +1455,13 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
     /* debug finished, close debug resource */
     if (func->debug) {
         /* if debuger is waiting for end msg, send end */
-        server_send_end_msg(func->debug);
+        PlDebuggerComm* debug_comm = &g_instance.pldebug_cxt.debug_comm[func->debug->comm->comm_idx];
+        /* if debuger is waiting for end msg, send end */
+        if (debug_comm->isGmsRunning()) {
+            server_send_gms_end_msg(func->debug);
+        } else {
+            server_send_end_msg(func->debug);
+        }
         /* pass opt to upper debug function */
         server_pass_upper_debug_opt(func->debug);
         clean_up_debug_server(func->debug, false, true);

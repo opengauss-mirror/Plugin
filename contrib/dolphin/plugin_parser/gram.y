@@ -539,6 +539,7 @@ static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
 static void CheckPartitionExpr(Node* expr, int* colCount);
+static void CheckPartitionExprInner(Node* expr, int* colCount, bool checkTypeCast);
 static char* GetValidUserHostId(char* userName, char* hostId);
 static void CheckHostId(char* hostId);
 static void CheckUserHostIsValid();
@@ -949,6 +950,7 @@ static bool GreaterThanHour (List* int_type);
 %type <boolean> opt_percent only_or_ties
 
 %type <list>	OptSeqOptList SeqOptList
+%type <boolean> ignNulls fromLast
 %type <defelt>	SeqOptElem
 
 /* INSERT */
@@ -1069,7 +1071,7 @@ static bool GreaterThanHour (List* int_type);
 %type <boolean> xml_whitespace_option
 
 %type <node>	func_application func_with_separator func_expr_common_subexpr index_functional_expr_key func_application_special functime_app
-%type <node>	func_expr func_expr_windowless
+%type <node>	func_expr func_expr_windowless analytic_func_expr
 %type <node>	common_table_expr
 %type <keep>    keep_clause
 %type <with>	with_clause opt_with_clause
@@ -1079,7 +1081,7 @@ static bool GreaterThanHour (List* int_type);
 
 %type <list>	within_group_clause pkg_body_subprogram
 %type <list>	window_clause window_definition_list opt_partition_clause
-%type <windef>	window_definition over_clause window_specification
+%type <windef>	window_definition over_clause window_specification opt_over_clause
 				opt_frame_clause frame_extent frame_bound
 %type <str>		opt_existing_window_name opt_unique_key
 %type <boolean>	opt_if_not_exists
@@ -1304,7 +1306,7 @@ static bool GreaterThanHour (List* int_type);
 	MOD MODIFIES MAX_ROWS
 	// DB4AI
 	NAME_P NAMES NAN_P NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
-	NOT NOTHING NOTIFY NOTNULL NOVALIDATE NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
+	NOT NOTHING NOTIFY NOTNULL NOVALIDATE NOWAIT NTH_VALUE_P NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
@@ -1325,7 +1327,7 @@ static bool GreaterThanHour (List* int_type);
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REPLICAS REGEXP REORGANIZE REPAIR
-	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNED_SQLSTATE RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP ROTATE
+	RESET RESIZE RESOURCE RESPECT_P RESTART RESTRICT RETURN RETURNED_SQLSTATE RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP ROTATE
 	ROTATION ROW ROW_COUNT ROWS ROWTYPE_P RULE
 	RESIGNAL RLIKE ROUTINE ROW_FORMAT SCHEMAS
 	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
@@ -36715,7 +36717,7 @@ fulltext_match_params:
  * (Note that many of the special SQL functions wouldn't actually make any
  * sense as functional index entries, but we ignore that consideration here.)
  */
-func_expr:	func_application within_group_clause over_clause
+func_expr:	func_application within_group_clause opt_over_clause
 				{
 					FuncCall *n = (FuncCall *) $1;
 
@@ -36845,6 +36847,96 @@ func_expr:	func_application within_group_clause over_clause
 				{
 					$$ = MakeNoArgFunctionCall(SystemFuncName("current_schema"), @1);
 				}
+			| analytic_func_expr
+				{ $$ = $1; }
+		;
+opt_over_clause:
+			over_clause				{ $$ = $1; }
+			| /*EMPTY*/				{ $$ = NULL; }
+		;
+analytic_func_expr:
+ NTH_VALUE_P '(' func_arg_list ')' fromLast ignNulls over_clause
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("nth_value");
+					n->args = $3;
+					n->is_from_last = $5;
+					n->is_ignore_nulls = $6;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = $7;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			|  NTH_VALUE_P '(' func_arg_list ')' fromLast over_clause
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("nth_value");
+					n->args = $3;
+					n->is_from_last = $5;
+					n->is_ignore_nulls = FALSE;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = $6;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			|  NTH_VALUE_P '(' func_arg_list ')' ignNulls over_clause
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("nth_value");
+					n->args = $3;
+					n->is_from_last = FALSE;
+					n->is_ignore_nulls = $5;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = $6;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			|  NTH_VALUE_P '(' func_arg_list ')' over_clause
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("nth_value");
+					n->args = $3;
+					n->is_from_last = FALSE;
+					n->is_ignore_nulls = FALSE;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = $5;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			;
+fromLast:	 FROM FIRST_P
+			{
+				$$ = false;
+			}
+		| FROM LAST_P
+			{
+				$$ = true;
+			}
+		;
+ignNulls: 	IGNORE NULLS_P
+			{
+				$$ = true;
+			}
+		| RESPECT_P NULLS_P
+			{
+				$$ = false;
+			}
 		;
 
 func_application:	dolphin_func_name '(' func_arg_list opt_sort_clause ')'
@@ -38727,8 +38819,6 @@ over_clause: OVER window_specification
 					n->location = @2;
 					$$ = n;
 				}
-			| /*EMPTY*/
-				{ $$ = NULL; }
 		;
 
 window_specification: '(' opt_existing_window_name opt_partition_clause
@@ -41507,6 +41597,7 @@ alias_name_unreserved_keyword_without_key:
 			| RESET
 			| RESIZE
 			| RESOURCE
+			| RESPECT_P
 			| RESTART
 			| RESTRICT
 			| RESULT
@@ -41824,6 +41915,7 @@ alias_name_col_name_alias_nonambiguous_keyword:
 	| NATIONAL
 	| NCHAR %prec IDENT
 	| NONE
+	| NTH_VALUE_P
 	| NUMBER_P %prec IDENT
 	| NVARCHAR2 %prec IDENT
 	| SETOF
@@ -44404,7 +44496,13 @@ static void checkDeleteRelationError()
 #ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
 #define MAX_SUPPORTED_FUNC_FOR_PART_EXPR 26
 #endif
+
 static void CheckPartitionExpr(Node* expr, int* colCount)
+{
+	CheckPartitionExprInner(expr, colCount, true);
+}
+
+static void CheckPartitionExprInner(Node* expr, int* colCount, bool checkTypeCast)
 {
 	if (expr == NULL)
 		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
@@ -44416,8 +44514,8 @@ static void CheckPartitionExpr(Node* expr, int* colCount)
 		char* name = strVal(linitial(a_expr->name));
 		if (strcmp(name, "+") != 0 && strcmp(name, "-") != 0 && strcmp(name, "*") != 0)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s operator is not supported for Partition Expr", name)));
-		CheckPartitionExpr(a_expr->lexpr, colCount);
-		CheckPartitionExpr(a_expr->rexpr, colCount);
+		CheckPartitionExprInner(a_expr->lexpr, colCount, false);
+		CheckPartitionExprInner(a_expr->rexpr, colCount, false);
 	} else if (expr->type == T_FuncCall) {
 		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","b_extract","floor","hour",
 		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek","date_part","div"};
@@ -44433,12 +44531,18 @@ static void CheckPartitionExpr(Node* expr, int* colCount)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s func is not supported for Partition Expr", funcname)));
 		ListCell* cell = NULL;
 		foreach (cell, ((FuncCall*)expr)->args) {
-			CheckPartitionExpr((Node*)(lfirst(cell)),colCount);
+			CheckPartitionExprInner((Node*)(lfirst(cell)), colCount, false);
 		}
 	} else if (expr->type == T_ColumnRef) {
 		(*colCount)++;
 	} else if (expr->type == T_A_Const) {
 		return;
+	} else if (expr->type == T_TypeCast) {
+		if (checkTypeCast) {
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The Partition Expr can't be a Type Cast")));
+		} else {
+			return;
+		}
 	} else {
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The Partition Expr can't be %d type", expr->type)));
 	}

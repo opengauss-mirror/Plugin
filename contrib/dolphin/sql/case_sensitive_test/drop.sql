@@ -5,17 +5,6 @@ set dolphin.lower_case_table_names TO 0;
 --
 
 --
--- this will fail if the user is not the postgres superuser.
--- if it does, don't worry about it (you can turn usersuper
--- back on as "postgres").  too many people don't follow
--- directions and run this as "postgres", though...
---
-UPDATE pg_user
-   SET usesuper = 't'::bool
-   WHERE usename = 'postgres';
-
-
---
 -- FUNCTION REMOVAL
 --
 DROP FUNCTION hobbies("Person");
