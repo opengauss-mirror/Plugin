@@ -398,7 +398,7 @@ insert into test values('str_to_date(''2021-11-12'', null)', str_to_date('2021-1
 insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_date('200454 Monday', '%X%V %W'));
 
 -- 结果
-select * from test order by funcname;
+select * from test order by funcname, result;
 drop table test;
 -- fix bug
 CREATE TABLE memos (

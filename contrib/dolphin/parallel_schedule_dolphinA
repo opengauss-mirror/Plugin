@@ -1,0 +1,95 @@
+test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test float_numeric_test/db_b_atan_test float_numeric_test/db_b_float_round_test
+test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
+
+test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_compress_test string_func_test/db_b_weightstring_test string_func_test/db_b_insert_test string_func_test/db_b_nameconst_test
+
+test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine test_uncommon_table_option add_unique_index blob_with_parameter
+
+test: db_b_parser1 db_b_parser3 db_b_parser4 second_microsecond test_set_password_for_user test_timestamp_overflow select_from_parens
+
+test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network test_dayofweek test_timestampn kwlist empty_enum_value
+
+test: empty_value_list empty_value_lists empty_value_support_value create_index test_guc_select_and_set test_copy_year2 test_default convert_truncated_warning assignment_conversion_to_year ustore_test xdescape_test
+
+test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table test_dolphin_catalog inet_ntoa_nvarchar2
+
+# must be single test group, cause other connection will affect the result
+test: test_shows
+
+test: test_shows_2 time_function_test
+
+# must be single test group, cause other connection will affect the result
+test: test_shows_3
+
+test: test_shows_4 test_shows_5
+
+test: nvarchar regexp upsert zerofill test_set_charset test_optimize
+
+test: test_binary test_blob test_datatype test_fixed test_mysql_enum bxconst_test table_option_separator grant_user_to_user compress_modify_flag
+
+test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_binary_and_varbinary create_function_core time_type_compare
+
+test: test_enum_collation multi_delete join_using function_type_test join_commas_connect define_primary_key interval_units interval_expr_unit date_add_time_interval test_interval_expr
+ 
+test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3 test_straight_join enum_empty_str_copy
+
+test: builtin_funcs/bin builtin_funcs/char builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format builtin_funcs/math_func builtin_funcs/ascii builtin_funcs/bit_func builtin_funcs/varlena_func builtin_funcs/b_compatibility_substr_func
+
+test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between builtin_funcs/lower_func builtin_funcs/b_compatibility_str_index builtin_funcs/mod builtin_funcs/test_sum
+
+test: uint_agg uint_and uint_cast uint_cast2 uint_cast3 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
+
+test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast
+
+test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure algorithm_opt extract_units rpad_integer_overflow
+
+test: disable_thread_pool
+
+test: b_database_deadlock
+
+test: b_database_diff_session
+
+test: b_database_getlock b_database_getlock_01 b_database_getlock_02 b_database_getlock_03 b_database_getlock_04 b_database_getlock_05 b_database_getlock_06 b_database_getlock_07
+
+test: b_database_isfreelock_01 b_database_isfreelock_02 b_database_isfreelock_03 b_database_isfreelock_04
+
+test: b_database_isusedlock_01 b_database_isusedlock_02 b_database_isusedlock_03 b_database_isusedlock_04
+
+test: b_database_lock_other_01 b_database_lock_other_02 b_database_lock_other_03
+
+test: b_database_other_languages_01 b_database_other_languages_02 b_database_other_languages_03 b_database_other_languages_04 b_database_other_languages_05 b_database_other_languages_06
+
+test: b_database_releasealllocks_01
+
+test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
+
+test: enable_thread_pool
+
+test: create_function_test/m_type_create_proc create_function_test/b_compat_create_func b_compat_create_func_source
+
+test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
+
+test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index invisible_index
+
+test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace multi_select_in_proc
+
+test: network2 use_dbname view_definer_test insert_set show_variables b_auto_increment nulls_get_partition null_in_partitions
+
+test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test partition_no_key
+
+test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
+
+test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl
+
+test: b_auth_8_0 ignore_keyword_list test_show_slave_status recursive autoinc_sql_mode
+
+# lock tables
+test: lock_tables lock_tables_1
+
+# test user@host
+test: user_host_test sqlmode_having is_clause null-safe_eq_in null-safe_eq_like null-safe_eq_test uint_array
+
+# show open tables
+test: test_show_open_tables
+test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
+test: test_show_open_tables_cleanup

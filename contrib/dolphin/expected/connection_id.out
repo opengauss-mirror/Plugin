@@ -2,8 +2,8 @@ create schema test_connection_id;
 set current_schema to 'test_connection_id';
 -- 测试返回连接的ID
 SELECT CONNECTION_ID();
-  connection_id  
------------------
+--?
+--?
 --?
 (1 row)
 
