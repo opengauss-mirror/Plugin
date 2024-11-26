@@ -139,7 +139,10 @@ dolphin--4.0--4.0.1.sql: upgrade_script/dolphin--2.0--2.0.1.sql
 dolphin--4.0.1--4.0.sql: rollback_script/dolphin--2.0.1--2.0.sql
 	cat $^ > $@
 
-DATA_built = dolphin--5.0.sql openGauss_expr_dolphin.ir dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql
+parallel_schedule_dolphin: parallel_schedule_dolphinA parallel_schedule_dolphinB
+	cat $^ > $@
+
+DATA_built = dolphin--5.0.sql openGauss_expr_dolphin.ir dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql parallel_schedule_dolphin
 DATA = upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql \
 upgrade_script/dolphin--1.1--2.0.sql rollback_script/dolphin--2.0--1.1.sql \
 upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql \
