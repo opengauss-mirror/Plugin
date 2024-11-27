@@ -1105,5 +1105,33 @@ referenced column: uint8
  18446744073709551615
 (1 row)
 
+--- 测试cast uint to varchar
+drop table if exists t_cast_uint_varchar;
+NOTICE:  table "t_cast_uint_varchar" does not exist, skipping
+drop view if exists v_cast_uint_varchar;
+NOTICE:  view "v_cast_uint_varchar" does not exist, skipping
+create table t_cast_uint_varchar (
+    flag int,
+    vc varchar(10),
+    vi int
+);
+insert into t_cast_uint_varchar values(1, 'a', 1), (2, 'b', 2);
+select case when flag=1 then vc else cast(vi as unsigned) end as v from t_cast_uint_varchar;
+ v 
+---
+ a
+ 2
+(2 rows)
+
+create view v_cast_uint_varchar as select case when flag=1 then vc else cast(vi as unsigned) end as v from t_cast_uint_varchar;
+select * from v_cast_uint_varchar;
+ v 
+---
+ a
+ 2
+(2 rows)
+
+drop view v_cast_uint_varchar;
+drop table t_cast_uint_varchar;
 drop schema uint_cast3 cascade;
 reset current_schema;
