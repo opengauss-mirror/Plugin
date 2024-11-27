@@ -3,9 +3,9 @@ create database db_restore dbcompatibility='b';
 \c db_dump
 set dolphin.b_compatibility_mode=on;
 create database db1;
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 create database db2;
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 set search_path=db1;
 create table test(a int);
 set search_path=db2;

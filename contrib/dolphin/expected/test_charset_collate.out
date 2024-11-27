@@ -9,7 +9,7 @@ drop database if exists test1;
 drop database if exists test2;
 set dolphin.b_compatibility_mode = on;
 create database test3;
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 select nspcollation from pg_namespace where nspname='test3';
  nspcollation 
 --------------
@@ -20,7 +20,7 @@ create table test3.test33(a varchar(10));
 drop table test3.test33;
 create database test4 encoding 'utf8';
 create database test5 charset 'utf8';
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 create database test6 with charset 'utf8';
 ERROR:  syntax error at or near "charset"
 LINE 1: create database test6 with charset 'utf8';
@@ -45,7 +45,7 @@ drop database test4;
 NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.
 ERROR:  schema "test4" does not exist
 create database if not exists test5 charset 'utf8';
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 drop database test5;
 NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.
 set dolphin.b_compatibility_mode = off;
@@ -66,7 +66,7 @@ alter database test1 charset 'utf8';
 NOTICE:  ALTER DATABASE will change to ALTER SCHEMA when dolphin.b_compatibility_mode is on.
 ERROR:  schema "test1" does not exist
 create database test1;
-NOTICE:  CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.
 alter database test1 charset 'utf8';
 NOTICE:  ALTER DATABASE will change to ALTER SCHEMA when dolphin.b_compatibility_mode is on.
 alter database test1 collate 'utf8';

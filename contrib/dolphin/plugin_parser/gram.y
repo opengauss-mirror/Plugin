@@ -27209,7 +27209,7 @@ CreatedbStmt:
 						n->options = $4;
 						$$ = (Node *)n;
 					} else {
-						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
+						ereport(NOTICE, (errmsg("CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $3;
 						n->authid = NULL;
@@ -27237,7 +27237,7 @@ CreatedbStmt:
 						n->options = $7;
 						$$ = (Node *)n;
 					} else {
-						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
+						ereport(NOTICE, (errmsg("CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $6;
 						n->authid = NULL;
@@ -27258,7 +27258,7 @@ CreatedbStmt:
 			| CREATE DATABASE database_name CharsetCollate
 				{
 					if (ENABLE_B_CMPT_MODE) {
-						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
+						ereport(NOTICE, (errmsg("CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $3;
 						n->authid = NULL;
@@ -27276,7 +27276,7 @@ CreatedbStmt:
 			| CREATE DATABASE IF_P NOT EXISTS database_name CharsetCollate
 				{
 					if (ENABLE_B_CMPT_MODE) {
-						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
+						ereport(NOTICE, (errmsg("CREATE DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $6;
 						n->authid = NULL;
