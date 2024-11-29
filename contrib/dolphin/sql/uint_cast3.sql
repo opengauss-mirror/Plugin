@@ -234,5 +234,20 @@ select '65536'::nvarchar2::uint2;
 select '4294967296'::nvarchar2::uint4;
 select '18446744073709551616'::nvarchar2::uint8;
 
+--- 测试cast uint to varchar
+drop table if exists t_cast_uint_varchar;
+drop view if exists v_cast_uint_varchar;
+create table t_cast_uint_varchar (
+    flag int,
+    vc varchar(10),
+    vi int
+);
+insert into t_cast_uint_varchar values(1, 'a', 1), (2, 'b', 2);
+select case when flag=1 then vc else cast(vi as unsigned) end as v from t_cast_uint_varchar;
+create view v_cast_uint_varchar as select case when flag=1 then vc else cast(vi as unsigned) end as v from t_cast_uint_varchar;
+select * from v_cast_uint_varchar;
+drop view v_cast_uint_varchar;
+drop table t_cast_uint_varchar;
+
 drop schema uint_cast3 cascade;
 reset current_schema;
