@@ -631,6 +631,11 @@ raise notice 'RESULT COL :%t', d;
 end;
 /
 
+CREATE TABLE t_timestamp(id int, start_time timestamp(3) without time zone, endtime timestamp(3) with time zone);
+insert into t_timestamp values (1, '2024-10-10 10:10:10.100', '2024-10-10 10:10:10.100');
+select id from t_timestamp where start_time >= '2024-10-10 10:10:10.100'::varchar and start_time <= '2024-10-10 10:10:10.100'::varchar;
+select id from t_timestamp where endtime >= '2024-10-10 10:10:10.100'::varchar and endtime <= '2024-10-10 10:10:10.100'::varchar;
+drop table t_timestamp;
 
 drop table test_time;
 drop table t_time;
