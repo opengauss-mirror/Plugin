@@ -11473,9 +11473,10 @@ ConstraintElem:
 					n->indexspace = $10;
 					n->constraintOptions = $11;
 					processCASbits($12, @12, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $13; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;	
 				}
@@ -11494,9 +11495,10 @@ ConstraintElem:
 					n->indexspace = NULL;
 					n->constraintOptions = $10;
 					processCASbits($11, @11, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;	
 				}
@@ -11514,9 +11516,10 @@ ConstraintElem:
 					n->indexspace = $10;
 					n->constraintOptions = $11;
 					processCASbits($12, @12, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $13; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11534,9 +11537,10 @@ ConstraintElem:
 					n->indexspace = NULL;
 					n->constraintOptions = $10;
 					processCASbits($11, @11, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11553,9 +11557,10 @@ ConstraintElem:
 					n->indexspace = $8;
 					n->constraintOptions = $9;
 					processCASbits($10, @10, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $11; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11572,9 +11577,10 @@ ConstraintElem:
 					n->indexspace = NULL;
 					n->constraintOptions = $8;
 					processCASbits($9, @9, "UNIQUE",
-					               &n->deferrable, &n->initdeferred, NULL,
+					               &n->deferrable, &n->initdeferred, &n->skip_validation,
 					               NULL, yyscanner);
-					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */	
+					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */
+					n->initially_valid = !n->skip_validation;
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
