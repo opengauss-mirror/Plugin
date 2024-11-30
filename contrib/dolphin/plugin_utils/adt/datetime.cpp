@@ -958,7 +958,8 @@ int ParseDateTime(
 #ifdef DOLPHIN
 int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, unsigned int date_flag)
 #else
-int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp,
+    bool* bc_flag)
 #endif
 {
     unsigned int fmask = 0, tmask;
@@ -1497,6 +1498,9 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
 #ifdef DOLPHIN
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm, date_flag);
 #else
+    if (bc_flag != nullptr) {
+        *bc_flag = bc;
+    }
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
 #endif
     if (dterr)

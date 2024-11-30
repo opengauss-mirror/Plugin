@@ -1,0 +1,58 @@
+--set enable_thread_pool to off
+\! @abs_bindir@/gs_guc set -D @abs_srcdir@/tmp_check/datanode1/ -c "enable_thread_pool=off" > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl stop -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl start -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! sleep 5
+--end
+
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "CREATE DATABASE mysqldb01 DBCOMPATIBILITY = 'B';";
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "CREATE USER monadmin01 monadmin PASSWORD 'Cmcc@123';";
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "CREATE USER user01 PASSWORD 'Cmcc@123';";
+\! @abs_bindir@/gsql -d mysqldb01 -p @portstring@ -r -c "ALTER DATABASE mysqldb01 SET track_stmt_stat_level TO 'L1,L0';";
+
+\! @abs_bindir@/gsql -d mysqldb01 -p @portstring@ -r -c "SHOW track_stmt_stat_level;";
+\! @abs_bindir@/gsql -d mysqldb01 -p @portstring@ -r -c "SHOW track_stmt_parameter;";
+\! @abs_bindir@/gsql -d mysqldb01 -p @portstring@ -r -c "SHOW enable_thread_pool;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_statements_current limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_history;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_statements_history limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_summary_by_digest;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_statements_summary_by_digest limit 1;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_waits_current limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_waits_summary_global_by_event_name limit 1;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_waits_current limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.events_waits_summary_global_by_event_name limit 1;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.file_summary_by_instance;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.file_summary_by_instance limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.table_io_waits_summary_by_table;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.table_io_waits_summary_by_table limit 1;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.table_io_waits_summary_by_index_usage;";
+\! @abs_bindir@/gsql -d mysqldb01 -U monadmin01 -W Cmcc@123 -p @portstring@ -r -c "SELECT * FROM performance_schema.table_io_waits_summary_by_index_usage limit 1;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_history;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_statements_summary_by_digest;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_current;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;";
+
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.file_summary_by_instance;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.table_io_waits_summary_by_table;";
+\! @abs_bindir@/gsql -d mysqldb01 -U user01 -W Cmcc@123 -p @portstring@ -r -c "SELECT count(*) FROM performance_schema.table_io_waits_summary_by_index_usage;";
+
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "DROP user monadmin01 CASCADE;";
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "DROP user user01 CASCADE;";
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "set dolphin.b_compatibility_mode to off;";
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -r -c "DROP DATABASE mysqldb01;";

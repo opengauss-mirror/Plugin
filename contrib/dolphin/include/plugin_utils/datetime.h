@@ -34,7 +34,8 @@ extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dty
 extern char* AppendFsec(int64 quot, fsec_t fsec);
 #else
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
-extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp);
+extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm,
+           fsec_t* fsec, int* tzp, bool* bc_flag);
 #endif
 extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
 extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
