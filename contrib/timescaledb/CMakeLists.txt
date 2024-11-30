@@ -322,6 +322,11 @@ add_subdirectory(sql)
 add_subdirectory(test)
 add_subdirectory(src)
 
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+  # Include code for tests in Debug build
+  target_sources(${PROJECT_NAME} PRIVATE ${TEST_SOURCES})
+endif (CMAKE_BUILD_TYPE MATCHES Debug)
+
 option(APACHE_ONLY "only compile apache code" off)
 
 if(NOT APACHE_ONLY)
