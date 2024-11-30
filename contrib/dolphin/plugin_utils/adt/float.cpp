@@ -622,7 +622,7 @@ Datum float4out(PG_FUNCTION_ARGS)
     errno_t rc = EOK;
 
     if (isnan(num)) {
-        if (u_sess->attr.attr_sql.enable_binary_special_a_format) {
+        if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
             rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Nan");
         } else {
             rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "NaN");
@@ -633,7 +633,7 @@ Datum float4out(PG_FUNCTION_ARGS)
 
     switch (is_infinite(num)) {
         case 1:
-            if (u_sess->attr.attr_sql.enable_binary_special_a_format) {
+            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Inf");
             } else {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Infinity");
@@ -641,7 +641,7 @@ Datum float4out(PG_FUNCTION_ARGS)
             securec_check_ss(rc, "\0", "\0");
             break;
         case -1:
-            if (u_sess->attr.attr_sql.enable_binary_special_a_format) {
+            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Inf");
             } else {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Infinity");
@@ -907,7 +907,7 @@ Datum float8out(PG_FUNCTION_ARGS)
     errno_t rc = EOK;
 
     if (isnan(num)) {
-        if (u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
+        if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
             rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Nan");
         } else {
             rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "NaN");
@@ -917,7 +917,7 @@ Datum float8out(PG_FUNCTION_ARGS)
     }
     switch (is_infinite(num)) {
         case 1:
-            if (u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
+            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Inf");
             } else {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Infinity");
@@ -925,7 +925,7 @@ Datum float8out(PG_FUNCTION_ARGS)
             securec_check(rc, "\0", "\0");
             break;
         case -1:
-            if (u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
+            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Inf");
             } else {
                 rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Infinity");
