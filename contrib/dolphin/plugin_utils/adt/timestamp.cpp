@@ -1290,7 +1290,7 @@ Datum convert_text_datetime(PG_FUNCTION_ARGS)
     char* str = NULL;
     TimeErrorType time_error_type = TIME_CORRECT;
     str = DatumGetCString(DirectFunctionCall1(textout, textValue));
-    Datum result = timestamp_internal(fcinfo, str, TIME_IN, &time_error_type);
+    Datum result = timestamp_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
     pfree_ext(str);
     PG_RETURN_TIMESTAMP(result);
 }
@@ -1301,7 +1301,7 @@ Datum convert_text_timestamptz(PG_FUNCTION_ARGS)
     char* str = NULL;
     TimeErrorType time_error_type = TIME_CORRECT;
     str = DatumGetCString(DirectFunctionCall1(textout, textValue));
-    Datum result = timestamptz_internal(fcinfo, str, TIME_IN, &time_error_type);
+    Datum result = timestamptz_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
     pfree_ext(str);
     PG_RETURN_TIMESTAMPTZ(result);
 }

@@ -2554,6 +2554,21 @@ NOTICE:  RESULT COL :4714-11-23 08:00:00-08t
 NOTICE:  RESULT COL :4714-11-24 00:00:00t
 NOTICE:  RESULT COL :11:11:11+08t
 NOTICE:  RESULT COL :11:11:11t
+CREATE TABLE t_timestamp(id int, start_time timestamp(3) without time zone, endtime timestamp(3) with time zone);
+insert into t_timestamp values (1, '2024-10-10 10:10:10.100', '2024-10-10 10:10:10.100');
+select id from t_timestamp where start_time >= '2024-10-10 10:10:10.100'::varchar and start_time <= '2024-10-10 10:10:10.100'::varchar;
+ id 
+----
+  1
+(1 row)
+
+select id from t_timestamp where endtime >= '2024-10-10 10:10:10.100'::varchar and endtime <= '2024-10-10 10:10:10.100'::varchar;
+ id 
+----
+  1
+(1 row)
+
+drop table t_timestamp;
 drop table test_time;
 drop table t_time;
 drop schema b_time_funcs3 cascade;
