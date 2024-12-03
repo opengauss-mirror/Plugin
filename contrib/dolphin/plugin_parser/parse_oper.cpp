@@ -1703,6 +1703,8 @@ static Node* CreateCastForType(
         -1,
         COERCION_EXPLICIT,
         COERCE_EXPLICIT_CAST,
+        NULL,
+        NULL,
         location);
     return cast;
 }

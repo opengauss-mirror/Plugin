@@ -1749,6 +1749,8 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
                                                    0, /* targettypmod */
                                                    COERCION_ASSIGNMENT,
                                                    COERCE_IMPLICIT_CAST,
+                                                   NULL,
+                                                   NULL,
                                                    -1);
                 }
 

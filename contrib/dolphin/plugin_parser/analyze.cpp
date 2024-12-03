@@ -196,6 +196,10 @@ Query* parse_analyze(Node* parseTree, const char* sourceText, Oid* paramTypes, i
 {
     ParseState* pstate = make_parsestate(parent_pstate);
     Query* query = NULL;
+    if (u_sess) { // make sure to initial status.
+        u_sess->parser_cxt.fmt_str = NULL;
+        u_sess->parser_cxt.nls_fmt_str = NULL;
+    }
 
     /* required as of 8.4 */
     AssertEreport(sourceText != NULL, MOD_OPT, "para cannot be NULL");
@@ -5552,7 +5556,8 @@ static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* 
         TargetEntry* tle = (TargetEntry*)lfirst(lc);
         if (exprType((Node*)tle->expr) == UNKNOWNOID) {
             tle->expr = (Expr*)coerce_type(
-                pstate, (Node*)tle->expr, UNKNOWNOID, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                pstate, (Node*)tle->expr, UNKNOWNOID, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST,
+                NULL, NULL, -1);
         }
     }
 

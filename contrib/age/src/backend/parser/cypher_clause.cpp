@@ -1546,7 +1546,7 @@ static List *add_target_to_group_list(cypher_parsestate *cpstate,
     {
         tle->expr = (Expr *) coerce_type(pstate, (Node *) tle->expr, restype,
                                          TEXTOID, -1, COERCION_IMPLICIT,
-                                         COERCE_IMPLICIT_CAST, -1);
+                                         COERCE_IMPLICIT_CAST, NULL, NULL, -1);
         restype = TEXTOID;
     }
 

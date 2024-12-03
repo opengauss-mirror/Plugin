@@ -617,7 +617,8 @@ static Query *analyze_cypher_and_coerce(List *stmt, RangeTblEntry *rte,
             new_expr = coerce_to_target_type(pstate, expr, current_type,
                                              target_type, target_typmod,
                                              COERCION_EXPLICIT,
-                                             COERCE_EXPLICIT_CAST, -1);
+                                             COERCE_EXPLICIT_CAST,
+                                             NULL, NULL, -1);
             if (!new_expr)
             {
                 char *colname = strVal(lfirst(lc1));

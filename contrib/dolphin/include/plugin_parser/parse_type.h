@@ -54,7 +54,8 @@ extern bool typeByVal(Type t);
 extern char* typeTypeName(Type t);
 extern Oid typeTypeRelid(Type typ);
 extern Oid typeTypeCollation(Type typ);
-extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore = false);
+extern Datum stringTypeDatum(Type tp, char* string, char* fmtstr, char* nlsfmtstr, int32 atttypmod,
+    bool can_ignore = false);
 #ifdef DOLPHIN
 extern Datum stringTypeDatumCompatibleNullResult(Type tp, char* string, int32 atttypmod, bool can_ignore,
     CoercionContext ccontext, bool* result_isnull);
