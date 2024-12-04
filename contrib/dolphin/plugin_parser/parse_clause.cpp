@@ -1595,6 +1595,8 @@ static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_co
             COERCION_IMPLICIT,
             COERCE_IMPLICIT_CAST,
 #endif
+            NULL,
+            NULL,
             -1);
     } else if (l_colvar->vartypmod != outcoltypmod) {
         l_node = (Node*)makeRelabelType((Expr*)l_colvar,
@@ -1618,6 +1620,8 @@ static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_co
             COERCION_IMPLICIT,
             COERCE_IMPLICIT_CAST,
 #endif
+            NULL,
+            NULL,
             -1);
     } else if (r_colvar->vartypmod != outcoltypmod) {
         r_node = (Node*)makeRelabelType((Expr*)r_colvar,
@@ -2872,7 +2876,8 @@ List* addTargetToSortList(
     /* if tlist item is an UNKNOWN literal, change it to TEXT */
     if (restype == UNKNOWNOID && resolveUnknown) {
         tle->expr = (Expr*)coerce_type(
-            pstate, (Node*)tle->expr, restype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            pstate, (Node*)tle->expr, restype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST,
+            NULL, NULL, -1);
         restype = TEXTOID;
     }
 
@@ -3020,7 +3025,8 @@ static List* addTargetToGroupList(
     /* if tlist item is an UNKNOWN literal, change it to TEXT */
     if (restype == UNKNOWNOID && resolveUnknown) {
         tle->expr = (Expr*)coerce_type(
-            pstate, (Node*)tle->expr, restype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            pstate, (Node*)tle->expr, restype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST,
+            NULL, NULL, -1);
         restype = TEXTOID;
     }
 

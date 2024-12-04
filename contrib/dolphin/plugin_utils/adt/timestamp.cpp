@@ -116,6 +116,8 @@
 #define MAX_YEAR 9999
 #endif
 
+constexpr int N_TIMESTAMP_FUNC_ARGS = 4;
+constexpr int FMT_INDX_TIMESTAMP_FUNC_ARGS = 3;
 /* NaN and Infinity Macro used in interval_mul and interval_div*/
 /*
  * Actually, when this macro is used, it probabily means interval overflow/underflow.
@@ -849,10 +851,17 @@ Datum input_timestamp_in(char* str, Oid typioparam, int32 typmod, bool can_ignor
     Timestamp result;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
+    int tz;
     int dterr;
 
     if (u_sess->attr.attr_common.enable_iud_fusion) {
-        dterr = ParseIudDateTime(str, tm, &fsec);
+        if (u_sess && u_sess->parser_cxt.fmt_str) {
+            text* fmt_txt = cstring_to_text(u_sess->parser_cxt.fmt_str);
+            text* date_txt = cstring_to_text(str);
+            do_to_timestamp(date_txt, fmt_txt, tm, &fsec, &tz);
+        } else {
+            dterr = ParseIudDateTime(str, tm, &fsec);
+        }
         if (dterr == 0) {
             if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
                 ereport(ERROR,
@@ -1436,7 +1445,7 @@ Datum smalldatetime_in(PG_FUNCTION_ARGS)
     /*
      * this case is used for timestamp format is specified.
      */
-    if (4 == PG_NARGS()) {
+    if (PG_NARGS() == N_TIMESTAMP_FUNC_ARGS) {
         smalldatetime_fmt = PG_GETARG_CSTRING(3);
         if (smalldatetime_fmt == NULL) {
             ereport(
@@ -1888,7 +1897,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
     securec_check(rc, "\0", "\0");
     int tm_type = DTK_NONE;
 #endif
-    int tz;
+    int tz = 0;
     int invalid_tz;
     int dtype;
     int nf;
@@ -12546,7 +12555,7 @@ Datum get_coerce_node_datum(Datum val, Oid sourceType, Oid targetType, CoercionC
     Datum datumVal = 0;
     if (can_coerce_type(1, &sourceType, &targetType, COERCION_IMPLICIT)) {
         Node* node = (Node*)makeConst(sourceType, -1, -1, -1, val, false, false, NULL);
-        Node* newNode = coerce_type(NULL, node, sourceType, targetType, -1, ccontext, cform, -1);
+        Node* newNode = coerce_type(NULL, node, sourceType, targetType, -1, ccontext, cform, NULL, NULL, -1);
         Node* constNode = eval_const_node(newNode, can_ignore);
         
         if (IsA(constNode, Const)) {

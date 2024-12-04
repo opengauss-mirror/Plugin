@@ -413,7 +413,7 @@ static void base_yyerror(YYLTYPE *yylloc, core_yyscan_t yyscanner,
 						 const char *msg);
 static Node *makeColumnRef(char *colname, List *indirection,
 						   int location, core_yyscan_t yyscanner);
-static Node *makeTypeCast(Node *arg, TypeName *typname, int location);
+static Node *makeTypeCast(Node *arg, TypeName *typname, Node *fmt_list, Node *nls_fmt, Node *default_expr, int location);
 static Node *makeStringConst(char *str, int location);
 static Node *makeStringConstCast(char *str, int location, TypeName *typname);
 static Node *makeIntConst(int val, int location);
@@ -976,7 +976,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr a_expr_without_interval a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
                                 columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
-				ExclusionWhereClause fulltext_match_params func_table_with_table
+				ExclusionWhereClause fulltext_match_params func_table_with_table default_on_err_expr
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
 %type <node>	func_arg_expr on_error_clause opt_on_error_clause
@@ -3502,7 +3502,7 @@ set_expr_extension:
 			| b_expr TYPECAST Typename
 				{
 					ChangeBpcharCastType($3);
-					$$ = makeTypeCast($1, $3, @2);
+					{ $$ = makeTypeCast($1, $3, NULL, NULL, NULL, @2); }
 				}
 			| '@' b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
@@ -21608,7 +21608,7 @@ every_interval:
 					t = SystemTypeName("interval");
 					t->typmods = $2;
 					Node *num = makeIntConst($1, @1);
-		            $$ = makeTypeCast(num, t, -1);	
+		            $$ = makeTypeCast(num, t, NULL, NULL, NULL, -1);	
 				}
 				| SCONST interval_unit
 				{
@@ -21616,7 +21616,7 @@ every_interval:
 					t = SystemTypeName("interval");
 					t->typmods = $2;
 					Node *num = makeStringConst($1, @1);
-					$$ = makeTypeCast(num, t, -1);
+					$$ = makeTypeCast(num, t, NULL, NULL, NULL, -1);
 				}
 				| FCONST interval_unit
 				{
@@ -21624,7 +21624,7 @@ every_interval:
 					t = SystemTypeName("interval");
 					t->typmods = $2;
 					Node *num = makeStringConst($1, @1);
-					$$ = makeTypeCast(num, t, -1);
+					$$ = makeTypeCast(num, t, NULL, NULL, NULL, -1);
 				}
 			;
 
@@ -35333,7 +35333,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 			| a_expr TYPECAST Typename
 				{
 					ChangeBpcharCastType($3);
-					$$ = makeTypeCast($1, $3, @2);
+					$$ = makeTypeCast($1, $3, NULL, NULL, NULL, @2);
 				}
 			| a_expr COLLATE collate_name
 				{
@@ -35345,7 +35345,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| BINARY a_expr					%prec UMINUS
 				{
-					$$ = makeTypeCast($2, SystemTypeName("binary"), -1); 
+					$$ = makeTypeCast($2, SystemTypeName("binary"), NULL, NULL, NULL, -1); 
 				}
 			| a_expr AT TIME ZONE a_expr			%prec AT
 				{
@@ -35721,28 +35721,28 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 			| a_expr IS NAN_P
 			    {
 					NanTest *n = makeNode(NanTest);
-					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), NULL, NULL, NULL, @1);
 					n->nantesttype = IS_NAN;
 					$$ = (Node *)n;
 				}
 			| a_expr IS NOT NAN_P
 			    {
 					NanTest *n = makeNode(NanTest);
-					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), NULL, NULL, NULL, @1);
 					n->nantesttype = IS_NOT_NAN;
 					$$ = (Node *)n;
 				}
 			| a_expr IS INFINITE_P
 			    {
 					InfiniteTest *n = makeNode(InfiniteTest);
-					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), NULL, NULL, NULL, @1);
 					n->infinitetesttype = IS_INFINITE;
 					$$ = (Node *)n;
 				}
 			| a_expr IS NOT INFINITE_P
 			    {
 					InfiniteTest *n = makeNode(InfiniteTest);
-					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), @1);
+					n->arg = (Expr *) makeTypeCast($1, SystemTypeName("float8"), NULL, NULL, NULL, @1);
 					n->infinitetesttype = IS_NOT_INFINITE;
 					$$ = (Node *)n;
 				}
@@ -36258,12 +36258,12 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 			| FCONST_F
 				{
 					Node *num = makeFloatConst($1, @1);
-					$$ = makeTypeCast(num, SystemTypeName("float4"), @1);	
+					$$ = makeTypeCast(num, SystemTypeName("float4"), NULL, NULL, NULL, @1);	
 				}
 			| FCONST_D
 				{
 					Node *num = makeFloatConst($1, @1);
-					$$ = makeTypeCast(num, SystemTypeName("float8"), @1);	
+					$$ = makeTypeCast(num, SystemTypeName("float8"), NULL, NULL, NULL, @1);	
 				}
 		;
 
@@ -36281,7 +36281,7 @@ b_expr:		c_expr
 			| b_expr TYPECAST Typename
 				{
 					ChangeBpcharCastType($3);
-					$$ = makeTypeCast($1, $3, @2);
+					$$ = makeTypeCast($1, $3, NULL, NULL, NULL, @2);
 				}
 			| '+' b_expr					%prec UMINUS
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", NULL, $2, @1); }
@@ -37075,9 +37075,31 @@ func_application_special:	dolphin_func_name '(' ')'
 				}
 			| dolphin_func_name '(' func_arg_list DEFAULT func_arg_expr ON CONVERSION_P ERROR_P opt_default_fmt_clause opt_default_nls_clause ')'
 				{
-					ereport(ERROR,
-                               (errcode(ERRCODE_SYNTAX_ERROR),
-                               errmsg("Syntax with nls condition is not supported.")));
+					FuncCall *n = makeNode(FuncCall);
+                    n->funcname = $1;
+
+					// args: 
+					//   input_expr, default_val, 
+					//   is DEFAULT gramy, default expr is column ref,
+					//   fmt constraints, nls param constraints
+                    n->args = lappend($3, $5);
+					// is DEFAULT gramy
+					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
+					// default expr is column ref
+					n->args = lappend(n->args, makeBoolAConst(IsA($5, ColumnRef), -1));
+					// There may be fmt constraints
+                    n->args = lappend(n->args, $9);
+					// nls param constraints is NULL
+                    n->args = lappend(n->args, $10);
+					
+					n->agg_order = NIL;
+                    n->agg_star = FALSE;
+                    n->agg_distinct = FALSE;
+                    n->func_variadic = FALSE;
+                    n->over = NULL;
+                    n->location = @1;
+                    n->call_func = false;
+                    $$ = (Node *) n;
 				}
 			| dolphin_func_name '(' VARIADIC func_arg_expr opt_sort_clause ')'
 				{
@@ -37346,7 +37368,7 @@ func_expr_common_subexpr:
 					$$ = (Node *)n;
 				} else {
 				        ReleaseSysCache(typtup);
-				        $$ = makeTypeCast($3, $5, @1);
+				        $$ = makeTypeCast($3, $5, NULL, NULL, NULL, @1);
 				}
 
 			}
@@ -37369,39 +37391,39 @@ func_expr_common_subexpr:
 			| CONVERT '(' a_expr ',' Typename ')'
 			{
 				ChangeBpcharCastType($5);
-				$$ = makeTypeCast($3, $5, @1);
+				$$ = makeTypeCast($3, $5, NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' UNSIGNED INTEGER ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' SIGNED INTEGER ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' INTEGER UNSIGNED ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' INTEGER SIGNED ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' UNSIGNED INT_P ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' SIGNED INT_P ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' UNSIGNED ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1);
 			}
 			| CONVERT '(' a_expr ',' SIGNED ')'
 			{
-			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1);
 			}
 			| CURRENT_TIME
 				{
@@ -37892,30 +37914,56 @@ func_expr_common_subexpr:
 			| CAST '(' a_expr AS Typename ')'
 				{
 					ChangeBpcharCastType($5);
-					$$ = makeTypeCast($3, $5, @1);
+					$$ = makeTypeCast($3, $5, NULL, NULL, NULL, @1);
+				}
+			| CAST '(' a_expr AS Typename opt_default_fmt_clause')'
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, $6, NULL, NULL, @1); 
+				}		
+			| CAST '(' a_expr AS Typename opt_default_fmt_clause opt_default_nls_clause ')'
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, $6, $7, NULL, @1); 
+				}												
+			| CAST '(' a_expr AS Typename default_on_err_expr opt_default_fmt_clause ')'
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, $7, NULL, $6, @1); 
+				}				
+			| CAST '(' a_expr AS Typename default_on_err_expr opt_default_fmt_clause opt_default_nls_clause ')'
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, $7, $8, $6, @1); 
+				}
+			| CAST '(' a_expr AS Typename default_on_err_expr ')'
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, NULL, NULL, $6, @1); 
 				}
 			| CAST '(' a_expr AS Character charset ')'
 				{
 					$5->charset = $6;
 					ChangeBpcharCastType($5);
-					$$ = makeTypeCast($3, $5, @1);
+					$$ = makeTypeCast($3, $5, NULL, NULL, NULL, @1);
 				}
 			| CAST '(' a_expr AS UNSIGNED ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS SIGNED ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS UNSIGNED INTEGER ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS SIGNED INTEGER ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS UNSIGNED INT_P ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS SIGNED INT_P ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS INTEGER UNSIGNED ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), NULL, NULL, NULL, @1); }
 			| CAST '(' a_expr AS INTEGER SIGNED ')'
-				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), NULL, NULL, NULL, @1); }
+				
 			| EXTRACT '(' extract_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -38668,6 +38716,11 @@ utc_timestamp_func:	UTC_TIMESTAMP
 			| UTC_TIMESTAMP '(' ')'
 		;
 
+default_on_err_expr:
+	DEFAULT a_expr ON CONVERSION_P ERROR_P {
+		$$ = $2;
+	}
+	;
 /*
  * SQL/XML support
  */
@@ -39318,7 +39371,7 @@ substr_list:
 					 */
 					$$ = list_make3($1, makeIntConst(1, -1),
 									makeTypeCast($2,
-												 SystemTypeName("int4"), -1));
+												 SystemTypeName("int4"), NULL, NULL, NULL, -1));
 				}
 			| expr_list
 				{
@@ -39372,7 +39425,7 @@ case_expr:	CASE case_arg when_clause_list case_default END_P
 				}
 			| IF_P '(' a_expr ',' a_expr ',' a_expr ')'
 				{
-					Node *n = makeTypeCast($3, SystemTypeName("text"), @3);
+					Node *n = makeTypeCast($3, SystemTypeName("text"), NULL, NULL, NULL, @3);
 					CaseExpr *c = makeNode(CaseExpr);
 					c->casetype = InvalidOid; /* not analyzed yet */
 					c->arg = NULL;
@@ -42245,11 +42298,14 @@ makeColumnRef(char *colname, List *indirection,
 }
 
 static Node *
-makeTypeCast(Node *arg, TypeName *typname, int location)
+makeTypeCast(Node *arg, TypeName *typname, Node *fmt_list, Node *nls_fmt, Node *default_expr, int location)
 {
 	TypeCast *n = makeNode(TypeCast);
 	n->arg = arg;
 	n->typname = typname;
+	n->fmt_str = fmt_list;
+	n->nls_fmt_str = nls_fmt;
+	n->default_expr = default_expr;	
 	n->location = location;
 	return (Node *) n;
 }
@@ -42324,7 +42380,7 @@ makeStringConstCast(char *str, int location, TypeName *typname)
 {
 	Node *s = makeStringConst(str, location);
 
-	return makeTypeCast(s, typname, -1);
+	return makeTypeCast(s, typname, NULL, NULL, NULL, -1);
 }
 
 static Node *
@@ -42399,7 +42455,7 @@ makeBoolAConst(bool state, int location)
 	n->val.val.str = (char *)(state ? "t" : "f");
 	n->location = location;
 
-	return makeTypeCast((Node *)n, SystemTypeName("bool"), -1);
+	return makeTypeCast((Node *)n, SystemTypeName("bool"), NULL, NULL, NULL, -1);
 }
 
 /* check_qualified_name --- check the result of qualified_name production

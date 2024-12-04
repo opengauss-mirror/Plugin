@@ -422,7 +422,7 @@ static Node *transform_ColumnRef(cypher_parsestate *cpstate, ColumnRef *cref)
                 {
                     node = coerce_type(pstate, node, inputTypeId, targetTypeId,
                                        -1, COERCION_EXPLICIT,
-                                       COERCE_EXPLICIT_CAST, -1);
+                                       COERCE_EXPLICIT_CAST, NULL, NULL, -1);
                 }
                 break;
             }

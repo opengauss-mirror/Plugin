@@ -2447,7 +2447,8 @@ static Node* transformArrayExpr(ParseState* pstate, A_ArrayExpr* a, Oid array_ty
 
         if (coerce_hard) {
             newe = coerce_to_target_type(
-                pstate, e, exprType(e), coerce_type, typmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+                pstate, e, exprType(e), coerce_type, typmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
+                NULL, NULL, -1);
             if (newe == NULL) {
                 ereport(ERROR,
                     (errcode(ERRCODE_CANNOT_COERCE),
@@ -2735,7 +2736,8 @@ static Node* transformXmlSerialize(ParseState* pstate, XmlSerialize* xs)
      * fit in.
      */
     result = coerce_to_target_type(
-        pstate, (Node*)xexpr, TEXTOID, targetType, targetTypmod, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+        pstate, (Node*)xexpr, TEXTOID, targetType, targetTypmod, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST,
+        NULL, NULL, -1);
     if (result == NULL) {
         ereport(ERROR,
             (errcode(ERRCODE_CANNOT_COERCE),
@@ -2998,7 +3000,8 @@ static Node* transformTypeCast(ParseState* pstate, TypeCast* tc)
         location = tc->typname->location;
     }
     result = coerce_to_target_type(
-        pstate, expr, inputType, targetType, targetTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, location);
+        pstate, expr, inputType, targetType, targetTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
+        NULL, NULL, location);
     if (result == NULL) {
         ereport(ERROR,
             (errcode(ERRCODE_CANNOT_COERCE),
@@ -3037,9 +3040,11 @@ static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
     } else {
         /* treate string as binary datatype: bytea */
         if (c->is_binary) {
-            result = coerce_type(pstate, result, exprType(result), BYTEAOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+            result = coerce_type(pstate, result, exprType(result), BYTEAOID, -1, COERCION_IMPLICIT,
+                                 COERCE_IMPLICIT_CAST, NULL, NULL, c->location);
         } else {
-            result = coerce_type(pstate, result, exprType(result), TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+            result = coerce_type(pstate, result, exprType(result), TEXTOID, -1, COERCION_IMPLICIT,
+                                 COERCE_IMPLICIT_CAST, NULL, NULL, c->location);
         }
     }
 
