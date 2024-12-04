@@ -2311,4 +2311,43 @@ Datum bpchar_text(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(result);
 }
+
+static Datum GetPeakVarchar(PG_FUNCTION_ARGS, bool isLarger)
+{
+    VarChar* arg0 = (VarChar*)PG_GETARG_DATUM(0);
+    VarChar* arg1 = (VarChar*)PG_GETARG_DATUM(1);
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        } else {
+            PG_RETURN_VARCHAR_P(arg1);
+        }
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_VARCHAR_P(arg0);
+    }
+
+    int cmpFlag = text_cmp(arg0, arg1, PG_GET_COLLATION());
+    if ((isLarger && cmpFlag < 0) ||
+        (!isLarger && cmpFlag > 0)) {
+        PG_RETURN_VARCHAR_P(arg1);
+    } else {
+        PG_RETURN_VARCHAR_P(arg0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_larger);
+extern "C" DLL_PUBLIC Datum varchar_larger(PG_FUNCTION_ARGS);
+Datum varchar_larger(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarchar(fcinfo, true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_smaller);
+extern "C" DLL_PUBLIC Datum varchar_smaller(PG_FUNCTION_ARGS);
+Datum varchar_smaller(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarchar(fcinfo, false);
+}
+
 #endif

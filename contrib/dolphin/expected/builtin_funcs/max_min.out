@@ -170,3 +170,109 @@ select * from enum_maxmin_v;
  c     | a
 (1 row)
 
+-- test bool
+drop table if exists bool_maxmin_t cascade;
+NOTICE:  table "bool_maxmin_t" does not exist, skipping
+create table bool_maxmin_t(a boolean);
+insert into bool_maxmin_t values (true);
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (false), (true);
+select max(a), min(a) from bool_maxmin_t;
+ max | min 
+-----+-----
+ t   | f
+(1 row)
+
+create view bool_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a
+    from bool_maxmin_t;
+\d bool_maxmin_v;
+ View "public.bool_maxmin_v"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ max_a  | boolean | 
+ min_a  | boolean | 
+
+delete from bool_maxmin_t;
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (true);
+select * from bool_maxmin_v;
+ max_a | min_a 
+-------+-------
+ t     | t
+(1 row)
+
+delete from bool_maxmin_t;
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (false);
+select * from bool_maxmin_v;
+ max_a | min_a 
+-------+-------
+ f     | f
+(1 row)
+
+-- test varchar
+drop table if exists char_maxmin_t cascade;
+NOTICE:  table "char_maxmin_t" does not exist, skipping
+create table char_maxmin_t(
+    a varchar,
+    b varchar(19)
+);
+insert into char_maxmin_t values ('hello', 'world'),
+                                 (null, null),
+                                 (null, null),
+                                 ('abc', 'abc'),
+                                 ('b', 'cc');
+create view char_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b
+    from char_maxmin_t;
+\d char_maxmin_v;
+      View "public.char_maxmin_v"
+ Column |       Type        | Modifiers 
+--------+-------------------+-----------
+ max_a  | character varying | 
+ min_a  | character varying | 
+ max_b  | character varying | 
+ min_b  | character varying | 
+
+select * from char_maxmin_v;
+ max_a | min_a | max_b | min_b 
+-------+-------+-------+-------
+ hello | abc   | world | abc
+(1 row)
+
+-- test binaries
+drop table if exists binary_maxmin_t cascade;
+NOTICE:  table "binary_maxmin_t" does not exist, skipping
+create table binary_maxmin_t(
+    a binary(33),
+    b varbinary(22)
+);
+insert into binary_maxmin_t values ('dfdfd', 'fehhrr');
+insert into binary_maxmin_t values (null, null), (null, null);
+insert into binary_maxmin_t values ('dfds', 'gsdsf'), ('b', 'cc');
+create view binary_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b
+    from binary_maxmin_t;
+\d binary_maxmin_v;
+  View "public.binary_maxmin_v"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ max_a  | "binary"    | 
+ min_a  | "binary"    | 
+ max_b  | "varbinary" | 
+ min_b  | "varbinary" | 
+
+select * from binary_maxmin_v;
+                                max_a                                 |                                min_a                                 |    max_b     | min_b  
+----------------------------------------------------------------------+----------------------------------------------------------------------+--------------+--------
+ \x646664730000000000000000000000000000000000000000000000000000000000 | \x620000000000000000000000000000000000000000000000000000000000000000 | \x6773647366 | \x6363
+(1 row)
+

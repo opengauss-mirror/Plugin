@@ -20,6 +20,7 @@
 
 #include "libpq/pqformat.h"
 #include "utils/builtins.h"
+#include "plugin_postgres.h"
 
 /*
  * Try to interpret value as boolean value.  Valid values are: true,
@@ -292,3 +293,37 @@ Datum boolum(PG_FUNCTION_ARGS)
 {
     PG_RETURN_BOOL(PG_GETARG_BOOL(0));
 }
+
+#ifdef DOLPHIN
+static Datum GetPeakBool(PG_FUNCTION_ARGS, bool isLarger)
+{
+    bool arg0 = PG_GETARG_BOOL(0);
+    bool arg1 = PG_GETARG_BOOL(1);
+    if (PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_BOOL(arg0);
+    } else if (PG_ARGISNULL(0)) {
+        PG_RETURN_BOOL(arg1);
+    } else if (arg0 == arg1) {
+        PG_RETURN_BOOL(arg0);
+    } else {
+        PG_RETURN_BOOL(isLarger);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_larger);
+extern "C" DLL_PUBLIC Datum bool_larger(PG_FUNCTION_ARGS);
+Datum bool_larger(PG_FUNCTION_ARGS)
+{
+    return GetPeakBool(fcinfo, true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_smaller);
+extern "C" DLL_PUBLIC Datum bool_smaller(PG_FUNCTION_ARGS);
+Datum bool_smaller(PG_FUNCTION_ARGS)
+{
+    return GetPeakBool(fcinfo, false);
+}
+
+#endif

@@ -27,3 +27,24 @@ DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT4);
 
 DROP CAST IF EXISTS (UINT8 AS VARCHAR);
 DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT8);
+
+-- max/min for bool type
+DROP aggregate pg_catalog.max(boolean);
+DROP aggregate pg_catalog.min(boolean);
+DROP FUNCTION pg_catalog.bool_larger(boolean, boolean);
+DROP FUNCTION pg_catalog.bool_smaller(boolean, boolean);
+-- max/min for varchar type
+DROP aggregate pg_catalog.max(varchar);
+DROP aggregate pg_catalog.min(varchar);
+DROP FUNCTION pg_catalog.varchar_larger(varchar, varchar);
+DROP FUNCTION pg_catalog.varchar_smaller(varchar, varchar);
+-- max/min for binary type
+DROP aggregate pg_catalog.max(binary);
+DROP aggregate pg_catalog.min(binary);
+DROP FUNCTION pg_catalog.binary_larger(binary, binary);
+DROP FUNCTION pg_catalog.binary_smaller(binary, binary);
+-- max/min for varbinary type
+DROP aggregate pg_catalog.max(varbinary);
+DROP aggregate pg_catalog.min(varbinary);
+DROP FUNCTION pg_catalog.varbinary_larger(varbinary, varbinary);
+DROP FUNCTION pg_catalog.varbinary_smaller(varbinary, varbinary);
