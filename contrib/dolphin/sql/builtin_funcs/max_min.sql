@@ -83,3 +83,62 @@ create view enum_maxmin_v as select
     min(a) as min_a
     from enum_maxmin_t;
 select * from enum_maxmin_v;
+
+-- test bool
+drop table if exists bool_maxmin_t cascade;
+create table bool_maxmin_t(a boolean);
+insert into bool_maxmin_t values (true);
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (false), (true);
+select max(a), min(a) from bool_maxmin_t;
+create view bool_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a
+    from bool_maxmin_t;
+\d bool_maxmin_v;
+delete from bool_maxmin_t;
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (true);
+select * from bool_maxmin_v;
+delete from bool_maxmin_t;
+insert into bool_maxmin_t values (null), (null);
+insert into bool_maxmin_t values (false);
+select * from bool_maxmin_v;
+
+-- test varchar
+drop table if exists char_maxmin_t cascade;
+create table char_maxmin_t(
+    a varchar,
+    b varchar(19)
+);
+insert into char_maxmin_t values ('hello', 'world'),
+                                 (null, null),
+                                 (null, null),
+                                 ('abc', 'abc'),
+                                 ('b', 'cc');
+create view char_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b
+    from char_maxmin_t;
+\d char_maxmin_v;
+select * from char_maxmin_v;
+
+-- test binaries
+drop table if exists binary_maxmin_t cascade;
+create table binary_maxmin_t(
+    a binary(33),
+    b varbinary(22)
+);
+insert into binary_maxmin_t values ('dfdfd', 'fehhrr');
+insert into binary_maxmin_t values (null, null), (null, null);
+insert into binary_maxmin_t values ('dfds', 'gsdsf'), ('b', 'cc');
+create view binary_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b
+    from binary_maxmin_t;
+\d binary_maxmin_v;
+select * from binary_maxmin_v;

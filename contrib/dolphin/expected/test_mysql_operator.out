@@ -1836,15 +1836,15 @@ select count(cout like '2022%') from hotel group by hotel ;
 select max(cout like '2022%') from hotel group by hotel ;
  max 
 -----
-   1
-   1
+ t
+ t
 (2 rows)
 
 select min(cout like '2021%') from hotel group by hotel ;
  min 
 -----
-   0
-   0
+ f
+ f
 (2 rows)
 
 select avg(cout like '2022%') from hotel group by hotel ;
@@ -1871,15 +1871,15 @@ select count(cout like binary '2022%') from hotel group by hotel ;
 select max(cout like binary '2022%') from hotel group by hotel ;
  max 
 -----
-   1
-   1
+ t
+ t
 (2 rows)
 
 select min(cout like binary '2021%') from hotel group by hotel ;
  min 
 -----
-   0
-   0
+ f
+ f
 (2 rows)
 
 select avg(cout like binary '2022%') from hotel group by hotel ;
@@ -2016,15 +2016,15 @@ select count(cout like '2022%') from hotel group by hotel ;
 select max(cout like '2022%') from hotel group by hotel ;
  max 
 -----
-   1
-   1
+ t
+ t
 (2 rows)
 
 select min(cout like '2021%') from hotel group by hotel ;
  min 
 -----
-   0
-   0
+ f
+ f
 (2 rows)
 
 select avg(cout like '2022%') from hotel group by hotel ;
@@ -2051,15 +2051,15 @@ select count(cout like binary '2022%') from hotel group by hotel ;
 select max(cout like binary '2022%') from hotel group by hotel ;
  max 
 -----
-   1
-   1
+ t
+ t
 (2 rows)
 
 select min(cout like binary '2021%') from hotel group by hotel ;
  min 
 -----
-   0
-   0
+ f
+ f
 (2 rows)
 
 select avg(cout like binary '2022%') from hotel group by hotel ;
