@@ -79,7 +79,7 @@ test: partition_test1 partition_test2 partition_test3 partition_test4 partition_
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
 
-test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl
+test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl dump_force_clean
 
 test: b_auth_8_0 ignore_keyword_list test_show_slave_status recursive autoinc_sql_mode
 
