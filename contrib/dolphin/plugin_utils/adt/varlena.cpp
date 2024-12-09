@@ -7719,20 +7719,67 @@ Datum text_left(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
+static int64 getLengthForNumeric(Datum num)
+{
+    int64 length = 0;
+    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, num));
+    if (n > (int128)UINT64_MAX || n < INT64_MIN) {
+        char* buf = DatumGetCString(DirectFunctionCall1(int16out, Int128GetDatum(n)));
+        ereport(WARNING, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Truncated incorrect integer value: '%s'", buf)));
+        pfree_ext(buf);
+    }
+    if (n > (int128)INT64_MAX) {
+        length = INT64_MAX;
+    } else if (n < (int128)INT64_MIN) {
+        length = INT64_MIN;
+    } else {
+        length = (int64)n;
+    }
+    return length;
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(text_left_numeric);
 extern "C" DLL_PUBLIC Datum text_left_numeric(PG_FUNCTION_ARGS);
 Datum text_left_numeric(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
+    int64 length = getLengthForNumeric(PG_GETARG_DATUM(1));
     if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("text_left could not support more than 1GB clob/blob data")));
     }
-    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    return text_left_right_helper(str, length, true, fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_left_text);
+extern "C" DLL_PUBLIC Datum text_left_text(PG_FUNCTION_ARGS);
+Datum text_left_text(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    Datum lengthDatum = PG_GETARG_DATUM(1);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)DatumGetTextPP(lengthDatum))) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("text_left could not support more than 1GB clob/blob data")));
+    }
+    char* lenstr = DatumGetCString(DirectFunctionCall1(textout, lengthDatum));
+    int128 n = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(lenstr), fcinfo->can_ignore));
+    pfree(lenstr);
+    if (n > (int128)UINT64_MAX || n < INT64_MIN) {
+        char* buf = DatumGetCString(DirectFunctionCall1(int16out, Int128GetDatum(n)));
+        ereport(WARNING, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Truncated incorrect integer value: '%s'", buf)));
+        pfree_ext(buf);
+    }
+    int64 length = 0;
     if (n > (int128)INT64_MAX) {
         PG_RETURN_TEXT_P(cstring_to_text(""));
+    } else if (n < (int128)INT64_MIN) {
+        length = INT64_MIN;
+    } else {
+        length = (int64)n;
     }
-    return text_left_right_helper(str, (int64)n, true, fcinfo);
+    return text_left_right_helper(str, length, true, fcinfo);
 }
 #endif
 
@@ -7757,15 +7804,42 @@ extern "C" DLL_PUBLIC Datum text_right_numeric(PG_FUNCTION_ARGS);
 Datum text_right_numeric(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
+    int64 length = getLengthForNumeric(PG_GETARG_DATUM(1));
     if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("text_right could not support more than 1GB clob/blob data")));
     }
-    int128 n = DatumGetInt128(DirectFunctionCall1(numeric_int16, PG_GETARG_DATUM(1)));
+    return text_left_right_helper(str, length, false, fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_right_text);
+extern "C" DLL_PUBLIC Datum text_right_text(PG_FUNCTION_ARGS);
+Datum text_right_text(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    Datum lengthDatum = PG_GETARG_DATUM(1);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)DatumGetTextPP(lengthDatum))) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("text_left could not support more than 1GB clob/blob data")));
+    }
+    char* lenstr = DatumGetCString(DirectFunctionCall1(textout, lengthDatum));
+    int128 n = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(lenstr), fcinfo->can_ignore));
+    pfree(lenstr);
+    if (n > (int128)UINT64_MAX || n < INT64_MIN) {
+        char* buf = DatumGetCString(DirectFunctionCall1(int16out, Int128GetDatum(n)));
+        ereport(WARNING, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Truncated incorrect integer value: '%s'", buf)));
+        pfree_ext(buf);
+    }
+    int64 length = 0;
     if (n > (int128)INT64_MAX) {
         PG_RETURN_TEXT_P(cstring_to_text(""));
+    } else if (n < (int128)INT64_MIN) {
+        length = INT64_MIN;
+    } else {
+        length = (int64)n;
     }
-    return text_left_right_helper(str, (int64)n, false, fcinfo);
+    return text_left_right_helper(str, length, false, fcinfo);
 }
 #endif
 

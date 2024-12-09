@@ -40,6 +40,12 @@ AS $$ select CAST(uint8out($1) AS VARCHAR)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
 CREATE CAST (uint8 AS VARCHAR) WITH FUNCTION TO_VARCHAR(uint8) AS IMPLICIT;
 
+-- left/right for text type
+DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.left(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_left_text';
+DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.right(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_right_text';
+
 -- max/min for bool type
 CREATE OR REPLACE FUNCTION pg_catalog.bool_larger(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_larger';
 CREATE OR REPLACE FUNCTION pg_catalog.bool_smaller(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_smaller';

@@ -28,6 +28,10 @@ DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT4);
 DROP CAST IF EXISTS (UINT8 AS VARCHAR);
 DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT8);
 
+-- left/right for text type
+DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
+
 -- max/min for bool type
 DROP aggregate pg_catalog.max(boolean);
 DROP aggregate pg_catalog.min(boolean);
