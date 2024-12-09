@@ -175,9 +175,9 @@ select json_extract(1, null);
 ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
 CONTEXT:  referenced column: json_extract
 select json_extract('{"a": 341522654875451.12345678901234567890123456789012345678901234567}', '$.a');
-    json_extract    
---------------------
- 341522654875451.12
+                          json_extract                           
+-----------------------------------------------------------------
+ 341522654875451.12345678901234567890123456789012345678901234567
 (1 row)
 
 create temp table test (
@@ -217,6 +217,54 @@ select * from test;
  {"a": "abc","b": {"b": "abc", "a": "abc"}}
  {"c": true}
 (5 rows)
+
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name');
+    json_extract     
+---------------------
+ 9223372036854775805
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+    json_extract     
+---------------------
+ 9223372036854775806
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854775807}', '$.name');
+    json_extract     
+---------------------
+ 9223372036854775807
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854776000}', '$.name');
+    json_extract     
+---------------------
+ 9223372036854776000
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854776001}', '$.name');
+    json_extract     
+---------------------
+ 9223372036854776001
+(1 row)
+
+select json_extract('{"id": "7", "name": 9.223372036854776e18}', '$.name');
+     json_extract     
+----------------------
+ 9.223372036854776e18
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name') < json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+ ?column? 
+----------
+ t
+(1 row)
+
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name') = json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+ ?column? 
+----------
+ f
+(1 row)
 
 drop schema test_json_extract cascade;
 reset current_schema;
