@@ -355,7 +355,7 @@ select right('dont!', 9223372036854775807);
 select right('dont!', 9223372036854775808);
  right 
 -------
- 
+ dont!
 (1 row)
 
 \x
@@ -1556,7 +1556,11 @@ right(`json`,`enum_t`),
 right(`json`,`set_t`),
 right(`json`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1570,9 +1574,238 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
@@ -1636,7 +1869,11 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1650,33 +1887,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1690,33 +1910,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1730,33 +1933,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1770,33 +1956,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1810,33 +1979,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1850,195 +2002,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-SQL function "right" statement 1
-referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -2052,147 +2025,8 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: right
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
@@ -2236,6 +2070,52 @@ WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
 SQL function "right" statement 1
 referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
@@ -2253,6 +2133,192 @@ CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: right
+SQL function "right" statement 1
+referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: right
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
@@ -4592,7 +4658,11 @@ left(`json`,`enum_t`),
 left(`json`,`set_t`),
 left(`json`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4606,9 +4676,238 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
@@ -4672,7 +4971,11 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4686,33 +4989,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4726,33 +5012,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4766,33 +5035,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4806,33 +5058,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4846,33 +5081,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4886,195 +5104,16 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-SQL function "left" statement 1
-referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -5088,147 +5127,8 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
-CONTEXT:  referenced column: left
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
@@ -5272,6 +5172,52 @@ WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
 SQL function "left" statement 1
 referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
@@ -5289,6 +5235,192 @@ CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: left
+SQL function "left" statement 1
+referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: left
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
@@ -6490,6 +6622,58 @@ right | 0
 select left('2022-12-12',b'1010');
 -[ RECORD 1 ]----
 left | 2022-12-12
+
+select left(1.234e5,'1.2e2');
+WARNING:  invalid input syntax for type int16: "1.2e2"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+-[ RECORD 1 ]
+left | 1
+
+select left('123.456e8','000.345e1');
+WARNING:  invalid input syntax for type int16: "000.345e1"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: left
+-[ RECORD 1 ]
+left | 
+
+select left(2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234,9999999999999999999999999);
+WARNING:  Truncated incorrect integer value: '9999999999999999999999999'
+CONTEXT:  referenced column: left
+-[ RECORD 1 ]----------------------------------------------------------------------------------------------
+left | 2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234
+
+select left('2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234',9999999999999999999999999);
+WARNING:  Truncated incorrect integer value: '9999999999999999999999999'
+CONTEXT:  referenced column: left
+-[ RECORD 1 ]----------------------------------------------------------------------------------------------
+left | 2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234
+
+select right(1.234e5,'1.2e2');
+WARNING:  invalid input syntax for type int16: "1.2e2"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+-[ RECORD 1 ]
+right | 0
+
+select right('123.456e8','000.345e1');
+WARNING:  invalid input syntax for type int16: "000.345e1"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: right
+-[ RECORD 1 ]
+right | 
+
+select right(2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234,9999999999999999999999999);
+WARNING:  Truncated incorrect integer value: '9999999999999999999999999'
+CONTEXT:  referenced column: right
+-[ RECORD 1 ]-----------------------------------------------------------------------------------------------
+right | 2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234
+
+select right('2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234',9999999999999999999999999);
+WARNING:  Truncated incorrect integer value: '9999999999999999999999999'
+CONTEXT:  referenced column: right
+-[ RECORD 1 ]-----------------------------------------------------------------------------------------------
+right | 2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234
 
 drop schema db_b_left_right_test cascade;
 reset current_schema;
