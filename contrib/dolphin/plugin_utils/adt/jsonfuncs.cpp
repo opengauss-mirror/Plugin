@@ -4298,6 +4298,28 @@ Datum json_textcontains(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
+
+
+
+void replace_json_double_to_numeric(cJSON *root)
+{
+    cJSON *item = NULL;
+    if (root == NULL) {
+        return;
+    }
+    if (root->type == cJSON_Number && root->valuestring != NULL) {
+        root->type = cJSON_Raw;
+    }
+    cJSON_ArrayForEach(item, root) {
+        const char *key = item->string;
+        cJSON *value = item;
+        if (item->type == cJSON_Number && item->valuestring != NULL) {
+            item->type = cJSON_Raw;
+        }
+    }
+}
+
+
 static cJSON *input_to_cjson(Oid valtype, const char *funcName, int pos, Datum arg)
 {
     Oid typOutput;
@@ -5482,6 +5504,7 @@ Datum json_extract(PG_FUNCTION_ARGS)
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     arg = PG_GETARG_DATUM(0);
     root = input_to_cjson(valtype, "json_extract", 1, arg);
+    replace_json_double_to_numeric(root);
     cJSON_SortObject(root);
 
     deconstruct_array(in_array, TEXTOID, -1, false, 'i', &in_datums, &in_nulls, &in_count);
@@ -6396,6 +6419,10 @@ static void json_regular_format(StringInfo result, cJSON *json)
         }
         case cJSON_String: {
             escape_json(result, json->valuestring);
+            break;
+        }
+        case cJSON_Raw :{
+            appendStringInfoString(result, json->valuestring);
             break;
         }
         default:
@@ -7680,6 +7707,7 @@ static cJSON *input_to_cjson_cmp(Oid valtype, Datum arg, bool& jsontype) {
     } else {
         jsontype = false;
     }
+    replace_json_double_to_numeric(root);
     return root;
 }
 

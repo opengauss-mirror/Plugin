@@ -54,5 +54,16 @@ insert into test values
 (json_extract('{"a": 43, "b": {"c": true}}', '$.b'));
 select * from test;
 
+
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name');
+select json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+select json_extract('{"id": "7", "name": 9223372036854775807}', '$.name');
+select json_extract('{"id": "7", "name": 9223372036854776000}', '$.name');
+select json_extract('{"id": "7", "name": 9223372036854776001}', '$.name');
+select json_extract('{"id": "7", "name": 9.223372036854776e18}', '$.name');
+
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name') < json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+select json_extract('{"id": "7", "name": 9223372036854775805}', '$.name') = json_extract('{"id": "7", "name": 9223372036854775806}', '$.name');
+
 drop schema test_json_extract cascade;
 reset current_schema;
