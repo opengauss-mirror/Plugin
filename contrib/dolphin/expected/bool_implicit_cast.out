@@ -1,0 +1,178 @@
+create schema bool_implicit_cast;
+set current_schema to 'bool_implicit_cast';
+create table t_v13(col1 boolean);
+create table t_enum(col1 enum('a','b'));
+create table t_set(col1 set('a','b'));
+NOTICE:  CREATE TABLE will create implicit set "t_set_col1_set" for column "t_set.col1"
+insert into t_v13 values(true);
+insert into t_enum values('a');
+insert into t_set values('a');
+insert into t_enum select * from t_v13;
+insert into t_set select * from t_v13;
+select * from t_enum;
+ col1 
+------
+ a
+ a
+(2 rows)
+
+select * from t_set;
+ col1 
+------
+ a
+ a
+(2 rows)
+
+drop table t_enum;
+drop table t_set;
+create table test_type_table
+(
+   `int1` tinyint,
+   `uint1` tinyint unsigned,
+   `int2` smallint,
+   `uint2` smallint unsigned,
+   `int4` integer,
+   `uint4` integer unsigned,
+   `int8` bigint,
+   `uint8` bigint unsigned,
+   `float4` float4,
+   `float8` float8,
+   `numeric` decimal(20, 6),
+   `bit1` bit(1),
+   `bit64` bit(64),
+   `boolean` boolean,
+   `date` date,
+   `time` time,
+   `time(4)` time(4),
+   `datetime` datetime,
+   `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+   `timestamp` timestamp,
+   `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+   `year` year,
+   `char` char(100),
+   `varchar` varchar(100), 
+   `binary` binary(100),
+   `varbinary` varbinary(100),
+   `tinyblob` tinyblob,
+   `blob` blob,
+   `mediumblob` mediumblob,
+   `longblob` longblob,
+   `text` text,
+   `enum_t` enum('a', 'b', 'c'),
+   `set_t` set('a', 'b', 'c'),
+   `json` json   
+);
+NOTICE:  CREATE TABLE will create implicit set "test_type_table_set_t_set" for column "test_type_table.set_t"
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+create table t_set(col1 set('a','b','c', 'd','e','f','9'));
+NOTICE:  CREATE TABLE will create implicit set "t_set_col1_set" for column "t_set.col1"
+create table t_enum(col1 enum('a','b','c', 'd','e','f','9'));
+insert into t_set select `int1` from test_type_table;
+insert into t_set select `uint1` from test_type_table;
+insert into t_set select `int2` from test_type_table;
+insert into t_set select `uint2` from test_type_table;
+insert into t_set select `int4` from test_type_table;
+insert into t_set select `uint4` from test_type_table;
+insert into t_set select `int8` from test_type_table;
+insert into t_set select `uint8` from test_type_table;
+insert into t_set select `float4` from test_type_table;
+insert into t_set select `float8` from test_type_table;
+insert into t_set select `numeric` from test_type_table;
+insert into t_set select `bit1` from test_type_table;
+insert into t_set select `bit64` from test_type_table; 
+insert into t_set select `boolean` from test_type_table;
+-- error expect
+insert into t_set select `year` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: 2023
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `char` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `varchar` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `binary` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `tinyblob` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `blob` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `mediumblob` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `longblob` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `text` from test_type_table;
+ERROR:  invalid input value for set t_set_col1_set: '1.23a'
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_set select `enum_t` from test_type_table;
+insert into t_enum select `int1` from test_type_table;
+insert into t_enum select `uint1` from test_type_table;
+insert into t_enum select `int2` from test_type_table;
+insert into t_enum select `uint2` from test_type_table;
+insert into t_enum select `int4` from test_type_table;
+insert into t_enum select `uint4` from test_type_table;
+insert into t_enum select `int8` from test_type_table;
+insert into t_enum select `uint8` from test_type_table;
+insert into t_enum select `float4` from test_type_table;
+insert into t_enum select `float8` from test_type_table;
+insert into t_enum select `numeric` from test_type_table;
+insert into t_enum select `bit1` from test_type_table;
+insert into t_enum select `bit64` from test_type_table;
+insert into t_enum select `boolean` from test_type_table;
+-- error expect
+insert into t_enum select `year` from test_type_table;
+ERROR:  enum order 2023 out of the enum value size: 7
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `char` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `varchar` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `binary` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `tinyblob` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `blob` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `mediumblob` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `longblob` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+-- error expect
+insert into t_enum select `text` from test_type_table;
+--?ERROR:  invalid input value for enum .*
+CONTEXT:  referenced column: col1
+drop table test_type_table;
+drop table t_set;
+drop table t_enum;
+drop schema bool_implicit_cast cascade;
+NOTICE:  drop cascades to table t_v13
+reset current_schema;

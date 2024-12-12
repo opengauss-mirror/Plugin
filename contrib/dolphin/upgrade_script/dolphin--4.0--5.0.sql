@@ -67,3 +67,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.varbinary_larger(varbinary, varbinary) RET
 CREATE OR REPLACE FUNCTION pg_catalog.varbinary_smaller(varbinary, varbinary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
 create aggregate pg_catalog.max(varbinary) (SFUNC=pg_catalog.varbinary_larger, STYPE=varbinary);
 create aggregate pg_catalog.min(varbinary) (SFUNC=pg_catalog.varbinary_smaller, STYPE=varbinary);
+
+
+-- bool to set and enum
+CREATE OR REPLACE FUNCTION pg_catalog.bool_enum(bool, int4, anyelement) RETURNS anyenum LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_enum';
+
+CREATE OR REPLACE FUNCTION pg_catalog.set(bool, int4) RETURNS anyset LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'booltoset';
+CREATE CAST (bool AS anyset) WITH FUNCTION pg_catalog.set(bool, int4) AS ASSIGNMENT;
+
+

@@ -52,3 +52,8 @@ DROP aggregate pg_catalog.max(varbinary);
 DROP aggregate pg_catalog.min(varbinary);
 DROP FUNCTION pg_catalog.varbinary_larger(varbinary, varbinary);
 DROP FUNCTION pg_catalog.varbinary_smaller(varbinary, varbinary);
+
+-- bool to set and enum
+DROP CAST IF EXISTS (bool AS anyset) CASCADE;
+DROP FUNCTION pg_catalog.set(bool, int4);
+DROP FUNCTION pg_catalog.bool_enum(bool, int4, anyelement);
