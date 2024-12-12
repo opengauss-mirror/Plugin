@@ -16060,7 +16060,7 @@ DefineStmt:
 				}
 			| CREATE TYPE_P any_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16091,7 +16091,7 @@ DefineStmt:
 				}
 			| CREATE OR REPLACE TYPE_P any_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16122,7 +16122,7 @@ DefineStmt:
 				}
 			| CREATE TYPE_P any_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16148,7 +16148,7 @@ DefineStmt:
 				}
 			| CREATE OR REPLACE TYPE_P any_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16174,7 +16174,7 @@ DefineStmt:
 				}
 			| CREATE TYPE_P any_name UNDER any_name '(' TableFuncElementList ')' final_clause
 				{
-						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16201,7 +16201,7 @@ DefineStmt:
 				}
 			| CREATE OR REPLACE TYPE_P any_name UNDER any_name '(' TableFuncElementList ')' final_clause
 				{
-						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16228,7 +16228,7 @@ DefineStmt:
 				}
 			| CREATE TYPE_P any_name UNDER any_name '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
-						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16255,7 +16255,7 @@ DefineStmt:
 				}
 			| CREATE OR REPLACE TYPE_P any_name UNDER any_name '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
-						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16282,7 +16282,7 @@ DefineStmt:
 				}
 			| CREATE TYPE_P BODY_P any_name as_is type_body_subprogram
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));
@@ -16304,7 +16304,7 @@ DefineStmt:
 				}
 			| CREATE OR REPLACE TYPE_P BODY_P any_name as_is type_body_subprogram
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT) {
+					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("CREATE TYPE AS OBJECT is only support in A-format database")));

@@ -64,11 +64,17 @@ typedef struct {
 Datum int2in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
+
 #ifdef DOLPHIN
     PG_RETURN_INT16(PgStrToIntInternal<false>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
         PG_INT16_MAX, PG_INT16_MIN, "smallint"));
 #else
-    PG_RETURN_INT16(pg_strtoint16(num, fcinfo->can_ignore));
+    if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT) {
+        PG_RETURN_INT16(PgStrToIntInternal<false>(num, fcinfo->can_ignore,
+            PG_INT16_MAX, PG_INT16_MIN, "smallint"));
+    } else {
+        PG_RETURN_INT16(pg_strtoint16(num, fcinfo->can_ignore));
+    }
 #endif
 }
 
@@ -303,6 +309,7 @@ Datum int2vectoreq(PG_FUNCTION_ARGS)
 Datum int4in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
+
 #ifdef DOLPHIN
     PG_RETURN_INT32(PgStrToIntInternal<false>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
         PG_INT32_MAX, PG_INT32_MIN, "integer"));
@@ -312,7 +319,12 @@ Datum int4in(PG_FUNCTION_ARGS)
         fmtStr = u_sess->parser_cxt.fmt_str;
     }
     if (!fmtStr) {
-        PG_RETURN_INT32(pg_strtoint32(num, fcinfo->can_ignore));
+        if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT) {
+            PG_RETURN_INT32(PgStrToIntInternal<false>(num, fcinfo->can_ignore,
+                PG_INT32_MAX, PG_INT32_MIN, "integer"));
+        } else {
+            PG_RETURN_INT32(pg_strtoint32(num, fcinfo->can_ignore));
+        }
     }
 
     Datum result;
@@ -1281,7 +1293,12 @@ Datum int1in(PG_FUNCTION_ARGS)
     PG_RETURN_INT8(PgStrToIntInternal<false>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
         PG_INT8_MAX, PG_INT8_MIN, "tinyint"));
 #else
-    PG_RETURN_UINT8((uint8)pg_atoi(num, sizeof(uint8), '\0', fcinfo->can_ignore));
+    if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT) {
+        PG_RETURN_UINT8(PgStrToIntInternal<true>(num, fcinfo->can_ignore,
+            PG_UINT8_MAX, 0, "tinyint"));
+    } else {
+        PG_RETURN_UINT8((uint8)pg_atoi(num, sizeof(uint8), '\0', fcinfo->can_ignore));
+    }
 #endif
 }
 

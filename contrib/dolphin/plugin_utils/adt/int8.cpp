@@ -119,7 +119,13 @@ Datum int8in(PG_FUNCTION_ARGS)
     result = PgStrToIntInternal<false>(str, fcinfo->can_ignore || !SQL_MODE_STRICT(),
         PG_INT64_MAX, PG_INT64_MIN, "bigint");
 #else
-    (void)scanint8(str, false, &result, fcinfo->can_ignore);
+
+    if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT) {
+        result = PgStrToIntInternal<false>(str, fcinfo->can_ignore,
+            PG_INT64_MAX, PG_INT64_MIN, "bigint");
+    } else {
+        (void)scanint8(str, false, &result, fcinfo->can_ignore);
+    }
 #endif
     PG_RETURN_INT64(result);
 }

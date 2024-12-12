@@ -139,4 +139,7 @@ extern Datum ftoi8_floor(PG_FUNCTION_ARGS);
 #include "../plugin_vector/vecprimitive/int8.inl"
 #endif
 
+template <bool is_unsigned>
+extern int64 PgStrToIntInternal(const char* s, bool errOk, uint64 max, int64 min, const char* typname);
+
 #endif /* INT8_H */

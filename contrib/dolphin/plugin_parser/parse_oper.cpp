@@ -428,6 +428,12 @@ bool IsIntType(Oid typeoid)
     }
 }
 
+bool IsTextType(Oid attr_type)
+{
+    return (attr_type == UNKNOWNOID) || IsCharType(attr_type);
+}
+
+
 #ifdef DOLPHIN
 bool IsUnsignedIntType(Oid typeoid)
 {
@@ -566,8 +572,14 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         ltypeId = NUMERICOID;
         rtypeId = NUMERICOID;
     }
-	
-	    /*
+
+    if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT &&
+        ((IsIntType(ltypeId) && IsTextType(rtypeId)) || (IsIntType(rtypeId) && IsTextType(ltypeId)))) {
+        ltypeId = NUMERICOID;
+        rtypeId = NUMERICOID;
+    }
+
+    /*
      * In A_FORMAT compatibility and CHAR_COERCE_COMPAT, we choose TEXT-related
      * operators for varchar and bpchar.
      */
@@ -1281,6 +1293,8 @@ Expr* make_scalar_array_op(ParseState* pstate, List* opname, bool useOr, Node* l
     result = makeNode(ScalarArrayOpExpr);
     result->opno = oprid(tup);
     result->opfuncid = opform->oprcode;
+    result->hashfuncid = InvalidOid;
+    result->negfuncid = InvalidOid;
     result->useOr = useOr;
     /* inputcollid will be set by parse_collate.c */
     result->args = args;
