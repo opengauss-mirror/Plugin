@@ -89,7 +89,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 
 #define CAST_FUNCTION_ROW 13
 #define CAST_FUNCTION_COLUMN 4
-#define CAST_ENUM_IDX 23
+#define CAST_ENUM_IDX 24
 #define ENUM_CAST_IDX 24
 #define CAST_SIGNED_IDX 17
 #define NUM_CAST_TIME_IDX 14
@@ -120,7 +120,7 @@ static const char* castEnumFunction[CAST_ENUM_IDX] = {"bit_enum", "int1_enum", "
                                                       "date_enum", "timestamp_enum", "timestamptz_enum", "time_enum",
                                                       "set_enum", "uint1_enum", "uint2_enum", "uint4_enum",
                                                       "uint8_enum", "year_enum", "varlena_enum", "bpchar_enum",
-                                                      "varchar_enum", "nvarchar2_enum", "text_enum"};
+                                                      "varchar_enum", "nvarchar2_enum", "text_enum", "bool_enum"};
 
 static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "enum_int2", "enum_int4",
                                                       "enum_int8", "enum_float4", "enum_float8", "enum_numeric",
@@ -3812,7 +3812,7 @@ int findEnumFunctionIdx(Oid typeId)
         case TEXTOID:
             return E_TEXT;
         case BOOLOID:
-            return E_BOOLEAN;    
+            return E_BOOLEAN;
         case BYTEAOID:
         case BLOBOID:
         case JSONOID:

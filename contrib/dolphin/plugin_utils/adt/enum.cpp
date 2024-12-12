@@ -320,6 +320,16 @@ Datum int1_enum(PG_FUNCTION_ARGS)
                                    (Datum)PG_GETARG_INT8(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_enum);
+extern "C" DLL_PUBLIC Datum bool_enum(PG_FUNCTION_ARGS);
+Datum bool_enum(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)PG_GETARG_BOOL(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+}
+
+
 PG_FUNCTION_INFO_V1_PUBLIC(int2_enum);
 extern "C" DLL_PUBLIC Datum int2_enum(PG_FUNCTION_ARGS);
 Datum int2_enum(PG_FUNCTION_ARGS)

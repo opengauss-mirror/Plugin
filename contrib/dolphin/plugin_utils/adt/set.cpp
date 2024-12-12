@@ -1313,6 +1313,15 @@ Datum i1toset(PG_FUNCTION_ARGS)
     return int64toset(PG_GETARG_INT8(0), PG_GETARG_OID(1));
 }
 
+
+PG_FUNCTION_INFO_V1_PUBLIC(booltoset);
+extern "C" DLL_PUBLIC Datum booltoset(PG_FUNCTION_ARGS);
+Datum booltoset(PG_FUNCTION_ARGS)
+{
+    return int64toset((int64)PG_GETARG_BOOL(0), PG_GETARG_OID(1));
+}
+
+
 PG_FUNCTION_INFO_V1_PUBLIC(ui1toset);
 extern "C" DLL_PUBLIC Datum ui1toset(PG_FUNCTION_ARGS);
 Datum ui1toset(PG_FUNCTION_ARGS)

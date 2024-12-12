@@ -5745,7 +5745,11 @@ select * from t_enum natural join t_v12;
 (0 rows)
 
 select * from t_enum natural join t_v13;
---?ERROR:  failed to find conversion function from boolean to .*
+ col1 
+------
+ a
+(1 row)
+
 select * from t_enum natural join t_v14;
  col1 
 ------
@@ -5910,7 +5914,11 @@ select * from t_set natural join t_v12;
 (0 rows)
 
 select * from t_set natural join t_v13;
---?ERROR:  failed to find conversion function from boolean to .*
+ col1 
+------
+ a
+(1 row)
+
 select * from t_set natural join t_v14;
  col1 
 ------
