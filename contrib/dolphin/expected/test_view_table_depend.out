@@ -85,7 +85,7 @@ View "test_view_table_depend.v1"
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 drop table t1;
@@ -109,7 +109,7 @@ select * from v1;
 --------+-------------------+-----------+----------+-------------
  c1     | character varying |           | extended | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 drop table t1 cascade;
@@ -159,7 +159,7 @@ View "test_view_table_depend.v1"
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 drop table t1 cascade;
@@ -340,7 +340,7 @@ select * from v2;
 --------+-------------------+-----------+----------+-------------
  c1     | character varying |           | extended | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 \d+ v2;
@@ -349,7 +349,7 @@ View definition:
 --------+-------------------+-----------+----------+-------------
  c1     | character varying |           | extended | 
 View definition:
- SELECT  *
+ SELECT v1.c1
    FROM v1;
 
 drop table t1 cascade;
@@ -484,7 +484,7 @@ View definition:
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT v1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM v1;
 
 drop table t1 cascade;
@@ -556,7 +556,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM t1;
 
 drop table t1 cascade;
@@ -630,7 +630,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2 AS "?column?"
+ SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) t2.c2::bigint AS "?column?"
    FROM t1
   CROSS JOIN t2;
 
@@ -682,7 +682,7 @@ select * from v1;
 --?.*
 --?.*
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 drop table t1 cascade;
@@ -735,7 +735,7 @@ select * from v1;
 --------+-----------+-----------+---------+-------------
  c1     | t1_c1_set |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 drop table t1 cascade;
@@ -801,7 +801,7 @@ select * from partition_v1;
  a      | integer |           | plain   | 
  b      | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT partition_t1.a, partition_t1.b
    FROM partition_t1 PARTITION (p1);
 
 -- less partition and different partition type
@@ -826,7 +826,7 @@ select * from partition_v1;
  a      | character(20) |           | extended | 
  b      | character(20) |           | extended | 
 View definition:
- SELECT  *
+ SELECT partition_t1.a, partition_t1.b
    FROM partition_t1 PARTITION (p1);
 
 drop table partition_t1 cascade;
@@ -1082,7 +1082,8 @@ select * from partition_v1;
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION (p_201901);
 
 select * from partition_v2;
@@ -1103,7 +1104,8 @@ select * from partition_v2;
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION (p_201901, p_201902);
 
 select * from partition_v3;
@@ -1122,7 +1124,8 @@ select * from partition_v3;
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION FOR('201901'::character varying(30));
 
 select * from partition_v4;
@@ -1140,7 +1143,8 @@ select * from partition_v4;
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION(p_201902_a);
 
 select * from partition_v5;
@@ -1158,7 +1162,8 @@ select * from partition_v5;
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION FOR('201902'::character varying(30) ,'2'::character varying(30));
 
 -- less subpartition and different partition type
@@ -1198,7 +1203,8 @@ select * from partition_v1;
  user_no    | integer               |           | plain    | 
  sales_amt  | character varying(30) |           | extended | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION (p_201901);
 
 select * from partition_v2;
@@ -1217,7 +1223,8 @@ select * from partition_v2;
  user_no    | integer               |           | plain    | 
  sales_amt  | character varying(30) |           | extended | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION (p_201901, p_201902);
 
 select * from partition_v3;
@@ -1242,7 +1249,8 @@ select * from partition_v4;
  user_no    | integer               |           | plain    | 
  sales_amt  | character varying(30) |           | extended | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION(p_201902_a);
 
 select * from partition_v5;
@@ -1259,7 +1267,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) |           | extended | 
  sales_amt  | integer               |           | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION FOR('201902'::character varying(30) ,'2'::character varying(30));
 
 drop table partition_t1 cascade;
@@ -1268,6 +1277,31 @@ DETAIL:  drop cascades to view partition_v1
 drop cascades to view partition_v2
 drop cascades to view partition_v4
 drop cascades to view partition_v5
+create table t1 (a int, b int);
+create view v1 as select a + 3, b from t1;
+alter table t1 modify (a time);
+insert into t1 values ('14:00:00', 1);
+select * from v1;
+ ?column? | b 
+----------+---
+   140003 | 1
+(1 row)
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
+create table t1 (c1 int, c2 int);
+create view v1 as select * from t1;
+drop table t1;
+create table t1 (c2 int, c3 int, c4 int, c1 int);
+insert into t1 values (2, 3, 4, 1);
+select * from v1;
+ c1 | c2 
+----+----
+  1 |  2
+(1 row)
+
+drop table t1 cascade;
+NOTICE:  drop cascades to view v1
 drop schema test_view_table_depend cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table t2
