@@ -343,5 +343,22 @@ select * from partition_v5;
 
 drop table partition_t1 cascade;
 
+create table t1 (a int, b int);
+create view v1 as select a + 3, b from t1;
+alter table t1 modify (a time);
+insert into t1 values ('14:00:00', 1);
+select * from v1;
+
+drop table t1 cascade;
+
+create table t1 (c1 int, c2 int);
+create view v1 as select * from t1;
+drop table t1;
+create table t1 (c2 int, c3 int, c4 int, c1 int);
+insert into t1 values (2, 3, 4, 1);
+select * from v1;
+
+drop table t1 cascade;
+
 drop schema test_view_table_depend cascade;
 reset current_schema;
