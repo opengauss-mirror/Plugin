@@ -31491,6 +31491,14 @@ static void ATExecSplitSubPartition(Relation partTableRel, AlterTableCmd* cmd)
                                 ? errmsg("split subpartition \"%s\" does not exist.", splitSubPart->src_partition_name)
                                 : errmsg("split subpartition does not exist.")));
         }
+
+#ifdef ENABLE_HTAP
+        if (RelHasImcs(srcSubPartOid)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                    errmsg("The subpart rel enable imcstore, please unimcstore if want to split it.")));
+        }
+#endif
+
         // check src subpartitions
         ChecksrcRangeSubPartitionNameForSplit(partTableRel, partOid, srcSubPartOid);
         // check dest subpartitions name not existing

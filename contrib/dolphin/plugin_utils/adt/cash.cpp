@@ -1213,6 +1213,18 @@ Datum int8_cash(PG_FUNCTION_ARGS)
     PG_RETURN_CASH(result);
 }
 
+Datum float8_cash(PG_FUNCTION_ARGS)
+{
+    Datum cash = DirectFunctionCall1(float8_numeric, PG_GETARG_DATUM(0));
+    return DirectFunctionCall1(numeric_cash, cash);
+}
+
+Datum float4_cash(PG_FUNCTION_ARGS)
+{
+    Datum cash = DirectFunctionCall1(float4_numeric, PG_GETARG_DATUM(0));
+    return DirectFunctionCall1(numeric_cash, cash);
+}
+
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(uint_cash);
 extern "C" DLL_PUBLIC Datum uint_cash(PG_FUNCTION_ARGS);

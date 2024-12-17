@@ -22,12 +22,15 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include <cstring>
+
 #include "access/printtup.h"
 #include "access/transam.h"
 #include "access/tableam.h"
 #include "libpq/libpq.h"
 #include "libpq/pqformat.h"
 #include "tcop/pquery.h"
+#include "utils/float.h"
 #include "utils/lsyscache.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
@@ -653,8 +656,9 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                 needFree = false;
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
+                        outputstr = u_sess->utils_cxt.int4output_buffer;
                         int length32 = 0;
-                        outputstr = pg_ltoa_printtup(DatumGetInt32(attr), &length32);
+                        pg_ltoa(DatumGetInt32(attr), outputstr, &length32);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
@@ -663,8 +667,9 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                         continue;
                     }
                     case F_INT8OUT: {
+                        outputstr = u_sess->utils_cxt.int4output_buffer;
                         int length64 = 0;
-                        outputstr = pg_lltoa_printtup(DatumGetInt64(attr), &length64);
+                        pg_lltoa(DatumGetInt64(attr), outputstr, &length64);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
@@ -914,8 +919,9 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                 need_free = false;
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
+                        outputstr = u_sess->utils_cxt.int4output_buffer;
                         int length32 = 0;
-                        outputstr = pg_ltoa_printtup(DatumGetInt32(attr), &length32);
+                        pg_ltoa(DatumGetInt32(attr), outputstr, &length32);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
@@ -924,8 +930,9 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         continue;
                     }
                     case F_INT8OUT: {
+                        outputstr = u_sess->utils_cxt.int8output_buffer;
                         int length64 = 0;
-                        outputstr = pg_lltoa_printtup(DatumGetInt64(attr), &length64);
+                        pg_lltoa(DatumGetInt64(attr), outputstr, &length64);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif

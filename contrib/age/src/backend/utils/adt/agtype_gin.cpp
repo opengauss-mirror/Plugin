@@ -29,6 +29,10 @@
 #include "postgres.h"
 // #include "varatt.h"
 
+#include <cmath>
+#include <cctype>
+#include <limits>
+
 #include "access/gin.h"
 #include "access/hash.h"
 #include "catalog/pg_collation.h"
@@ -508,10 +512,10 @@ float8out_internal(double num)
 {
 	char	   *ascii = (char *) palloc(MAXDOUBLEWIDTH + 1);
 
-	if (isnan(num))
+	if (std::isnan(num))
 		return strcpy(ascii, "NaN");
 
-	switch (is_infinite(num))
+	switch (std::isinf(num))
 	{
 		case 1:
 			strcpy(ascii, "Infinity");
