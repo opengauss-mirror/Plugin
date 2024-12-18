@@ -1,12 +1,32 @@
 -- for dolphin-4.0 to dolphin-4.1 begin
 CREATE OR REPLACE FUNCTION pg_catalog.float8_sum(float8, float8) RETURNS float8 LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'float8_sum';
+drop aggregate if exists pg_catalog.sum_ext(float4);
 CREATE OR REPLACE FUNCTION pg_catalog.float_sum(double precision, float4) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'float_sum_ext';
+create aggregate pg_catalog.sum_ext(float4) (SFUNC=float_sum, cFUNC=float8pl, STYPE= double precision);
+
+drop aggregate if exists pg_catalog.sum(tinyint);
 CREATE OR REPLACE FUNCTION pg_catalog.tinyint_sum(numeric, tinyint) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'tinyint_sum_ext';
+create aggregate pg_catalog.sum(tinyint) (SFUNC=tinyint_sum, cFUNC=numeric_add, STYPE= numeric);
+
+drop aggregate if exists pg_catalog.sum_ext(smallint);
 CREATE OR REPLACE FUNCTION pg_catalog.smallint_sum_ext(numeric, smallint) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'smallint_sum_ext';
+create aggregate pg_catalog.sum_ext(smallint) (SFUNC=smallint_sum_ext, cFUNC=numeric_add, STYPE= numeric);
+
+drop aggregate if exists pg_catalog.sum_ext(int);
 CREATE OR REPLACE FUNCTION pg_catalog.int_sum_ext(numeric, int) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'int_sum_ext';
+create aggregate pg_catalog.sum_ext(int) (SFUNC=int_sum_ext, cFUNC=numeric_add, STYPE= numeric);
+
+drop aggregate if exists pg_catalog.sum(year);
 CREATE OR REPLACE FUNCTION pg_catalog.year_sum(numeric, year) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'year_sum_ext';
+create aggregate pg_catalog.sum(year) (SFUNC=tinyint_sum, cFUNC=numeric_add, STYPE= numeric);
+
+drop aggregate if exists pg_catalog.sum(text);
 CREATE OR REPLACE FUNCTION pg_catalog.text_sum(double precision, text) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'text_sum_ext';
+create aggregate pg_catalog.sum(text) (SFUNC=text_sum, cFUNC=float8pl, STYPE= double precision);
+
+drop aggregate if exists pg_catalog.sum(anyset);
 CREATE OR REPLACE FUNCTION pg_catalog.anyset_sum(double precision, anyset) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'set_sum_ext';
+create aggregate pg_catalog.sum(anyset) (SFUNC=anyset_sum, cFUNC=float8pl, STYPE= double precision);
 
 drop aggregate pg_catalog.sum(year);
 create aggregate pg_catalog.sum(year) (SFUNC=year_sum, cFUNC=numeric_add, STYPE= numeric);

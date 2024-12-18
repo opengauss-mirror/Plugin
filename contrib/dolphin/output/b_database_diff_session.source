@@ -80,11 +80,13 @@ PL/pgSQL function inline_code_block line 13 at SQL statement
 NOTICE:  session2:0
 NOTICE:  session2:<NULL>
 NOTICE:  session2:0
+WARNING:  you don't own a lock of type AccessShareLock
 NOTICE:  session1:0
 NOTICE:  session1:1
 NOTICE:  session1:<NULL>
 NOTICE:  session1:1
 NOTICE:  session1:<NULL>
 NOTICE:  session1:5
+WARNING:  you don't own a lock of type AccessShareLock
 \c postgres
 set dolphin.b_compatibility_mode to off;

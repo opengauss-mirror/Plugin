@@ -24,6 +24,7 @@
 #include "libpq/pqformat.h"
 #include "utils/int8.h"
 #include "utils/builtins.h"
+#include "utils/numutils.h"
 #include "plugin_commands/mysqlmode.h"
 #ifdef DOLPHIN
 #include "plugin_utils/varbit.h"
@@ -109,8 +110,48 @@ void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr, bool checkD
 /* ----------------------------------------------------------
  * Formatting and conversion routines.
  * --------------------------------------------------------- */
-/* int8in()
+
+/*
+ * Try to parse `str` into an `int8`.
+ *
+ * If errorOK is false, ereport a useful error message if the string is bad.
+ * If errorOK is true, just return "false" for bad input.
+ *
+ * Param can_ignore is true when using ignore hint, which will ignore errors of
+ * overflowing or invalid input.
  */
+bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
+{
+    NumUtilsConvertResult res = pg_strtoint64_internal(str, result);
+
+    if (res == RES_OK) {
+        return true;
+    }
+
+    if (errorOK) {
+        return false;
+    }
+
+    if (res == RES_OUT_OF_RANGE) {
+        if (!can_ignore) {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
+        }
+        ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                          errmsg("value \"%s\" is out of range for type %s. truncated automatically", str, "bigint")));
+    } else if (res == RES_NOT_A_NUMBER) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
+    } else if (res == RES_UNEXPECTED_TRAILING_CHARS) {
+        if (!can_ignore) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                              errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
+        }
+    }
+
+    return true;
+}
+
 Datum int8in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
@@ -121,8 +162,7 @@ Datum int8in(PG_FUNCTION_ARGS)
 #else
 
     if (DB_IS_CMPT(A_FORMAT) && ACCEPT_FLOAT_STR_AS_INT) {
-        result = PgStrToIntInternal<false>(str, fcinfo->can_ignore,
-            PG_INT64_MAX, PG_INT64_MIN, "bigint");
+        result = PgStrToIntInternal<false>(str, fcinfo->can_ignore, PG_INT64_MAX, PG_INT64_MIN, "bigint");
     } else {
         (void)scanint8(str, false, &result, fcinfo->can_ignore);
     }
@@ -130,8 +170,6 @@ Datum int8in(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(result);
 }
 
-/* int8out()
- */
 Datum int8out(PG_FUNCTION_ARGS)
 {
     int64 val = PG_GETARG_INT64(0);

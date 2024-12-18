@@ -30,6 +30,7 @@
 #include "plugin_utils/date.h"
 #include "plugin_utils/datetime.h"
 #include "utils/memutils.h"
+#include "utils/numutils.h"
 #include "utils/tzparser.h"
 #include "plugin_parser/scansup.h"
 #ifdef DOLPHIN
@@ -545,7 +546,7 @@ static char* AppendSeconds(char* cp, int sec, fsec_t fsec, int precision, bool f
     if (fsec != 0)
     {
         int32 value = Abs(fsec);
-        char *end = &cp[precision + 1];
+        char* end = &cp[precision + 1];
         bool gotnonzero = false;
 
         *cp++ = '.';
@@ -4229,11 +4230,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
         case USE_ISO_DATES:
         case USE_XSD_DATES:
             /* compatible with ISO date formats */
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             *str++ = '-';
             str = pg_ultostr_zeropad(str, tm->tm_mon, 2);
@@ -4254,11 +4255,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
                 str = pg_ultostr_zeropad(str, tm->tm_mday, 2);
             }
             *str++ = '/';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             break;
 
@@ -4268,11 +4269,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
             *str++ = '.';
             str = pg_ultostr_zeropad(str, tm->tm_mon, 2);
             *str++ = '.';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             break;
 
@@ -4290,11 +4291,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
                 str = pg_ultostr_zeropad(str, tm->tm_mday, 2);
             }
             *str++ = '-';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             break;
     }
@@ -4373,11 +4374,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
         case USE_ISO_DATES:
         case USE_XSD_DATES:
             /* Compatible with ISO-8601 date formats */
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             *str++ = '-';
             str = pg_ultostr_zeropad(str, tm->tm_mon, 2);
@@ -4405,11 +4406,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                 str = pg_ultostr_zeropad(str, tm->tm_mday, 2);
             }
             *str++ = '/';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             *str++ = ' ';
             str = pg_ultostr_zeropad(str, tm->tm_hour, 2);
@@ -4439,11 +4440,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
             *str++ = '.';
             str = pg_ultostr_zeropad(str, tm->tm_mon, 2);
             *str++ = '.';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
             *str++ = ' ';
             str = pg_ultostr_zeropad(str, tm->tm_hour, 2);
@@ -4491,11 +4492,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
             *str++ = ':';
             str = AppendTimestampSeconds(str, tm, fsec);
             *str++ = ' ';
-            str = pg_ultostr_zeropad(str,
+            str = pg_ultostr_zeropad_min_width_4(str,
 #ifdef DOLPHIN
-                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
 #else
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1), 4);
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
 #endif
 
             if (print_tz) {

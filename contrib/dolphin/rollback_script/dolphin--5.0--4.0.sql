@@ -1,11 +1,18 @@
 -- for dolphin-4.1 to dolphin-4.0 begin
 CREATE OR REPLACE FUNCTION pg_catalog.float8_sum(float8, float8) RETURNS float8 LANGUAGE C AS  '$libdir/dolphin',  'float8_sum';
+drop aggregate if exists pg_catalog.sum_ext(float4);
 CREATE OR REPLACE FUNCTION pg_catalog.float_sum(double precision, float4) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum(tinyint);
 CREATE OR REPLACE FUNCTION pg_catalog.tinyint_sum(numeric, tinyint) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(smallint);
 CREATE OR REPLACE FUNCTION pg_catalog.smallint_sum_ext(numeric, smallint) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(int);
 CREATE OR REPLACE FUNCTION pg_catalog.int_sum_ext(numeric, int) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(year);
 CREATE OR REPLACE FUNCTION pg_catalog.tinyint_sum(numeric, year) RETURNS numeric LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.int8_sum($1, $2::int8) $$;
+drop aggregate if exists pg_catalog.sum(text);
 CREATE OR REPLACE FUNCTION pg_catalog.text_sum(double precision, text) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
+drop aggregate if exists pg_catalog.sum(anyset);
 CREATE OR REPLACE FUNCTION pg_catalog.anyset_sum(double precision, anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
 
 drop aggregate pg_catalog.sum(year);

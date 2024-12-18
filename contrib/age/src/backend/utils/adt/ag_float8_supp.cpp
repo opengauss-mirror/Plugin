@@ -25,7 +25,11 @@
 
 #include "postgres.h"
 
-#include <math.h>
+#include "utils/float.h"
+
+#include <cmath>
+#include <cctype>
+#include <limits>
 
 #include "utils/builtins.h"
 #include "utils/ag_float8_supp.h"
@@ -91,37 +95,37 @@ float8 float8in_internal_null(char *num, char **endptr_p, const char *type_name,
          */
         if (pg_strncasecmp(num, "NaN", 3) == 0)
         {
-            val = get_float8_nan();
+            val = std::numeric_limits<double>::quiet_NaN();
             endptr = num + 3;
         }
         else if (pg_strncasecmp(num, "Infinity", 8) == 0)
         {
-            val = get_float8_infinity();
+            val = std::numeric_limits<double>::infinity();
             endptr = num + 8;
         }
         else if (pg_strncasecmp(num, "+Infinity", 9) == 0)
         {
-            val = get_float8_infinity();
+            val = std::numeric_limits<double>::infinity();
             endptr = num + 9;
         }
         else if (pg_strncasecmp(num, "-Infinity", 9) == 0)
         {
-            val = -get_float8_infinity();
+            val = -std::numeric_limits<double>::infinity();
             endptr = num + 9;
         }
         else if (pg_strncasecmp(num, "inf", 3) == 0)
         {
-            val = get_float8_infinity();
+            val = std::numeric_limits<double>::infinity();
             endptr = num + 3;
         }
         else if (pg_strncasecmp(num, "+inf", 4) == 0)
         {
-            val = get_float8_infinity();
+            val = std::numeric_limits<double>::infinity();
             endptr = num + 4;
         }
         else if (pg_strncasecmp(num, "-inf", 4) == 0)
         {
-            val = -get_float8_infinity();
+            val = -std::numeric_limits<double>::infinity();
             endptr = num + 4;
         }
         else if (save_errno == ERANGE)
