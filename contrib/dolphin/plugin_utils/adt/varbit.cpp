@@ -26,6 +26,7 @@
 #include "access/tuptoaster.h"
 #include "plugin_postgres.h"
 #ifdef DOLPHIN
+#include "utils/float.h"
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_utils/int8.h"
 #include "plugin_utils/year.h"

@@ -126,7 +126,6 @@ typedef enum {
 /*size of \000 */
 #define ESCAPE_ZERO_SZIE 4
 
-extern bool is_req_from_jdbc();
 extern bool is_req_from_gsql();
 
 #endif
