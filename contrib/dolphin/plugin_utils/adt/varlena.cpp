@@ -26,6 +26,7 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include "plugin_utils/varbit.h"
+#include "utils/float.h"
 #endif
 
 #include "access/hash.h"

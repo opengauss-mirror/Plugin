@@ -3664,3 +3664,4 @@ Datum to_binary_float_text_number(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT4(static_cast<float>(result));
 }
+
