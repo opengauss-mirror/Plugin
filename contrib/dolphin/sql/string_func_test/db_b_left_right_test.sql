@@ -111,9 +111,9 @@ CREATE TABLE test_type_table
     `timestamp` timestamp,
     `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
     `year` year,
-    `char` char(100),
+    `char` char(10),
     `varchar` varchar(100),
-    `binary` binary(100),
+    `binary` binary(10),
     `varbinary` varbinary(100),
     `tinyblob` tinyblob,
     `blob` blob,
@@ -161,7 +161,10 @@ right(`int1`,`longblob`),
 right(`int1`,`text`),
 right(`int1`,`enum_t`),
 right(`int1`,`set_t`),
-right(`int1`,`json`),
+right(`int1`,`json`)
+from test_type_table;
+
+select
 right(`uint1`,`int1`),
 right(`uint1`,`uint1`),
 right(`uint1`,`int2`),
@@ -195,7 +198,10 @@ right(`uint1`,`longblob`),
 right(`uint1`,`text`),
 right(`uint1`,`enum_t`),
 right(`uint1`,`set_t`),
-right(`uint1`,`json`),
+right(`uint1`,`json`)
+from test_type_table;
+
+select
 right(`int2`,`int1`),
 right(`int2`,`uint1`),
 right(`int2`,`int2`),
@@ -229,7 +235,10 @@ right(`int2`,`longblob`),
 right(`int2`,`text`),
 right(`int2`,`enum_t`),
 right(`int2`,`set_t`),
-right(`int2`,`json`),
+right(`int2`,`json`)
+from test_type_table;
+
+select
 right(`uint2`,`int1`),
 right(`uint2`,`uint1`),
 right(`uint2`,`int2`),
@@ -263,7 +272,10 @@ right(`uint2`,`longblob`),
 right(`uint2`,`text`),
 right(`uint2`,`enum_t`),
 right(`uint2`,`set_t`),
-right(`uint2`,`json`),
+right(`uint2`,`json`)
+from test_type_table;
+
+select
 right(`int4`,`int1`),
 right(`int4`,`uint1`),
 right(`int4`,`int2`),
@@ -297,7 +309,10 @@ right(`int4`,`longblob`),
 right(`int4`,`text`),
 right(`int4`,`enum_t`),
 right(`int4`,`set_t`),
-right(`int4`,`json`),
+right(`int4`,`json`)
+from test_type_table;
+
+select
 right(`uint4`,`int1`),
 right(`uint4`,`uint1`),
 right(`uint4`,`int2`),
@@ -331,7 +346,10 @@ right(`uint4`,`longblob`),
 right(`uint4`,`text`),
 right(`uint4`,`enum_t`),
 right(`uint4`,`set_t`),
-right(`uint4`,`json`),
+right(`uint4`,`json`)
+from test_type_table;
+
+select
 right(`int8`,`int1`),
 right(`int8`,`uint1`),
 right(`int8`,`int2`),
@@ -365,7 +383,10 @@ right(`int8`,`longblob`),
 right(`int8`,`text`),
 right(`int8`,`enum_t`),
 right(`int8`,`set_t`),
-right(`int8`,`json`),
+right(`int8`,`json`)
+from test_type_table;
+
+select
 right(`uint8`,`int1`),
 right(`uint8`,`uint1`),
 right(`uint8`,`int2`),
@@ -399,7 +420,10 @@ right(`uint8`,`longblob`),
 right(`uint8`,`text`),
 right(`uint8`,`enum_t`),
 right(`uint8`,`set_t`),
-right(`uint8`,`json`),
+right(`uint8`,`json`)
+from test_type_table;
+
+select
 right(`float4`,`int1`),
 right(`float4`,`uint1`),
 right(`float4`,`int2`),
@@ -433,7 +457,10 @@ right(`float4`,`longblob`),
 right(`float4`,`text`),
 right(`float4`,`enum_t`),
 right(`float4`,`set_t`),
-right(`float4`,`json`),
+right(`float4`,`json`)
+from test_type_table;
+
+select
 right(`float8`,`int1`),
 right(`float8`,`uint1`),
 right(`float8`,`int2`),
@@ -467,7 +494,10 @@ right(`float8`,`longblob`),
 right(`float8`,`text`),
 right(`float8`,`enum_t`),
 right(`float8`,`set_t`),
-right(`float8`,`json`),
+right(`float8`,`json`)
+from test_type_table;
+
+select
 right(`numeric`,`int1`),
 right(`numeric`,`uint1`),
 right(`numeric`,`int2`),
@@ -501,7 +531,10 @@ right(`numeric`,`longblob`),
 right(`numeric`,`text`),
 right(`numeric`,`enum_t`),
 right(`numeric`,`set_t`),
-right(`numeric`,`json`),
+right(`numeric`,`json`)
+from test_type_table;
+
+select
 right(`bit1`,`int1`),
 right(`bit1`,`uint1`),
 right(`bit1`,`int2`),
@@ -535,7 +568,10 @@ right(`bit1`,`longblob`),
 right(`bit1`,`text`),
 right(`bit1`,`enum_t`),
 right(`bit1`,`set_t`),
-right(`bit1`,`json`),
+right(`bit1`,`json`)
+from test_type_table;
+
+select
 right(`bit64`,`int1`),
 right(`bit64`,`uint1`),
 right(`bit64`,`int2`),
@@ -569,7 +605,10 @@ right(`bit64`,`longblob`),
 right(`bit64`,`text`),
 right(`bit64`,`enum_t`),
 right(`bit64`,`set_t`),
-right(`bit64`,`json`),
+right(`bit64`,`json`)
+from test_type_table;
+
+select
 right(`boolean`,`int1`),
 right(`boolean`,`uint1`),
 right(`boolean`,`int2`),
@@ -603,7 +642,10 @@ right(`boolean`,`longblob`),
 right(`boolean`,`text`),
 right(`boolean`,`enum_t`),
 right(`boolean`,`set_t`),
-right(`boolean`,`json`),
+right(`boolean`,`json`)
+from test_type_table;
+
+select
 right(`date`,`int1`),
 right(`date`,`uint1`),
 right(`date`,`int2`),
@@ -637,7 +679,10 @@ right(`date`,`longblob`),
 right(`date`,`text`),
 right(`date`,`enum_t`),
 right(`date`,`set_t`),
-right(`date`,`json`),
+right(`date`,`json`)
+from test_type_table;
+
+select
 right(`time`,`int1`),
 right(`time`,`uint1`),
 right(`time`,`int2`),
@@ -671,7 +716,10 @@ right(`time`,`longblob`),
 right(`time`,`text`),
 right(`time`,`enum_t`),
 right(`time`,`set_t`),
-right(`time`,`json`),
+right(`time`,`json`)
+from test_type_table;
+
+select
 right(`time(4)`,`int1`),
 right(`time(4)`,`uint1`),
 right(`time(4)`,`int2`),
@@ -705,7 +753,10 @@ right(`time(4)`,`longblob`),
 right(`time(4)`,`text`),
 right(`time(4)`,`enum_t`),
 right(`time(4)`,`set_t`),
-right(`time(4)`,`json`),
+right(`time(4)`,`json`)
+from test_type_table;
+
+select
 right(`datetime`,`int1`),
 right(`datetime`,`uint1`),
 right(`datetime`,`int2`),
@@ -739,7 +790,10 @@ right(`datetime`,`longblob`),
 right(`datetime`,`text`),
 right(`datetime`,`enum_t`),
 right(`datetime`,`set_t`),
-right(`datetime`,`json`),
+right(`datetime`,`json`)
+from test_type_table;
+
+select
 right(`datetime(4)`,`int1`),
 right(`datetime(4)`,`uint1`),
 right(`datetime(4)`,`int2`),
@@ -773,7 +827,10 @@ right(`datetime(4)`,`longblob`),
 right(`datetime(4)`,`text`),
 right(`datetime(4)`,`enum_t`),
 right(`datetime(4)`,`set_t`),
-right(`datetime(4)`,`json`),
+right(`datetime(4)`,`json`)
+from test_type_table;
+
+select
 right(`timestamp`,`int1`),
 right(`timestamp`,`uint1`),
 right(`timestamp`,`int2`),
@@ -807,7 +864,10 @@ right(`timestamp`,`longblob`),
 right(`timestamp`,`text`),
 right(`timestamp`,`enum_t`),
 right(`timestamp`,`set_t`),
-right(`timestamp`,`json`),
+right(`timestamp`,`json`)
+from test_type_table;
+
+select
 right(`timestamp(4)`,`int1`),
 right(`timestamp(4)`,`uint1`),
 right(`timestamp(4)`,`int2`),
@@ -841,7 +901,10 @@ right(`timestamp(4)`,`longblob`),
 right(`timestamp(4)`,`text`),
 right(`timestamp(4)`,`enum_t`),
 right(`timestamp(4)`,`set_t`),
-right(`timestamp(4)`,`json`),
+right(`timestamp(4)`,`json`)
+from test_type_table;
+
+select
 right(`year`,`int1`),
 right(`year`,`uint1`),
 right(`year`,`int2`),
@@ -875,7 +938,10 @@ right(`year`,`longblob`),
 right(`year`,`text`),
 right(`year`,`enum_t`),
 right(`year`,`set_t`),
-right(`year`,`json`),
+right(`year`,`json`)
+from test_type_table;
+
+select
 right(`char`,`int1`),
 right(`char`,`uint1`),
 right(`char`,`int2`),
@@ -909,7 +975,10 @@ right(`char`,`longblob`),
 right(`char`,`text`),
 right(`char`,`enum_t`),
 right(`char`,`set_t`),
-right(`char`,`json`),
+right(`char`,`json`)
+from test_type_table;
+
+select
 right(`varchar`,`int1`),
 right(`varchar`,`uint1`),
 right(`varchar`,`int2`),
@@ -943,7 +1012,10 @@ right(`varchar`,`longblob`),
 right(`varchar`,`text`),
 right(`varchar`,`enum_t`),
 right(`varchar`,`set_t`),
-right(`varchar`,`json`),
+right(`varchar`,`json`)
+from test_type_table;
+
+select
 right(`binary`,`int1`),
 right(`binary`,`uint1`),
 right(`binary`,`int2`),
@@ -977,7 +1049,10 @@ right(`binary`,`longblob`),
 right(`binary`,`text`),
 right(`binary`,`enum_t`),
 right(`binary`,`set_t`),
-right(`binary`,`json`),
+right(`binary`,`json`)
+from test_type_table;
+
+select
 right(`varbinary`,`int1`),
 right(`varbinary`,`uint1`),
 right(`varbinary`,`int2`),
@@ -1011,7 +1086,10 @@ right(`varbinary`,`longblob`),
 right(`varbinary`,`text`),
 right(`varbinary`,`enum_t`),
 right(`varbinary`,`set_t`),
-right(`varbinary`,`json`),
+right(`varbinary`,`json`)
+from test_type_table;
+
+select
 right(`tinyblob`,`int1`),
 right(`tinyblob`,`uint1`),
 right(`tinyblob`,`int2`),
@@ -1045,7 +1123,10 @@ right(`tinyblob`,`longblob`),
 right(`tinyblob`,`text`),
 right(`tinyblob`,`enum_t`),
 right(`tinyblob`,`set_t`),
-right(`tinyblob`,`json`),
+right(`tinyblob`,`json`)
+from test_type_table;
+
+select
 right(`blob`,`int1`),
 right(`blob`,`uint1`),
 right(`blob`,`int2`),
@@ -1079,7 +1160,10 @@ right(`blob`,`longblob`),
 right(`blob`,`text`),
 right(`blob`,`enum_t`),
 right(`blob`,`set_t`),
-right(`blob`,`json`),
+right(`blob`,`json`)
+from test_type_table;
+
+select
 right(`mediumblob`,`int1`),
 right(`mediumblob`,`uint1`),
 right(`mediumblob`,`int2`),
@@ -1113,7 +1197,10 @@ right(`mediumblob`,`longblob`),
 right(`mediumblob`,`text`),
 right(`mediumblob`,`enum_t`),
 right(`mediumblob`,`set_t`),
-right(`mediumblob`,`json`),
+right(`mediumblob`,`json`)
+from test_type_table;
+
+select
 right(`longblob`,`int1`),
 right(`longblob`,`uint1`),
 right(`longblob`,`int2`),
@@ -1147,7 +1234,10 @@ right(`longblob`,`longblob`),
 right(`longblob`,`text`),
 right(`longblob`,`enum_t`),
 right(`longblob`,`set_t`),
-right(`longblob`,`json`),
+right(`longblob`,`json`)
+from test_type_table;
+
+select
 right(`text`,`int1`),
 right(`text`,`uint1`),
 right(`text`,`int2`),
@@ -1181,7 +1271,10 @@ right(`text`,`longblob`),
 right(`text`,`text`),
 right(`text`,`enum_t`),
 right(`text`,`set_t`),
-right(`text`,`json`),
+right(`text`,`json`)
+from test_type_table;
+
+select
 right(`enum_t`,`int1`),
 right(`enum_t`,`uint1`),
 right(`enum_t`,`int2`),
@@ -1215,7 +1308,10 @@ right(`enum_t`,`longblob`),
 right(`enum_t`,`text`),
 right(`enum_t`,`enum_t`),
 right(`enum_t`,`set_t`),
-right(`enum_t`,`json`),
+right(`enum_t`,`json`)
+from test_type_table;
+
+select
 right(`set_t`,`int1`),
 right(`set_t`,`uint1`),
 right(`set_t`,`int2`),
@@ -1249,7 +1345,10 @@ right(`set_t`,`longblob`),
 right(`set_t`,`text`),
 right(`set_t`,`enum_t`),
 right(`set_t`,`set_t`),
-right(`set_t`,`json`),
+right(`set_t`,`json`)
+from test_type_table;
+
+select
 right(`json`,`int1`),
 right(`json`,`uint1`),
 right(`json`,`int2`),
@@ -1320,7 +1419,10 @@ left(`int1`,`longblob`),
 left(`int1`,`text`),
 left(`int1`,`enum_t`),
 left(`int1`,`set_t`),
-left(`int1`,`json`),
+left(`int1`,`json`)
+from test_type_table;
+
+select
 left(`uint1`,`int1`),
 left(`uint1`,`uint1`),
 left(`uint1`,`int2`),
@@ -1354,7 +1456,10 @@ left(`uint1`,`longblob`),
 left(`uint1`,`text`),
 left(`uint1`,`enum_t`),
 left(`uint1`,`set_t`),
-left(`uint1`,`json`),
+left(`uint1`,`json`)
+from test_type_table;
+
+select
 left(`int2`,`int1`),
 left(`int2`,`uint1`),
 left(`int2`,`int2`),
@@ -1388,7 +1493,10 @@ left(`int2`,`longblob`),
 left(`int2`,`text`),
 left(`int2`,`enum_t`),
 left(`int2`,`set_t`),
-left(`int2`,`json`),
+left(`int2`,`json`)
+from test_type_table;
+
+select
 left(`uint2`,`int1`),
 left(`uint2`,`uint1`),
 left(`uint2`,`int2`),
@@ -1422,7 +1530,10 @@ left(`uint2`,`longblob`),
 left(`uint2`,`text`),
 left(`uint2`,`enum_t`),
 left(`uint2`,`set_t`),
-left(`uint2`,`json`),
+left(`uint2`,`json`)
+from test_type_table;
+
+select
 left(`int4`,`int1`),
 left(`int4`,`uint1`),
 left(`int4`,`int2`),
@@ -1456,7 +1567,10 @@ left(`int4`,`longblob`),
 left(`int4`,`text`),
 left(`int4`,`enum_t`),
 left(`int4`,`set_t`),
-left(`int4`,`json`),
+left(`int4`,`json`)
+from test_type_table;
+
+select
 left(`uint4`,`int1`),
 left(`uint4`,`uint1`),
 left(`uint4`,`int2`),
@@ -1490,7 +1604,10 @@ left(`uint4`,`longblob`),
 left(`uint4`,`text`),
 left(`uint4`,`enum_t`),
 left(`uint4`,`set_t`),
-left(`uint4`,`json`),
+left(`uint4`,`json`)
+from test_type_table;
+
+select
 left(`int8`,`int1`),
 left(`int8`,`uint1`),
 left(`int8`,`int2`),
@@ -1524,7 +1641,10 @@ left(`int8`,`longblob`),
 left(`int8`,`text`),
 left(`int8`,`enum_t`),
 left(`int8`,`set_t`),
-left(`int8`,`json`),
+left(`int8`,`json`)
+from test_type_table;
+
+select
 left(`uint8`,`int1`),
 left(`uint8`,`uint1`),
 left(`uint8`,`int2`),
@@ -1558,7 +1678,10 @@ left(`uint8`,`longblob`),
 left(`uint8`,`text`),
 left(`uint8`,`enum_t`),
 left(`uint8`,`set_t`),
-left(`uint8`,`json`),
+left(`uint8`,`json`)
+from test_type_table;
+
+select
 left(`float4`,`int1`),
 left(`float4`,`uint1`),
 left(`float4`,`int2`),
@@ -1592,7 +1715,10 @@ left(`float4`,`longblob`),
 left(`float4`,`text`),
 left(`float4`,`enum_t`),
 left(`float4`,`set_t`),
-left(`float4`,`json`),
+left(`float4`,`json`)
+from test_type_table;
+
+select
 left(`float8`,`int1`),
 left(`float8`,`uint1`),
 left(`float8`,`int2`),
@@ -1626,7 +1752,10 @@ left(`float8`,`longblob`),
 left(`float8`,`text`),
 left(`float8`,`enum_t`),
 left(`float8`,`set_t`),
-left(`float8`,`json`),
+left(`float8`,`json`)
+from test_type_table;
+
+select
 left(`numeric`,`int1`),
 left(`numeric`,`uint1`),
 left(`numeric`,`int2`),
@@ -1660,7 +1789,10 @@ left(`numeric`,`longblob`),
 left(`numeric`,`text`),
 left(`numeric`,`enum_t`),
 left(`numeric`,`set_t`),
-left(`numeric`,`json`),
+left(`numeric`,`json`)
+from test_type_table;
+
+select
 left(`bit1`,`int1`),
 left(`bit1`,`uint1`),
 left(`bit1`,`int2`),
@@ -1694,7 +1826,10 @@ left(`bit1`,`longblob`),
 left(`bit1`,`text`),
 left(`bit1`,`enum_t`),
 left(`bit1`,`set_t`),
-left(`bit1`,`json`),
+left(`bit1`,`json`)
+from test_type_table;
+
+select
 left(`bit64`,`int1`),
 left(`bit64`,`uint1`),
 left(`bit64`,`int2`),
@@ -1728,7 +1863,10 @@ left(`bit64`,`longblob`),
 left(`bit64`,`text`),
 left(`bit64`,`enum_t`),
 left(`bit64`,`set_t`),
-left(`bit64`,`json`),
+left(`bit64`,`json`)
+from test_type_table;
+
+select
 left(`boolean`,`int1`),
 left(`boolean`,`uint1`),
 left(`boolean`,`int2`),
@@ -1762,7 +1900,10 @@ left(`boolean`,`longblob`),
 left(`boolean`,`text`),
 left(`boolean`,`enum_t`),
 left(`boolean`,`set_t`),
-left(`boolean`,`json`),
+left(`boolean`,`json`)
+from test_type_table;
+
+select
 left(`date`,`int1`),
 left(`date`,`uint1`),
 left(`date`,`int2`),
@@ -1796,7 +1937,10 @@ left(`date`,`longblob`),
 left(`date`,`text`),
 left(`date`,`enum_t`),
 left(`date`,`set_t`),
-left(`date`,`json`),
+left(`date`,`json`)
+from test_type_table;
+
+select
 left(`time`,`int1`),
 left(`time`,`uint1`),
 left(`time`,`int2`),
@@ -1830,7 +1974,10 @@ left(`time`,`longblob`),
 left(`time`,`text`),
 left(`time`,`enum_t`),
 left(`time`,`set_t`),
-left(`time`,`json`),
+left(`time`,`json`)
+from test_type_table;
+
+select
 left(`time(4)`,`int1`),
 left(`time(4)`,`uint1`),
 left(`time(4)`,`int2`),
@@ -1864,7 +2011,10 @@ left(`time(4)`,`longblob`),
 left(`time(4)`,`text`),
 left(`time(4)`,`enum_t`),
 left(`time(4)`,`set_t`),
-left(`time(4)`,`json`),
+left(`time(4)`,`json`)
+from test_type_table;
+
+select
 left(`datetime`,`int1`),
 left(`datetime`,`uint1`),
 left(`datetime`,`int2`),
@@ -1898,7 +2048,10 @@ left(`datetime`,`longblob`),
 left(`datetime`,`text`),
 left(`datetime`,`enum_t`),
 left(`datetime`,`set_t`),
-left(`datetime`,`json`),
+left(`datetime`,`json`)
+from test_type_table;
+
+select
 left(`datetime(4)`,`int1`),
 left(`datetime(4)`,`uint1`),
 left(`datetime(4)`,`int2`),
@@ -1932,7 +2085,10 @@ left(`datetime(4)`,`longblob`),
 left(`datetime(4)`,`text`),
 left(`datetime(4)`,`enum_t`),
 left(`datetime(4)`,`set_t`),
-left(`datetime(4)`,`json`),
+left(`datetime(4)`,`json`)
+from test_type_table;
+
+select
 left(`timestamp`,`int1`),
 left(`timestamp`,`uint1`),
 left(`timestamp`,`int2`),
@@ -1966,7 +2122,10 @@ left(`timestamp`,`longblob`),
 left(`timestamp`,`text`),
 left(`timestamp`,`enum_t`),
 left(`timestamp`,`set_t`),
-left(`timestamp`,`json`),
+left(`timestamp`,`json`)
+from test_type_table;
+
+select
 left(`timestamp(4)`,`int1`),
 left(`timestamp(4)`,`uint1`),
 left(`timestamp(4)`,`int2`),
@@ -2000,7 +2159,10 @@ left(`timestamp(4)`,`longblob`),
 left(`timestamp(4)`,`text`),
 left(`timestamp(4)`,`enum_t`),
 left(`timestamp(4)`,`set_t`),
-left(`timestamp(4)`,`json`),
+left(`timestamp(4)`,`json`)
+from test_type_table;
+
+select
 left(`year`,`int1`),
 left(`year`,`uint1`),
 left(`year`,`int2`),
@@ -2034,7 +2196,10 @@ left(`year`,`longblob`),
 left(`year`,`text`),
 left(`year`,`enum_t`),
 left(`year`,`set_t`),
-left(`year`,`json`),
+left(`year`,`json`)
+from test_type_table;
+
+select
 left(`char`,`int1`),
 left(`char`,`uint1`),
 left(`char`,`int2`),
@@ -2068,7 +2233,10 @@ left(`char`,`longblob`),
 left(`char`,`text`),
 left(`char`,`enum_t`),
 left(`char`,`set_t`),
-left(`char`,`json`),
+left(`char`,`json`)
+from test_type_table;
+
+select
 left(`varchar`,`int1`),
 left(`varchar`,`uint1`),
 left(`varchar`,`int2`),
@@ -2102,7 +2270,10 @@ left(`varchar`,`longblob`),
 left(`varchar`,`text`),
 left(`varchar`,`enum_t`),
 left(`varchar`,`set_t`),
-left(`varchar`,`json`),
+left(`varchar`,`json`)
+from test_type_table;
+
+select
 left(`binary`,`int1`),
 left(`binary`,`uint1`),
 left(`binary`,`int2`),
@@ -2136,7 +2307,10 @@ left(`binary`,`longblob`),
 left(`binary`,`text`),
 left(`binary`,`enum_t`),
 left(`binary`,`set_t`),
-left(`binary`,`json`),
+left(`binary`,`json`)
+from test_type_table;
+
+select
 left(`varbinary`,`int1`),
 left(`varbinary`,`uint1`),
 left(`varbinary`,`int2`),
@@ -2170,7 +2344,10 @@ left(`varbinary`,`longblob`),
 left(`varbinary`,`text`),
 left(`varbinary`,`enum_t`),
 left(`varbinary`,`set_t`),
-left(`varbinary`,`json`),
+left(`varbinary`,`json`)
+from test_type_table;
+
+select
 left(`tinyblob`,`int1`),
 left(`tinyblob`,`uint1`),
 left(`tinyblob`,`int2`),
@@ -2204,7 +2381,10 @@ left(`tinyblob`,`longblob`),
 left(`tinyblob`,`text`),
 left(`tinyblob`,`enum_t`),
 left(`tinyblob`,`set_t`),
-left(`tinyblob`,`json`),
+left(`tinyblob`,`json`)
+from test_type_table;
+
+select
 left(`blob`,`int1`),
 left(`blob`,`uint1`),
 left(`blob`,`int2`),
@@ -2238,7 +2418,10 @@ left(`blob`,`longblob`),
 left(`blob`,`text`),
 left(`blob`,`enum_t`),
 left(`blob`,`set_t`),
-left(`blob`,`json`),
+left(`blob`,`json`)
+from test_type_table;
+
+select
 left(`mediumblob`,`int1`),
 left(`mediumblob`,`uint1`),
 left(`mediumblob`,`int2`),
@@ -2272,7 +2455,10 @@ left(`mediumblob`,`longblob`),
 left(`mediumblob`,`text`),
 left(`mediumblob`,`enum_t`),
 left(`mediumblob`,`set_t`),
-left(`mediumblob`,`json`),
+left(`mediumblob`,`json`)
+from test_type_table;
+
+select
 left(`longblob`,`int1`),
 left(`longblob`,`uint1`),
 left(`longblob`,`int2`),
@@ -2306,7 +2492,10 @@ left(`longblob`,`longblob`),
 left(`longblob`,`text`),
 left(`longblob`,`enum_t`),
 left(`longblob`,`set_t`),
-left(`longblob`,`json`),
+left(`longblob`,`json`)
+from test_type_table;
+
+select
 left(`text`,`int1`),
 left(`text`,`uint1`),
 left(`text`,`int2`),
@@ -2340,7 +2529,10 @@ left(`text`,`longblob`),
 left(`text`,`text`),
 left(`text`,`enum_t`),
 left(`text`,`set_t`),
-left(`text`,`json`),
+left(`text`,`json`)
+from test_type_table;
+
+select
 left(`enum_t`,`int1`),
 left(`enum_t`,`uint1`),
 left(`enum_t`,`int2`),
@@ -2374,7 +2566,10 @@ left(`enum_t`,`longblob`),
 left(`enum_t`,`text`),
 left(`enum_t`,`enum_t`),
 left(`enum_t`,`set_t`),
-left(`enum_t`,`json`),
+left(`enum_t`,`json`)
+from test_type_table;
+
+select
 left(`set_t`,`int1`),
 left(`set_t`,`uint1`),
 left(`set_t`,`int2`),
@@ -2408,7 +2603,10 @@ left(`set_t`,`longblob`),
 left(`set_t`,`text`),
 left(`set_t`,`enum_t`),
 left(`set_t`,`set_t`),
-left(`set_t`,`json`),
+left(`set_t`,`json`)
+from test_type_table;
+
+select
 left(`json`,`int1`),
 left(`json`,`uint1`),
 left(`json`,`int2`),
@@ -2444,6 +2642,7 @@ left(`json`,`enum_t`),
 left(`json`,`set_t`),
 left(`json`,`json`)
 from test_type_table;
+
 drop table test_type_table;
 
 select right('2022-12-12',b'1010');
@@ -2459,6 +2658,30 @@ select right(1.234e5,'1.2e2');
 select right('123.456e8','000.345e1');
 select right(2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234,9999999999999999999999999);
 select right('2315312353244532354353445633544635234432534432354523534435234435142334521433452345352423344253443234',9999999999999999999999999);
+
+
+drop table if exists t_left_008;
+create table t_left_008 (id date ,result bytea)
+partition by hash(id)
+( 
+    partition p1,
+	partition p2
+);
+
+insert into t_left_008 values ('2022-01-05',E'jo\\000se');
+insert t_left_008 value ('1999-03-05',E'\\xDEADBEEF');
+insert t_left_008 values('2046-04-08',E'\\xedfacb');
+
+select * from t_left_008;
+select left(result, id) from t_left_008;
+select right(result, id) from t_left_008;
+drop table t_left_008;
+
+create table t2 (c1 bit(1), c2 bit(64), c3 binary(10), c4 varbinary(10), c5 blob);
+insert into t2 values (b'1', b'111', '1.23a', E'1.\\023a', E'1.\\023a');
+
+select hex(left(c3, 7)), hex(left(c4, 8)), hex(left(c5, 8)) from t2;
+drop table t2;
 
 drop schema db_b_left_right_test cascade;
 reset current_schema;

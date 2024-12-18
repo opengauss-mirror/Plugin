@@ -95,8 +95,8 @@ left | \x000000
 left | 1
 left | 62.3
 left | 
-left | 67890
-left | 67890 
+left | \x3637383930
+left | \x363738393020
 left | 67890 - 12
 left | \x3637383930202d
 left | \x3637383930202d20
@@ -119,8 +119,8 @@ left | \xffffff
 left | 1
 left | Toda
 left | 
-left | Today
-left | Today 
+left | \x546f646179
+left | \x546f64617920
 left | Today is a
 left | \x546f6461792069
 left | \x546f646179206973
