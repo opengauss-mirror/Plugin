@@ -8113,7 +8113,18 @@ Datum time_format(PG_FUNCTION_ARGS)
     text_to_cstring_buffer(format_text, format, sizeof(char) * (len + 1));
 
     /* is time_text in datetime or time format? */
-    str_to_pg_tm(buf, tt, fsec, timeSign);
+    char *str_time = buf;
+    int tm_type;
+    bool warnings = false, null_func_result = false;
+    int errlevel = (SQL_MODE_STRICT()) ? ERROR : WARNING;
+    cstring_to_time(str_time, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+    if (warnings || null_func_result) {
+        ereport(errlevel,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str_time)));
+        if (null_func_result) {
+            PG_RETURN_NULL();
+        }
+    }
 
     /* check whether it is a negative time */
     isNeg = (timeSign == -1);
@@ -8126,15 +8137,6 @@ Datum time_format(PG_FUNCTION_ARGS)
         tt.tm_hour += tt.tm_min / MINS_PER_HOUR;
         tt.tm_min %= MINS_PER_HOUR;
         fsec = 0;
-    }
-
-    /* is time out of range? */
-    if (tm->tm_hour == TIME_MAX_HOUR && tm->tm_min == TIME_MAX_MINUTE &&
-        tm->tm_sec == TIME_MAX_SECOND && fsec > 0) {
-        pfree_ext(format);
-        ereport(ERROR,
-                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                 errmsg("date/time field value out of range: \"%s\"", buf)));
     }
 
     str = makeStringInfo();
