@@ -44,5 +44,14 @@ alter table t1 add gc bigint as (a) stored;
 show create table t1;
 drop table t1;
 
+create table test1(
+id character varying(255) NOT NULL,
+employee_no character varying(255) DEFAULT ''::character varying,
+create_date timestamp(0) without time zone ON UPDATE CURRENT_TIMESTAMP(0)
+);
+create table test2 like test1;
+drop table test1;
+drop table test2;
+
 reset current_schema;
 drop schema test_default cascade;
