@@ -16,6 +16,8 @@ set current_schema to 'db_b_log_test';
 SELECT LOG(10);
 SELECT LOG10(100);
 SELECT LOG2(64);
+SELECT log2(0.1);
+SELECT log2(.1);
 
 SELECT LOG(10::numeric);
 SELECT LOG10(100::numeric);

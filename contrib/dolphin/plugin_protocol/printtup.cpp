@@ -30,12 +30,12 @@
 #include "libpq/libpq.h"
 #include "libpq/pqformat.h"
 #include "tcop/pquery.h"
-#include "utils/float.h"
 #include "utils/lsyscache.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "access/heapam.h"
 #include "catalog/pg_proc.h"
+#include "plugin_utils/float.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
@@ -657,23 +657,37 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
                         outputstr = u_sess->utils_cxt.int4output_buffer;
-                        int length32 = 0;
-                        pg_ltoa(DatumGetInt32(attr), outputstr, &length32);
+                        int length = 0;
+                        pg_ltoa(DatumGetInt32(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
-                        pq_sendcountedtext_printtup(buf, outputstr, length32, thisState->encoding,
+                        pq_sendcountedtext_printtup(buf, outputstr, length, thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
                     case F_INT8OUT: {
-                        outputstr = u_sess->utils_cxt.int4output_buffer;
-                        int length64 = 0;
-                        pg_lltoa(DatumGetInt64(attr), outputstr, &length64);
+                        outputstr = u_sess->utils_cxt.int8output_buffer;
+                        int length = 0;
+                        pg_lltoa(DatumGetInt64(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
-                        pq_sendcountedtext_printtup(buf, outputstr, length64, thisState->encoding,
+                        pq_sendcountedtext_printtup(buf, outputstr, length, thisState->encoding,
+                                                    (void *)&thisState->convert_finfo);
+                        continue;
+                    }
+                    case F_FLOAT4OUT: {
+                        outputstr = u_sess->utils_cxt.float4output_buffer;
+                        pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
+                        pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
+                                                    (void*)&thisState->convert_finfo);
+                        continue;
+                    }
+                    case F_FLOAT8OUT: {
+                        outputstr = u_sess->utils_cxt.float8output_buffer;
+                        dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
+                        pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
@@ -920,23 +934,23 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
                         outputstr = u_sess->utils_cxt.int4output_buffer;
-                        int length32 = 0;
-                        pg_ltoa(DatumGetInt32(attr), outputstr, &length32);
+                        int length = 0;
+                        pg_ltoa(DatumGetInt32(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
-                        pq_sendcountedtext_printtup(buf, outputstr, length32, thisState->encoding,
+                        pq_sendcountedtext_printtup(buf, outputstr, length, thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
                     case F_INT8OUT: {
                         outputstr = u_sess->utils_cxt.int8output_buffer;
-                        int length64 = 0;
-                        pg_lltoa(DatumGetInt64(attr), outputstr, &length64);
+                        int length = 0;
+                        pg_lltoa(DatumGetInt64(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
                         t_thrd.xact_cxt.callPrint = false;
 #endif
-                        pq_sendcountedtext_printtup(buf, outputstr, length64, thisState->encoding,
+                        pq_sendcountedtext_printtup(buf, outputstr, length, thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
