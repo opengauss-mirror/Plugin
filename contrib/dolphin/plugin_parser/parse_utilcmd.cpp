@@ -170,7 +170,7 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
 static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints);
 static void TransfromSortByNulls(IndexStmt* index);
 #endif
-
+extern void pg_ulltoa(uint64 value, char *a);
 /*
  * @hdfs
  * The following three functions are used for HDFS foreign talbe constraint.
@@ -1144,6 +1144,18 @@ static bool DropTypeOwnedByTable(CreateStmtContext* cxt, char *colname)
     return false;
 }
 
+#ifdef DOLPHIN
+static bool TypeNameCheckIsUnsignedIntType(CreateStmtContext* cxt, TypeName* typname)
+{
+    HeapTuple ctype = typenameType(cxt->pstate, typname, NULL);
+    Oid typeId = HeapTupleGetOid(ctype);
+    bool result = IsUnsignedIntType(typeId);
+    ReleaseSysCache(ctype);
+
+    return result;
+}
+#endif
+
 /*
  * createSeqOwnedByTable -
  *		create a sequence owned by table, need to add record to pg_depend.
@@ -1200,6 +1212,20 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
     seqstmt = makeNode(CreateSeqStmt);
     seqstmt->sequence = makeRangeVar(snamespace, sname, -1);
     seqstmt->options = is_autoinc ? GetAutoIncSeqOptions(cxt) : NULL;
+#ifdef DOLPHIN
+    if (is_autoinc) {
+        Node* maxvalue = NULL;
+        if (TypeNameCheckIsUnsignedIntType(cxt, column->typname)) {
+            char buf[MAXINT8LEN + 1];
+            pg_ulltoa(PG_UINT64_MAX, buf);
+            char* uint64Str = pstrdup(buf);
+            maxvalue = (Node*)makeDefElem("maxvalue", (Node*)makeFloat(uint64Str));
+        } else {
+            maxvalue = (Node*)makeDefElem("maxvalue", (Node*)makeInteger(PG_INT64_MAX));
+        }
+        seqstmt->options = lappend(seqstmt->options, maxvalue);
+    }
+#endif
     seqstmt->is_autoinc = is_autoinc;
 #ifdef PGXC
     seqstmt->is_serial = true;
