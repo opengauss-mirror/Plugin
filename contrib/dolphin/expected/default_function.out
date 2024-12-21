@@ -202,5 +202,28 @@ select pg_catalog.mode_b_default(b) from a;
 ERROR:  Invalid default value.
 DETAIL:  the 2th column of a doesn't have a default value
 CONTEXT:  referenced column: mode_b_default
+CREATE TABLE `woss_duty_group_post_ref` (
+  `id` char(32) CHARACTER SET utf8mb4  NOT NULL ,
+  `group_id` char(32) CHARACTER SET utf8mb4  NOT NULL ,
+  `post_id` char(32) CHARACTER SET utf8mb4  NOT NULL ,
+  `create_time` datetime DEFAULT NULL ,
+  `create_user` char(32) CHARACTER SET utf8mb4  DEFAULT NULL,
+  `seq_no` int DEFAULT NULL ,
+  `update_time` datetime DEFAULT NULL ,
+  `update_user` char(32) CHARACTER SET utf8mb4  DEFAULT NULL ,
+  `is_deleted` smallint DEFAULT '0',
+  `tenant_id` char(32) CHARACTER SET utf8mb4  DEFAULT NULL,
+  `group_id_post_id_not_deleted` varchar(64) GENERATED ALWAYS AS ((case when (`is_deleted` = 0) then concat(`group_id`::varchar,`post_id`::varchar) end)) STORED,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `woss_duty_group_post_ref_idx_unique_group_id_post_id_not_deleted` (`group_id_post_id_not_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+NOTICE:  identifier "woss_duty_group_post_ref_idx_unique_group_id_post_id_not_deleted" will be truncated to "woss_duty_group_post_ref_idx_unique_group_id_post_id_not_delete"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "woss_duty_group_post_ref_pkey" for table "woss_duty_group_post_ref"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "woss_duty_group_post_ref_idx_unique_group_id_post_id_not_delete" for table "woss_duty_group_post_ref"
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+insert into `woss_duty_group_post_ref`(`id`,`group_id`,`post_id`,`create_time`,`create_user`,`seq_no`,`update_time`,`update_user`,`is_deleted`,`tenant_id`) values ("id_1","group_1","post_1","2024-12-18","zhangsan",1,"2024-12-18","zhangsan",0,"tenant_1");
+insert into `woss_duty_group_post_ref`(`id`,`group_id`,`post_id`,`create_time`,`create_user`,`seq_no`,`update_time`,`update_user`,`is_deleted`,`tenant_id`) values ("id_2","group_2","post_2","2024-12-18","zhangsan",2,"2024-12-18","zhangsan",1,"tenant_1");
+reset dolphin.sql_mode;
+drop table woss_duty_group_post_ref;
 \c postgres
 drop database if exists db_default;
