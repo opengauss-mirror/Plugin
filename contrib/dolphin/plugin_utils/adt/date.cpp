@@ -5092,7 +5092,7 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_ad
 /**
  * Convert non-NULL values of the indicated types to the TimeADT value
  */
-void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore)
+void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore, bool* result_isnull)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
@@ -5182,11 +5182,14 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
             break;
         }
         case BITOID: {
-            if (SQL_MODE_STRICT()) {
-                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
-                                errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
-            }
+            int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+            ereport(errlevel, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
             *time = 0;
+            if (result_isnull != NULL) {
+                *result_isnull = true;
+                return;
+            }
             break;
         }
         default: {

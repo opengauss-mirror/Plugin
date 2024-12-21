@@ -234,9 +234,11 @@ CONTEXT:  referenced column: timediff
 
 -- test normal
 select timediff(B'101', B'10101');
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: timediff
  timediff 
 ----------
- 00:00:00
+ 
 (1 row)
 
 select timediff(time'00:00:00', 'asdfg');

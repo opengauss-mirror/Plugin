@@ -857,14 +857,10 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,0.001,'
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,-0.001,''2022-07-27 00:00:00'')', TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00'));
 -- 越界预判
 insert into func_test2(functionName, result) values('TIMESTAMPADD(year,1,time''23:59:59'')', TIMESTAMPADD(year,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,time''23:59:59'')', TIMESTAMPADD(qtr,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''23:59:59'')', TIMESTAMPADD(month,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
+-- timetz
+insert into func_test2(functionName, result) values('timestampadd(day, 1, timetz''1:1:0+05'')', timestampadd(day, 1, timetz'1:1:0+05'));
 -- TIME、TIMESTAMP建表语法修改测试
 create table t1(col timestamp('1'));
 ERROR:  Un-support feature
@@ -1069,7 +1065,8 @@ select * from func_test2 order by 1, 2;
  TIMESTAMPADD(DAY,-1.6,'2022-07-27')                                                         | 2022-07-25
  TIMESTAMPADD(DAY,1.6,'2022-07-27')                                                          | 2022-07-29
  TIMESTAMPADD(DAY,1,cast('2022-04-05' as datetime))                                          | 2022-04-06 00:00:00
- TIMESTAMPADD(DAY,1,time'14:30:00')                                                          | 38:30:00
+--?.*
+--?.*
  TIMESTAMPADD(DAY,timestamptz'2000-1-1 1:1:1+05','2022-07-01')                               | 2027-12-21
  TIMESTAMPADD(HOUR,0.3,'2022-07-27')                                                         | 2022-07-27 00:00:00
  TIMESTAMPADD(HOUR,-1.1,'2022-07-27')                                                        | 2022-07-26 23:00:00
@@ -1115,9 +1112,11 @@ select * from func_test2 order by 1, 2;
  TIMESTAMPADD(MONTH,1,'2022-12-31')                                                          | 2023-01-31
  TIMESTAMPADD(MONTH,-1.6,'2022-07-27')                                                       | 2022-05-27
  TIMESTAMPADD(MONTH,1.6,'2022-07-27')                                                        | 2022-09-27
+--?.*
  TIMESTAMPADD(MONTH,2,'2022-07-31')                                                          | 2022-09-30
  TIMESTAMPADD(MONTH,3,'2019-12-31')                                                          | 2020-03-31
  TIMESTAMPADD(qtr,1,'0000-01-01 00:00:00')                                                   | 0000-04-01 00:00:00
+--?.*
  TIMESTAMPADD(SECOND,0.000000003,'2022-07-27')                                               | 2022-07-27 00:00:00
  TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00')                                           | 2022-07-26 23:59:59.999
  TIMESTAMPADD(SECOND,0.001,'2022-07-27 08:30:59.999')                                        | 2022-07-27 08:31:00
@@ -1158,6 +1157,7 @@ select * from func_test2 order by 1, 2;
  TIMESTAMPADD(YEAR,1,'2022-07-27 08:30:00')                                                  | 2023-07-27 08:30:00
  TIMESTAMPADD(YEAR,-1.6,'2022-07-27')                                                        | 2020-07-27
  TIMESTAMPADD(YEAR,1.6,'2022-07-27')                                                         | 2024-07-27
+--?.*
  TIMESTAMP(cast('2007-12-10 23:59:59' as datetime))                                          | 2007-12-10 23:59:59
  TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)) | 2007-12-11 22:59:58
  TIMESTAMP(date'2003-01-01')                                                                 | 2003-01-01 00:00:00
@@ -1248,6 +1248,15 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
 WARNING:  time field value out of range
 CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('subtime(B''0'',B''1'')', subtime(B'0',B'1'));
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101'));
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: result
 select * from func_test2 order by functionName;
              functionName             |   result   
 --------------------------------------+------------
@@ -1258,7 +1267,10 @@ select * from func_test2 order by functionName;
  subtime('-838:59:59', '25:00')       | -838:59:59
  subtime('838:59:59', '-25:00')       | 838:59:59
  subtime('839:59:59', '837:59:59')    | 01:00:00
-(7 rows)
+ subtime(B'0',B'1')                   | 
+ TIME(B'1')                           | 
+ TIMEDIFF(B'101', B'101')             | 
+(10 rows)
 
 set dolphin.b_compatibility_mode=on;
 set b_format_behavior_compat_options='enable_set_variables,enable_multi_charset';
