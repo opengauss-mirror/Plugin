@@ -540,7 +540,7 @@ create table t2(col time('1'));
 drop table t1;
 drop table t2;
 
-select * from func_test2;
+select * from func_test2 order by 1, 2;
 
 -- 单独select边界测试
 select subtime('838:59:59', '-25:00');
