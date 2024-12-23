@@ -120,6 +120,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"not_escape_zero_in_binary", OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY},
     {"escape_quotes", OPT_SQL_MODE_ESCAPE_QUOTES},
     {"no_auto_value_on_zero", OPT_SQL_MODE_NO_AUTO_VALUE_ON_ZERO},
+    {"disable_escape_bytea", OPT_SQL_MODE_DISABLE_ESCAPE_BYTEA},
 };
 
 #define DOLPHIN_TYPES_NUM 12
