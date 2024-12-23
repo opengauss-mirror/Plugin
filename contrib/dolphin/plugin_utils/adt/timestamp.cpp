@@ -7537,6 +7537,25 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             *datetime = DatumGetTimestamp(DirectFunctionCall1(date_timestamp, value));
             break;
         }
+        case TIMETZOID: {
+            // The conversion rule from Time to Timestamp is:
+            // Combining the current date withe the input time
+            pg_tm tt, *tm = &tt;
+            int tz = 0;
+            TimestampTz temp;
+            TimeTzADT* time = DatumGetTimeTzADTP(value);
+            GetCurrentDateTime(tm);
+            tm->tm_hour = tm->tm_min = tm->tm_sec = 0;  // Keep date only
+            tm2timestamp(tm, 0, &tz, &temp);
+
+#ifdef HAVE_INT64_TIMESTAMP
+            *datetime = time->time + (time->zone * 1000000.0) + temp;
+#else
+            *datetime = time->time + time->zone + temp;
+#endif
+            break;
+        }
+            
         case TIMEOID: {
             // The conversion rule from Time to Timestamp is:
             // Combining the current date withe the input time
@@ -7774,7 +7793,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case INT4OID:
         case BOOLOID: 
         case BITOID: {
-            convert_to_time(value, valuetypid, time, can_ignore);
+            convert_to_time(value, valuetypid, time, can_ignore, result_isnull);
             check_b_format_time_range_with_ereport(*time);
             return TIMEOID;
         }
@@ -7887,10 +7906,15 @@ Datum subtime(PG_FUNCTION_ARGS)
     TimeADT time1, time2, res_time;
     Timestamp datetime1, datetime2, res_datetime;
     Oid val_type1, val_type2;
+    bool result_isnull = false;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
-    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, true);
+    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, true, &result_isnull);
+
+    if (result_isnull == true) {
+        PG_RETURN_NULL();
+    }
 
     switch (val_type2) {
         case TIMESTAMPOID:
@@ -7902,8 +7926,8 @@ Datum subtime(PG_FUNCTION_ARGS)
             val_type2 = TIMEOID;
             break;
         default:
-            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, true);
-            if (val_type2 == TIMESTAMPOID) {
+            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, true, &result_isnull);
+            if (val_type2 == TIMESTAMPOID || result_isnull == true) {
                 PG_RETURN_NULL();
             }
     }
@@ -7989,6 +8013,7 @@ Datum timediff(PG_FUNCTION_ARGS)
     Oid val_type1, val_type2;
     TimeADT result;
     int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+    bool result_isnull = false;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -8004,12 +8029,18 @@ Datum timediff(PG_FUNCTION_ARGS)
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
         val_type2 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(1)), &datetime2, &time2, val_type1);
     } else {
-        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
+        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, fcinfo->can_ignore, &result_isnull);
         if (val_type1 == TIMEOID &&  time1 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
             PG_RETURN_NULL();
         }
-        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+        if (result_isnull == true) {
+            PG_RETURN_NULL();
+        }
+        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, fcinfo->can_ignore, &result_isnull);
         if (val_type2 == TIMEOID &&  time2 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
+            PG_RETURN_NULL();
+        }
+        if (result_isnull == true) {
             PG_RETURN_NULL();
         }
     }
@@ -8346,6 +8377,25 @@ bool determine_conversion(int dtk)
     }
 }
 
+
+bool is_conversion_from_time_to_datetime(int dtk, Oid expr_type)
+{
+    if (expr_type != TIMETZOID && expr_type != TIMEOID) {
+        return false;
+    }
+    switch (dtk) {
+        case DTK_DAY:
+        case DTK_WEEK:
+        case DTK_MONTH:
+        case DTK_QUARTER:
+        case DTK_YEAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
 /*
  * @Description: Internal operation function of timestamp_add_numeric() 
  * and timestamp_add_text() function.
@@ -8358,6 +8408,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
     Timestamp datetime, res_datetime;
     DateADT date, res_date;
     TimeADT time, res_time;
+    bool is_need_convert_to_datetime = is_conversion_from_time_to_datetime(unit, expr_type);
 
     NumericVar tmp;
     lldiv_t delta;
@@ -8387,17 +8438,20 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
         char *str = DatumGetCString(DirectFunctionCall1(year_out, expr));
         ereport(ERROR, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
     }
-    switch (expr_type) {
-        // when the input type is time or timetz
-        case TIMETZOID:
-        case TIMEOID:
-            convert_to_time(expr, expr_type, &time);
-            res_time = time_sub_interval(time, span);
-            PG_RETURN_TEXT_P(DirectFunctionCall1(time_text, TimeADTGetDatum(res_time)));
+
+    if (is_need_convert_to_datetime == false) {
+        switch (expr_type) {
+            // when the input type is time or timetz
+            case TIMETZOID:
+            case TIMEOID:
+                convert_to_time(expr, expr_type, &time);
+                res_time = time_sub_interval(time, span);
+                PG_RETURN_TEXT_P(DirectFunctionCall1(time_text, TimeADTGetDatum(res_time)));
+        }
     }
 
     bool conversion = determine_conversion(unit);
-    if (conversion) {
+    if (conversion || is_need_convert_to_datetime) {
         // With specific units, the return type is datetime
         convert_to_datetime(expr, expr_type, &datetime);
         check_b_format_datetime_range_with_ereport(datetime);

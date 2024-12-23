@@ -534,6 +534,9 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(year,1,time''2
 insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,time''23:59:59'')', TIMESTAMPADD(qtr,1,time'23:59:59'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''23:59:59'')', TIMESTAMPADD(month,1,time'23:59:59'));
 
+-- timetz
+insert into func_test2(functionName, result) values('timestampadd(day, 1, timetz''1:1:0+05'')', timestampadd(day, 1, timetz'1:1:0+05'));
+
 -- TIME、TIMESTAMP建表语法修改测试
 create table t1(col timestamp('1'));
 create table t2(col time('1'));
@@ -561,6 +564,10 @@ insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-
 insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
 insert into func_test2(functionName, result) values('subtime(8375959.9999999, ''-1:00:00'')', subtime(8375959.9999999,'-1:00:00'));
 insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
+
+insert into func_test2(functionName, result) values('subtime(B''0'',B''1'')', subtime(B'0',B'1'));
+insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101'));
+insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
 select * from func_test2 order by functionName;
 
 set dolphin.b_compatibility_mode=on;
