@@ -14,6 +14,7 @@
  * -------------------------------------------------------------------------
  */
 #include "utils/float.h"
+#include "plugin_utils/float.h"
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
@@ -542,75 +543,10 @@ Datum float4out(PG_FUNCTION_ARGS)
 {
     float4 num = PG_GETARG_FLOAT4(0);
     char* ascii = (char*)palloc(MAXFLOATWIDTH + 1);
-    errno_t rc = EOK;
 
-    if (isnan(num)) {
-        if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-            rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Nan");
-        } else {
-            rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "NaN");
-        }
-        securec_check_ss(rc, "\0", "\0");
-        PG_RETURN_CSTRING(ascii);
-    } else if (isinf(num)) {
-        if (num > 0) {
-            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Inf");
-            } else {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Infinity");
-            }
-            securec_check_ss(rc, "\0", "\0");
-        } else {
-            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Inf");
-            } else {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Infinity");
-            }
-            securec_check_ss(rc, "\0", "\0");
-        }
-    } else {
-        int ndig = FLT_DIG + u_sess->attr.attr_common.extra_float_digits;
+    pg_ftoa<MAXFLOATWIDTH + 1>(num, ascii);
 
-        if (ndig < 1)
-            ndig = 1;
-#ifdef DOLPHIN
-        else if (ndig > 8) {
-            ndig = 8;
-        }
-#endif
-
-        rc = snprintf_s(ascii, MAXFLOATWIDTH + 1, MAXFLOATWIDTH, "%.*g", ndig, num);
-        securec_check_ss(rc, "\0", "\0");
-    }
-    if (DISPLAY_LEADING_ZERO) {
-        PG_RETURN_CSTRING(ascii);
-    }
-
-    if (!((num > 0 && num < 1) || (num > -1 && num < 0))) {
-        PG_RETURN_CSTRING(ascii);
-    }
-    // Delete 0 before decimal.
-    // For Example: convert 0.123 to .123, or -0.123 to -.123
-    else {
-        char* final_ascii = (char*)palloc0(MAXFLOATWIDTH + 1);
-        char* ascii_copy = ascii;
-
-        if ('-' == *ascii_copy) {
-            *final_ascii = *ascii_copy++;
-        }
-
-        // Skip 0 before decimal
-        if ('0' == *ascii_copy) {
-            ascii_copy++;
-        }
-
-        rc = strncat_s(final_ascii, MAXFLOATWIDTH + 1, ascii_copy, strlen(ascii_copy));
-        securec_check(rc, "\0", "\0");
-
-        pfree_ext(ascii);
-
-        PG_RETURN_CSTRING(final_ascii);
-    }
+    PG_RETURN_CSTRING(ascii);
 }
 
 /*
@@ -821,81 +757,12 @@ Datum float8in(PG_FUNCTION_ARGS)
  */
 Datum float8out(PG_FUNCTION_ARGS)
 {
-    float8 num = PG_GETARG_FLOAT8(0);
+    double num = PG_GETARG_FLOAT8(0);
     char* ascii = (char*)palloc(MAXDOUBLEWIDTH + 1);
-    errno_t rc = EOK;
 
-    if (std::isnan(num)) {
-        if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-            rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Nan");
-        } else {
-            rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "NaN");
-        }
-        securec_check(rc, "\0", "\0");
-        PG_RETURN_CSTRING(ascii);
-    } else if (std::isinf(num)) {
-        if (num > 0) {
-            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Inf");
-            } else {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "Infinity");
-            }
-            securec_check(rc, "\0", "\0");
-        } else {
-            if (DB_IS_CMPT(A_FORMAT) && u_sess->attr.attr_sql.enable_binary_special_a_format && !is_req_from_jdbc()) {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Inf");
-            } else {
-                rc = strcpy_s(ascii, MAXDOUBLEWIDTH + 1, "-Infinity");
-            }
-            securec_check(rc, "\0", "\0");
-        }
-    } else {
-#ifdef DOLPHIN
-        int ndig = DBL_DIG + u_sess->attr.attr_common.extra_float_digits + 1;
-#else
-        int ndig = DBL_DIG + u_sess->attr.attr_common.extra_float_digits;
-#endif
+    dolphin_dtoa<MAXDOUBLEWIDTH + 1>(num, ascii);
 
-        if (ndig < 1)
-            ndig = 1;
-#ifdef DOLPHIN
-        else if (ndig > 17) {
-            ndig = 17;
-        }
-#endif
-
-        rc = snprintf_s(ascii, MAXDOUBLEWIDTH + 1, MAXDOUBLEWIDTH, "%.*g", ndig, num);
-        securec_check_ss(rc, "\0", "\0");
-    }
-    if (DISPLAY_LEADING_ZERO) {
-        PG_RETURN_CSTRING(ascii);
-    }
-
-    if (!((num > 0 && num < 1) || (num > -1 && num < 0))) {
-        PG_RETURN_CSTRING(ascii);
-    }
-    // Delete 0 before decimal.
-    // For Example: convert 0.123 to .123, or -0.123 to -.123
-    else {
-        char* final_ascii = (char*)palloc0(MAXFLOATWIDTH + 1);
-        char* ascii_copy = ascii;
-
-        if ('-' == *ascii_copy) {
-            *final_ascii = *ascii_copy++;
-        }
-
-        /* Skip 0 before decimal */
-        if ('0' == *ascii_copy) {
-            ascii_copy++;
-        }
-
-        rc = strncat_s(final_ascii, MAXFLOATWIDTH + 1, ascii_copy, strlen(ascii_copy));
-        securec_check(rc, "\0", "\0");
-
-        pfree_ext(ascii);
-
-        PG_RETURN_CSTRING(final_ascii);
-    }
+    PG_RETURN_CSTRING(ascii);
 }
 
 /*
@@ -3624,7 +3491,7 @@ Datum to_binary_float_number(PG_FUNCTION_ARGS)
     }
 
     double val = PG_GETARG_FLOAT8(0);
-    
+
     PG_RETURN_FLOAT4(static_cast<float>(val));
 }
 
@@ -3664,4 +3531,3 @@ Datum to_binary_float_text_number(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT4(static_cast<float>(result));
 }
-
