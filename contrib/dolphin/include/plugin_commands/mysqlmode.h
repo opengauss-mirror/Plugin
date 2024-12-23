@@ -24,7 +24,8 @@
 #define OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY (1<<11)
 #define OPT_SQL_MODE_ESCAPE_QUOTES (1<<12)
 #define OPT_SQL_MODE_NO_AUTO_VALUE_ON_ZERO (1<<13)
-#define OPT_SQL_MODE_MAX 14
+#define OPT_SQL_MODE_DISABLE_ESCAPE_BYTEA (1<<14)
+#define OPT_SQL_MODE_MAX 15
 #define SQL_MODE_STRICT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
 #define SQL_MODE_STRICT_ON_SELECT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_NOT_STRICT_ON_INSERT() \
@@ -44,7 +45,7 @@
     OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO)
 #define SQL_MODE_TREAT_BXCONST_AS_BINARY() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY)
 #define SQL_MODE_ESCAPE_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ESCAPE_QUOTES)
-
+#define SQL_MODE_DISABLE_ESCAPE_BYTEA() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_DISABLE_ESCAPE_BYTEA)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,
