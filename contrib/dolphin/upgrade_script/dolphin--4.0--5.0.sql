@@ -1,5 +1,6 @@
 -- for dolphin-4.0 to dolphin-4.1 begin
 CREATE OR REPLACE FUNCTION pg_catalog.float8_sum(float8, float8) RETURNS float8 LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'float8_sum';
+
 drop aggregate if exists pg_catalog.sum_ext(float4);
 CREATE OR REPLACE FUNCTION pg_catalog.float_sum(double precision, float4) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'float_sum_ext';
 create aggregate pg_catalog.sum_ext(float4) (SFUNC=float_sum, cFUNC=float8pl, STYPE= double precision);
@@ -16,21 +17,18 @@ drop aggregate if exists pg_catalog.sum_ext(int);
 CREATE OR REPLACE FUNCTION pg_catalog.int_sum_ext(numeric, int) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'int_sum_ext';
 create aggregate pg_catalog.sum_ext(int) (SFUNC=int_sum_ext, cFUNC=numeric_add, STYPE= numeric);
 
-drop aggregate if exists pg_catalog.sum(year);
-CREATE OR REPLACE FUNCTION pg_catalog.year_sum(numeric, year) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'year_sum_ext';
-create aggregate pg_catalog.sum(year) (SFUNC=tinyint_sum, cFUNC=numeric_add, STYPE= numeric);
-
 drop aggregate if exists pg_catalog.sum(text);
 CREATE OR REPLACE FUNCTION pg_catalog.text_sum(double precision, text) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'text_sum_ext';
 create aggregate pg_catalog.sum(text) (SFUNC=text_sum, cFUNC=float8pl, STYPE= double precision);
 
+CREATE OR REPLACE FUNCTION pg_catalog.anyset_sum(double precision, anyset) RETURNS double precision LANGUAGE SQL IMMUTABLE as $$ SELECT pg_catalog.float8_sum($1, $2::float8) $$;
 drop aggregate if exists pg_catalog.sum(anyset);
-CREATE OR REPLACE FUNCTION pg_catalog.anyset_sum(double precision, anyset) RETURNS double precision LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'set_sum_ext';
 create aggregate pg_catalog.sum(anyset) (SFUNC=anyset_sum, cFUNC=float8pl, STYPE= double precision);
 
 drop aggregate pg_catalog.sum(year);
-create aggregate pg_catalog.sum(year) (SFUNC=year_sum, cFUNC=numeric_add, STYPE= numeric);
 drop FUNCTION IF EXISTS pg_catalog.tinyint_sum(numeric, year);
+CREATE OR REPLACE FUNCTION pg_catalog.year_sum(numeric, year) RETURNS numeric LANGUAGE C IMMUTABLE AS '$libdir/dolphin',  'year_sum_ext';
+create aggregate pg_catalog.sum(year) (SFUNC=year_sum, cFUNC=numeric_add, STYPE= numeric);
 
 -- for dolphin-4.0 to dolphin-4.1 end
 
@@ -65,6 +63,10 @@ DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
 CREATE OR REPLACE FUNCTION pg_catalog.left(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_left_text';
 DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
 CREATE OR REPLACE FUNCTION pg_catalog.right(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_right_text';
+
+CREATE OR REPLACE FUNCTION pg_catalog.left(bytea, integer) RETURNS bytea LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bytea_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(binary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.left(varbinary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
 
 -- max/min for bool type
 CREATE OR REPLACE FUNCTION pg_catalog.bool_larger(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_larger';
