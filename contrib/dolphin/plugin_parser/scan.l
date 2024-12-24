@@ -622,6 +622,9 @@ other			.
 					SET_YYLLOC();
 					if (u_sess->attr.attr_sql.standard_conforming_strings)
 						BEGIN(xq);
+					/* enable disable_escape_bytea and start with 0x */
+					else if (SQL_MODE_DISABLE_ESCAPE_BYTEA() && (yytext[2] == 'x'))
+						BEGIN(xq);
 					else
 						BEGIN(xe);
 					startlit();

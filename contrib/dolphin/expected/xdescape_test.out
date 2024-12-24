@@ -25,6 +25,39 @@ select * from fact_weatherstation_daily;
  Sunny   | {"defaultValue":"Sunny","i18nValue":{"en_US":"Sunny","zh_CN":"晴","es_ES":"Soleado","ja_JP":"晴れ"}}
 (1 row)
 
+set standard_conforming_strings=off;
+create table test_blob(col1 blob,col2 json);
+insert into test_blob values('\xE78E8BE6ADA3E58583E5A4A7E5B885E6AF94','{"my_key": "\'my_value"}');
+WARNING:  nonstandard use of escape in a string literal
+LINE 1: insert into test_blob values('\xE78E8BE6ADA3E58583E5A4A7E5B8...
+                                     ^
+HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
+ERROR:  invalid byte sequence for encoding "UTF8": 0xe7 0x38 0x45
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,disable_escape_bytea';
+insert into test_blob values('\xE78E8BE6ADA3E58583E5A4A7E5B885E6AF94','{"my_key": "\'my_value"}');
+WARNING:  nonstandard use of \' in a string literal
+LINE 1: ...b values('\xE78E8BE6ADA3E58583E5A4A7E5B885E6AF94','{"my_key"...
+                                                             ^
+HINT:  Use '' to write quotes in strings, or use the escape string syntax (E'...').
+insert into test_blob values('\x','{"my_key": "\'my_value"}');
+WARNING:  nonstandard use of \' in a string literal
+LINE 1: insert into test_blob values('\x','{"my_key": "\'my_value"}'...
+                                          ^
+HINT:  Use '' to write quotes in strings, or use the escape string syntax (E'...').
+insert into test_blob values('','{"my_key": "\'my_value"}');
+WARNING:  nonstandard use of \' in a string literal
+LINE 1: insert into test_blob values('','{"my_key": "\'my_value"}');
+                                        ^
+HINT:  Use '' to write quotes in strings, or use the escape string syntax (E'...').
+select * from test_blob order by 1;
+                  col1                  |          col2           
+----------------------------------------+-------------------------
+ \x                                     | {"my_key": "'my_value"}
+ \x                                     | {"my_key": "'my_value"}
+ \xe78e8be6ada3e58583e5a4a7e5b885e6af94 | {"my_key": "'my_value"}
+(3 rows)
+
+drop table test_blob;
 drop table test1;
 drop table fact_weatherstation_daily;
 drop schema xdescape_test cascade;

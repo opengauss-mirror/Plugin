@@ -316,9 +316,9 @@ select json_merge_patch(1,null,'1');
 ERROR:  Invalid data type for JSON data in argument 1 to function json_merge_patch
 CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('["a",1,{"a":"abc"}]','["b",341522654875451.12345678901234567890123456789012345678901234567,{"b":"bcd"}]');
-            json_merge_patch             
------------------------------------------
- ["b", 341522654875451.12, {"b": "bcd"}]
+                                   json_merge_patch                                   
+--------------------------------------------------------------------------------------
+ ["b", 341522654875451.12345678901234567890123456789012345678901234567, {"b": "bcd"}]
 (1 row)
 
 create table test (
