@@ -3130,7 +3130,7 @@ int tm2timestamp(struct pg_tm* tm, const fsec_t fsec, const int* tzp, Timestamp*
 
     /* Julian day routines are not correct for negative Julian days */
     if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
-        *result = 0; /* keep compiler quiet */
+        *result = TIMESTAMP_ZERO;
         return -1;
     }
 
@@ -3141,7 +3141,7 @@ int tm2timestamp(struct pg_tm* tm, const fsec_t fsec, const int* tzp, Timestamp*
     *result = date * USECS_PER_DAY + time;
     /* check for major overflow */
     if ((*result - time) / USECS_PER_DAY != date) {
-        *result = 0; /* keep compiler quiet */
+        *result = TIMESTAMP_ZERO;
         return -1;
     }
     /* check for just-barely overflow (okay except time-of-day wraps) */
@@ -8596,8 +8596,13 @@ Datum timestamp_param1(PG_FUNCTION_ARGS)
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
 
-    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE)
+    if (datetime == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
+    }
+
+    if (IS_VALID_TIMESTAMP(datetime)) {
         PG_RETURN_TIMESTAMP(datetime);
+    }
 
     if (ENABLE_B_CMPT_MODE) {
         /*
@@ -8632,7 +8637,11 @@ Datum timestamp_param2(PG_FUNCTION_ARGS)
 
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
-    if (datetime < B_FORMAT_TIMESTAMP_FIRST_YEAR || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+    if (datetime == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
+    }
+
+    if (!IS_VALID_TIMESTAMP(datetime)) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                         errmsg("date/time field value out of range")));
     }
@@ -8642,28 +8651,13 @@ Datum timestamp_param2(PG_FUNCTION_ARGS)
     time_in_range(time);
 
     Timestamp result = datetime + time;
-    if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR || result > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                        errmsg("date/time field overflow")));
+    if (!IS_VALID_TIMESTAMP(result)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+        PG_RETURN_NULL();
     }
 
     PG_RETURN_TIMESTAMP(result);
-}
-
-/**
- * @Description: Calculate timestamps from '0000-00-00 00:00:00.000000' to the input arg,
- * while '0000-02-29' is invalid.
- * @return: Timestamps from '0000-00-00 00:00:00.000000' to the input arg.
- */
-Timestamp calc_timestamp_from_zero(Timestamp timestamp)
-{
-    if (B_FORMAT_TIMESTAMP_APART_LEFT <= timestamp && timestamp < B_FORMAT_TIMESTAMP_APART_RIGHT) {
-        return B_FORMAT_TIMESTAMP_MIN_VALUE;
-    } else if (timestamp < B_FORMAT_TIMESTAMP_APART_LEFT) {
-        return timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE + USECS_PER_DAY;
-    } else {
-        return timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE;
-    }
 }
 
 /**
@@ -8678,20 +8672,21 @@ Datum to_seconds(PG_FUNCTION_ARGS)
 
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &timestamp);
-    if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
-            PG_RETURN_NULL();
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
+    if (timestamp == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
-            PG_RETURN_NULL();
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
+
+    if (!IS_VALID_TIMESTAMP(timestamp)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime value out of range")));
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 /**
@@ -10723,39 +10718,6 @@ static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without
     return true;
 }
 
-/**
- * validate the result for str_to_date
- * return true if normal
- * return false if out of range
-*/
-static inline bool final_range_check(int return_type, struct pg_tm *tm, fsec_t *fsec)
-{
-    int dterr = 0;
-    bool no_zero_date_set = SQL_MODE_NO_ZERO_DATE();
-    if (return_type == DTK_DATE || return_type == DTK_DATE_TIME) {
-        if (!tm->tm_year && !tm->tm_mon && !tm->tm_mday) {  // case of '0000-00-00 xxx'
-            if (no_zero_date_set)
-                return false;
-        } else {
-            dterr = ValidateDateForBDatabase(false, tm);
-            if (dterr)
-                return false;
-        }
-        if (return_type == DTK_DATE_TIME) {
-            dterr =  ValidateTimeForBDatabase(true, tm, fsec);
-            if (dterr)
-                return false;
-        }
-    } else if (return_type == DTK_TIME) {
-        if (no_zero_date_set)
-            return false;
-        dterr = ValidateTimeForBDatabase(true, tm, fsec);
-        if (dterr)
-            return false;
-    }
-    return true;
-}
-
 // construct text result for str_to_date
 static inline Datum make_text_result(int return_type ,struct pg_tm *tm, fsec_t fsec, char *buf)
 {
@@ -11715,11 +11677,12 @@ Datum to_seconds_text(PG_FUNCTION_ARGS)
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(to_seconds_time);
@@ -11759,11 +11722,12 @@ Datum to_seconds_numeric(PG_FUNCTION_ARGS)
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_text);

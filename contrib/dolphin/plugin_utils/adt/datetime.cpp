@@ -1085,14 +1085,7 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
                     } else {
                         namedTz = pg_tzset(field[i]);
                         if (NULL == namedTz) {
-                            /*
-                             * We should return an error code instead of
-                             * ereport'ing directly, but then there is no way
-                             * to report the bad time zone name.
-                             */
-                            ereport(ERROR,
-                                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                    errmsg("time zone \"%s\" not recognized", field[i])));
+                            return DTERR_BAD_FORMAT;
                         }
                         /* we'll apply the zone setting below */
                         tmask = DTK_M(TZ);
@@ -1706,7 +1699,6 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     for (i = 0; i < nf; i++) {
         switch (ftype[i]) {
             case DTK_DATE:
-
                 /*
                  * Time zone not allowed? Then should not accept dates or time
                  * zones no matter what else!
@@ -2371,7 +2363,7 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
             // we cannot throw execetion directly for some case,
             // for eample: function call or insert on non-restrict mode
             // so we just need to return DTERR_FIELD_OVERFLOW and let it to be handled by caller
-            return DTERR_FIELD_OVERFLOW;
+            return DTERR_TIME_OVERFLOW;
         }
     }
     return 0;
@@ -4078,6 +4070,10 @@ void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype
         case DTERR_ZERO_MD:
             ereport(level,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
+            break;
+        case DTERR_TIME_OVERFLOW:
+            ereport(level,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("truncated incorrect time value: \"%s\"", str)));
             break;
 #endif
         case DTERR_BAD_FORMAT:

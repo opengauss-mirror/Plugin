@@ -55,14 +55,15 @@ insert into func_test3(functionName,result) values('TO_DAYS(00101000001)',TO_DAY
 insert into func_test3(functionName,result) values('TO_DAYS(0000101000001)',TO_DAYS(0000101000001));      -- -三位年+双位日月+双位时分秒
 -- 边界测试
 -- 最小值
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1'')',TO_DAYS('0000-1-1'));
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1 00:00:00'')',TO_DAYS('0000-1-1 00:00:00'));
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-0-0'')',TO_DAYS('0000-0-0'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-24bc'')', TO_DAYS('4714-11-24bc'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-24 00:00:00.000000bc'')', TO_DAYS('4714-11-24 00:00:00.000000bc'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-23bc'')', TO_DAYS('4714-11-23bc'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-23 23:59:59.999999bc'')', TO_DAYS('4714-11-23 23:59:59.999999bc'));
 -- 最大值
-insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31'')',TO_DAYS('9999-12-31'));
-insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31 23:59:59.999999'')',TO_DAYS('9999-12-31 23:59:59.999999'));
-insert into func_test3(functionName,result) values('TO_DAYS(''10000-1-1'')',TO_DAYS('10000-1-1'));
-insert into func_test3(functionName,result) values('TO_DAYS(''10000-1-1 00:00:00'')',TO_DAYS('10000-1-1 00:00:00'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294276-12-31'')', TO_DAYS('294276-12-31'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294276-12-31 23:59:59.999999'')', TO_DAYS('294276-12-31 23:59:59.999999'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294277-01-01'')', TO_DAYS('294277-01-01'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294277-01-01 00:00:00.000000'')', TO_DAYS('294277-01-01 00:00:00.000000'));
 
 -- TO_SECONDS()
 -- 正常测试
@@ -99,16 +100,16 @@ insert into func_test3(functionName, result) values('TO_SECONDS(20220801182030.8
 -- 任意分隔符参数
 insert into func_test3(functionName, result) values('TO_SECONDS(''0,1,1,0,0,0'')', TO_SECONDS('0,1,1,0,0,0'));
 -- 边界测试
--- 最大值
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31'')', TO_SECONDS('9999-12-31'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31 23:59:59'')', TO_SECONDS('9999-12-31 23:59:59'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31 23:59:59.999999'')', TO_SECONDS('9999-12-31 23:59:59.999999'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''10000-01-01'')', TO_SECONDS('10000-01-01'));
 -- 最小值
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01'')', TO_SECONDS('0000-01-01'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01 00:00:00'')', TO_SECONDS('0000-01-01 00:00:00'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00'')', TO_SECONDS('0000-00-00'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00 00:00:00'')', TO_SECONDS('0000-00-00 00:00:00'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-24bc'')', TO_SECONDS('4714-11-24bc'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-24 00:00:00.000000bc'')', TO_SECONDS('4714-11-24 00:00:00.000000bc'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-23bc'')', TO_SECONDS('4714-11-23bc'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-23 23:59:59.999999bc'')', TO_SECONDS('4714-11-23 23:59:59.999999bc'));
+-- 最大值
+insert into func_test3(functionName, result) values('TO_SECONDS(''294276-12-31'')', TO_SECONDS('294276-12-31'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''294276-12-31 23:59:59.999999'')', TO_SECONDS('294276-12-31 23:59:59.999999'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''294277-01-01'')', TO_SECONDS('294277-01-01'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''294277-01-01 00:00:00.000000'')', TO_SECONDS('294277-01-01 00:00:00.000000'));
 
 set timezone to 'PRC';
 -- UNIX_TIMESTAMP()
