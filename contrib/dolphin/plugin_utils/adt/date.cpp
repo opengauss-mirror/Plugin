@@ -4453,6 +4453,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     securec_check(rc, "\0", "\0");
     fsec = 0;
     warnings = false;
+    *null_func_result = false;
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
@@ -5671,15 +5672,15 @@ Datum to_days(PG_FUNCTION_ARGS) {
         PG_RETURN_NULL();
     }
 
-    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                        errmsg("datetime value out of range")));
+    if (!IS_VALID_TIMESTAMP(datetime)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime value out of range")));
+        PG_RETURN_NULL();
     }
-    days = (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
 
-    if (datetime <= B_FORMAT_TIMESTAMP_ZERO_YEAR_LEAP_DAY) {
-        ++days;
-    }
+    /* To avoid overflow */
+    days = datetime > 0 ? (static_cast<uint64>(datetime) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY
+                        : (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
 
     PG_RETURN_INT64(days);
 }

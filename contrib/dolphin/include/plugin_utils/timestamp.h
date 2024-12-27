@@ -155,6 +155,7 @@ typedef enum {
 
 #define DTERR_ZERO_DATE (-6)
 #define DTERR_ZERO_MD (-7)
+#define DTERR_TIME_OVERFLOW (-8)
 
 typedef enum {
     STRICT_NO_ZERO_DAY = 0,

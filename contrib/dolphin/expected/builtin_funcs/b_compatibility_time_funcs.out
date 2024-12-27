@@ -479,10 +479,10 @@ select * from func_test;
 (150 rows)
 
 SELECT SUBDATE(time'839:59:59', interval 2 hour);
-ERROR:  date/time field value out of range: "839:59:59"
+ERROR:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
-ERROR:  date/time field value out of range: "-838:59:59.9"
+ERROR:  truncated incorrect time value: "-838:59:59.9"
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE('839:59:59', interval 2 hour);
 WARNING:  date/time field value out of range: "839:59:59"
@@ -919,8 +919,6 @@ select time_bool('-838:59:59');
 select timestamp('2022-05');
 WARNING:  invalid input syntax for type timestamp: "2022-05"
 CONTEXT:  referenced column: timestamp
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: timestamp
  timestamp 
 -----------
  
@@ -941,8 +939,6 @@ select timestamp('2022-05-05 1');
 select timestamp('2023-13-15 1');
 WARNING:  invalid input syntax for type timestamp: "2023-13-15 1"
 CONTEXT:  referenced column: timestamp
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: timestamp
  timestamp 
 -----------
  
@@ -951,8 +947,6 @@ CONTEXT:  referenced column: timestamp
 select timestamp('2023-13-15 1:65');
 WARNING:  date/time field value out of range: "2023-13-15 1:65"
 CONTEXT:  referenced column: timestamp
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: timestamp
  timestamp 
 -----------
  
@@ -960,8 +954,6 @@ CONTEXT:  referenced column: timestamp
 
 select timestamp('2022-05-05 1:55:61');
 WARNING:  date/time field value out of range: "2022-05-05 1:55:61"
-CONTEXT:  referenced column: timestamp
-WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp
  timestamp 
 -----------

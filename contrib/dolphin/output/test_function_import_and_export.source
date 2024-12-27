@@ -1035,7 +1035,7 @@ call test_timestampadd(datetime1);
 call test_to_days(days);
  days 
 ------
-    1
+    0
 (1 row)
 
 call test_to_seconds(seconds);
@@ -1830,7 +1830,7 @@ call test_timestampadd(datetime1);
 call test_to_days(days);
  days 
 ------
-    1
+    0
 (1 row)
 
 call test_to_seconds(seconds);
