@@ -293,12 +293,20 @@ SELECT count(*) FROM cypher('cypher_vle', $$
 	MATCH ()-[e1*1..1]->(v)-[e2*1..1]->()
 	RETURN e1, e2
 $$) AS (e1 agtype, e2 agtype);
-ERROR:  plan should not reference subplan's variable
+ count 
+-------
+    31
+(1 row)
+
 SELECT count(*) FROM cypher('cypher_vle', $$
 	MATCH (v)-[e1*1..1]->()-[e2*1..1]->()
 	RETURN e1, e2
 $$) AS (e1 agtype, e2 agtype);
-ERROR:  plan should not reference subplan's variable
+ count 
+-------
+    31
+(1 row)
+
 SELECT count(*) FROM cypher('cypher_vle', $$
 	MATCH ()-[e1]->(v)-[e2*1..1]->()
 	RETURN e1, e2
@@ -364,7 +372,11 @@ $$) AS (e1 agtype);
 
 -- Should return 1 path
 SELECT * FROM cypher('cypher_vle', $$ MATCH p=()<-[e1*]-(:end)-[e2*]->(:begin) RETURN p $$) AS (result agtype);
-ERROR:  plan should not reference subplan's variable
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
+(1 row)
+
 -- Each should return 3
 SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)-[e*0..1]->(v) RETURN id(u), e, id(v) $$) AS (u agtype, e agtype, v agtype);
         u        |                                                                                                                          e                                                                                                                           |        v         
