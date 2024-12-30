@@ -132,3 +132,5 @@ make installcheck
 ### 成功示例
 ![test_suit_success_example.png](doc%2Fimg%2Ftest_suit_success_example.png)
 
+## 已知约束
+1. openGauss安装dolphin插件后，B模式下无法使用age插件
