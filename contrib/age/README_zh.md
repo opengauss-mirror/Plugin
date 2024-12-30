@@ -45,7 +45,7 @@ make install USE_PGXS=true
 ![install_example.jpg](doc%2Fimg%2Finstall_example.jpg)
 
 
-## 使用
+## 快速开始
 ### 连接openGauss
 
 ### 创建插件
@@ -116,7 +116,11 @@ n
 (1 row)
 
 ```
-
+## 适配情况
+AGE在openGauss上实现了适配,适配详情参考
+[AGE适配openGauss详情说明](doc/AGE_adapt_opengauss_detail.md)
+## 使用文档
+更详细的使用方式可以参考AGE的官方文档: https://age.apache.org/age-manual/master/
 ## 运行 test suite
 ### 执行步骤
 >>前提条件：openGauss使用源码编译的方式安装
