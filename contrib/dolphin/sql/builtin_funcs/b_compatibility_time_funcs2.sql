@@ -742,6 +742,37 @@ insert into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(
 select * from t1 order by c1;
 select * from t2 order by c1;
 
+select TIME_FORMAT('838:59:59.999999','%f');
+select TIME_FORMAT('837:59:59.999999','%f');
+select TIME_FORMAT('-838:59:59.999999','%f');
+select TIME_FORMAT('-837:59:59.999999','%f');
+select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+select TIMEDIFF(time'23:59:59','a1eebc99');
+select TIMEDIFF(time'23:59:59','1aeebc99');
+select timestampadd(microsecond, 1,'0000-1-1 00:00:00');
+select timestampadd(day,-1,'0001-01-01'); 
+select timestampadd(week, 1, '0000-01-01');
+select timestampadd(year, 1, '0000-01-01');
+select timestampadd(month, 1, '0000-01-01');
+select timestampadd(hour, 1, '0000-01-01');
+select timestampadd(minute, 1, '0000-01-01');
+select timestampadd(second, 1, '0000-01-01');
+
+show dolphin.sql_mode;
+reset dolphin.sql_mode;
+create table test_diff(c1 time);
+insert into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+insert into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+select * from test_diff;
+drop table test_diff;
+
 drop table t_time;
 drop table t_char;
 drop table t1;

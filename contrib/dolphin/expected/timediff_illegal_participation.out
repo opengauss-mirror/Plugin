@@ -242,7 +242,7 @@ CONTEXT:  referenced column: timediff
 (1 row)
 
 select timediff(time'00:00:00', 'asdfg');
-WARNING:  invalid input syntax for type time: "asdfg"
+WARNING:  Truncated incorrect time value: "asdfg"
 CONTEXT:  referenced column: timediff
  timediff 
 ----------
