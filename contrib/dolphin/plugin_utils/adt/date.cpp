@@ -5066,7 +5066,7 @@ bool date_sub_days(DateADT date, int days, DateADT *result, bool is_add_func)
  * @Description: Subtract an interval from a date, giving a new date and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
  */
-bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func)
+bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
 {
     if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
         return false;
@@ -5080,11 +5080,8 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_ad
         return true;
 
     if (*result < B_FORMAT_DATEADT_FIRST_YEAR) {
-        if (is_add_func) {
-            *result = DATE_ALL_ZERO_VALUE;
-            return true;
-        }
-        return false;
+        *result = DATE_ALL_ZERO_VALUE;
+        return true;
     }
     
     return true;
@@ -6198,7 +6195,7 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
     span->month = -span->month;
     span->day = -span->day;
     span->time = -span->time;
-    return date_sub_interval(date, span, result, true);
+    return date_sub_interval(date, span, result);
 }
 
 /**

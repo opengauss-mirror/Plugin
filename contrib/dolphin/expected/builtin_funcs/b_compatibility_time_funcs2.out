@@ -818,11 +818,7 @@ ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 -- 最小值
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01'')', TIMESTAMPADD(DAY,-1,'0001-01-01'));
-ERROR:  date/time field overflow
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01 00:00:00'')', TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00'));
-ERROR:  date/time field overflow
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(YEAR, 1,'0000-01-01 00:00:00'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(qtr, 1,'0000-01-01 00:00:00'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,1,''0000-01-01 14:25:59'')', TIMESTAMPADD(MONTH, 1,'0000-01-01 14:25:59'));
@@ -1060,6 +1056,8 @@ select * from func_test2 order by 1, 2;
  TIMESTAMP('4714-11-24 00:00:00.000000bc')                                                   | 4714-11-24 00:00:00 BC
  TIMESTAMP('4714-11-24bc')                                                                   | 4714-11-24 00:00:00 BC
  TIMESTAMP('4714-11-24bc', '00:00:00')                                                       | 4714-11-24 00:00:00 BC
+ TIMESTAMPADD(DAY,-1,'0001-01-01')                                                           | 0000-00-00
+ TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00')                                                  | 0000-00-00 00:00:00
  TIMESTAMPADD(DAY,-1.1,'2022-07-27')                                                         | 2022-07-26
  TIMESTAMPADD(DAY,1.1,'2022-07-27')                                                          | 2022-07-28
  TIMESTAMPADD(DAY,-1,'2022-01-01')                                                           | 2021-12-31
@@ -2111,6 +2109,156 @@ select * from t2 order by c1;
   3 |    |    |    |    |   
 (3 rows)
 
+select TIME_FORMAT('838:59:59.999999','%f');
+WARNING:  Truncated incorrect time value: "838:59:59.999999"
+CONTEXT:  referenced column: time_format
+ time_format 
+-------------
+ 000000
+(1 row)
+
+select TIME_FORMAT('837:59:59.999999','%f');
+ time_format 
+-------------
+ 999999
+(1 row)
+
+select TIME_FORMAT('-838:59:59.999999','%f');
+WARNING:  Truncated incorrect time value: "-838:59:59.999999"
+CONTEXT:  referenced column: time_format
+ time_format 
+-------------
+ -000000
+(1 row)
+
+select TIME_FORMAT('-837:59:59.999999','%f');
+ time_format 
+-------------
+ -999999
+(1 row)
+
+select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:59
+(1 row)
+
+select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select TIMEDIFF(time'23:59:59','a1eebc99');
+WARNING:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:59
+(1 row)
+
+select TIMEDIFF(time'23:59:59','1aeebc99');
+WARNING:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:58
+(1 row)
+
+select timestampadd(microsecond, 1,'0000-1-1 00:00:00');
+        timestampadd        
+----------------------------
+ 0000-00-00 00:00:00.000001
+(1 row)
+
+select timestampadd(day,-1,'0001-01-01'); 
+ timestampadd 
+--------------
+ 0000-00-00
+(1 row)
+
+select timestampadd(week, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0000-00-00
+(1 row)
+
+select timestampadd(year, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0001-01-01
+(1 row)
+
+select timestampadd(month, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0000-02-01
+(1 row)
+
+select timestampadd(hour, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 01:00:00
+(1 row)
+
+select timestampadd(minute, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 00:01:00
+(1 row)
+
+select timestampadd(second, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 00:00:01
+(1 row)
+
+show dolphin.sql_mode;
+ dolphin.sql_mode 
+------------------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
+create table test_diff(c1 time);
+insert into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+ERROR:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+ERROR:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+ERROR:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+ERROR:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+WARNING:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+WARNING:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+select * from test_diff;
+    c1    
+----------
+ 23:59:59
+ 
+ 23:59:59
+ 23:59:58
+(4 rows)
+
+drop table test_diff;
 drop table t_time;
 drop table t_char;
 drop table t1;

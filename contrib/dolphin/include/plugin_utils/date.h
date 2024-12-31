@@ -87,7 +87,7 @@ extern bool time_in_without_overflow(const char *str, TimeADT *time, bool can_ig
 extern bool is_date_format(const char *str);
 extern Datum input_date_in(char* str, bool can_ignore);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
-extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func = false);
+extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 
 #ifdef DOLPHIN
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore = false,

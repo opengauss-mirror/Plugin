@@ -8022,12 +8022,44 @@ Datum timediff(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int timeSign = 1;
+    int tm_type;
+    bool warnings = false, null_func_result = false;
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
     if (val_type1 == UNKNOWNOID && val_type2 == DATEOID) {
         val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
         val_type1 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(0)), &datetime1, &time1, val_type2);
     } else if (val_type1 == DATEOID && val_type2 == UNKNOWNOID) {
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
         val_type2 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(1)), &datetime2, &time2, val_type1);
+    } else if (val_type1 == UNKNOWNOID && val_type2 == TIMEOID) {
+        char *str = DatumGetCString(PG_GETARG_DATUM(0));
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+        if (warnings || null_func_result) {
+            ereport(errlevel,
+                    (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
+            if (null_func_result) {
+                PG_RETURN_NULL();
+            }
+        }
+        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, fcinfo->can_ignore, &result_isnull);
+        tm2time(tm, fsec, &time1);
+        val_type1 = TIMEOID;
+    } else if (val_type1 == TIMEOID && val_type2 == UNKNOWNOID) {
+        char *str = DatumGetCString(PG_GETARG_DATUM(1));
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+        if (warnings || null_func_result) {
+            ereport(errlevel,
+                    (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
+            if (null_func_result) {
+                PG_RETURN_NULL();
+            }
+        }
+        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, fcinfo->can_ignore, &result_isnull);
+        tm2time(tm, fsec, &time2);
+        val_type2 = TIMEOID;
     } else {
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, fcinfo->can_ignore, &result_isnull);
         if (val_type1 == TIMEOID &&  time1 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
@@ -8462,7 +8494,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
 
     switch (expr_type) {
         case TIMESTAMPOID:
-            if (datetime_sub_interval(datetime, span, &res_datetime)) {
+            if (datetime_sub_interval(datetime, span, &res_datetime, true)) {
                 PG_RETURN_TEXT_P(DirectFunctionCall1(datetime_text, res_datetime));
             }
             break;
