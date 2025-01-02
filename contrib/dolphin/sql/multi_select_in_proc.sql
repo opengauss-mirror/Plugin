@@ -281,5 +281,29 @@ select * from t_tinyint0009 order by c2;
 
 set  dolphin.sql_mode=default;
 
+set b_format_behavior_compat_options=enable_set_variables;
+
+create table string_tables(input_string varchar(64));
+DROP PROCEDURE IF EXISTS  p_define_config_check;
+CREATE PROCEDURE  p_define_config_check(v_wtg_alias VARCHAR(64))
+LANGUAGE 'plpgsql'
+AS
+DECLARE
+   v_tmp            BIGINT(10)   DEFAULT -1;
+   v_controller_id  BIGINT(10)   DEFAULT -1;
+   v_tmp_alias      VARCHAR(64);
+   v_controller_name  VARCHAR(64)  DEFAULT -1;
+BEGIN
+   --  WGEN.GenActivePW
+   SELECT COUNT(*) INTO v_tmp
+          FROM string_tables WHERE input_string = CONCAT(v_wtg_alias, '.WGEN.GenActivePW');
+END;
+/
+
+set @alias = 'F011';
+CALL p_define_config_check(@alias);
+drop table string_tables;
+DROP PROCEDURE IF EXISTS  p_define_config_check;
+
 drop schema multi_select_proc cascade;
 reset current_schema;
