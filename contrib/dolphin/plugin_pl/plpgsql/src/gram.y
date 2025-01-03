@@ -9342,7 +9342,7 @@ read_sql_construct6(int until,
     int					right_brace_count = 0;
     bool					stop_count = false;
     int					stop_tok;
-     /* mark if there are 2 table of index by var call functions in an expr */
+    /* mark if there are 2 table of index by var call functions in an expr */
     int tableof_func_dno = -1;
     int tableof_var_dno = -1;
     bool is_have_tableof_index_var = false;

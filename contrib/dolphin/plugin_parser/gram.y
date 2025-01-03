@@ -49,6 +49,7 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
+
 #include "plugin_nodes/parsenodes_common.h"
 #include "plugin_parser/scanner.h"
 #include "plugin_nodes/parsenodes.h"
@@ -1251,7 +1252,7 @@ static bool GreaterThanHour (List* int_type);
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND APPLY ARCHIVE ARRAY AS ASC ASCII
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND APPLY ARCHIVE ARRAY AS ASC ASCII ASOF_P
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_DOUBLE_INF BINARY_DOUBLE_NAN BINARY_INTEGER BIT BLANKS
@@ -1495,7 +1496,7 @@ static bool GreaterThanHour (List* int_type);
  * They wouldn't be given a precedence at all, were it not that we need
  * left-associativity among the JOIN rules themselves.
  */
-%left		JOIN CROSS LEFT FULL RIGHT INNER_P NATURAL ENCRYPTED STRAIGHT_JOIN APPLY OUTER_P
+%left		JOIN CROSS LEFT FULL RIGHT ASOF_P INNER_P NATURAL ENCRYPTED STRAIGHT_JOIN APPLY OUTER_P
 /* kluge to keep xml_whitespace_option from causing shift/reduce conflicts */
 %right		PRESERVE STRIP_P
 %token <keyword> CONSTRUCTOR FINAL MAP MEMBER RESULT SELF STATIC_P UNDER
@@ -9962,16 +9963,26 @@ maxValueList:
 maxValueItem:
 		a_expr
 			{
-				$$ = $1;
-			}
-		| MAXVALUE
-			{
-				Const *n = makeNode(Const);
-
-				n->ismaxvalue = true;
-				n->location = @1;
-
-				$$ = (Node *)n;
+				if IsA($1, ColumnRef) {
+					ColumnRef* ref = (ColumnRef*)$1;
+					List* l = (ref != NULL) ? ref->fields : NULL;
+					Node* sn = list_length(l) == 1 ? linitial_node(Node, l) : NULL;
+					if (sn != NULL && !IsA(sn, String)){
+						$$ = $1;
+					} else if (sn != NULL) {
+						char* colname = strVal(sn);
+						if (strcasecmp("maxvalue", colname) == 0) {
+							Const *n = makeNode(Const);
+							n->ismaxvalue = true;
+							n->location = @1;	
+							$$ = (Node*)n;	
+						}
+					} else {
+						$$ = $1;
+					}
+				} else {
+					$$ = $1;
+				}
 			}
 		;
 
@@ -32852,6 +32863,7 @@ joined_table:
 						JoinExpr *n = makeNode(JoinExpr);
 						n->jointype = JOIN_INNER;
 						n->isNatural = FALSE;
+						n->isAsof = FALSE;
 						if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
 							n->is_straight_join = TRUE;
 						} else {
@@ -32874,6 +32886,7 @@ joined_table:
 						JoinExpr *n = makeNode(JoinExpr);
 						n->jointype = JOIN_INNER;
 						n->isNatural = FALSE;
+						n->isAsof = FALSE;
 						if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
 							n->is_straight_join = TRUE;
 						} else {
@@ -32891,6 +32904,7 @@ joined_table:
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = JOIN_INNER;
 					n->isNatural = FALSE;
+					n->isAsof = FALSE;
 					if ($2 == JOIN_STRAIGHT || u_sess->parser_cxt.is_straight_join) {
 						n->is_straight_join = TRUE;
 					} else {
@@ -32910,6 +32924,7 @@ joined_table:
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = $2;
 					n->isNatural = FALSE;
+					n->isAsof = FALSE;
 					n->is_straight_join = FALSE;
 					n->larg = $1;
 					n->rarg = $4;
@@ -32925,6 +32940,7 @@ joined_table:
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = $2;
 					n->isNatural = FALSE;
+					n->isAsof = FALSE;
 					n->is_straight_join = FALSE;
 					n->larg = $1;
 					n->rarg = $4;
@@ -32932,11 +32948,27 @@ joined_table:
 					n->quals = $6;
 					$$ = n;
 				}
+			| table_ref ASOF_P JOIN table_ref join_qual
+				{
+					/* letting join_type reduce to empty doesn't work */
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = FALSE;
+					n->isAsof = TRUE;
+					n->larg = $1;
+					n->rarg = $4;
+					if ($4 != NULL && IsA($5, List))
+						n->usingClause = (List *) $5; /* USING clause */
+					else
+						n->quals = $5; /* ON clause */
+					$$ = n;
+				}
 			| table_ref NATURAL natural_join_type JOIN table_ref
 				{
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = $3;
 					n->isNatural = TRUE;
+					n->isAsof = FALSE;
 					n->is_straight_join = FALSE;
 					n->larg = $1;
 					n->rarg = $5;
@@ -32950,6 +32982,7 @@ joined_table:
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = JOIN_INNER;
 					n->isNatural = FALSE;
+					n->isAsof = FALSE;
 					n->is_apply_join = TRUE;
 					n->larg = $1;
 					n->rarg = $4;
@@ -32966,6 +32999,7 @@ joined_table:
 					JoinExpr *n = makeNode(JoinExpr);
 					n->jointype = JOIN_LEFT;
 					n->isNatural = FALSE;
+					n->isAsof = FALSE;
 					n->is_apply_join = TRUE;
 					n->larg = $1;
 					n->rarg = $4;
@@ -41340,8 +41374,10 @@ alias_name_unreserved_keyword_without_key:
 			| ALWAYS
 			| APP
 			| APPEND
+			| APPLY
 			| ARCHIVE
 			| ASCII
+			| ASOF_P
 			| ASSERTION
 			| ASSIGNMENT
 			| AST
@@ -41581,6 +41617,7 @@ alias_name_unreserved_keyword_without_key:
 			| MAXEXTENTS
 			| MAXSIZE
 			| MAXTRANS
+			| MAXVALUE
 			| MEMBER
 			| MEMORY
 			| MERGE
@@ -42197,7 +42234,6 @@ reserved_keyword:
 			| LOCALTIME
 			| LOCALTIMESTAMP
 			| LOW_PRIORITY
-			| MAXVALUE
 			| NOT
 			| NULL_P
 			| OFFSET

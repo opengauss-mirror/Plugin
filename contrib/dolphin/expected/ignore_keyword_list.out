@@ -61,7 +61,6 @@ begin
     end loop;
 end;
 /
-NOTICE:  test failed. test sql: create table ignore_keyword_list.apply(apply int); drop table ignore_keyword_list.apply;
 NOTICE:  test failed. test sql: create function ignore_keyword_list.ignore() returns int language sql as 'select 1'; drop function ignore_keyword_list.ignore;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.interval(interval int); drop table ignore_keyword_list.interval;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.key(key int); drop table ignore_keyword_list.key;
