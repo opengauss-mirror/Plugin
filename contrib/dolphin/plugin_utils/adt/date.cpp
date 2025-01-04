@@ -297,6 +297,8 @@ extern "C" DLL_PUBLIC Datum time_cast(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(time_cast_implicit);
 extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_in_func);
+extern "C" DLL_PUBLIC Datum time_in_func(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(text_time_explicit);
 extern "C" DLL_PUBLIC Datum text_time_explicit(PG_FUNCTION_ARGS);
@@ -1858,29 +1860,52 @@ Datum time_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
     char* input_str = PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, input_str, TIME_IN, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_IN, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT && ENABLE_B_CMPT_MODE) {
         PG_RETURN_TIMEADT(B_FORMAT_TIME_INVALID_VALUE_TAG);
     }
     return datum_internal;
 }
 
-/*
- *	 time_cast_implicit, such as select time'23:65:66'
- *
+Datum time_in_func(PG_FUNCTION_ARGS)
+{
+    char* input_str = PG_GETARG_CSTRING(0);
+    TimeErrorType time_error_type = TIME_CORRECT;
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_IN, &time_error_type, tm_type);
+    if (tm_type != DTK_TIME) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level,
+                (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("Truncated incorrect time value: '%s'", input_str)));
+        PG_RETURN_TIMEADT(B_FORMAT_TIME_INVALID_VALUE_TAG);
+    }
+
+    return datum_internal;
+}
+
+/**
+ * Cast to time, such as `select time'23:65:66'`
  */
 Datum time_cast(PG_FUNCTION_ARGS)
 {
     char* input_str = PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
-    return time_internal(fcinfo, input_str, TIME_CAST, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_CAST, &time_error_type, tm_type);
+    if (tm_type != DTK_TIME) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("Incorrect TIME value: '%s'", input_str)));
+    }
+
+    return datum_internal;
 }
 
 Datum time_cast_implicit(PG_FUNCTION_ARGS)
 {
     char* input_str = DatumGetCString(textout(fcinfo));
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, input_str, TIME_CAST_IMPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_CAST_IMPLICIT, &time_error_type, tm_type);
     return datum_internal;
 }
 
@@ -1901,7 +1926,8 @@ Datum text_time_explicit(PG_FUNCTION_ARGS)
     Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
     char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -2004,7 +2030,13 @@ GaussTimeResult* gs_time_internal(PG_FUNCTION_ARGS, char* str, pg_tm *tt, int ti
     return gs_time_result;
 }
 
-Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type)
+/**
+ * Convert `str` to time.
+ *
+ * @param[in] str The string to be converted, should be a format of date, datetime or time.
+ * @param[out] tm_type: return the time type corresponding to str.
+ */
+Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type, int& tm_type)
 {
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
@@ -2017,6 +2049,7 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
     char* time_fmt = NULL;
     int timeSign = 1;
     bool null_func_result = false;
+    tm_type = DTK_ERROR;
     /*
      * this case is used for time format is specified.
      */
@@ -2029,7 +2062,6 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
         /* the following logic shared from to_timestamp(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
     } else {
-        int tm_type;
         bool warnings;
         errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
         securec_check(rc, "\0", "\0");
@@ -2215,7 +2247,8 @@ Datum numeric_cast_time(PG_FUNCTION_ARGS)
     Numeric n = PG_GETARG_NUMERIC(0);
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -2227,7 +2260,8 @@ Datum float8_cast_time(PG_FUNCTION_ARGS)
     float8 n = PG_GETARG_FLOAT8(0);
     char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -2239,7 +2273,8 @@ Datum float4_cast_time(PG_FUNCTION_ARGS)
     float4 n = PG_GETARG_FLOAT4(0);
     char *str = DatumGetCString(DirectFunctionCall1(float4out, Float4GetDatum(n)));
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -2466,7 +2501,8 @@ Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
     }
     char *str = DatumGetCString(DirectFunctionCall1(int8out, Int64GetDatum(number)));
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    int tm_type = DTK_ERROR;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type, tm_type);
     if (time_error_type == TIME_INCORRECT || number > TIME_MAX_INT || number < TIME_MIN_INT) {
         *isnull = true;
     }
@@ -5096,7 +5132,7 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
         case UNKNOWNOID:
         case CSTRINGOID: {
             *time = DatumGetTimeADT(
-                DirectFunctionCall3(time_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+                DirectFunctionCall3(time_in_func, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
         }
         case CLOBOID:
@@ -5105,8 +5141,8 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
         case VARCHAROID:
         case TEXTOID: {
             char *str = TextDatumGetCString(value);
-            *time = DatumGetTimeADT(
-                DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            *time = DatumGetTimeADT(DirectFunctionCall3(time_in_func, CStringGetDatum(str),
+                                                        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
         }
         case TIMESTAMPOID: {
