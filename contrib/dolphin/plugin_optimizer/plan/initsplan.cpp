@@ -919,7 +919,7 @@ static List* deconstruct_recurse(PlannerInfo* root, Node* jtnode,
                                         false, below_outer_join, JOIN_INNER,
                                         root->qualSecurityLevel,
                                         *qualscope, NULL, NULL, NULL,
-                                        NULL, FALSE);
+                                        NULL, false);
             else
                 *postponed_qual_list = lappend(*postponed_qual_list, pq);
         }
@@ -930,7 +930,7 @@ static List* deconstruct_recurse(PlannerInfo* root, Node* jtnode,
         foreach (l, (List*)f->quals) {
             Node* qual = (Node*)lfirst(l);
             distribute_qual_to_rels(root, qual, false, below_outer_join, JOIN_INNER,
-                root->qualSecurityLevel, *qualscope, NULL, NULL, NULL, postponed_qual_list, FALSE);
+                root->qualSecurityLevel, *qualscope, NULL, NULL, NULL, postponed_qual_list, false);
         }
     } else if (IsA(jtnode, JoinExpr)) {
         JoinExpr* j = (JoinExpr*)jtnode;
@@ -2188,7 +2188,7 @@ RestrictInfo* build_implied_join_equality(
         qualscope,        /* required_relids */
         NULL,             /* outer_relids */
         nullable_relids,  /* nullable_relids */
-        false);
+        false);           /* is_asof */
 
     /* Set mergejoinability/hashjoinability flags */
     check_mergejoinable(restrictinfo);

@@ -1305,7 +1305,7 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 				RestrictInfo *restrictinfo;
 #ifdef OG30
 Index security_level = 0;
-	restrictinfo = make_restrictinfo((Expr *) propagated, true, false, false,security_level, relids, NULL, NULL);
+	restrictinfo = make_restrictinfo((Expr *) propagated, true, false, false, security_level, relids, NULL, NULL, false);
 #else
 #if PG96
 				restrictinfo =
@@ -1318,7 +1318,8 @@ Index security_level = 0;
 												 ctx->root->qual_security_level,
 												 relids,
 												 NULL,
-												 NULL);
+												 NULL,
+												 false);
 #endif
 
 #endif
