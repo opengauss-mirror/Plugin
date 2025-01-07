@@ -70,7 +70,6 @@ NOTICE:  test failed. test sql: create table ignore_keyword_list.novalidate(nova
 NOTICE:  test failed. test sql: create table ignore_keyword_list.raw(raw int); drop table ignore_keyword_list.raw;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.timezone_hour(timezone_hour int); drop table ignore_keyword_list.timezone_hour;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.timezone_minute(timezone_minute int); drop table ignore_keyword_list.timezone_minute;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.under(under int); drop table ignore_keyword_list.under;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.warnings(warnings int); drop table ignore_keyword_list.warnings;
 reset current_schema;
 drop schema ignore_keyword_list cascade;
