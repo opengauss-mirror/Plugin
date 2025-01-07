@@ -446,11 +446,8 @@ SELECT time'59.12';
 (1 row)
 
 SELECT time'';
-   time   
-----------
- 00:00:00
-(1 row)
-
+ERROR:  Incorrect TIME value: ''
+CONTEXT:  referenced column: time
 SELECT time'1 09';
    time   
 ----------
@@ -469,6 +466,9 @@ SELECT time'-2 00000009';
  -57:00:00
 (1 row)
 
+SELECT time'2000-01-01 23:01:01';
+ERROR:  Incorrect TIME value: '2000-01-01 23:01:01'
+CONTEXT:  referenced column: time
 -- 'hhmmss.fsec'
 SELECT time(1)'1.123456';
     time    
@@ -1927,6 +1927,12 @@ select cast(('2001-10-10 11:11:59.123456'::datetime(6)) as bigint);
  20011010111159
 (1 row)
 
+select cast('2001-10-10 11:11:59.123456' as time);
+   time   
+----------
+ 11:11:59
+(1 row)
+
 -- test time type operations
 select ('2001-10-10 11:11:59.123456'::time(6) + 1);
    ?column?    
@@ -2049,11 +2055,13 @@ WARNING:  invalid input syntax for type time: "20220-01-01"
 LINE 1: INSERT INTO time_tbl VALUES('20220-01-01');
                                     ^
 CONTEXT:  referenced column: v
+INSERT INTO time_tbl VALUES('2001-10-10 11:11:59.123456');
 select * from time_tbl;
     v     
 ----------
  02:02:20
-(1 row)
+ 11:11:59
+(2 rows)
 
 DROP TABLE time_tbl;
 -- test sql_mode NO_ZERO_DATE

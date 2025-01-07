@@ -143,7 +143,7 @@ typedef struct GaussTimeResult {
 #define GET_TIME_ERROR_TYPE() (SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?  \
             TIME_CORRECT : TIME_INCORRECT)
 
-extern Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type);
+Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type, int& tm_type);
 Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number);
 Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
 Datum uint64_number_cast_time(PG_FUNCTION_ARGS, uint64 number);
