@@ -276,3 +276,61 @@ select * from binary_maxmin_v;
  \x646664730000000000000000000000000000000000000000000000000000000000 | \x620000000000000000000000000000000000000000000000000000000000000000 | \x6773647366 | \x6363
 (1 row)
 
+truncate binary_maxmin_t;
+insert into binary_maxmin_t values ('a', 'a'), ('ab', 'ab');
+select * from binary_maxmin_v;
+                                max_a                                 |                                min_a                                 | max_b  | min_b 
+----------------------------------------------------------------------+----------------------------------------------------------------------+--------+-------
+ \x616200000000000000000000000000000000000000000000000000000000000000 | \x610000000000000000000000000000000000000000000000000000000000000000 | \x6162 | \x61
+(1 row)
+
+drop table if exists json_maxmin_t cascade;
+NOTICE:  drop cascades to view json_maxmin_v
+drop table if exists blob_maxmin_t cascade;
+NOTICE:  drop cascades to view blob_maxmin_v
+drop table if exists bit_maxmin_t cascade;
+NOTICE:  drop cascades to view bit_maxmin_v
+drop table if exists enum_maxmin_t cascade;
+NOTICE:  drop cascades to view enum_maxmin_v
+drop table if exists bool_maxmin_t cascade;
+NOTICE:  drop cascades to view bool_maxmin_v
+drop table if exists char_maxmin_t cascade;
+NOTICE:  drop cascades to view char_maxmin_v
+drop table if exists binary_maxmin_t cascade;
+NOTICE:  drop cascades to view binary_maxmin_v
+-- test varbinary 3
+drop table if exists t_chara_0022;
+NOTICE:  table "t_chara_0022" does not exist, skipping
+create table t_chara_0022(c_0022_x text);
+insert into t_chara_0022 values (chara(reverse(96)));
+insert into t_chara_0022 values (reverse(chara(52,49)));
+insert into t_chara_0022 values (replace(chara(72,73,74,43,63,119),6,9));
+insert into t_chara_0022 values (ascii('xzy'));
+insert into t_chara_0022 values (ascii(chara(121,122)));
+select * from t_chara_0022;
+ c_0022_x 
+----------
+ E
+ 14
+ HIJ+?w
+ 120
+ 121
+(5 rows)
+
+select chara(c_0022_x) as result from t_chara_0022;
+ result 
+--------
+ \x
+ \x0e
+ \x
+ \x78
+ \x79
+(5 rows)
+
+select max(c_0022_x),max(chara(c_0022_x)),chara(max(c_0022_x))from t_chara_0022;
+  max   | max  | chara 
+--------+------+-------
+ HIJ+?w | \x79 | \x
+(1 row)
+
+drop table if exists t_chara_0022 cascade;

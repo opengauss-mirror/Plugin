@@ -142,3 +142,29 @@ create view binary_maxmin_v as select
     from binary_maxmin_t;
 \d binary_maxmin_v;
 select * from binary_maxmin_v;
+
+truncate binary_maxmin_t;
+insert into binary_maxmin_t values ('a', 'a'), ('ab', 'ab');
+select * from binary_maxmin_v;
+
+drop table if exists json_maxmin_t cascade;
+drop table if exists blob_maxmin_t cascade;
+drop table if exists bit_maxmin_t cascade;
+drop table if exists enum_maxmin_t cascade;
+drop table if exists bool_maxmin_t cascade;
+drop table if exists char_maxmin_t cascade;
+drop table if exists binary_maxmin_t cascade;
+
+-- test varbinary 3
+drop table if exists t_chara_0022;
+create table t_chara_0022(c_0022_x text);
+
+insert into t_chara_0022 values (chara(reverse(96)));
+insert into t_chara_0022 values (reverse(chara(52,49)));
+insert into t_chara_0022 values (replace(chara(72,73,74,43,63,119),6,9));
+insert into t_chara_0022 values (ascii('xzy'));
+insert into t_chara_0022 values (ascii(chara(121,122)));
+select * from t_chara_0022;
+select chara(c_0022_x) as result from t_chara_0022;
+select max(c_0022_x),max(chara(c_0022_x)),chara(max(c_0022_x))from t_chara_0022;
+drop table if exists t_chara_0022 cascade;

@@ -11954,11 +11954,19 @@ static Datum GetPeakVarlena(PG_FUNCTION_ARGS, bool isLarger)
     int len0 = VARSIZE_ANY_EXHDR(arg0);
     int len1 = VARSIZE_ANY_EXHDR(arg1);
     int cmpFlag = memcmp(VARDATA_ANY(arg0), VARDATA_ANY(arg1), Min(len0, len1));
-    if ((isLarger && cmpFlag < 0) ||
-        (!isLarger && cmpFlag > 0)) {
-        PG_RETURN_BYTEA_P(arg1);
+
+    if (isLarger) {
+        if (cmpFlag < 0 || (cmpFlag == 0 && len0 < len1)) {
+            PG_RETURN_BYTEA_P(arg1);
+        } else {
+            PG_RETURN_BYTEA_P(arg0);
+        }
     } else {
-        PG_RETURN_BYTEA_P(arg0);
+        if (cmpFlag > 0 || (cmpFlag == 0 && len0 > len1)) {
+            PG_RETURN_BYTEA_P(arg1);
+        } else {
+            PG_RETURN_BYTEA_P(arg0);
+        }
     }
 }
 
