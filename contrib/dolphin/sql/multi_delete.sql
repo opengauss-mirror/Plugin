@@ -527,4 +527,13 @@ select * from delete_2;
 delete multidelete.delete_2.* from delete_2 where a = 2;
 select * from delete_2;
 
+create table t1 (i int);
+insert into t1 (i) values(1),(1),(1),(1);
+delete from t1 limit 1;
+delete from t1 limit 0;
+select * from t1;
+delete from t1;
+select * from t1;
+drop table t1;
+
 drop schema multidelete cascade;
