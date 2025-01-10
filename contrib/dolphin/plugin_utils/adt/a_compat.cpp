@@ -226,6 +226,9 @@ Datum lpad(PG_FUNCTION_ARGS)
 
     int bytelen;
     errno_t ss_rc;
+#ifdef DOLPHIN
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#endif
 
     FUNC_CHECK_HUGE_POINTER(false, string1, "lpad()");
 
@@ -252,9 +255,15 @@ Datum lpad(PG_FUNCTION_ARGS)
     bytelen = pg_database_encoding_max_length() * len;
 
     /* check for integer overflow */
+#ifdef DOLPHIN
+    if (len != 0 && bytelen / pg_database_encoding_max_length() != len) {
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
+#else
     if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
         ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-
+#endif
     ret = (text*)palloc(VARHDRSZ + bytelen);
 
     m = len - s1len;
