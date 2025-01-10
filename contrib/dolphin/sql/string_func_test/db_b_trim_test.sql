@@ -40,5 +40,9 @@ SELECT TRIM('   X  '::bytea);
 SELECT TRIM(LEADING '   X  '::bytea);
 SELECT TRIM(TRAILING '   X  '::bytea);
 
+SELECT REVERSE(true);
+SELECT REVERSE(false);
+select pg_typeof(REVERSE(true));
+
 drop schema db_b_trim_test cascade;
 reset current_schema;
