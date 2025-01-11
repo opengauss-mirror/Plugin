@@ -519,6 +519,41 @@ select replace(NULL, NULL, 'a');
  
 (1 row)
 
+-- lapd
+reset dolphin.sql_mode;
+SELECT LPAD('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: lpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+create table test_lpad as SELECT LPAD('a', 9223372036854775807, 'x');
+ERROR:  integer out of range
+CONTEXT:  referenced column: lpad
+set dolphin.sql_mode = '';
+create table test_lpad as SELECT LPAD('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: lpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+reset dolphin.sql_mode;
+insert ignore into test_lpad SELECT LPAD('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: lpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+select * from test_lpad;
+ lpad 
+------
+ 
+ 
+(2 rows)
+
+drop table test_lpad;
 drop schema substr_func_test cascade;
 reset bytea_output;
 reset dolphin.sql_mode;

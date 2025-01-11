@@ -245,6 +245,17 @@ select replace('string', 'i', NULL);
 select replace('string', NULL, 'i');
 select replace(NULL, NULL, 'a');
 
+-- lapd
+reset dolphin.sql_mode;
+SELECT LPAD('a', 9223372036854775807, 'x');
+create table test_lpad as SELECT LPAD('a', 9223372036854775807, 'x');
+set dolphin.sql_mode = '';
+create table test_lpad as SELECT LPAD('a', 9223372036854775807, 'x');
+reset dolphin.sql_mode;
+insert ignore into test_lpad SELECT LPAD('a', 9223372036854775807, 'x');
+select * from test_lpad;
+drop table test_lpad;
+
 drop schema substr_func_test cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
