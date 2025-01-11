@@ -539,6 +539,11 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''
 -- timetz
 insert into func_test2(functionName, result) values('timestampadd(day, 1, timetz''1:1:0+05'')', timestampadd(day, 1, timetz'1:1:0+05'));
 
+insert into func_test2(functionName, result) values('TIME_FORMAT(''00:00:00'', ''%l %p'')', TIME_FORMAT('00:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''12:00:00'', ''%l %p'')', TIME_FORMAT('12:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''23:00:00'', ''%l %p'')', TIME_FORMAT('23:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''24:00:00'', ''%l %p'')', TIME_FORMAT('24:00:00', '%l %p'));
+
 -- TIME、TIMESTAMP建表语法修改测试
 create table t1(col timestamp('1'));
 create table t2(col time('1'));
