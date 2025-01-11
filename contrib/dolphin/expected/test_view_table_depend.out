@@ -36,6 +36,8 @@ create table t1 (c1 int);
 create view v1 as select * from t1;
 drop table t1;
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
 --------+---------+-----------
@@ -199,6 +201,8 @@ select * from v1;
 ERROR:  The view v1 is invalid, please make it valid before operation.
 HINT:  Please re-add missing table fields.
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
 --------+---------+-----------
@@ -269,12 +273,16 @@ View definition:
 
 drop table t1;
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c1     | integer | 
 
 \d v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v2"
  Column |  Type   | Modifiers 
 --------+---------+-----------
@@ -404,12 +412,16 @@ View definition:
 
 drop table t1;
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c1     | integer | 
 
 \d v2;
+WARNING:  View v2 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v2"
   Column  |  Type  | Modifiers 
 ----------+--------+-----------
@@ -517,6 +529,8 @@ View definition:
 
 drop table t1;
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
   Column  |  Type  | Modifiers 
 ----------+--------+-----------
@@ -590,6 +604,8 @@ View definition:
 
 drop table t1;
 \d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
 View "test_view_table_depend.v1"
   Column  |  Type  | Modifiers 
 ----------+--------+-----------
@@ -1302,6 +1318,96 @@ select * from v1;
 
 drop table t1 cascade;
 NOTICE:  drop cascades to view v1
+-- test \d with table column type changed
+create table t1(b char);
+create view v1 as select * from t1;
+desc v1;
+ Field |     Type     | Null | Key | Default | Extra 
+-------+--------------+------+-----+---------+-------
+ b     | character(1) | YES  |     | NULL    | 
+(1 row)
+
+alter table t1 ALTER COLUMN b type int;
+desc v1;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ b     | integer | YES  |     | NULL    | 
+(1 row)
+
+desc t1;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ b     | integer | YES  |     | NULL    | 
+(1 row)
+
+drop view v1;
+drop table t1;
+create table t1 (c1 int, c2 varchar(10));
+create view v1 as select * from t1;
+drop table t1;
+desc v1;
+ERROR:  View v1 references invalid table(s), view(s) or column(s).
+create table t1 (c1 text, c2 float8);
+desc v1;
+ Field |       Type       | Null | Key | Default | Extra 
+-------+------------------+------+-----+---------+-------
+ c1    | text             | YES  |     | NULL    | 
+ c2    | double precision | YES  |     | NULL    | 
+(2 rows)
+
+drop view v1;
+drop table t1;
+create table t1 (c1 int, c2 varchar(10));
+create view v1 as select * from t1;
+drop table t1;
+\d v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+      View "test_view_table_depend.v1"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | integer               | 
+ c2     | character varying(10) | 
+
+create table t1 (c1 text, c2 float8);
+\d v1;
+   View "test_view_table_depend.v1"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ c1     | text             | 
+ c2     | double precision | 
+
+drop view v1;
+drop table t1;
+-- test \d+ with table column type changed
+create table t1 (c1 int, c2 varchar(10));
+create view v1 as select * from t1;
+drop table t1;
+\d+ v1;
+WARNING:  View v1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+                  View "test_view_table_depend.v1"
+ Column |         Type          | Modifiers | Storage  | Description 
+--------+-----------------------+-----------+----------+-------------
+ c1     | integer               |           | plain    | 
+ c2     | character varying(10) |           | extended | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+create table t1 (c1 text, c2 float8);
+\d+ v1;
+                View "test_view_table_depend.v1"
+ Column |       Type       | Modifiers | Storage  | Description 
+--------+------------------+-----------+----------+-------------
+ c1     | text             |           | extended | 
+ c2     | double precision |           | plain    | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+drop view v1;
+drop table t1;
 drop schema test_view_table_depend cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table t2
