@@ -173,5 +173,24 @@ WARNING:  Truncated incorrect DOUBLE value: false
  f        | t        | f        | t
 (1 row)
 
+create table t1(id int, a int);
+insert into t1 values(1,1),(2,2),(3,null);
+select id, a=1 is false from t1;
+ id | ?column? 
+----+----------
+  1 | f
+  2 | t
+  3 | f
+(3 rows)
+
+select id, not (a=1 is true) from t1;
+ id | ?column? 
+----+----------
+  1 | f
+  2 | t
+  3 | t
+(3 rows)
+
+drop table t1;
 drop schema is_clause cascade;
 NOTICE:  drop cascades to table test_type_table
