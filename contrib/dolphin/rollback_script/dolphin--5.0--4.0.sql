@@ -87,4 +87,7 @@ DROP OPERATOR IF EXISTS pg_catalog.^(bool, time without time zone);
 DROP FUNCTION IF EXISTS pg_catalog.op_bool_bit_xor(bool, bit);
 DROP FUNCTION IF EXISTS pg_catalog.op_bit_bool_xor(bit, bool);
 DROP FUNCTION IF EXISTS pg_catalog.op_time_bool_xor(time, bool);
-DROP FUNCTION IF EXISTS pg_catalog.op_bool_time_xor(bool, time)
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_time_xor(bool, time);
+
+-- reverse
+DROP FUNCTION IF EXISTS pg_catalog.reverse(bool);

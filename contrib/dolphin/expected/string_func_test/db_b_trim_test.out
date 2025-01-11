@@ -148,5 +148,23 @@ SELECT TRIM(TRAILING '   X  '::bytea);
     X
 (1 row)
 
+SELECT REVERSE(true);
+ reverse 
+---------
+ 1
+(1 row)
+
+SELECT REVERSE(false);
+ reverse 
+---------
+ 0
+(1 row)
+
+select pg_typeof(REVERSE(true));
+     pg_typeof     
+-------------------
+ character varying
+(1 row)
+
 drop schema db_b_trim_test cascade;
 reset current_schema;
