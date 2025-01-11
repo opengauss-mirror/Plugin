@@ -50,4 +50,10 @@ select `varbinary` is true, `varbinary` is not true, `varbinary` is false, `varb
 select '' is true, '1.23' is true, '1.23a' is true, '1.23$@' is true, '     1.23       ' is true, '     1.23       a' is true;
 select 'true' is true, 'true' is false, 'false' is true, 'false' is false;
 
+create table t1(id int, a int);
+insert into t1 values(1,1),(2,2),(3,null);
+select id, a=1 is false from t1;
+select id, not (a=1 is true) from t1;
+drop table t1;
+
 drop schema is_clause cascade;

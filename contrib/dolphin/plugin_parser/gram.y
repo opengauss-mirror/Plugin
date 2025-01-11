@@ -1423,7 +1423,7 @@ static bool GreaterThanHour (List* int_type);
 %left		AND
 %right		NOT
 %right		CmpNullOp COLON_EQUALS
-%left		'=' '<' '>' CmpOp
+%left		'=' '<' '>' CmpOp IS
 %nonassoc	BINARY
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
@@ -1472,7 +1472,6 @@ static bool GreaterThanHour (List* int_type);
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
-%nonassoc	IS				/* sets precedence for IS NULL, etc */
 %nonassoc	JsonOp JsonOpText
 %left		'+' '-'
 %left		'*' '/' '%'
