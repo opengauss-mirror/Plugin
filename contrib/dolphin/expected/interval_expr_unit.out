@@ -283,9 +283,9 @@ create table test_def_interval_pl(
 desc test_def_interval_pl;
  Field |              Type              | Null | Key |                                             Default                                              | Extra 
 -------+--------------------------------+------+-----+--------------------------------------------------------------------------------------------------+-------
- a     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone + any2interval(1, 8)) | 
- b     | timestamp(0) without time zone | YES  |     | (any2interval(1, 8) + ('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone) | 
- c     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(1) without time zone - any2interval(1, 8)) | 
+ a     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(6) without time zone + any2interval(1, 8)) | 
+ b     | timestamp(0) without time zone | YES  |     | (any2interval(1, 8) + ('2020-01-01 00:00:00' COLLATE "default")::timestamp(6) without time zone) | 
+ c     | timestamp(0) without time zone | YES  |     | (('2020-01-01 00:00:00' COLLATE "default")::timestamp(6) without time zone - any2interval(1, 8)) | 
 (3 rows)
 
 insert into test_def_interval_pl values(default, default, default);

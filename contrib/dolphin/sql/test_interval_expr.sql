@@ -289,6 +289,51 @@ select '2024-07-05 14:25:59' - interval 1 year_month + 1;
 select '2024-07-05' - interval 1 year_month + 1;
 select '2024-07-05 14:25:59' - interval 1 day_hour + 1;
 select '2024-07-05' - interval 1 day_hour + 1;
+
+select '20230205231050.968789' + interval 1 minute;
+select '20230205231050.968789' + interval 1 hour;
+select '20230205231050.968789' + interval 1 year;
+select '20230205231050.968789' + interval 1 day;
+select '20230205231050.968789' + interval 1 year_month;
+select '20230205231050.968789' + interval 1 day_hour;
+select '20230205231050.968789' + interval 1 day_microsecond;
+select interval 1 minute + '20230205231050.968789';
+select interval 1 hour + '20230205231050.968789';
+select interval 1 year + '20230205231050.968789';
+select interval 1 day + '20230205231050.968789';
+select interval 1 year_month + '20230205231050.968789';
+select interval 1 day_hour + '20230205231050.968789';
+select interval 1 day_microsecond + '20230205231050.968789';
+select '20230205231050.968789' - interval 1 minute;
+select '20230205231050.968789' - interval 1 hour;
+select '20230205231050.968789' - interval 1 year;
+select '20230205231050.968789' - interval 1 day;
+select '20230205231050.968789' - interval 1 year_month;
+select '20230205231050.968789' - interval 1 day_hour;
+select '20230205231050.968789' - interval 1 day_microsecond;
+
+select '2023-02-28 14:25:59.999999' + interval 1 day_microsecond;
+select '2023-02-28 14:25:59.999999' + interval 1 year;
+select '2023-02-28 14:25:59.999999' + interval 1 month;
+select '2023-02-28 14:25:59.999999' + interval 1 day;
+select '2023-02-28 14:25:59.999999' + interval 1 hour;
+select '2023-02-28 14:25:59.999999' + interval 1 minute;
+select '2023-02-28 14:25:59.999999' + interval 1 second;
+select interval 1 day_microsecond + '2023-02-28 14:25:59.999999';
+select interval 1 year + '2023-02-28 14:25:59.999999';
+select interval 1 month + '2023-02-28 14:25:59.999999';
+select interval 1 day + '2023-02-28 14:25:59.999999';
+select interval 1 hour + '2023-02-28 14:25:59.999999';
+select interval 1 minute + '2023-02-28 14:25:59.999999';
+select interval 1 second + '2023-02-28 14:25:59.999999';
+select '2023-02-28 14:25:59.999999' - interval 1 day_microsecond;
+select '2023-02-28 14:25:59.999999' - interval 1 year;
+select '2023-02-28 14:25:59.999999' - interval 1 month;
+select '2023-02-28 14:25:59.999999' - interval 1 day;
+select '2023-02-28 14:25:59.999999' - interval 1 hour;
+select '2023-02-28 14:25:59.999999' - interval 1 minute;
+select '2023-02-28 14:25:59.999999' - interval 1 second;
+
 -- 全类型兼容
 create table all_types_table (
     `int1` tinyint,
