@@ -5,6 +5,7 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "plugin_parser/parse_show.h"
+#include "plugin_parser/parse_relation.h"
 
 static Node* makeTypeColumn(bool smallcase = FALSE);
 static List* makeFromList();
@@ -687,6 +688,17 @@ SelectStmt *checkTableExistence(RangeVar *classrel)
     char *nspname = NULL;
     recomputeNamespacePath();
     nspname = (classrel->schemaname != NULL) ? classrel->schemaname : get_namespace_name(getCurrentNamespace());
+
+    Oid nspid = get_namespace_oid(nspname, true);
+    Oid relOid = get_relname_relid(classrel->relname, nspid);
+    char relKind = get_rel_relkind(relOid);
+    if (relKind == RELKIND_VIEW || relKind == RELKIND_CONTQUERY) {
+        if (!ValidateDependView(relOid, relKind)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("View %s references invalid table(s), view(s) or column(s).", classrel->relname)));
+        }
+    }
  
     (void)plps_check_schema_or_table_valid(nspname, classrel->relname, false, true);
 
