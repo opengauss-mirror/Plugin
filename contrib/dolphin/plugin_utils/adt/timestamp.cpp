@@ -8254,6 +8254,7 @@ Datum time_format(PG_FUNCTION_ARGS)
                     securec_check_ss(insert_len, "", "");
                     appendStringInfo(str, "%s", buf);
                     break;
+                case 'l':
                 case 'h':
                 case 'I': /* hours in range of 0..12 */
                     hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;

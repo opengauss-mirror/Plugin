@@ -863,6 +863,10 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,time''23
 insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''23:59:59'')', TIMESTAMPADD(month,1,time'23:59:59'));
 -- timetz
 insert into func_test2(functionName, result) values('timestampadd(day, 1, timetz''1:1:0+05'')', timestampadd(day, 1, timetz'1:1:0+05'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''00:00:00'', ''%l %p'')', TIME_FORMAT('00:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''12:00:00'', ''%l %p'')', TIME_FORMAT('12:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''23:00:00'', ''%l %p'')', TIME_FORMAT('23:00:00', '%l %p'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''24:00:00'', ''%l %p'')', TIME_FORMAT('24:00:00', '%l %p'));
 -- TIME、TIMESTAMP建表语法修改测试
 create table t1(col timestamp('1'));
 ERROR:  Un-support feature
@@ -997,6 +1001,7 @@ select * from func_test2 order by 1, 2;
  TIMEDIFF(time'-37:59:59', time'-39:59:59')                                                  | 02:00:00
  TIMEDIFF(year'2021', year'2022')                                                            | -00:00:01
  TIME(false)                                                                                 | 00:00:00
+ TIME_FORMAT('00:00:00', '%l %p')                                                            | 12 AM
   TIME_FORMAT('00:00:00', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                   | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
   TIME_FORMAT('0000-12-31 23:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                        | 23:59:59|11:59:59 PM|23|11|11|59|59|000000|PM|23
   TIME_FORMAT('00:00:59.999999000', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                         | 00:00:59|12:00:59 AM|00|12|12|00|59|999999|AM|0
@@ -1006,11 +1011,14 @@ select * from func_test2 order by 1, 2;
   TIME_FORMAT('100:59:59.0123', '%a|%b|%c|%D|%d|%e|%j|%M|%m')                                | 
   TIME_FORMAT('100:59:59.0123', '%N|%n abcd')                                                | N|n abcd
   TIME_FORMAT('100:59:59.0123', '%U|%u|%V|%v|%W|%w|%X|%x|%Y|%y')                             | 0|00|0|00|0000|00
+ TIME_FORMAT('12:00:00', '%l %p')                                                            | 12 PM
   TIME_FORMAT('2003-12-31 01:02:03.0123', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                   | 01:02:03|01:02:03 AM|01|01|01|02|03|012300|AM|1
   TIME_FORMAT('20031231010203.0123', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                        | 01:02:03|01:02:03 AM|01|01|01|02|03|012300|AM|1
   TIME_FORMAT(20031231010203.0123, '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                          | 01:02:03|01:02:03 AM|01|01|01|02|03|012300|AM|1
   TIME_FORMAT(20031231010203, '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                               | 01:02:03|01:02:03 AM|01|01|01|02|03|000000|AM|1
+ TIME_FORMAT('23:00:00', '%l %p')                                                            | 11 PM
   TIME_FORMAT(240000.000001, '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                | 24:00:00|12:00:00 AM|24|12|12|00|00|000001|AM|24
+ TIME_FORMAT('24:00:00', '%l %p')                                                            | 12 AM
   TIME_FORMAT('240000', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 24:00:00|12:00:00 AM|24|12|12|00|00|000000|AM|24
   TIME_FORMAT(240000, '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                       | 24:00:00|12:00:00 AM|24|12|12|00|00|000000|AM|24
   TIME_FORMAT('-25:30:30', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                  | -25:30:30|01:30:30 AM|25|01|01|30|30|000000|AM|25
