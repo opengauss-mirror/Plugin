@@ -242,6 +242,17 @@ Oid GetIntervalOpOid(Node* lexpr, Node* rexpr)
 
 Oid GetDateIntervalOpOid(Node* expr)
 {
+    if (expr->type == T_Const) {
+        Const* cons = (Const*)expr;
+        Interval* timeval = DatumGetIntervalP(cons->constvalue);
+        
+        if (timeval->time > 0) {
+            return TIMESTAMPOID;
+        } else {
+            return DATEOID;
+        }
+    }
+    
     if (expr->type != T_FuncExpr) {
         return DATEOID;
     }
