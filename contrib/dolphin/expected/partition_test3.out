@@ -203,6 +203,10 @@ ERROR:  function add(integer, integer) does not exist
 LINE 1: ALTER TABLE test_part2_1 add PARTITION p5 VALUES (add(600,10...
                                                           ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ALTER TABLE test_part2_1 add PARTITION p4 VALUES in (DEFAULT);
+ERROR:  syntax error at or near ")"
+LINE 1: ALTER TABLE test_part2_1 add PARTITION p4 VALUES in (DEFAULT...
+                                                         ^
 CREATE TABLE IF NOT EXISTS test_subpart2_1
 (
 a int,
@@ -224,6 +228,49 @@ LINE 1: ALTER TABLE test_part2_1 add PARTITION p2 VALUES (add(600,10...
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 ALTER TABLE test_part2_1 add PARTITION p3 VALUES (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
 ERROR:  can not add none-range partition to range partition table
+ALTER TABLE test_part2_1 add PARTITION p3 VALUES in (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
+ERROR:  syntax error at or near ")"
+LINE 1: ALTER TABLE test_part2_1 add PARTITION p3 VALUES in (DEFAULT...
+                                                         ^
+set dolphin.sql_mode = '';
+CREATE TABLE t1
+(a INT,
+b CHAR(2))
+PARTITION BY LIST COLUMNS (a, b)
+(PARTITION p0_a VALUES IN
+((0, "a0"), (0, "a1"), (0, "a2"), (0, "a3"), (0, "a4"), (0, "a5"), (0, "a6"),
+(0, "a7"), (0, "a8"), (0, "a9"), (0, "aa"), (0, "ab"), (0, "ac"), (0, "ad"),
+(0, "ae"), (0, "af"), (0, "ag"), (0, "ah"), (0, "ai"), (0, "aj"), (0, "ak"),
+(0, "al")));
+ALTER TABLE t1 ADD PARTITION
+(PARTITION p1_a VALUES IN
+((1, "a0"), (1, "a1"), (1, "a2"), (1, "a3"), (1, "a4"), (1, "a5"), (1, "a6"),
+(1, "a7"), (1, "a8"), (1, "a9"), (1, "aa"), (1, "ab"), (1, "ac"), (1, "ad"),
+(1, "ae"), (1, "af"), (1, "ag"), (1, "ah"), (1, "ai"), (1, "aj"), (1, "ak"),
+(1, "al")));
+reset dolphin.sql_mode;
+show create table t1;
+ Table |                                                                                                            Create Table                                                                                                            
+-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t1    | SET search_path = partition_test3;                                                                                                                                                                                                +
+       | CREATE TABLE t1 (                                                                                                                                                                                                                 +
+       |     a integer,                                                                                                                                                                                                                    +
+       |     b character(2)                                                                                                                                                                                                                +
+       | )                                                                                                                                                                                                                                 +
+       | WITH (orientation=row, compression=no)                                                                                                                                                                                            +
+       | PARTITION BY LIST (a, b)                                                                                                                                                                                                          +
+       | (                                                                                                                                                                                                                                 +
+       |     PARTITION p0_a VALUES ((0,'a0'),(0,'a1'),(0,'a2'),(0,'a3'),(0,'a4'),(0,'a5'),(0,'a6'),(0,'a7'),(0,'a8'),(0,'a9'),(0,'aa'),(0,'ab'),(0,'ac'),(0,'ad'),(0,'ae'),(0,'af'),(0,'ag'),(0,'ah'),(0,'ai'),(0,'aj'),(0,'ak'),(0,'al')),+
+       |     PARTITION p1_a VALUES ((1,'a0'),(1,'a1'),(1,'a2'),(1,'a3'),(1,'a4'),(1,'a5'),(1,'a6'),(1,'a7'),(1,'a8'),(1,'a9'),(1,'aa'),(1,'ab'),(1,'ac'),(1,'ad'),(1,'ae'),(1,'af'),(1,'ag'),(1,'ah'),(1,'ai'),(1,'aj'),(1,'ak'),(1,'al')) +
+       | )                                                                                                                                                                                                                                 +
+       | ENABLE ROW MOVEMENT;
+(1 row)
+
+insert into t1 values (0,'a0');
+insert into t1 values (1,'ak');
+insert into t1 values (1,'bc');
+ERROR:  inserted partition key does not map to any table partition
+drop table t1;
 drop schema partition_test3 cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test_part2
