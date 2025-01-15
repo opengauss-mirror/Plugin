@@ -89,6 +89,7 @@ ALTER TABLE test_part2_1 add PARTITION p2 END (400);
 ALTER TABLE test_part2_1 add PARTITION p3 START (500);
 ALTER TABLE test_part2_1 add PARTITION p4 VALUES (DEFAULT);
 ALTER TABLE test_part2_1 add PARTITION p5 VALUES (add(600,100));
+ALTER TABLE test_part2_1 add PARTITION p4 VALUES in (DEFAULT);
 
 CREATE TABLE IF NOT EXISTS test_subpart2_1
 (
@@ -106,5 +107,31 @@ PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
 ALTER TABLE test_part2_1 add PARTITION p1 VALUES LESS THAN (200) (SUBPARTITION p1_0 VALUES LESS THAN (100));
 ALTER TABLE test_part2_1 add PARTITION p2 VALUES (add(600,100)) (SUBPARTITION p2_0 VALUES LESS THAN (100));
 ALTER TABLE test_part2_1 add PARTITION p3 VALUES (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
+ALTER TABLE test_part2_1 add PARTITION p3 VALUES in (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
+
+set dolphin.sql_mode = '';
+CREATE TABLE t1
+(a INT,
+b CHAR(2))
+PARTITION BY LIST COLUMNS (a, b)
+(PARTITION p0_a VALUES IN
+((0, "a0"), (0, "a1"), (0, "a2"), (0, "a3"), (0, "a4"), (0, "a5"), (0, "a6"),
+(0, "a7"), (0, "a8"), (0, "a9"), (0, "aa"), (0, "ab"), (0, "ac"), (0, "ad"),
+(0, "ae"), (0, "af"), (0, "ag"), (0, "ah"), (0, "ai"), (0, "aj"), (0, "ak"),
+(0, "al")));
+ALTER TABLE t1 ADD PARTITION
+(PARTITION p1_a VALUES IN
+((1, "a0"), (1, "a1"), (1, "a2"), (1, "a3"), (1, "a4"), (1, "a5"), (1, "a6"),
+(1, "a7"), (1, "a8"), (1, "a9"), (1, "aa"), (1, "ab"), (1, "ac"), (1, "ad"),
+(1, "ae"), (1, "af"), (1, "ag"), (1, "ah"), (1, "ai"), (1, "aj"), (1, "ak"),
+(1, "al")));
+reset dolphin.sql_mode;
+show create table t1;
+insert into t1 values (0,'a0');
+insert into t1 values (1,'ak');
+insert into t1 values (1,'bc');
+
+drop table t1;
+
 drop schema partition_test3 cascade;
 reset current_schema;

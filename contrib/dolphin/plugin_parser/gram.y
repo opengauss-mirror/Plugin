@@ -719,7 +719,7 @@ static bool GreaterThanHour (List* int_type);
 %type <list>	AlterSnapshotCmdOrEmpty AlterSnapshotCmdList AlterSnapshotCmdListNoParens
 %type <list>	AlterSnapshotCmdListWithParens SnapshotSample SnapshotSampleList OptSnapshotStratify
 %type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment opt_bracket
-%type <boolean>	OptSnapshotAlias AlterSnapshotDdl AlterSnapshotDdlList
+%type <boolean>	OptSnapshotAlias AlterSnapshotDdl AlterSnapshotDdlList opt_addpartition_in
 %type <boolean>	OptAlterUpdateSnapshot OptInsertIntoSnapshot OptDeleteFromSnapshot
 
 /* TRAIN MODEL */
@@ -7369,22 +7369,26 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' expr_list ')' opt_part_options
+		| name VALUES opt_addpartition_in '(' expr_list ')' opt_part_options
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $4;
-				p->tablespacename = $6;
+				p->boundary = $5;
+				p->tablespacename = $7;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = false;
 				n->subtype = AT_AddPartition;
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' DEFAULT ')' opt_part_options
+		| name VALUES opt_addpartition_in '(' DEFAULT ')' opt_part_options
 			{
+				if ($3 == TRUE) {
+					ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+					errmsg("syntax error at or near \"%s\"", ")"), parser_errposition(@3)));
+				}
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
@@ -7393,7 +7397,7 @@ add_partition_cmd:
 				n_default->ismaxvalue = true;
 				n_default->location = -1;
 				p->boundary = list_make1(n_default);
-				p->tablespacename = $6;
+				p->tablespacename = $7;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = false;
 				n->subtype = AT_AddPartition;
@@ -7427,15 +7431,15 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' expr_list ')' opt_part_options '(' subpartition_definition_list ')'
+		| name VALUES opt_addpartition_in '(' expr_list ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $4;
-				p->tablespacename = $6;
-				p->subPartitionDefState = $8;
+				p->boundary = $5;
+				p->tablespacename = $7;
+				p->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = p->subPartitionDefState;
@@ -7453,8 +7457,12 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' DEFAULT ')' opt_part_options '(' subpartition_definition_list ')'
+		| name VALUES opt_addpartition_in '(' DEFAULT ')' opt_part_options '(' subpartition_definition_list ')'
 			{
+				if ($3 == TRUE) {
+					ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+					errmsg("syntax error at or near \"%s\"", ")"), parser_errposition(@3)));
+				}
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
@@ -7463,8 +7471,8 @@ add_partition_cmd:
 				n_default->ismaxvalue = true;
 				n_default->location = -1;
 				p->boundary = list_make1(n_default);
-				p->tablespacename = $6;
-				p->subPartitionDefState = $8;
+				p->tablespacename = $7;
+				p->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = p->subPartitionDefState;
@@ -13111,6 +13119,11 @@ AlterSnapshotDdl:			// parse and ignore
 			| DROP opt_column IF_P EXISTS ColId	{ $$ = FALSE; }
 			| DROP opt_column ColId				{ $$ = FALSE; }
 		;
+
+opt_addpartition_in:
+			IN_P				{ $$ = TRUE; }
+			| /* EMPTY */		{ $$ = FALSE; }
+		;	 
 
 SnapshotSample:
 			AS ColLabel AT RATIO FCONST OptSnapshotComment
