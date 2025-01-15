@@ -74,3 +74,6 @@ DROP FUNCTION IF EXISTS pg_catalog.op_bool_time_xor(bool, time);
 
 -- reverse
 DROP FUNCTION IF EXISTS pg_catalog.reverse(bool);
+
+DROP CAST IF EXISTS (int16 AS text);
+DROP FUNCTION IF EXISTS pg_catalog.int16_text(int16);

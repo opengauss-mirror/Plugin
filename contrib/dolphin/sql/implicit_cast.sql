@@ -78,5 +78,15 @@ select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('
 select * from test1 t1 where t1.id = 1 and binary(t1.ptype)::varbinary(30) in ('type1'::char(30), 'type2'::char(30));
 drop table test1;
 
+set b_format_behavior_compat_options = 'fetch,enable_set_variables,enable_multi_charset';
+create table t1(a int not null auto_increment primary key);
+SET @tzid= LAST_INSERT_ID();
+select @tzid;
+insert into t1 values(NULL);
+SET @tzid= LAST_INSERT_ID();
+select @tzid;
+reset b_format_behavior_compat_options;
+drop table t1;
+
 drop schema implicit_cast cascade;
 reset current_schema;

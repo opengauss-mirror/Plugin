@@ -420,11 +420,14 @@ PG_FUNCTION_INFO_V1_PUBLIC(int16_u1);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_u2);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_u4);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_u8);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_text);
 extern "C" DLL_PUBLIC Datum uint_16(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int16_text(PG_FUNCTION_ARGS);
+
 
 Datum uint_16(PG_FUNCTION_ARGS)
 {
@@ -487,6 +490,20 @@ Datum int16_u8(PG_FUNCTION_ARGS)
     }
     PG_RETURN_INT64(result);
 }
+
+Datum int16_text(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    char* tmp = NULL;
+    Datum result;
+
+    tmp = DatumGetCString(DirectFunctionCall1(int16out, Int128GetDatum(arg)));
+    result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
 #endif
 
 Datum i16tod(PG_FUNCTION_ARGS)

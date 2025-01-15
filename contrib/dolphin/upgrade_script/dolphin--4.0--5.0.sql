@@ -94,3 +94,5 @@ CREATE OPERATOR pg_catalog.^ (leftarg = bool, rightarg = time without time zone,
 -- reverse
 CREATE OR REPLACE FUNCTION pg_catalog.reverse(bool) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.reverse($1::text)::varchar $$;
  
+CREATE FUNCTION pg_catalog.int16_text(int16) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_text';
+CREATE CAST(int16 AS text) WITH FUNCTION pg_catalog.int16_text(int16)   AS IMPLICIT;
