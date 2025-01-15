@@ -7147,6 +7147,24 @@ Node* transformIntoConst(ParseState* pstate, ParseExprKind exprKind, Node* maxEl
                             (isPartition ? "partition" : "distribution"))));
             }
         } break;
+#ifdef DOLPHIN
+        case T_OpExpr: {
+            OpExpr* op_expr = (OpExpr*)maxElem;
+            result = (Node*)evaluate_expr(
+                (Expr*)op_expr, op_expr->opresulttype, -1, op_expr->opcollid);
+            /*
+             * if the function expression cannot be evaluated and output a const,
+             * than report error
+             */
+            if (!IsA(result, Const)) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                        errmsg("%s key value must be const or const-evaluable expression",
+                            (isPartition ? "partition" : "distribution"))));
+            }
+            
+        } break;
+#endif
         default: {
             ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),

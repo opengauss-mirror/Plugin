@@ -1103,6 +1103,17 @@ select * from slb_monitor_drop_part;
 
 reset enable_opfusion;
 reset enable_partition_opfusion;
+CREATE TABLE tt1 (a DATE, KEY(a))
+PARTITION BY RANGE (TO_DAYS(a))
+(PARTITION `pNULL` VALUES LESS THAN (0),
+PARTITION `p0001-01-01` VALUES LESS THAN (366 + 1),
+PARTITION `p1001-01-01` VALUES LESS THAN (TO_DAYS('1001-01-01') + 1),
+PARTITION `p2001-01-01` VALUES LESS THAN (TO_DAYS('2001-01-01') + 1));
+insert into tt1 values ('0001-01-01');
+insert into tt1 values ('2001-01-01');
+insert into tt1 values ('2001-01-02');
+ERROR:  inserted partition key does not map to any table partition
+drop table tt1;
 drop schema partition_test4 cascade;
 NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to table test_range_subpart

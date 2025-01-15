@@ -371,5 +371,18 @@ copy slb_monitor_drop_part from stdin;
 select * from slb_monitor_drop_part;
 reset enable_opfusion;
 reset enable_partition_opfusion;
+
+CREATE TABLE tt1 (a DATE, KEY(a))
+PARTITION BY RANGE (TO_DAYS(a))
+(PARTITION `pNULL` VALUES LESS THAN (0),
+PARTITION `p0001-01-01` VALUES LESS THAN (366 + 1),
+PARTITION `p1001-01-01` VALUES LESS THAN (TO_DAYS('1001-01-01') + 1),
+PARTITION `p2001-01-01` VALUES LESS THAN (TO_DAYS('2001-01-01') + 1));
+
+insert into tt1 values ('0001-01-01');
+insert into tt1 values ('2001-01-01');
+insert into tt1 values ('2001-01-02');
+drop table tt1;
+
 drop schema partition_test4 cascade;
 reset current_schema;
