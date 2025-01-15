@@ -764,6 +764,15 @@ select timestampadd(hour, 1, '0000-01-01');
 select timestampadd(minute, 1, '0000-01-01');
 select timestampadd(second, 1, '0000-01-01');
 
+-- Default: compat with MySQL 5.7
+select timestampadd(week, 1, time'23:59:59');
+select timestampadd(day, 1, time'23:59:59');
+-- Test compatibility with MySQL 8.0
+set dolphin.cmpt_version to 8.0;
+select timestampadd(week, 1, time'23:59:59');
+select timestampadd(day, 1, time'23:59:59');
+set dolphin.cmpt_version to default;
+
 show dolphin.sql_mode;
 reset dolphin.sql_mode;
 create table test_diff(c1 time);
