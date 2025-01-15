@@ -2225,6 +2225,34 @@ select timestampadd(second, 1, '0000-01-01');
  0000-00-00 00:00:01
 (1 row)
 
+-- Default: compat with MySQL 5.7
+select timestampadd(week, 1, time'23:59:59');
+ timestampadd 
+--------------
+ 191:59:59
+(1 row)
+
+select timestampadd(day, 1, time'23:59:59');
+ timestampadd 
+--------------
+ 47:59:59
+(1 row)
+
+-- Test compatibility with MySQL 8.0
+set dolphin.cmpt_version to 8.0;
+select timestampadd(week, 1, time'23:59:59');
+    timestampadd     
+---------------------
+--? \d{4}-\d{2}-\d{2} 23:59:59
+(1 row)
+
+select timestampadd(day, 1, time'23:59:59');
+    timestampadd     
+---------------------
+--? \d{4}-\d{2}-\d{2} 23:59:59
+(1 row)
+
+set dolphin.cmpt_version to default;
 show dolphin.sql_mode;
  dolphin.sql_mode 
 ------------------

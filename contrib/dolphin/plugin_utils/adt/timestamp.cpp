@@ -8419,6 +8419,7 @@ bool is_conversion_from_time_to_datetime(int dtk, Oid expr_type)
     switch (dtk) {
         case DTK_DAY:
         case DTK_WEEK:
+            return GetSessionContext()->cmpt_version == MYSQL_VERSION_8_0;
         case DTK_MONTH:
         case DTK_QUARTER:
         case DTK_YEAR:
