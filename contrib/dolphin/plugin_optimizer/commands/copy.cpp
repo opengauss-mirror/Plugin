@@ -5139,6 +5139,16 @@ uint64 CopyFrom(CopyState cstate)
                                 isPartitionRel ? partition : NULL,
                                 bucketid, &specConflict, NULL);
                             if (specConflict) {
+                                /* delete index tuples and mark them as dead */
+                                ExecIndexTuplesState exec_index_tuples_state;
+                                exec_index_tuples_state.estate = estate;
+                                exec_index_tuples_state.targetPartRel = heaprel;
+                                exec_index_tuples_state.p = partition;
+                                exec_index_tuples_state.conflict = NULL;
+                                exec_index_tuples_state.rollbackIndex = true;
+
+                                tableam_tops_exec_delete_index_tuples(slot, targetRel, NULL,
+                                                                    pTSelf, exec_index_tuples_state, NULL);
                                 //Rollback tuple
                                 tableam_tuple_abort_speculative(targetRel, tuple);
                                 list_free(recheckIndexes);
