@@ -13,7 +13,7 @@ DATA = spqplugin--1.0.sql
 # for opengauss plugin PG_MODULE_MAGIC should place at first of .so, which contained by spqplugin.o
 src_objs = ./src/objfiles.txt
 obj_files = $(addprefix ./, $(shell cat ./src/objfiles.txt))
-compile_src = $(shell $(MAKE) -j -C src)
+compile_src = $(shell $(MAKE) -j16 -C src)
 
 OBJS = $(if $(compile_src), $(obj_files), $(obj_files))
 
