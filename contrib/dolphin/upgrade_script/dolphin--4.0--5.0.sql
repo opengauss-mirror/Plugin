@@ -51,6 +51,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.left(bytea, integer) RETURNS bytea LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.left(binary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
 CREATE OR REPLACE FUNCTION pg_catalog.left(varbinary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
 
+CREATE OR REPLACE FUNCTION pg_catalog.left(bit, boolean) RETURNS bytea LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1, $2::integer)';
+
 -- max/min for bool type
 CREATE OR REPLACE FUNCTION pg_catalog.bool_larger(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_larger';
 CREATE OR REPLACE FUNCTION pg_catalog.bool_smaller(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_smaller';
