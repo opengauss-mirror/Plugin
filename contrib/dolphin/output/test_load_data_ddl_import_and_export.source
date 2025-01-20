@@ -114,13 +114,13 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_010_
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_010_b_key" for table "t_load_data_010"
 insert into t_load_data_010 values(1, 'a'), (2, 'b');
 load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_010;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t_load_data_010;
 select * from t_load_data_010 order by (a, b);
  a | b 
 ---+---
- 1 | a
- 2 | b
+ 1 | b
  3 | c
-(3 rows)
+(2 rows)
 
 create table t_load_data_011(a int primary key, b char unique) with (segment = on);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_011_pkey" for table "t_load_data_011"
@@ -236,10 +236,9 @@ select * from t_load_data_009 order by (a, b);
 select * from t_load_data_010 order by (a, b);
  a | b 
 ---+---
- 1 | a
- 2 | b
+ 1 | b
  3 | c
-(3 rows)
+(2 rows)
 
 select * from t_load_data_011 order by (a, b);
  a | b 
