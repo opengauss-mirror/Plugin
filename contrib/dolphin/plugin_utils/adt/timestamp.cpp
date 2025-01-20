@@ -4526,45 +4526,33 @@ static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, co
      * tm1_days_of_year calc how many days have passed since the beginning of the tm2 year
      * tm2_days_of_year calc how many days have passed since the beginning of the tm2 year
      */
-    if (tm->tm_year > 0 || tm->tm_mon > 0 || tm->tm_mday > 0) {
-        i = tm2->tm_mon - 1;
-        while (i > 0) {
-            i = i - 1;
-            tm2_days_of_year += day_tab[isleap(tm2->tm_year)][i];
-        }
-        tm2_days_of_year += tm2->tm_mday;
-
-        j = tm1->tm_year - tm2->tm_year;
-        while (j > 0) {
-            j = j - 1;
-            tm1_days_of_year += isleap(j + tm2->tm_year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR;
-        }
-        k = tm1->tm_mon - 1;
-        while (k > 0) {
-            k = k - 1;
-            tm1_days_of_year += day_tab[isleap(tm1->tm_year)][k];
-        }
-        tm1_days_of_year += tm1->tm_mday;
-    } else {
-        i = tm1->tm_mon - 1;
-        while (i > 0) {
-            i = i - 1;
-            tm1_days_of_year += day_tab[isleap(tm1->tm_year)][i];
-        }
-        tm1_days_of_year += tm1->tm_mday;
-
-        j = tm2->tm_year - tm1->tm_year;
-        while (j > 0) {
-            j = j - 1;
-            tm2_days_of_year += isleap(j + tm1->tm_year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR;
-        }
-        k = tm2->tm_mon - 1;
-        while (k > 0) {
-            k = k - 1;
-            tm2_days_of_year += day_tab[isleap(tm2->tm_year)][k];
-        }
-        tm2_days_of_year += tm2->tm_mday;
+    i = tm1->tm_mon - 1;
+    while (i > 0) {
+        i = i - 1;
+        tm1_days_of_year += day_tab[isleap(tm1->tm_year)][i];
     }
+    tm1_days_of_year += tm1->tm_mday;
+
+    k = tm2->tm_mon - 1;
+    while (k > 0) {
+        k = k - 1;
+        tm2_days_of_year += day_tab[isleap(tm2->tm_year)][k];
+    }
+    tm2_days_of_year += tm2->tm_mday;
+
+    j = tm1->tm_year - tm2->tm_year;
+
+    int j1 = abs(j);
+    if (j > 0) {
+        while (j1-- > 0) {
+            tm1_days_of_year += isleap(j1 + tm2->tm_year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR;
+        }
+    } else if (j < 0) {
+        while (j1-- > 0) {
+            tm2_days_of_year += isleap(j1 + tm1->tm_year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR;
+        }
+    }
+
     result = tm1_days_of_year - tm2_days_of_year;
 
     if (!day_fix) {
