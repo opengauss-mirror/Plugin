@@ -106,6 +106,17 @@ drop table bit_test;
 drop table boolean_test;
 drop table blob_test;
 
+set bytea_output to escape;
+create table t_left(c1 text);
+insert into t_left values(left(b'110001', true));
+select hex(c1) from t_left;
+drop table t_left;
+
+select left(b'110001', true);
+select left(b'00110001', true);
+select left(b'110001', 1);
+reset bytea_output;
+
 create table t_number
 (
 	c1 integer,

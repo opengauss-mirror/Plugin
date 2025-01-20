@@ -36,6 +36,8 @@ DROP FUNCTION IF EXISTS pg_catalog.left(varbinary, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(binary, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(bytea, integer);
 
+DROP FUNCTION IF EXISTS pg_catalog.left(bit, boolean);
+
 -- max/min for bool type
 DROP aggregate pg_catalog.max(boolean);
 DROP aggregate pg_catalog.min(boolean);
