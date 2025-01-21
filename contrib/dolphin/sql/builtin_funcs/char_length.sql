@@ -50,5 +50,8 @@ create database db_char_length_ascii dbcompatibility 'b' encoding 'sql_ascii';
 \encoding sql_ascii;
 select char_length('测试');
 select char_length('测试123');
+
+SELECT LPAD('a', 9223372036854775807, 'x');
+SELECT RPAD('a', 9223372036854775807, 'x');
 \c postgres
 drop database if exists db_char_length_ascii;

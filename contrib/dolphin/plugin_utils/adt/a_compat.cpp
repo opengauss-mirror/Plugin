@@ -260,11 +260,21 @@ Datum lpad(PG_FUNCTION_ARGS)
         ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
         PG_RETURN_NULL();
     }
+    PG_TRY();
+    {
+        ret = (text*)palloc(VARHDRSZ + bytelen);
+    }
+    PG_CATCH();
+    {
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
+    PG_END_TRY();
 #else
     if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
         ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-#endif
     ret = (text*)palloc(VARHDRSZ + bytelen);
+#endif
 
     m = len - s1len;
 
@@ -408,6 +418,9 @@ Datum rpad(PG_FUNCTION_ARGS)
 
     int bytelen;
     errno_t ss_rc;
+#ifdef DOLPHIN
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#endif
 
     /* Negative len is silently taken as zero */
     if (len < 0)
@@ -432,14 +445,28 @@ Datum rpad(PG_FUNCTION_ARGS)
     bytelen = pg_database_encoding_max_length() * len;
 
     /* Check for integer overflow */
+#ifdef DOLPHIN
     if (len != 0 && bytelen / pg_database_encoding_max_length() != len) {
-        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
-            (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                 errmsg("requested length too large")));
         PG_RETURN_NULL();
     }
+    PG_TRY();
+    {
+        ret = (text*)palloc(VARHDRSZ + bytelen);
+    }
+    PG_CATCH();
+    {
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
+    PG_END_TRY();
+#else
+    if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
+        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
 
-    ret = (text*)palloc(VARHDRSZ + bytelen);
+#endif
     m = len - s1len;
 
     ptr1 = VARDATA_ANY(string1);
