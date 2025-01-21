@@ -41663,6 +41663,7 @@ alias_name_unreserved_keyword_without_key:
 			| NOMINVALUE
 			| NOTHING
 			| NOTIFY
+			| NOVALIDATE
 			| NOWAIT
 			| NULLCOLS
 			| NULLS_P
@@ -41721,8 +41722,7 @@ alias_name_unreserved_keyword_without_key:
 			| QUOTE
 			| RANDOMIZED
 			| RATIO
-			| RAW  '(' Iconst ')'				{	$$ = "raw";}
-			| RAW  %prec UNION				{	$$ = "raw";}
+			| RAW  				{	$$ = "raw";}
 			| REASSIGN
 			| REBUILD
 			| RECHECK
@@ -41957,6 +41957,8 @@ unreserved_keyword_without_key:
 			| TABLESPACE
 			| TARGET
 			| TIMESTAMP_FORMAT_P
+			| TIMEZONE_HOUR_P
+			| TIMEZONE_MINUTE_P
 			| TIME_FORMAT_P
 			| TRIGGER
 			| TYPE_P

@@ -63,6 +63,8 @@
 #include "catalog/pg_proc.h"
 #include "catalog/pg_statistic.h"
 #include "catalog/pg_statistic_ext.h"
+#include "catalog/pg_statistic_history.h"
+#include "catalog/pg_statistic_lock.h"
 #include "catalog/pg_synonym.h"
 #include "catalog/pg_tablespace.h"
 #include "catalog/pg_type.h"
@@ -2726,6 +2728,12 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
             ereport(WARNING,
                 (errmsg("Store unlogged table in segment when enable system table segment")));
         }
+        /* store tables in segment storage as all possible while initdb */
+        if (relpersistence == RELPERSISTENCE_PERMANENT && (relkind == RELKIND_RELATION ||
+            relkind == RELKIND_INDEX || relkind == RELKIND_GLOBAL_INDEX)) {
+            storage_type = SEGMENT_PAGE;
+            reloptions = AddSegmentOption(reloptions);
+        }
     }
 
     pg_class_desc = heap_open(RelationRelationId, RowExclusiveLock);
@@ -5030,6 +5038,14 @@ void RemoveStatistics(Oid relid, AttrNumber attnum)
 
     systable_endscan(scan);
     heap_close(pgstatistic, RowExclusiveLock);
+
+    if (t_thrd.proc->workingVersionNum >= STATISTIC_HISTORY_VERSION_NUMBER) {
+        RemoveStatisticHistory(relid, attnum);
+        if (attnum == 0) {
+            Oid namespaceid = get_rel_namespace(relid);
+            RemoveStatisticLockTab(namespaceid, relid);
+        }
+    }
 }
 
 /*

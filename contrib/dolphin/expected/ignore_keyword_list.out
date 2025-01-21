@@ -66,10 +66,6 @@ NOTICE:  test failed. test sql: create table ignore_keyword_list.interval(interv
 NOTICE:  test failed. test sql: create table ignore_keyword_list.key(key int); drop table ignore_keyword_list.key;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.map(map int); drop table ignore_keyword_list.map;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.match(match int); drop table ignore_keyword_list.match;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.novalidate(novalidate int); drop table ignore_keyword_list.novalidate;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.raw(raw int); drop table ignore_keyword_list.raw;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.timezone_hour(timezone_hour int); drop table ignore_keyword_list.timezone_hour;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.timezone_minute(timezone_minute int); drop table ignore_keyword_list.timezone_minute;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.warnings(warnings int); drop table ignore_keyword_list.warnings;
 reset current_schema;
 drop schema ignore_keyword_list cascade;
