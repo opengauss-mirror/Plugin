@@ -167,5 +167,25 @@ select char_length('测试123');
            5
 (1 row)
 
+SELECT LPAD('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: lpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+SELECT RPAD('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: rpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: rpad
+ rpad 
+------
+ 
+(1 row)
+
 \c postgres
 drop database if exists db_char_length_ascii;
