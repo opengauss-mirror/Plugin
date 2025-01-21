@@ -36,6 +36,8 @@ LINE 1: create table t2 (prior int);
 set disable_keyword_options ='prior,binary';
 create table t1 (binary int);
 create table t2 (prior int);
+create table key (c1 int);
+set disable_keyword_options ='prior,binary,interval';
 declare
 keyword_name varchar;
 catcode_name char;
@@ -61,14 +63,10 @@ begin
     end loop;
 end;
 /
-NOTICE:  test failed. test sql: create function ignore_keyword_list.ignore() returns int language sql as 'select 1'; drop function ignore_keyword_list.ignore;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.interval(interval int); drop table ignore_keyword_list.interval;
 NOTICE:  test failed. test sql: create table ignore_keyword_list.key(key int); drop table ignore_keyword_list.key;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.map(map int); drop table ignore_keyword_list.map;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.match(match int); drop table ignore_keyword_list.match;
-NOTICE:  test failed. test sql: create table ignore_keyword_list.warnings(warnings int); drop table ignore_keyword_list.warnings;
 reset current_schema;
 drop schema ignore_keyword_list cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table ignore_keyword_list.t1
 drop cascades to table ignore_keyword_list.t2
+drop cascades to table ignore_keyword_list.key

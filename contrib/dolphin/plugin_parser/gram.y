@@ -1042,7 +1042,7 @@ static bool GreaterThanHour (List* int_type);
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 /* for keyword which could be a column/table alias name, use alias_name_xxxx*/
 %type <keyword> alias_name_keyword alias_name_unreserved_keyword_without_key alias_name_reserved_keyword alias_name_col_name_keyword alias_name_col_name_alias_nonambiguous_keyword alias_name_type_func_name_keyword_without_current_schema
-%type <keyword> unreserved_keyword type_func_name_keyword type_func_name_keyword_without_current_schema unreserved_keyword_without_key unreserved_keyword_without_proxy alias_keyword_ColId
+%type <keyword> unreserved_keyword type_func_name_keyword type_func_name_keyword_without_current_schema unreserved_keyword_without_key unreserved_keyword_without_proxy alias_keyword_ColId type_func_name_keyword_without_ignore
 %type <keyword> col_name_keyword reserved_keyword col_name_keyword_nonambiguous
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
@@ -3818,25 +3818,7 @@ FunctionSetResetClause:
 
 
 VariableShowStmt:
-			SHOW WARNINGS
-				{
-#ifdef ENABLE_MULTIPLE_NODES
-					ereport(ERROR,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("Un-support feature"),
-							errdetail("Show warnings feature is unsupported on distributed mode.")));
-#else
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
-					{
-						VariableShowStmt *n = makeNode(VariableShowStmt);
-						n->name = "show_warnings";
-						n->offset = 0;
-						n->count = MAX_ERROR_COUNT;
-						$$ = (Node *) n;
-					}
-#endif
-				}
-			| SHOW WARNINGS LIMIT Iconst
+			SHOW WARNINGS LIMIT Iconst
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					ereport(ERROR,
@@ -4026,6 +4008,19 @@ VariableShowStmt:
 						n->from_clause = NULL;
 						n->where_clause = NULL;
 						$$ = (Node *)n;
+				} else if (strcmp($2, "warnings") == 0) {
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					VariableShowStmt *n = makeNode(VariableShowStmt);
+					n->name = "show_warnings";
+					n->offset = 0;
+					n->count = MAX_ERROR_COUNT;
+					$$ = (Node *) n;
+#endif
 					} else if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeShowProcesslistQuery(FALSE);
 						$$ = (Node *) n;
@@ -41240,7 +41235,7 @@ PrivilegeColId:         normal_ident                                            
  */
 type_function_name:	normal_ident					{ $$ = $1; }
 			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
-			| type_func_name_keyword            	{ $$ = downcase_str(pstrdup($1), false); }
+			| type_func_name_keyword_without_ignore            	{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
 /* Column label --- allowed labels in "AS" clauses.
@@ -41624,9 +41619,11 @@ alias_name_unreserved_keyword_without_key:
 			| LOGIN_SUCCESS
 			| LOGOUT
 			| LOGS
+			| MAP
 			| MAPPING
 			| MASKING
 			| MASTER
+			| MATCH
 			| MATCHED
 			| MATERIALIZED
 			| MAX_ROWS
@@ -41865,7 +41862,7 @@ alias_name_unreserved_keyword_without_key:
 			| VISIBLE
 			| VOLATILE
 			| WAIT
-			/* | WARNINGS */
+			| WARNINGS 
 			| WEAK
 			| WEEK_P
 			| WHITESPACE_P
@@ -41916,7 +41913,7 @@ unreserved_keyword_without_key:
 			| LOAD
 			| LOCK_P
 			| LOOP
-			| MATCH
+
 			| MINUTE_MICROSECOND_P
 			| MINUTE_SECOND_P
 			| MOD
@@ -42150,6 +42147,9 @@ type_func_name_keyword_without_current_schema:
  * - thomas 2000-11-28
  */
 type_func_name_keyword:
+			type_func_name_keyword_without_ignore
+			| IGNORE 
+type_func_name_keyword_without_ignore:
 			type_func_name_keyword_without_current_schema
 			| CURRENT_SCHEMA
 		;
@@ -42162,8 +42162,7 @@ type_func_name_keyword:
  */
 
 alias_keyword_ColId: 
-			WARNINGS
-			| CSN
+			CSN
 			| PRIOR
 			| AGAINST
 			| AUTHORIZATION
