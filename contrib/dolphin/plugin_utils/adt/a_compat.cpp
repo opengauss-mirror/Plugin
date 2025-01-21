@@ -192,6 +192,9 @@ Datum lpad(PG_FUNCTION_ARGS)
 
     int bytelen;
     errno_t ss_rc;
+#ifdef DOLPHIN
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#endif
 
     FUNC_CHECK_HUGE_POINTER(false, string1, "lpad()");
 
@@ -215,13 +218,33 @@ Datum lpad(PG_FUNCTION_ARGS)
     if (s2len <= 0)
         len = s1len; /* nothing to pad with, so don't pad */
 
+#ifdef DOLPHIN
     if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
         unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
         unlikely(!AllocSizeIsValid(bytelen))) {
-            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));    
+            ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+            PG_RETURN_NULL();
+    }
+    PG_TRY();
+    {
+        ret = (text*)palloc(bytelen);
+    }
+    PG_CATCH();
+    {
+        FlushErrorState();
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
+    PG_END_TRY();
+#else
+    if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
+        unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+        unlikely(!AllocSizeIsValid(bytelen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
     }
 
     ret = (text*)palloc(bytelen);
+#endif
 
     m = len - s1len;
 
@@ -365,6 +388,9 @@ Datum rpad(PG_FUNCTION_ARGS)
 
     int bytelen;
     errno_t ss_rc;
+#ifdef DOLPHIN
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#endif
 
     /* Negative len is silently taken as zero */
     if (len < 0)
@@ -386,14 +412,33 @@ Datum rpad(PG_FUNCTION_ARGS)
     if (s2len <= 0)
         len = s1len; /* nothing to pad with, so don't pad */
 
-
+#ifdef DOLPHIN
     if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
         unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
         unlikely(!AllocSizeIsValid(bytelen))) {
-            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));    
+            ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+            PG_RETURN_NULL();
+    }
+    PG_TRY();
+    {
+        ret = (text*)palloc(bytelen);
+    }
+    PG_CATCH();
+    {
+        ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
+    PG_END_TRY();
+#else
+    if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
+        unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+        unlikely(!AllocSizeIsValid(bytelen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
     }
 
     ret = (text*)palloc(bytelen);
+#endif
     m = len - s1len;
 
     ptr1 = VARDATA_ANY(string1);
