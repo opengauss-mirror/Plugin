@@ -1240,6 +1240,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             /*
              * DEFAULT must be reduced to one token, to allow START as table / column alias.
              */
+            if (GetSessionContext()->is_create_alter_stmt) {
+                break;
+            }
             GET_NEXT_TOKEN();
             switch (next_token) {
                 case '(':

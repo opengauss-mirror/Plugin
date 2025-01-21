@@ -14,7 +14,9 @@ create table t2 (prior int);
 set disable_keyword_options ='prior,binary';
 create table t1 (binary int);
 create table t2 (prior int);
+create table key (c1 int);
 
+set disable_keyword_options ='prior,binary,interval';
 declare
 keyword_name varchar;
 catcode_name char;
@@ -43,4 +45,3 @@ end;
 
 reset current_schema;
 drop schema ignore_keyword_list cascade;
-
