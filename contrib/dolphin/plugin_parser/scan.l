@@ -1089,6 +1089,12 @@ other			.
 					if (slashstar)
 						nchars = slashstar - yytext;
 #ifdef DOLPHIN
+					if (strcmp(yytext, "<#>") == 0)
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return Op;
+					}
 					if(nchars >= 1 && ENABLE_B_CMPT_MODE && !yyextra->in_slash_proc_body)
 					{
 						char   *sharpchar = strstr(yytext, "#");

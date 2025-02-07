@@ -298,6 +298,12 @@ Options: orientation=row, compression=no
 Has OIDs: no
 Options: orientation=row, compression=no
 
+select '[1,2,3]'::Vector <#> '[2,3,4]';
+ ?column? 
+----------
+      -20
+(1 row)
+
 drop schema b_comments cascade;
 NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to table test_unsupported

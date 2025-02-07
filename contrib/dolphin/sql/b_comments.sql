@@ -191,5 +191,7 @@ create table t4(id int comment 'user id' comment 'user_id');
 \d+ t3
 \d+ t4
 
+select '[1,2,3]'::Vector <#> '[2,3,4]';
+
 drop schema b_comments cascade;
 reset search_path;
