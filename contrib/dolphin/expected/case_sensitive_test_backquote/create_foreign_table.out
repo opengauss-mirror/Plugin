@@ -74,38 +74,38 @@ ERROR:  syntax error at or near "`foreign`"
 LINE 1: create `foreign` table `Foreign_t9` (
                ^
 drop `foreign` table `Foreign_t1`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t1`;
              ^
 drop `foreign` table `Foreign_t2`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t2`;
              ^
 drop `foreign` table `Foreign_t3`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t3`;
              ^
 drop `foreign` table `Foreign_t4`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t4`;
              ^
 drop `foreign` table `Foreign_t5`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t5`;
              ^
 drop `foreign` table `Foreign_t6`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t6`;
              ^
 drop `foreign` table `Foreign_t7`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t7`;
              ^
 drop `foreign` table `Foreign_t8`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t8`;
              ^
 drop `foreign` table `Foreign_t9`;
-ERROR:  syntax error at or near "`foreign`"
+ERROR:  syntax error at or near "`"
 LINE 1: drop `foreign` table `Foreign_t9`;
              ^

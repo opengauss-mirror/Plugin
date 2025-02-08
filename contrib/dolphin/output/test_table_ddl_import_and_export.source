@@ -11,7 +11,6 @@ create database restore_table_db with dbcompatibility = 'B';
 create table t_create_table_001(c int) engine = InnoDB;
 --指定compression设置压缩参数
 create table t_create_table_002(c int) compression = pglz;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 --row_format支持default
 create table t_create_table_003(c int) row_format = default;
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
@@ -35,7 +34,6 @@ create table if not exists t_create_table_015 like t_create_table_011;
 create table t_create_table_016(c int) charset utf8 engine = InnoDB;
 create table t_create_table_017(c int) engine = InnoDB charset utf8;
 create table t_create_table_018(c int) for materialized view nocompress compression = pglz for materialized view compression = zstd;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 --指定timestamp类型为on update current_timestamp
 create table t_create_table_019(c int, t timestamp on update current_timestamp);
 --支持create table创建索引

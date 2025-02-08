@@ -113,8 +113,7 @@ b  := 5;
 insert into test values (a + b);
 end;
 //
-ERROR:  syntax error at or near "declare
-b int"
+ERROR:  syntax error at or near "declare"
 LINE 2: declare
         ^
 delimiter ;
@@ -500,9 +499,6 @@ set @x2=0;
 set @x3=0;
 set @x4=0;
 call proc_continue_sqlexception();
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
-CONTEXT:  SQL statement "create table t_rowcompress_pglz_compresslevel(id int) with (compresstype=1,compress_level=2)"
-PL/pgSQL function proc_continue_sqlexception() line 6 at SQL statement
  proc_continue_sqlexception 
 ----------------------------
  

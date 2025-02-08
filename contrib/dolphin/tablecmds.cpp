@@ -727,7 +727,6 @@ static void ATPrepDropSubPartition(Relation rel);
 static void ATPrepUnusableIndexPartition(Relation rel);
 static void ATPrepUnusableAllIndexOnPartition(Relation rel);
 static void ATExecAddPartition(Relation rel, AddPartitionState *partState);
-static void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partState);
 static void ATExecAddSubPartition(Relation rel, AddSubPartitionState *subpartState);
 static void CheckForAddPartition(Relation rel, List *partDefStateList);
 static void CheckForAddSubPartition(Relation rel, Relation partrel, List *subpartDefStateList);
@@ -1367,14 +1366,14 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
                         errmsg("There is a conflict caused by storage_type and orientation")));
     }
 
-    bool noSupportTable = segment || isCStore || isTsStore || relkind != RELKIND_RELATION ||
+    bool noSupportTable = isCStore || isTsStore || relkind != RELKIND_RELATION ||
                           stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED ||
                           stmt->relation->relpersistence == RELPERSISTENCE_TEMP ||
                           stmt->relation->relpersistence == RELPERSISTENCE_GLOBAL_TEMP;
     if (noSupportTable && tableCreateSupport.compressType) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-                        errmsg("compresstype can not be used in segment table, "
-                               "column table, view, unlogged table or temp table.")));
+                        errmsg("compresstype can not be used in column table, "
+                               "view, unlogged table or temp table.")));
     }
 
     if (tableCreateSupport.compressType && ENABLE_DMS) {
@@ -2149,7 +2148,7 @@ static void CheckPartitionKeyForCreateTable(PartitionState *partTableState, List
         CompareListValue(pos, descriptor->attrs, partTableState->partitionList, partkeyIsFunc);
 
     /* charset of partkey columns cannot be different from server_encoding */
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         foreach_cell (cell, pos) {
             int attidx = lfirst_int(cell);
             check_unsupported_charset_for_column(
@@ -2565,7 +2564,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     /* relation collation is stored using stmt->options. */
-    if (DB_IS_CMPT(B_FORMAT) && relkind == RELKIND_RELATION) {
+    if (DB_IS_CMPT_BD && relkind == RELKIND_RELATION) {
         (void)fill_relation_collation(stmt->collate, stmt->charset, &stmt->options, nspdefcoll);
     }
 
@@ -3183,8 +3182,6 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("Only support segment storage type while parameter enable_segment is ON.")));
     }
-
-    CheckSegmentCompressOption(stmt->options, relkind, storage_type, storeChar);
 
     /*
      * Create the relation.  Inherited defaults and constraints are passed in
@@ -7643,11 +7640,6 @@ ObjectAddress renamePartition(RenameStmt* stmt)
                 errmsg("partition \"%s\" of relation \"%s\" already exists", stmt->newname, stmt->relation->relname)));
     }
 
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(rel)) {
-        LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
-    }
-
     /* Do the work */
     renamePartitionInternal(partitionedTableOid, partitionOid, stmt->newname);
 
@@ -9743,6 +9735,11 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         if (!PARTITIONNO_IS_VALID(partitionno)) {
             RelationResetPartitionno(rel->rd_id, ShareUpdateExclusiveLock);
         }
+
+        // add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION
+        if (RELATION_IS_INTERVAL_PARTITIONED(rel) && !u_sess->is_partition_autonomous_session) {
+            LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
+        }
     }
     
     if (sqlcmd_partition_index_ddl_cmd(cmd->subtype) && RelationIsIndex(rel)) {
@@ -10195,8 +10192,12 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
 
     /* Recode time of alter relation. */
     PgObjectType objectType = GetPgObjectTypePgClass(tab->relkind);
-    if (objectType != OBJECT_TYPE_INVALID) {
+    if (objectType != OBJECT_TYPE_INVALID && !u_sess->is_partition_autonomous_session) {
         UpdatePgObjectMtime(tab->relid, objectType);
+    }
+
+    if (u_sess->is_partition_autonomous_session) {
+        UpdatePgObjectChangecsn(tab->relid, objectType);
     }
 
     /* take ExclusiveLock to avoid PARTITION DDL COMMIT until we finish the InitPlan. Oid info will be masked here, and
@@ -13375,9 +13376,8 @@ List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid)
     return evAction;
 }
 
-void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
+void UpdatePgrewriteForView(Oid rw_oid, List* evAction)
 {
-    List *new_query_str = NIL;
     ScanKeyData entry;
     ScanKeyInit(&entry, ObjectIdAttributeNumber, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rw_oid));
     Relation rewrite_rel = heap_open(RewriteRelationId, RowExclusiveLock);
@@ -13396,43 +13396,17 @@ void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
     simple_heap_update(rewrite_rel, &new_dep_tuple->t_self, new_dep_tuple);
     CatalogUpdateIndexes(rewrite_rel, new_dep_tuple);
     CommandCounterIncrement();
+    /* force relcache rebuild */
+    SetRelationRuleStatus(rewrite_form->ev_class, true, false);
+
     heap_freetuple_ext(new_dep_tuple);
     pfree_ext(actiontree);
-    /* get new_query_str from pg_rewrite */
-    if (query_str == NULL) {
-        systable_endscan(rewrite_scan);
-        heap_close(rewrite_rel, RowExclusiveLock);
-        return;
-    }
-    Query* query = (Query*)linitial(evAction);
-    StringInfoData buf;
-    initStringInfo(&buf);
-    Relation ev_relation = heap_open(rewrite_form->ev_class, AccessShareLock);
-    get_query_def(query,
-        &buf,
-        NIL,
-        RelationGetDescr(ev_relation),
-        0,
-        -1,
-        0,
-        false,
-        false,
-        NULL,
-        false,
-        false);
-    appendStringInfo(&buf, ";");
-    ViewInfoForAdd * info = static_cast<ViewInfoForAdd *>(palloc(sizeof(ViewInfoForAdd)));
-    info->ev_class = rewrite_form->ev_class;
-    info->query_string = pstrdup(buf.data);
-    heap_close(ev_relation, AccessShareLock);
-    FreeStringInfo(&buf);
-    new_query_str = lappend(new_query_str, info);
-    *query_str = new_query_str;
+
     systable_endscan(rewrite_scan);
     heap_close(rewrite_rel, RowExclusiveLock);
 }
 
-void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction, Query* query, List **query_str)
+void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction, Query* query)
 {
     List* evAction = NIL;
     evAction = lappend(evAction, query);
@@ -13441,7 +13415,7 @@ void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction,
      * so that GetRefreshedViewQuery which would scan pg_rewrite to get ev_action
      * can obtain right view_def.
      */
-    UpdatePgrewriteForView(rw_objid, evAction, NULL);
+    UpdatePgrewriteForView(rw_objid, evAction);
 
     List* newEvAction = NIL;
     PG_TRY();
@@ -13473,8 +13447,10 @@ void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction,
         UpdatePgAttributeForView(tle, tle2, viewid);
     }
 
+    freshed_query = UpdateRangeTableOfViewParse(viewid, freshed_query);
+
     /* update pg_rewrite with final ev_action */
-    UpdatePgrewriteForView(rw_objid, newEvAction, query_str);
+    UpdatePgrewriteForView(rw_objid, list_make1(freshed_query));
 
     list_free_deep(newEvAction);
 }
@@ -17652,7 +17628,7 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
     /* And the collation */
     Oid rel_coll_oid = rel->rd_options == NULL ? InvalidOid : ((StdRdOptions*)(rel)->rd_options)->collate;
     targetcollid = GetColumnDefCollation(NULL, def, targettype, rel_coll_oid);
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         targettype = binary_need_transform_typeid(targettype, &targetcollid);
         target_charset = get_charset_by_collation(targetcollid);
     }
@@ -18486,7 +18462,7 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     /* And the collation */
     Oid rel_coll_oid = rel->rd_options == NULL ? InvalidOid : ((StdRdOptions*)(rel)->rd_options)->collate;
     targetcollid = GetColumnDefCollation(NULL, def, targettype, rel_coll_oid);
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         targettype = binary_need_transform_typeid(targettype, &targetcollid);
         if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
             check_unsupported_charset_for_column(targetcollid, colName);
@@ -20303,9 +20279,10 @@ bool static transformTableCompressedOptions(Relation rel, bytea* relOption, List
                         errmsg("row-compression feature current not support algorithm is PGZSTD.")));
     }
 
-    if (newCompressOpt->compressType != COMPRESS_TYPE_ZSTD && newCompressOpt->compressLevel != 0) {
+    if ((newCompressOpt->compressType != COMPRESS_TYPE_ZSTD && newCompressOpt->compressType != COMPRESS_TYPE_ZLIB) &&
+        newCompressOpt->compressLevel != 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-            errmsg("compress_level should be used with ZSTD algorithm."))); 
+            errmsg("compress_level should be used with ZSTD or ZLIB algorithm."))); 
     }
 
     if (!newCompressOpt->compressByteConvert && newCompressOpt->compressDiffConvert) {
@@ -20364,7 +20341,7 @@ void static transfromIndexCompressedOptions(Relation rel, bytea* relOoption, Lis
                 DefElem *def = (DefElem *)lfirst(opt);
                 if (pg_strcasecmp(def->defname, "compress_level") == 0) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-                                    errmsg("compress_level should be used with ZSTD algorithm.")));
+                                    errmsg("compress_level should be used with ZSTD or ZLIB algorithm.")));
                 }
             }
         }
@@ -20398,18 +20375,6 @@ bool static transformCompressedOptions(Relation rel, bytea* relOption, List* def
     /* If delist doesn't contains compressed options, return false. */
     if (!relOption || defList == NULL || !CheckDefListContainsCompressedOptions(defList)) {
         return false;
-    }
-
-    if (g_instance.attr.attr_common.support_extended_features) {
-        ereport(WARNING,
-               (errmsg("The compressed relation you are using is an unofficial supported extended feature."))
-	);
-    } else {
-        ereport(ERROR,
-               (errmsg("The compressed relation you are trying to create or alter "
-                       "is an unofficial supported extended feature."),
-                errhint("Turn on GUC 'support_extended_features' to enable it."))
-        );
     }
 
     /* If the relkind doesn't support compressed options, check if delist contains compressed options.
@@ -20880,11 +20845,6 @@ static void ATExecSetTableSpaceForPartitionP2(AlteredTableInfo* tab, Relation re
     /* cehck oid validity of found partition */
     if (!OidIsValid(partOid)) {
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("The partition number is invalid or out-of-range")));
-    }
-
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(rel)) {
-        LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
     }
 
     tab->partid = partOid;
@@ -25284,7 +25244,7 @@ Node* GetTargetValue(Form_pg_attribute attrs, Const* src, bool isinterval, bool 
     }
 
     /* convert source const's charset to target partkey's charset */
-    if (!partkeyIsFunc && DB_IS_CMPT(B_FORMAT) && OidIsValid(attrs->attcollation)) {
+    if (!partkeyIsFunc && DB_IS_CMPT_BD && OidIsValid(attrs->attcollation)) {
         assign_expr_collations(NULL, expr);
         if (attrs->attcollation != exprCollation(expr)) {
             int attcharset = get_valid_charset_by_collation(attrs->attcollation);
@@ -26298,6 +26258,8 @@ static void CheckForAddPartition(Relation rel, List *partDefStateList)
         ComparePartitionValue(partKeyPosList, (RelationGetDescr(rel))->attrs, partDefStateList, true, partkeyIsFunc);
     } else if (rel->partMap->type == PART_TYPE_LIST) {
         CompareListValue(partKeyPosList, (RelationGetDescr(rel))->attrs, partDefStateList, partkeyIsFunc);
+    } else if (PartitionMapIsInterval(rel->partMap)) {
+        Assert(list_length(partDefStateList) == 1);
     }
     list_free_ext(partKeyPosList);
 
@@ -26390,7 +26352,7 @@ static void CheckForAddSubPartition(Relation rel, Relation partrel, List *subpar
  * Description	:
  * Notes		:
  */
-static void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partState)
+void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partState)
 {
     Relation pgPartRel = NULL;
     Oid newPartOid = InvalidOid;
@@ -26403,6 +26365,7 @@ static void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partStat
     ListCell* cell = NULL;
     Oid bucketOid;
     Relation parentrel = NULL;
+    char partStrategy = PartTypeGetPartStrategy(rel->partMap->type);
     char subparttype = PART_STRATEGY_INVALID;
     int2vector *subpartitionKey = NULL;
     PartitionDefState* partDef = NULL;
@@ -26461,7 +26424,7 @@ static void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partStat
         partDef = (PartitionDefState*)lfirst(cell);
 
         PartitionState *partitionState = makeNode(PartitionState);
-        partitionState->partitionStrategy = PartitionMapIsRange(rel) ? PART_STRATEGY_RANGE : PART_STRATEGY_LIST;
+        partitionState->partitionStrategy = partStrategy;
         partitionState->partitionNameList = partitionNameList;
         if (RelationIsSubPartitioned(rel)) {
             partitionState->subPartitionState = makeNode(PartitionState);
@@ -26498,7 +26461,8 @@ static void ATExecAddPartitionInternal(Relation rel, AddPartitionState *partStat
                 AccessExclusiveLock,
                 subpartitionKey,
                 RelationIsPartitionOfSubPartitionTable(rel),
-                &partExprKeyInfo);
+                &partExprKeyInfo,
+                partStrategy);
         }
 
         Oid partTablespaceOid =
@@ -26733,11 +26697,6 @@ static void ATExecDropPartition(Relation rel, AlterTableCmd *cmd)
 
     /* getting the dropping partition's oid, and lock partition */
     partOid = GetPartOidByATcmd(rel, cmd, "DROP PARTITION");
-
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(rel)) {
-        LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
-    }
 
     /* check 1: check validity of partition oid */
     if (!OidIsValid(partOid)) {
@@ -27769,11 +27728,6 @@ static void ATExecTruncatePartition(Relation rel, AlterTableCmd* cmd)
     }
 #endif
 
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(rel)) {
-        LockPartitionObject(rel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
-    }
-
     if (RelationIsSubPartitioned(rel)) {
         ATExecTruncatePartitionForSubpartitionTable(rel, partOid, cmd, hasGPI);
         return;
@@ -28584,11 +28538,6 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
         renameTargetPart = true;
     }
 
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(partTableRel)) {
-        LockPartitionObject(partTableRel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
-    }
-
     if (cmd->alterGPI) {
         destPartOid = AddTemporaryRangePartitionForAlterPartitions(cmd, partTableRel, curPartIndex, &renameTargetPart);
         int partitionno = GetPartitionnoFromSequence(partTableRel->partMap, curPartIndex);
@@ -29059,11 +29008,6 @@ static void ATExecExchangePartition(Relation partTableRel, AlterTableCmd* cmd)
 
     if (!OidIsValid(partOid)) {
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_TABLE), errmsg("Specified partition does not exist")));
-    }
-
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(partTableRel)) {
-        LockPartitionObject(partTableRel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
     }
 
     Assert(OidIsValid(ordTableOid));
@@ -30963,11 +30907,6 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
             partTableRel->rd_att->attrs, partMap->base.partitionKey, splitPart->partition_for_values);
         srcPartOid = PartitionValuesGetPartitionOid(
             partTableRel, splitPart->partition_for_values, AccessExclusiveLock, true, true, false);
-    }
-
-    /* add INTERVAL_PARTITION_LOCK_SDEQUENCE here to avoid ADD INTERVAL PARTITION */
-    if (RELATION_IS_INTERVAL_PARTITIONED(partTableRel)) {
-        LockPartitionObject(partTableRel->rd_id, INTERVAL_PARTITION_LOCK_SDEQUENCE, PARTITION_EXCLUSIVE_LOCK);
     }
 
     // check final partition num
@@ -35791,7 +35730,17 @@ void RebuildDependViewForProc(Oid proc_oid)
         List* raw_parsetree_list = raw_parser(view_def);
         Node* stmt = (Node*)linitial(raw_parsetree_list);
         Assert(IsA(stmt, ViewStmt));
-        DefineView((ViewStmt*)stmt, view_def);
+
+        PG_TRY();
+        {
+            DefineView((ViewStmt*)stmt, view_def);
+        }
+        PG_CATCH();
+        {
+            /* If there is an error in rebuilding the view, ignore it and set it invalid. */
+            InvalidateDependView(view_oid, OBJECT_TYPE_VIEW);
+        }
+        PG_END_TRY();
         pfree(view_def);
         list_free(raw_parsetree_list);
     }

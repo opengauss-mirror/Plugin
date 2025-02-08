@@ -131,7 +131,7 @@ ALTER TABLE `Ctlt2` ALTER COLUMN `c` SET STORAGE EXTERNAL;
 COMMENT ON COLUMN `Ctlt2`.`c` IS C;
 ERROR:  syntax error at or near "C"
 LINE 1: COMMENT ON COLUMN `Ctlt2`.`c` IS C;
-                                         ^
+                           ^
 CREATE TABLE `Ctlt3` (`a` text CHECK (length(`a`) < 5), `c` text);
 ALTER TABLE `Ctlt3` ALTER COLUMN `c` SET STORAGE EXTERNAL;
 ALTER TABLE `Ctlt3` ALTER COLUMN `a` SET STORAGE MAIN;
@@ -231,7 +231,7 @@ CREATE TABLE `Ctlt13` (LIKE `Ctlt4` INCLUDING ALL);
 CREATE TABLE `Ctlt14` (LIKE `Ctlt4` INCLUDING ALL EXCLUDING RELOPTIONS) WITH (ORIENTATION = COLUMN);
 -- should fail, syntax error
 CREATE TABLE `Ctlt15` (LIKE `Ctlt4` INCLUDING ALL INCLUDING RELOPTIONS);
-ERROR:  syntax error at or near "INCLUDING RELOPTIONS"
+ERROR:  syntax error at or near "INCLUDING"
 LINE 1: CREATE TABLE `Ctlt15` (LIKE `Ctlt4` INCLUDING ALL INCLUDING ...
                                                           ^
 CREATE TABLE `Ctlt16` (LIKE `Ctlt4` INCLUDING ALL EXCLUDING ALL);

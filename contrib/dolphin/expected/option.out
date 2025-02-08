@@ -4,9 +4,7 @@ create global temp table test1(a int primary key, b text) on commit delete rows 
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test1_pkey" for table "test1"
 create global temp table test2(id int,vname varchar(48),remark text) engine = InnoDB on commit PRESERVE rows ;
 create table test3(a int) FOR MATERIALIZED VIEW nocompress compression = pglz;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 create table test4(a int) FOR MATERIALIZED VIEW nocompress compression = pglz FOR MATERIALIZED VIEW compression = zstd;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 create table test5 nocompress with(orientation = column) as select * from test4;
 create table test6 with(orientation = column) nocompress  with(orientation = row) as table test5;
 ERROR:  can't use "option" with more than once
