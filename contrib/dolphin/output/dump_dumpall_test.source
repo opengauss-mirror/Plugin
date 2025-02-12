@@ -28,9 +28,7 @@ NOTICE:  table "table_created_with_compression_option_zstd" does not exist, skip
 drop table if exists table_created_with_compression_option_none;
 NOTICE:  table "table_created_with_compression_option_none" does not exist, skipping
 create table table_created_with_compression_option_pglz(c1 int, c2 text) compression = pglz;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 create table table_created_with_compression_option_zstd(c1 int, c2 text) compression = zstd;
-WARNING:  The compressed relation you are using is an unofficial supported extended feature.
 create table table_created_with_compression_option_none(c1 int, c2 text) compression = none;
 select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
                   relname                   |            reloptions            

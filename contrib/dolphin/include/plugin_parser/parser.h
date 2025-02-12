@@ -48,7 +48,7 @@ extern char** get_next_snippet(
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
 extern char* EscapeQuotes(const char* src);
-extern Oid get_func_oid(const char* funcname, Oid funcnamespace, Expr* expr);
+extern Oid get_func_oid(const char* funcname, Oid funcnamespace, Expr* expr, bool noPkg);
 #ifdef DOLPHIN
 enum CmpType {CMP_STRING_TYPE, CMP_REAL_TYPE, CMP_INT_TYPE, CMP_DECIMAL_TYPE, CMP_UNKNOWN_TYPE};
 CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag, bool *is_temporal_type = NULL);

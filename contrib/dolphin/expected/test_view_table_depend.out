@@ -496,7 +496,7 @@ View definition:
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT v1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
+ SELECT v1.c1::bigint + 1::bigint AS "?column?"
    FROM v1;
 
 drop table t1 cascade;
@@ -570,7 +570,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
+ SELECT t1.c1::bigint + 1::bigint AS "?column?"
    FROM t1;
 
 drop table t1 cascade;
@@ -646,7 +646,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) t2.c2::bigint AS "?column?"
+ SELECT t1.c1::bigint + t2.c2::bigint AS "?column?"
    FROM t1
   CROSS JOIN t2;
 

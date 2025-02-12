@@ -81,7 +81,7 @@ ERROR:  syntax error at or near "analyse"
 LINE 1: analyse;
         ^
 explain analyse select 1;
-ERROR:  syntax error at or near "analyse select"
+ERROR:  syntax error at or near "analyse"
 LINE 1: explain analyse select 1;
                 ^
 analyse verbose;

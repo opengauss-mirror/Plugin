@@ -6004,7 +6004,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
     if (column->collClause) {
         if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation) && !type_is_enum(typeTypeId(ctype)))
 #else
-    if (!DB_IS_CMPT(B_FORMAT) && column->collClause) {
+    if (!DB_IS_CMPT_BD && column->collClause) {
         LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
         /* Complain if COLLATE is applied to an uncollatable type */
         if (!OidIsValid(typtup->typcollation))

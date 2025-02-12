@@ -181,7 +181,7 @@ alter algorithm=MERGE definer = algorithm view algo_c_v2 as select * from va_1_t
 alter algorithm=TEMPTABLE view algo_c_v3 as select c3 from va_1_t; -- openGauss does not support drop columns currently
 ERROR:  cannot drop columns from view
 alter algorithm TEMPTABLE view algo_c_v3 as select c3 from algo_t;
-ERROR:  syntax error at or near "TEMPTABLE view"
+ERROR:  syntax error at or near "TEMPTABLE"
 LINE 1: alter algorithm TEMPTABLE view algo_c_v3 as select c3 from a...
                         ^
 alter algorithm='TEMPTABLE' view algo_c_v3 as select c3 from algo_t;

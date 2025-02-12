@@ -126,7 +126,8 @@ DB_CompatibilityAttr g_dbCompatArray[] = {
     {DB_CMPT_A, "A"},
     {DB_CMPT_B, "B"},
     {DB_CMPT_C, "C"},
-    {DB_CMPT_PG, "PG"}
+    {DB_CMPT_PG, "PG"},
+	{DB_CMPT_D, "D"}
 };
 
 IntervalStylePack g_interStyleVal = {"a"};
@@ -21098,9 +21099,9 @@ collate:
 					errmsg("Un-support feature"),
 					errdetail(specifying character sets and collations is not yet supported)));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("specifying character sets and collations is supported only in B-format database")));
+						errmsg("specifying character sets and collations is supported only in B-format or D-format database")));
 				}
 				$$ = $3;
 			}
@@ -22290,14 +22291,21 @@ b_proc_body:{
 
 							if (tok == ';' )
 							{
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								}
 								else
 								{
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							break;
@@ -22765,11 +22773,18 @@ CreatePackageStmt:
                     appendBinaryStringInfo(&content_info, yyextra->core_yy_extra.scanbuf + proc_start_pos - 1, name_start_pos - proc_start_pos + 1);
                     char* pkg_spec_str = content_info.data;
 
-                    if (yyextra->lookahead_num != 0) {
+                    if (yyextra->lookahead_len != 0) {
                         parser_yyerror("package spec is not ended correctly");
                     } else {
-                        yyextra->lookahead_token[0] = tok;
-                        yyextra->lookahead_num = 1;
+                        const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+                        yyextra->lookaheads[0] = {
+                            .token = tok,
+                            .yylloc = yylloc,
+                            .yyleng = yyleng,
+                            .prev_hold_char_loc = yylloc + yyleng,
+                            .prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+                        };
+                        yyextra->lookahead_len = 1;
                     }
 
                     /* Reset the flag which mark whether we are in slash proc. */
@@ -23030,13 +23045,21 @@ pkg_body_subprogram: {
                     instantiation_str[INSTANTIATION_LEN + pkg_instantiation_len + END_LEN] = '\0';
                 }
 
-                if (yyextra->lookahead_num != 0)
+                if (yyextra->lookahead_len != 0)
                     parser_yyerror("package spec is not ended correctly");
                 else
                 {
-                    yyextra->lookahead_token[0] = tok;
-                    yyextra->lookahead_num = 1;
+                    const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+                    yyextra->lookaheads[0] = {
+                        .token = tok,
+                        .yylloc = yylloc,
+                        .yyleng = yyleng,
+                        .prev_hold_char_loc = yylloc + yyleng,
+                        .prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+                    };
+                    yyextra->lookahead_len = 1;
                 }
+
                 /* Reset the flag which mark whether we are in slash proc. */
                 yyextra->core_yy_extra.in_slash_proc_body = false;
                 yyextra->core_yy_extra.dolqstart = NULL;
@@ -23699,14 +23722,21 @@ subprogram_body: 	{
 
 							if (tok == ';' )
 							{
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								}
 								else
 								{
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							if(in_procedure == 0)
@@ -23982,12 +24012,19 @@ flow_control_func_body:
 							proc_e = yylloc;
 
 							if (tok == ';' ) {
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								} else {
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							break;
@@ -34451,7 +34488,7 @@ charset:
 				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					errmsg("specifying character sets and collations is not yet supported")));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 						errmsg("specifying character sets and collations is supported only in B-format database")));
 				}
@@ -34478,9 +34515,9 @@ convert_charset:
 				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					errmsg("specifying character sets and collations is not yet supported")));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("specifying character sets and collations is supported only in B-format database")));
+						errmsg("specifying character sets and collations is supported only in B-format or D-format database")));
 				}
 				$$ = PG_INVALID_ENCODING;
 			}
@@ -44637,10 +44674,10 @@ static void checkDeleteRelationError()
 			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				errmsg("multi-relation delete is not yet supported.")));
 #endif
-	if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)						
+	if (!DB_IS_CMPT_BD)						
 		ereport(errstate, 
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					errmsg("multi-relation delete only support in B-format database")));
+					errmsg("multi-relation delete only support in B-format or D-format database")));
 }
 
 #ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
