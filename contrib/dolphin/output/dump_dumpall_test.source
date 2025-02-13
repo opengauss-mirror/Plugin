@@ -2343,5 +2343,49 @@ select * from allshortestpath_splitprovince;
 --------+--------+---------+-------+-----+-------+-------+---+------+------
 (0 rows)
 
+DROP DATABASE IF EXISTS b_test_partition_index;
+NOTICE:  database "b_test_partition_index" does not exist, skipping
+CREATE DATABASE b_test_partition_index DBCOMPATIBILITY 'B';
+\c b_test_partition_index
+-- test for partition index
+DROP TABLE IF EXISTS sales_range;
+NOTICE:  table "sales_range" does not exist, skipping
+CREATE TABLE sales_range (
+    sale_date DATE,
+    PRIMARY KEY (sale_date)
+)
+PARTITION BY RANGE (SALE_DATE) (
+    PARTITION p202401 VALUES LESS THAN ('2024-02-01'),
+    PARTITION p202402 VALUES LESS THAN ('2024-03-01'),
+    PARTITION p202403 VALUES LESS THAN ('2024-04-01'),
+    PARTITION p_others VALUES LESS THAN (MAXVALUE)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sales_range_pkey" for table "sales_range"
+\d sales_range
+  Table "public.sales_range"
+  Column   | Type | Modifiers 
+-----------+------+-----------
+ sale_date | date | not null
+Indexes:
+    "sales_range_pkey" PRIMARY KEY, btree (sale_date) LOCAL TABLESPACE pg_default
+Partition By RANGE(sale_date)
+Number of partitions: 4 (View pg_partition to check each partition range.)
+
+\! @abs_bindir@/gs_dump b_test_partition_index --quote-all-identifiers -p @portstring@ -f @abs_bindir@/part_index.sql >/dev/null 2>&1; echo $?
+0
+DROP TABLE IF EXISTS sales_range;
+\! @abs_bindir@/gsql -d b_test_partition_index -p @portstring@ -f @abs_bindir@/part_index.sql >/dev/null 2>&1; echo $?
+0
+\d sales_range
+  Table "public.sales_range"
+  Column   | Type | Modifiers 
+-----------+------+-----------
+ sale_date | date | not null
+Indexes:
+    "sales_range_pkey" PRIMARY KEY, btree (sale_date) LOCAL TABLESPACE pg_default
+Partition By RANGE(sale_date)
+Number of partitions: 4 (View pg_partition to check each partition range.)
+
 \c postgres
 drop database if exists table_test;
+drop database if exists b_test_partition_index;
