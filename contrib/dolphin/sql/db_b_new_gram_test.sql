@@ -463,7 +463,7 @@ insert ignore into ignore_range_range values('201903', '4', '1', 1);
 -- select from single partition
 select * from ignore_range_range partition (p_201901);
 -- select from single subpartition
-select * from ignore_range_range partition (p_201901_a);
+select * from ignore_range_range subpartition (p_201901_a);
 -- select only from subpartition
 select * from ignore_range_range partition (p_201901_a, p_201905_a);
 select * from ignore_range_range partition (p_201901_a, p_201905_b);
