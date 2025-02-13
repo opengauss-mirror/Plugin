@@ -31299,6 +31299,8 @@ single_table:	relation_expr		%prec UMINUS
 			| relation_expr PARTITION '(' name ')'
 				{
 					$1->partitionNameList = list_make1(makeString($4));
+					$1->partitionname = $4;
+					$1->ispartition = true;
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')'
@@ -31328,6 +31330,8 @@ single_table:	relation_expr		%prec UMINUS
 			| relation_expr PARTITION '(' name ')' index_hint_list
 				{
 					$1->partitionNameList = list_make1(makeString($4));
+					$1->partitionname = $4;
+					$1->ispartition = true;
 					$1->indexhints = $6;
 					$$ = (Node *)$1;
 				}
@@ -31363,6 +31367,8 @@ single_table:	relation_expr		%prec UMINUS
 				{
 					$1->alias = $6;
 					$1->partitionNameList = list_make1(makeString($4));
+					$1->partitionname = $4;
+					$1->ispartition = true;
 					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
