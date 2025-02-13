@@ -3454,8 +3454,11 @@ static bool IsPartitionKeyInParmaryKeyAndUniqueKey(const char *pkname, const Lis
 
     foreach (ixcell, constraintKeys) {
         char *ikname = strVal(lfirst(ixcell));
-
+#ifdef DOLPHIN
+        if (!pg_strcasecmp(pkname, ikname)) {
+#else
         if (!strcmp(pkname, ikname)) {
+#endif
             found = true;
             break;
         }
