@@ -2267,6 +2267,9 @@ Datum intervaltypmodin(PG_FUNCTION_ARGS)
                  INTERVAL_MASK(MICROSECOND):
             case INTERVAL_MASK(WEEK):
             case INTERVAL_MASK(QUARTER):
+            case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                 INTERVAL_MASK(INTERVAL_TO):
+            case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO):
 #endif
             case INTERVAL_FULL_RANGE:
                 /* all OK */
@@ -2307,7 +2310,13 @@ Datum intervaltypmodin(PG_FUNCTION_ARGS)
 #else
             typmod = INTERVAL_TYPMOD((unsigned int)tl[1], (unsigned int)tl[0]);
 #endif
-    } else {
+    }
+#ifdef DOLPHIN
+    else if (n == 3) {
+        typmod = INTERVAL_TYPMOD2((unsigned int)tl[1], (unsigned int)tl[2], (unsigned int)tl[0]);
+    } 
+#endif
+    else {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid INTERVAL type modifier")));
         typmod = 0; /* keep compiler quiet */
     }
@@ -2353,6 +2362,12 @@ Datum intervaltypmodout(PG_FUNCTION_ARGS)
         case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
             fieldstr = " year to month";
             break;
+        case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO): {
+            int p1 = INTERVAL_PRECISION_P1(typmod);
+            rc = snprintf_s(res, TYPMODOUT_LEN, (TYPMODOUT_LEN - 1), " year(%d) to month", p1);
+            securec_check_ss(rc, "\0", "\0");
+            precision = INTERVAL_FULL_PRECISION;
+        } break;
         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):
             fieldstr = " day to hour";
             break;
@@ -2362,6 +2377,14 @@ Datum intervaltypmodout(PG_FUNCTION_ARGS)
         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
             fieldstr = " day to second";
             break;
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+             INTERVAL_MASK(SECOND) | INTERVAL_MASK(INTERVAL_TO): {
+            int p1 = INTERVAL_PRECISION_P1(typmod);
+            int p2 = INTERVAL_PRECISION_P2(typmod);
+            rc = snprintf_s(res, TYPMODOUT_LEN, (TYPMODOUT_LEN - 1), " day(%d) to second(%d)", p1, p2);
+            securec_check_ss(rc, "\0", "\0");
+            precision = INTERVAL_FULL_PRECISION;
+        } break;
         case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
             fieldstr = " hour to minute";
             break;
@@ -2383,7 +2406,7 @@ Datum intervaltypmodout(PG_FUNCTION_ARGS)
     if (precision != INTERVAL_FULL_PRECISION) {
         rc = snprintf_s(res, TYPMODOUT_LEN, 63, "%s(%d)", fieldstr, precision);
         securec_check_ss(rc, "\0", "\0");
-    } else {
+    } else if (!(fields & 0x1)) {
         rc = snprintf_s(res, TYPMODOUT_LEN, 63, "%s", fieldstr);
         securec_check_ss(rc, "\0", "\0");
     }

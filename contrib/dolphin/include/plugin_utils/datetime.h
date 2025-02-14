@@ -157,6 +157,12 @@ extern bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_rese
 #define BC_STR_LEN (2)
 #define SHORT_YEAR_LEN (2)
 
+#define INTERVAL_PRECISION_MASK_P1 (0xFF)
+#define INTERVAL_PRECISION_MASK_P2 (0xFF)
+#define INTERVAL_TYPMOD2(p1, p2, r) ((((r)&INTERVAL_RANGE_MASK) << 16) | \
+    (((p1)&INTERVAL_PRECISION_MASK_P1) << 8) | ((p2)&INTERVAL_PRECISION_MASK_P2))
+#define INTERVAL_PRECISION_P1(t) (((t) >> 8) & INTERVAL_PRECISION_MASK_P1)
+#define INTERVAL_PRECISION_P2(t) ((t) & INTERVAL_PRECISION_MASK_P2)
 #endif
 
 #endif // !FRONTEND_PARSER

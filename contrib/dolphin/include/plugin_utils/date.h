@@ -68,6 +68,8 @@
 #define TIME_MAX_NANO_SECOND 99999999
 #define TIME_NANO_SECOND_TO_MICRO_SECOND_RADIX 1000
 #define DATETIME_MIN_LEN (10) /* datetime: 0001-00-00 00-00-00 */
+/* This is used only to distinguish between similar time units such as YEAR_MONTH and YEAR TO MONTH. */
+#define INTERVAL_TO 0
 struct LongLongTm {
     pg_tm result_tm; /* yyyy-mm-dd hh:MM:ss timestamp */
     fsec_t fsec;     /* ms of result_tm */
