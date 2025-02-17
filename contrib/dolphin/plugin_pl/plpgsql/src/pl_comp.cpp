@@ -182,7 +182,11 @@ static void check_proc_args_type_match(FunctionCallInfo fcinfo, HeapTuple proc_t
             continue;
         }
 
+#ifdef DOLPHIN
+        if (fcinfo->argTypes[i] != proargs->values[i] && !fcinfo->argnull[i]) {
+#else
         if (fcinfo->argTypes[i] != proargs->values[i]) {
+#endif
             ereport(ERROR,  (errmodule(MOD_PLSQL),  errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
                     errmsg("type of function %u args have been changed, while the function maybe rebuilt",
                            fcinfo->flinfo->fn_oid)));
