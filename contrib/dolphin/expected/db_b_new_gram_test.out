@@ -1173,7 +1173,7 @@ select * from ignore_range_range partition (p_201901);
 (1 row)
 
 -- select from single subpartition
-select * from ignore_range_range partition (p_201901_a);
+select * from ignore_range_range subpartition (p_201901_a);
  month_code | dept_code | user_no | sales_amt 
 ------------+-----------+---------+-----------
  201812     | 1         | 1       |         1
