@@ -16,5 +16,23 @@ select * from t1 where a in ('bb', NULL, 'aa');
 (2 rows)
 
 drop table t1;
+set dolphin.sql_mode = '';
+CREATE TABLE t1
+(id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+name TINYBLOB NOT NULL,
+modified TIMESTAMP DEFAULT '0000-00-00 00:00:00',
+INDEX namelocs (name(255))) ENGINE = InnoDB
+PARTITION BY HASH(id) PARTITIONS 2;
+NOTICE:  CREATE TABLE will create implicit sequence "t1_id_seq" for serial column "t1.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+reset dolphin.sql_mode;
+insert into t1 values (1, 'aa', '2024-10-01 10:10:10');
+select * from t1 where name = '\x6161';
+ id |  name  |        modified        
+----+--------+------------------------
+  1 | \x6161 | 2024-10-01 10:10:10-07
+(1 row)
+
+drop table t1;
 drop schema m_testcase_fix cascade;
 reset current_schema;

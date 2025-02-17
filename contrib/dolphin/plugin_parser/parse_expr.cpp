@@ -6087,11 +6087,21 @@ static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey)
             break;
 
         default:
-            ereport(ERROR,
-                (errcode(ERRCODE_DATATYPE_MISMATCH),
-                errmsg("index prefix key are not supported by column type %s",
-                    format_type_be(((Var*)argnode)->vartype)),
-                parser_errposition(pstate, location)));
+#ifdef DOLPHIN
+            if ((((Var*)argnode)->vartype == TINYBLOBOID) ||
+                (((Var*)argnode)->vartype == MEDIUMBLOBOID) ||
+                (((Var*)argnode)->vartype == LONGBLOBOID)) {
+                pkey->arg = (Expr*)argnode;
+            } else {
+#endif
+                ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("index prefix key are not supported by column type %s",
+                        format_type_be(((Var*)argnode)->vartype)),
+                    parser_errposition(pstate, location)));
+#ifdef DOLPHIN
+            }
+#endif
     }
 
     maxlen = ((Var*)argnode)->vartypmod;
