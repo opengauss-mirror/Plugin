@@ -220,6 +220,7 @@ RelOptInfo* build_simple_rel(PlannerInfo* root, int relid, RelOptKind reloptkind
     rel->lateral_referencers = NULL;
     rel->indexlist = NIL;
     rel->pages = 0;
+    rel->amflags = 0;
     rel->tuples = 0;
     rel->multiple = 0;
     rel->allvisfrac = 0;
@@ -328,7 +329,7 @@ RelOptInfo* build_simple_rel(PlannerInfo* root, int relid, RelOptKind reloptkind
                 rel->partflag = PARTITION_ANCESOR;
             }
             /* Table --- retrieve statistics from the system catalogs */
-            get_relation_info(root, rte->relid, rte->inh, rel);
+            get_relation_info(root, rte, rel);
             break;
         case RTE_SUBQUERY:
         case RTE_FUNCTION:
@@ -717,6 +718,7 @@ RelOptInfo* build_join_rel(PlannerInfo* root, Relids joinrelids, RelOptInfo* out
     joinrel->lateral_referencers = NULL;
     joinrel->indexlist = NIL;
     joinrel->pages = 0.0;
+    joinrel->amflags = 0;
     joinrel->tuples = 0;
     joinrel->multiple = 1;
     joinrel->allvisfrac = 0;
