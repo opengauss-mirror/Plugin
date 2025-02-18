@@ -79,6 +79,12 @@ static void resetHasSetUservarFlag()
     u_sess->parser_cxt.has_set_uservar = false;
 }
 
+extern "C" DLL_PUBLIC List* dolphin_raw_parser(const char* str, List** query_string_locationlist);
+List* dolphin_raw_parser(const char* str, List** query_string_locationlist)
+{
+    return raw_parser(str, query_string_locationlist);
+}
+
 /*
  * raw_parser
  *        Given a query in string form, do lexical and grammatical analysis.
