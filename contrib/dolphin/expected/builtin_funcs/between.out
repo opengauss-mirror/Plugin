@@ -715,6 +715,49 @@ CONTEXT:  referenced column: b_between_and
 select time'23:56:59' not between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
 ERROR:  date/time field value out of range: "2018-12-31"
 CONTEXT:  referenced column: b_not_between_and
+-- test the cmp of str and date/time/datetime
+select '2019-12-31' between date'2018-12-31' and date'2020-12-31';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '2019-12-31' between datetime'2018-12-31 23:56:59' and datetime'2020-12-31 23:56:59';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '2019-12-31' between timestamp'2018-12-31 23:56:59' and timestamp'2020-12-31 23:56:59';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '2019abc' between date'2018-12-31' and date'2020-12-31';
+WARNING:  invalid input syntax for type timestamp: "2019abc"
+CONTEXT:  referenced column: b_between_and
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select '2019abc' between datetime'2018-12-31 23:56:59' and datetime'2020-12-31 23:56:59';
+WARNING:  invalid input syntax for type timestamp: "2019abc"
+CONTEXT:  referenced column: b_between_and
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select '2019abc' between timestamp'2018-12-31 23:56:59' and timestamp'2020-12-31 23:56:59';
+WARNING:  invalid input syntax for type timestamp: "2019abc"
+CONTEXT:  referenced column: b_between_and
+ b_between_and 
+---------------
+ f
+(1 row)
+
 -- test the cmp of number and date/time/datetime
 select period_add(202201,2) between '2022-01-01' and date'2022-03-31';
  b_between_and 

@@ -166,6 +166,13 @@ select time'23:56:59' between date'2018-12-31' and timestamp'2018-12-31 23:56:59
 select time'23:56:59' not between date'2018-12-31' and timestamp'2018-12-31 23:56:59';
 select time'23:56:59' between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
 select time'23:56:59' not between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
+-- test the cmp of str and date/time/datetime
+select '2019-12-31' between date'2018-12-31' and date'2020-12-31';
+select '2019-12-31' between datetime'2018-12-31 23:56:59' and datetime'2020-12-31 23:56:59';
+select '2019-12-31' between timestamp'2018-12-31 23:56:59' and timestamp'2020-12-31 23:56:59';
+select '2019abc' between date'2018-12-31' and date'2020-12-31';
+select '2019abc' between datetime'2018-12-31 23:56:59' and datetime'2020-12-31 23:56:59';
+select '2019abc' between timestamp'2018-12-31 23:56:59' and timestamp'2020-12-31 23:56:59';
 -- test the cmp of number and date/time/datetime
 select period_add(202201,2) between '2022-01-01' and date'2022-03-31';
 select sec_to_time(4396) between sec_to_time(4395) and 4396;
