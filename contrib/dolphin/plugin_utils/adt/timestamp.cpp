@@ -7907,6 +7907,7 @@ Datum subtime(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2, res_datetime;
     Oid val_type1, val_type2;
     bool result_isnull = false;
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -7949,7 +7950,7 @@ Datum subtime(PG_FUNCTION_ARGS)
                 }
                 PG_RETURN_NULL();
             }
-            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+            ereport(level, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                             errmsg("date/time field overflow")));
             break;
         }
