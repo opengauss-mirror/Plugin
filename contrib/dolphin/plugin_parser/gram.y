@@ -21636,7 +21636,7 @@ every_interval:
 					t = SystemTypeName("interval");
 					t->typmods = $2;
 					Node *num = makeIntConst($1, @1);
-		            $$ = makeTypeCast(num, t, NULL, NULL, NULL, -1);	
+		            $$ = makeTypeCast(num, t, NULL, NULL, NULL, -1);
 				}
 				| SCONST interval_unit
 				{
@@ -28184,6 +28184,22 @@ AnalyzeStmt:
 					n->relation = $3;
 					n->va_cols = $4;
 					$3->partitionname = $7;
+					$$ = (Node *)n;
+				}
+			/*
+			 * @analyse subpartition
+			 */
+			| analyze_keyword opt_verbose_with_brance dolphin_qualified_name opt_name_list SUBPARTITION '('name')'
+				{
+					VacuumStmt *n = makeNode(VacuumStmt);
+					n->options = VACOPT_ANALYZE;
+					if ($2)
+						n->options |= VACOPT_VERBOSE;
+					n->freeze_min_age = -1;
+					n->freeze_table_age = -1;
+					n->relation = $3;
+					n->va_cols = $4;
+					$3->subpartitionname = $7;
 					$$ = (Node *)n;
 				}
 			/*
@@ -37151,7 +37167,7 @@ func_application_special:	dolphin_func_name '(' ')'
                     n->args = lappend(n->args, makeNullAConst(-1));
 					// nls param constraints is NULL
                     n->args = lappend(n->args, makeNullAConst(-1));
-					
+
 					n->agg_order = NIL;
                     n->agg_star = FALSE;
                     n->agg_distinct = FALSE;
@@ -37172,8 +37188,8 @@ func_application_special:	dolphin_func_name '(' ')'
 					FuncCall *n = makeNode(FuncCall);
                     n->funcname = $1;
 
-					// args: 
-					//   input_expr, default_val, 
+					// args:
+					//   input_expr, default_val,
 					//   is DEFAULT gramy, default expr is column ref,
 					//   fmt constraints, nls param constraints
                     n->args = lappend($3, $5);
@@ -37185,7 +37201,7 @@ func_application_special:	dolphin_func_name '(' ')'
                     n->args = lappend(n->args, $9);
 					// nls param constraints is NULL
                     n->args = lappend(n->args, makeNullAConst(-1));
-					
+
 					n->agg_order = NIL;
                     n->agg_star = FALSE;
                     n->agg_distinct = FALSE;
@@ -37201,7 +37217,7 @@ func_application_special:	dolphin_func_name '(' ')'
                     n->funcname = $1;
 
 					// args: 
-					//   input_expr, default_val, 
+					//   input_expr, default_val,
 					//   is DEFAULT gramy, default expr is column ref,
 					//   fmt constraints, nls param constraints
                     n->args = lappend($3, $5);
@@ -42436,7 +42452,7 @@ makeTypeCast(Node *arg, TypeName *typname, Node *fmt_list, Node *nls_fmt, Node *
 	n->typname = typname;
 	n->fmt_str = fmt_list;
 	n->nls_fmt_str = nls_fmt;
-	n->default_expr = default_expr;	
+	n->default_expr = default_expr;
 	n->location = location;
 	return (Node *) n;
 }
