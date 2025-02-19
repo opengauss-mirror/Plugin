@@ -325,5 +325,11 @@ select * from t_longtext;
 drop table if exists t_longtext;
 reset dolphin.sql_mode;
 
+create table t1 (id bigint, code1 uint1, code2 uint2, code4 uint4, code8 uint8);
+INSERT INTO t1 VALUES (1, '110', '456', '456', '456');
+INSERT INTO t1 VALUES (10,'110'::nvarchar2, '110'::nvarchar2, '110'::nvarchar2, '110'::nvarchar2); 
+select * from t1;
+drop table t1;
+
 drop schema uint_cast cascade;
 reset current_schema;

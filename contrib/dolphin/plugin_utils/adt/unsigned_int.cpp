@@ -5436,4 +5436,59 @@ Datum int8_eq_uint1(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(arg1 == arg2);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_to_uint1);
+extern "C" DLL_PUBLIC Datum nvarchar2_to_uint1(PG_FUNCTION_ARGS);
+Datum nvarchar2_to_uint1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    uint8 result;
+    tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, txt));
+    result = DatumGetUInt8(DirectFunctionCall1(uint1in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_UINT8(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_to_uint2);
+extern "C" DLL_PUBLIC Datum nvarchar2_to_uint2(PG_FUNCTION_ARGS);
+Datum nvarchar2_to_uint2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    uint16 result;
+    tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, txt));
+    result = DatumGetUInt16(DirectFunctionCall1(uint2in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_UINT16(result);
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_to_uint4);
+extern "C" DLL_PUBLIC Datum nvarchar2_to_uint4(PG_FUNCTION_ARGS);
+Datum nvarchar2_to_uint4(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    uint32 result;
+    tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, txt));
+    result = DatumGetUInt32(DirectFunctionCall1(uint4in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_UINT32(result);
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_to_uint8);
+extern "C" DLL_PUBLIC Datum nvarchar2_to_uint8(PG_FUNCTION_ARGS);
+Datum nvarchar2_to_uint8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    uint64 result;
+    tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, txt));
+    result = DatumGetUInt64(DirectFunctionCall1(uint8in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_UINT64(result);
+}
+
+
 #endif

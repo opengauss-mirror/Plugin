@@ -79,3 +79,13 @@ DROP FUNCTION IF EXISTS pg_catalog.reverse(bool);
 
 DROP CAST IF EXISTS (int16 AS text);
 DROP FUNCTION IF EXISTS pg_catalog.int16_text(int16);
+
+
+DROP CAST IF EXISTS (nvarchar2 AS uint1);
+DROP CAST IF EXISTS (nvarchar2 AS uint2);
+DROP CAST IF EXISTS (nvarchar2 AS uint4);
+DROP CAST IF EXISTS (nvarchar2 AS uint8);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint1(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint2(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint4(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint8(nvarchar2);
