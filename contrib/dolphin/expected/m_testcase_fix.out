@@ -34,5 +34,17 @@ select * from t1 where name = '\x6161';
 (1 row)
 
 drop table t1;
+SELECT SUBTIME(120120519090607 | 120120519090607 ,'1 1:1:1.000002');
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: subtime
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: subtime
+WARNING:  date/time field overflow
+CONTEXT:  referenced column: subtime
+ subtime 
+---------
+ 
+(1 row)
+
 drop schema m_testcase_fix cascade;
 reset current_schema;

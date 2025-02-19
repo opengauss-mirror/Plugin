@@ -22,6 +22,7 @@ insert into t1 values (1, 'aa', '2024-10-01 10:10:10');
 select * from t1 where name = '\x6161';
 drop table t1;
 
+SELECT SUBTIME(120120519090607 | 120120519090607 ,'1 1:1:1.000002');
 
 drop schema m_testcase_fix cascade;
 reset current_schema;
