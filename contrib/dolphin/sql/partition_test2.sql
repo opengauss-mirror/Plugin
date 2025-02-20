@@ -205,5 +205,34 @@ select * from test_part_hash order by 1,2;
 select * from test_no_part1;
 alter table test_part_hash analyze partition p0,p1;
 alter table test_part_hash analyze partition all;
+
+-- test partition key upper and lower case
+DROP TABLE IF EXISTS sales_range;
+CREATE TABLE sales_range (
+    sale_date int,
+    PRIMARY KEY (SALE_DATE)
+)
+PARTITION BY RANGE (SALE_DATE) (
+    PARTITION p202401 VALUES LESS THAN (1000),
+    PARTITION p202402 VALUES LESS THAN (2000),
+    PARTITION p202403 VALUES LESS THAN (3000),
+    PARTITION p_others VALUES LESS THAN (MAXVALUE)
+);
+\d sales_range
+
+DROP TABLE IF EXISTS sales_range;
+CREATE TABLE sales_range (
+    sale_date DATE,
+    PRIMARY KEY (sale_date)
+)
+PARTITION BY RANGE (sale_date) (
+    PARTITION p202401 VALUES LESS THAN ('2024-02-01'),
+    PARTITION p202402 VALUES LESS THAN ('2024-03-01'),
+    PARTITION p202403 VALUES LESS THAN ('2024-04-01'),
+    PARTITION p_others VALUES LESS THAN (MAXVALUE)
+);
+\d sales_range
+
+DROP TABLE IF EXISTS sales_range;
 drop schema partition_test2 cascade;
 reset current_schema;
