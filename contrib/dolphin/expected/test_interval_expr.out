@@ -7063,6 +7063,91 @@ select interval '2' second + '20031111000050'::json;
  2003-11-11 00:00:52
 (1 row)
 
+-- test desc/explain for `interval day(precision) to second(precision)` and `year(precision) to month`
+set dolphin.support_interval_to = on;
+create table t_explain_001(c_time_interval interval day(3) to second (4));
+desc t_explain_001;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(3) to second(4) | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_001;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(3) to second(4) | YES  |     | NULL    | 
+(1 row)
+
+create table t_explain_002(c_time_interval interval day to second (4));
+desc t_explain_002;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(2) to second(4) | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_002;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(2) to second(4) | YES  |     | NULL    | 
+(1 row)
+
+create table t_explain_003(c_time_interval interval day(3) to second);
+desc t_explain_003;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(3) to second(6) | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_003;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(3) to second(6) | YES  |     | NULL    | 
+(1 row)
+
+create table t_explain_004(c_time_interval interval day to second);
+desc t_explain_004;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(2) to second(6) | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_004;
+      Field      |             Type             | Null | Key | Default | Extra 
+-----------------+------------------------------+------+-----+---------+-------
+ c_time_interval | interval day(2) to second(6) | YES  |     | NULL    | 
+(1 row)
+
+create table t_explain_005(c_time_interval interval year(3) to month);
+desc t_explain_005;
+      Field      |           Type            | Null | Key | Default | Extra 
+-----------------+---------------------------+------+-----+---------+-------
+ c_time_interval | interval year(3) to month | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_005;
+      Field      |           Type            | Null | Key | Default | Extra 
+-----------------+---------------------------+------+-----+---------+-------
+ c_time_interval | interval year(3) to month | YES  |     | NULL    | 
+(1 row)
+
+create table t_explain_006(c_time_interval interval year to month);
+desc t_explain_006;
+      Field      |           Type            | Null | Key | Default | Extra 
+-----------------+---------------------------+------+-----+---------+-------
+ c_time_interval | interval year(2) to month | YES  |     | NULL    | 
+(1 row)
+
+explain t_explain_006;
+      Field      |           Type            | Null | Key | Default | Extra 
+-----------------+---------------------------+------+-----+---------+-------
+ c_time_interval | interval year(2) to month | YES  |     | NULL    | 
+(1 row)
+
+--- expect error
+create table t_explain_007(c_time_interval interval year(10) to month);
+ERROR:  interval precision is out of range
+drop table t_explain_001,t_explain_002,t_explain_003,t_explain_004,t_explain_005,t_explain_006;
+reset dolphin.support_interval_to;
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 NOTICE:  drop cascades to 5 other objects

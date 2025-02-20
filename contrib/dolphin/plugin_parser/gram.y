@@ -35010,8 +35010,22 @@ interval_type:
 					if (GetSessionContext()->support_interval_to) {
 						$$ = SystemTypeName("interval");
 						$$->location = @1;
+#ifdef DOLPHIN
+						int precision = ($2 == NULL) ? 2 : $2;
+						if (0 > precision || precision > 9) {
+							ereport(ERROR,
+								(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+									errmsg("interval precision is out of range")));						
+						}
+						$$->typmods = list_make3(makeIntConst(INTERVAL_MASK(YEAR) |
+												 INTERVAL_MASK(MONTH) |
+												 INTERVAL_MASK(INTERVAL_TO), @1),
+												 makeIntConst(precision, -1),
+												 makeIntConst(-1, -1));
+#else
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
 												 INTERVAL_MASK(MONTH), @1));
+#endif
 					} else {
 						ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -35045,15 +35059,62 @@ interval_type:
 								errmsg("interval day to minute is not supported")));
 					}
 				}
-			| INTERVAL_TYPE_DAY opt_precision TO interval_second
+			| INTERVAL_TYPE_DAY opt_precision TO SECOND_P
 				{
 					if (GetSessionContext()->support_interval_to) {
 						$$ = SystemTypeName("interval");
 						$$->location = @1;
+#ifdef DOLPHIN
+						int precision = ($2 == NULL) ? 2 : $2;
+						if (0 > precision || precision > 9) {
+							ereport(ERROR,
+								(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+									errmsg("interval precision is out of range")));						
+						}
+						$$->typmods = list_make3(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(INTERVAL_TO), @1),
+												 makeIntConst(precision, -1),
+												 makeIntConst(6, -1));
+#else
 						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
 												 INTERVAL_MASK(HOUR) |
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND), @1));
+#endif
+					} else {
+						ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("interval day to second is not supported")));
+					}
+				}
+			| INTERVAL_TYPE_DAY opt_precision TO SECOND_P '(' Iconst ')'
+				{
+					if (GetSessionContext()->support_interval_to) {
+						$$ = SystemTypeName("interval");
+						$$->location = @1;
+#ifdef DOLPHIN
+						int precision = ($2 == NULL) ? 2 : $2;
+						if (0 > precision || precision > 9 || 0 > $6 || $6 > 9) {
+							ereport(ERROR,
+								(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+									errmsg("interval precision is out of range")));						
+						}
+						$$->typmods = list_make3(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(INTERVAL_TO), @1),
+												 makeIntConst(precision, -1),
+												 makeIntConst($6, -1));
+#else
+						$$->typmods = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+#endif
 					} else {
 						ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),

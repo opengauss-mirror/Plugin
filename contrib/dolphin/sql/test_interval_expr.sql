@@ -1538,6 +1538,31 @@ select interval '2' second + '2003-11-11 00:00:50'::tinyblob;
 select '20031111000050'::json + interval '2' second;
 select interval '2' second + '20031111000050'::json;
 
+-- test desc/explain for `interval day(precision) to second(precision)` and `year(precision) to month`
+set dolphin.support_interval_to = on;
+create table t_explain_001(c_time_interval interval day(3) to second (4));
+desc t_explain_001;
+explain t_explain_001;
+create table t_explain_002(c_time_interval interval day to second (4));
+desc t_explain_002;
+explain t_explain_002;
+create table t_explain_003(c_time_interval interval day(3) to second);
+desc t_explain_003;
+explain t_explain_003;
+create table t_explain_004(c_time_interval interval day to second);
+desc t_explain_004;
+explain t_explain_004;
+create table t_explain_005(c_time_interval interval year(3) to month);
+desc t_explain_005;
+explain t_explain_005;
+create table t_explain_006(c_time_interval interval year to month);
+desc t_explain_006;
+explain t_explain_006;
+--- expect error
+create table t_explain_007(c_time_interval interval year(10) to month);
+drop table t_explain_001,t_explain_002,t_explain_003,t_explain_004,t_explain_005,t_explain_006;
+reset dolphin.support_interval_to;
+
 drop table all_types_table cascade;
 drop schema test_interval_expr cascade;
 reset current_schema;
