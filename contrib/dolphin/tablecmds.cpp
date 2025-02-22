@@ -25626,7 +25626,7 @@ static void ATPrepAddPartition(Relation rel)
             ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not add partition against NON-PARTITIONED table")));
     }
 
-    if (rel->partMap->type == PART_TYPE_INTERVAL) {
+    if (rel->partMap->type == PART_TYPE_INTERVAL && !u_sess->is_partition_autonomous_session) {
         ereport(ERROR, (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
             errmsg("can not add partition against interval partitioned table")));
     }
