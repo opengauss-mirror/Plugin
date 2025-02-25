@@ -21,8 +21,7 @@ create table t1 (c1 int);
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
-   FROM t1;
+SELECT t1.c1 FROM t1;
 
 select valid = true from pg_class join pg_object on oid = object_oid where relname = 'v1';
  ?column? 
@@ -496,7 +495,7 @@ View definition:
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT v1.c1::bigint + 1::bigint AS "?column?"
+ SELECT v1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM v1;
 
 drop table t1 cascade;
@@ -570,7 +569,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1::bigint + 1::bigint AS "?column?"
+ SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM t1;
 
 drop table t1 cascade;
@@ -646,7 +645,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1::bigint + t2.c2::bigint AS "?column?"
+ SELECT t1.c1::bigint OPERATOR(dolphin_catalog.+) t2.c2::bigint AS "?column?"
    FROM t1
   CROSS JOIN t2;
 
@@ -1403,8 +1402,7 @@ create table t1 (c1 text, c2 float8);
  c1     | text             |           | extended | 
  c2     | double precision |           | plain    | 
 View definition:
- SELECT  *
-   FROM t1;
+SELECT t1.c1, t1.c2 FROM t1;
 
 drop view v1;
 drop table t1;
