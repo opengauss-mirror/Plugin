@@ -113,3 +113,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_to_uint8(nvarchar2) RETURNS uint
 CREATE CAST (nvarchar2 AS uint8) WITH FUNCTION pg_catalog.nvarchar2_to_uint8(nvarchar2) AS ASSIGNMENT;
 
 
+--date function
+DROP FUNCTION IF EXISTS pg_catalog.subdate(time, int8);
+DROP FUNCTION IF EXISTS pg_catalog.adddate(time, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2::text::interval)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2::text::interval)  $$ LANGUAGE SQL;

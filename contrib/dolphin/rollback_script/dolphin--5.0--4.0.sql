@@ -89,3 +89,8 @@ DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint1(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint2(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint4(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint8(nvarchar2);
+--date function
+DROP FUNCTION IF EXISTS pg_catalog.subdate (time, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_days';
+DROP FUNCTION IF EXISTS pg_catalog.adddate (time, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_days';
