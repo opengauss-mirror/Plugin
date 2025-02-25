@@ -98,3 +98,18 @@ CREATE OR REPLACE FUNCTION pg_catalog.reverse(bool) RETURNS varchar LANGUAGE SQL
  
 CREATE FUNCTION pg_catalog.int16_text(int16) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_text';
 CREATE CAST(int16 AS text) WITH FUNCTION pg_catalog.int16_text(int16)   AS IMPLICIT;
+
+-- nvchar to uint
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_to_uint1(nvarchar2) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'nvarchar2_to_uint1';
+CREATE CAST (nvarchar2 AS uint1) WITH FUNCTION pg_catalog.nvarchar2_to_uint1(nvarchar2) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_to_uint2(nvarchar2) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'nvarchar2_to_uint2';
+CREATE CAST (nvarchar2 AS uint2) WITH FUNCTION pg_catalog.nvarchar2_to_uint2(nvarchar2) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_to_uint4(nvarchar2) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'nvarchar2_to_uint4';
+CREATE CAST (nvarchar2 AS uint4) WITH FUNCTION pg_catalog.nvarchar2_to_uint4(nvarchar2) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_to_uint8(nvarchar2) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'nvarchar2_to_uint8';
+CREATE CAST (nvarchar2 AS uint8) WITH FUNCTION pg_catalog.nvarchar2_to_uint8(nvarchar2) AS ASSIGNMENT;
+
+
