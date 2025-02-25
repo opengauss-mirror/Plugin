@@ -252,7 +252,6 @@ typedef struct OnCommitItem {
 
 static const char* ORCSupportOption[] = {"orientation", "compression", "version", "partial_cluster_rows"};
 
-
 /* Context for check whether the targetEntry of view's querytree has changed */
 typedef struct {
     Oid relid;
@@ -3160,6 +3159,16 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     if (ENABLE_DMS && !u_sess->attr.attr_common.IsInplaceUpgrade) {
+        if ((t_thrd.proc->workingVersionNum < PAGE_BASED_VERSION_NUM) 
+            && ((stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED)
+            || (stmt->relation->relpersistence == RELPERSISTENCE_TEMP)
+            || (stmt->relation->relpersistence == RELPERSISTENCE_GLOBAL_TEMP)
+            || (relkind == RELKIND_MATVIEW)
+            || (relkind == RELKIND_FOREIGN_TABLE))) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Page Characteristics Table not supported in current version!")));
+        }
+
         if ((relkind == RELKIND_RELATION && storage_type != SEGMENT_PAGE
             && (stmt->relation->relpersistence != RELPERSISTENCE_UNLOGGED)
             && (stmt->relation->relpersistence != RELPERSISTENCE_TEMP)
@@ -13394,13 +13403,9 @@ void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
     simple_heap_update(rewrite_rel, &new_dep_tuple->t_self, new_dep_tuple);
     CatalogUpdateIndexes(rewrite_rel, new_dep_tuple);
     CommandCounterIncrement();
-    /* force relcache rebuild */
-    SetRelationRuleStatus(rewrite_form->ev_class, true, false);
 
     heap_freetuple_ext(new_dep_tuple);
     pfree_ext(actiontree);
-
-
     /* get new_query_str from pg_rewrite */
     if (query_str == NULL) {
         systable_endscan(rewrite_scan);
@@ -13431,8 +13436,6 @@ void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
     FreeStringInfo(&buf);
     new_query_str = lappend(new_query_str, info);
     *query_str = new_query_str;
-
-
     systable_endscan(rewrite_scan);
     heap_close(rewrite_rel, RowExclusiveLock);
 }
@@ -22978,7 +22981,7 @@ static void ATExecGenericOptions(Relation rel, List* options)
     tableam_tops_free_tuple(tuple);
 }
 
- #ifdef ENABLE_HTAP
+#ifdef ENABLE_HTAP
 /*
  * ALTER TABLE <name> IMCSTORED(...)
  */
@@ -22988,9 +22991,11 @@ static void ATExecIMCSTORED(Relation rel, List* colList)
     int2vector* imcsAtts = NULL;
     int imcsNatts = 0;
 
+    CheckImcstoreCacheReady();
     CheckForEnableImcs(rel, colList, imcsAtts, &imcsNatts);
     /* standbynode populate */
     if (IMCS_IS_PRIMARY_MODE) {
+        AbortIfSinglePrimary();
         CreateImcsDescForPrimaryNode(rel, imcsAtts, imcsNatts);
         SendImcstoredRequest(relOid, InvalidOid, imcsAtts->values, imcsNatts, TYPE_IMCSTORED);
     } else {
@@ -23005,11 +23010,14 @@ static void ATExecIMCSTORED(Relation rel, List* colList)
 static void ATExecUNIMCSTORED(Relation rel) 
 {
     Oid relOid = RelationGetRelid(rel);
+
+    CheckImcstoreCacheReady();
     if (!RelHasImcs(relOid)) {
         ereport(ERROR, (errmsg("rel not populated, no need to be unpopulate.")));
     }
 
     if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+        AbortIfSinglePrimary();
         SendUnImcstoredRequest(relOid, InvalidOid, TYPE_UNIMCSTORED);
     }
     AlterTableDisableImcstore(rel);
@@ -23025,6 +23033,7 @@ static void ATExecModifyPartitionIMCSTORED(Relation rel, const char* partName, L
     int2vector* imcsAtts = NULL;
     int imcsNatts = 0;
 
+    CheckImcstoreCacheReady();
     partOid = ImcsPartNameGetPartOid(relOid, partName);
     CheckForEnableImcs(rel, colList, imcsAtts, &imcsNatts, partOid);
 
@@ -23043,6 +23052,7 @@ static void ATExecModifyPartitionIMCSTORED(Relation rel, const char* partName, L
     {
         /* populate on standbynode */
         if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+            AbortIfSinglePrimary();
             CreateImcsDescForPrimaryNode(partRel, imcsAtts, imcsNatts);
             SendImcstoredRequest(relOid, partOid, imcsAtts->values, imcsNatts, TYPE_PARTITION_IMCSTORED);
         } else {
@@ -23072,8 +23082,9 @@ static void ATExecModifyPartitionUNIMCSTORED(Relation rel, const char* partName)
 {
     Oid partOid = InvalidOid;
     Oid relOid = RelationGetRelid(rel);
-    partOid = ImcsPartNameGetPartOid(relOid, partName);
 
+    CheckImcstoreCacheReady();
+    partOid = ImcsPartNameGetPartOid(relOid, partName);
     if (!RelHasImcs(relOid) || !RelHasImcs(partOid)) {
         ereport(ERROR, (errmsg("partition %d of rel %d not populated", partOid, relOid)));
     }
@@ -23085,6 +23096,7 @@ static void ATExecModifyPartitionUNIMCSTORED(Relation rel, const char* partName)
     {
         /* unpopulate partition on standby node */
         if (t_thrd.postmaster_cxt.HaShmData->current_mode == PRIMARY_MODE) {
+            AbortIfSinglePrimary();
             SendUnImcstoredRequest(relOid, partOid, TYPE_PARTITION_UNIMCSTORED);
         }
         /* unpopulate partition on current node */
