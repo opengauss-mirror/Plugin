@@ -8053,11 +8053,11 @@ static void get_update_query_def(Query* query, deparse_context* context)
     }
     appendStringInfo(buf, "UPDATE ");
     get_hint_string(query->hintState, buf);
-#ifdef ODLPHIN
+#ifdef DOLPHIN
     if (rte->inh) {
         appendStringInfo(buf, "%s", generate_relation_name(rte->relid, NIL));
     } else {
-        appendStringInfo(buf, "ONLY (%s)", enerate_relation_name(rte->relid, NIL));
+        appendStringInfo(buf, "ONLY (%s)", generate_relation_name(rte->relid, NIL));
     }
 #else
     appendStringInfo(buf, "%s%s", only_marker(rte), generate_relation_name(rte->relid, NIL));
@@ -8199,7 +8199,7 @@ static void get_delete_query_def(Query* query, deparse_context* context)
     }
     appendStringInfo(buf, "DELETE ");
     get_hint_string(query->hintState, buf);
-#ifdef ODLPHIN
+#ifdef DOLPHIN
     if (rte->inh) {
         appendStringInfo(buf, "FROM %s", generate_relation_name(rte->relid, NIL));
     } else {
