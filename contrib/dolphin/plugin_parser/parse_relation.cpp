@@ -1222,7 +1222,7 @@ bool CheckFuncExpr(FuncExpr* funcExpr, Oid rewrite_oid)
 
     Oid schemaOid = get_namespace_oid(schemaname, true);
     if (!OidIsValid(schemaOid)) {
-        return false;;
+        return false;
     }
 
     if (pkgname != NULL) {
@@ -1623,7 +1623,8 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
     return (ValidateDependResult)isValid;
 }
 
-bool ValidateDependView(Oid view_oid, char objType, StringInfo buf) {
+bool ValidateDependView(Oid view_oid, char objType, StringInfo buf)
+{
     List * list = NIL;
     ValidateDependResult result = ValidateDependView(view_oid, objType, &list, false, buf);
     list_free_ext(list);

@@ -4636,6 +4636,12 @@ Datum blob_to_char_default(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+Datum unknown_to_char2(PG_FUNCTION_ARGS)
+{
+    Datum result = DirectFunctionCall2(numeric_to_char, PG_GETARG_DATUM(0), PG_GETARG_DATUM(1));
+    PG_RETURN_DATUM(result);
+}
+
 /* ---------------------
  * TO_TIMESTAMP()
  *
@@ -7066,6 +7072,7 @@ Datum numeric_to_text_number(PG_FUNCTION_ARGS)
                     // Number description: fmt
                     NUMDesc numDesc;
                     bool shouldFree = false;
+                    fmt = PG_GETARG_TEXT_P(4);
                     int len = VARSIZE(fmt) - VARHDRSZ;
                     FormatNode* format = NUM_cache(len, &numDesc, fmt, &shouldFree);
                     // Integer digits
@@ -7150,6 +7157,7 @@ Datum numeric_to_default_without_defaultval(PG_FUNCTION_ARGS)
                     result = to_numeric_number_internal_without_fmt(default_num_val,
 						PG_GET_COLLATION(), &resultNull);
                 } else {
+                    fmt = PG_GETARG_TEXT_P(4);
                     result = to_numeric_to_number_internal(default_num_val, fmt,
 						PG_GET_COLLATION(), &resultNull);
                 }
