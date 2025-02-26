@@ -1,0 +1,480 @@
+-- Test Case 1: TINYINT type
+CREATE TABLE test_least_tinyint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TINYINT,
+    val2 TINYINT,
+    val3 TINYINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_tinyint_id_seq" for serial column "test_least_tinyint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_tinyint_pkey" for table "test_least_tinyint"
+INSERT INTO test_least_tinyint (val1, val2, val3) VALUES (10, 20, 30), (5, 3, 8);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_tinyint;
+ val1 | val2 | val3 | least_result 
+------+------+------+--------------
+ 10   | 20   | 30   | 10
+ 5    | 3    | 8    | 3
+(2 rows)
+
+-- Test Case 2: SMALLINT type
+CREATE TABLE test_least_smallint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 SMALLINT,
+    val2 SMALLINT,
+    val3 SMALLINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_smallint_id_seq" for serial column "test_least_smallint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_smallint_pkey" for table "test_least_smallint"
+INSERT INTO test_least_smallint (val1, val2, val3) VALUES (100, 200, 300), (50, 30, 80);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_smallint;
+ val1 | val2 | val3 | least_result 
+------+------+------+--------------
+  100 |  200 |  300 |          100
+   50 |   30 |   80 |           30
+(2 rows)
+
+-- Test Case 3: MEDIUMINT type
+CREATE TABLE test_least_mediumint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 MEDIUMINT,
+    val2 MEDIUMINT,
+    val3 MEDIUMINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_mediumint_id_seq" for serial column "test_least_mediumint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_mediumint_pkey" for table "test_least_mediumint"
+INSERT INTO test_least_mediumint (val1, val2, val3) VALUES (1000, 2000, 3000), (500, 300, 800);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_mediumint;
+ val1 | val2 | val3 | least_result 
+------+------+------+--------------
+ 1000 | 2000 | 3000 |         1000
+  500 |  300 |  800 |          300
+(2 rows)
+
+-- Test Case 4: INT type
+CREATE TABLE test_least_int (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 INT,
+    val2 INT,
+    val3 INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_int_id_seq" for serial column "test_least_int.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_int_pkey" for table "test_least_int"
+INSERT INTO test_least_int (val1, val2, val3) VALUES (10000, 20000, 30000), (5000, 3000, 8000);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_int;
+ val1  | val2  | val3  | least_result 
+-------+-------+-------+--------------
+ 10000 | 20000 | 30000 |        10000
+  5000 |  3000 |  8000 |         3000
+(2 rows)
+
+-- Test Case 5: BIGINT type
+CREATE TABLE test_least_bigint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BIGINT,
+    val2 BIGINT,
+    val3 BIGINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_bigint_id_seq" for serial column "test_least_bigint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_bigint_pkey" for table "test_least_bigint"
+INSERT INTO test_least_bigint (val1, val2, val3) VALUES (10000000000, 20000000000, 30000000000), (5000000000, 3000000000, 8000000000);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_bigint;
+    val1     |    val2     |    val3     | least_result 
+-------------+-------------+-------------+--------------
+ 10000000000 | 20000000000 | 30000000000 |  10000000000
+  5000000000 |  3000000000 |  8000000000 |   3000000000
+(2 rows)
+
+-- Test Case 6: FLOAT type
+CREATE TABLE test_least_float (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 FLOAT,
+    val2 FLOAT,
+    val3 FLOAT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_float_id_seq" for serial column "test_least_float.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_float_pkey" for table "test_least_float"
+INSERT INTO test_least_float (val1, val2, val3) VALUES (1.5, 2.5, 3.5), (0.5, 0.3, 0.8);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_float;
+ val1 | val2 | val3 | least_result 
+------+------+------+--------------
+  1.5 |  2.5 |  3.5 |          1.5
+  0.5 |  0.3 |  0.8 |          0.3
+(2 rows)
+
+-- Test Case 7: DOUBLE type
+CREATE TABLE test_least_double (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DOUBLE,
+    val2 DOUBLE,
+    val3 DOUBLE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_double_id_seq" for serial column "test_least_double.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_double_pkey" for table "test_least_double"
+INSERT INTO test_least_double (val1, val2, val3) VALUES (1.123456789, 2.123456789, 3.123456789), (0.123, 0.023, 0.089);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_double;
+    val1     |    val2     |    val3     | least_result 
+-------------+-------------+-------------+--------------
+ 1.123456789 | 2.123456789 | 3.123456789 |  1.123456789
+       0.123 |       0.023 |       0.089 |        0.023
+(2 rows)
+
+-- Test Case 8: DECIMAL type
+CREATE TABLE test_least_decimal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DECIMAL(5, 2),
+    val2 DECIMAL(5, 2),
+    val3 DECIMAL(5, 2)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_decimal_id_seq" for serial column "test_least_decimal.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_decimal_pkey" for table "test_least_decimal"
+INSERT INTO test_least_decimal (val1, val2, val3) VALUES (10.25, 20.25, 30.25), (5.25, 3.25, 8.25);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_decimal;
+ val1  | val2  | val3  | least_result 
+-------+-------+-------+--------------
+ 10.25 | 20.25 | 30.25 |        10.25
+  5.25 |  3.25 |  8.25 |         3.25
+(2 rows)
+
+-- Test Case 9: CHAR type
+CREATE TABLE test_least_char (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 CHAR(10),
+    val2 CHAR(10),
+    val3 CHAR(10)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_char_id_seq" for serial column "test_least_char.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_char_pkey" for table "test_least_char"
+INSERT INTO test_least_char (val1, val2, val3) VALUES ('apple', 'banana', 'cherry'), ('dog', 'cat', 'elephant');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_char;
+    val1    |    val2    |    val3    | least_result 
+------------+------------+------------+--------------
+ apple      | banana     | cherry     | apple     
+ dog        | cat        | elephant   | cat       
+(2 rows)
+
+-- Test Case 10: VARCHAR type
+CREATE TABLE test_least_varchar (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 VARCHAR(50),
+    val2 VARCHAR(50),
+    val3 VARCHAR(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_varchar_id_seq" for serial column "test_least_varchar.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_varchar_pkey" for table "test_least_varchar"
+INSERT INTO test_least_varchar (val1, val2, val3) VALUES ('hello', 'world', 'mysql'), ('abc', 'def', 'ghi');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_varchar;
+ val1  | val2  | val3  | least_result 
+-------+-------+-------+--------------
+ hello | world | mysql | hello
+ abc   | def   | ghi   | abc
+(2 rows)
+
+-- Test Case 11: TEXT type
+CREATE TABLE test_least_text (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TEXT,
+    val2 TEXT,
+    val3 TEXT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_text_id_seq" for serial column "test_least_text.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_text_pkey" for table "test_least_text"
+INSERT INTO test_least_text (val1, val2, val3) VALUES ('This is a long text', 'Another long text', 'Yet another text'), ('Short', 'Shorter', 'Shortest');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_text;
+        val1         |       val2        |       val3       |   least_result    
+---------------------+-------------------+------------------+-------------------
+ This is a long text | Another long text | Yet another text | Another long text
+ Short               | Shorter           | Shortest         | Short
+(2 rows)
+
+-- Test Case 12: DATE type
+CREATE TABLE test_least_date (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DATE,
+    val2 DATE,
+    val3 DATE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_date_id_seq" for serial column "test_least_date.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_date_pkey" for table "test_least_date"
+INSERT INTO test_least_date (val1, val2, val3) VALUES ('2023-01-01', '2023-02-01', '2023-03-01'), ('2023-05-01', '2023-04-01', '2023-06-01');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_date;
+    val1    |    val2    |    val3    |    least_result     
+------------+------------+------------+---------------------
+ 2023-01-01 | 2023-02-01 | 2023-03-01 | 2023-01-01 00:00:00
+ 2023-05-01 | 2023-04-01 | 2023-06-01 | 2023-04-01 00:00:00
+(2 rows)
+
+-- Test Case 13: TIME type
+CREATE TABLE test_least_time (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TIME,
+    val2 TIME,
+    val3 TIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_time_id_seq" for serial column "test_least_time.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_time_pkey" for table "test_least_time"
+INSERT INTO test_least_time (val1, val2, val3) VALUES ('12:00:00', '13:00:00', '14:00:00'), ('09:30:00', '10:15:00', '08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_time;
+   val1   |   val2   |   val3   | least_result 
+----------+----------+----------+--------------
+ 12:00:00 | 13:00:00 | 14:00:00 | 12:00:00
+ 09:30:00 | 10:15:00 | 08:45:00 | 08:45:00
+(2 rows)
+
+-- Test Case 14: DATETIME type
+CREATE TABLE test_least_datetime (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DATETIME,
+    val2 DATETIME,
+    val3 DATETIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_datetime_id_seq" for serial column "test_least_datetime.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_datetime_pkey" for table "test_least_datetime"
+INSERT INTO test_least_datetime (val1, val2, val3) VALUES ('2023-01-01 12:00:00', '2023-02-01 13:00:00', '2023-03-01 14:00:00'), ('2023-05-01 09:30:00', '2023-04-01 10:15:00', '2023-06-01 08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_datetime;
+        val1         |        val2         |        val3         |    least_result     
+---------------------+---------------------+---------------------+---------------------
+ 2023-01-01 12:00:00 | 2023-02-01 13:00:00 | 2023-03-01 14:00:00 | 2023-01-01 12:00:00
+ 2023-05-01 09:30:00 | 2023-04-01 10:15:00 | 2023-06-01 08:45:00 | 2023-04-01 10:15:00
+(2 rows)
+
+-- Test Case 15: TIMESTAMP type
+CREATE TABLE test_least_timestamp (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TIMESTAMP,
+    val2 TIMESTAMP,
+    val3 TIMESTAMP
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_timestamp_id_seq" for serial column "test_least_timestamp.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_timestamp_pkey" for table "test_least_timestamp"
+INSERT INTO test_least_timestamp (val1, val2, val3) VALUES ('2023-01-01 12:00:00', '2023-02-01 13:00:00', '2023-03-01 14:00:00'), ('2023-05-01 09:30:00', '2023-04-01 10:15:00', '2023-06-01 08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_timestamp;
+          val1          |          val2          |          val3          |    least_result     
+------------------------+------------------------+------------------------+---------------------
+ 2023-01-01 12:00:00-08 | 2023-02-01 13:00:00-08 | 2023-03-01 14:00:00-08 | 2023-01-01 12:00:00
+ 2023-05-01 09:30:00-07 | 2023-04-01 10:15:00-07 | 2023-06-01 08:45:00-07 | 2023-04-01 10:15:00
+(2 rows)
+
+-- Test Case 16: YEAR type
+CREATE TABLE test_least_year (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 YEAR,
+    val2 YEAR,
+    val3 YEAR
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_year_id_seq" for serial column "test_least_year.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_year_pkey" for table "test_least_year"
+INSERT INTO test_least_year (val1, val2, val3) VALUES (2023, 2024, 2025), (2022, 2026, 2021);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_year;
+ERROR:  LEAST could not convert type year to uint4
+LINE 5:     LEAST(val1, val2, val3) AS least_result
+                  ^
+CONTEXT:  referenced column: least_result
+-- Test Case 17: ENUM type
+CREATE TABLE test_least_enum (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 ENUM('red', 'green', 'blue'),
+    val2 ENUM('red', 'green', 'blue'),
+    val3 ENUM('red', 'green', 'blue')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_enum_id_seq" for serial column "test_least_enum.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_enum_pkey" for table "test_least_enum"
+INSERT INTO test_least_enum (val1, val2, val3) VALUES ('red', 'green', 'blue'), ('green', 'blue', 'red');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_enum;
+ERROR:  LEAST could not convert type test_least_enum_val1_2200_anonymous_enum_1 to text
+LINE 5:     LEAST(val1, val2, val3) AS least_result
+                  ^
+CONTEXT:  referenced column: least_result
+-- Test Case 18: SET type
+CREATE TABLE test_least_set (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 SET('apple', 'banana', 'cherry'),
+    val2 SET('apple', 'banana', 'cherry'),
+    val3 SET('apple', 'banana', 'cherry')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_set_id_seq" for serial column "test_least_set.id"
+NOTICE:  CREATE TABLE will create implicit set "test_least_set_val1_set" for column "test_least_set.val1"
+NOTICE:  CREATE TABLE will create implicit set "test_least_set_val2_set" for column "test_least_set.val2"
+NOTICE:  CREATE TABLE will create implicit set "test_least_set_val3_set" for column "test_least_set.val3"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_set_pkey" for table "test_least_set"
+INSERT INTO test_least_set (val1, val2, val3) VALUES ('apple', 'banana', 'cherry'), ('banana,cherry', 'apple', 'cherry');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_set;
+     val1      |  val2  |  val3  | least_result 
+---------------+--------+--------+--------------
+ apple         | banana | cherry | apple
+ banana,cherry | apple  | cherry | apple
+(2 rows)
+
+-- Test Case 19: BINARY type
+CREATE TABLE test_least_binary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BINARY(5),
+    val2 BINARY(5),
+    val3 BINARY(5)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_binary_id_seq" for serial column "test_least_binary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_binary_pkey" for table "test_least_binary"
+INSERT INTO test_least_binary (val1, val2, val3) VALUES (0x6162636465, 0x6263646566, 0x6364656667), (0x666768696a, 0x6768696a6b, 0x68696a6b6c);
+ERROR:  The input length:12 exceeds the maximum length:5.
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_binary;
+ val1 | val2 | val3 | least_result 
+------+------+------+--------------
+(0 rows)
+
+-- Test Case 20: VARBINARY type
+CREATE TABLE test_least_varbinary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 VARBINARY(50),
+    val2 VARBINARY(50),
+    val3 VARBINARY(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_varbinary_id_seq" for serial column "test_least_varbinary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_varbinary_pkey" for table "test_least_varbinary"
+INSERT INTO test_least_varbinary (val1, val2, val3) VALUES (0x616263, 0x626364, 0x636465), (0x646566, 0x656667, 0x666768);
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_varbinary;
+   val1   |   val2   |   val3   | least_result 
+----------+----------+----------+--------------
+ \x616263 | \x626364 | \x636465 | \x616263
+ \x646566 | \x656667 | \x666768 | \x646566
+(2 rows)
+
+-- Test Case 21: BIT type
+CREATE TABLE test_least_bit (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BIT(8),
+    val2 BIT(8),
+    val3 BIT(8)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_least_bit_id_seq" for serial column "test_least_bit.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_least_bit_pkey" for table "test_least_bit"
+INSERT INTO test_least_bit (val1, val2, val3) VALUES (b'00000001', b'00000010', b'00000011'), (b'00000100', b'00000011', b'00000101');
+SELECT 
+    val1,
+    val2,
+    val3,
+    LEAST(val1, val2, val3) AS least_result
+FROM test_least_bit;
+ERROR:  LEAST could not convert type bit to integer
+LINE 5:     LEAST(val1, val2, val3) AS least_result
+                  ^
+CONTEXT:  referenced column: least_result
+-- Clean up the test environment
+DROP TABLE IF EXISTS test_least_tinyint;
+DROP TABLE IF EXISTS test_least_smallint;
+DROP TABLE IF EXISTS test_least_mediumint;
+DROP TABLE IF EXISTS test_least_int;
+DROP TABLE IF EXISTS test_least_bigint;
+DROP TABLE IF EXISTS test_least_float;
+DROP TABLE IF EXISTS test_least_double;
+DROP TABLE IF EXISTS test_least_decimal;
+DROP TABLE IF EXISTS test_least_char;
+DROP TABLE IF EXISTS test_least_varchar;
+DROP TABLE IF EXISTS test_least_text;
+DROP TABLE IF EXISTS test_least_date;
+DROP TABLE IF EXISTS test_least_time;
+DROP TABLE IF EXISTS test_least_datetime;
+DROP TABLE IF EXISTS test_least_timestamp;
+DROP TABLE IF EXISTS test_least_year;
+DROP TABLE IF EXISTS test_least_enum;
+DROP TABLE IF EXISTS test_least_set;
+DROP TABLE IF EXISTS test_least_binary;
+DROP TABLE IF EXISTS test_least_varbinary;
+DROP TABLE IF EXISTS test_least_bit;
