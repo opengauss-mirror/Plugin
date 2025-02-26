@@ -352,5 +352,29 @@ insert into test_check1 values('C');
 insert into test_check1 values('c');
 drop table test_check1;
 
+-- test dolphin \d+ for collation > 10000
+\c postgres
+drop database if exists db2;
+create database db2 dbcompatibility 'B' encoding 'SQL_ASCII';
+\c db2
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create table t_collate_fo (c1 char(38)) charset latin1 collate "fo_FO";
+insert into t_collate_fo values('sdeWEFWE123512312'),('werWEFWE346342');
+create index index_collate_fo on t_collate_fo(c1(20));
+explain (costs off) select * from t_collate_fo where c1 like 'sde%';
+\d+ t_collate_fo
+drop table t_collate_fo;
+
+create table t_collate_fo2 (c1 char(38) charset latin1 collate "fo_FO") charset latin1 collate "fo_FO";
+insert into t_collate_fo2 values('sdeWEFWE123512312'),('werWEFWE346342');
+create index index_collate_fo2 on t_collate_fo2(c1(20));
+explain (costs off) select * from t_collate_fo2 where c1 like 'sde%';
+\d+ t_collate_fo2
+drop table t_collate_fo2;
+reset b_format_behavior_compat_options;
+\c postgres
+drop database db2;
+\c contrib_regression
+set current_schema = 'test_enum_collation';
 drop schema test_enum_collation cascade;
 reset current_schema;

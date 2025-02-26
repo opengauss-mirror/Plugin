@@ -1056,6 +1056,61 @@ insert into test_check1 values('B  ');
 insert into test_check1 values('C');
 insert into test_check1 values('c');
 drop table test_check1;
+-- test dolphin \d+ for collation > 10000
+\c postgres
+drop database if exists db2;
+NOTICE:  database "db2" does not exist, skipping
+create database db2 dbcompatibility 'B' encoding 'SQL_ASCII';
+\c db2
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create table t_collate_fo (c1 char(38)) charset latin1 collate "fo_FO";
+insert into t_collate_fo values('sdeWEFWE123512312'),('werWEFWE346342');
+create index index_collate_fo on t_collate_fo(c1(20));
+explain (costs off) select * from t_collate_fo where c1 like 'sde%';
+           QUERY PLAN           
+--------------------------------
+ Seq Scan on t_collate_fo
+   Filter: (c1 ~~ 'sde%'::text)
+(2 rows)
+
+\d+ t_collate_fo
+                          Table "public.t_collate_fo"
+ Column |     Type      |   Modifiers   | Storage  | Stats target | Description 
+--------+---------------+---------------+----------+--------------+-------------
+ c1     | character(38) | collate fo_FO | extended |              | 
+Indexes:
+    "index_collate_fo" btree (c1(20)) TABLESPACE pg_default
+Has OIDs: no
+--?Options: orientation=row, compression=no, collate=.*
+
+drop table t_collate_fo;
+create table t_collate_fo2 (c1 char(38) charset latin1 collate "fo_FO") charset latin1 collate "fo_FO";
+WARNING:  Invalid collation for column c1 detected. default value set
+insert into t_collate_fo2 values('sdeWEFWE123512312'),('werWEFWE346342');
+create index index_collate_fo2 on t_collate_fo2(c1(20));
+explain (costs off) select * from t_collate_fo2 where c1 like 'sde%';
+           QUERY PLAN           
+--------------------------------
+ Seq Scan on t_collate_fo2
+   Filter: (c1 ~~ 'sde%'::text)
+(2 rows)
+
+\d+ t_collate_fo2
+                        Table "public.t_collate_fo2"
+ Column |     Type      | Modifiers | Storage  | Stats target | Description 
+--------+---------------+-----------+----------+--------------+-------------
+ c1     | character(38) |           | extended |              | 
+Indexes:
+    "index_collate_fo2" btree (c1(20)) TABLESPACE pg_default
+Has OIDs: no
+--?Options: orientation=row, compression=no, collate=.*
+
+drop table t_collate_fo2;
+reset b_format_behavior_compat_options;
+\c postgres
+drop database db2;
+\c contrib_regression
+set current_schema = 'test_enum_collation';
 drop schema test_enum_collation cascade;
 NOTICE:  drop cascades to 10 other objects
 --?.*
