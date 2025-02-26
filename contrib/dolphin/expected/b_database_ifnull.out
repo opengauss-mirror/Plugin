@@ -1,0 +1,443 @@
+-- Test Case 1: TINYINT type
+CREATE TABLE test_nullif_tinyint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tiny1 TINYINT,
+    tiny2 TINYINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_tinyint_id_seq" for serial column "test_nullif_tinyint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_tinyint_pkey" for table "test_nullif_tinyint"
+INSERT INTO test_nullif_tinyint (tiny1, tiny2) VALUES (10, 10), (20, 30);
+SELECT 
+    tiny1,
+    tiny2,
+    NULLIF(tiny1, tiny2) AS nullif_result
+FROM test_nullif_tinyint;
+ tiny1 | tiny2 | nullif_result 
+-------+-------+---------------
+ 10    | 10    | 
+ 20    | 30    | 20
+(2 rows)
+
+-- Test Case 2: SMALLINT type
+CREATE TABLE test_nullif_smallint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    small1 SMALLINT,
+    small2 SMALLINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_smallint_id_seq" for serial column "test_nullif_smallint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_smallint_pkey" for table "test_nullif_smallint"
+INSERT INTO test_nullif_smallint (small1, small2) VALUES (100, 100), (200, 300);
+SELECT 
+    small1,
+    small2,
+    NULLIF(small1, small2) AS nullif_result
+FROM test_nullif_smallint;
+ small1 | small2 | nullif_result 
+--------+--------+---------------
+    100 |    100 |              
+    200 |    300 |           200
+(2 rows)
+
+-- Test Case 3: MEDIUMINT type
+CREATE TABLE test_nullif_mediumint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    medium1 MEDIUMINT,
+    medium2 MEDIUMINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_mediumint_id_seq" for serial column "test_nullif_mediumint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_mediumint_pkey" for table "test_nullif_mediumint"
+INSERT INTO test_nullif_mediumint (medium1, medium2) VALUES (1000, 1000), (2000, 3000);
+SELECT 
+    medium1,
+    medium2,
+    NULLIF(medium1, medium2) AS nullif_result
+FROM test_nullif_mediumint;
+ medium1 | medium2 | nullif_result 
+---------+---------+---------------
+    1000 |    1000 |              
+    2000 |    3000 |          2000
+(2 rows)
+
+-- Test Case 4: INT type
+CREATE TABLE test_nullif_int (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    int1 INT,
+    int2 INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_int_id_seq" for serial column "test_nullif_int.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_int_pkey" for table "test_nullif_int"
+INSERT INTO test_nullif_int (int1, int2) VALUES (10000, 10000), (20000, 30000);
+SELECT 
+    int1,
+    int2,
+    NULLIF(int1, int2) AS nullif_result
+FROM test_nullif_int;
+ int1  | int2  | nullif_result 
+-------+-------+---------------
+ 10000 | 10000 |              
+ 20000 | 30000 |         20000
+(2 rows)
+
+-- Test Case 5: BIGINT type
+CREATE TABLE test_nullif_bigint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    big1 BIGINT,
+    big2 BIGINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_bigint_id_seq" for serial column "test_nullif_bigint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_bigint_pkey" for table "test_nullif_bigint"
+INSERT INTO test_nullif_bigint (big1, big2) VALUES (10000000000, 10000000000), (20000000000, 30000000000);
+SELECT 
+    big1,
+    big2,
+    NULLIF(big1, big2) AS nullif_result
+FROM test_nullif_bigint;
+    big1     |    big2     | nullif_result 
+-------------+-------------+---------------
+ 10000000000 | 10000000000 |              
+ 20000000000 | 30000000000 |   20000000000
+(2 rows)
+
+-- Test Case 6: FLOAT type
+CREATE TABLE test_nullif_float (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    float1 FLOAT,
+    float2 FLOAT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_float_id_seq" for serial column "test_nullif_float.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_float_pkey" for table "test_nullif_float"
+INSERT INTO test_nullif_float (float1, float2) VALUES (1.5, 1.5), (2.5, 3.5);
+SELECT 
+    float1,
+    float2,
+    NULLIF(float1, float2) AS nullif_result
+FROM test_nullif_float;
+ float1 | float2 | nullif_result 
+--------+--------+---------------
+    1.5 |    1.5 |              
+    2.5 |    3.5 |           2.5
+(2 rows)
+
+-- Test Case 7: DOUBLE type
+CREATE TABLE test_nullif_double (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    double1 DOUBLE,
+    double2 DOUBLE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_double_id_seq" for serial column "test_nullif_double.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_double_pkey" for table "test_nullif_double"
+INSERT INTO test_nullif_double (double1, double2) VALUES (1.123456789, 1.123456789), (2.123456789, 3.123456789);
+SELECT 
+    double1,
+    double2,
+    NULLIF(double1, double2) AS nullif_result
+FROM test_nullif_double;
+   double1   |   double2   | nullif_result 
+-------------+-------------+---------------
+ 1.123456789 | 1.123456789 |              
+ 2.123456789 | 3.123456789 |   2.123456789
+(2 rows)
+
+-- Test Case 8: DECIMAL type
+CREATE TABLE test_nullif_decimal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dec1 DECIMAL(5, 2),
+    dec2 DECIMAL(5, 2)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_decimal_id_seq" for serial column "test_nullif_decimal.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_decimal_pkey" for table "test_nullif_decimal"
+INSERT INTO test_nullif_decimal (dec1, dec2) VALUES (10.25, 10.25), (20.25, 30.25);
+SELECT 
+    dec1,
+    dec2,
+    NULLIF(dec1, dec2) AS nullif_result
+FROM test_nullif_decimal;
+ dec1  | dec2  | nullif_result 
+-------+-------+---------------
+ 10.25 | 10.25 |              
+ 20.25 | 30.25 |         20.25
+(2 rows)
+
+-- Test Case 9: CHAR type
+CREATE TABLE test_nullif_char (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    char1 CHAR(10),
+    char2 CHAR(10)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_char_id_seq" for serial column "test_nullif_char.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_char_pkey" for table "test_nullif_char"
+INSERT INTO test_nullif_char (char1, char2) VALUES ('hello   ', 'hello   '), ('world   ', 'universe');
+SELECT 
+    char1,
+    char2,
+    NULLIF(char1, char2) AS nullif_result
+FROM test_nullif_char;
+   char1    |   char2    | nullif_result 
+------------+------------+---------------
+ hello      | hello      | 
+ world      | universe   | world     
+(2 rows)
+
+-- Test Case 10: VARCHAR type
+CREATE TABLE test_nullif_varchar (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    varchar1 VARCHAR(50),
+    varchar2 VARCHAR(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_varchar_id_seq" for serial column "test_nullif_varchar.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_varchar_pkey" for table "test_nullif_varchar"
+INSERT INTO test_nullif_varchar (varchar1, varchar2) VALUES ('hello', 'hello'), ('world', 'universe');
+SELECT 
+    varchar1,
+    varchar2,
+    NULLIF(varchar1, varchar2) AS nullif_result
+FROM test_nullif_varchar;
+ varchar1 | varchar2 | nullif_result 
+----------+----------+---------------
+ hello    | hello    | 
+ world    | universe | world
+(2 rows)
+
+-- Test Case 11: TEXT type
+CREATE TABLE test_nullif_text (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    text1 TEXT,
+    text2 TEXT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_text_id_seq" for serial column "test_nullif_text.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_text_pkey" for table "test_nullif_text"
+INSERT INTO test_nullif_text (text1, text2) VALUES ('This is a test', 'This is a test'), ('Another test', 'Different test');
+SELECT 
+    text1,
+    text2,
+    NULLIF(text1, text2) AS nullif_result
+FROM test_nullif_text;
+     text1      |     text2      | nullif_result 
+----------------+----------------+---------------
+ This is a test | This is a test | 
+ Another test   | Different test | Another test
+(2 rows)
+
+-- Test Case 12: DATE type
+CREATE TABLE test_nullif_date (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date1 DATE,
+    date2 DATE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_date_id_seq" for serial column "test_nullif_date.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_date_pkey" for table "test_nullif_date"
+INSERT INTO test_nullif_date (date1, date2) VALUES ('2023-01-01', '2023-01-01'), ('2023-02-01', '2023-03-01');
+SELECT 
+    date1,
+    date2,
+    NULLIF(date1, date2) AS nullif_result
+FROM test_nullif_date;
+   date1    |   date2    | nullif_result 
+------------+------------+---------------
+ 2023-01-01 | 2023-01-01 | 
+ 2023-02-01 | 2023-03-01 | 2023-02-01
+(2 rows)
+
+-- Test Case 13: TIME type
+CREATE TABLE test_nullif_time (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    time1 TIME,
+    time2 TIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_time_id_seq" for serial column "test_nullif_time.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_time_pkey" for table "test_nullif_time"
+INSERT INTO test_nullif_time (time1, time2) VALUES ('12:00:00', '12:00:00'), ('13:00:00', '14:00:00');
+SELECT 
+    time1,
+    time2,
+    NULLIF(time1, time2) AS nullif_result
+FROM test_nullif_time;
+  time1   |  time2   | nullif_result 
+----------+----------+---------------
+ 12:00:00 | 12:00:00 | 
+ 13:00:00 | 14:00:00 | 13:00:00
+(2 rows)
+
+-- Test Case 14: DATETIME type
+CREATE TABLE test_nullif_datetime (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    datetime1 DATETIME,
+    datetime2 DATETIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_datetime_id_seq" for serial column "test_nullif_datetime.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_datetime_pkey" for table "test_nullif_datetime"
+INSERT INTO test_nullif_datetime (datetime1, datetime2) VALUES ('2023-01-01 12:00:00', '2023-01-01 12:00:00'), ('2023-02-01 13:00:00', '2023-03-01 14:00:00');
+SELECT 
+    datetime1,
+    datetime2,
+    NULLIF(datetime1, datetime2) AS nullif_result
+FROM test_nullif_datetime;
+      datetime1      |      datetime2      |    nullif_result    
+---------------------+---------------------+---------------------
+ 2023-01-01 12:00:00 | 2023-01-01 12:00:00 | 
+ 2023-02-01 13:00:00 | 2023-03-01 14:00:00 | 2023-02-01 13:00:00
+(2 rows)
+
+-- Test Case 15: TIMESTAMP type
+CREATE TABLE test_nullif_timestamp (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp1 TIMESTAMP,
+    timestamp2 TIMESTAMP
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_timestamp_id_seq" for serial column "test_nullif_timestamp.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_timestamp_pkey" for table "test_nullif_timestamp"
+INSERT INTO test_nullif_timestamp (timestamp1, timestamp2) VALUES ('2023-01-01 12:00:00', '2023-01-01 12:00:00'), ('2023-02-01 13:00:00', '2023-03-01 14:00:00');
+SELECT 
+    timestamp1,
+    timestamp2,
+    NULLIF(timestamp1, timestamp2) AS nullif_result
+FROM test_nullif_timestamp;
+       timestamp1       |       timestamp2       |     nullif_result      
+------------------------+------------------------+------------------------
+ 2023-01-01 12:00:00-08 | 2023-01-01 12:00:00-08 | 
+ 2023-02-01 13:00:00-08 | 2023-03-01 14:00:00-08 | 2023-02-01 13:00:00-08
+(2 rows)
+
+-- Test Case 16: YEAR type
+CREATE TABLE test_nullif_year (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    year1 YEAR,
+    year2 YEAR
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_year_id_seq" for serial column "test_nullif_year.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_year_pkey" for table "test_nullif_year"
+INSERT INTO test_nullif_year (year1, year2) VALUES (2023, 2023), (2024, 2025);
+SELECT 
+    year1,
+    year2,
+    NULLIF(year1, year2) AS nullif_result
+FROM test_nullif_year;
+ year1 | year2 | nullif_result 
+-------+-------+---------------
+ 2023  | 2023  | 
+ 2024  | 2025  | 2024
+(2 rows)
+
+-- Test Case 17: ENUM type
+CREATE TABLE test_nullif_enum (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    enum1 ENUM('red', 'green', 'blue'),
+    enum2 ENUM('red', 'green', 'blue')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_enum_id_seq" for serial column "test_nullif_enum.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_enum_pkey" for table "test_nullif_enum"
+INSERT INTO test_nullif_enum (enum1, enum2) VALUES ('red', 'red'), ('green', 'blue');
+SELECT 
+    enum1,
+    enum2,
+    NULLIF(enum1, enum2) AS nullif_result
+FROM test_nullif_enum;
+ enum1 | enum2 | nullif_result 
+-------+-------+---------------
+ red   | red   |              
+ green | blue  |             2
+(2 rows)
+
+-- Test Case 18: SET type
+CREATE TABLE test_nullif_set (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    set1 SET('apple', 'banana', 'cherry'),
+    set2 SET('apple', 'banana', 'cherry')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_set_id_seq" for serial column "test_nullif_set.id"
+NOTICE:  CREATE TABLE will create implicit set "test_nullif_set_set1_set" for column "test_nullif_set.set1"
+NOTICE:  CREATE TABLE will create implicit set "test_nullif_set_set2_set" for column "test_nullif_set.set2"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_set_pkey" for table "test_nullif_set"
+INSERT INTO test_nullif_set (set1, set2) VALUES ('apple', 'apple'), ('apple,banana', 'banana,cherry');
+SELECT 
+    set1,
+    set2,
+    NULLIF(set1, set2) AS nullif_result
+FROM test_nullif_set;
+     set1     |     set2      | nullif_result 
+--------------+---------------+---------------
+ apple        | apple         | 
+ apple,banana | banana,cherry | apple,banana
+(2 rows)
+
+-- Test Case 19: BINARY type
+CREATE TABLE test_nullif_binary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bin1 BINARY(5),
+    bin2 BINARY(5)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_binary_id_seq" for serial column "test_nullif_binary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_binary_pkey" for table "test_nullif_binary"
+INSERT INTO test_nullif_binary (bin1, bin2) VALUES (0x6162636465, 0x6162636465), (0x666768696a, 0x6b6c6d6e6f);
+ERROR:  The input length:12 exceeds the maximum length:5.
+SELECT 
+    bin1,
+    bin2,
+    NULLIF(bin1, bin2) AS nullif_result
+FROM test_nullif_binary;
+ bin1 | bin2 | nullif_result 
+------+------+---------------
+(0 rows)
+
+-- Test Case 20: VARBINARY type
+CREATE TABLE test_nullif_varbinary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    varbin1 VARBINARY(50),
+    varbin2 VARBINARY(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_varbinary_id_seq" for serial column "test_nullif_varbinary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_varbinary_pkey" for table "test_nullif_varbinary"
+INSERT INTO test_nullif_varbinary (varbin1, varbin2) VALUES (0x616263, 0x616263), (0x646566, 0x676869);
+SELECT 
+    varbin1,
+    varbin2,
+    NULLIF(varbin1, varbin2) AS nullif_result
+FROM test_nullif_varbinary;
+ varbin1  | varbin2  | nullif_result 
+----------+----------+---------------
+ \x616263 | \x616263 | 
+ \x646566 | \x676869 | \x646566
+(2 rows)
+
+-- Test Case 21: BIT type
+CREATE TABLE test_nullif_bit (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bit1 BIT(8),
+    bit2 BIT(8)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_nullif_bit_id_seq" for serial column "test_nullif_bit.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_nullif_bit_pkey" for table "test_nullif_bit"
+INSERT INTO test_nullif_bit (bit1, bit2) VALUES (b'00000001', b'00000001'), (b'00000010', b'00000011');
+SELECT 
+    bit1,
+    bit2,
+    NULLIF(bit1, bit2) AS nullif_result
+FROM test_nullif_bit;
+   bit1   |   bit2   | nullif_result 
+----------+----------+---------------
+ 00000001 | 00000001 | 
+ 00000010 | 00000011 | 00000010
+(2 rows)
+
+-- Clean up the test environment
+DROP TABLE IF EXISTS test_nullif_tinyint;
+DROP TABLE IF EXISTS test_nullif_smallint;
+DROP TABLE IF EXISTS test_nullif_mediumint;
+DROP TABLE IF EXISTS test_nullif_int;
+DROP TABLE IF EXISTS test_nullif_bigint;
+DROP TABLE IF EXISTS test_nullif_float;
+DROP TABLE IF EXISTS test_nullif_double;
+DROP TABLE IF EXISTS test_nullif_decimal;
+DROP TABLE IF EXISTS test_nullif_char;
+DROP TABLE IF EXISTS test_nullif_varchar;
+DROP TABLE IF EXISTS test_nullif_text;
+DROP TABLE IF EXISTS test_nullif_date;
+DROP TABLE IF EXISTS test_nullif_time;
+DROP TABLE IF EXISTS test_nullif_datetime;
+DROP TABLE IF EXISTS test_nullif_timestamp;
+DROP TABLE IF EXISTS test_nullif_year;
+DROP TABLE IF EXISTS test_nullif_enum;
+DROP TABLE IF EXISTS test_nullif_set;
+DROP TABLE IF EXISTS test_nullif_binary;
+DROP TABLE IF EXISTS test_nullif_varbinary;
+DROP TABLE IF EXISTS test_nullif_bit;
