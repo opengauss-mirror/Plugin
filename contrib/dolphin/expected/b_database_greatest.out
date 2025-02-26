@@ -1,0 +1,480 @@
+-- Test Case 1: TINYINT type
+CREATE TABLE test_greatest_tinyint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TINYINT,
+    val2 TINYINT,
+    val3 TINYINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_tinyint_id_seq" for serial column "test_greatest_tinyint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_tinyint_pkey" for table "test_greatest_tinyint"
+INSERT INTO test_greatest_tinyint (val1, val2, val3) VALUES (10, 20, 30), (5, 3, 8);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_tinyint;
+ val1 | val2 | val3 | greatest_result 
+------+------+------+-----------------
+ 10   | 20   | 30   | 30
+ 5    | 3    | 8    | 8
+(2 rows)
+
+-- Test Case 2: SMALLINT type
+CREATE TABLE test_greatest_smallint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 SMALLINT,
+    val2 SMALLINT,
+    val3 SMALLINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_smallint_id_seq" for serial column "test_greatest_smallint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_smallint_pkey" for table "test_greatest_smallint"
+INSERT INTO test_greatest_smallint (val1, val2, val3) VALUES (100, 200, 300), (50, 30, 80);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_smallint;
+ val1 | val2 | val3 | greatest_result 
+------+------+------+-----------------
+  100 |  200 |  300 |             300
+   50 |   30 |   80 |              80
+(2 rows)
+
+-- Test Case 3: MEDIUMINT type
+CREATE TABLE test_greatest_mediumint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 MEDIUMINT,
+    val2 MEDIUMINT,
+    val3 MEDIUMINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_mediumint_id_seq" for serial column "test_greatest_mediumint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_mediumint_pkey" for table "test_greatest_mediumint"
+INSERT INTO test_greatest_mediumint (val1, val2, val3) VALUES (1000, 2000, 3000), (500, 300, 800);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_mediumint;
+ val1 | val2 | val3 | greatest_result 
+------+------+------+-----------------
+ 1000 | 2000 | 3000 |            3000
+  500 |  300 |  800 |             800
+(2 rows)
+
+-- Test Case 4: INT type
+CREATE TABLE test_greatest_int (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 INT,
+    val2 INT,
+    val3 INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_int_id_seq" for serial column "test_greatest_int.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_int_pkey" for table "test_greatest_int"
+INSERT INTO test_greatest_int (val1, val2, val3) VALUES (10000, 20000, 30000), (5000, 3000, 8000);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_int;
+ val1  | val2  | val3  | greatest_result 
+-------+-------+-------+-----------------
+ 10000 | 20000 | 30000 |           30000
+  5000 |  3000 |  8000 |            8000
+(2 rows)
+
+-- Test Case 5: BIGINT type
+CREATE TABLE test_greatest_bigint (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BIGINT,
+    val2 BIGINT,
+    val3 BIGINT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_bigint_id_seq" for serial column "test_greatest_bigint.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_bigint_pkey" for table "test_greatest_bigint"
+INSERT INTO test_greatest_bigint (val1, val2, val3) VALUES (10000000000, 20000000000, 30000000000), (5000000000, 3000000000, 8000000000);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_bigint;
+    val1     |    val2     |    val3     | greatest_result 
+-------------+-------------+-------------+-----------------
+ 10000000000 | 20000000000 | 30000000000 |     30000000000
+  5000000000 |  3000000000 |  8000000000 |      8000000000
+(2 rows)
+
+-- Test Case 6: FLOAT type
+CREATE TABLE test_greatest_float (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 FLOAT,
+    val2 FLOAT,
+    val3 FLOAT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_float_id_seq" for serial column "test_greatest_float.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_float_pkey" for table "test_greatest_float"
+INSERT INTO test_greatest_float (val1, val2, val3) VALUES (1.5, 2.5, 3.5), (0.5, 0.3, 0.8);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_float;
+ val1 | val2 | val3 | greatest_result 
+------+------+------+-----------------
+  1.5 |  2.5 |  3.5 |             3.5
+  0.5 |  0.3 |  0.8 |             0.8
+(2 rows)
+
+-- Test Case 7: DOUBLE type
+CREATE TABLE test_greatest_double (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DOUBLE,
+    val2 DOUBLE,
+    val3 DOUBLE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_double_id_seq" for serial column "test_greatest_double.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_double_pkey" for table "test_greatest_double"
+INSERT INTO test_greatest_double (val1, val2, val3) VALUES (1.123456789, 2.123456789, 3.123456789), (0.123, 0.023, 0.089);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_double;
+    val1     |    val2     |    val3     | greatest_result 
+-------------+-------------+-------------+-----------------
+ 1.123456789 | 2.123456789 | 3.123456789 |     3.123456789
+       0.123 |       0.023 |       0.089 |           0.123
+(2 rows)
+
+-- Test Case 8: DECIMAL type
+CREATE TABLE test_greatest_decimal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DECIMAL(5, 2),
+    val2 DECIMAL(5, 2),
+    val3 DECIMAL(5, 2)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_decimal_id_seq" for serial column "test_greatest_decimal.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_decimal_pkey" for table "test_greatest_decimal"
+INSERT INTO test_greatest_decimal (val1, val2, val3) VALUES (10.25, 20.25, 30.25), (5.25, 3.25, 8.25);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_decimal;
+ val1  | val2  | val3  | greatest_result 
+-------+-------+-------+-----------------
+ 10.25 | 20.25 | 30.25 |           30.25
+  5.25 |  3.25 |  8.25 |            8.25
+(2 rows)
+
+-- Test Case 9: CHAR type
+CREATE TABLE test_greatest_char (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 CHAR(10),
+    val2 CHAR(10),
+    val3 CHAR(10)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_char_id_seq" for serial column "test_greatest_char.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_char_pkey" for table "test_greatest_char"
+INSERT INTO test_greatest_char (val1, val2, val3) VALUES ('apple', 'banana', 'cherry'), ('dog', 'cat', 'elephant');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_char;
+    val1    |    val2    |    val3    | greatest_result 
+------------+------------+------------+-----------------
+ apple      | banana     | cherry     | cherry    
+ dog        | cat        | elephant   | elephant  
+(2 rows)
+
+-- Test Case 10: VARCHAR type
+CREATE TABLE test_greatest_varchar (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 VARCHAR(50),
+    val2 VARCHAR(50),
+    val3 VARCHAR(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_varchar_id_seq" for serial column "test_greatest_varchar.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_varchar_pkey" for table "test_greatest_varchar"
+INSERT INTO test_greatest_varchar (val1, val2, val3) VALUES ('hello', 'world', 'mysql'), ('abc', 'def', 'ghi');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_varchar;
+ val1  | val2  | val3  | greatest_result 
+-------+-------+-------+-----------------
+ hello | world | mysql | world
+ abc   | def   | ghi   | ghi
+(2 rows)
+
+-- Test Case 11: TEXT type
+CREATE TABLE test_greatest_text (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TEXT,
+    val2 TEXT,
+    val3 TEXT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_text_id_seq" for serial column "test_greatest_text.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_text_pkey" for table "test_greatest_text"
+INSERT INTO test_greatest_text (val1, val2, val3) VALUES ('This is a long text', 'Another long text', 'Yet another text'), ('Short', 'Shorter', 'Shortest');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_text;
+        val1         |       val2        |       val3       | greatest_result  
+---------------------+-------------------+------------------+------------------
+ This is a long text | Another long text | Yet another text | Yet another text
+ Short               | Shorter           | Shortest         | Shortest
+(2 rows)
+
+-- Test Case 12: DATE type
+CREATE TABLE test_greatest_date (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DATE,
+    val2 DATE,
+    val3 DATE
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_date_id_seq" for serial column "test_greatest_date.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_date_pkey" for table "test_greatest_date"
+INSERT INTO test_greatest_date (val1, val2, val3) VALUES ('2023-01-01', '2023-02-01', '2023-03-01'), ('2023-05-01', '2023-04-01', '2023-06-01');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_date;
+    val1    |    val2    |    val3    |   greatest_result   
+------------+------------+------------+---------------------
+ 2023-01-01 | 2023-02-01 | 2023-03-01 | 2023-03-01 00:00:00
+ 2023-05-01 | 2023-04-01 | 2023-06-01 | 2023-06-01 00:00:00
+(2 rows)
+
+-- Test Case 13: TIME type
+CREATE TABLE test_greatest_time (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TIME,
+    val2 TIME,
+    val3 TIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_time_id_seq" for serial column "test_greatest_time.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_time_pkey" for table "test_greatest_time"
+INSERT INTO test_greatest_time (val1, val2, val3) VALUES ('12:00:00', '13:00:00', '14:00:00'), ('09:30:00', '10:15:00', '08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_time;
+   val1   |   val2   |   val3   | greatest_result 
+----------+----------+----------+-----------------
+ 12:00:00 | 13:00:00 | 14:00:00 | 14:00:00
+ 09:30:00 | 10:15:00 | 08:45:00 | 10:15:00
+(2 rows)
+
+-- Test Case 14: DATETIME type
+CREATE TABLE test_greatest_datetime (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 DATETIME,
+    val2 DATETIME,
+    val3 DATETIME
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_datetime_id_seq" for serial column "test_greatest_datetime.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_datetime_pkey" for table "test_greatest_datetime"
+INSERT INTO test_greatest_datetime (val1, val2, val3) VALUES ('2023-01-01 12:00:00', '2023-02-01 13:00:00', '2023-03-01 14:00:00'), ('2023-05-01 09:30:00', '2023-04-01 10:15:00', '2023-06-01 08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_datetime;
+        val1         |        val2         |        val3         |   greatest_result   
+---------------------+---------------------+---------------------+---------------------
+ 2023-01-01 12:00:00 | 2023-02-01 13:00:00 | 2023-03-01 14:00:00 | 2023-03-01 14:00:00
+ 2023-05-01 09:30:00 | 2023-04-01 10:15:00 | 2023-06-01 08:45:00 | 2023-06-01 08:45:00
+(2 rows)
+
+-- Test Case 15: TIMESTAMP type
+CREATE TABLE test_greatest_timestamp (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 TIMESTAMP,
+    val2 TIMESTAMP,
+    val3 TIMESTAMP
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_timestamp_id_seq" for serial column "test_greatest_timestamp.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_timestamp_pkey" for table "test_greatest_timestamp"
+INSERT INTO test_greatest_timestamp (val1, val2, val3) VALUES ('2023-01-01 12:00:00', '2023-02-01 13:00:00', '2023-03-01 14:00:00'), ('2023-05-01 09:30:00', '2023-04-01 10:15:00', '2023-06-01 08:45:00');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_timestamp;
+          val1          |          val2          |          val3          |   greatest_result   
+------------------------+------------------------+------------------------+---------------------
+ 2023-01-01 12:00:00-08 | 2023-02-01 13:00:00-08 | 2023-03-01 14:00:00-08 | 2023-03-01 14:00:00
+ 2023-05-01 09:30:00-07 | 2023-04-01 10:15:00-07 | 2023-06-01 08:45:00-07 | 2023-06-01 08:45:00
+(2 rows)
+
+-- Test Case 16: YEAR type
+CREATE TABLE test_greatest_year (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 YEAR,
+    val2 YEAR,
+    val3 YEAR
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_year_id_seq" for serial column "test_greatest_year.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_year_pkey" for table "test_greatest_year"
+INSERT INTO test_greatest_year (val1, val2, val3) VALUES (2023, 2024, 2025), (2022, 2026, 2021);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_year;
+ERROR:  GREATEST could not convert type year to uint4
+LINE 5:     GREATEST(val1, val2, val3) AS greatest_result
+                     ^
+CONTEXT:  referenced column: greatest_result
+-- Test Case 17: ENUM type
+CREATE TABLE test_greatest_enum (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 ENUM('red', 'green', 'blue'),
+    val2 ENUM('red', 'green', 'blue'),
+    val3 ENUM('red', 'green', 'blue')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_enum_id_seq" for serial column "test_greatest_enum.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_enum_pkey" for table "test_greatest_enum"
+INSERT INTO test_greatest_enum (val1, val2, val3) VALUES ('red', 'green', 'blue'), ('green', 'blue', 'red');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_enum;
+ERROR:  GREATEST could not convert type test_greatest_enum_val1_2200_anonymous_enum_1 to text
+LINE 5:     GREATEST(val1, val2, val3) AS greatest_result
+                     ^
+CONTEXT:  referenced column: greatest_result
+-- Test Case 18: SET type
+CREATE TABLE test_greatest_set (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 SET('apple', 'banana', 'cherry'),
+    val2 SET('apple', 'banana', 'cherry'),
+    val3 SET('apple', 'banana', 'cherry')
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_set_id_seq" for serial column "test_greatest_set.id"
+NOTICE:  CREATE TABLE will create implicit set "test_greatest_set_val1_set" for column "test_greatest_set.val1"
+NOTICE:  CREATE TABLE will create implicit set "test_greatest_set_val2_set" for column "test_greatest_set.val2"
+NOTICE:  CREATE TABLE will create implicit set "test_greatest_set_val3_set" for column "test_greatest_set.val3"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_set_pkey" for table "test_greatest_set"
+INSERT INTO test_greatest_set (val1, val2, val3) VALUES ('apple', 'banana', 'cherry'), ('banana,cherry', 'apple', 'cherry');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_set;
+     val1      |  val2  |  val3  | greatest_result 
+---------------+--------+--------+-----------------
+ apple         | banana | cherry | cherry
+ banana,cherry | apple  | cherry | cherry
+(2 rows)
+
+-- Test Case 19: BINARY type
+CREATE TABLE test_greatest_binary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BINARY(5),
+    val2 BINARY(5),
+    val3 BINARY(5)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_binary_id_seq" for serial column "test_greatest_binary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_binary_pkey" for table "test_greatest_binary"
+INSERT INTO test_greatest_binary (val1, val2, val3) VALUES (0x6162636465, 0x6263646566, 0x6364656667), (0x666768696a, 0x6768696a6b, 0x68696a6b6c);
+ERROR:  The input length:12 exceeds the maximum length:5.
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_binary;
+ val1 | val2 | val3 | greatest_result 
+------+------+------+-----------------
+(0 rows)
+
+-- Test Case 20: VARBINARY type
+CREATE TABLE test_greatest_varbinary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 VARBINARY(50),
+    val2 VARBINARY(50),
+    val3 VARBINARY(50)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_varbinary_id_seq" for serial column "test_greatest_varbinary.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_varbinary_pkey" for table "test_greatest_varbinary"
+INSERT INTO test_greatest_varbinary (val1, val2, val3) VALUES (0x616263, 0x626364, 0x636465), (0x646566, 0x656667, 0x666768);
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_varbinary;
+   val1   |   val2   |   val3   | greatest_result 
+----------+----------+----------+-----------------
+ \x616263 | \x626364 | \x636465 | \x636465
+ \x646566 | \x656667 | \x666768 | \x666768
+(2 rows)
+
+-- Test Case 21: BIT type
+CREATE TABLE test_greatest_bit (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    val1 BIT(8),
+    val2 BIT(8),
+    val3 BIT(8)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_greatest_bit_id_seq" for serial column "test_greatest_bit.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_greatest_bit_pkey" for table "test_greatest_bit"
+INSERT INTO test_greatest_bit (val1, val2, val3) VALUES (b'00000001', b'00000010', b'00000011'), (b'00000100', b'00000011', b'00000101');
+SELECT 
+    val1,
+    val2,
+    val3,
+    GREATEST(val1, val2, val3) AS greatest_result
+FROM test_greatest_bit;
+ERROR:  GREATEST could not convert type bit to integer
+LINE 5:     GREATEST(val1, val2, val3) AS greatest_result
+                     ^
+CONTEXT:  referenced column: greatest_result
+-- Clean up the test environment
+DROP TABLE IF EXISTS test_greatest_tinyint;
+DROP TABLE IF EXISTS test_greatest_smallint;
+DROP TABLE IF EXISTS test_greatest_mediumint;
+DROP TABLE IF EXISTS test_greatest_int;
+DROP TABLE IF EXISTS test_greatest_bigint;
+DROP TABLE IF EXISTS test_greatest_float;
+DROP TABLE IF EXISTS test_greatest_double;
+DROP TABLE IF EXISTS test_greatest_decimal;
+DROP TABLE IF EXISTS test_greatest_char;
+DROP TABLE IF EXISTS test_greatest_varchar;
+DROP TABLE IF EXISTS test_greatest_text;
+DROP TABLE IF EXISTS test_greatest_date;
+DROP TABLE IF EXISTS test_greatest_time;
+DROP TABLE IF EXISTS test_greatest_datetime;
+DROP TABLE IF EXISTS test_greatest_timestamp;
+DROP TABLE IF EXISTS test_greatest_year;
+DROP TABLE IF EXISTS test_greatest_enum;
+DROP TABLE IF EXISTS test_greatest_set;
+DROP TABLE IF EXISTS test_greatest_binary;
+DROP TABLE IF EXISTS test_greatest_varbinary;
+DROP TABLE IF EXISTS test_greatest_bit;
