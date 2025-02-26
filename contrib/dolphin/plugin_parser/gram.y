@@ -24742,6 +24742,9 @@ to_or_as:		TO									{}
 				| AS								{}
 		;
 
+table_or_tables:	TABLE							{}
+					| TABLES						{}
+		;
 
 /*****************************************************************************
  *
@@ -25585,7 +25588,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					}
 					$$ = (Node *)renamestmts;
 				}
-			| RENAME TABLE rename_clause_list
+			| RENAME table_or_tables rename_clause_list
 				{
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {

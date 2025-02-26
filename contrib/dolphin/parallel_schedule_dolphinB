@@ -1,11 +1,12 @@
 # show storage engines
 # enable_mot_server must be before at test_show_storage_engines_1 and test_show_storage_engines_2
 test: enable_mot_server
+test: m_testcase_fix
 test: test_show_storage_engines_1
 test: disable_ustore_incremental_checkpoint
 test: test_show_storage_engines_2 show_create show_create_database
 test: perf_schema_test
-test: enable_ustore_incremental_checkpoint m_testcase_fix
+test: enable_ustore_incremental_checkpoint
 
 # case sensitive test, do not insert test case */
 test: case_sensitive_test/create_env

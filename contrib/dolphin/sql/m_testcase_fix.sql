@@ -24,5 +24,20 @@ drop table t1;
 
 SELECT SUBTIME(120120519090607 | 120120519090607 ,'1 1:1:1.000002');
 
+
+
+CREATE TABLE t1(a INT) ENGINE=MyISAM;
+CREATE TABLE t2(b INT);
+CREATE TABLE t3(c INT);
+CREATE TABLE t4(d INT);
+CREATE VIEW v1 AS SELECT * FROM t2;
+RENAME TABLES t1 TO t5, v1 TO v2;
+
+drop view v2;
+drop table t2;
+drop table t3;
+drop table t4;
+drop table t5;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
