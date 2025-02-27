@@ -133,4 +133,9 @@ make installcheck
 ![test_suit_success_example.png](doc%2Fimg%2Ftest_suit_success_example.png)
 
 ## 已知约束
-1. openGauss安装dolphin插件后，B模式下无法使用age插件
+1. openGauss安装dolphin插件后，B模式下需要使用如下方式安装AGE插件:
+```sql
+set dolphin.b_compatibility_mode=off;
+create extension age;
+set dolphin.b_compatibility_mode=on;
+```

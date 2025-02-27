@@ -3132,7 +3132,7 @@ STABLE
 RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
-CREATE FUNCTION ag_catalog.age_date_part(format agtype,timelong agtype)
+CREATE FUNCTION ag_catalog.age_date_part(format_str agtype,timelong agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
