@@ -36432,7 +36432,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 						c = (ColumnRef *)(((A_Indirection *)$3)->arg);
 					nfields = list_length(c->fields);
 					/* only allow col.*, col[...], col */
-					if (nfields > 1)
+					if (nfields > 2)
 					{
 						const char* message = "only allow column name within VALUES";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -36441,8 +36441,10 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 								 errmsg("only allow column name within VALUES"),
 								 parser_errposition(@3)));
 					}
+					if (nfields < 2) {
+						c->fields = lcons((Node *)makeString(GetSessionContext()->upSertAliasName->aliasname), c->fields);
+					}
 
-					c->fields = lcons((Node *)makeString(GetSessionContext()->upSertAliasName->aliasname), c->fields);
 					$$ = (Node *) $3;
 				}
 			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' SCONST search_modifier ')'
