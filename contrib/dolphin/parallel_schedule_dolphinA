@@ -67,7 +67,7 @@ test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock
 
 test: enable_thread_pool
 
-test: create_function_test/m_type_create_proc create_function_test/b_compat_create_func b_compat_create_func_source
+test: create_function_test/m_type_create_proc create_function_test/b_compat_create_func b_compat_create_func_source b_database_ifnull
 
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
 
