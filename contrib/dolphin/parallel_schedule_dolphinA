@@ -23,6 +23,8 @@ test: test_shows_3
 
 test: test_shows_4 test_shows_5
 
+test: b_database_var b_database_sum b_database_stddev
+
 test: nvarchar regexp upsert zerofill test_set_charset test_optimize
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum bxconst_test table_option_separator grant_user_to_user compress_modify_flag

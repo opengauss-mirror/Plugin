@@ -1,0 +1,114 @@
+-- test Case 1: Basic functionality test_var_var for numeric values
+-- Create a table with a numeric column
+CREATE TABLE test_var_numeric (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_var_numeric_id_seq" for serial column "test_var_numeric.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_var_numeric_pkey" for table "test_var_numeric"
+-- Insert test data
+INSERT INTO test_var_numeric (value) VALUES (1), (2), (3), (4), (5);
+-- Calculate variance using VAR_POP() and VAR_SAMP()
+SELECT 
+    VAR_POP(value) AS var_pop_result,
+    VAR_SAMP(value) AS var_samp_result
+FROM test_var_numeric;
+   var_pop_result   |  var_samp_result   
+--------------------+--------------------
+ 2.0000000000000000 | 2.5000000000000000
+(1 row)
+
+-- test Case 2: Empty table test for numeric values
+-- Create an empty table with a numeric column
+CREATE TABLE test_var_numeric_empty (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_var_numeric_empty_id_seq" for serial column "test_var_numeric_empty.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_var_numeric_empty_pkey" for table "test_var_numeric_empty"
+-- Calculate variance using VAR_POP() and VAR_SAMP()
+SELECT 
+    VAR_POP(value) AS var_pop_result,
+    VAR_SAMP(value) AS var_samp_result
+FROM test_var_numeric_empty;
+ var_pop_result | var_samp_result 
+----------------+-----------------
+                |                
+(1 row)
+
+-- test Case 3: Single - value test for numeric values
+-- Create a table with a single numeric value
+CREATE TABLE test_var_numeric_single (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_var_numeric_single_id_seq" for serial column "test_var_numeric_single.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_var_numeric_single_pkey" for table "test_var_numeric_single"
+-- Insert a single value
+INSERT INTO test_var_numeric_single (value) VALUES (10);
+-- Calculate variance using VAR_POP() and VAR_SAMP()
+SELECT 
+    VAR_POP(value) AS var_pop_result,
+    VAR_SAMP(value) AS var_samp_result
+FROM test_var_numeric_single;
+ var_pop_result | var_samp_result 
+----------------+-----------------
+              0 |                
+(1 row)
+
+-- test Case 4: test with string values
+-- Create a table with a string column
+CREATE TABLE test_var_string (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(20)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_var_string_id_seq" for serial column "test_var_string.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_var_string_pkey" for table "test_var_string"
+-- Insert test data
+INSERT INTO test_var_string (value) VALUES ('abc'), ('def'), ('ghi');
+-- Try to calculate variance using VAR_POP() and VAR_SAMP()
+-- Expected result: NULL since the input is non - numeric
+SELECT 
+    VAR_POP(value) AS var_pop_result,
+    VAR_SAMP(value) AS var_samp_result
+FROM test_var_string;
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "def"
+WARNING:  invalid input syntax for type numeric: "def"
+WARNING:  invalid input syntax for type numeric: "ghi"
+WARNING:  invalid input syntax for type numeric: "ghi"
+ var_pop_result | var_samp_result 
+----------------+-----------------
+              0 |               0
+(1 row)
+
+-- test Case 5: Mixed numeric and non - numeric values
+-- Create a table with a mixed column
+CREATE TABLE test_var_mixed (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(20)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_var_mixed_id_seq" for serial column "test_var_mixed.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_var_mixed_pkey" for table "test_var_mixed"
+-- Insert test data
+INSERT INTO test_var_mixed (value) VALUES ('1'), ('2'), ('abc');
+-- Try to calculate variance using VAR_POP() and VAR_SAMP()
+-- MySQL will try to convert strings to numbers if possible and ignore non - convertible values
+SELECT 
+    VAR_POP(value) AS var_pop_result,
+    VAR_SAMP(value) AS var_samp_result
+FROM test_var_mixed;
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "abc"
+     var_pop_result     |    var_samp_result     
+------------------------+------------------------
+ 0.66666666666666666667 | 1.00000000000000000000
+(1 row)
+
+-- Clean up the test data
+DROP TABLE IF EXISTS test_var_numeric;
+DROP TABLE IF EXISTS test_var_numeric_empty;
+DROP TABLE IF EXISTS test_var_numeric_single;
+DROP TABLE IF EXISTS test_var_string;
+DROP TABLE IF EXISTS test_var_mixed;

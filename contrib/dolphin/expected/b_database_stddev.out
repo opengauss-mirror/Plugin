@@ -1,0 +1,118 @@
+-- test Case 1: Basic functionality test for numeric values
+-- Create a table with a numeric column
+CREATE TABLE test_stddev_numeric (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_stddev_numeric_id_seq" for serial column "test_stddev_numeric.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_stddev_numeric_pkey" for table "test_stddev_numeric"
+-- Insert test data
+INSERT INTO test_stddev_numeric (value) VALUES (1), (2), (3), (4), (5);
+-- Calculate standard deviation using STDDEV(), STDDEV_POP(), and STDDEV_SAMP()
+SELECT 
+    STDDEV(value) AS stddev_result,
+    STDDEV_POP(value) AS stddev_pop_result,
+    STDDEV_SAMP(value) AS stddev_samp_result
+FROM test_stddev_numeric;
+   stddev_result    | stddev_pop_result  | stddev_samp_result 
+--------------------+--------------------+--------------------
+ 1.4142135623730950 | 1.4142135623730950 | 1.5811388300841897
+(1 row)
+
+-- test Case 2: Empty table test for numeric values
+-- Create an empty table with a numeric column
+CREATE TABLE test_stddev_numeric_empty (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_stddev_numeric_empty_id_seq" for serial column "test_stddev_numeric_empty.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_stddev_numeric_empty_pkey" for table "test_stddev_numeric_empty"
+-- Calculate standard deviation using STDDEV(), STDDEV_POP(), and STDDEV_SAMP()
+SELECT 
+    STDDEV(value) AS stddev_result,
+    STDDEV_POP(value) AS stddev_pop_result,
+    STDDEV_SAMP(value) AS stddev_samp_result
+FROM test_stddev_numeric_empty;
+ stddev_result | stddev_pop_result | stddev_samp_result 
+---------------+-------------------+--------------------
+               |                   |                   
+(1 row)
+
+-- test Case 3: Single - value test for numeric values
+-- Create a table with a single numeric value
+CREATE TABLE test_stddev_numeric_single (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value INT
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_stddev_numeric_single_id_seq" for serial column "test_stddev_numeric_single.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_stddev_numeric_single_pkey" for table "test_stddev_numeric_single"
+-- Insert a single value
+INSERT INTO test_stddev_numeric_single (value) VALUES (10);
+-- Calculate standard deviation using STDDEV(), STDDEV_POP(), and STDDEV_SAMP()
+SELECT 
+    STDDEV(value) AS stddev_result,
+    STDDEV_POP(value) AS stddev_pop_result,
+    STDDEV_SAMP(value) AS stddev_samp_result
+FROM test_stddev_numeric_single;
+ stddev_result | stddev_pop_result | stddev_samp_result 
+---------------+-------------------+--------------------
+             0 |                 0 |                   
+(1 row)
+
+-- test Case 4: test with string values
+-- Create a table with a string column
+CREATE TABLE test_stddev_string (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(20)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_stddev_string_id_seq" for serial column "test_stddev_string.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_stddev_string_pkey" for table "test_stddev_string"
+-- Insert test data
+INSERT INTO test_stddev_string (value) VALUES ('abc'), ('def'), ('ghi');
+-- Try to calculate standard deviation using STDDEV(), STDDEV_POP(), and STDDEV_SAMP()
+-- Expected result: NULL since the input is non - numeric
+SELECT 
+    STDDEV(value) AS stddev_result,
+    STDDEV_POP(value) AS stddev_pop_result,
+    STDDEV_SAMP(value) AS stddev_samp_result
+FROM test_stddev_string;
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "def"
+WARNING:  invalid input syntax for type numeric: "def"
+WARNING:  invalid input syntax for type numeric: "ghi"
+WARNING:  invalid input syntax for type numeric: "ghi"
+ stddev_result | stddev_pop_result | stddev_samp_result 
+---------------+-------------------+--------------------
+             0 |                 0 |                  0
+(1 row)
+
+-- test Case 5: Mixed numeric and non - numeric values
+-- Create a table with a mixed column
+CREATE TABLE test_stddev_mixed (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(20)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_stddev_mixed_id_seq" for serial column "test_stddev_mixed.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_stddev_mixed_pkey" for table "test_stddev_mixed"
+-- Insert test data
+INSERT INTO test_stddev_mixed (value) VALUES ('1'), ('2'), ('abc');
+-- Try to calculate standard deviation using STDDEV(), STDDEV_POP(), and STDDEV_SAMP()
+SELECT 
+    STDDEV(value) AS stddev_result,
+    STDDEV_POP(value) AS stddev_pop_result,
+    STDDEV_SAMP(value) AS stddev_samp_result
+FROM test_stddev_mixed;
+WARNING:  invalid input syntax for type numeric: "abc"
+WARNING:  invalid input syntax for type numeric: "abc"
+     stddev_result      |   stddev_pop_result    |   stddev_samp_result   
+------------------------+------------------------+------------------------
+ 0.81649658092772603273 | 0.81649658092772603273 | 1.00000000000000000000
+(1 row)
+
+-- Clean up the test data
+DROP TABLE IF EXISTS test_stddev_numeric;
+DROP TABLE IF EXISTS test_stddev_numeric_empty;
+DROP TABLE IF EXISTS test_stddev_numeric_single;
+DROP TABLE IF EXISTS test_stddev_string;
+DROP TABLE IF EXISTS test_stddev_mixed;
