@@ -55,7 +55,7 @@ test: show b_comments ansi_quotes_start b_system_view b_rowtype test_proxy test_
 
 test: pl_debugger_server pl_debugger_client load load2 flush ansi_quotes_test partition_engine
 
-test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4 b_plugin_signal_resignal
+test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4 b_plugin_signal_resignal b_database_greatest
 
 test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_remove json_replace json_set json_depth
 
