@@ -57,5 +57,24 @@ drop table t2;
 drop table t3;
 drop table t4;
 drop table t5;
+CREATE TABLE t1 (a INT, b INT, c INT, UNIQUE (A), UNIQUE(B));
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t1_a_key" for table "t1"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t1_b_key" for table "t1"
+CREATE TABLE t2 (a INT, b INT, c INT, d INT);
+insert into t1 values (1, 1, 1);
+insert into t1 values (2, 2, 2);
+insert into t2 values (1, 1, 1, 1);
+insert into t2 values (2, 2, 2, 2);
+INSERT t1 SELECT a,b,c FROM t2 WHERE d=2 ON DUPLICATE KEY UPDATE c=t1.c+VALUES(t1.a);
+INSERT t1 SELECT a,b,c FROM t2 WHERE d=2 ON DUPLICATE KEY UPDATE c=t1.c+VALUES(t1.a);
+select * from t1;
+ a | b | c 
+---+---+---
+ 1 | 1 | 1
+ 2 | 2 | 6
+(2 rows)
+
+drop table t1;
+drop table t2;
 drop schema m_testcase_fix cascade;
 reset current_schema;
