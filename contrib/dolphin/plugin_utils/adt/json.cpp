@@ -2370,18 +2370,20 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
         appendStringInfoString(result, keys[pos[order]]);
         appendStringInfoString(result, ": ");
         /* process value */
-        val_type = get_fn_expr_argtype(fcinfo->flinfo, 2 * pos[order] + 1);
+        int arg_num = 2 * pos[order] + 1; /* 2 means a pair of key-value */
+        val_type = get_fn_expr_argtype(fcinfo->flinfo, arg_num);
         /* see comments above */
-        if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, 2 * pos[order] + 1)) {
+        if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, arg_num)) {
             val_type = TEXTOID;
-            if (PG_ARGISNULL(2 * pos[order] + 1)) {
+            if (PG_ARGISNULL(arg_num)) {
                 arg = (Datum)0;
                 is_null = true;
             } else {
-                arg = CStringGetTextDatum(PG_GETARG_POINTER(2 * pos[order] + 1));
+                arg = CStringGetTextDatum(PG_GETARG_POINTER(arg_num));
             }
         } else {
-            arg = PG_GETARG_DATUM(2 * pos[order] + 1);
+            arg = PG_GETARG_DATUM(arg_num);
+            is_null = PG_ARGISNULL(arg_num);
         }
         if (val_type == InvalidOid || val_type == UNKNOWNOID) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
