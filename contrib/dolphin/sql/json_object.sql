@@ -124,5 +124,8 @@ set dolphin.b_compatibility_mode = 0;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 
+set dolphin.b_compatibility_mode = on;
+select json_object('abc', NULL::text);
+
 drop schema test_json_object cascade;
 reset current_schema;
