@@ -858,7 +858,7 @@ static bool GreaterThanHour (List* int_type);
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
 				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
 				from_list_for_no_table_function
-				qualified_name_list any_name type_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list casesensitive_caseignore_any_name casesensitive_caseignore_any_name_list
+				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list casesensitive_caseignore_any_name casesensitive_caseignore_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
@@ -7498,7 +7498,7 @@ add_partition_cmd:
  *****************************************************************************/
 
 AlterCompositeTypeStmt:
-			ALTER TYPE_P type_name alter_type_cmds
+			ALTER TYPE_P any_name alter_type_cmds
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 
@@ -14086,7 +14086,7 @@ AlterExtensionContentsStmt:
 					n->objname = list_make1(makeString($6));
 					$$ = (Node *)n;
 				}
-			| ALTER EXTENSION name add_drop TYPE_P type_name
+			| ALTER EXTENSION name add_drop TYPE_P any_name
 				{
 					AlterExtensionContentsStmt *n = makeNode(AlterExtensionContentsStmt);
 					n->extname = $3;
@@ -16012,7 +16012,7 @@ DefineStmt:
 					n->definition = $4;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name definition
+			| CREATE TYPE_P any_name definition
 				{
 					DefineStmt *n = makeNode(DefineStmt);
 					n->kind = OBJECT_TYPE;
@@ -16022,7 +16022,7 @@ DefineStmt:
 					n->definition = $4;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name
+			| CREATE TYPE_P any_name
 				{
 					/* Shell type (identified by lack of definition) */
 					DefineStmt *n = makeNode(DefineStmt);
@@ -16033,7 +16033,7 @@ DefineStmt:
 					n->definition = NIL;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is '(' OptTableFuncElementList ')'
+			| CREATE TYPE_P any_name as_is '(' OptTableFuncElementList ')'
 				{
 					CompositeTypeStmt *n = makeNode(CompositeTypeStmt);
 
@@ -16048,7 +16048,7 @@ DefineStmt:
 					n->methodlist = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE OR REPLACE TYPE_P type_name as_is '(' OptTableFuncElementList ')'
+			| CREATE OR REPLACE TYPE_P any_name as_is '(' OptTableFuncElementList ')'
 				{
 					CompositeTypeStmt *n = makeNode(CompositeTypeStmt);
 
@@ -16063,7 +16063,7 @@ DefineStmt:
 					n->methodlist = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
+			| CREATE TYPE_P any_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 						ereport(errstate, 
@@ -16094,7 +16094,7 @@ DefineStmt:
 					n->typebody = NULL;
 					$$ = (Node *)n;					
 				}
-			| CREATE OR REPLACE TYPE_P type_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
+			| CREATE OR REPLACE TYPE_P any_name as_is OBJECT_P '(' OptTableFuncElementList ')' final_clause
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 						ereport(errstate, 
@@ -16125,7 +16125,7 @@ DefineStmt:
 					n->typebody = NULL;
 					$$ = (Node *)n;					
 				}
-			| CREATE TYPE_P type_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
+			| CREATE TYPE_P any_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 						ereport(errstate, 
@@ -16151,7 +16151,7 @@ DefineStmt:
 					n->typebody = NULL;
 					$$ = (Node *)n;						
 				}
-			| CREATE OR REPLACE TYPE_P type_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
+			| CREATE OR REPLACE TYPE_P any_name as_is OBJECT_P '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 						ereport(errstate, 
@@ -16177,7 +16177,7 @@ DefineStmt:
 					n->typebody = NULL;
 					$$ = (Node *)n;						
 				}
-			| CREATE TYPE_P type_name UNDER type_name '(' TableFuncElementList ')' final_clause
+			| CREATE TYPE_P any_name UNDER any_name '(' TableFuncElementList ')' final_clause
 				{
 						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 							ereport(errstate, 
@@ -16204,7 +16204,7 @@ DefineStmt:
 						n->typebody = NULL;
 						$$ = (Node *)n;	
 				}
-			| CREATE OR REPLACE TYPE_P type_name UNDER type_name '(' TableFuncElementList ')' final_clause
+			| CREATE OR REPLACE TYPE_P any_name UNDER any_name '(' TableFuncElementList ')' final_clause
 				{
 						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 							ereport(errstate, 
@@ -16231,7 +16231,7 @@ DefineStmt:
 						n->typebody = NULL;
 						$$ = (Node *)n;	
 				}
-			| CREATE TYPE_P type_name UNDER type_name '(' TableFuncElementList ',' Method_specList ')' final_clause
+			| CREATE TYPE_P any_name UNDER any_name '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
 						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 							ereport(errstate, 
@@ -16258,7 +16258,7 @@ DefineStmt:
 						n->typebody = NULL;
 						$$ = (Node *)n;		
 				}
-			| CREATE OR REPLACE TYPE_P type_name UNDER type_name '(' TableFuncElementList ',' Method_specList ')' final_clause
+			| CREATE OR REPLACE TYPE_P any_name UNDER any_name '(' TableFuncElementList ',' Method_specList ')' final_clause
 				{
 						if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 							ereport(errstate, 
@@ -16285,7 +16285,7 @@ DefineStmt:
 						n->typebody = NULL;
 						$$ = (Node *)n;
 				}
-			| CREATE TYPE_P BODY_P type_name as_is type_body_subprogram
+			| CREATE TYPE_P BODY_P any_name as_is type_body_subprogram
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != A_FORMAT && !IsInitdb && !u_sess->attr.attr_common.IsInplaceUpgrade) {
 						ereport(errstate, 
@@ -16329,7 +16329,7 @@ DefineStmt:
 					n->typebody = typebody.data;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is VARRAY '(' ICONST ')' OF func_type
+			| CREATE TYPE_P any_name as_is VARRAY '(' ICONST ')' OF func_type
 				{
 					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
 					n->typname = $3;
@@ -16339,7 +16339,7 @@ DefineStmt:
 					n->typecategory = TYPCATEGORY_VARRAY;
 					$$ = (Node *)n;
 				}
-			| CREATE OR REPLACE TYPE_P type_name as_is VARRAY '(' ICONST ')' OF func_type
+			| CREATE OR REPLACE TYPE_P any_name as_is VARRAY '(' ICONST ')' OF func_type
 				{
 					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
 					n->typname = $5;
@@ -16349,7 +16349,7 @@ DefineStmt:
 					n->typecategory = TYPCATEGORY_VARRAY;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is TABLE OF func_type
+			| CREATE TYPE_P any_name as_is TABLE OF func_type
 				{
 					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
 					n->replace = false;
@@ -16359,7 +16359,7 @@ DefineStmt:
 					n->typecategory = TYPCATEGORY_TABLEOF;
 					$$ = (Node *)n;
 				}
-			| CREATE OR REPLACE TYPE_P type_name as_is TABLE OF func_type
+			| CREATE OR REPLACE TYPE_P any_name as_is TABLE OF func_type
 				{
 					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
 					n->replace = true;
@@ -16369,14 +16369,14 @@ DefineStmt:
 					n->typecategory = TYPCATEGORY_TABLEOF;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is ENUM_P '(' opt_enum_val_list ')'
+			| CREATE TYPE_P any_name as_is ENUM_P '(' opt_enum_val_list ')'
 				{
 					CreateEnumStmt *n = makeNode(CreateEnumStmt);
 					n->typname = $3;
 					n->vals = $7;
 					$$ = (Node *)n;
 				}
-			| CREATE TYPE_P type_name as_is RANGE definition
+			| CREATE TYPE_P any_name as_is RANGE definition
 				{
 					CreateRangeStmt *n = makeNode(CreateRangeStmt);
 					n->typname = $3;
@@ -17108,7 +17108,7 @@ enum_val_list:	SCONST
  *****************************************************************************/
 
 AlterEnumStmt:
-		ALTER TYPE_P type_name ADD_P VALUE_P opt_if_not_exists SCONST
+		ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -17119,7 +17119,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P type_name ADD_P VALUE_P opt_if_not_exists SCONST BEFORE SCONST
+		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST BEFORE SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -17130,7 +17130,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P type_name ADD_P VALUE_P opt_if_not_exists SCONST AFTER SCONST
+		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST AFTER SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -17141,7 +17141,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P type_name RENAME VALUE_P SCONST TO SCONST
+		 | ALTER TYPE_P any_name RENAME VALUE_P SCONST TO SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -17672,11 +17672,6 @@ casesensitive_caseignore_any_name_list:
 
 any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 			| ColId attrs				{ $$ = lcons(makeString($1), $2); }
-		;
-
-type_name:
-			type_function_name			{ $$ = list_make1(makeString($1)); }
-			| type_function_name attrs	{ $$ = lcons(makeString($1), $2); }
 		;
 
 any_name_or_sconst:
@@ -23676,7 +23671,8 @@ subprogram_body: 	{
 						parser_yyerror("subprogram body is not ended correctly");
 						break;
 					}
-					if (!in_begin && (pre_tok == ';' || pre_tok == DECLARE || pre_tok == 0 || pre_tok == COMMENTSTRING) && (tok == PROCEDURE || tok == FUNCTION)) {
+					if (!in_begin && (pre_tok == ';' || pre_tok == DECLARE || pre_tok == 0 || pre_tok == COMMENTSTRING
+						|| pre_tok == AS || pre_tok == IS) && (tok == PROCEDURE || tok == FUNCTION)) {
 						in_procedure++;
 						max_proc_level = max_proc_level > in_procedure ? max_proc_level : in_procedure;
 						procedure_count++;
@@ -25552,7 +25548,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TYPE_P type_name RENAME TO name
+			| ALTER TYPE_P any_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TYPE;
@@ -25561,7 +25557,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TYPE_P type_name RENAME ATTRIBUTE name TO name opt_drop_behavior
+			| ALTER TYPE_P any_name RENAME ATTRIBUTE name TO name opt_drop_behavior
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_ATTRIBUTE;
@@ -25905,7 +25901,7 @@ AlterObjectSchemaStmt:
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TYPE_P type_name SET SCHEMA DolphinColId
+			| ALTER TYPE_P any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TYPE;
@@ -26047,7 +26043,7 @@ AlterOwnerStmt: ALTER AGGREGATE func_name aggr_args OWNER TO RoleId
 					n->newowner = $6;
 					$$ = (Node *)n;
 				}
-			| ALTER TYPE_P type_name OWNER TO TypeOwner
+			| ALTER TYPE_P any_name OWNER TO TypeOwner
 				{
 					AlterOwnerStmt *n = makeNode(AlterOwnerStmt);
 					n->objectType = OBJECT_TYPE;
