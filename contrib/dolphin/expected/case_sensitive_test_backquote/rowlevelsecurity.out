@@ -839,7 +839,8 @@ SELECT `type`, `database`, `object_name`, `detail_info` FROM `pg_query_audit`('2
      type     |      database      |    object_name     |                        detail_info                         
 --------------+--------------------+--------------------+------------------------------------------------------------
  ddl_database | table_name_test_db | table_name_test_db | ALTER DATABASE `table_name_test_db` ENABLE PRIVATE OBJECT;
-(1 row)
+ ddl_database | table_name_test_db | table_name_test_db | ALTER DATABASE table_name_test_db ENABLE PRIVATE OBJECT;
+(2 rows)
 
 -- viewpoint from rls_regres_david again
 SET ROLE `regress_rls_david` PASSWORD 'Ttest@123';
