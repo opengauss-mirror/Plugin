@@ -774,13 +774,7 @@ static Node *transform_A_Indirection(cypher_parsestate *cpstate,
     {
         Node *node = (Node*)lfirst(lc);
         /* is this a slice? */
-        bool isSlice = false;
-        if (((A_Indices*)node)->is_slice != NULL && ((A_Indices*)node)->is_slice) {
-            isSlice=true;
-        }
-
-        if (IsA(node, A_Indices) &&isSlice)
-        {
+        if (IsA(node, A_Indices) && ((A_Indices*)node)->is_slice) {
             A_Indices *indices = (A_Indices *)node;
 
             /* were we working on an access? if so, wrap and close it */
@@ -827,8 +821,7 @@ static Node *transform_A_Indirection(cypher_parsestate *cpstate,
             args = lappend(NIL, func_expr);
         }
         /* is this a string or index?*/
-        else if (IsA(node, String) || IsA(node, A_Indices))
-        {
+        else if (IsA(node, String) || IsA(node, A_Indices)) {
             /* we are working on an access */
             is_access = true;
             /* is this an index? */
@@ -849,8 +842,7 @@ static Node *transform_A_Indirection(cypher_parsestate *cpstate,
             }
         }
         /* not an indirection we understand */
-        else
-        {
+        else {
             ereport(ERROR,
                     (errmsg("invalid indirection node %d", nodeTag(node))));
         }

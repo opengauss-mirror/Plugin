@@ -143,10 +143,7 @@ static inline void dq_append_string_len(StringInfo buf, const char *data, uint32
 
 static inline void dq_append_string_lenenc(StringInfo buf, const char *data, int dataLen = -1)
 {
-    size_t len = data ? strlen(data) : 0;
-    if (dataLen != -1) {
-        len = dataLen;
-    }
+    size_t len = dataLen != -1 ? dataLen : (data ? strlen(data) : 0);
     if (!data) {
         dq_append_int1(buf, NULL_STRING_MARK);
     } else if (len == 0) {
