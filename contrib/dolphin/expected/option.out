@@ -88,8 +88,7 @@ create table test12() inherits (test11);
 ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table if not exists test13(a int);
 create index idx1 on test1 using ubtree(a) with(fillfactor = 30) INCLUDE(b);
-NOTICE:  Index type ubtree is converted to index type btree.
-ERROR:  create a index with include columns is only supported in ubtree
+ERROR:  ubtree index is only supported for ustore
 create index idx2 on test8(user_no) LOCAL;
 drop index idx2;
 create index idx3 on test8(user_no) GLOBAL;
