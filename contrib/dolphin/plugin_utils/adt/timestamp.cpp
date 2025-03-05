@@ -2433,12 +2433,19 @@ static int intervaltypmodleastfield(int32 typmod)
         case INTERVAL_MASK(SECOND):
             return 0; /* SECOND */
         case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
+#ifdef DOLPHIN
+        case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO):
+#endif
             return 4; /* MONTH */
         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):
             return 2; /* HOUR */
         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
             return 1; /* MINUTE */
         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+#ifdef DOLPHIN
+        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+            INTERVAL_MASK(INTERVAL_TO):
+#endif
             return 0; /* SECOND */
         case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
             return 1; /* MINUTE */
@@ -2612,7 +2619,11 @@ static void AdjustIntervalForTypmod(Interval* interval, int32 typmod)
             interval->time = 0;
         }
         /* YEAR TO MONTH */
-        else if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH))) {
+        else if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) 
+#ifdef DOLPHIN
+            || range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO))
+#endif
+            ) {
             interval->day = 0;
             interval->time = 0;
         } else if (range == INTERVAL_MASK(DAY)) {
@@ -2639,7 +2650,11 @@ static void AdjustIntervalForTypmod(Interval* interval, int32 typmod)
             type_mode = 'M';
         }
         /* DAY TO SECOND */
-        else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND))) {
+        else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND))
+#ifdef DOLPHIN
+            || range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(INTERVAL_TO))
+#endif
+            ) {
             /* fractional-second rounding will be dealt with below */
 
             // set second mode character
@@ -2681,12 +2696,26 @@ static void AdjustIntervalForTypmod(Interval* interval, int32 typmod)
 
         /* Need to adjust subsecond precision? */
         if (precision != INTERVAL_FULL_PRECISION) {
+#ifdef DOLPHIN
+            /**
+             * there are actually 2 kinds of precision:
+             * 1) select '1'::interval(2) day, precision for interval->time, 16 bits data for this presicion, range 0 ~ 6
+             * 2) select '1 2 3 4'::interval day(2) to second(6), 
+             *    high 8 bits data for part1, low 8 bits data for part2, both range 0 ~ 6 
+             * it may not match precision <= MAX_INTERVAL_PRECISION in somecase,
+             * so ignore the high 8 bits，as it's not usable for now. 
+             */
+            precision = INTERVAL_PRECISION_P2(precision);
+            // return if full precision
+            if (precision == INTERVAL_PRECISION_MASK_P2) {
+                return;
+            }
+#endif
             if (precision < 0 || precision > MAX_INTERVAL_PRECISION)
                 ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg(
                             "interval(%d) precision must be between %d and %d", precision, 0, MAX_INTERVAL_PRECISION)));
-
                 /*
                  * Note: this round-to-nearest code is not completely consistent
                  * about rounding values that are exactly halfway between integral
@@ -7336,6 +7365,7 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
     {
         FlushErrorState();
         is_success = false;
+        FlushErrorState();
     }
     PG_END_TRY();
     if (!is_success)
@@ -9670,7 +9700,9 @@ bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result
     itv->month = -span->month;
     itv->day = -span->day;
     itv->time = -span->time;
-    return datetime_sub_interval(datetime, itv, result, true);
+    bool res = datetime_sub_interval(datetime, itv, result, true);
+    pfree_ext(itv);
+    return res;
 }
 
 /**
