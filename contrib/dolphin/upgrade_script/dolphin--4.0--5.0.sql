@@ -118,3 +118,5 @@ DROP FUNCTION IF EXISTS pg_catalog.subdate(time, int8);
 DROP FUNCTION IF EXISTS pg_catalog.adddate(time, int8);
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS text AS $$ SELECT pg_catalog.date_sub($1, $2::text::interval)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2::text::interval)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(time) RETURNS date LANGUAGE SQL VOLATILE STRICT as 'select time_date($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(timestamp without time zone) RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.b_db_date($1::text)';

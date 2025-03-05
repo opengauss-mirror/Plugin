@@ -491,5 +491,8 @@ select timestamptz '2022-7-21 12:1';
 select timestamptz '2022-7-21 60';
 select timestamptz '2022-7-21 60:01:01';
 
+select date(time '12:30:00');
+select date(time '32:30:00');
+select date(smalldatetime '2022-01-01 12:30');
 drop schema b_time_funcs cascade;
 reset current_schema;
