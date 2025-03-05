@@ -1072,9 +1072,9 @@ other			.
 								return SET_USER_IDENT;
 							}
 						}
-						
+#ifdef DOLPHIN
 						/* check whether the string end with '@' or '@@', if so, remove last one or two '@', treat them as user var */
-						if (nchars >= 2 && yytext[nchars - 1] == '@')
+						if (nchars > 2 && yytext[nchars - 1] == '@')
 						{
 							/* remove two '@' at most */
 							nchars--;
@@ -1083,6 +1083,12 @@ other			.
 								nchars--;
 							}
 						}
+						/* if the string is exactly "@@", we treat them as an operator. */
+						else if (nchars == 2 && yytext[1] == '@' && yytext[0] != '@')
+						{
+							nchars--;
+						}
+#endif
 					}
 
 					if (slashstar && dashdash)
