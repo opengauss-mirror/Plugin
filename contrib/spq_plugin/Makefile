@@ -14,12 +14,8 @@ DATA = spqplugin--1.0.sql
 src_objs = ./src/objfiles.txt
 obj_files = $(addprefix ./, $(shell cat ./src/objfiles.txt))
 
-OBJS = $(filter spqplugin.o, $(obj_files)) $(filter-out spqplugin.o, $(obj_files))
+compile_src = $(shell $(MAKE) -j16 -C src || echo "SpqPlugin compile failed" && exit 1)
+OBJS = $(if $(filter SpqPlugin compile failed, $(compile_src)), $(error SpqPlugin compile failed), $(obj_files))
 
 subdir = contrib/spq_plugin
 include $(top_srcdir)/contrib/contrib-global.mk
-
-compile_src:
-	@echo "Compile spq plugin source files..."
-	$(MAKE) -j16 -C src || { echo "Error compile spq plugin source files."; exit 1; }
-all: compile_src
