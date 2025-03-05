@@ -147,6 +147,13 @@ select timestampdiff(SQL_TSI_MONTH, '2001-02-01', '2001-05-01') = timestampdiff(
 select timestampdiff(SQL_TSI_QUARTER, '2001-02-01', '2001-05-01') = timestampdiff(QUARTER, '2001-02-01', '2001-05-01');
 select timestampdiff(SQL_TSI_YEAR, '2001-02-01', '2001-05-01') = timestampdiff(YEAR, '2001-02-01', '2001-05-01');
 
+select TIMESTAMPDIFF(HOUR,'2024-12-31 00:00:00','2024-12-31 20:12:00') ;
+select TIMESTAMPDIFF(DAY,'2024-12-30 00:00:00','2024-12-30 20:12:00') ;
+select TIMESTAMPDIFF(DAY,'2024-12-31 00:00:00','2024-12-31 20:12:00') ;
+select TIMESTAMPDIFF(DAY,'2023-12-31 00:00:00','2023-12-31 20:12:00') ;
+select TIMESTAMPDIFF(HOUR,'2025-1-1 01:00:00','2024-12-31 20:12:00') ;
+select TIMESTAMPDIFF(HOUR,'2024-12-31 20:12:00', '2025-1-1 01:00:00') ;
+
 set dolphin.b_compatibility_mode = false;
 
 -- test convert_tz
