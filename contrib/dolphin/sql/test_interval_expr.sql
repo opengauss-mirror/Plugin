@@ -1,6 +1,32 @@
 create schema test_interval_expr;
 set current_schema to 'test_interval_expr';
 
+set dolphin.support_interval_to to off;
+select '1 2'::interval year to month;
+select '1 2'::interval day to hour;
+select '1 2 3'::interval day to minute;
+select '1 2 3 4'::interval day to second;
+select '1 2 3 4 5'::interval day to microsecond;
+select '1 2'::interval hour to minute;
+select '1 2 3'::interval hour to second;
+select '1 2 3 4'::interval hour to microsecond;
+select '1 2'::interval minute to second;
+select '1 2 3'::interval minute to microsecond;
+select '1 2'::interval second to microsecond;
+select interval '1 2' year to month;
+select interval '1 2' day to hour;
+select interval '1 2 3' day to minute;
+select interval '1 2 3 4' day to second;
+select interval '1 2 3 4 5' day to microsecond;
+select interval '1 2' hour to minute;
+select interval '1 2 3' hour to second;
+select interval '1 2 3 4' hour to microsecond;
+select interval '1 2' minute to second;
+select interval '1 2 3' minute to microsecond;
+select interval '1 2' second to microsecond;
+
+set dolphin.support_interval_to to on;
+
 -- 类型
 select 1::interval;
 select 1::interval year;
