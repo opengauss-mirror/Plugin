@@ -141,6 +141,7 @@ select @ta!=@tb;
 select @ta<>@tb;
 select @ta>@tb;
 select @ta<@tb;
+select 1 @@ 12;
 
 show b_format_behavior_compat_options;
 show character_set_connection;

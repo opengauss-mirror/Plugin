@@ -306,6 +306,12 @@ select @ta<@tb;
  f
 (1 row)
 
+select 1 @@ 12;
+ ?column? 
+----------
+ f
+(1 row)
+
 show b_format_behavior_compat_options;
  b_format_behavior_compat_options 
 ----------------------------------
