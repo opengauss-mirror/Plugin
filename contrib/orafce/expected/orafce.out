@@ -3505,3 +3505,27 @@ CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \U002FFFFF');
 ERROR:  invalid Unicode escape value
 CONTEXT:  referenced column: unistr
+select plvstr.is_prefix(44556677, -44);
+ is_prefix 
+-----------
+ f
+(1 row)
+
+select plvstr.is_prefix(-44556677, -44);
+ is_prefix 
+-----------
+ t
+(1 row)
+
+select plvstr.is_prefix(44556677, 44);
+ is_prefix 
+-----------
+ t
+(1 row)
+
+select plvstr.is_prefix(-44556677, 44);
+ is_prefix 
+-----------
+ f
+(1 row)
+

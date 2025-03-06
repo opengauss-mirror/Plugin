@@ -509,6 +509,9 @@ plvstr_is_prefix_int (PG_FUNCTION_ARGS)
 	int prefix = PG_GETARG_INT32(1);
 	bool result = false;
 
+	if (prefix == 0) {
+		PG_RETURN_BOOL(n == 0);
+	}
 	do
 	{
 		if (n == prefix)
@@ -518,7 +521,7 @@ plvstr_is_prefix_int (PG_FUNCTION_ARGS)
 		}
 		n = n / 10;
 
-	} while (n >= prefix);
+	} while (n != 0);
 
 	PG_RETURN_BOOL(result);
 }
@@ -530,6 +533,9 @@ plvstr_is_prefix_int64 (PG_FUNCTION_ARGS)
 	int64 prefix = PG_GETARG_INT64(1);
 	bool result = false;
 
+	if (prefix == 0) {
+		PG_RETURN_BOOL(n == 0);
+	}
 	do
 	{
 		if (n == prefix)
@@ -539,7 +545,7 @@ plvstr_is_prefix_int64 (PG_FUNCTION_ARGS)
 		}
 		n = n / 10;
 
-	} while (n >= prefix);
+	} while (n != 0);
 
 	PG_RETURN_BOOL(result);
 }
