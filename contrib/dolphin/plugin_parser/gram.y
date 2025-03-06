@@ -21415,7 +21415,9 @@ CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
 											$3 = lappend($3, makeIntConst(10, -1));
 										}
 									}
-									$3 = lappend($3, makeStringConst(lobname, -1));
+									if (strcmp(strVal(funcname), "getlength") != 0) {
+										$3 = lappend($3, makeStringConst(lobname, -1));
+									}
 								} else if (IsA(n1, NamedArgExpr)) {
 									Node* n2 = ((Node*)((NamedArgExpr*)n1)->arg);
 									if (IsA(n2, ColumnRef)) {
@@ -21431,7 +21433,9 @@ CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
 										na->arg = (Expr *)makeStringConst(lobname, -1);
 										na->argnumber = -1;		/* until determined */
 										na->location = @1;
-										$3 = lappend($3, (Node *) na);
+										if (strcmp(strVal(funcname), "getlength") != 0) {
+											$3 = lappend($3, (Node *) na);
+										}
 									}
 								}
 							}

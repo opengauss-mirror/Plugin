@@ -6871,7 +6871,7 @@ static char *HeapGetIntervalNextTablespace(Relation rel)
         return NULL;
     }
 
-    return get_namespace_name(newTbsOid);
+    return get_tablespace_name(newTbsOid);
 }
 
 static bool HeapAddIntervalPartitionByAutonomousSession(Relation rel, Tuple insertTuple)
