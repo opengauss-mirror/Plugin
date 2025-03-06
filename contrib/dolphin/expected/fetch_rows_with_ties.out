@@ -1,0 +1,115 @@
+CREATE TABLE fetch_float_1 ( id SERIAL PRIMARY KEY, name text, score float, group_id INT );
+NOTICE:  CREATE TABLE will create implicit sequence "fetch_float_1_id_seq" for serial column "fetch_float_1.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "fetch_float_1_pkey" for table "fetch_float_1"
+INSERT INTO fetch_float_1 (name, score, group_id) VALUES ('Alice', 95.5, 1), ('Bob', 95.5, 1), ('Charlie', 90.1, 2), ('David', 85.5, 2), ('Eve', 80.19999, 3), ('Frank', 80.19999, 3), ('Grace', 75, 4), ('Heidi', 70.908, 4), ('Ivan', 65.1, 5), ('Judy', 60.1, 5),('海绵',null,6),('星星**',null,6);
+--0 12 2 3 4 6 6 7 2 1 3 3
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 0 PERCENT rows WITH TIES;
+ id | name | score | group_id 
+----+------+-------+----------
+(0 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 100 PERCENT rows WITH TIES;
+ id |  name   | score  | group_id 
+----+---------+--------+----------
+ 12 | 星星**  |        |        6
+ 11 | 海绵    |        |        6
+ 10 | Judy    |   60.1 |        5
+  9 | Ivan    |   65.1 |        5
+  8 | Heidi   | 70.908 |        4
+  7 | Grace   |     75 |        4
+  6 | Frank   |   80.2 |        3
+  5 | Eve     |   80.2 |        3
+  4 | David   |   85.5 |        2
+  3 | Charlie |   90.1 |        2
+  1 | Alice   |   95.5 |        1
+  2 | Bob     |   95.5 |        1
+(12 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 16.6 PERCENT rows WITH TIES;
+ id |  name  | score | group_id 
+----+--------+-------+----------
+ 12 | 星星** |       |        6
+ 11 | 海绵   |       |        6
+(2 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 16.7 PERCENT rows WITH TIES;
+ id |  name  | score | group_id 
+----+--------+-------+----------
+ 12 | 星星** |       |        6
+ 11 | 海绵   |       |        6
+ 10 | Judy   |  60.1 |        5
+(3 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 33.3 PERCENT rows WITH TIES;
+ id |  name  | score | group_id 
+----+--------+-------+----------
+ 12 | 星星** |       |        6
+ 11 | 海绵   |       |        6
+ 10 | Judy   |  60.1 |        5
+  9 | Ivan   |  65.1 |        5
+(4 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 33.34 PERCENT rows WITH TIES;
+ id |  name  | score  | group_id 
+----+--------+--------+----------
+ 12 | 星星** |        |        6
+ 11 | 海绵   |        |        6
+ 10 | Judy   |   60.1 |        5
+  9 | Ivan   |   65.1 |        5
+  8 | Heidi  | 70.908 |        4
+(5 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 50 PERCENT rows WITH TIES;
+ id |  name  | score  | group_id 
+----+--------+--------+----------
+ 12 | 星星** |        |        6
+ 11 | 海绵   |        |        6
+ 10 | Judy   |   60.1 |        5
+  9 | Ivan   |   65.1 |        5
+  8 | Heidi  | 70.908 |        4
+  7 | Grace  |     75 |        4
+(6 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score FETCH NEXT 50.1 PERCENT rows WITH TIES;
+ id |  name  | score  | group_id 
+----+--------+--------+----------
+ 12 | 星星** |        |        6
+ 11 | 海绵   |        |        6
+ 10 | Judy   |   60.1 |        5
+  9 | Ivan   |   65.1 |        5
+  8 | Heidi  | 70.908 |        4
+  7 | Grace  |     75 |        4
+  6 | Frank  |   80.2 |        3
+  5 | Eve    |   80.2 |        3
+(8 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score desc FETCH first 3 PERCENT rows WITH TIES;
+ id | name  | score | group_id 
+----+-------+-------+----------
+  1 | Alice |  95.5 |        1
+  2 | Bob   |  95.5 |        1
+(2 rows)
+
+SELECT * FROM fetch_float_1 ORDER BY score desc,name FETCH NEXT 3 PERCENT rows WITH TIES;
+ id | name  | score | group_id 
+----+-------+-------+----------
+  1 | Alice |  95.5 |        1
+(1 row)
+
+SELECT * FROM fetch_float_1 ORDER BY score DESC, name FETCH NEXT 3 rows WITH TIES;
+ id |  name   | score | group_id 
+----+---------+-------+----------
+  1 | Alice   |  95.5 |        1
+  2 | Bob     |  95.5 |        1
+  3 | Charlie |  90.1 |        2
+(3 rows)
+
+SELECT * FROM fetch_float_1 FETCH NEXT 3 rows WITH TIES;
+ id |  name   | score | group_id 
+----+---------+-------+----------
+  1 | Alice   |  95.5 |        1
+  2 | Bob     |  95.5 |        1
+  3 | Charlie |  90.1 |        2
+(3 rows)
+
+DROP TABLE fetch_float_1;
