@@ -7311,6 +7311,7 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
     }
     PG_CATCH();
     {
+        FlushErrorState();
         is_success = false;
     }
     PG_END_TRY();
@@ -8296,6 +8297,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
 static Datum timestampadd_internal_with_sql_mode(PG_FUNCTION_ARGS, char *lowunits, int unit, int unit_type, Numeric num)
 {
     Datum result = (Datum)0;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         result = timestamp_add_internal(fcinfo, lowunits, unit, unit_type, num);
@@ -8305,9 +8307,12 @@ static Datum timestampadd_internal_with_sql_mode(PG_FUNCTION_ARGS, char *lowunit
         if (!fcinfo->can_ignore && SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            char *msg = pstrdup(Geterrmsg());
-            ereport(WARNING, (errcode(geterrcode()), errmsg("%s", msg)));
+            (void)MemoryContextSwitchTo(current_ctx);
+            int code = geterrcode();
+            char* msg = pstrdup(Geterrmsg());
             FlushErrorState();
+
+            ereport(WARNING, (errcode(code), errmsg("%s", msg)));
             pfree(msg);
             fcinfo->isnull = true;
         }
@@ -9155,7 +9160,8 @@ static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timesta
 {
     bool ret = true;
     int code;
-    const char *msg = NULL;
+    char *msg = NULL;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         *result = timestamp_diff_internal(units, dt1, dt2, true);
@@ -9167,15 +9173,18 @@ static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timesta
             PG_RE_THROW();
         } else {
             code = geterrcode();
-            msg = pstrdup(Geterrmsg());
             if (code != ERRCODE_DATETIME_VALUE_OUT_OF_RANGE)
                 PG_RE_THROW();
+
+            (void)MemoryContextSwitchTo(current_ctx);
+            msg = pstrdup(Geterrmsg());
             FlushErrorState();
         }
     }
     PG_END_TRY();
     if (msg) {
         ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+        pfree(msg);
     }
     return ret;
 }
@@ -9506,10 +9515,9 @@ static inline bool convert_tz_internal(Timestamp raw_datetime, text *expr2, text
 {
     Timestamp datetime;
     Interval *interval1 = NULL, *interval2 = NULL;
-    int code;
-    const char *msg = NULL;
 
     datetime = raw_datetime;
+    MemoryContext current_ctx = CurrentMemoryContext;
 
     PG_TRY();
     {
@@ -9545,13 +9553,16 @@ static inline bool convert_tz_internal(Timestamp raw_datetime, text *expr2, text
         if (SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            code = geterrcode();
-            msg = pstrdup(Geterrmsg());
+            (void)MemoryContextSwitchTo(current_ctx);
+            int code = geterrcode();
+            char* msg = pstrdup(Geterrmsg());
             FlushErrorState();
+
+            ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+            pfree(msg);
         }
     }
     PG_END_TRY();
-    ereport(WARNING, (errcode(code), errmsg("%s", msg)));
     return false;
 }
 
@@ -9722,10 +9733,8 @@ Datum addtime_text(PG_FUNCTION_ARGS)
 bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, bool can_ignore)
 {
     bool ret = true;
-    bool raise_warning = false;
-    int code;
-    const char *msg = NULL;
     int tm_type = DTK_NONE;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         datetime_in_with_flag_internal(str, tm, fsec, tm_type, date_flag);
@@ -9736,16 +9745,16 @@ bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsign
         if (!can_ignore && SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            raise_warning = true;
-            code = geterrcode();
-            msg = pstrdup(Geterrmsg());
+            (void)MemoryContextSwitchTo(current_ctx);
+            int code = geterrcode();
+            char* msg = pstrdup(Geterrmsg());
             FlushErrorState();
+
+            ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+            pfree(msg);
         }
     }
     PG_END_TRY();
-    if (raise_warning) {
-        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
-    }
     return ret;
 }
 
@@ -9753,9 +9762,7 @@ bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fse
                                         bool can_ignore)
 {
     bool ret = true;
-    bool raise_warning = false;
-    int code;
-    const char *msg = NULL;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         datetime_in_with_flag_internal(str, tm, fsec, tm_type, date_flag);
@@ -9766,16 +9773,16 @@ bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fse
         if (!can_ignore && SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            raise_warning = true;
-            code = geterrcode();
-            msg = pstrdup(Geterrmsg());
+            (void)MemoryContextSwitchTo(current_ctx);
+            int code = geterrcode();
+            char* msg = pstrdup(Geterrmsg());
             FlushErrorState();
+
+            ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+            pfree(msg);
         }
     }
     PG_END_TRY();
-    if (raise_warning) {
-        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
-    }
     return ret;
 }
 
@@ -12281,26 +12288,26 @@ Datum numeric_cast_datetime(PG_FUNCTION_ARGS)
 
 Datum date_cast_timestamp(PG_FUNCTION_ARGS, PGFunction func)
 {
-    int code;
-    Datum result;
-    const char *msg = NULL;
+    Datum result = (Datum)0;
     DateADT dateVal = PG_GETARG_DATEADT(0);
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         result = DirectFunctionCall1(func, DateADTGetDatum(dateVal));
     }
     PG_CATCH();
     {
-        code = geterrcode();
-        msg = pstrdup(Geterrmsg());
+        (void)MemoryContextSwitchTo(current_ctx);
+        int code = geterrcode();
+        char* msg = pstrdup(Geterrmsg());
         FlushErrorState();
+
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+        pfree(msg);
+        fcinfo->isnull = true;
     }
     PG_END_TRY();
-    if (msg == NULL) {
-        return result;
-    }
-    ereport(WARNING, (errcode(code), errmsg("%s", msg)));
-    PG_RETURN_NULL();
+    return result;
 }
 
 
