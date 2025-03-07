@@ -802,3 +802,8 @@ SELECT oracle.unistr('wrong: \+2FFFFF');
 SELECT oracle.unistr('wrong: \udb99\u0061');
 SELECT oracle.unistr('wrong: \U0000db99\U00000061');
 SELECT oracle.unistr('wrong: \U002FFFFF');
+
+select plvstr.is_prefix(44556677, -44);
+select plvstr.is_prefix(-44556677, -44);
+select plvstr.is_prefix(44556677, 44);
+select plvstr.is_prefix(-44556677, 44);
