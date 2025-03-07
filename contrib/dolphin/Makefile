@@ -130,7 +130,7 @@ extra_clean:
 	make clean -C $(catalog)
 clean: extra_clean
 
-dolphin--5.0.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--5.0.sql
+dolphin--5.0.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--5.0.sql
 	cat $^ > $@
 
 dolphin--4.0--4.0.1.sql: upgrade_script/dolphin--2.0--2.0.1.sql
@@ -147,7 +147,8 @@ DATA = upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sq
 upgrade_script/dolphin--1.1--2.0.sql rollback_script/dolphin--2.0--1.1.sql \
 upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql \
 upgrade_script/dolphin--3.0--4.0.sql rollback_script/dolphin--4.0--3.0.sql \
-upgrade_script/dolphin--4.0--5.0.sql rollback_script/dolphin--5.0--4.0.sql \
+upgrade_script/dolphin--4.0--4.1.sql rollback_script/dolphin--4.1--4.0.sql \
+upgrade_script/dolphin--4.1--5.0.sql rollback_script/dolphin--5.0--4.1.sql \
 upgrade_script/dolphin--2.0--2.0.1.sql rollback_script/dolphin--2.0.1--2.0.sql \
 dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql
 

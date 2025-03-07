@@ -6,7 +6,7 @@ rm -f dolphin--5.0.sql
 touch dolphin--5.0.sql
 for i in `ls sql_script`; do cat sql_script/$i >> dolphin--5.0.sql; done
 for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--5.0.sql; done
-cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--5.0.sql >> dolphin--5.0.sql
+cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--5.0.sql >> dolphin--5.0.sql
 rm -f dolphin--1.0--1.1.sql
 cp upgrade_script/dolphin--1.0--1.1.sql dolphin--1.0--1.1.sql
 rm -f dolphin--1.1--1.0.sql
@@ -23,10 +23,10 @@ rm -f dolphin--3.0--4.0.sql
 cp upgrade_script/dolphin--3.0--4.0.sql dolphin--3.0--4.0.sql
 rm -f dolphin--4.0--3.0.sql
 cp rollback_script/dolphin--4.0--3.0.sql dolphin--4.0--3.0.sql
-rm -f dolphin--4.0--5.0.sql
-cp upgrade_script/dolphin--4.0--5.0.sql dolphin--4.0--5.0.sql
-rm -f dolphin--5.0--4.0.sql
-cp rollback_script/dolphin--5.0--4.0.sql dolphin--5.0--4.0.sql
+rm -f dolphin--4.1--5.0.sql
+cp upgrade_script/dolphin--4.1--5.0.sql dolphin--4.1--5.0.sql
+rm -f dolphin--5.0--4.1.sql
+cp rollback_script/dolphin--5.0--4.1.sql dolphin--5.0--4.1.sql
 rm -f dolphin--2.0--2.0.1.sql
 cp upgrade_script/dolphin--2.0--2.0.1.sql dolphin--2.0--2.0.1.sql
 rm -f dolphin--2.0.1--2.0.sql
@@ -34,6 +34,10 @@ cp rollback_script/dolphin--2.0.1--2.0.sql dolphin--2.0.1--2.0.sql
 rm -f dolphin--4.0.1--4.0.sql dolphin--4.0--4.0.1.sql
 cp dolphin--2.0--2.0.1.sql dolphin--4.0--4.0.1.sql
 cp dolphin--2.0.1--2.0.sql dolphin--4.0.1--4.0.sql
+rm -f dolphin--4.0--4.1.sql
+cp upgrade_script/dolphin--4.0--4.1.sql dolphin--4.0--4.1.sql
+rm -f dolphin--4.1--4.0.sql
+cp rollback_script/dolphin--4.1--4.0.sql dolphin--4.1--4.0.sql
 cp llvmir/openGauss_expr_dolphin_${BUILD_TUPLE}.ir openGauss_expr_dolphin.ir
 DOLPHIN_CMAKE_BUILD_DIR=`pwd`/tmp_build
 [ -d "${DOLPHIN_CMAKE_BUILD_DIR}" ] && rm -rf ${DOLPHIN_CMAKE_BUILD_DIR}
