@@ -6941,7 +6941,7 @@ static void get_target_list(Query* query, List* targetList, deparse_context* con
             continue; /* ignore junk entries */
 
         /* Ignore junk columns from the targetlist in start with */
-        if (query->hasRecursive && tle->isStartWithPseudo) {
+        if (query->hasRecursive && IsPseudoReturnTargetEntry(tle)) {
             continue;
         }
 

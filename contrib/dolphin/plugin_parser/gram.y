@@ -15360,7 +15360,7 @@ CreateAmStmt: CREATE ACCESS METHOD name TYPE_P INDEX HANDLER handler_name
 CreateTrigStmt:
 			CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name DolphinTriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
-			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
+			EXECUTE FUNCTION_or_PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
 					if ($2 != false)
 					{
@@ -15399,7 +15399,7 @@ CreateTrigStmt:
 			| CREATE CONSTRAINT TRIGGER qualified_trigger_name AFTER TriggerEvents ON
 			dolphin_qualified_name OptConstrFromTable ConstraintAttributeSpec
 			FOR EACH ROW TriggerWhen
-			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
+			EXECUTE FUNCTION_or_PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->schemaname = $4->schemaname;
@@ -15645,6 +15645,11 @@ TriggerWhen:
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
+FUNCTION_or_PROCEDURE:
+			FUNCTION
+		|	PROCEDURE
+		;
+
 TriggerFuncArgs:
 			TriggerFuncArg							{ $$ = list_make1($1); }
 			| TriggerFuncArgs ',' TriggerFuncArg	{ $$ = lappend($1, $3); }
@@ -15762,7 +15767,7 @@ ConstraintAttr_isValidate:
 
 CreateEventTrigStmt:
 			CREATE EVENT_TRIGGER name ON ColLabel
-			EXECUTE PROCEDURE func_name '(' ')'
+			EXECUTE FUNCTION_or_PROCEDURE func_name '(' ')'
 				{
 					CreateEventTrigStmt *n = makeNode(CreateEventTrigStmt);
 					n->trigname = $3;
@@ -15773,7 +15778,7 @@ CreateEventTrigStmt:
 				}
 			| CREATE EVENT_TRIGGER name ON ColLabel
 			WHEN event_trigger_when_list
-			EXECUTE PROCEDURE func_name '(' ')'
+			EXECUTE FUNCTION_or_PROCEDURE func_name '(' ')'
 				{
 					CreateEventTrigStmt *n = makeNode(CreateEventTrigStmt);
 					n->trigname = $3;
