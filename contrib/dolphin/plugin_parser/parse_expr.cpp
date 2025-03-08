@@ -997,6 +997,10 @@ static Node* replaceExprAliasIfNecessary(ParseState* pstate, char* colname, Colu
     int matchVarlevel = 0;
     while (pstate != NULL) {
 #endif
+        if (pstate->p_hasStartWith && strstr(colname, "@") != NULL) {
+            char* label = strrchr(colname, '@');
+            colname = label + 1;
+        }
         foreach (lc, pstate->p_target_list) {
             tle = (TargetEntry*)lfirst(lc);
             /*

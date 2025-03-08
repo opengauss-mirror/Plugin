@@ -336,8 +336,6 @@ static Node *transform_VLE_Function(cypher_parsestate *cpstate, Node *n,
                                     List **namespaceoid);
 static RangeTblEntry *append_VLE_Func_to_FromClause(cypher_parsestate *cpstate,
                                                     Node *n);
-static void setNamespaceLateralState(List *namespaceoid, bool lateral_only,
-                                     bool lateral_ok);
 static bool isa_special_VLE_case(cypher_path *path);
 
 /* new logic for VLE */
@@ -2407,26 +2405,6 @@ static Node *transform_VLE_Function(cypher_parsestate *cpstate, Node *n,
 
     /* if it isn't a RangeFunction, return NULL */
     return NULL;
-}
-
-/*
- * static function borrowed from PG.
- *
- * setNamespaceLateralState -
- * Convenience subroutine to update LATERAL flags in a namespace list.
- */
-static void setNamespaceLateralState(List *namespaceoid, bool lateral_only,
-                                     bool lateral_ok)
-{
-    ListCell *lc;
-
-    foreach(lc, namespaceoid)
-    {
-        ParseNamespaceItem *nsitem = (ParseNamespaceItem *) lfirst(lc);
-
-        nsitem->p_lateral_only = lateral_only;
-        nsitem->p_lateral_ok = lateral_ok;
-    }
 }
 
 /*
