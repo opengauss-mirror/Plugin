@@ -5,93 +5,75 @@ NOTICE:  table "t_alias_case0001_1" does not exist, skipping
 CREATE TABLE t_alias_case0001_1 (a int);
 INSERT INTO t_alias_case0001_1 SET a=1;
 select character varying 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character varying(1)
-CONTEXT:  referenced column: varchar
- varchar 
----------
- k
+   varchar    
+--------------
+ keyword_test
 (1 row)
 
 select character 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- k
+    bpchar    
+--------------
+ keyword_test
 (1 row)
 
 select nvarchar 'keyword_test' from t_alias_case0001_1;
- nvarchar2 
------------
- k
+  nvarchar2   
+--------------
+ keyword_test
 (1 row)
 
 select nvarchar2 'keyword_test' from t_alias_case0001_1;
- nvarchar2 
------------
- k
+  nvarchar2   
+--------------
+ keyword_test
 (1 row)
 
 select national varchar 'keyword_test' from t_alias_case0001_1;
- nvarchar2 
------------
- k
+  nvarchar2   
+--------------
+ keyword_test
 (1 row)
 
 select VARCHAR 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character varying(1)
-CONTEXT:  referenced column: varchar
- varchar 
----------
- k
+   varchar    
+--------------
+ keyword_test
 (1 row)
 
 select VARCHAR2 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character varying(1)
-CONTEXT:  referenced column: varchar
- varchar 
----------
- k
+   varchar    
+--------------
+ keyword_test
 (1 row)
 
 select NATIONAL CHARACTER 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- k
+    bpchar    
+--------------
+ keyword_test
 (1 row)
 
 select NATIONAL CHAR 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- k
+    bpchar    
+--------------
+ keyword_test
 (1 row)
 
 select NCHAR 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- k
+    bpchar    
+--------------
+ keyword_test
 (1 row)
 
 select NCHAR VARYING 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character varying(1)
-CONTEXT:  referenced column: varchar
- varchar 
----------
- k
+   varchar    
+--------------
+ keyword_test
 (1 row)
 
 select CHAR 'keyword_test' from t_alias_case0001_1;
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- k
+    bpchar    
+--------------
+ keyword_test
 (1 row)
 
 select CHAR VARYING 'keyword_test' from t_alias_case0001_1;
@@ -912,6 +894,34 @@ select cidr'10.1.0.0/16';
  10.1.0.0/16
 (1 row)
 
+-- test select N''
+select N'1234';
+ varchar 
+---------
+ 1234
+(1 row)
+
+select n'abcd中文';
+ varchar  
+----------
+ abcd中文
+(1 row)
+
+select hour(varchar'2001-06-28 17:00:00');
+ hour 
+------
+   17
+(1 row)
+
+create table tb1 (id varchar);
+insert into tb1 values('2001-06-28 17:00:00');
+select * from tb1;
+         id          
+---------------------
+ 2001-06-28 17:00:00
+(1 row)
+
+drop table tb1;
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;

@@ -590,9 +590,18 @@ other			.
 
 					SET_YYLLOC();
 					yyless(1);				/* eat only 'n' this time */
-
-					kwnum = ScanKeywordLookup("nchar",
-											  yyextra->keywordlist);
+#ifdef DOLPHIN
+					if (!GetSessionContext()->scan_from_pl) {
+						yylval->dolphinIdent = CreateDolphinIdent("n", false);
+					} else {
+						yylval->str = pstrdup("n");
+					}
+					yyextra->ident_quoted = false;
+					yyextra->is_hint_str = false;
+					return N_TOK;
+#else
+					kwnum = ScanKeywordLookup("nchar", yyextra->keywordlist);
+#endif
 					if (kwnum >= 0)
 					{
 						yyextra->is_hint_str = false;
