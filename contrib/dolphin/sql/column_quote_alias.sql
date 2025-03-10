@@ -141,6 +141,16 @@ SELECT a 'SSSS' from t_alias_case0001_1;
 select atan(point '(1,1)',point '(2,1)');
 select hex(compress(point '(1,1)'));
 select cidr'10.1.0.0/16';
+
+-- test select N''
+select N'1234';
+select n'abcd中文';
+select hour(varchar'2001-06-28 17:00:00');
+create table tb1 (id varchar);
+insert into tb1 values('2001-06-28 17:00:00');
+select * from tb1;
+drop table tb1;
+
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;
