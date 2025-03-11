@@ -555,6 +555,7 @@ typedef struct { /* Row variable */
     int dno;
     bool ispkg;
     bool inherit;
+    Oid pkg_oid;
     char* refname;
     int lineno;
     bool isImplicit;
