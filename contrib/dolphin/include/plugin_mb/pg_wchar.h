@@ -293,7 +293,7 @@ typedef struct pg_enc2name {
 #endif
 } pg_enc2name;
 
-extern pg_enc2name pg_enc2name_tbl[];
+extern PGDLLIMPORT pg_enc2name pg_enc2name_tbl[];
 
 /*
  * Encoding names for gettext
