@@ -33,6 +33,8 @@
 #include "plugin_protocol/password.h"
 #include "plugin_protocol/auth.h"
 
+extern int SSL_set_fd_ex_wrap(Port* port, int fd);
+
 static char fast_auth_success = '\3';
 static char perform_full_authentication = '\4';
 
@@ -785,7 +787,7 @@ int TlsSecureOpen(Port* port)
     }
     SSL_clear(port->ssl);
     SSL_SESSION_set_timeout(SSL_get_session(port->ssl), SSLTIMEOUT);
-    if (!SSL_set_fd(port->ssl, (int)((intptr_t)(port->sock)))) {
+    if (!SSL_set_fd_ex_wrap(port, (int)((intptr_t)(port->sock)))) {
         ereport(
             COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("could not set SSL socket: %s", SSLerrmessage())));
         close_SSL(port);
