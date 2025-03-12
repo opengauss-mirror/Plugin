@@ -40,6 +40,85 @@ PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
 		)
 );
 
+--alter partition table
+drop table if exists tab1;
+create table tab1 (a datetime ,b varchar(100))
+partition by range (to_days(a))
+(partition p1 values less than (to_days('20240330')),
+partition p2 values less than (to_days('20240930'))
+);
+
+--插入数据
+insert into tab1 values('20240130','one');
+insert into tab1 values('20240330','one');
+insert into tab1 values('20240412','two');
+insert into tab1 values('20240430','two');--这个值，在分裂分区的时候作为了键值
+insert into tab1 values('20240512','two');
+insert into tab1 values('20240630','three');
+
+--切割分区，指定切割点
+alter table tab1 split partition p2 at (to_days('20240430')) into (partition p3 ,partition pdefault);
+
+select * from tab1 partition (p1);
+select * from tab1 partition (p3);
+select * from tab1 partition (pdefault);
+drop table if exists tab1;
+create table tab1 (a datetime ,b varchar(100))
+partition by range (to_days(a))
+(partition p1 values less than (to_days('20240330')),
+partition p2 values less than (to_days('20240930'))
+);
+
+--插入数据
+insert into tab1 values('20240130','one');
+insert into tab1 values('20240330','one');
+insert into tab1 values('20240412','two');
+insert into tab1 values('20240430','two');--这个值，在分裂分区的时候作为了键值
+insert into tab1 values('20240512','two');
+insert into tab1 values('20240630','three');
+
+--切割分区，不指定切割点
+alter table tab1 split partition p2 into (
+    partition p3 values less than (to_days('20240430')),
+     partition pdefault values less than (to_days('20240930'))
+);
+
+select * from tab1 partition (p1);
+select * from tab1 partition (p3);
+select * from tab1 partition (pdefault);
+drop table if exists tab1;
+drop table if exists abs_tab;
+CREATE TABLE abs_tab
+( prod_id NUMBER(6)
+    , cust_id NUMBER
+    , time_id double precision
+    , channel_id CHAR(1)
+    , promo_id NUMBER(6)
+    , quantity_sold NUMBER(3)
+    , amount_sold NUMBER(10,2)
+)
+PARTITION BY RANGE (abs(time_id))
+( PARTITION p0 VALUES LESS THAN (abs('-5')),
+  PARTITION p1 VALUES LESS THAN (abs('-20'))
+);
+
+insert into abs_tab values(1, 1, '1', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-2', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-3', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '4', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-9', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '11', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-19', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-18', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '-15', 'a', 1, 1, 1);
+insert into abs_tab values(1, 1, '5', 'a', 1, 1, 1);
+
+alter table abs_tab split partition p1 at (abs('-10')) into (partition p1_1, partition p1_2);
+select * from abs_tab partition (p0);
+select * from abs_tab partition (p1_1);
+select * from abs_tab partition (p1_2);
+drop table abs_tab;
+
 create table test_no_part1(a int, b int);
 insert into test_part1 values(99,1),(199,1),(299,1);
 select * from test_part1;
