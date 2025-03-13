@@ -15,6 +15,7 @@ select elt(2,null,'1.2a测试',23);
 select elt(1,null,'1.2a测试',23);
 select elt(true,12,null,'1.2a测试',23);
 select elt('1',1);
+select elt('999999999999999999999999999999999999999999999999999999999999999', '12345');
 select elt('1',1.2);
 select elt(1,'a','b');
 select elt(1,'a',2);
