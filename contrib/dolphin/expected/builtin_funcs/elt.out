@@ -98,6 +98,14 @@ select elt('1',1);
  1
 (1 row)
 
+select elt('999999999999999999999999999999999999999999999999999999999999999', '12345');
+WARNING:  Truncated incorrect INTEGER value: '999999999999999999999999999999999999999999999999999999999999999'
+CONTEXT:  referenced column: elt
+ elt 
+-----
+ 
+(1 row)
+
 select elt('1',1.2);
  elt 
 -----

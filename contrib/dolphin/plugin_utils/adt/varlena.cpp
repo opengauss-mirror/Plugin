@@ -9761,6 +9761,7 @@ Datum elt_string(PG_FUNCTION_ARGS)
     int64 num;
     char* value = text_to_cstring(PG_GETARG_TEXT_PP(0));
     char* badp = NULL;
+    errno = 0;
     num = (int64)strtol(value, &badp, 10);
     if ((badp != NULL && *badp != '\0') || errno == ERANGE) {
         ereport((!SQL_MODE_STRICT() || fcinfo->can_ignore) ? WARNING : ERROR,
