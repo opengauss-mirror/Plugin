@@ -2258,14 +2258,16 @@ Datum text_bool(PG_FUNCTION_ARGS)
     char *a1p = NULL;
     double tmp;
 
-    a1p = VARDATA_ANY(input);
+    a1p = text_to_cstring(input);
     tmp = atof(a1p);
     if (!ENABLE_B_CMPT_MODE) {
         bool result = false;
         if (parse_bool_with_len(a1p, len, &result)) {
+            pfree_ext(a1p);
             PG_RETURN_BOOL((tmp ? true : false) || result);
         }
     }
+    pfree_ext(a1p);
     PG_RETURN_BOOL(tmp ? true : false);
 }
 
