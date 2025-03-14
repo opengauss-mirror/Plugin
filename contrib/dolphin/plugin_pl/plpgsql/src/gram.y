@@ -8468,6 +8468,7 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
                 execsql->row	 = row;
                 execsql->placeholders = placeholders;
                 execsql->multi_func = multi_func;
+                execsql->object_rel_value = false;
                 if (u_sess->parser_cxt.isPerform) {
                     execsql->sqlString = func_inparas.data;
                 } else {
@@ -8553,6 +8554,7 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
             execsql->row	 = row;
             execsql->placeholders = placeholders;
             execsql->multi_func = multi_func;
+            execsql->object_rel_value = false;
             execsql->sqlString = plpgsql_get_curline_query();
             return (PLpgSQL_stmt *)execsql;
         }
@@ -8842,6 +8844,16 @@ static void checkFuncName(List* funcname)
             if (OidIsValid(namespaceId)) {
                 packageOid = PackageNameGetOid(pkgname, namespaceId);
             }
+            if (!OidIsValid(packageOid)) {
+                /* 
+                 * Might be object type here.
+                 * Make a TypeName so we can use standard type lookup machinery
+                 */
+                TypeName* typname = makeTypeNameFromNameList(
+                    list_make2(makeString(schemaname),makeString(pkgname))
+                );
+                packageOid = typenameTypeId(NULL, typname);
+            }
         }
         if (!OidIsValid(packageOid)) {
             const char* message = "function does not exist";
@@ -8941,7 +8953,7 @@ static void checkTypeName(List* nest_typnames, List* target_nest_typnames)
         for (int i = 0; i < (sizeof(cp) / sizeof(cp[0]) - 1) ; i++) {
             if (cp[i] && cp[i][0] != '\0') {
                 if (i != 0) {
-                    funcname = list_make2(funcname, makeString(cp[i]));
+                    funcname = lappend(funcname, makeString(cp[i]));
                 } else {
                     funcname = list_make1(makeString(cp[i]));
                 }
@@ -10059,7 +10071,7 @@ read_sql_construct6(int until,
                     idents = yylval.wdatum.idents;
                     int dno = yylval.wdatum.datum->dno;
                     PLpgSQL_datum *datum = (PLpgSQL_datum *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[dno];
-                    if (datum->dtype == PLPGSQL_DTYPE_RECFIELD) {
+                    if (datum && datum->dtype == PLPGSQL_DTYPE_RECFIELD) {
                         PLpgSQL_recfield *rec_field = (PLpgSQL_recfield *)datum;
                         PLpgSQL_rec *rec = (PLpgSQL_rec *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[rec_field->recparentno];
                         MemoryContext old_cxt = NULL;
@@ -11001,6 +11013,7 @@ make_execsql_stmt(int firsttoken, int location)
     bool is_user_var = false;
     bool insert_record = false;
     bool insert_array_record = false; 
+    bool object_rel_value = false;
     int values_end_loc = -1;
     int before_semi_loc = -1;
     const char* err_msg = "The label name can only contain letters, digits and underscores";
@@ -11015,6 +11028,8 @@ make_execsql_stmt(int firsttoken, int location)
             prev_prev_tok = prev_tok;
         }
 
+        if (prev_tok == K_SELECT && tok == T_WORD && strcmp(yylval.word.ident, "value") == 0)
+            object_rel_value = true;
         if (have_into && into_end_loc < 0)
             into_end_loc = yylloc;		/* token after the INTO part */
 
@@ -11606,6 +11621,7 @@ make_execsql_stmt(int firsttoken, int location)
     execsql->rec	 = rec;
     execsql->row	 = row;
     execsql->placeholders = placeholders;
+    execsql->object_rel_value = object_rel_value;
     execsql->sqlString = plpgsql_get_curline_query();
 
     return (PLpgSQL_stmt *) execsql;
