@@ -49,12 +49,33 @@ replace into Parts partition(p1) table T2;
 replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) select A from T2 where A >=2 ;
+drop table if exists r_replace;
+NOTICE:  table "r_replace" does not exist, skipping
+CREATE TABLE t_replace (
+id int ,
+t_id int ,
+name varchar(200),
+sex varchar(2),
+PRIMARY KEY(id,t_id));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_replace_pkey" for table "t_replace"
+INSERT INTO t_replace VALUES(1,1,'zhangsan','m');
+INSERT INTO t_replace VALUES(2,2,'lisi','m');
+INSERT INTO t_replace VALUES(3,3,'wangwu','m');
+REPLACE t_replace VALUES(1,1,(select name from t_replace where id =1),'f');
+ERROR:  REPLACE not support target relation in subselect.
+LINE 1: REPLACE t_replace VALUES(1,1,(select name from t_replace whe...
+                                     ^
+REPLACE INTO t_replace SET id=3,t_id=3,name=(select name from t_replace where id=3);
+ERROR:  REPLACE not support target relation in subselect.
+LINE 1: REPLACE INTO t_replace SET id=3,t_id=3,name=(select name fro...
+                                                    ^
 drop schema db_replace cascade;
-NOTICE:  drop cascades to 6 other objects
+NOTICE:  drop cascades to 7 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
 drop cascades to table parts
 drop cascades to table "T1"
 drop cascades to table "T2"
 drop cascades to table "Parts"
+drop cascades to table t_replace
 reset current_schema;
