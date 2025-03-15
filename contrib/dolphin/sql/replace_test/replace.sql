@@ -55,5 +55,20 @@ replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) select A from T2 where A >=2 ;
 
+drop table if exists r_replace;
+
+CREATE TABLE t_replace (
+id int ,
+t_id int ,
+name varchar(200),
+sex varchar(2),
+PRIMARY KEY(id,t_id));
+INSERT INTO t_replace VALUES(1,1,'zhangsan','m');
+INSERT INTO t_replace VALUES(2,2,'lisi','m');
+INSERT INTO t_replace VALUES(3,3,'wangwu','m');
+
+REPLACE t_replace VALUES(1,1,(select name from t_replace where id =1),'f');
+REPLACE INTO t_replace SET id=3,t_id=3,name=(select name from t_replace where id=3);
+
 drop schema db_replace cascade;
 reset current_schema;

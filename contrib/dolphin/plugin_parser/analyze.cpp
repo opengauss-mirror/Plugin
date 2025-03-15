@@ -178,6 +178,7 @@ static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCol
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static List* makeValueLists(ParseState* pstate);
 static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt);
+static void replaceSubqueryCheck(Expr* expr, InsertStmt* stmt, ParseState* pstate);
 #endif
 
 /*
@@ -2417,6 +2418,9 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         ResTarget* col = NULL;
         AttrNumber attr_num;
         TargetEntry* tle = NULL;
+
+        /* check replace into gram */
+        replaceSubqueryCheck(expr, stmt, pstate);
 
         col = (ResTarget*)lfirst(icols);
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
@@ -5626,6 +5630,34 @@ static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt)
     result->utilityStmt = (Node *) stmt;
 
     return result;
+}
+
+/*
+ * Replace into gram check
+ * Replace into with inserted table in subselect should report error
+ */
+
+static void replaceSubqueryCheck(Expr* expr, InsertStmt* stmt, ParseState* pstate)
+{
+    if (IsA(expr, SubLink) && stmt->isReplace) {
+        SubLink* sublink = (SubLink*)expr;
+        if (IsA(sublink->subselect, Query)) {
+            Query* query = (Query*)sublink->subselect;
+            ListCell* rt = NULL;
+
+            foreach(rt, query->rtable) {
+                RangeTblEntry* rte = (RangeTblEntry*)lfirst(rt);
+                if (rte->rtekind == RTE_RELATION) {
+                    if (pg_strcasecmp(stmt->relation->relname, rte->relname) == 0) {
+                        ereport(ERROR,
+                                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("REPLACE not support target relation in subselect."),
+                                parser_errposition(pstate, exprLocation((Node*)expr))));
+                    }
+                }
+            }
+        }
+    }
 }
 #endif
 
