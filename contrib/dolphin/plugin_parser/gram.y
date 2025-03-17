@@ -550,6 +550,7 @@ static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* 
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 static Node* MakeNoArgFunctionCall(List* funcName, int location);
 static char* IdentResolveToChar(DolphinIdent *ident, core_yyscan_t yyscanner);
+static void contain_unsupport_node(Node* node, bool* has_unsupport_default_node);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
 static DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted);
@@ -37182,7 +37183,9 @@ func_application:	dolphin_func_name '(' func_arg_list opt_sort_clause ')'
 									n->args = lappend(n->args, makeIntConst(10, -1));
 								};
 							}
-							n->args = lappend(n->args, makeStringConst(lobname, -1));
+							if (strcmp(strVal(funcname), "getlength") != 0) {
+								n->args = lappend(n->args, makeStringConst(lobname, -1));
+							}
 						} else if (IsA(n1, NamedArgExpr)) {
 							Node* n2 = ((Node*)((NamedArgExpr*)n1)->arg);
 							if (IsA(n2, ColumnRef)) {
@@ -37236,7 +37239,9 @@ func_application_special:	dolphin_func_name '(' ')'
 					// is DEFAULT gramy
 					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
 					// default expr is column ref
-					n->args = lappend(n->args, makeBoolAConst(IsA($5, ColumnRef), -1));
+					bool is_column_ref = false; 
+					contain_unsupport_node($5, &is_column_ref);
+					n->args = lappend(n->args, makeBoolAConst(is_column_ref, -1));
 					// fmt constraints is NULL
                     n->args = lappend(n->args, makeNullAConst(-1));
 					// nls param constraints is NULL
@@ -37270,7 +37275,9 @@ func_application_special:	dolphin_func_name '(' ')'
 					// is DEFAULT gramy
 					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
 					// default expr is column ref
-					n->args = lappend(n->args, makeBoolAConst(IsA($5, ColumnRef), -1));
+					bool is_column_ref = false; 
+					contain_unsupport_node($5, &is_column_ref);
+					n->args = lappend(n->args, makeBoolAConst(is_column_ref, -1));
 					// There may be fmt constraints
                     n->args = lappend(n->args, $9);
 					// nls param constraints is NULL
@@ -37298,7 +37305,9 @@ func_application_special:	dolphin_func_name '(' ')'
 					// is DEFAULT gramy
 					n->args = lappend(n->args, makeBoolAConst(TRUE, -1));
 					// default expr is column ref
-					n->args = lappend(n->args, makeBoolAConst(IsA($5, ColumnRef), -1));
+					bool is_column_ref = false; 
+					contain_unsupport_node($5, &is_column_ref);
+					n->args = lappend(n->args, makeBoolAConst(is_column_ref, -1));
 					// There may be fmt constraints
                     n->args = lappend(n->args, $9);
 					// nls param constraints is NULL
@@ -45736,6 +45745,17 @@ static char* IdentResolveToChar(char *ident, core_yyscan_t yyscanner)
 	{
 		return ident;
 	}
+}
+
+
+
+void contain_unsupport_node(Node* node, bool* has_unsupport_default_node)
+{
+    if (node != NULL && IsA(node, ColumnRef)) {
+		*has_unsupport_default_node = true;
+		return;
+    }
+    (void)raw_expression_tree_walker(node, (bool (*)())contain_unsupport_node, (void*)has_unsupport_default_node);
 }
 
 /* return a function option list that is filtered. */
