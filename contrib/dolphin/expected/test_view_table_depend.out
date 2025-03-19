@@ -1406,6 +1406,21 @@ SELECT t1.c1, t1.c2 FROM t1;
 
 drop view v1;
 drop table t1;
+describe pg_catalog.pg_tables;
+     Field     |           Type           | Null | Key | Default | Extra 
+---------------+--------------------------+------+-----+---------+-------
+ schemaname    | name                     | YES  |     | NULL    | 
+ tablename     | name                     | YES  |     | NULL    | 
+ tableowner    | name                     | YES  |     | NULL    | 
+ tablespace    | name                     | YES  |     | NULL    | 
+ hasindexes    | boolean                  | YES  |     | NULL    | 
+ hasrules      | boolean                  | YES  |     | NULL    | 
+ hastriggers   | boolean                  | YES  |     | NULL    | 
+ tablecreator  | name                     | YES  |     | NULL    | 
+ created       | timestamp with time zone | YES  |     | NULL    | 
+ last_ddl_time | timestamp with time zone | YES  |     | NULL    | 
+(10 rows)
+
 drop schema test_view_table_depend cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table t2
