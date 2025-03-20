@@ -398,5 +398,7 @@ create table t1 (c1 text, c2 float8);
 drop view v1;
 drop table t1;
 
+describe pg_catalog.pg_tables;
+
 drop schema test_view_table_depend cascade;
 reset current_schema;
