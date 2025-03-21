@@ -13953,7 +13953,7 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
         bool isViewValid = true;
         foreach (viewinfo, query_str) {
             ViewInfoForAdd *info = (ViewInfoForAdd *)lfirst(viewinfo);
-            isViewValid &= GetPgObjectValid(info->ev_class, OBJECT_TYPE_VIEW);
+            isViewValid &= GetPgObjectValid(info->ev_class,  get_rel_relkind(info->ev_class));
             if (!isViewValid) {
                 break;
             }
@@ -32498,6 +32498,7 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
                 }
                 pfree(partExprKeyStr);
             }
+
             searchFakeReationForPartitionOid(partRelHTAB, CurrentMemoryContext, partTableRel, targetPartOid, partitionno,
                 partRel, part, RowExclusiveLock);
             if (RelationIsSubPartitioned(partTableRel)) {
