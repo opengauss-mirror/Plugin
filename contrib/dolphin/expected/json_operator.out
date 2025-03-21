@@ -216,6 +216,62 @@ select jsondate->>'$.chargeModeCode'from t;
 (1 row)
 
 
+
+set standard_conforming_strings = off;
+
+create table test_json(c1 json);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\b方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\f方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\r方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+
+select c1->>'$.i18nValue'  from test_json order by 1;
+                      ?column?                       
+-----------------------------------------------------
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+(4 rows)
+
+select convert((c1->>'$.i18nValue'),json) il8_value from test_json;
+                      il8_value                      
+-----------------------------------------------------
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+(4 rows)
+
+select name_value, convert((name_value->>'$.i18nValue'),json)il8_value from (select CONVERT(c1 , json) name_value  from test_json) enlight_dim_model_point_detail;
+                                          name_value                                          |                      il8_value                      
+----------------------------------------------------------------------------------------------+-----------------------------------------------------
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\b方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\f方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\r方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+(4 rows)
+
+
+drop table test_json;
+reset standard_conforming_strings;
+
 drop schema test_operator cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test1
