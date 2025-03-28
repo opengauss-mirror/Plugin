@@ -1,7 +1,7 @@
 # show storage engines
 # enable_mot_server must be before at test_show_storage_engines_1 and test_show_storage_engines_2
 test: enable_mot_server
-test: m_testcase_fix
+test: m_testcase_fix test_dml_func
 test: test_show_storage_engines_1
 test: disable_ustore_incremental_checkpoint
 test: test_show_storage_engines_2 show_create show_create_database
