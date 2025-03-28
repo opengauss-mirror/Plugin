@@ -10246,8 +10246,8 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     int min_sound_len = 5;
     int i;
 
-    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
-    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
+    char* result1 = (char*)palloc0(Max(str_len1, min_sound_len));
+    char* result2 = (char*)palloc0(Max(str_len2, min_sound_len));
     set_sound(arg1, result1, strlen(arg1));
     set_sound(arg2, result2, strlen(arg2));
 
