@@ -494,6 +494,74 @@ select * from test_type_table t1 where `datetime` in (select `datetime` from tes
 select * from test_type_table t1 where `timestamp` in (select `timestamp` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_segment t3 where t3.`int4` = t1.`int4`);
 select * from test_type_table t1 where `blob` in (select `blob` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_ustore t3 where t3.`int4` = t1.`int4`);
 
+-- in index column
+create index index11 on test_type_table(`text`);
+create index index12 on test_type_table(`int4`);
+create index index13 on test_type_table(`int1`);
+create index index21 on test_type_table_ustore(`text`);
+create index index22 on test_type_table_ustore(`int4`);
+create index index23 on test_type_table_ustore(`int1`);
+create index index31 on test_type_table_partition(`text`);
+create index index32 on test_type_table_partition(`int4`);
+create index index33 on test_type_table_partition(`int1`);
+create index index41 on test_type_table_second_partition(`text`);
+create index index42 on test_type_table_second_partition(`int4`);
+create index index43 on test_type_table_second_partition(`int1`);
+create index index51 on test_type_table_temporary(`text`);
+create index index52 on test_type_table_temporary(`int4`);
+create index index53 on test_type_table_temporary(`int1`);
+create index index61 on test_type_table_unlogged(`text`);
+create index index62 on test_type_table_unlogged(`int4`);
+create index index63 on test_type_table_unlogged(`int1`);
+create index index71 on test_type_table_segment(`text`);
+create index index72 on test_type_table_segment(`int4`);
+create index index73 on test_type_table_segment(`int1`);
+create index index81 on test_type_table_partition(`time`);
+create index index82 on test_type_table_second_partition(`datetime`);
+create index index83 on test_type_table(`timestamp`);
+create index index84 on test_type_table(`blob`);
+
+select * from test_type_table t1 where `int4` in (select `int4` from test_type_table_ustore);
+select * from test_type_table t1 where `int4` not in (select `int4` from test_type_table_ustore);
+select * from test_type_table t1 where `int4` in (select 1);
+select * from test_type_table t1 where `int4` not in (select 1 from test_type_table_ustore);
+select * from test_type_table t1 where `int4` in (select '1');
+select * from test_type_table t1 where `int4` not in (select '1');
+select * from test_type_table t1 where `int4` in (select `int4` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_ustore t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where `text` in (select NULL);
+select * from test_type_table_segment t1 where `int4` in (select `int4` from test_type_table_ustore t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_partition t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_ustore t1 where `int1` in (select `int1` from test_type_table_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_segment t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_partition t1 where `time` in (select `time` from test_type_table_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_temporary t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where `datetime` in (select `datetime` from test_type_table_second_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_temporary t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_second_partition t1 where `timestamp` in (select `timestamp` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_segment t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where `blob` in (select `blob` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_ustore t3 where t3.`int4` = t1.`int4`);
+
+-- exists
+select * from test_type_table t1 where EXISTS (select `int4` from test_type_table_ustore);
+select * from test_type_table t1 where not EXISTS (select `int4` from test_type_table_ustore);
+select * from test_type_table t1 where EXISTS (select 1,2,3);
+select * from test_type_table t1 where not EXISTS (select 1,2,3 from test_type_table_ustore);
+select * from test_type_table t1 where EXISTS (select '1', '2', '3');
+select * from test_type_table t1 where not EXISTS (select '1', '2', '3');
+select * from test_type_table t1 where EXISTS (select `int4` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_ustore t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where EXISTS (select NULL);
+select * from test_type_table_segment t1 where EXISTS (select `int4` from test_type_table_ustore t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_partition t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_ustore t1 where EXISTS (select `int1` from test_type_table_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_segment t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_partition t1 where not EXISTS (select `time` from test_type_table_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_temporary t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where EXISTS (select `datetime` from test_type_table_second_partition t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_temporary t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table_second_partition t1 where EXISTS (select `timestamp` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_segment t3 where t3.`int4` = t1.`int4`);
+select * from test_type_table t1 where EXISTS (select `blob` from test_type_table t2 where t1.`int4` = t2.`int4` union all select `text` from test_type_table_ustore t3 where t3.`int4` = t1.`int4`);
+
+-- [AS] tbl_name
+select * from (select * from test_type_table) t1 join (select * from test_type_table_ustore t2) t2 on t1.`int4` = t2.`int4`;
+select * from (select * from test_type_table) as t1 join (select * from test_type_table_ustore t2) t2 on t1.`int4` = t2.`int4`;
+select * from (select t1.`int4` from test_type_table as t1 join test_type_table_partition on 1 = 1) as t1 join (select * from test_type_table_ustore t2) t2 where t1.`int4` = t2.`int4`;
+select * from (select * from test_type_table_partition) t1 join (select * from test_type_table_second_partition t2) t2 on t1.`int4` = t2.`int4`;
+select * from (select * from test_type_table_temporary) t1 join (select * from test_type_table_unlogged t2) t2 on t1.`int4` = t2.`int4`;
+select * from (select * from test_type_table) t1 join (select * from test_type_table_segment t2) t2 on t1.`int4` = t2.`int4`;
+select * from (select * from test_type_table) int4 join (select * from test_type_table_ustore t2) t2 on int4.`int4` = t2.`int4`;
+select * from ((select * from test_type_table) t1 join (select `text` from test_type_table_ustore t2) t2 on t1.`text` = t2.`text`) t3 where t3.`int4` = 1;
+select * from (select * from (select * from ((select * from test_type_table) t1 join (select `text` from test_type_table t2) t2 on t1.`text` = t2.`text`)t3 where t3.`int4` = 1) as t4)t5;
 
 drop view v1;
 drop view v2;
