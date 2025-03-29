@@ -24,7 +24,7 @@
 #include "catalog/namespace.h"
 #include "catalog/pg_type.h"
 #include "libpq/pqformat.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
@@ -305,9 +305,7 @@ Datum get_b_schema(PG_FUNCTION_ARGS)
 {
     return current_schema(fcinfo);
 }
-#endif
 
-#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(get_b_session_user);
 extern "C" DLL_PUBLIC Datum get_b_session_user(PG_FUNCTION_ARGS);
 Datum get_b_session_user(PG_FUNCTION_ARGS)

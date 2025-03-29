@@ -38,7 +38,7 @@
 #include "libpq/md5.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "plugin_parser/parse_type.h"
 #include "port/pg_bswap.h"
 #include "regex/regex.h"

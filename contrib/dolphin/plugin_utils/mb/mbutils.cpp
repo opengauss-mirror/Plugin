@@ -11,7 +11,7 @@
 
 #include "access/xact.h"
 #include "catalog/namespace.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "pgxc/execRemote.h"
 #include "plugin_postgres.h"
 #include "utils/builtins.h"

@@ -33,7 +33,7 @@
 #include "utils/memutils.h"
 #include "utils/numutils.h"
 #include "utils/tzparser.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 #endif

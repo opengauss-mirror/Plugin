@@ -53,7 +53,7 @@
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_oper.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_func.h"
 #include "pgxc/pgxc.h"
 #include "pgxc/pgxcnode.h"

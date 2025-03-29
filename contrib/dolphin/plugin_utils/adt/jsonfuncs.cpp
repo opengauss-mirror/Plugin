@@ -20,7 +20,7 @@
 #include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "utils/hsearch.h"
@@ -45,7 +45,7 @@
 #ifdef DOLPHIN
 #include "cjson/cJSON.h"
 #include "plugin_postgres.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
 #include "utils/pg_locale.h"

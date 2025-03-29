@@ -57,7 +57,7 @@
 #include "optimizer/planswcb.h"
 #include "plugin_parser/analyze.h"
 #include "optimizer/gtmfree.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_agg.h"
 #include "plugin_parser/parse_oper.h"
 #include "plugin_parser/parse_hint.h"

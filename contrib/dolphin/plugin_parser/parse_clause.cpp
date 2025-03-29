@@ -32,7 +32,7 @@
 #include "optimizer/tlist.h"
 #include "plugin_optimizer/planner.h"
 #include "plugin_parser/analyze.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_clause.h"
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_collate.h"

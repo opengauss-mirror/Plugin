@@ -21,7 +21,7 @@
 #include "utils/formatting.h"
 #include "utils/rangetypes.h"
 #include "utils/tzparser.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "plugin_parser/parser.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_postgres.h"

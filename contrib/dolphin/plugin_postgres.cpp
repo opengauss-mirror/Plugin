@@ -36,7 +36,7 @@
 #include "commands/cluster.h"
 #include "commands/matview.h"
 #include "utils/guc.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "utils/builtins.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_synonym.h"

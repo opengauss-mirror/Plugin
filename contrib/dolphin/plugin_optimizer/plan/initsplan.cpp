@@ -31,7 +31,7 @@
 #include "optimizer/restrictinfo.h"
 #include "optimizer/streamplan.h"
 #include "optimizer/var.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/lsyscache.h"
 #include "catalog/index.h"

@@ -1,9 +1,9 @@
 %{
 #include "plugin_parser/parse_hint.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "utils/memutils.h"
 #include "plugin_parser/parser.h"				/* only needed for GUC variables */
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 
 
 #include "plugin_parser/gramparse.h"

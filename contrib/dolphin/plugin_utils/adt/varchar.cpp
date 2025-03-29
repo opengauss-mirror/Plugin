@@ -22,7 +22,7 @@
 #include "nodes/supportnodes.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "plugin_commands/mysqlmode.h"
 #include "utils/sortsupport.h"
 #include "vecexecutor/vectorbatch.h"

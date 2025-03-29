@@ -23,7 +23,7 @@
 #include "utils/numeric.h"
 #include "utils/numeric_gs.h"
 #include "utils/syscache.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "miscadmin.h"
 
 #define MAX_INT32_LEN 11

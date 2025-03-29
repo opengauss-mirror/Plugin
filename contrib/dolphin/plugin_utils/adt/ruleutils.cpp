@@ -80,7 +80,7 @@
 #include "plugin_parser/parse_oper.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parser.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "plugin_parser/parse_relation.h"

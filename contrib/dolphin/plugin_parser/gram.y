@@ -84,7 +84,7 @@
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_hint.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "pgxc/pgxc.h"
 #include "nodes/nodes.h"

@@ -27,26 +27,21 @@ OBJS = $(protocol)/password.o $(protocol)/server_startup.o $(protocol)/auth.o $(
 $(protocol)/dqformat.o $(protocol)/bytestream.o $(protocol)/printtup.o
 
 OBJS += $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
-$(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
-$(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o $(parser)/parse_param.o \
-$(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o $(parser)/scansup.o $(parser)/parse_compatibility.o \
-$(parser)/parse_describe.o $(parser)/parse_show.o $(parser)/parse_show_create.o $(parser)/parse_checksum.o $(parser)/parse_flush.o $(parser)/parse_startwith.o
+$(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_startwith.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
+$(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o \
+$(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o \
+$(parser)/parse_describe.o $(parser)/parse_show.o $(parser)/parse_show_create.o $(parser)/parse_checksum.o $(parser)/parse_flush.o
 
-OBJS += $(adt)/acl.o $(adt)/arrayfuncs.o $(adt)/array_selfuncs.o $(adt)/array_typanalyze.o\
-$(adt)/array_userfuncs.o $(adt)/arrayutils.o $(adt)/bool.o\
-$(adt)/cash.o $(adt)/char.o $(adt)/date.o $(adt)/datetime.o $(adt)/datum.o $(adt)/domains.o\
+OBJS += $(adt)/bool.o $(adt)/cash.o $(adt)/date.o $(adt)/datetime.o\
 $(adt)/enum.o $(adt)/float.o $(adt)/format_type.o\
 $(adt)/int.o $(adt)/int8.o $(adt)/int16.o\
 $(adt)/json.o $(adt)/jsonfuncs.o $(adt)/like.o $(adt)/lockfuncs.o\
-$(adt)/misc.o $(adt)/nabstime.o $(adt)/name.o $(adt)/numeric.o $(adt)/numutils.o\
-$(adt)/a_compat.o $(adt)/orderedsetaggs.o $(adt)/pseudotypes.o $(adt)/rangetypes.o $(adt)/rangetypes_gist.o\
-$(adt)/rowtypes.o $(adt)/regexp.o $(adt)/regproc.o $(adt)/ruleutils.o $(adt)/selfuncs.o\
+$(adt)/misc.o $(adt)/name.o $(adt)/numeric.o $(adt)/numutils.o $(adt)/a_compat.o\
+$(adt)/rowtypes.o $(adt)/regproc.o $(adt)/ruleutils.o $(adt)/selfuncs.o\
 $(adt)/timestamp.o $(adt)/varbit.o $(adt)/varchar.o $(adt)/varlena.o $(adt)/version.o \
-$(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
-$(adt)/ri_triggers.o $(adt)/partitionfuncs.o $(adt)/pg_locale.o $(adt)/formatting.o\
-$(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
-$(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
-$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/unsigned_int.o $(adt)/year.o\
+$(adt)/network.o $(adt)/ri_triggers.o $(adt)/partitionfuncs.o\
+$(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/uuid.o\
+$(adt)/my_locale.o $(adt)/unsigned_int.o $(adt)/year.o\
 $(adt)/vacuumfuncs.o $(adt)/set.o\
 $(adt)/show/show_grants.o $(adt)/show/show_common.o $(adt)/show/show_function.o $(adt)/show/show_trigger.o \
 $(adt)/show/show_charset.o $(adt)/show/show_collation.o \
@@ -72,7 +67,7 @@ OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o 
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
-OBJS += $(catalog)/heap.o $(catalog)/pg_enum.o
+OBJS += $(catalog)/heap.o
 
 all $(OBJS): write_git_commit protocol parser utils executor vector plan prep optimizer_util commands storage pl catalog;
 

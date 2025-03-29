@@ -18,10 +18,10 @@
 
 #include "access/heapam.h"
 #include "catalog/pg_type.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_relation.h"
