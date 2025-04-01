@@ -9,7 +9,6 @@ create database dump_function_db with dbcompatibility = 'B';
 create database restore_function_db with dbcompatibility 'B';
 \c dump_function_db
 create user function_definer password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 --时间类型相关函数
 create definer = function_definer procedure test_makedate
 (

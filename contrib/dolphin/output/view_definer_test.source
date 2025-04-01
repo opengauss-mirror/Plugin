@@ -3,12 +3,10 @@ DROP DATABASE IF EXISTS test_db;
 NOTICE:  database "test_db" does not exist, skipping
 CREATE DATABASE test_db DBCOMPATIBILITY 'B';
 CREATE USER "Root_Test" WITH PASSWORD 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO "Root_Test";
 \c test_db
 SET ROLE "Root_Test" PASSWORD 'openGauss@123';
 CREATE USER "Test_User" with password 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE VIEW definer_test_view1 AS SELECT log(10, 100);
 CREATE DEFINER="Test_User" VIEW definer_test_view2 AS SELECT log(10, 100);
 ERROR:  permission denied for schema public
@@ -28,7 +26,6 @@ SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u W
 (3 rows)
 
 CREATE USER test_user2 with password 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 SELECT * FROM definer_test_view1;
         log         
 --------------------
@@ -180,9 +177,7 @@ GRANT
 
 \c test_db
 create user use_a_1144425 identified by 'A@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user use_b_1144425 identified by 'A@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create table sql_security_1144425(id int,cal int);
 insert into sql_security_1144425 values(1,1);
 insert into sql_security_1144425 values(2,2);
@@ -289,9 +284,7 @@ drop cascades to view v_1144425_1
 drop user use_a_1144425 cascade;
 drop user use_b_1144425 cascade;
 create user use_a_1144425 identified by 'A@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user use_b_1144425 identified by 'A@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create table sql_security_1144425(id int,cal int);
 insert into sql_security_1144425 values(1,1);
 --user a can create view in shcema

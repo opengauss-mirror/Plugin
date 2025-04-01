@@ -169,7 +169,7 @@ test: perf_schema_test
 test: enable_ustore_incremental_checkpoint
 
 # show slave status
-test: test_show_slave_status recursive
+test: test_show_slave_status recursive privileges
 
 # show open tables
 test: test_show_open_tables

@@ -498,9 +498,7 @@ select * from pg_tablespace where spcname='test_tbspace_6';
 (1 row)
 
 create user u_test_tbspace identified by 'test-1234';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user u_test_tbspace2 identified by 'test-1234';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace;
 select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
     usename     

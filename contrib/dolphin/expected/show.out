@@ -2,7 +2,6 @@ create schema show_test;
 set current_schema to 'show_test';
 set b_compatibility_user_host_auth to on;
 create user `test_grant`@`127.0.0.1` identified by 'H&*#^DH85@#(J';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create table test(id int);
 grant select on table test to 'test_grant'@'127.0.0.1';
 grant update on table test to 'test_grant'@'127.0.0.1' with grant option;

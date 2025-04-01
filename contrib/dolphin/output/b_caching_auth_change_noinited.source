@@ -11,7 +11,6 @@ CREATE DATABASE
 NOTICE:  role "caching_user" does not exist, skipping
 DROP ROLE
 \! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "CREATE USER caching_user WITH PASSWORD 'Gauss@123'";
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE ROLE
 \! @abs_bindir@/gsql -d dbmysql -p @portstring@ -r -c "GRANT ALL PRIVILEGES TO caching_user";
 ALTER ROLE

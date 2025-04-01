@@ -213,7 +213,6 @@ show full columns from tst_t1 where Type = 'text';
 DROP ROLE if EXISTS tst_shows_u1;
 NOTICE:  role "tst_shows_u1" does not exist, skipping
 CREATE ROLE tst_shows_u1 IDENTIFIED BY 'tst_shows_u1@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 SET ROLE tst_shows_u1 PASSWORD 'tst_shows_u1@123';
 SELECT CURRENT_USER;
  current_user 

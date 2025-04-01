@@ -1,8 +1,6 @@
 -- init
 create user user1 with sysadmin password 'Show@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user user2 password 'Show@456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- B库执行
 set dolphin.b_compatibility_mode to off;
 drop database if exists show_slave_status_b;

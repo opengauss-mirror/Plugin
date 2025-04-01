@@ -13,7 +13,6 @@ ERROR:  user@host is only supported in b database when the b_compatibility_user_
 create user 'test_user_host'@'127.0.%' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create user 'test_user_host%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create database user_host_db dbcompatibility 'B';
@@ -35,31 +34,22 @@ set b_compatibility_user_host_auth = on;
 CREATE USER 'da@localhost'@'%' PASSWORD 'test123@';
 ERROR:  @ can't be allowed in username
 create user if not exists 'test_user_host'@'%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 alter user 'test_user_host'@'%' with account lock;
 alter user 'test_user_host'@'%' password 'test1234@';
 ERROR:  The account has been locked.
 alter user 'test_user_host'@'%' with account unlock;
 create user 'test_user_host'@'127.%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host'@'127.0.0.%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host'@'127.0.%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host%' password 'test123@';
 ERROR:  role "test_user_host%" already exists
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host1@127.0.0.1' password 'test123@';
 ERROR:  @ can't be allowed in username
 create user test_user_host1@127.0.0.1 password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user test_user_host1@127.0.0. password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user test_user_host2@localhost password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host3'@'localhost' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user test_user_host1@127.0.0.% password 'test123@';
 ERROR:  syntax error at or near "%"
 LINE 1: create user test_user_host1@127.0.0.% password 'test123@';
@@ -84,7 +74,6 @@ alter table test1 owner to 'test_user_host'@'%';
 GRANT ALL PRIVILEGES TO 'test_user_host'@'%';
 REVOKE ALL PRIVILEGES FROM 'test_user_host'@'%';
 ALTER USER 'test_user_host'@'%' password 'test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 ALTER USER 'test_user_host'@'%' RENAME TO 'test_user_host'@'1%';
 CREATE  DEFINER='test_user_host'@'127.0.%' FUNCTION test_func(integer, integer) RETURNS integer SECURITY INVOKER
 AS 'select $1 + $2;'
@@ -97,7 +86,6 @@ grant select on test2 to 'test_user_host'@'127.0.%';
 grant insert on test2 to 'test_user_host'@'127.0.%';
 revoke insert on test2 from 'test_user_host'@'127.0.%';
 create user test1@localhost password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 alter session set session authorization test1@localhost password 'Test@123';
 --?.*
 --?.*

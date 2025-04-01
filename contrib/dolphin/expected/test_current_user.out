@@ -13,7 +13,6 @@ select current_user();
 (1 row)
 
 create user u1 password 'Gauss123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 rename user u1 to current_user;
 --?ERROR:  role "(.*)" already exists
 rename user u1 to current_user();
