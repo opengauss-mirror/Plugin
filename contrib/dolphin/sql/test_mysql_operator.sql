@@ -940,6 +940,9 @@ CREATE TABLE test_type_table
 
 insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2), NULL);
 
+-- test return value for '~'
+reset dolphin.sql_mode;
+
 select
 ~(`int1`),
 ~(`uint1`),
@@ -1015,6 +1018,169 @@ select
 (`json`)|(`json`),
 (`null`)|(`null`)
 from test_type_table;
+
+-- test ignore & non-strict-mode for '~'
+drop table if exists test_doubles;
+
+create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+
+insert ignore into test_doubles  select ~(`int1`), ~(`uint1`), ~(`int2`), ~(`uint2`), ~(`int4`), ~(`uint4`), ~(`int8`), ~(`uint8`), ~(`float4`), ~(`float8`), ~(`numeric`),~(`bit1`), ~(`bit64`),~(`boolean`), ~(`date`), ~(`time`), ~(`time(4)`), ~(`datetime`),~(`datetime(4)`), ~(`timestamp`), ~(`timestamp(4)`), ~(`year`), ~(`char`), ~(`varchar`), ~(`binary`),~(`varbinary`), ~(`tinyblob`), ~(`blob`), ~(`mediumblob`), ~(`longblob`), ~(`text`), ~(`enum_t`), ~(`set_t`), ~(`json`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_doubles  select ~(`int1`), ~(`uint1`), ~(`int2`), ~(`uint2`), ~(`int4`), ~(`uint4`), ~(`int8`), ~(`uint8`), ~(`float4`), ~(`float8`), ~(`numeric`),~(`bit1`), ~(`bit64`),~(`boolean`), ~(`date`), ~(`time`), ~(`time(4)`), ~(`datetime`),~(`datetime(4)`), ~(`timestamp`), ~(`timestamp(4)`), ~(`year`), ~(`char`), ~(`varchar`), ~(`binary`),~(`varbinary`), ~(`tinyblob`), ~(`blob`), ~(`mediumblob`), ~(`longblob`), ~(`text`), ~(`enum_t`), ~(`set_t`), ~(`json`) from test_type_table;
+
+select * from test_doubles order by 1;
+
+drop table test_doubles;
+
+reset dolphin.sql_mode;
+
+-- test return type for '~'
+create or replace view test_type_view as select
+~(`int1`) as 'int1',
+~(`uint1`) as 'uint1',
+~(`int2`) as 'int2',
+~(`uint2`) as 'uint2',
+~(`int4`) as 'int4',
+~(`uint4`) as 'uint4',
+~(`int8`) as 'int8',
+~(`uint8`) as 'uint8',
+~(`float4`) as 'float4',
+~(`float8`) as 'float8',
+~(`numeric`) as 'numeric',
+~(`bit1`) as 'bit1',
+~(`bit64`) as 'bit64',
+~(`boolean`) as 'boolean',
+~(`date`) as 'date',
+~(`time`) as 'time',
+~(`time(4)`) as 'time(4)',
+~(`datetime`) as 'datetime',
+~(`datetime(4)`) as 'datetime(4)',
+~(`timestamp`) as 'timestamp',
+~(`timestamp(4)`) as 'timestamp(4)',
+~(`year`) as 'year',
+~(`char`) as 'char',
+~(`varchar`) as 'varchar',
+~(`binary`) as 'binary',
+~(`varbinary`) as 'varbinary',
+~(`tinyblob`) as 'tinyblob',
+~(`blob`) as 'blob',
+~(`mediumblob`) as 'mediumblob',
+~(`longblob`) as 'longblob',
+~(`text`) as 'text',
+~(`enum_t`) as 'enum_t',
+~(`set_t`) as 'set_t',
+~(`json`) as 'json'
+from test_type_table;
+desc test_type_view;
+drop view test_type_view;
+
+-- test invalid input parameters for '~'
+select ~(null);
+
+-- test for '-'
+-- test return value for '-'
+reset dolphin.sql_mode;
+
+select
+-(`int1`),
+-(`uint1`),
+-(`int2`),
+-(`uint2`),
+-(`int4`),
+-(`uint4`),
+-(`int8`),
+-(`uint8`),
+-(`float4`),
+-(`float8`),
+-(`numeric`),
+-(`bit1`),
+-(`bit64`),
+-(`boolean`),
+-(`date`),
+-(`time`),
+-(`time(4)`),
+-(`datetime`),
+-(`datetime(4)`),
+-(`timestamp`),
+-(`timestamp(4)`),
+-(`year`),
+-(`char`),
+-(`varchar`),
+-(`binary`),
+-(`varbinary`),
+-(`tinyblob`),
+-(`blob`),
+-(`mediumblob`),
+-(`longblob`),
+-(`text`),
+-(`enum_t`),
+-(`set_t`),
+-(`json`)
+from test_type_table;
+
+-- test ignore & non-strict-mode for '-'
+drop table if exists test_doubles;
+
+create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+
+insert ignore into test_doubles  select -(`int1`), -(`uint1`), -(`int2`), -(`uint2`), -(`int4`), -(`uint4`), -(`int8`), -(`uint8`), -(`float4`), -(`float8`), -(`numeric`),-(`bit1`), -(`bit64`),-(`boolean`), -(`date`), -(`time`), -(`time(4)`), -(`datetime`),-(`datetime(4)`), -(`timestamp`), -(`timestamp(4)`), -(`year`), -(`char`), -(`varchar`), -(`binary`),-(`varbinary`), -(`tinyblob`), -(`blob`), -(`mediumblob`), -(`longblob`), -(`text`), -(`enum_t`), -(`set_t`), -(`json`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_doubles  select -(`int1`), -(`uint1`), -(`int2`), -(`uint2`), -(`int4`), -(`uint4`), -(`int8`), -(`uint8`), -(`float4`), -(`float8`), -(`numeric`),-(`bit1`), -(`bit64`),-(`boolean`), -(`date`), -(`time`), -(`time(4)`), -(`datetime`),-(`datetime(4)`), -(`timestamp`), -(`timestamp(4)`), -(`year`), -(`char`), -(`varchar`), -(`binary`),-(`varbinary`), -(`tinyblob`), -(`blob`), -(`mediumblob`), -(`longblob`), -(`text`), -(`enum_t`), -(`set_t`), -(`json`) from test_type_table;
+
+select * from test_doubles order by 1;
+
+drop table test_doubles;
+
+reset dolphin.sql_mode;
+
+-- test return type for '-'
+create or replace view test_type_view as select
+-(`int1`) as 'int1',
+-(`uint1`) as 'uint1',
+-(`int2`) as 'int2',
+-(`uint2`) as 'uint2',
+-(`int4`) as 'int4',
+-(`uint4`) as 'uint4',
+-(`int8`) as 'int8',
+-(`uint8`) as 'uint8',
+-(`float4`) as 'float4',
+-(`float8`) as 'float8',
+-(`numeric`) as 'numeric',
+-(`bit1`) as 'bit1',
+-(`bit64`) as 'bit64',
+-(`boolean`) as 'boolean',
+-(`date`) as 'date',
+-(`time`) as 'time',
+-(`time(4)`) as 'time(4)',
+-(`datetime`) as 'datetime',
+-(`datetime(4)`) as 'datetime(4)',
+-(`timestamp`) as 'timestamp',
+-(`timestamp(4)`) as 'timestamp(4)',
+-(`year`) as 'year',
+-(`char`) as 'char',
+-(`varchar`) as 'varchar',
+-(`binary`) as 'binary',
+-(`varbinary`) as 'varbinary',
+-(`tinyblob`) as 'tinyblob',
+-(`blob`) as 'blob',
+-(`mediumblob`) as 'mediumblob',
+-(`longblob`) as 'longblob',
+-(`text`) as 'text',
+-(`enum_t`) as 'enum_t',
+-(`set_t`) as 'set_t',
+-(`json`) as 'json'
+from test_type_table;
+desc test_type_view;
+drop view test_type_view;
+
+-- test invalid input parameters for '-'
+select -(null);
+
+reset dolphin.sql_mode;
 
 DROP TABLE test_type_table;
 

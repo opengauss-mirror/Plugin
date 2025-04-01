@@ -2608,6 +2608,8 @@ CREATE TABLE test_type_table
 );
 NOTICE:  CREATE TABLE will create implicit set "test_type_table_set_t_set" for column "test_type_table.set_t"
 insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2), NULL);
+-- test return value for '~'
+reset dolphin.sql_mode;
 select
 ~(`int1`),
 ~(`uint1`),
@@ -2702,6 +2704,323 @@ ERROR:  operator is not unique: character | character
 LINE 24: (`char`)|(`char`),
                  ^
 HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+-- test ignore & non-strict-mode for '~'
+drop table if exists test_doubles;
+NOTICE:  table "test_doubles" does not exist, skipping
+create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+insert ignore into test_doubles  select ~(`int1`), ~(`uint1`), ~(`int2`), ~(`uint2`), ~(`int4`), ~(`uint4`), ~(`int8`), ~(`uint8`), ~(`float4`), ~(`float8`), ~(`numeric`),~(`bit1`), ~(`bit64`),~(`boolean`), ~(`date`), ~(`time`), ~(`time(4)`), ~(`datetime`),~(`datetime(4)`), ~(`timestamp`), ~(`timestamp(4)`), ~(`year`), ~(`char`), ~(`varchar`), ~(`binary`),~(`varbinary`), ~(`tinyblob`), ~(`blob`), ~(`mediumblob`), ~(`longblob`), ~(`text`), ~(`enum_t`), ~(`set_t`), ~(`json`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: d23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d30
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: d31
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: d34
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_doubles  select ~(`int1`), ~(`uint1`), ~(`int2`), ~(`uint2`), ~(`int4`), ~(`uint4`), ~(`int8`), ~(`uint8`), ~(`float4`), ~(`float8`), ~(`numeric`),~(`bit1`), ~(`bit64`),~(`boolean`), ~(`date`), ~(`time`), ~(`time(4)`), ~(`datetime`),~(`datetime(4)`), ~(`timestamp`), ~(`timestamp(4)`), ~(`year`), ~(`char`), ~(`varchar`), ~(`binary`),~(`varbinary`), ~(`tinyblob`), ~(`blob`), ~(`mediumblob`), ~(`longblob`), ~(`text`), ~(`enum_t`), ~(`set_t`), ~(`json`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d30
+WARNING:  invalid input syntax for type int16: "1.23a"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: d31
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: d34
+select * from test_doubles order by 1;
+          d1           |          d2           |          d3           |          d4           |          d5           |          d6           |          d7           |          d8           |          d9           |          d10          |          d11          |          d12          |          d13          |          d14          |          d15          |          d16          |          d17          |          d18          |          d19          |          d20          |          d21          |          d22          |          d23          |          d24          |          d25          |          d26          |          d27          |          d28          |          d29          |          d30          |          d31          |          d32          |          d33          |          d34          
+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------
+ 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407368932e+19 | 1.844674407370936e+19 | 1.844674407370936e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19
+ 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407368932e+19 | 1.844674407370936e+19 | 1.844674407370936e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844672384350436e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19 | 1.844674407370955e+19
+(2 rows)
+
+drop table test_doubles;
+reset dolphin.sql_mode;
+-- test return type for '~'
+create or replace view test_type_view as select
+~(`int1`) as 'int1',
+~(`uint1`) as 'uint1',
+~(`int2`) as 'int2',
+~(`uint2`) as 'uint2',
+~(`int4`) as 'int4',
+~(`uint4`) as 'uint4',
+~(`int8`) as 'int8',
+~(`uint8`) as 'uint8',
+~(`float4`) as 'float4',
+~(`float8`) as 'float8',
+~(`numeric`) as 'numeric',
+~(`bit1`) as 'bit1',
+~(`bit64`) as 'bit64',
+~(`boolean`) as 'boolean',
+~(`date`) as 'date',
+~(`time`) as 'time',
+~(`time(4)`) as 'time(4)',
+~(`datetime`) as 'datetime',
+~(`datetime(4)`) as 'datetime(4)',
+~(`timestamp`) as 'timestamp',
+~(`timestamp(4)`) as 'timestamp(4)',
+~(`year`) as 'year',
+~(`char`) as 'char',
+~(`varchar`) as 'varchar',
+~(`binary`) as 'binary',
+~(`varbinary`) as 'varbinary',
+~(`tinyblob`) as 'tinyblob',
+~(`blob`) as 'blob',
+~(`mediumblob`) as 'mediumblob',
+~(`longblob`) as 'longblob',
+~(`text`) as 'text',
+~(`enum_t`) as 'enum_t',
+~(`set_t`) as 'set_t',
+~(`json`) as 'json'
+from test_type_table;
+desc test_type_view;
+    Field     | Type  | Null | Key | Default | Extra 
+--------------+-------+------+-----+---------+-------
+ int1         | uint8 | YES  |     | NULL    | 
+ uint1        | uint8 | YES  |     | NULL    | 
+ int2         | uint8 | YES  |     | NULL    | 
+ uint2        | uint8 | YES  |     | NULL    | 
+ int4         | uint8 | YES  |     | NULL    | 
+ uint4        | uint8 | YES  |     | NULL    | 
+ int8         | uint8 | YES  |     | NULL    | 
+ uint8        | uint8 | YES  |     | NULL    | 
+ float4       | uint8 | YES  |     | NULL    | 
+ float8       | uint8 | YES  |     | NULL    | 
+ numeric      | uint8 | YES  |     | NULL    | 
+ bit1         | uint8 | YES  |     | NULL    | 
+ bit64        | uint8 | YES  |     | NULL    | 
+ boolean      | uint8 | YES  |     | NULL    | 
+ date         | uint8 | YES  |     | NULL    | 
+ time         | uint8 | YES  |     | NULL    | 
+ time(4)      | uint8 | YES  |     | NULL    | 
+ datetime     | uint8 | YES  |     | NULL    | 
+ datetime(4)  | uint8 | YES  |     | NULL    | 
+ timestamp    | uint8 | YES  |     | NULL    | 
+ timestamp(4) | uint8 | YES  |     | NULL    | 
+ year         | uint8 | YES  |     | NULL    | 
+ char         | uint8 | YES  |     | NULL    | 
+ varchar      | uint8 | YES  |     | NULL    | 
+ binary       | uint8 | YES  |     | NULL    | 
+ varbinary    | uint8 | YES  |     | NULL    | 
+ tinyblob     | uint8 | YES  |     | NULL    | 
+ blob         | uint8 | YES  |     | NULL    | 
+ mediumblob   | uint8 | YES  |     | NULL    | 
+ longblob     | uint8 | YES  |     | NULL    | 
+ text         | uint8 | YES  |     | NULL    | 
+ enum_t       | uint8 | YES  |     | NULL    | 
+ set_t        | uint8 | YES  |     | NULL    | 
+ json         | uint8 | YES  |     | NULL    | 
+(34 rows)
+
+drop view test_type_view;
+-- test invalid input parameters for '~'
+select ~(null);
+ ?column? 
+----------
+         
+(1 row)
+
+-- test for '-'
+-- test return value for '-'
+reset dolphin.sql_mode;
+select
+-(`int1`),
+-(`uint1`),
+-(`int2`),
+-(`uint2`),
+-(`int4`),
+-(`uint4`),
+-(`int8`),
+-(`uint8`),
+-(`float4`),
+-(`float8`),
+-(`numeric`),
+-(`bit1`),
+-(`bit64`),
+-(`boolean`),
+-(`date`),
+-(`time`),
+-(`time(4)`),
+-(`datetime`),
+-(`datetime(4)`),
+-(`timestamp`),
+-(`timestamp(4)`),
+-(`year`),
+-(`char`),
+-(`varchar`),
+-(`binary`),
+-(`varbinary`),
+-(`tinyblob`),
+-(`blob`),
+-(`mediumblob`),
+-(`longblob`),
+-(`text`),
+-(`enum_t`),
+-(`set_t`),
+-(`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column?  | ?column? | ?column? | ?column? | ?column?  | ?column?  |    ?column?    |    ?column?     |        ?column?        |    ?column?     |        ?column?        | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+-----------+----------+----------+----------+-----------+-----------+----------------+-----------------+------------------------+-----------------+------------------------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
+       -1 |       -1 |       -1 |       -1 |       -1 |       -1 |       -1 |       -1 |       -1 |       -1 | -1.000000 |       -1 |       -7 | t        | -20230205 | -19:10:50 | -19:10:50.3456 | -20230205191050 | -20230205191050.456000 | -20230205191050 | -20230205191050.456000 |    -2023 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |    -1.23 |       -1 |       -5 |       -0
+(1 row)
+
+-- test ignore & non-strict-mode for '-'
+drop table if exists test_doubles;
+NOTICE:  table "test_doubles" does not exist, skipping
+create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+insert ignore into test_doubles  select -(`int1`), -(`uint1`), -(`int2`), -(`uint2`), -(`int4`), -(`uint4`), -(`int8`), -(`uint8`), -(`float4`), -(`float8`), -(`numeric`),-(`bit1`), -(`bit64`),-(`boolean`), -(`date`), -(`time`), -(`time(4)`), -(`datetime`),-(`datetime(4)`), -(`timestamp`), -(`timestamp(4)`), -(`year`), -(`char`), -(`varchar`), -(`binary`),-(`varbinary`), -(`tinyblob`), -(`blob`), -(`mediumblob`), -(`longblob`), -(`text`), -(`enum_t`), -(`set_t`), -(`json`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_doubles  select -(`int1`), -(`uint1`), -(`int2`), -(`uint2`), -(`int4`), -(`uint4`), -(`int8`), -(`uint8`), -(`float4`), -(`float8`), -(`numeric`),-(`bit1`), -(`bit64`),-(`boolean`), -(`date`), -(`time`), -(`time(4)`), -(`datetime`),-(`datetime(4)`), -(`timestamp`), -(`timestamp(4)`), -(`year`), -(`char`), -(`varchar`), -(`binary`),-(`varbinary`), -(`tinyblob`), -(`blob`), -(`mediumblob`), -(`longblob`), -(`text`), -(`enum_t`), -(`set_t`), -(`json`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+select * from test_doubles order by 1;
+ d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 |    d15    |   d16   |     d17      |       d18       |        d19         |       d20       |        d21         |  d22  |  d23  |  d24  |  d25  |  d26  |  d27  |  d28  |  d29  |  d30  |  d31  | d32 | d33 | d34 
+----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+-----------+---------+--------------+-----------------+--------------------+-----------------+--------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-----+-----+-----
+ -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 |  -1 |  -1 |  -1 |  -7 |   1 | -20230205 | -191050 | -191050.3456 | -20230205191050 | -20230205191050.46 | -20230205191050 | -20230205191050.46 | -2023 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 |  -1 |  -5 |  -0
+ -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 |  -1 |  -1 |  -1 |  -7 |   1 | -20230205 | -191050 | -191050.3456 | -20230205191050 | -20230205191050.46 | -20230205191050 | -20230205191050.46 | -2023 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 | -1.23 |  -1 |  -5 |  -0
+(2 rows)
+
+drop table test_doubles;
+reset dolphin.sql_mode;
+-- test return type for '-'
+create or replace view test_type_view as select
+-(`int1`) as 'int1',
+-(`uint1`) as 'uint1',
+-(`int2`) as 'int2',
+-(`uint2`) as 'uint2',
+-(`int4`) as 'int4',
+-(`uint4`) as 'uint4',
+-(`int8`) as 'int8',
+-(`uint8`) as 'uint8',
+-(`float4`) as 'float4',
+-(`float8`) as 'float8',
+-(`numeric`) as 'numeric',
+-(`bit1`) as 'bit1',
+-(`bit64`) as 'bit64',
+-(`boolean`) as 'boolean',
+-(`date`) as 'date',
+-(`time`) as 'time',
+-(`time(4)`) as 'time(4)',
+-(`datetime`) as 'datetime',
+-(`datetime(4)`) as 'datetime(4)',
+-(`timestamp`) as 'timestamp',
+-(`timestamp(4)`) as 'timestamp(4)',
+-(`year`) as 'year',
+-(`char`) as 'char',
+-(`varchar`) as 'varchar',
+-(`binary`) as 'binary',
+-(`varbinary`) as 'varbinary',
+-(`tinyblob`) as 'tinyblob',
+-(`blob`) as 'blob',
+-(`mediumblob`) as 'mediumblob',
+-(`longblob`) as 'longblob',
+-(`text`) as 'text',
+-(`enum_t`) as 'enum_t',
+-(`set_t`) as 'set_t',
+-(`json`) as 'json'
+from test_type_table;
+desc test_type_view;
+    Field     |          Type          | Null | Key | Default | Extra 
+--------------+------------------------+------+-----+---------+-------
+ int1         | smallint               | YES  |     | NULL    | 
+ uint1        | smallint               | YES  |     | NULL    | 
+ int2         | smallint               | YES  |     | NULL    | 
+ uint2        | integer                | YES  |     | NULL    | 
+ int4         | integer                | YES  |     | NULL    | 
+ uint4        | bigint                 | YES  |     | NULL    | 
+ int8         | bigint                 | YES  |     | NULL    | 
+ uint8        | bigint                 | YES  |     | NULL    | 
+ float4       | real                   | YES  |     | NULL    | 
+ float8       | double precision       | YES  |     | NULL    | 
+ numeric      | number                 | YES  |     | NULL    | 
+ bit1         | number                 | YES  |     | NULL    | 
+ bit64        | number                 | YES  |     | NULL    | 
+ boolean      | boolean                | YES  |     | NULL    | 
+ date         | number                 | YES  |     | NULL    | 
+ time         | time without time zone | YES  |     | NULL    | 
+ time(4)      | time without time zone | YES  |     | NULL    | 
+ datetime     | number                 | YES  |     | NULL    | 
+ datetime(4)  | number                 | YES  |     | NULL    | 
+ timestamp    | number                 | YES  |     | NULL    | 
+ timestamp(4) | number                 | YES  |     | NULL    | 
+ year         | integer                | YES  |     | NULL    | 
+ char         | number                 | YES  |     | NULL    | 
+ varchar      | number                 | YES  |     | NULL    | 
+ binary       | double precision       | YES  |     | NULL    | 
+ varbinary    | double precision       | YES  |     | NULL    | 
+ tinyblob     | double precision       | YES  |     | NULL    | 
+ blob         | double precision       | YES  |     | NULL    | 
+ mediumblob   | double precision       | YES  |     | NULL    | 
+ longblob     | double precision       | YES  |     | NULL    | 
+ text         | number                 | YES  |     | NULL    | 
+ enum_t       | number                 | YES  |     | NULL    | 
+ set_t        | number                 | YES  |     | NULL    | 
+ json         | double precision       | YES  |     | NULL    | 
+(34 rows)
+
+drop view test_type_view;
+-- test invalid input parameters for '-'
+select -(null);
+ ?column? 
+----------
+         
+(1 row)
+
+reset dolphin.sql_mode;
 DROP TABLE test_type_table;
 set dolphin.b_compatibility_mode = 0;
 select !10;
