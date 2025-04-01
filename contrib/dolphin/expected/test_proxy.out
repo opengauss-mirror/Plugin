@@ -11,15 +11,12 @@ INSERT INTO tst_t1 values(20220101, 'proxy_example');
 DROP ROLE if EXISTS test_proxy_u1;
 NOTICE:  role "test_proxy_u1" does not exist, skipping
 CREATE ROLE test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 DROP ROLE if EXISTS test_proxy_u2;
 NOTICE:  role "test_proxy_u2" does not exist, skipping
 CREATE ROLE test_proxy_u2 IDENTIFIED BY 'test_proxy_u2@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 DROP ROLE if EXISTS test_proxy_u3;
 NOTICE:  role "test_proxy_u3" does not exist, skipping
 CREATE ROLE test_proxy_u3 IDENTIFIED BY 'test_proxy_u3@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL ON SCHEMA tst_schema1 TO test_proxy_u1;
 GRANT ALL ON SCHEMA tst_schema1 TO test_proxy_u2;
 GRANT ALL ON SCHEMA tst_schema1 TO test_proxy_u3;
@@ -90,20 +87,17 @@ LINE 1: GRANT ALL ON *.* to test_proxy_u1 IDENTIFIED BY 'test_proxy_...
 --success, change passwd
 GRANT USAGE ON *.* to test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@234';
 WARNING:  Using GRANT statement to modify existing user's password is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 SET ROLE test_proxy_u1 PASSWORD 'test_proxy_u1@234';
 RESET ROLE;
 --sucess, create role
 set b_compatibility_user_host_auth to on;
 GRANT USAGE ON *.* to does_not_exist@localhost IDENTIFIED BY 'does_not_exist1@localhost';
 WARNING:  Using GRANT for creating new user is deprecatedand will be removed in future release. Create new user with CREATE USER statement.
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 --SET ROLE does_not_exist@localhost PASSWORD 'does_not_exist1@localhost';
 --RESET ROLE;
 --sucess, change passwd
 GRANT USAGE ON *.* to does_not_exist@localhost IDENTIFIED BY 'does_not_exist1@localhost2';
 WARNING:  Using GRANT statement to modify existing user's password is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 --SET ROLE does_not_exist@localhost PASSWORD 'does_not_exist1@localhost2';
 --RESET ROLE;
 --error, can't use b_mode_create_user_if_not_exist in alter user, it's a internal option

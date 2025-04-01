@@ -1,7 +1,6 @@
 create schema show_createdatabase;
 set current_schema to 'show_createdatabase';
 CREATE USER test_showcreate_database WITH PASSWORD 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO test_showcreate_database;
 SET ROLE test_showcreate_database PASSWORD 'openGauss@123';
 create schema test_get_database;

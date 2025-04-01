@@ -302,7 +302,6 @@ WHERE pg_class.oid=indexrelid
 
 -- Verify that clustering all tables does in fact cluster the right ones
 CREATE USER Clstr_user PASSWORD 'ttest@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE TABLE Clstr_1 (a INT PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Clstr_1_pkey" for table "Clstr_1"
 CREATE TABLE Clstr_2 (a INT PRIMARY KEY);

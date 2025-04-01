@@ -60,9 +60,7 @@ show schemas where Database = 'abb2';
 (1 row)
 
 create user u1 with password 'abc@1234';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user u2 with password 'abc@1234';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 set role u1 password 'abc@1234';
 show databases;
       Database      

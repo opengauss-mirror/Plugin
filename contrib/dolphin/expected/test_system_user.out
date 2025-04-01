@@ -24,7 +24,6 @@ reset current_schema;
 drop user if exists user_revoke_001;
 NOTICE:  role "user_revoke_001" does not exist, skipping
 create user user_revoke_001 password 'Test_123';
---?.*
 grant proxy on user_revoke_001 to user_revoke_001;
 NOTICE:  the role granted is the same as the role of grantee: "user_revoke_001"
 \du user_revoke_001
@@ -48,9 +47,7 @@ NOTICE:  role "user001" does not exist, skipping
 drop user if exists user002;
 NOTICE:  role "user002" does not exist, skipping
 create user user001 password 'Test_123';
---?.*
 create user user002 password 'Test_123';
---?.*
 \du user001
            List of roles
  Role name | Attributes | Member of 

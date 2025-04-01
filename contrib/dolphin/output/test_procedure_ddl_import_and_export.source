@@ -8,7 +8,6 @@ create database dump_procedure_db lc_collate='C' dbcompatibility = 'B';
 create database restore_procedure_db lc_collate='C' dbcompatibility = 'B';
 \c dump_procedure_db
 create user test_procedure_definer password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 --test language sql
 delimiter //;
 create definer = test_procedure_definer procedure create_procedure_001() language plpgsql

@@ -8,7 +8,6 @@ create database dump_function_db lc_collate='C' dbcompatibility = 'B';
 create database restore_function_db lc_collate='C' dbcompatibility = 'B';
 \c dump_function_db
 create user test_function_definer password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 --test language sql
 delimiter //;
 create definer = test_function_definer function create_function_001() returns void language plpgsql
