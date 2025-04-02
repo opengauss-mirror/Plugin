@@ -36469,6 +36469,19 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					A_Expr *match_against = makeSimpleA_Expr(AEXPR_OP, "@@", (Node *)lexpr_func, (Node *)rexpr_func, -1);
 					$$ = (Node *)match_against;
 				}
+			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' against_null_condition search_modifier ')'
+				{
+					FuncCall *lexpr_func = makeNode(FuncCall);
+					lexpr_func->funcname = SystemFuncName("to_tsvector");
+					lexpr_func->args = lappend(lexpr_func->args, makeStringConst("ngram", -1));
+					lexpr_func->args = lappend(lexpr_func->args, $2);
+					FuncCall *rexpr_func = makeNode(FuncCall);
+					rexpr_func->funcname = SystemFuncName("to_tsquery");
+					rexpr_func->args = lappend(rexpr_func->args, makeStringConst("ngram", -1));
+					rexpr_func->args = lappend(rexpr_func->args, makeNullAConst(@6));
+					A_Expr *match_against = makeSimpleA_Expr(AEXPR_OP, "@@", (Node *)lexpr_func, (Node *)rexpr_func, -1);
+					$$ = (Node *)match_against;
+				}	
 			| FCONST_F
 				{
 					Node *num = makeFloatConst($1, @1);
@@ -36480,6 +36493,11 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					$$ = makeTypeCast(num, SystemTypeName("float8"), NULL, NULL, NULL, @1);	
 				}
 		;
+
+
+against_null_condition:
+				NULL_P						{}
+				;
 
 /*
  * Restricted expressions
