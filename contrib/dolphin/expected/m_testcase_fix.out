@@ -76,5 +76,126 @@ select * from t1;
 
 drop table t1;
 drop table t2;
+-- decimal(0)
+create table t11(c DECIMAL(0,0));
+insert into t11 values (9999999999);
+insert into t11 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t12(c DECIMAL(0));
+insert into t12 values (9999999999);
+insert into t12 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t21(c numeric(0,0));
+insert into t21 values (9999999999);
+insert into t21 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t22(c numeric(0));
+insert into t22 values (9999999999);
+insert into t22 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t31(c fixed(0,0));
+insert into t31 values (9999999999);
+insert into t31 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t32(c fixed(0));
+insert into t32 values (9999999999);
+insert into t32 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t41(c dec(0,0));
+insert into t41 values (9999999999);
+insert into t41 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+create table t42(c dec(0));
+insert into t42 values (9999999999);
+insert into t42 values (10000000000);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: c
+\d+ t11;
+                        Table "m_testcase_fix.t11"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t12;
+                        Table "m_testcase_fix.t12"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t21;
+                        Table "m_testcase_fix.t21"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t22;
+                        Table "m_testcase_fix.t22"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t31;
+                        Table "m_testcase_fix.t31"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t32;
+                        Table "m_testcase_fix.t32"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t41;
+                        Table "m_testcase_fix.t41"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t42;
+                        Table "m_testcase_fix.t42"
+ Column |     Type      | Modifiers | Storage | Stats target | Description 
+--------+---------------+-----------+---------+--------------+-------------
+ c      | numeric(10,0) |           | main    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+drop table t11;
+drop table t12;
+drop table t21;
+drop table t22;
+drop table t31;
+drop table t32;
+drop table t41;
+drop table t42;
 drop schema m_testcase_fix cascade;
 reset current_schema;

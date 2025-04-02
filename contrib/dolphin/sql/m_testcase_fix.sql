@@ -53,5 +53,52 @@ drop table t1;
 drop table t2;
 
 
+
+-- decimal(0)
+create table t11(c DECIMAL(0,0));
+insert into t11 values (9999999999);
+insert into t11 values (10000000000);
+create table t12(c DECIMAL(0));
+insert into t12 values (9999999999);
+insert into t12 values (10000000000);
+
+create table t21(c numeric(0,0));
+insert into t21 values (9999999999);
+insert into t21 values (10000000000);
+create table t22(c numeric(0));
+insert into t22 values (9999999999);
+insert into t22 values (10000000000);
+
+create table t31(c fixed(0,0));
+insert into t31 values (9999999999);
+insert into t31 values (10000000000);
+create table t32(c fixed(0));
+insert into t32 values (9999999999);
+insert into t32 values (10000000000);
+
+create table t41(c dec(0,0));
+insert into t41 values (9999999999);
+insert into t41 values (10000000000);
+create table t42(c dec(0));
+insert into t42 values (9999999999);
+insert into t42 values (10000000000);
+
+\d+ t11;
+\d+ t12;
+\d+ t21;
+\d+ t22;
+\d+ t31;
+\d+ t32;
+\d+ t41;
+\d+ t42;
+drop table t11;
+drop table t12;
+drop table t21;
+drop table t22;
+drop table t31;
+drop table t32;
+drop table t41;
+drop table t42;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
