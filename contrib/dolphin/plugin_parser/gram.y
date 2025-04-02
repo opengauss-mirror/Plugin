@@ -576,6 +576,7 @@ static inline Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char*
 /* null is the minimum value in sortby */
 static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule);
 static bool GreaterThanHour (List* int_type);
+static List* PreHandleTymod(List* origin);
 %}
 
 %define api.pure
@@ -34157,7 +34158,7 @@ NumericNoConflict:	INT_P unsigned_list
 			| DECIMAL_P '(' expr_list ')'
 				{
 					$$ = SystemTypeName("numeric");
-					$$->typmods = $3;
+					$$->typmods = PreHandleTymod($3);
 					$$->location = @1;
 				}
 			| NUMBER_P '(' expr_list ')'
@@ -34169,19 +34170,19 @@ NumericNoConflict:	INT_P unsigned_list
 			| DEC '(' expr_list ')'
 				{
 					$$ = SystemTypeName("numeric");			
-					$$->typmods = $3;
+					$$->typmods = PreHandleTymod($3);
 					$$->location = @1;
 				}
 			| NUMERIC '(' expr_list ')'
 				{
 					$$ = SystemTypeName("numeric");			
-					$$->typmods = $3;
+					$$->typmods = PreHandleTymod($3);
 					$$->location = @1;
 				}
 			| FIXED_P '(' expr_list ')'
 				{
 					$$ = SystemTypeName("numeric");
-					$$->typmods = $3;
+					$$->typmods = PreHandleTymod($3);
 					$$->location = @1;
 				}
 		;
@@ -45883,6 +45884,37 @@ static bool GreaterThanHour (List* argsList) {
 		return false;
 	}
 }
+
+static List* PreHandleTymod(List* origin) {
+	
+	/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) 
+	 * So wo need to transform decimal(0) to decimal(10) and
+	 * tarnsform decimal(0, 0) to decimal(10, 0) here.
+	 * the same applies to numeric/dec/fixed type.
+	 */
+	if (origin == NIL) {
+		return origin;
+	}
+
+	if (list_length(origin) == 1 && IsA((Node*)linitial(origin), A_Const)) {
+		A_Const* arg1 = (A_Const*)linitial(origin);
+		if (arg1->val.type == T_Integer && intVal(&arg1->val) == 0) {
+			arg1->val.val.ival = 10; 
+		}
+	}
+
+	if (list_length(origin) == 2 && IsA((Node*)linitial(origin), A_Const) && IsA((Node*)lsecond(origin), A_Const)) {
+		A_Const* arg1 = (A_Const*)linitial(origin);
+		A_Const* arg2 = (A_Const*)lsecond(origin);
+		if (arg1->val.type == T_Integer && intVal(&arg1->val) == 0 &&
+		    arg2->val.type == T_Integer && intVal(&arg2->val) == 0) {
+			arg1->val.val.ival = 10; 
+		}
+	}
+	return origin;
+}
+
+
 /*
  * Must undefine this stuff before including scan.c, since it has different
  * definitions for these macros.
