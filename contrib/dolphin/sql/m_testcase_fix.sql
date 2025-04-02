@@ -100,5 +100,20 @@ drop table t32;
 drop table t41;
 drop table t42;
 
+
+CREATE TABLE t1 (id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+a VARCHAR(200), b TEXT ) ENGINE = InnoDB;
+CREATE FULLTEXT INDEX idx on t1 (a,b);
+
+insert into t1(a, b) values('test1', 'test2');
+insert into t1(a, b) values('test3', 'test1');
+insert into t1(a, b) values('test1', 'test1');
+insert into t1(a, b) values(NULL, NULL);
+
+SELECT id FROM t1 WHERE MATCH (a,b) AGAINST ('test1' IN NATURAL LANGUAGE MODE);
+SELECT id FROM t1 WHERE MATCH (a,b) AGAINST (NULL IN NATURAL LANGUAGE MODE);
+
+drop table t1;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
