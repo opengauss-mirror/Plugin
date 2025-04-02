@@ -8862,6 +8862,7 @@ stats_sample_pages_option:
 		STATS_SAMPLE_PAGES opt_equal Iconst	{}
 		| STATS_SAMPLE_PAGES opt_equal FCONST	{}
 		| STATS_SAMPLE_PAGES opt_equal XCONST	{}
+		| STATS_SAMPLE_PAGES opt_equal DEFAULT	{}
 		;
 
 tablespace_storage_option_without_empty:

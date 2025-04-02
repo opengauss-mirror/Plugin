@@ -220,5 +220,11 @@ SELECT id FROM t1 WHERE MATCH (a,b) AGAINST (NULL IN NATURAL LANGUAGE MODE);
 (0 rows)
 
 drop table t1;
+CREATE TABLE test_ps_sample_pages_used (
+a VARCHAR(512), PRIMARY KEY (a)
+) ENGINE=INNODB STATS_SAMPLE_PAGES=default;
+WARNING:  STATS_SAMPLE_PAGES for TABLE is not supported for current version. skipped
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_ps_sample_pages_used_pkey" for table "test_ps_sample_pages_used"
+drop table test_ps_sample_pages_used;
 drop schema m_testcase_fix cascade;
 reset current_schema;
