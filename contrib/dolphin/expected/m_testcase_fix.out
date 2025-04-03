@@ -226,5 +226,30 @@ a VARCHAR(512), PRIMARY KEY (a)
 WARNING:  STATS_SAMPLE_PAGES for TABLE is not supported for current version. skipped
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_ps_sample_pages_used_pkey" for table "test_ps_sample_pages_used"
 drop table test_ps_sample_pages_used;
+-- ONE
+select json_contains_path('{ "a": true }', 'ONE', '$.a','$.b' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{ "a": true }', 'one', '$.a','$.b' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{ "a": true }', 'ALL', '$.a','$.b' );
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{ "a": true }', 'all', '$.a','$.b' );
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
