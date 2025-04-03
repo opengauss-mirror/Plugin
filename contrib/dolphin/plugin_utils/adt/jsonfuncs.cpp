@@ -5510,7 +5510,7 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
     int error_pos = -1;
     int last_len = 0;
 
-    if (strcmp(mode, "one") == 0) {
+    if (pg_strcasecmp(mode, "one") == 0) {
         for (int i = 0; i < path_num; i++) {
             if (pathnulls[i]) {
                 cJSON_Delete(root);
@@ -5547,7 +5547,7 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
 
         PG_RETURN_BOOL(false);
 
-    } else if (strcmp(mode, "all") == 0) {
+    } else if (pg_strcasecmp(mode, "all") == 0) {
         flag = true;
 
         for (int i = 0; i < path_num; i++) {

@@ -121,5 +121,11 @@ a VARCHAR(512), PRIMARY KEY (a)
 ) ENGINE=INNODB STATS_SAMPLE_PAGES=default;
 drop table test_ps_sample_pages_used;
 
+-- ONE
+select json_contains_path('{ "a": true }', 'ONE', '$.a','$.b' );
+select json_contains_path('{ "a": true }', 'one', '$.a','$.b' );
+select json_contains_path('{ "a": true }', 'ALL', '$.a','$.b' );
+select json_contains_path('{ "a": true }', 'all', '$.a','$.b' );
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
