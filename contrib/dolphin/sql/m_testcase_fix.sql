@@ -115,5 +115,11 @@ SELECT id FROM t1 WHERE MATCH (a,b) AGAINST (NULL IN NATURAL LANGUAGE MODE);
 
 drop table t1;
 
+
+CREATE TABLE test_ps_sample_pages_used (
+a VARCHAR(512), PRIMARY KEY (a)
+) ENGINE=INNODB STATS_SAMPLE_PAGES=default;
+drop table test_ps_sample_pages_used;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
