@@ -1,13 +1,11 @@
 create schema test_if_not_exists;
 set current_schema to 'test_if_not_exists';
 CREATE USER ZZZ WITH PASSWORD 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER ZZZ WITH PASSWORD 'openGauss@123';
 ERROR:  role "zzz" already exists
 CREATE USER IF NOT EXISTS ZZZ WITH PASSWORD 'openGauss@123';
 NOTICE:  role "zzz" already exists
 DROP USER ZZZ;
 CREATE USER IF NOT EXISTS ZZZ WITH PASSWORD 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 drop schema test_if_not_exists cascade;
 reset current_schema;

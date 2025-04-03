@@ -6,7 +6,6 @@ CREATE DATABASE role_test_db dbcompatibility 'b';
 SET dolphin.lower_case_table_names TO 0;
 CREATE TABLE `test_table` (`a` int);
 CREATE USER `Test_User` WITH PASSWORD 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 SELECT `rolname` FROM `pg_roles` WHERE `rolname` LIKE '%Test_%';
   rolname  
 -----------

@@ -165,7 +165,6 @@ LINE 1: select user;
                ^
 CONTEXT:  referenced column: user
 create user user identified by 'xxxx@xx1xx'; -- username user can be created
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user mapping for user server mot_server; -- username: user
 create user mapping for current_user server mot_server; -- username: current_user
 select count(distinct usename) from pg_user_mappings where usename in ('user', current_user()); -- expected: 2

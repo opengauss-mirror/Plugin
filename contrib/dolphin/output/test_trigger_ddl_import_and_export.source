@@ -11,7 +11,6 @@ create database restore_trigger_db with dbcompatibility = 'B' lc_collate 'C';
 create table t_create_trigger_001(c int);
 create table t_create_trigger_002(c int);
 create user test_trigger_definer with sysadmin password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 grant all on t_create_trigger_001, t_create_trigger_002 to test_trigger_definer;
 create definer = test_trigger_definer trigger if not exists trigger001
 after insert on t_create_trigger_001

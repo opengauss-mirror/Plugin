@@ -1,5 +1,4 @@
 create user algorithm with password 'algorithm@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 grant usage on schema public to algorithm;
 grant create on schema public to algorithm;
 -- -------- test create view cases --------
@@ -215,7 +214,6 @@ ERROR:  syntax error at or near "1"
 LINE 1: alter algorithm = 1 view vv_v alter c1 set default 1;
                           ^
 create user nu with password 'newUser@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create or replace algorithm = bad view vv_v2 as select * from vv_t;
 ERROR:  syntax error at or near "bad"
 LINE 1: create or replace algorithm = bad view vv_v2 as select * fro...

@@ -20,7 +20,6 @@ partition by range(col1)
 	partition p3 values less than (4000)
 );
 create user viewdefiner001 password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create table t_create_view_007(col1 date, col2 int)
 partition by range(col1)
 interval('1 day')
@@ -222,7 +221,6 @@ show create view view010;
 --alter view测试
 --修改视图definer
 create user viewdefiner002 password 'Test@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 grant proxy on current_user() to viewdefiner002;
 create table t_alter_view_001(c int);
 create or replace definer = viewdefiner001 view view011(c) as select c from t_alter_view_001;
