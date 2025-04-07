@@ -127,5 +127,14 @@ select json_contains_path('{ "a": true }', 'one', '$.a','$.b' );
 select json_contains_path('{ "a": true }', 'ALL', '$.a','$.b' );
 select json_contains_path('{ "a": true }', 'all', '$.a','$.b' );
 
+
+-- var
+set enable_set_variable_b_format = on;
+set @c:=1;
+with recursive q (b, c) as
+(select 1, 1 union all select (1+b), (@c:=(@c+1)) from q where b<2000)
+select sum(b*c) from q;
+reset enable_set_variable_b_format;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
