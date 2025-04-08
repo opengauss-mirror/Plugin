@@ -12811,7 +12811,8 @@ static void UpdateGenerateColFirstAfter(Relation rel, int startattnum, int endat
         }
 
         // update pg_attrdef_adbin
-        if (generated_col == ATTRIBUTE_GENERATED_STORED) {
+        if (generated_col == ATTRIBUTE_GENERATED_STORED ||
+            generated_col == ATTRIBUTE_GENERATED_PERSISTED) {
             Datum adbin_datum;
             Node *adbin = NULL;
             Node *new_adbin = NULL;
@@ -15171,6 +15172,10 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
         if (lastColumn) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("must have at least one column")));
         }
+    }
+
+    if (u_sess->hook_cxt.invokePreDropColumnHook) {
+        ((InvokePreDropColumnHookType)(u_sess->hook_cxt.invokePreDropColumnHook))(rel, attnum);
     }
 
     /*
@@ -18525,7 +18530,7 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
         if (RelAutoIncAttrNum(rel) == attnum) {
             defaultexpr = RecookAutoincAttrDefault(rel, attnum, targettype, targettypmod);
             if (defaultexpr == NULL) {
-                if (generatedCol == ATTRIBUTE_GENERATED_STORED) {
+                if (generatedCol == ATTRIBUTE_GENERATED_STORED || generatedCol == ATTRIBUTE_GENERATED_PERSISTED) {
                     ereport(ERROR, (errmodule(MOD_GEN_COL), errcode(ERRCODE_DATATYPE_MISMATCH),
                         errmsg("generation expression for column \"%s\" cannot be cast automatically to type %s",
                             colName, format_type_be(targettype))));
@@ -35045,7 +35050,8 @@ static void ATPrepAlterModifyColumn(List** wqueue, AlteredTableInfo* tab, Relati
     ColumnDef* def = (ColumnDef*)cmd->def;
     Node* tmp_expr = def->raw_default;
     char* tmp_name = cmd->name;
-    if (def->generatedCol != ATTRIBUTE_GENERATED_STORED && (tmp_expr == NULL || !IsA(tmp_expr, AutoIncrement))) {
+    if (def->generatedCol != ATTRIBUTE_GENERATED_STORED && def->generatedCol != ATTRIBUTE_GENERATED_PERSISTED &&
+        (tmp_expr == NULL || !IsA(tmp_expr, AutoIncrement))) {
         ATPrepCheckDefault(tmp_expr);
     }
 
@@ -35467,7 +35473,7 @@ static void ATAlterModifyColumnDefault(AlteredTableInfo* tab, Relation rel, Colu
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 (errmsg("generated column cannot refer to auto_increment column"))));
         }
-    } else if (def->generatedCol == ATTRIBUTE_GENERATED_STORED) {
+    } else if (def->generatedCol == ATTRIBUTE_GENERATED_STORED || def->generatedCol == ATTRIBUTE_GENERATED_PERSISTED) {
         if (list_length(tab->changedGeneratedCols) > 0) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
                 errmsg("Invalid modify column operation"),
@@ -35821,6 +35827,41 @@ static void check_unsupported_charset_for_column(Oid collation, const char* col_
             errmsg("difference between the charset of column %s and the database encoding has not supported",
                 col_name)));
     }
+}
+
+bool IsComputedColumn(Oid adrelid, int2 asnum)
+{
+    Relation    attrdef;
+    ScanKeyData keys[2];
+    SysScanDesc scan;
+    HeapTuple   tup;
+    bool        res = false;
+
+    attrdef = relation_open(AttrDefaultRelationId, AccessShareLock);
+    ScanKeyInit(&keys[0],
+                Anum_pg_attrdef_adrelid,
+                BTEqualStrategyNumber,
+                F_OIDEQ,
+                ObjectIdGetDatum(adrelid));
+    ScanKeyInit(&keys[1],
+                Anum_pg_attrdef_adnum,
+                BTEqualStrategyNumber,
+                F_INT2EQ,
+                Int16GetDatum(asnum));
+    scan = systable_beginscan(attrdef, AttrDefaultIndexId, true, NULL, 2, keys);
+    if (HeapTupleIsValid(tup = systable_getnext(scan))) {
+        bool isnull = false;
+        char generatedCol = '\0';
+        Datum adgencol = fastgetattr(tup, Anum_pg_attrdef_adgencol, attrdef->rd_att, &isnull);
+        if (!isnull) {
+            generatedCol = DatumGetChar(adgencol);
+        }
+        res = (generatedCol == ATTRIBUTE_GENERATED_PERSISTED);            
+    }
+
+    systable_endscan(scan);
+    relation_close(attrdef, AccessShareLock);
+    return res;
 }
 
 #ifdef DOLPHIN

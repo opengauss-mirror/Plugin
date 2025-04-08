@@ -36,6 +36,7 @@
 #include "catalog/indexing.h"
 #include "catalog/namespace.h"
 #include "commands/typecmds.h"
+#include "utils/date.h"
 #include "utils/fmgroids.h"
 #include "utils/snapmgr.h"
 #endif
@@ -144,17 +145,6 @@ static void CheckUpdateRelation(Relation targetrel);
 static void transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt);
 static bool ContainColStoreWalker(Node* node, Oid targetOid);
 static bool ContainAStoreWalker(Node* node, Oid targetOid);
-
-static bool IsValuesCanTransformDirectly(ParseState* pstate, InsertStmt* stmt);
-static List* GetTargetColumnAttrs(ParseState* pstate, List* cols, int exprCnt);
-static void GenerateTargetList(Query* query, RangeTblEntry* rte, int rtindex, List* targetColsAttrs);
-static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Relation targetrel, bool isRelationNullOk);
-static void CheckColumnExprsConsistency(ParseState* pstate, List* cols, List* firstRowList, int finalTargetCnt);
-static void GetColumnTypeAttrs(List* targetColsAttrs, ColumnTypeForm* typeItems);
-static Node* TransformAconstToTarget(A_Const* con, ColumnTypeForm& typeItem, bool hasIgnore);
-static List* TransformAllValuesDirectly(ParseState* pstate, SelectStmt* selectStmt, List* targetColsAttrs);
-static Query* TryTransformInsertDirectly(ParseState* pstate, InsertStmt* stmt);
-
 #ifdef PGXC
 static Query* transformExecDirectStmt(ParseState* pstate, ExecDirectStmt* stmt);
 static bool IsExecDirectUtilityStmt(const Node* node);
@@ -171,6 +161,18 @@ static void set_subquery_is_under_insert(ParseState* subParseState);
 static void set_ancestor_ps_contain_foreigntbl(ParseState* subParseState);
 static bool include_groupingset(Node* groupClause);
 static void transformGroupConstToColumn(ParseState* pstate, Node* groupClause, List* targetList);
+static bool checkAllowedTableCombination(ParseState* pstate);
+
+static bool IsValuesCanTransformDirectly(ParseState* pstate, InsertStmt* stmt);
+static List* GetTargetColumnAttrs(ParseState* pstate, List* cols, int exprCnt);
+static void GenerateTargetList(Query* query, RangeTblEntry* rte, int rtindex, List* targetColsAttrs);
+static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Relation targetrel, bool isRelationNullOk);
+static void CheckColumnExprsConsistency(ParseState* pstate, List* cols, List* firstRowList, int finalTargetCnt);
+static void GetColumnTypeAttrs(List* targetColsAttrs, ColumnTypeForm* typeItems);
+static Node* TransformAconstToTarget(A_Const* con, ColumnTypeForm& typeItem, bool hasIgnore);
+static List* TransformAllValuesDirectly(ParseState* pstate, SelectStmt* selectStmt, List* targetColsAttrs);
+static Query* TryTransformInsertDirectly(ParseState* pstate, InsertStmt* stmt);
+
 #ifdef ENABLE_MULTIPLE_NODES
 static void checkUpsertTargetlist(Relation targetTable, List* updateTlist);
 static bool ContainSubLinkWalker(Node* node, void* context);
@@ -3429,6 +3431,9 @@ static Query* transformSelectStmt(ParseState* pstate, SelectStmt* stmt, bool isF
     qry->limitCount = transformLimitClause(pstate, stmt->limitCount, EXPR_KIND_LIMIT, "LIMIT");
     qry->limitIsPercent = stmt->limitIsPercent;
     qry->limitWithTies = stmt->limitWithTies;
+    if (u_sess->hook_cxt.invokeTransformSelectForLimitHook) {
+        ((InvokeTransformSelectForLimitHookType)(u_sess->hook_cxt.invokeTransformSelectForLimitHook))(stmt);
+    }
     qry->isFetch = stmt->isFetch;
 
     /* transform window clauses after we have seen all window functions */
@@ -6701,6 +6706,42 @@ static void transformGroupConstToColumn(ParseState* pstate, Node* groupClause, L
     }
 }
 
+static bool checkAllowedTableCombination(ParseState* pstate)
+{
+    RangeTblEntry* rte = NULL;
+    ListCell* lc = NULL;
+    bool has_ustore = false;
+    bool has_else = false;
+
+    // Check range table list for the presence of
+    // relations with different storages
+    foreach(lc, pstate->p_rtable) {
+        rte = (RangeTblEntry*)lfirst(lc);
+        if (rte && rte->rtekind == RTE_RELATION) {
+            if (rte->is_ustore) {
+                has_ustore = true;
+            } else {
+                has_else = true;
+            }
+        }
+    }
+
+    // Check target table for the type of storage
+    foreach(lc, pstate->p_target_rangetblentry) {
+        rte = (RangeTblEntry*)lfirst(lc);
+        if (rte && rte->rtekind == RTE_RELATION) {
+            if (rte->is_ustore) {
+                has_ustore = true;
+            } else {
+                has_else = true;
+            }
+        }
+    }
+
+    Assert(has_ustore || has_else);
+
+    return !(has_ustore && has_else);
+}
 
 static bool IsValuesCanTransformDirectly(ParseState* pstate, InsertStmt* stmt)
 {
