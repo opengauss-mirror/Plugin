@@ -251,5 +251,17 @@ select json_contains_path('{ "a": true }', 'all', '$.a','$.b' );
  f
 (1 row)
 
+-- var
+set enable_set_variable_b_format = on;
+set @c:=1;
+with recursive q (b, c) as
+(select 1, 1 union all select (1+b), (@c:=(@c+1)) from q where b<2000)
+select sum(b*c) from q;
+    sum     
+------------
+ 2668667000
+(1 row)
+
+reset enable_set_variable_b_format;
 drop schema m_testcase_fix cascade;
 reset current_schema;
