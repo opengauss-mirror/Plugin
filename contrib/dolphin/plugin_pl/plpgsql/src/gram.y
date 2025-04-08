@@ -41,7 +41,7 @@
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/scanner.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "plugin_postgres.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"

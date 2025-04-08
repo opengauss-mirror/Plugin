@@ -104,7 +104,7 @@
 #include "utils/varbit.h"
 #include "utils/xml.h"
 #include "access/heapam.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "utils/partitionmap_gs.h"
 #include "access/tableam.h"
 #ifdef ENABLE_HTAP

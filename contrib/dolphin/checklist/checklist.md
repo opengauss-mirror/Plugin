@@ -14,7 +14,6 @@
 |plugin_parser|parse_clause.cpp   |src\common\backend\parser\parse_clause.cpp   |
 |plugin_parser|parse_coerce.cpp   |src\common\backend\parser\parse_coerce.cpp   |
 |plugin_parser|parse_collate.cpp   |src\common\backend\parser\parse_collate.cpp   |
-|plugin_parser|parse_compatibility.cpp   |src\common\backend\parser\parse_compatibility.cpp   |
 |plugin_parser|parse_cte.cpp   |src\common\backend\parser\parse_cte.cpp   |
 |plugin_parser|parse_expr.cpp|src\common\backend\parser\parse_expr.cpp   |
 |plugin_parser|parse_func.cpp   |src\common\backend\parser\parse_func.cpp   |
@@ -22,7 +21,6 @@
 |plugin_parser|parse_merge.cpp   |src\common\backend\parser\parse_merge.cpp   |
 |plugin_parser|parse_node.cpp   |src\common\backend\parser\parse_node.cpp   |
 |plugin_parser|parse_oper.cpp   |src\common\backend\parser\parse_oper.cpp    |
-|plugin_parser|parse_param.cpp   |src\common\backend\parser\parse_param.cpp   |
 |plugin_parser|parse_relation.cpp   |src\common\backend\parser\parse_relation.cpp   |
 |plugin_parser|parse_startwith.cpp   |src\common\backend\parser\parse_startwith.cpp   |
 |plugin_parser|parse_target.cpp   |src\common\backend\parser\parse_target.cpp   |
@@ -30,72 +28,42 @@
 |plugin_parser|parse_utilcmd.cpp   |src\common\backend\parser\parse_utilcmd.cpp   |
 |plugin_parser|parser.cpp|src\common\backend\parser\parser.cpp   |
 |plugin_parser|scan.l|src\common\backend\parser\scan.l   |
-|plugin_parser|scansup.cpp|src\common\backend\parser\scansup.cpp   |
-|plugin_utils\adt|acl.cpp   |src\common\backend\utils\adt\acl.cpp   |
-|plugin_utils\adt|array_selfuncs.cpp   |src\common\backend\utils\adt\array_selfuncs.cpp   |
-|plugin_utils\adt|array_typanalyze.cpp   |src\common\backend\utils\adt\array_typanalyze.cpp   |
-|plugin_utils\adt|array_userfuncs.cpp   |src\common\backend\utils\adt\array_userfuncs.cpp   |
-|plugin_utils\adt|arrayfuncs.cpp   |src\common\backend\utils\adt\arrayfuncs.cpp   |
-|plugin_utils\adt|arrayutils.cpp   |src\common\backend\utils\adt\arrayutils.cpp   |
-|plugin_utils\adt|ascii.cpp   |src\common\backend\utils\adt\ascii.cpp   |
 |plugin_utils\adt|bool.cpp   |src\common\backend\utils\adt\bool.cpp   |
 |plugin_utils\adt|cash.cpp   |src\common\backend\utils\adt\cash.cpp   |
-|plugin_utils\adt|char.cpp   |src\common\backend\utils\adt\char.cpp   |
 |plugin_utils\adt|clientlogicsettings.cpp   |src\common\backend\utils\adt\clientlogicsettings.cpp   |
 |plugin_utils\adt|date.cpp   |src\common\backend\utils\adt\date.cpp   |
 |plugin_utils\adt|datetime.cpp   |src\common\backend\utils\adt\datetime.cpp   |
-|plugin_utils\adt|datum.cpp   |src\common\backend\utils\adt\datum.cpp   |
-|plugin_utils\adt|dbsize.cpp   |src\common\backend\utils\adt\dbsize.cpp   |
-|plugin_utils\adt|domains.cpp   |src\common\backend\utils\adt\domains.cpp   |
 |plugin_utils\adt|encode.cpp   |src\common\backend\utils\adt\encode.cpp   |
 |plugin_utils\adt|enum.cpp   |src\common\backend\utils\adt\enum.cpp   |
-|plugin_utils\adt|expr_distinct.cpp   |src\common\backend\utils\adt\expr_distinct.cpp   |
 |plugin_utils\adt|extended_statistics.cpp   |src\common\backend\utils\adt\extended_statistics.cpp   |
-|plugin_utils\adt|first_last_agg.cpp   |src\common\backend\utils\adt\first_last_agg.cpp   |
 |plugin_utils\adt|float.cpp   |src\common\backend\utils\adt\float.cpp   |
 |plugin_utils\adt|format_type.cpp   |src\common\backend\utils\adt\format_type.cpp   |
-|plugin_utils\adt|formatting.cpp   |src\common\backend\utils\adt\formatting.cpp   |
-|plugin_utils\adt|inet_cidr_ntop.cpp   |src\common\backend\utils\adt\inet_cidr_ntop.cpp   |
 |plugin_utils\adt|inet_net_pton.cpp   |src\common\backend\utils\adt\inet_net_pton.cpp   |
 |plugin_utils\adt|int.cpp   |src\common\backend\utils\adt\int.cpp   |
 |plugin_utils\adt|int8.cpp   |src\common\backend\utils\adt\int8.cpp   |
 |plugin_utils\adt|int16.cpp   |src\common\backend\utils\adt\int16.cpp   |
 |plugin_utils\adt|json.cpp   |src\common\backend\utils\adt\json.cpp   |
 |plugin_utils\adt|jsonfuncs.cpp   |src\common\backend\utils\adt\jsonfuncs.cpp   |
-|plugin_utils\adt|like_match.cpp   |src\common\backend\utils\adt\like_match.cpp   |
 |plugin_utils\adt|like.cpp   |src\common\backend\utils\adt\like.cpp   |
 |plugin_utils\adt|lockfuncs.cpp   |src\common\backend\utils\adt\lockfuncs.cpp   |
-|plugin_utils\adt|mac.cpp   |src\common\backend\utils\adt\mac.cpp   |
-|plugin_utils\adt|median_aggs.cpp   |src\common\backend\utils\adt\median_aggs.cpp   |
 |plugin_utils\adt|misc.cpp   |src\common\backend\utils\adt\misc.cpp   |
-|plugin_utils\adt|nabstime.cpp   |src\common\backend\utils\adt\nabstime.cpp   |
 |plugin_utils\adt|name.cpp   |src\common\backend\utils\adt\name.cpp   |
 |plugin_utils\adt|network.cpp   |src\common\backend\utils\adt\network.cpp   |
-|plugin_utils\adt|nlssort.cpp   |src\common\backend\utils\adt\nlssort.cpp   |
 |plugin_utils\adt|numeric.cpp   |src\common\backend\utils\adt\numeric.cpp   |
 |plugin_utils\adt|numutils.cpp   |src\common\backend\utils\adt\numutils.cpp   |
-|plugin_utils\adt|orderedsetaggs.cpp   |src\common\backend\utils\adt\orderedsetaggs.cpp   |
-|plugin_utils\adt|pg_locale.cpp   |src\common\backend\utils\adt\pg_locale.cpp   |
 |plugin_utils\adt|pgstatfuncs.cpp   |src\common\backend\utils\adt\pgstatfuncs.cpp   |
-|plugin_utils\adt|pseudotypes.cpp   |src\common\backend\utils\adt\pseudotypes.cpp   |
-|plugin_utils\adt|quote.cpp   |src\common\backend\utils\adt\quote.cpp   |
-|plugin_utils\adt|rangetypes_gist.cpp   |src\common\backend\utils\adt\rangetypes_gist.cpp   |
-|plugin_utils\adt|rangetypes.cpp   |src\common\backend\utils\adt\rangetypes.cpp   |
-|plugin_utils\adt|regexp.cpp   |src\common\backend\utils\adt\regexp.cpp   |
-|plugin_utils\adt|regproc.cpp   |src\common\backend\utils\adt\regproc.cpp   |
 |plugin_utils\adt|ri_triggers.cpp   |src\common\backend\utils\adt\ri_triggers.cpp   |
+|plugin_utils\adt|regproc.cpp   |src\common\backend\utils\adt\regproc.cpp   |
 |plugin_utils\adt|rowtypes.cpp   |src\common\backend\utils\adt\rowtypes.cpp   |
 |plugin_utils\adt|ruleutils.cpp   |src\common\backend\utils\adt\ruleutils.cpp   |
 |plugin_utils\adt|selfuncs.cpp   |src\common\backend\utils\adt\selfuncs.cpp   |
 |plugin_utils\adt|set.cpp  |src\common\backend\utils\adt\set.cpp  |
 |plugin_utils\adt|timestamp.cpp   |src\common\backend\utils\adt\timestamp.cpp   |
-|plugin_utils\adt|trigfuncs.cpp   |src\common\backend\utils\adt\trigfuncs.cpp   |
 |plugin_utils\adt|uuid.cpp   |src\common\backend\utils\adt\uuid.cpp   |
 |plugin_utils\adt|varbit.cpp   |src\common\backend\utils\adt\varbit.cpp   |
 |plugin_utils\adt|varchar.cpp   |src\common\backend\utils\adt\varchar.cpp   |
 |plugin_utils\adt|varlena.cpp   |src\common\backend\utils\adt\varlena.cpp   |
 |plugin_utils\adt|version.cpp   |src\common\backend\utils\adt\version.cpp   |
-|plugin_utils\adt|windowfuncs.cpp   |src\common\backend\utils\adt\windowfuncs.cpp   |
 |plugin_utils\fmgr|fmgr.cpp |src\common\backend\utils\fmgr\fmgr.cpp|
 |plugin_utils\mb|mbutils.cpp   |src\common\backend\utils\mb\mbutils.cpp   |
 |plugin_utils|Gen_fmgrtab.pl   |src\common\backend\utils\Gen_fmgrtab.pl   |
@@ -113,9 +81,7 @@
 |plugin_optimizer\commands|schemacmds.cpp   |src\gausskernel\optimizer\commands\schemacmds.cpp  |
 |plugin_optimizer\commands|typecmds.cpp   |src\gausskernel\optimizer\commands\typecmds.cpp  |
 |plugin_optimizer\commands|user.cpp   |src\gausskernel\optimizer\commands\user.cpp  |
-|plugin_optimizer\commands|alter.cpp   |src\gausskernel\optimizer\commands\alter.cpp  |
 |plugin_optimizer\commands|prepare.cpp   |src\gausskernel\optimizer\commands\prepare.cpp  |
-|plugin_optimizer\plan|pgxcplan_single.cpp   |src\gausskernel\optimizer\plan\pgxcplan_single.cpp  |
 |plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
 |plugin_optimizer\plan|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
 |plugin_optimizer\plan|initsplan.cpp   |src\gausskernel\optimizer\plan\initsplan.cpp  |
@@ -129,10 +95,8 @@
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
 |plugin_pl\plpgsql\src|pl_handler.cpp   |src\common\pl\plpgsql\src\pl_handler.cpp  |
 |plugin_pl\plpgsql\src|pl_comp.cpp   |src\common\pl\plpgsql\src\pl_comp.cpp  |
-|plugin_pl\plpgsql\src\pl_reserved_kwlist.h|src\common\pl\plpgsql\src\pl_reserved_kwlist.h |
 |plugin_pl\plpgsql\src\pl_unreserved_kwlist.h|src\common\pl\plpgsql\src\pl_unreserved_kwlist.h |
 |plugin_catalog|heap.cpp   |src\common\backend\catalog\heap.cpp  |
-|plugin_catalog|pg_enum.cpp   |src\common\backend\catalog\pg_enum.cpp  |
 |llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
 |llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
 |llvmir|openGauss_expr_dolphin_x86_64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ir   |
@@ -145,7 +109,6 @@
 --header
 |文件夹   |文件名   |对应内核文件路径   |
 | :------------ | :------------ | :------------ |
-|plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
 |plugin_commands|copy.h  |src\include\commands\copy.h   |
 |plugin_commands|defrem.h  |src\include\commands\defrem.h   |
 |plugin_executor|functions.h |src\include\executor\functions.h |
@@ -154,7 +117,6 @@
 |plugin_optimizer|clauses.h |src\include\optimizer\clauses.h    |
 |plugin_parser|kwlookup.h  |src\include\parser\kwlookup.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
-|plugin_parser|backslash_quotes.h  |src\include\parser\backslash_quotes.h   |
 |plugin_parser|gramparse.h  |src\include\parser\gramparse.h   |
 |plugin_parser|keywords.h  |src\include\parser\keywords.h   |
 |plugin_parser|kwlist.h  |src\include\parser\kwlist.h   |
@@ -169,15 +131,12 @@
 |plugin_parser|parse_merge.h  |src\include\parser\parse_merge.h   |
 |plugin_parser|parse_node.h  |src\include\parser\parse_node.h   |
 |plugin_parser|parse_oper.h  |src\include\parser\parse_oper.h   |
-|plugin_parser|parse_param.h  |src\include\parser\parse_param.h   |
 |plugin_parser|parse_relation.h  |src\include\parser\parse_relation.h   |
 |plugin_parser|parse_target.h  |src\include\parser\parse_target.h   |
 |plugin_parser|parse_type.h  |src\include\parser\parse_type.h  |
 |plugin_parser|parse_utilcmd.h  |src\include\parser\parse_utilcmd.h   |
 |plugin_parser|parser.h  |src\include\mb\src\include\parser\parser.h   |
-|plugin_parser|parsetree.h  |src\include\parser\parsetree.h   |
 |plugin_parser|scanner.h  |src\include\parser\scanner.h   |
-|plugin_parser|scansup.h  |src\include\parser\scansup.h   |
 |plugin_storage|hash.h  |src\include\access\hash.h   |
 |plugin_storage|hash.inl  |src\include\access\hash.inl   |
 |plugin_utils|date.h  |src\include\utils\date.h   |

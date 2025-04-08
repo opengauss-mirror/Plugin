@@ -22,7 +22,7 @@
 #include "optimizer/pgxcship.h"
 #include "optimizer/streamplan.h"
 #include "utils/lsyscache.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_merge.h"
 #include "utils/syscache.h"
 #include "pgxc/locator.h"

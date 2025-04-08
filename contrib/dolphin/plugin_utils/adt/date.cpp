@@ -25,7 +25,7 @@
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "nodes/supportnodes.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "utils/array.h"
 #include "utils/numeric.h"
 #include "utils/builtins.h"

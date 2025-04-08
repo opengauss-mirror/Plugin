@@ -22,7 +22,7 @@
 #include "executor/spi.h"
 #include "lib/stringinfo.h"
 #include "libpq/pqformat.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "plugin_parser/parse_coerce.h"
 #include "utils/array.h"
@@ -34,7 +34,7 @@
 
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
-#include "plugin_parser/scansup.h"
+#include "parser/scansup.h"
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
 #include <wchar.h>

@@ -24,7 +24,7 @@
 #include "plugin_parser/parse_agg.h"
 #include "plugin_parser/parse_clause.h"
 #include "plugin_parser/parse_coerce.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_commands/mysqlmode.h"
 #include "rewrite/rewriteManip.h"

@@ -21,7 +21,7 @@
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
 #include "catalog/gs_package.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "plugin_parser/scanner.h"
 
 #include "pl_gram.hpp" /* must be after parser/scanner.h */

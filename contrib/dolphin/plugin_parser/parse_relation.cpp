@@ -27,7 +27,7 @@
 #include "funcapi.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "plugin_parser/parse_hint.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_type.h"

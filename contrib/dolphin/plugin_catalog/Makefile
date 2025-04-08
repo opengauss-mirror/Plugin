@@ -35,7 +35,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 
-OBJS = heap.o pg_enum.o
+OBJS = heap.o
        
 
 override CPPFLAGS += -D__STDC_FORMAT_MACROS

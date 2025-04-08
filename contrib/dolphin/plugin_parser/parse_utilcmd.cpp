@@ -91,7 +91,7 @@
 #include "utils/numeric.h"
 #include "utils/numeric_gs.h"
 #include "utils/int16.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "gaussdb_version.h"
 #include "gs_ledger/ledger_utils.h"
 #include "client_logic/client_logic.h"

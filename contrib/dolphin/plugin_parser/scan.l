@@ -38,8 +38,9 @@
 #include "plugin_parser/parser.h"				/* only needed for GUC variables */
 #include "plugin_commands/mysqlmode.h"          /* only needed for GUC variables */
 #include "plugin_parser/scanner.h"
-#include "plugin_parser/scansup.h"
-#include "plugin_mb/pg_wchar.h"
+#include "plugin_parser/kwlookup.h"
+#include "parser/scansup.h"
+#include "mb/pg_wchar.h"
 #include "utils/pl_package.h"
 #include "utils/plpgsql.h"
 

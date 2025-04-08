@@ -88,7 +88,7 @@
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_utilcmd.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "pgxc/groupmgr.h"
 #include "storage/buf/buf.h"
 #include "storage/predicate.h"

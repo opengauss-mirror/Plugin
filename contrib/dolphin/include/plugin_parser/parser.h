@@ -21,7 +21,7 @@
 #include "plugin_nodes/parsenodes_common.h"
 #endif /* FRONTEND_PARSER */
 
-#include "plugin_parser/backslash_quotes.h"
+#include "parser/backslash_quotes.h"
 
 #define UPSERT_TO_MERGE_VERSION_NUM 92022
 #define GS_SHOW_CREATE_TABLE 0

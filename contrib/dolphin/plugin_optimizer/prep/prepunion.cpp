@@ -46,7 +46,7 @@
 #include "optimizer/tlist.h"
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_hint.h"
-#include "plugin_parser/parsetree.h"
+#include "parser/parsetree.h"
 #include "pgxc/pgxc.h"
 #include "utils/syscache.h"
 #include "utils/lsyscache.h"
