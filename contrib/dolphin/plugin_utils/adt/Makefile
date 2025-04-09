@@ -35,5 +35,5 @@ OBJS = bool.o cash.o date.o datetime.o \
 	uuid.o unsigned_int.o my_locale.o year.o\
 	vacuumfuncs.o set.o compress.o weightstring.o
 
-like.o: like.cpp
+like.o: like.cpp like_match.cpp
 include $(top_srcdir)/src/gausskernel/common.mk
