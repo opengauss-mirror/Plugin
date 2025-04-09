@@ -6,5 +6,11 @@ SELECT SCHEMA();
  schema_test
 (1 row)
 
+SELECT pg_typeof(SCHEMA());
+ pg_typeof 
+-----------
+ name
+(1 row)
+
 drop schema schema_test cascade;
 reset current_schema;

@@ -127,6 +127,29 @@ random_bytes(`enum_t`),
 random_bytes(`set_t`)
 from test_type_table;
 
+create table test_str_table (
+    `char` char(100),
+    `varchar` varchar,
+    `text` text,
+    `null` text
+);
+
+insert into test_str_table values (
+    'test char字符1;',
+    'test varchar字符串2;',
+    'test text文本3;',
+    NULL
+);
+
+select
+ucase(`char`),
+ucase(`varchar`),
+ucase(`text`),
+ucase(`null`)
+from test_str_table;
+
+drop table test_str_table;
+
 --error, cause value out of range
 select length(random_bytes(`date`)::binary) from test_type_table;
 select length(random_bytes(`time`)::binary) from test_type_table;

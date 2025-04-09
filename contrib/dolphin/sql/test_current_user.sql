@@ -2,6 +2,8 @@ create schema test_current_user;
 set current_schema to 'test_current_user';
 select current_user;
 select current_user();
+select pg_typeof(current_user);
+select pg_typeof(current_user());
 create user u1 password 'Gauss123';
 rename user u1 to current_user;
 rename user u1 to current_user();

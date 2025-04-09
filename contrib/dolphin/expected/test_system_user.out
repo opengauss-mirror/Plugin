@@ -6,6 +6,12 @@ select session_user();
 --?.*
 (1 row)
 
+select pg_typeof(session_user());
+ pg_typeof 
+-----------
+ name
+(1 row)
+
 select user();
 --?.*
 --?.*
@@ -16,6 +22,12 @@ select system_user();
  system_user 
 -------------
 --?.*
+(1 row)
+
+select pg_typeof(system_user());
+ pg_typeof 
+-----------
+ name
 (1 row)
 
 drop schema test_system_user cascade;
