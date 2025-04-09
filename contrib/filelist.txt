@@ -77,6 +77,7 @@ kwlist.h
 kwlookup.cpp
 kwlookup.h
 like.cpp
+like_match.cpp
 lockfuncs.cpp
 make_check_postgresql.conf
 mbutils.cpp

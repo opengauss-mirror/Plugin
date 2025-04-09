@@ -44,6 +44,7 @@
 |plugin_utils\adt|int16.cpp   |src\common\backend\utils\adt\int16.cpp   |
 |plugin_utils\adt|json.cpp   |src\common\backend\utils\adt\json.cpp   |
 |plugin_utils\adt|jsonfuncs.cpp   |src\common\backend\utils\adt\jsonfuncs.cpp   |
+|plugin_utils\adt|like_match.cpp   |src\common\backend\utils\adt\like_match.cpp   |
 |plugin_utils\adt|like.cpp   |src\common\backend\utils\adt\like.cpp   |
 |plugin_utils\adt|lockfuncs.cpp   |src\common\backend\utils\adt\lockfuncs.cpp   |
 |plugin_utils\adt|misc.cpp   |src\common\backend\utils\adt\misc.cpp   |

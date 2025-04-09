@@ -50,7 +50,6 @@ set(dolphin_parser_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_clause.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_coerce.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_collate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/parse_compatibility.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_cte.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_describe.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_expr.cpp
@@ -60,7 +59,6 @@ set(dolphin_parser_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_merge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_oper.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/parse_param.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_show_create.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_show.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_startwith.cpp
@@ -69,7 +67,6 @@ set(dolphin_parser_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_target.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parse_utilcmd.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scansup.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gram.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hint_gram.cpp
 )
