@@ -29,5 +29,235 @@ insert ignore into t1 values(rpad('a', 2147483648, 'x'));
 insert ignore into t1 values(rpad('a', -2147483648, 'x'));
 insert ignore into t1 values(rpad('a', -2147483649, 'x'));
 drop table t1;
+
+CREATE TABLE test_type_table (
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `char` char(10),
+    `varchar` varchar(100),
+    `text` text,
+    `null` text
+);
+insert into test_type_table
+values(
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9.12,
+        10.34,
+        11.123456,
+        'test char',
+        'test varchar字符串',
+        'test text文本',
+        NULL
+    );
+select rpad(`char`,`int1`,`char`), pg_typeof(rpad(`char`,`int1`,`char`)) from test_type_table;
+select rpad(`char`,`int1`,`varchar`), pg_typeof(rpad(`char`,`int1`,`varchar`)) from test_type_table;
+select rpad(`char`,`int1`,`text`), pg_typeof(rpad(`char`,`int1`,`text`)) from test_type_table;
+select rpad(`char`,`int1`,`null`), pg_typeof(rpad(`char`,`int1`,`null`)) from test_type_table;
+select rpad(`char`,`uint1`,`char`), pg_typeof(rpad(`char`,`uint1`,`char`)) from test_type_table;
+select rpad(`char`,`uint1`,`varchar`), pg_typeof(rpad(`char`,`uint1`,`varchar`)) from test_type_table;
+select rpad(`char`,`uint1`,`text`), pg_typeof(rpad(`char`,`uint1`,`text`)) from test_type_table;
+select rpad(`char`,`uint1`,`null`), pg_typeof(rpad(`char`,`uint1`,`null`)) from test_type_table;
+select rpad(`char`,`int2`,`char`), pg_typeof(rpad(`char`,`int2`,`char`)) from test_type_table;
+select rpad(`char`,`int2`,`varchar`), pg_typeof(rpad(`char`,`int2`,`varchar`)) from test_type_table;
+select rpad(`char`,`int2`,`text`), pg_typeof(rpad(`char`,`int2`,`text`)) from test_type_table;
+select rpad(`char`,`int2`,`null`), pg_typeof(rpad(`char`,`int2`,`null`)) from test_type_table;
+select rpad(`char`,`uint2`,`char`), pg_typeof(rpad(`char`,`uint2`,`char`)) from test_type_table;
+select rpad(`char`,`uint2`,`varchar`), pg_typeof(rpad(`char`,`uint2`,`varchar`)) from test_type_table;
+select rpad(`char`,`uint2`,`text`), pg_typeof(rpad(`char`,`uint2`,`text`)) from test_type_table;
+select rpad(`char`,`uint2`,`null`), pg_typeof(rpad(`char`,`uint2`,`null`)) from test_type_table;
+select rpad(`char`,`int4`,`char`), pg_typeof(rpad(`char`,`int4`,`char`)) from test_type_table;
+select rpad(`char`,`int4`,`varchar`), pg_typeof(rpad(`char`,`int4`,`varchar`)) from test_type_table;
+select rpad(`char`,`int4`,`text`), pg_typeof(rpad(`char`,`int4`,`text`)) from test_type_table;
+select rpad(`char`,`int4`,`null`), pg_typeof(rpad(`char`,`int4`,`null`)) from test_type_table;
+select rpad(`char`,`uint4`,`char`), pg_typeof(rpad(`char`,`uint4`,`char`)) from test_type_table;
+select rpad(`char`,`uint4`,`varchar`), pg_typeof(rpad(`char`,`uint4`,`varchar`)) from test_type_table;
+select rpad(`char`,`uint4`,`text`), pg_typeof(rpad(`char`,`uint4`,`text`)) from test_type_table;
+select rpad(`char`,`uint4`,`null`), pg_typeof(rpad(`char`,`uint4`,`null`)) from test_type_table;
+select rpad(`char`,`int8`,`char`), pg_typeof(rpad(`char`,`int8`,`char`)) from test_type_table;
+select rpad(`char`,`int8`,`varchar`), pg_typeof(rpad(`char`,`int8`,`varchar`)) from test_type_table;
+select rpad(`char`,`int8`,`text`), pg_typeof(rpad(`char`,`int8`,`text`)) from test_type_table;
+select rpad(`char`,`int8`,`null`), pg_typeof(rpad(`char`,`int8`,`null`)) from test_type_table;
+select rpad(`char`,`uint8`,`char`), pg_typeof(rpad(`char`,`uint8`,`char`)) from test_type_table;
+select rpad(`char`,`uint8`,`varchar`), pg_typeof(rpad(`char`,`uint8`,`varchar`)) from test_type_table;
+select rpad(`char`,`uint8`,`text`), pg_typeof(rpad(`char`,`uint8`,`text`)) from test_type_table;
+select rpad(`char`,`uint8`,`null`), pg_typeof(rpad(`char`,`uint8`,`null`)) from test_type_table;
+select rpad(`char`,`float4`,`char`), pg_typeof(rpad(`char`,`float4`,`char`)) from test_type_table;
+select rpad(`char`,`float4`,`varchar`), pg_typeof(rpad(`char`,`float4`,`varchar`)) from test_type_table;
+select rpad(`char`,`float4`,`text`), pg_typeof(rpad(`char`,`float4`,`text`)) from test_type_table;
+select rpad(`char`,`float4`,`null`), pg_typeof(rpad(`char`,`float4`,`null`)) from test_type_table;
+select rpad(`char`,`float8`,`char`), pg_typeof(rpad(`char`,`float8`,`char`)) from test_type_table;
+select rpad(`char`,`float8`,`varchar`), pg_typeof(rpad(`char`,`float8`,`varchar`)) from test_type_table;
+select rpad(`char`,`float8`,`text`), pg_typeof(rpad(`char`,`float8`,`text`)) from test_type_table;
+select rpad(`char`,`float8`,`null`), pg_typeof(rpad(`char`,`float8`,`null`)) from test_type_table;
+select rpad(`char`,`numeric`,`char`), pg_typeof(rpad(`char`,`numeric`,`char`)) from test_type_table;
+select rpad(`char`,`numeric`,`varchar`), pg_typeof(rpad(`char`,`numeric`,`varchar`)) from test_type_table;
+select rpad(`char`,`numeric`,`text`), pg_typeof(rpad(`char`,`numeric`,`text`)) from test_type_table;
+select rpad(`char`,`numeric`,`null`), pg_typeof(rpad(`char`,`numeric`,`null`)) from test_type_table;
+select rpad(`char`,`null`,`char`), pg_typeof(rpad(`char`,`null`,`char`)) from test_type_table;
+select rpad(`char`,`null`,`varchar`), pg_typeof(rpad(`char`,`null`,`varchar`)) from test_type_table;
+select rpad(`char`,`null`,`text`), pg_typeof(rpad(`char`,`null`,`text`)) from test_type_table;
+select rpad(`char`,`null`,`null`), pg_typeof(rpad(`char`,`null`,`null`)) from test_type_table;
+select rpad(`varchar`,`int1`,`char`), pg_typeof(rpad(`varchar`,`int1`,`char`)) from test_type_table;
+select rpad(`varchar`,`int1`,`varchar`), pg_typeof(rpad(`varchar`,`int1`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`int1`,`text`), pg_typeof(rpad(`varchar`,`int1`,`text`)) from test_type_table;
+select rpad(`varchar`,`int1`,`null`), pg_typeof(rpad(`varchar`,`int1`,`null`)) from test_type_table;
+select rpad(`varchar`,`uint1`,`char`), pg_typeof(rpad(`varchar`,`uint1`,`char`)) from test_type_table;
+select rpad(`varchar`,`uint1`,`varchar`), pg_typeof(rpad(`varchar`,`uint1`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`uint1`,`text`), pg_typeof(rpad(`varchar`,`uint1`,`text`)) from test_type_table;
+select rpad(`varchar`,`uint1`,`null`), pg_typeof(rpad(`varchar`,`uint1`,`null`)) from test_type_table;
+select rpad(`varchar`,`int2`,`char`), pg_typeof(rpad(`varchar`,`int2`,`char`)) from test_type_table;
+select rpad(`varchar`,`int2`,`varchar`), pg_typeof(rpad(`varchar`,`int2`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`int2`,`text`), pg_typeof(rpad(`varchar`,`int2`,`text`)) from test_type_table;
+select rpad(`varchar`,`int2`,`null`), pg_typeof(rpad(`varchar`,`int2`,`null`)) from test_type_table;
+select rpad(`varchar`,`uint2`,`char`), pg_typeof(rpad(`varchar`,`uint2`,`char`)) from test_type_table;
+select rpad(`varchar`,`uint2`,`varchar`), pg_typeof(rpad(`varchar`,`uint2`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`uint2`,`text`), pg_typeof(rpad(`varchar`,`uint2`,`text`)) from test_type_table;
+select rpad(`varchar`,`uint2`,`null`), pg_typeof(rpad(`varchar`,`uint2`,`null`)) from test_type_table;
+select rpad(`varchar`,`int4`,`char`), pg_typeof(rpad(`varchar`,`int4`,`char`)) from test_type_table;
+select rpad(`varchar`,`int4`,`varchar`), pg_typeof(rpad(`varchar`,`int4`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`int4`,`text`), pg_typeof(rpad(`varchar`,`int4`,`text`)) from test_type_table;
+select rpad(`varchar`,`int4`,`null`), pg_typeof(rpad(`varchar`,`int4`,`null`)) from test_type_table;
+select rpad(`varchar`,`uint4`,`char`), pg_typeof(rpad(`varchar`,`uint4`,`char`)) from test_type_table;
+select rpad(`varchar`,`uint4`,`varchar`), pg_typeof(rpad(`varchar`,`uint4`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`uint4`,`text`), pg_typeof(rpad(`varchar`,`uint4`,`text`)) from test_type_table;
+select rpad(`varchar`,`uint4`,`null`), pg_typeof(rpad(`varchar`,`uint4`,`null`)) from test_type_table;
+select rpad(`varchar`,`int8`,`char`), pg_typeof(rpad(`varchar`,`int8`,`char`)) from test_type_table;
+select rpad(`varchar`,`int8`,`varchar`), pg_typeof(rpad(`varchar`,`int8`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`int8`,`text`), pg_typeof(rpad(`varchar`,`int8`,`text`)) from test_type_table;
+select rpad(`varchar`,`int8`,`null`), pg_typeof(rpad(`varchar`,`int8`,`null`)) from test_type_table;
+select rpad(`varchar`,`uint8`,`char`), pg_typeof(rpad(`varchar`,`uint8`,`char`)) from test_type_table;
+select rpad(`varchar`,`uint8`,`varchar`), pg_typeof(rpad(`varchar`,`uint8`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`uint8`,`text`), pg_typeof(rpad(`varchar`,`uint8`,`text`)) from test_type_table;
+select rpad(`varchar`,`uint8`,`null`), pg_typeof(rpad(`varchar`,`uint8`,`null`)) from test_type_table;
+select rpad(`varchar`,`float4`,`char`), pg_typeof(rpad(`varchar`,`float4`,`char`)) from test_type_table;
+select rpad(`varchar`,`float4`,`varchar`), pg_typeof(rpad(`varchar`,`float4`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`float4`,`text`), pg_typeof(rpad(`varchar`,`float4`,`text`)) from test_type_table;
+select rpad(`varchar`,`float4`,`null`), pg_typeof(rpad(`varchar`,`float4`,`null`)) from test_type_table;
+select rpad(`varchar`,`float8`,`char`), pg_typeof(rpad(`varchar`,`float8`,`char`)) from test_type_table;
+select rpad(`varchar`,`float8`,`varchar`), pg_typeof(rpad(`varchar`,`float8`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`float8`,`text`), pg_typeof(rpad(`varchar`,`float8`,`text`)) from test_type_table;
+select rpad(`varchar`,`float8`,`null`), pg_typeof(rpad(`varchar`,`float8`,`null`)) from test_type_table;
+select rpad(`varchar`,`numeric`,`char`), pg_typeof(rpad(`varchar`,`numeric`,`char`)) from test_type_table;
+select rpad(`varchar`,`numeric`,`varchar`), pg_typeof(rpad(`varchar`,`numeric`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`numeric`,`text`), pg_typeof(rpad(`varchar`,`numeric`,`text`)) from test_type_table;
+select rpad(`varchar`,`numeric`,`null`), pg_typeof(rpad(`varchar`,`numeric`,`null`)) from test_type_table;
+select rpad(`varchar`,`null`,`char`), pg_typeof(rpad(`varchar`,`null`,`char`)) from test_type_table;
+select rpad(`varchar`,`null`,`varchar`), pg_typeof(rpad(`varchar`,`null`,`varchar`)) from test_type_table;
+select rpad(`varchar`,`null`,`text`), pg_typeof(rpad(`varchar`,`null`,`text`)) from test_type_table;
+select rpad(`varchar`,`null`,`null`), pg_typeof(rpad(`varchar`,`null`,`null`)) from test_type_table;
+select rpad(`text`,`int1`,`char`), pg_typeof(rpad(`text`,`int1`,`char`)) from test_type_table;
+select rpad(`text`,`int1`,`varchar`), pg_typeof(rpad(`text`,`int1`,`varchar`)) from test_type_table;
+select rpad(`text`,`int1`,`text`), pg_typeof(rpad(`text`,`int1`,`text`)) from test_type_table;
+select rpad(`text`,`int1`,`null`), pg_typeof(rpad(`text`,`int1`,`null`)) from test_type_table;
+select rpad(`text`,`uint1`,`char`), pg_typeof(rpad(`text`,`uint1`,`char`)) from test_type_table;
+select rpad(`text`,`uint1`,`varchar`), pg_typeof(rpad(`text`,`uint1`,`varchar`)) from test_type_table;
+select rpad(`text`,`uint1`,`text`), pg_typeof(rpad(`text`,`uint1`,`text`)) from test_type_table;
+select rpad(`text`,`uint1`,`null`), pg_typeof(rpad(`text`,`uint1`,`null`)) from test_type_table;
+select rpad(`text`,`int2`,`char`), pg_typeof(rpad(`text`,`int2`,`char`)) from test_type_table;
+select rpad(`text`,`int2`,`varchar`), pg_typeof(rpad(`text`,`int2`,`varchar`)) from test_type_table;
+select rpad(`text`,`int2`,`text`), pg_typeof(rpad(`text`,`int2`,`text`)) from test_type_table;
+select rpad(`text`,`int2`,`null`), pg_typeof(rpad(`text`,`int2`,`null`)) from test_type_table;
+select rpad(`text`,`uint2`,`char`), pg_typeof(rpad(`text`,`uint2`,`char`)) from test_type_table;
+select rpad(`text`,`uint2`,`varchar`), pg_typeof(rpad(`text`,`uint2`,`varchar`)) from test_type_table;
+select rpad(`text`,`uint2`,`text`), pg_typeof(rpad(`text`,`uint2`,`text`)) from test_type_table;
+select rpad(`text`,`uint2`,`null`), pg_typeof(rpad(`text`,`uint2`,`null`)) from test_type_table;
+select rpad(`text`,`int4`,`char`), pg_typeof(rpad(`text`,`int4`,`char`)) from test_type_table;
+select rpad(`text`,`int4`,`varchar`), pg_typeof(rpad(`text`,`int4`,`varchar`)) from test_type_table;
+select rpad(`text`,`int4`,`text`), pg_typeof(rpad(`text`,`int4`,`text`)) from test_type_table;
+select rpad(`text`,`int4`,`null`), pg_typeof(rpad(`text`,`int4`,`null`)) from test_type_table;
+select rpad(`text`,`uint4`,`char`), pg_typeof(rpad(`text`,`uint4`,`char`)) from test_type_table;
+select rpad(`text`,`uint4`,`varchar`), pg_typeof(rpad(`text`,`uint4`,`varchar`)) from test_type_table;
+select rpad(`text`,`uint4`,`text`), pg_typeof(rpad(`text`,`uint4`,`text`)) from test_type_table;
+select rpad(`text`,`uint4`,`null`), pg_typeof(rpad(`text`,`uint4`,`null`)) from test_type_table;
+select rpad(`text`,`int8`,`char`), pg_typeof(rpad(`text`,`int8`,`char`)) from test_type_table;
+select rpad(`text`,`int8`,`varchar`), pg_typeof(rpad(`text`,`int8`,`varchar`)) from test_type_table;
+select rpad(`text`,`int8`,`text`), pg_typeof(rpad(`text`,`int8`,`text`)) from test_type_table;
+select rpad(`text`,`int8`,`null`), pg_typeof(rpad(`text`,`int8`,`null`)) from test_type_table;
+select rpad(`text`,`uint8`,`char`), pg_typeof(rpad(`text`,`uint8`,`char`)) from test_type_table;
+select rpad(`text`,`uint8`,`varchar`), pg_typeof(rpad(`text`,`uint8`,`varchar`)) from test_type_table;
+select rpad(`text`,`uint8`,`text`), pg_typeof(rpad(`text`,`uint8`,`text`)) from test_type_table;
+select rpad(`text`,`uint8`,`null`), pg_typeof(rpad(`text`,`uint8`,`null`)) from test_type_table;
+select rpad(`text`,`float4`,`char`), pg_typeof(rpad(`text`,`float4`,`char`)) from test_type_table;
+select rpad(`text`,`float4`,`varchar`), pg_typeof(rpad(`text`,`float4`,`varchar`)) from test_type_table;
+select rpad(`text`,`float4`,`text`), pg_typeof(rpad(`text`,`float4`,`text`)) from test_type_table;
+select rpad(`text`,`float4`,`null`), pg_typeof(rpad(`text`,`float4`,`null`)) from test_type_table;
+select rpad(`text`,`float8`,`char`), pg_typeof(rpad(`text`,`float8`,`char`)) from test_type_table;
+select rpad(`text`,`float8`,`varchar`), pg_typeof(rpad(`text`,`float8`,`varchar`)) from test_type_table;
+select rpad(`text`,`float8`,`text`), pg_typeof(rpad(`text`,`float8`,`text`)) from test_type_table;
+select rpad(`text`,`float8`,`null`), pg_typeof(rpad(`text`,`float8`,`null`)) from test_type_table;
+select rpad(`text`,`numeric`,`char`), pg_typeof(rpad(`text`,`numeric`,`char`)) from test_type_table;
+select rpad(`text`,`numeric`,`varchar`), pg_typeof(rpad(`text`,`numeric`,`varchar`)) from test_type_table;
+select rpad(`text`,`numeric`,`text`), pg_typeof(rpad(`text`,`numeric`,`text`)) from test_type_table;
+select rpad(`text`,`numeric`,`null`), pg_typeof(rpad(`text`,`numeric`,`null`)) from test_type_table;
+select rpad(`text`,`null`,`char`), pg_typeof(rpad(`text`,`null`,`char`)) from test_type_table;
+select rpad(`text`,`null`,`varchar`), pg_typeof(rpad(`text`,`null`,`varchar`)) from test_type_table;
+select rpad(`text`,`null`,`text`), pg_typeof(rpad(`text`,`null`,`text`)) from test_type_table;
+select rpad(`text`,`null`,`null`), pg_typeof(rpad(`text`,`null`,`null`)) from test_type_table;
+select rpad(`null`,`int1`,`char`), pg_typeof(rpad(`null`,`int1`,`char`)) from test_type_table;
+select rpad(`null`,`int1`,`varchar`), pg_typeof(rpad(`null`,`int1`,`varchar`)) from test_type_table;
+select rpad(`null`,`int1`,`text`), pg_typeof(rpad(`null`,`int1`,`text`)) from test_type_table;
+select rpad(`null`,`int1`,`null`), pg_typeof(rpad(`null`,`int1`,`null`)) from test_type_table;
+select rpad(`null`,`uint1`,`char`), pg_typeof(rpad(`null`,`uint1`,`char`)) from test_type_table;
+select rpad(`null`,`uint1`,`varchar`), pg_typeof(rpad(`null`,`uint1`,`varchar`)) from test_type_table;
+select rpad(`null`,`uint1`,`text`), pg_typeof(rpad(`null`,`uint1`,`text`)) from test_type_table;
+select rpad(`null`,`uint1`,`null`), pg_typeof(rpad(`null`,`uint1`,`null`)) from test_type_table;
+select rpad(`null`,`int2`,`char`), pg_typeof(rpad(`null`,`int2`,`char`)) from test_type_table;
+select rpad(`null`,`int2`,`varchar`), pg_typeof(rpad(`null`,`int2`,`varchar`)) from test_type_table;
+select rpad(`null`,`int2`,`text`), pg_typeof(rpad(`null`,`int2`,`text`)) from test_type_table;
+select rpad(`null`,`int2`,`null`), pg_typeof(rpad(`null`,`int2`,`null`)) from test_type_table;
+select rpad(`null`,`uint2`,`char`), pg_typeof(rpad(`null`,`uint2`,`char`)) from test_type_table;
+select rpad(`null`,`uint2`,`varchar`), pg_typeof(rpad(`null`,`uint2`,`varchar`)) from test_type_table;
+select rpad(`null`,`uint2`,`text`), pg_typeof(rpad(`null`,`uint2`,`text`)) from test_type_table;
+select rpad(`null`,`uint2`,`null`), pg_typeof(rpad(`null`,`uint2`,`null`)) from test_type_table;
+select rpad(`null`,`int4`,`char`), pg_typeof(rpad(`null`,`int4`,`char`)) from test_type_table;
+select rpad(`null`,`int4`,`varchar`), pg_typeof(rpad(`null`,`int4`,`varchar`)) from test_type_table;
+select rpad(`null`,`int4`,`text`), pg_typeof(rpad(`null`,`int4`,`text`)) from test_type_table;
+select rpad(`null`,`int4`,`null`), pg_typeof(rpad(`null`,`int4`,`null`)) from test_type_table;
+select rpad(`null`,`uint4`,`char`), pg_typeof(rpad(`null`,`uint4`,`char`)) from test_type_table;
+select rpad(`null`,`uint4`,`varchar`), pg_typeof(rpad(`null`,`uint4`,`varchar`)) from test_type_table;
+select rpad(`null`,`uint4`,`text`), pg_typeof(rpad(`null`,`uint4`,`text`)) from test_type_table;
+select rpad(`null`,`uint4`,`null`), pg_typeof(rpad(`null`,`uint4`,`null`)) from test_type_table;
+select rpad(`null`,`int8`,`char`), pg_typeof(rpad(`null`,`int8`,`char`)) from test_type_table;
+select rpad(`null`,`int8`,`varchar`), pg_typeof(rpad(`null`,`int8`,`varchar`)) from test_type_table;
+select rpad(`null`,`int8`,`text`), pg_typeof(rpad(`null`,`int8`,`text`)) from test_type_table;
+select rpad(`null`,`int8`,`null`), pg_typeof(rpad(`null`,`int8`,`null`)) from test_type_table;
+select rpad(`null`,`uint8`,`char`), pg_typeof(rpad(`null`,`uint8`,`char`)) from test_type_table;
+select rpad(`null`,`uint8`,`varchar`), pg_typeof(rpad(`null`,`uint8`,`varchar`)) from test_type_table;
+select rpad(`null`,`uint8`,`text`), pg_typeof(rpad(`null`,`uint8`,`text`)) from test_type_table;
+select rpad(`null`,`uint8`,`null`), pg_typeof(rpad(`null`,`uint8`,`null`)) from test_type_table;
+select rpad(`null`,`float4`,`char`), pg_typeof(rpad(`null`,`float4`,`char`)) from test_type_table;
+select rpad(`null`,`float4`,`varchar`), pg_typeof(rpad(`null`,`float4`,`varchar`)) from test_type_table;
+select rpad(`null`,`float4`,`text`), pg_typeof(rpad(`null`,`float4`,`text`)) from test_type_table;
+select rpad(`null`,`float4`,`null`), pg_typeof(rpad(`null`,`float4`,`null`)) from test_type_table;
+select rpad(`null`,`float8`,`char`), pg_typeof(rpad(`null`,`float8`,`char`)) from test_type_table;
+select rpad(`null`,`float8`,`varchar`), pg_typeof(rpad(`null`,`float8`,`varchar`)) from test_type_table;
+select rpad(`null`,`float8`,`text`), pg_typeof(rpad(`null`,`float8`,`text`)) from test_type_table;
+select rpad(`null`,`float8`,`null`), pg_typeof(rpad(`null`,`float8`,`null`)) from test_type_table;
+select rpad(`null`,`numeric`,`char`), pg_typeof(rpad(`null`,`numeric`,`char`)) from test_type_table;
+select rpad(`null`,`numeric`,`varchar`), pg_typeof(rpad(`null`,`numeric`,`varchar`)) from test_type_table;
+select rpad(`null`,`numeric`,`text`), pg_typeof(rpad(`null`,`numeric`,`text`)) from test_type_table;
+select rpad(`null`,`numeric`,`null`), pg_typeof(rpad(`null`,`numeric`,`null`)) from test_type_table;
+select rpad(`null`,`null`,`char`), pg_typeof(rpad(`null`,`null`,`char`)) from test_type_table;
+select rpad(`null`,`null`,`varchar`), pg_typeof(rpad(`null`,`null`,`varchar`)) from test_type_table;
+select rpad(`null`,`null`,`text`), pg_typeof(rpad(`null`,`null`,`text`)) from test_type_table;
+select rpad(`null`,`null`,`null`), pg_typeof(rpad(`null`,`null`,`null`)) from test_type_table;
+
+drop table test_type_table;
 reset current_schema;
-drop schema rpad_integer_overflow;
+drop schema rpad_integer_overflow cascade;
