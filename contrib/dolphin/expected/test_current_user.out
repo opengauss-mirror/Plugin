@@ -12,6 +12,18 @@ select current_user();
 --?.*
 (1 row)
 
+select pg_typeof(current_user);
+ pg_typeof 
+-----------
+ name
+(1 row)
+
+select pg_typeof(current_user());
+ pg_typeof 
+-----------
+ name
+(1 row)
+
 create user u1 password 'Gauss123';
 rename user u1 to current_user;
 --?ERROR:  role "(.*)" already exists

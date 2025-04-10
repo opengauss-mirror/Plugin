@@ -934,10 +934,11 @@ CREATE TABLE test_type_table
     `text` text,
     `enum_t` enum('a', 'b', 'c'),
     `set_t` set('a', 'b', 'c'),
-    `json` json
+    `json` json,
+    `null` text
 );
 
-insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2));
+insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2), NULL);
 
 select
 ~(`int1`),
@@ -973,7 +974,46 @@ select
 ~(`text`),
 ~(`enum_t`),
 ~(`set_t`),
-~(`json`)
+~(`json`),
+~(`null`)
+from test_type_table;
+
+select
+(`int1`)|(`int1`),
+(`uint1`)|(`uint1`),
+(`int2`)|(`int2`),
+(`uint2`)|(`uint2`),
+(`int4`)|(`int4`),
+(`uint4`)|(`uint4`),
+(`int8`)|(`int8`),
+(`uint8`)|(`uint8`),
+(`float4`)|(`float4`),
+(`float8`)|(`float8`),
+(`numeric`)|(`numeric`),
+(`bit1`)|(`bit1`),
+(`bit64`)|(`bit64`),
+(`boolean`)|(`boolean`),
+(`date`)|(`date`),
+(`time`)|(`time`),
+(`time(4)`)|(`time(4)`),
+(`datetime`)|(`datetime`),
+(`datetime(4)`)|(`datetime(4)`),
+(`timestamp`)|(`timestamp`),
+(`timestamp(4)`)|(`timestamp(4)`),
+(`year`)|(`year`),
+(`char`)|(`char`),
+(`varchar`)|(`varchar`),
+(`binary`)|(`binary`),
+(`varbinary`)|(`varbinary`),
+(`tinyblob`)|(`tinyblob`),
+(`blob`)|(`blob`),
+(`mediumblob`)|(`mediumblob`),
+(`longblob`)|(`longblob`),
+(`text`)|(`text`),
+(`enum_t`)|(`enum_t`),
+(`set_t`)|(`set_t`),
+(`json`)|(`json`),
+(`null`)|(`null`)
 from test_type_table;
 
 DROP TABLE test_type_table;
