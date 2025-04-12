@@ -136,5 +136,11 @@ with recursive q (b, c) as
 select sum(b*c) from q;
 reset enable_set_variable_b_format;
 
+-- window
+CREATE TABLE t(a INTEGER);
+INSERT INTO t VALUES (1),(2),(3),(4);
+SELECT SUM(a) OVER(ORDER BY a ROWS BETWEEN 9223372036854775807 FOLLOWING AND 9223372036854775807 FOLLOWING) as sum FROM t;
+drop table t;
+
 drop schema m_testcase_fix cascade;
 reset current_schema;
