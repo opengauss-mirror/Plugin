@@ -68,8 +68,8 @@ TypeItem b_type_items[] = {
     {"bpchar", DOLPHIN_TYPE_STRING, BPCHAROID, 0, 0x2d},                          // bpchar
     {"binary", DOLPHIN_TYPE_STRING, 0, BINARY_FLAG, COLLATE_BINARY},              // binary
     // varchar type
-    {"varchar", DOLPHIN_TYPE_VARCHAR, VARCHAROID, 0, 0x2d},                       // varchar
-    {"nvarchar2", DOLPHIN_TYPE_VARCHAR, NVARCHAR2OID, 0, 0x2d},                   // nvarchar
+    {"varchar", DOLPHIN_TYPE_VAR_STRING, VARCHAROID, 0, 0x2d},                       // varchar
+    {"nvarchar2", DOLPHIN_TYPE_VAR_STRING, NVARCHAR2OID, 0, 0x2d},                   // nvarchar
     {"varbinary", DOLPHIN_TYPE_VAR_STRING, 0, BINARY_FLAG, COLLATE_BINARY},       // varbinary
     {"bytea", DOLPHIN_TYPE_VAR_STRING, BYTEAOID, BINARY_FLAG, COLLATE_BINARY},    // varbinary
     // date and time
