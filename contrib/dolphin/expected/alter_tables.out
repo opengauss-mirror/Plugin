@@ -1,0 +1,356 @@
+-- ------ normal mode -------
+-- test ALTER TABLE ADD COLUMN for a single column
+CREATE TABLE IF NOT EXISTS altertbl_t (
+    id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "altertbl_t_pkey" for table "altertbl_t"
+INSERT INTO altertbl_t (id, name) VALUES (1, 'vertifyname');
+INSERT INTO altertbl_t (id, name) VALUES (2, 'test');
+ALTER TABLE altertbl_t ADD COLUMN age INT;
+\d altertbl_t
+         Table "public.altertbl_t"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+ age    | integer               | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test ALTER TABLE ADD COLUMN for multiple columns
+ALTER TABLE altertbl_t ADD COLUMN salary DECIMAL(10, 2), ADD COLUMN department VARCHAR(50);
+\d altertbl_t
+           Table "public.altertbl_t"
+   Column   |         Type          | Modifiers 
+------------+-----------------------+-----------
+ id         | integer               | not null
+ name       | character varying(50) | 
+ age        | integer               | 
+ salary     | numeric(10,2)         | 
+ department | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test ALTER TABLE ADD CHECK for a single constraint
+ALTER TABLE altertbl_t ADD CHECK (age > 0);
+INSERT INTO altertbl_t (id, name, age) VALUES (3, 'xugo', -1);
+ERROR:  new row for relation "altertbl_t" violates check constraint "altertbl_t_age_check"
+DETAIL:  N/A
+ALTER TABLE altertbl_t ADD CHECK (salary > 0), ADD CHECK (LENGTH(department) > 0);
+INSERT INTO altertbl_t (id, name, age, salary, department) VALUES (4, 'wangzi', 25, -1000.00, '');
+ERROR:  new row for relation "altertbl_t" violates check constraint "altertbl_t_department_check"
+DETAIL:  N/A
+-- test ALTER TABLE ALTER COLUMN SET DEFAULT
+ALTER TABLE altertbl_t ALTER COLUMN age SET DEFAULT 18;
+INSERT INTO altertbl_t (id, name) VALUES (5, 'litzz');
+SELECT id, name, age FROM altertbl_t WHERE id = 5;
+ id | name  | age 
+----+-------+-----
+  5 | litzz |  18
+(1 row)
+
+-- test ALTER TABLE ALTER COLUMN SET DEFAULT with an expression
+ALTER TABLE altertbl_t ALTER COLUMN salary SET DEFAULT (1500.00 * 1.1);
+INSERT INTO altertbl_t (id, name, age) VALUES (6, 'gg', 30);
+SELECT id, name, salary FROM altertbl_t WHERE id = 6;
+ id | name | salary  
+----+------+---------
+  6 | gg   | 1650.00
+(1 row)
+
+-- test ALTER TABLE ALTER COLUMN DROP DEFAULT
+ALTER TABLE altertbl_t ALTER COLUMN age DROP DEFAULT;
+INSERT INTO altertbl_t (id, name) VALUES (7, 'xiaoming');
+SELECT id, name, age FROM altertbl_t WHERE id = 7;
+ id |   name   | age 
+----+----------+-----
+  7 | xiaoming |    
+(1 row)
+
+-- test ALTER TABLE DROP COLUMN for a single column
+ALTER TABLE altertbl_t DROP COLUMN age;
+\d altertbl_t
+                               Table "public.altertbl_t"
+   Column   |         Type          |                     Modifiers                     
+------------+-----------------------+---------------------------------------------------
+ id         | integer               | not null
+ name       | character varying(50) | 
+ salary     | numeric(10,2)         | default (1500.00 OPERATOR(dolphin_catalog.*) 1.1)
+ department | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+Check constraints:
+    "altertbl_t_department_check" CHECK (length(department::text) > 0)
+    "altertbl_t_salary_check" CHECK (salary > 0::number)
+
+ALTER TABLE altertbl_t DROP COLUMN salary, DROP COLUMN department;
+\d altertbl_t
+         Table "public.altertbl_t"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test CREATE TABLE (basic form)
+CREATE TABLE IF NOT EXISTS atnt_t (
+    product_id INT PRIMARY KEY,
+    product_name VARCHAR(100)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "atnt_t_pkey" for table "atnt_t"
+\d atnt_t
+               Table "public.atnt_t"
+    Column    |          Type          | Modifiers 
+--------------+------------------------+-----------
+ product_id   | integer                | not null
+ product_name | character varying(100) | 
+Indexes:
+    "atnt_t_pkey" PRIMARY KEY, btree (product_id) TABLESPACE pg_default
+
+INSERT INTO atnt_t (product_id, product_name) VALUES (1, 'good');
+SELECT * FROM atnt_t;
+ product_id | product_name 
+------------+--------------
+          1 | good
+(1 row)
+
+-- test CREATE TABLE (including CHECK)
+CREATE TABLE IF NOT EXISTS checktbl_t (
+    price DECIMAL(10, 2),
+    quantity INT,
+    CHECK (price > 0 AND quantity > 0)
+);
+INSERT INTO checktbl_t (price, quantity) VALUES (-10.00, 5);
+ERROR:  new row for relation "checktbl_t" violates check constraint "checktbl_t_check"
+DETAIL:  N/A
+INSERT INTO checktbl_t (price, quantity) VALUES (20.00, -1);
+ERROR:  new row for relation "checktbl_t" violates check constraint "checktbl_t_check"
+DETAIL:  N/A
+INSERT INTO checktbl_t (price, quantity) VALUES (25.00, 10);
+SELECT * FROM checktbl_t;
+ price | quantity 
+-------+----------
+ 25.00 |       10
+(1 row)
+
+-- test CREATE TABLE (specifying COLLATE)
+CREATE TABLE IF NOT EXISTS collatetbl_t (
+    code CHAR(5)
+) DEFAULT COLLATE = utf8mb4_unicode_ci;
+\d collatetbl_t
+                      Table "public.collatetbl_t"
+ Column |     Type     |                   Modifiers                   
+--------+--------------+-----------------------------------------------
+ code   | character(5) | character set UTF8 collate utf8mb4_unicode_ci
+
+INSERT INTO collatetbl_t (code) VALUES ('ABCDE');
+SELECT * FROM collatetbl_t;
+ code  
+-------
+ ABCDE
+(1 row)
+
+-- test CREATE TABLE LIKE
+CREATE TABLE IF NOT EXISTS liketbl_t LIKE altertbl_t;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "liketbl_t_pkey" for table "liketbl_t"
+\d liketbl_t
+          Table "public.liketbl_t"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+Indexes:
+    "liketbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+INSERT INTO liketbl_t (id, name) VALUES (8, 'hello');
+SELECT * FROM liketbl_t;
+ id | name  
+----+-------
+  8 | hello
+(1 row)
+
+drop table if exists atnt_t cascade;
+drop table if exists checktbl_t cascade;
+drop table if exists collatetbl_t cascade;
+drop table if exists liketbl_t cascade;
+drop table if exists altertbl_t cascade;
+-- ------ temporary mode -------
+-- test ALTER TABLE ADD COLUMN for a single column
+CREATE TEMPORARY TABLE IF NOT EXISTS altertbl_t (
+    id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "altertbl_t_pkey" for table "altertbl_t"
+INSERT INTO altertbl_t (id, name) VALUES (1, 'vertifyname');
+INSERT INTO altertbl_t (id, name) VALUES (2, 'test');
+ALTER TABLE altertbl_t ADD COLUMN age INT;
+\d altertbl_t
+--?.*
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+ age    | integer               | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test ALTER TABLE ADD COLUMN for multiple columns
+ALTER TABLE altertbl_t ADD COLUMN salary DECIMAL(10, 2), ADD COLUMN department VARCHAR(50);
+\d altertbl_t
+--?.*
+   Column   |         Type          | Modifiers 
+------------+-----------------------+-----------
+ id         | integer               | not null
+ name       | character varying(50) | 
+ age        | integer               | 
+ salary     | numeric(10,2)         | 
+ department | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test ALTER TABLE ADD CHECK for a single constraint
+ALTER TABLE altertbl_t ADD CHECK (age > 0);
+INSERT INTO altertbl_t (id, name, age) VALUES (3, 'xugo', -1);
+ERROR:  new row for relation "altertbl_t" violates check constraint "altertbl_t_age_check"
+DETAIL:  N/A
+ALTER TABLE altertbl_t ADD CHECK (salary > 0), ADD CHECK (LENGTH(department) > 0);
+INSERT INTO altertbl_t (id, name, age, salary, department) VALUES (4, 'wangzi', 25, -1000.00, '');
+ERROR:  new row for relation "altertbl_t" violates check constraint "altertbl_t_department_check"
+DETAIL:  N/A
+-- test ALTER TABLE ALTER COLUMN SET DEFAULT
+ALTER TABLE altertbl_t ALTER COLUMN age SET DEFAULT 18;
+INSERT INTO altertbl_t (id, name) VALUES (5, 'litzz');
+SELECT id, name, age FROM altertbl_t WHERE id = 5;
+ id | name  | age 
+----+-------+-----
+  5 | litzz |  18
+(1 row)
+
+-- test ALTER TABLE ALTER COLUMN SET DEFAULT with an expression
+ALTER TABLE altertbl_t ALTER COLUMN salary SET DEFAULT (1500.00 * 1.1);
+INSERT INTO altertbl_t (id, name, age) VALUES (6, 'gg', 30);
+SELECT id, name, salary FROM altertbl_t WHERE id = 6;
+ id | name | salary  
+----+------+---------
+  6 | gg   | 1650.00
+(1 row)
+
+-- test ALTER TABLE ALTER COLUMN DROP DEFAULT
+ALTER TABLE altertbl_t ALTER COLUMN age DROP DEFAULT;
+INSERT INTO altertbl_t (id, name) VALUES (7, 'xiaoming');
+SELECT id, name, age FROM altertbl_t WHERE id = 7;
+ id |   name   | age 
+----+----------+-----
+  7 | xiaoming |    
+(1 row)
+
+-- test ALTER TABLE DROP COLUMN for a single column
+ALTER TABLE altertbl_t DROP COLUMN age;
+\d altertbl_t
+--?.*
+   Column   |         Type          |                     Modifiers                     
+------------+-----------------------+---------------------------------------------------
+ id         | integer               | not null
+ name       | character varying(50) | 
+ salary     | numeric(10,2)         | default (1500.00 OPERATOR(dolphin_catalog.*) 1.1)
+ department | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+Check constraints:
+    "altertbl_t_department_check" CHECK (length(department::text) > 0)
+    "altertbl_t_salary_check" CHECK (salary > 0::number)
+
+ALTER TABLE altertbl_t DROP COLUMN salary, DROP COLUMN department;
+\d altertbl_t
+--?.*
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+Indexes:
+    "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+-- test CREATE TABLE (basic form)
+CREATE TEMPORARY TABLE IF NOT EXISTS atnt_t (
+    product_id INT PRIMARY KEY,
+    product_name VARCHAR(100)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "atnt_t_pkey" for table "atnt_t"
+\d atnt_t
+--?.*
+    Column    |          Type          | Modifiers 
+--------------+------------------------+-----------
+ product_id   | integer                | not null
+ product_name | character varying(100) | 
+Indexes:
+    "atnt_t_pkey" PRIMARY KEY, btree (product_id) TABLESPACE pg_default
+
+INSERT INTO atnt_t (product_id, product_name) VALUES (1, 'good');
+SELECT * FROM atnt_t;
+ product_id | product_name 
+------------+--------------
+          1 | good
+(1 row)
+
+-- test CREATE TABLE (including CHECK)
+CREATE TEMPORARY TABLE IF NOT EXISTS checktbl_t (
+    price DECIMAL(10, 2),
+    quantity INT,
+    CHECK (price > 0 AND quantity > 0)
+);
+INSERT INTO checktbl_t (price, quantity) VALUES (-10.00, 5);
+ERROR:  new row for relation "checktbl_t" violates check constraint "checktbl_t_check"
+DETAIL:  N/A
+INSERT INTO checktbl_t (price, quantity) VALUES (20.00, -1);
+ERROR:  new row for relation "checktbl_t" violates check constraint "checktbl_t_check"
+DETAIL:  N/A
+INSERT INTO checktbl_t (price, quantity) VALUES (25.00, 10);
+SELECT * FROM checktbl_t;
+ price | quantity 
+-------+----------
+ 25.00 |       10
+(1 row)
+
+-- test CREATE TABLE (specifying COLLATE)
+CREATE TEMPORARY TABLE IF NOT EXISTS collatetbl_t (
+    code CHAR(5)
+) DEFAULT COLLATE = utf8mb4_unicode_ci;
+\d collatetbl_t
+--?.*
+ Column |     Type     |                   Modifiers                   
+--------+--------------+-----------------------------------------------
+ code   | character(5) | character set UTF8 collate utf8mb4_unicode_ci
+
+INSERT INTO collatetbl_t (code) VALUES ('ABCDE');
+SELECT * FROM collatetbl_t;
+ code  
+-------
+ ABCDE
+(1 row)
+
+-- test CREATE TABLE LIKE
+CREATE TEMPORARY TABLE IF NOT EXISTS liketbl_t LIKE altertbl_t;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "liketbl_t_pkey" for table "liketbl_t"
+\d liketbl_t
+--?.*
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ id     | integer               | not null
+ name   | character varying(50) | 
+Indexes:
+    "liketbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+
+INSERT INTO liketbl_t (id, name) VALUES (8, 'hello');
+SELECT * FROM liketbl_t;
+ id | name  
+----+-------
+  8 | hello
+(1 row)
+
+drop table if exists atnt_t cascade;
+drop table if exists checktbl_t cascade;
+drop table if exists collatetbl_t cascade;
+drop table if exists liketbl_t cascade;
+drop table if exists altertbl_t cascade;
