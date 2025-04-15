@@ -143,6 +143,14 @@ select @ta>@tb;
 select @ta<@tb;
 select 1 @@ 12;
 
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS;
+SET UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS;
+SET FOREIGN_KEY_CHECKS=0;
+
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
 show b_format_behavior_compat_options;
 show character_set_connection;
 set character_set_connection = binary;
