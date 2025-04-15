@@ -35661,7 +35661,6 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 							errmsg("@var_name := expr is not yet supported in distributed database.")));
 #endif
 					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
-						u_sess->parser_cxt.has_equal_uservar = true;
 						UserSetElem *n = makeNode(UserSetElem);
 						n->name = list_make1((Node *)$1);
 						n->val = (Expr *)$3;
