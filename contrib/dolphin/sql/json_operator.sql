@@ -6,6 +6,10 @@ create table test1(data json);
 insert into test1 values('[10,20,[30,40]]');
 select data->'$[1]' from test1;
 select data->'$[2][1]' from test1;
+select data->>'$[3]' from test1;
+select data->>'$[2][3]' from test1;
+select data->'$.*' from test1;
+select data->>'$.*' from test1;
 drop table if exists test2;
 create table test2(data json);
 insert into test2 values('{"a":"lihua"}');
@@ -27,6 +31,32 @@ select data->'c' from test2;
 select data->>'a' from test2;
 select data->>'b' from test2;
 select data->>'c' from test2;
+select data->>'$[0]' from test2;
+
+drop table if exists test3;
+create table test3(data json);
+insert into test3 values('["a", 1, {"key": {"b": 2, "c": [3]}}]');
+select data->'$[0]' from test3;
+select data->'$[1]' from test3;
+select data->'$[2]' from test3;
+select data->'$[3]' from test3;
+select data->'$[2][0]' from test3;
+select data->'$[2].key' from test3;
+select data->'$[2].key.b' from test3;
+select data->'$[2].key.c' from test3;
+select data->'$[2].key.c[0]' from test3;
+select data->'$[2].key.c[1]' from test3;
+select data->>'$[0]' from test3;
+select data->>'$[1]' from test3;
+select data->>'$[2]' from test3;
+select data->>'$[3]' from test3;
+select data->>'$[2][0]' from test3;
+select data->>'$[2].key' from test3;
+select data->>'$[2].key.b' from test3;
+select data->>'$[2].key.c' from test3;
+select data->>'$[2].key.c[0]' from test3;
+select data->>'$[2].key.c[1]' from test3;
+drop table test3;
 
 -- test for precedence
 CREATE TABLE `dept` (
