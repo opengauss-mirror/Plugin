@@ -400,8 +400,7 @@ int execute_com_stmt_prepare(const char *client_sql)
     rc = SPI_execute(sql->data, false, 0);
 
     PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
-    Query *query = (Query *)linitial(pstmt->plansource->query_list);
-    int column_count = list_length(query->targetList);
+    int column_count = pstmt->plansource->resultDesc == NULL ? 0 : pstmt->plansource->resultDesc->natts;
     int param_count = pstmt->plansource->num_params;
 
     StringInfo buf = makeStringInfo();
@@ -422,7 +421,7 @@ int execute_com_stmt_prepare(const char *client_sql)
         dolphin_column_definition* column_field = make_dolphin_column_definition("");
         send_column_definition41_packet(buf, column_field);
     }
-    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (column_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
         send_network_eof_packet(buf);
     }
 
