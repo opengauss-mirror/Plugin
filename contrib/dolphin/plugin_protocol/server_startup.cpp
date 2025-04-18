@@ -537,8 +537,13 @@ void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
         InitStmtParamTypesTable();
     }
 
+    bool found = false;
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_ENTER, NULL);
+                                                                          &stmt_id, HASH_ENTER, &found);
+    if (found) {
+        pfree_ext(entry->value->itypes);
+        pfree_ext(entry->value);
+    }
     entry->value = value;
 }
 

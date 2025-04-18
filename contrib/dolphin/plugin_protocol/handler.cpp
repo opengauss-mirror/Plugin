@@ -122,6 +122,13 @@ int dophin_read_command(StringInfo buf)
     return dq_getmessage(buf, 0);
 }
 
+static void free_com_stmt_exec_request(com_stmt_exec_request *req)
+{
+    pfree_ext(req->parameter_values);
+    pfree_ext(req->null_bitmap);
+    pfree(req);
+}
+
 int dolphin_process_command(StringInfo buf)
 {
     GetSessionContext()->enableBCmptMode = true;
@@ -170,6 +177,7 @@ int dolphin_process_command(StringInfo buf)
             GetSessionContext()->is_binary_proto = true;
             com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
             execute_binary_protocol_req(req);
+            free_com_stmt_exec_request(req);
             GetSessionContext()->is_binary_proto = false;
             break;
         }
@@ -403,27 +411,28 @@ int execute_com_stmt_prepare(const char *client_sql)
     int column_count = pstmt->plansource->resultDesc == NULL ? 0 : pstmt->plansource->resultDesc->natts;
     int param_count = pstmt->plansource->num_params;
 
-    StringInfo buf = makeStringInfo();
-    send_com_stmt_prepare_ok_packet(buf, statement_id, column_count, param_count);
+    resetStringInfo(sql);
+    send_com_stmt_prepare_ok_packet(sql, statement_id, column_count, param_count);
 
     for (int i = 0; i < param_count; i++) {
         dolphin_column_definition* param_field = make_dolphin_column_definition("?");
         const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
         param_field->type = item->dolphin_type_id;
         param_field->charsetnr = item->charset_flag;
-        send_column_definition41_packet(buf, param_field);
+        send_column_definition41_packet(sql, param_field);
     }
     if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet(sql);
     }
     
     for (int i = 0; i < column_count; i++) {
         dolphin_column_definition* column_field = make_dolphin_column_definition("");
-        send_column_definition41_packet(buf, column_field);
+        send_column_definition41_packet(sql, column_field);
     }
     if (column_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet(sql);
     }
+    DestroyStringInfo(sql);
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
@@ -497,7 +506,12 @@ void remove_cached_stmt_data(uint32 *statement_id)
         (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id, HASH_REMOVE, NULL);
     }
     if (GetSessionContext()->b_stmtInputTypeHash) {
-        (void)hash_search(GetSessionContext()->b_stmtInputTypeHash, (void*)statement_id, HASH_REMOVE, NULL);
+        HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
+            (void*)statement_id, HASH_REMOVE, NULL);
+        if (entry != NULL) {
+            pfree_ext(entry->value->itypes);
+            pfree_ext(entry->value);
+        }
     }
 }
 
