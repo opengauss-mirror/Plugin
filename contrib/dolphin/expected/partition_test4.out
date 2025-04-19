@@ -345,23 +345,23 @@ alter table test_part_ustore reorganize partition p1,p2 into (partition m1 value
 ERROR:  the bound of the last resulting partition is not equal with specified partition bound
 alter table test_part_ustore reorganize partition p1,p2 into (partition m1 values less than(100),partition m2 values less than(500));
 select pg_get_tabledef('test_part_ustore');
-                                                       pg_get_tabledef                                                       
------------------------------------------------------------------------------------------------------------------------------
- SET search_path = partition_test4;                                                                                         +
- CREATE TABLE test_part_ustore (                                                                                            +
-     a integer NOT NULL,                                                                                                    +
-     b integer                                                                                                              +
- )                                                                                                                          +
- WITH (orientation=row, storage_type=ustore, compression=no)                                                                +
- PARTITION BY RANGE (a)                                                                                                     +
- (                                                                                                                          +
-     PARTITION m1 VALUES LESS THAN (100),                                                                                   +
-     PARTITION m2 VALUES LESS THAN (500),                                                                                   +
-     PARTITION p3 VALUES LESS THAN (800),                                                                                   +
-     PARTITION p4 VALUES LESS THAN (1200)                                                                                   +
- )                                                                                                                          +
- ENABLE ROW MOVEMENT;                                                                                                       +
- ALTER TABLE test_part_ustore ADD CONSTRAINT test_part_ustore_pkey PRIMARY KEY USING ubtree  (a) WITH (storage_type=ustore);
+                                                               pg_get_tabledef                                                               
+---------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = partition_test4;                                                                                                         +
+ CREATE TABLE test_part_ustore (                                                                                                            +
+     a integer NOT NULL,                                                                                                                    +
+     b integer                                                                                                                              +
+ )                                                                                                                                          +
+ WITH (orientation=row, storage_type=ustore, compression=no)                                                                                +
+ PARTITION BY RANGE (a)                                                                                                                     +
+ (                                                                                                                                          +
+     PARTITION m1 VALUES LESS THAN (100),                                                                                                   +
+     PARTITION m2 VALUES LESS THAN (500),                                                                                                   +
+     PARTITION p3 VALUES LESS THAN (800),                                                                                                   +
+     PARTITION p4 VALUES LESS THAN (1200)                                                                                                   +
+ )                                                                                                                                          +
+ ENABLE ROW MOVEMENT;                                                                                                                       +
+ ALTER TABLE test_part_ustore ADD CONSTRAINT test_part_ustore_pkey PRIMARY KEY USING ubtree  (a) WITH (storage_type=ustore, index_type=rcr);
 (1 row)
 
 select * from test_part_ustore partition(m2);
