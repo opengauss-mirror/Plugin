@@ -230,7 +230,7 @@ Table "public.t_create_table_022"
  c3     | raw   | 
  c4     | bytea | 
 Indexes:
-    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_create_table_023;
 Table "public.t_create_table_023"
@@ -566,17 +566,17 @@ show create table t_create_table_021;
 (1 row)
 
 show create table t_create_table_022;
-       Table        |                                                                                    Create Table                                                                                    
---------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t_create_table_022 | SET search_path = public;                                                                                                                                                         +
-                    | CREATE TABLE t_create_table_022 (                                                                                                                                                 +
-                    |     c1 clob,                                                                                                                                                                      +
-                    |     c2 blob,                                                                                                                                                                      +
-                    |     c3 raw,                                                                                                                                                                       +
-                    |     c4 bytea                                                                                                                                                                      +
-                    | )                                                                                                                                                                                 +
-                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                      +
-                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default;
+       Table        |                                                                                            Create Table                                                                                            
+--------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_022 | SET search_path = public;                                                                                                                                                                         +
+                    | CREATE TABLE t_create_table_022 (                                                                                                                                                                 +
+                    |     c1 clob,                                                                                                                                                                                      +
+                    |     c2 blob,                                                                                                                                                                                      +
+                    |     c3 raw,                                                                                                                                                                                       +
+                    |     c4 bytea                                                                                                                                                                                      +
+                    | )                                                                                                                                                                                                 +
+                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                                      +
+                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default;
 (1 row)
 
 show create table t_create_table_023;
@@ -1020,7 +1020,7 @@ Table "public.t_alter_table_025"
  c1     | clob | 
  c2     | blob | 
 Indexes:
-    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_alter_table_026;
 Table "public.t_alter_table_026"
@@ -1029,7 +1029,7 @@ Table "public.t_alter_table_026"
  c1     | raw   | 
  c2     | bytea | 
 Indexes:
-    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_alter_table_027;
 Table "public.t_alter_table_027"
@@ -1391,7 +1391,7 @@ Table "public.t_create_table_022"
  c3     | raw   | 
  c4     | bytea | 
 Indexes:
-    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_create_table_023;
 Table "public.t_create_table_023"
@@ -1727,17 +1727,17 @@ show create table t_create_table_021;
 (1 row)
 
 show create table t_create_table_022;
-       Table        |                                                                                    Create Table                                                                                    
---------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t_create_table_022 | SET search_path = public;                                                                                                                                                         +
-                    | CREATE TABLE t_create_table_022 (                                                                                                                                                 +
-                    |     c1 clob,                                                                                                                                                                      +
-                    |     c2 blob,                                                                                                                                                                      +
-                    |     c3 raw,                                                                                                                                                                       +
-                    |     c4 bytea                                                                                                                                                                      +
-                    | )                                                                                                                                                                                 +
-                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                      +
-                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default;
+       Table        |                                                                                            Create Table                                                                                            
+--------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_022 | SET search_path = public;                                                                                                                                                                         +
+                    | CREATE TABLE t_create_table_022 (                                                                                                                                                                 +
+                    |     c1 clob,                                                                                                                                                                                      +
+                    |     c2 blob,                                                                                                                                                                                      +
+                    |     c3 raw,                                                                                                                                                                                       +
+                    |     c4 bytea                                                                                                                                                                                      +
+                    | )                                                                                                                                                                                                 +
+                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                                      +
+                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default;
 (1 row)
 
 show create table t_create_table_023;
@@ -2123,7 +2123,7 @@ Table "public.t_alter_table_025"
  c1     | clob | 
  c2     | blob | 
 Indexes:
-    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_alter_table_026;
 Table "public.t_alter_table_026"
@@ -2132,7 +2132,7 @@ Table "public.t_alter_table_026"
  c1     | raw   | 
  c2     | bytea | 
 Indexes:
-    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
 \d t_alter_table_027;
 Table "public.t_alter_table_027"
