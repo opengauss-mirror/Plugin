@@ -91,3 +91,5 @@ test: test_row_in test_std test_var_pop b_database_subquery test_lag_lead builti
 test: db_b_parser2 test_shows_1 test_charset_collate charset_utf8mb4_b_db charset_gbk_b_db test_binary2 like_index_test_gbk like_index_test_gb18030 builtin_funcs/char_length builtin_funcs/character_length
 
 test: in_test eq_all_subquery alter_tables
+
+test: prepare_index_con tpcc_plan
