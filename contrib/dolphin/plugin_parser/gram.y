@@ -45944,6 +45944,9 @@ static inline void ChangeBpcharCastType(TypeName* typname)
 		 * so I try to use location to distinguish the '(1)' is added by user or gram.y. since the location of
 		 * '(1)' added by gram.y is always -1.
 		*/
+		if (typname->typmods == NIL) {
+			return;
+		}
 		A_Const* typmods = (A_Const*)lfirst(list_head(typname->typmods));
 		if (typmods->val.val.ival == 1 && typmods->location == -1) {
 			list_free_deep(typname->typmods);

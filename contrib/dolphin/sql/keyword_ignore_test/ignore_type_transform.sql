@@ -344,5 +344,28 @@ insert into t_text values(123456789123456789);
 insert ignore into t_nvarchar2 select cont from t_text;
 select * from t_nvarchar2;
 
+-- test typecast with foreign key
+drop table if exists t1;
+create table t1(
+    column1 int ,
+    column2 char(10) primary Key,
+    column3 int,
+    unique(column1)
+);
+insert into t1 values(1,'df',22.22);
+insert into t1 values(2,'df1',22.22);
+insert into t1 values(3,'df2',22.22);
+
+drop table if exists t2;
+create table t2(
+    column1 int unique,
+    column2 char(10) primary Key
+);
+insert into t2 values(1,'df');
+insert into t2 values(2,'dfd');
+insert into t2 values(3,'sdf');
+
+alter table t2 add foreign Key (column1) references t1(column2);
+
 drop schema sql_ignore_type_transform_test cascade;
 reset current_schema;
