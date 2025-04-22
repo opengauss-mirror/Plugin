@@ -503,8 +503,49 @@ explain(costs off, verbose)select * from t1 where a >= -1::int8 and a <= 0::int8
          Index Cond: ((t1.a >= (-1)::bigint) AND (t1.a <= 0::bigint))
 (5 rows)
 
+-- test tinyint column index in int array
+CREATE TABLE t_ota_firmware (                                                                                                                                                            
+     id uint4(11) AUTO_INCREMENT NOT NULL,                                                                                                                                                
+     hardware_model character varying(128) DEFAULT ''::character varying NOT NULL,                                                           
+     hardware_version character varying(128) DEFAULT ''::character varying NOT NULL,                                                         
+     app_model character varying(32) DEFAULT ''::character varying,                                                                          
+     app_version character varying(16) DEFAULT ''::character varying,                                                                        
+     last_hardware_version character varying(16) DEFAULT ''::character varying,                                                              
+     last_app_version character varying(16) DEFAULT ''::character varying,                                                                   
+     doc_path character varying(128) DEFAULT ''::character varying NOT NULL,                                                                 
+     fw_path character varying(128) DEFAULT ''::character varying NOT NULL,                                                                  
+     fw_type tinyint(1) DEFAULT 0,                                                                                                                                                        
+     fw_status tinyint(1) DEFAULT 0,                                                                                                                                                      
+     attributes character varying(256) DEFAULT '{}'::character varying NOT NULL,                                                             
+     create_time timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone NOT NULL,                                                                           
+     update_time timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0) NOT NULL,                                            
+     creator character varying(64),                                                                                                          
+     CONSTRAINT pk_t_ota_firmware_1743388445_42 PRIMARY KEY (id)                                                                                                                          
+ ) AUTO_INCREMENT = 1                                                                                                                                                                     
+ WITH (orientation=row, compression=no);
+NOTICE:  CREATE TABLE will create implicit sequence "t_ota_firmware_id_seq" for serial column "t_ota_firmware.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pk_t_ota_firmware_1743388445_42" for table "t_ota_firmware"
+CREATE UNIQUE INDEX idx_unique_ver_t_ota_firm_1743388445_4258_43 ON t_ota_firmware USING btree (hardware_model, hardware_version, app_model, app_version, fw_type) TABLESPACE pg_default;
+explain (costs off) select count(1) from t_ota_firmware where fw_status = 0 and fw_type in (0, 1);
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
+ Aggregate
+   ->  Bitmap Heap Scan on t_ota_firmware
+         Recheck Cond: (fw_type = ANY ('{0,1}'::integer[]))
+         Filter: (fw_status = 0)
+         ->  Bitmap Index Scan on idx_unique_ver_t_ota_firm_1743388445_4258_43
+               Index Cond: (fw_type = ANY ('{0,1}'::integer[]))
+(6 rows)
+
+select count(1) from t_ota_firmware where fw_status = 0 and fw_type in (0, 1);
+ count 
+-------
+     0
+(1 row)
+
 drop schema tinyint_index cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
+drop cascades to table t_ota_firmware
 reset current_schema;
