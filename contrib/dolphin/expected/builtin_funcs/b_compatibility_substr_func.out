@@ -588,3 +588,57 @@ reset bytea_output;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;
 reset current_schema;
+set dolphin.b_compatibility_mode = off;
+create database db_sqlascii dbcompatibility 'B' encoding='SQL_ASCII' lc_collate='C' lc_ctype='C';
+\c db_sqlascii
+set dolphin.b_compatibility_mode = on;
+select LPAD('abc',2147483647,'abc');
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+select LPAD(repeat('abc',1000),2147483647,'abc');
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+select LPAD(NULL,2147483647,repeat('abc',1000));
+ lpad 
+------
+ 
+(1 row)
+
+select LPAD('',2147483647,repeat('abc',1000));
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+select LPAD('abc',2147483647,repeat('abc',1000));
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+select LPAD(repeat('abc',1000),2147483647,repeat('abc',1000));
+WARNING:  requested length too large
+CONTEXT:  referenced column: lpad
+ lpad 
+------
+ 
+(1 row)
+
+\c contrib_regression
+set dolphin.b_compatibility_mode = off;
+drop database db_sqlascii;
+reset dolphin.b_compatibility_mode;

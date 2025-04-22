@@ -272,3 +272,20 @@ reset bytea_output;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;
 reset current_schema;
+
+set dolphin.b_compatibility_mode = off;
+create database db_sqlascii dbcompatibility 'B' encoding='SQL_ASCII' lc_collate='C' lc_ctype='C';
+\c db_sqlascii
+set dolphin.b_compatibility_mode = on;
+
+select LPAD('abc',2147483647,'abc');
+select LPAD(repeat('abc',1000),2147483647,'abc');
+select LPAD(NULL,2147483647,repeat('abc',1000));
+select LPAD('',2147483647,repeat('abc',1000));
+select LPAD('abc',2147483647,repeat('abc',1000));
+select LPAD(repeat('abc',1000),2147483647,repeat('abc',1000));
+
+\c contrib_regression
+set dolphin.b_compatibility_mode = off;
+drop database db_sqlascii;
+reset dolphin.b_compatibility_mode;
