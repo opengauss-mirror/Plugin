@@ -353,6 +353,7 @@ Datum lpad(PG_FUNCTION_ARGS)
     }
     PG_CATCH();
     {
+        FlushErrorState();
         ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
         PG_RETURN_NULL();
     }
