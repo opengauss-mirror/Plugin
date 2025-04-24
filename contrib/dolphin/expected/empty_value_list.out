@@ -385,7 +385,7 @@ insert into test31 values();
 select *from test31;
     num     
 ------------
- 1970-01-01
+ 0000-00-00
 (1 row)
 
 insert into test32 values();
@@ -484,7 +484,7 @@ insert into m2 values();
 select * from m2;
      a      | b |          c          |          d          
 ------------+---+---------------------+---------------------
- 1970-01-01 |   | 2020-01-01 00:00:00 | 2020-01-01 00:00:00
+ 0000-00-00 |   | 2020-01-01 00:00:00 | 2020-01-01 00:00:00
 (1 row)
 
 insert into m3 values();

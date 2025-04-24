@@ -615,6 +615,18 @@ insert /*+ ignore_error */ into ignore_t1 values (2) ON DUPLICATE KEY UPDATE id 
 delete from ignore_t1 where id = 0;
 update /*+ ignore_error */ ignore_t1 set id = NULL where id = 1;
 
+-- test for issue #IC205M
+drop table if exists tb3;
+create table tb3(id int not null,col1 date not null);
+set dolphin.sql_mode='';
+set sql_ignore_strategy = 'overwrite_null';
+insert into tb3 values(5,null),(6,null);
+insert into tb3 values(7,default);
+select * from tb3;
+drop table tb3;
+reset dolphin.sql_mode;
+reset sql_ignore_strategy;
+
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 reset current_schema;

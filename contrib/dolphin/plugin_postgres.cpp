@@ -229,7 +229,7 @@ extern "C" DLL_PUBLIC Datum dolphin_types();
 extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
-static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup, bool can_ignore = false);
 static bool ReplaceNullOrNot();
 static bool NoAutoValueOnZero();
 static bool NullsMinimalPolicy();
@@ -1677,7 +1677,7 @@ static void InitDolphinOperator(BSqlPluginContext* cxt)
 }
 
 /* copy from openGauss-server's execUtils.cpp GetTypeZeroValue */
-static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup, bool can_ignore)
 {
     Datum result;
     switch (att_tup->atttypid) {
@@ -1711,7 +1711,8 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
             break;
         }
         case DATEOID: {
-            result = timestamp2date(SetEpochTimestamp());
+            result = (Datum)DirectFunctionCall3Coll(date_in, InvalidOid, CStringGetDatum("0000-00-00"),
+                                                    ObjectIdGetDatum(0), Int32GetDatum(-1), can_ignore);
             break;
         }
         case UUIDOID: {

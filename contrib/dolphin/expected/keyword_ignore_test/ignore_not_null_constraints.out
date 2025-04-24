@@ -398,23 +398,26 @@ create table t_date(c date not null);
 insert ignore into t_date values (null);
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
+WARNING:  date/time field value out of range: "0000-00-00"
 select * from t_date;
      c      
 ------------
- 1970-01-01
+ 0000-00-00
 (1 row)
 
 insert into t_date values('1991-01-01 08:00:00');
 update ignore t_date set c = null;
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
+WARNING:  date/time field value out of range: "0000-00-00"
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
+WARNING:  date/time field value out of range: "0000-00-00"
 select * from t_date;
      c      
 ------------
- 1970-01-01
- 1970-01-01
+ 0000-00-00
+ 0000-00-00
 (2 rows)
 
 -- uuid
@@ -1635,6 +1638,29 @@ delete from ignore_t1 where id = 0;
 update /*+ ignore_error */ ignore_t1 set id = NULL where id = 1;
 WARNING:  null value in column "id" violates not-null constraint
 DETAIL:  Failing row contains (null).
+-- test for issue #IC205M
+drop table if exists tb3;
+NOTICE:  table "tb3" does not exist, skipping
+create table tb3(id int not null,col1 date not null);
+set dolphin.sql_mode='';
+set sql_ignore_strategy = 'overwrite_null';
+insert into tb3 values(5,null),(6,null);
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (5, null).
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (6, null).
+insert into tb3 values(7,default);
+select * from tb3;
+ id |    col1    
+----+------------
+  5 | 0000-00-00
+  6 | 0000-00-00
+  7 | 0000-00-00
+(3 rows)
+
+drop table tb3;
+reset dolphin.sql_mode;
+reset sql_ignore_strategy;
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 NOTICE:  drop cascades to 34 other objects
