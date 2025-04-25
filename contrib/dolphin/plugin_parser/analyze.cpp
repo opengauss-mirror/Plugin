@@ -2542,6 +2542,17 @@ static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCol
                     targetByval);
                 break;
             }
+            case DATEOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        date_in, CStringGetDatum("0000-00-00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
             default: {
                 new_expr = (Node*)makeConst(targetType,
                     targetTypmod,

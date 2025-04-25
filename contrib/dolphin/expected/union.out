@@ -395,8 +395,8 @@ select * from test1 union select * from test30;
 select * from test1 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test1 union select * from test32;
@@ -1005,8 +1005,8 @@ select * from test2 union select * from test30;
 select * from test2 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test2 union select * from test32;
@@ -1615,8 +1615,8 @@ select * from test3 union select * from test30;
 select * from test3 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test3 union select * from test32;
@@ -2225,8 +2225,8 @@ select * from test4 union select * from test30;
 select * from test4 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test4 union select * from test32;
@@ -2835,8 +2835,8 @@ select * from test5 union select * from test30;
 select * from test5 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test5 union select * from test32;
@@ -3458,8 +3458,8 @@ select * from test6 union select * from test30;
 select * from test6 union select * from test31;
     num     
 ------------
- 1970-01-01
  \x
+ 0000-00-00
 (2 rows)
 
 select * from test6 union select * from test32;
@@ -4086,8 +4086,8 @@ select * from test7 union select * from test30;
 select * from test7 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test7 union select * from test32;
@@ -4709,8 +4709,8 @@ select * from test8 union select * from test30;
 select * from test8 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test8 union select * from test32;
@@ -5333,8 +5333,8 @@ select * from test9 union select * from test30;
 select * from test9 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test9 union select * from test32;
@@ -5948,8 +5948,8 @@ select * from test10 union select * from test30;
 select * from test10 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test10 union select * from test32;
@@ -6571,8 +6571,8 @@ select * from test11 union select * from test30;
 select * from test11 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test11 union select * from test32;
@@ -7194,8 +7194,8 @@ select * from test12 union select * from test30;
 select * from test12 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test12 union select * from test32;
@@ -7817,8 +7817,8 @@ select * from test13 union select * from test30;
 select * from test13 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test13 union select * from test32;
@@ -8441,8 +8441,8 @@ select * from test14 union select * from test30;
 select * from test14 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test14 union select * from test32;
@@ -9057,8 +9057,8 @@ select * from test15 union select * from test30;
 select * from test15 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test15 union select * from test32;
@@ -9680,8 +9680,8 @@ select * from test16 union select * from test30;
 select * from test16 union select * from test31;
     num     
 ------------
- 1970-01-01
  (0,0)
+ 0000-00-00
 (2 rows)
 
 select * from test16 union select * from test32;
@@ -10316,8 +10316,8 @@ select * from test17 union select * from test30;
 select * from test17 union select * from test31;
       num      
 ---------------
- 1970-01-01
  [(0,0),(0,0)]
+ 0000-00-00
 (2 rows)
 
 select * from test17 union select * from test32;
@@ -10951,8 +10951,8 @@ select * from test18 union select * from test30;
 select * from test18 union select * from test31;
     num     
 ------------
- 1970-01-01
  ((0,0))
+ 0000-00-00
 (2 rows)
 
 select * from test18 union select * from test32;
@@ -11588,7 +11588,7 @@ select * from test19 union select * from test31;
      num     
 -------------
  (0,0),(0,0)
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test19 union select * from test32;
@@ -12222,8 +12222,8 @@ select * from test20 union select * from test30;
 select * from test20 union select * from test31;
     num     
 ------------
- 1970-01-01
  ((0,0))
+ 0000-00-00
 (2 rows)
 
 select * from test20 union select * from test32;
@@ -12858,8 +12858,8 @@ select * from test21 union select * from test30;
 select * from test21 union select * from test31;
        num        
 ------------------
- 1970-01-01
  0000000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test21 union select * from test32;
@@ -13492,8 +13492,8 @@ select * from test22 union select * from test30;
 select * from test22 union select * from test31;
          num         
 ---------------------
- 1970-01-01
  1970-01-01 08:00:00
+ 0000-00-00
 (2 rows)
 
 select * from test22 union select * from test32;
@@ -14126,7 +14126,7 @@ select * from test23 union select * from test31;
           num           
 ------------------------
  1970-01-01 08:00:00+08
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test23 union select * from test32;
@@ -14759,8 +14759,8 @@ select * from test24 union select * from test30;
 select * from test24 union select * from test31;
     num     
 ------------
- 1970-01-01
  @ 0
+ 0000-00-00
 (2 rows)
 
 select * from test24 union select * from test32;
@@ -15394,8 +15394,8 @@ select * from test25 union select * from test30;
 select * from test25 union select * from test31;
                          num                         
 -----------------------------------------------------
- 1970-01-01
  ["1970-01-01 00:00:00+08" "1970-01-01 00:00:00+08"]
+ 0000-00-00
 (2 rows)
 
 select * from test25 union select * from test32;
@@ -16031,7 +16031,7 @@ select * from test26 union select * from test31;
     num     
 ------------
  <(0,0),0>
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test26 union select * from test32;
@@ -16667,7 +16667,7 @@ select * from test27 union select * from test31;
     num     
 ------------
  $0.00
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test27 union select * from test32;
@@ -17294,8 +17294,8 @@ select * from test28 union select * from test30;
 select * from test28 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test28 union select * from test32;
@@ -17917,8 +17917,8 @@ select * from test29 union select * from test30;
 select * from test29 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test29 union select * from test32;
@@ -18540,8 +18540,8 @@ select * from test30 union select * from test30;
 select * from test30 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test30 union select * from test32;
@@ -18962,636 +18962,637 @@ select * from test30 union select * from test91;
 select * from test31 union select * from test1;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test2;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test3;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test4;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test5;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test6;
     num     
 ------------
- 1970-01-01
  \x
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test7;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test8;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test9;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test10;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test11;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test12;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test13;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test14;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test15;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test16;
     num     
 ------------
- 1970-01-01
  (0,0)
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test17;
       num      
 ---------------
- 1970-01-01
  [(0,0),(0,0)]
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test18;
     num     
 ------------
- 1970-01-01
  ((0,0))
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test19;
      num     
 -------------
  (0,0),(0,0)
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test20;
     num     
 ------------
- 1970-01-01
  ((0,0))
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test21;
        num        
 ------------------
- 1970-01-01
  0000000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test22;
          num         
 ---------------------
- 1970-01-01
  1970-01-01 08:00:00
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test23;
           num           
 ------------------------
  1970-01-01 08:00:00+08
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test24;
     num     
 ------------
- 1970-01-01
  @ 0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test25;
                          num                         
 -----------------------------------------------------
- 1970-01-01
  ["1970-01-01 00:00:00+08" "1970-01-01 00:00:00+08"]
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test26;
     num     
 ------------
  <(0,0),0>
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test27;
     num     
 ------------
  $0.00
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test28;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test29;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test30;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test31;
     num     
 ------------
- 1970-01-01
+ 0000-00-00
 (1 row)
 
 select * from test31 union select * from test32;
     num     
 ------------
- 1970-01-01
  00:00:00
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test33;
-          num           
-------------------------
+               num               
+---------------------------------
  1970-01-01 08:00:00+08
- 1970-01-01 00:00:00+08
+ 4714-12-31 00:00:00+08:05:43 BC
 (2 rows)
 
 select * from test31 union select * from test34;
-          num           
-------------------------
+               num               
+---------------------------------
  1970-01-01 08:00:00+08
- 1970-01-01 00:00:00+08
+ 4714-12-31 00:00:00+08:05:43 BC
 (2 rows)
 
 select * from test31 union select * from test35;
     num     
 ------------
- 1970-01-01
  @ 0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test36;
      num     
 -------------
- 1970-01-01
  00:00:00+08
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test37;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test38;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test39;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test40;
                  num                  
 --------------------------------------
- 1970-01-01
  00000000-0000-0000-0000-000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test41;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test42;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test43;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test44;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test45;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test46;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test47;
          num         
 ---------------------
  1970-01-01 00:00:00
-(1 row)
+ 0000-00-00 00:00:00
+(2 rows)
 
 select * from test31 union select * from test48;
     num     
 ------------
- 1970-01-01
  a
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test49;
     num     
 ------------
- 1970-01-01
  a
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test50;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test51;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test52;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test53;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test54;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test55;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test56;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test57;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test58;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test59;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test60;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test61;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test62;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test63;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test64;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test65;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test66;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test67;
       num      
 ---------------
- 1970-01-01
  magnetic disk
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test68;
        num        
 ------------------
- 1970-01-01
  0000000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test69;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test70;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test71;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test72;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test73;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test74;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test75;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test76;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test77;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test78;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test79;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test80;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test81;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test82;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test83;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test84;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test85;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test86;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test87;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test88;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test89;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test90;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test31 union select * from test91;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test32 union select * from test1;
@@ -19807,8 +19808,8 @@ select * from test32 union select * from test30;
 select * from test32 union select * from test31;
     num     
 ------------
- 1970-01-01
  00:00:00
+ 0000-00-00
 (2 rows)
 
 select * from test32 union select * from test32;
@@ -20438,10 +20439,10 @@ select * from test33 union select * from test30;
 (2 rows)
 
 select * from test33 union select * from test31;
-          num           
-------------------------
+               num               
+---------------------------------
  1970-01-01 08:00:00+08
- 1970-01-01 00:00:00+08
+ 4714-12-31 00:00:00+08:05:43 BC
 (2 rows)
 
 select * from test33 union select * from test32;
@@ -21071,10 +21072,10 @@ select * from test34 union select * from test30;
 (2 rows)
 
 select * from test34 union select * from test31;
-          num           
-------------------------
+               num               
+---------------------------------
  1970-01-01 08:00:00+08
- 1970-01-01 00:00:00+08
+ 4714-12-31 00:00:00+08:05:43 BC
 (2 rows)
 
 select * from test34 union select * from test32;
@@ -21707,8 +21708,8 @@ select * from test35 union select * from test30;
 select * from test35 union select * from test31;
     num     
 ------------
- 1970-01-01
  @ 0
+ 0000-00-00
 (2 rows)
 
 select * from test35 union select * from test32;
@@ -22343,8 +22344,8 @@ select * from test36 union select * from test30;
 select * from test36 union select * from test31;
      num     
 -------------
- 1970-01-01
  00:00:00+08
+ 0000-00-00
 (2 rows)
 
 select * from test36 union select * from test32;
@@ -22969,8 +22970,8 @@ select * from test37 union select * from test30;
 select * from test37 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test37 union select * from test32;
@@ -23592,8 +23593,8 @@ select * from test38 union select * from test30;
 select * from test38 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test38 union select * from test32;
@@ -24216,8 +24217,8 @@ select * from test39 union select * from test30;
 select * from test39 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test39 union select * from test32;
@@ -24840,8 +24841,8 @@ select * from test40 union select * from test30;
 select * from test40 union select * from test31;
                  num                  
 --------------------------------------
- 1970-01-01
  00000000-0000-0000-0000-000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test40 union select * from test32;
@@ -25468,8 +25469,8 @@ select * from test41 union select * from test30;
 select * from test41 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test41 union select * from test32;
@@ -26084,8 +26085,8 @@ select * from test42 union select * from test30;
 select * from test42 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test42 union select * from test32;
@@ -26700,8 +26701,8 @@ select * from test43 union select * from test30;
 select * from test43 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test43 union select * from test32;
@@ -27316,8 +27317,8 @@ select * from test44 union select * from test30;
 select * from test44 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test44 union select * from test32;
@@ -27932,8 +27933,8 @@ select * from test45 union select * from test30;
 select * from test45 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test45 union select * from test32;
@@ -28548,8 +28549,8 @@ select * from test46 union select * from test30;
 select * from test46 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test46 union select * from test32;
@@ -29173,7 +29174,8 @@ select * from test47 union select * from test31;
          num         
 ---------------------
  1970-01-01 00:00:00
-(1 row)
+ 0000-00-00 00:00:00
+(2 rows)
 
 select * from test47 union select * from test32;
          num         
@@ -29807,8 +29809,8 @@ select * from test48 union select * from test30;
 select * from test48 union select * from test31;
     num     
 ------------
- 1970-01-01
  a
+ 0000-00-00
 (2 rows)
 
 select * from test48 union select * from test32;
@@ -30442,8 +30444,8 @@ select * from test49 union select * from test30;
 select * from test49 union select * from test31;
     num     
 ------------
- 1970-01-01
  a
+ 0000-00-00
 (2 rows)
 
 select * from test49 union select * from test32;
@@ -31078,7 +31080,7 @@ select * from test50 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test50 union select * from test32;
@@ -31685,8 +31687,8 @@ select * from test51 union select * from test30;
 select * from test51 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test51 union select * from test32;
@@ -32307,8 +32309,8 @@ select * from test52 union select * from test30;
 select * from test52 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test52 union select * from test32;
@@ -32926,7 +32928,7 @@ select * from test53 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test53 union select * from test32;
@@ -33529,8 +33531,8 @@ select * from test54 union select * from test30;
 select * from test54 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test54 union select * from test32;
@@ -34145,8 +34147,8 @@ select * from test55 union select * from test30;
 select * from test55 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test55 union select * from test32;
@@ -34761,8 +34763,8 @@ select * from test56 union select * from test30;
 select * from test56 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test56 union select * from test32;
@@ -35376,8 +35378,8 @@ select * from test57 union select * from test30;
 select * from test57 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test57 union select * from test32;
@@ -36009,7 +36011,7 @@ select * from test58 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test58 union select * from test32;
@@ -36621,7 +36623,7 @@ select * from test59 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test59 union select * from test32;
@@ -37233,7 +37235,7 @@ select * from test60 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test60 union select * from test32;
@@ -37845,7 +37847,7 @@ select * from test61 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test61 union select * from test32;
@@ -38457,7 +38459,7 @@ select * from test62 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test62 union select * from test32;
@@ -39069,7 +39071,7 @@ select * from test63 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test63 union select * from test32;
@@ -39681,7 +39683,7 @@ select * from test64 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test64 union select * from test32;
@@ -40293,7 +40295,7 @@ select * from test65 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test65 union select * from test32;
@@ -40905,7 +40907,7 @@ select * from test66 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test66 union select * from test32;
@@ -41516,8 +41518,8 @@ select * from test67 union select * from test30;
 select * from test67 union select * from test31;
       num      
 ---------------
- 1970-01-01
  magnetic disk
+ 0000-00-00
 (2 rows)
 
 select * from test67 union select * from test32;
@@ -42151,8 +42153,8 @@ select * from test68 union select * from test30;
 select * from test68 union select * from test31;
        num        
 ------------------
- 1970-01-01
  0000000000000000
+ 0000-00-00
 (2 rows)
 
 select * from test68 union select * from test32;
@@ -42788,7 +42790,7 @@ select * from test69 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test69 union select * from test32;
@@ -43400,7 +43402,7 @@ select * from test70 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test70 union select * from test32;
@@ -44012,7 +44014,7 @@ select * from test71 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test71 union select * from test32;
@@ -44624,7 +44626,7 @@ select * from test72 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test72 union select * from test32;
@@ -45236,7 +45238,7 @@ select * from test73 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test73 union select * from test32;
@@ -45838,8 +45840,8 @@ select * from test74 union select * from test30;
 select * from test74 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test74 union select * from test32;
@@ -46466,8 +46468,8 @@ select * from test75 union select * from test30;
 select * from test75 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test75 union select * from test32;
@@ -47088,8 +47090,8 @@ select * from test76 union select * from test30;
 select * from test76 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test76 union select * from test32;
@@ -47704,8 +47706,8 @@ select * from test77 union select * from test30;
 select * from test77 union select * from test31;
     num     
 ------------
- 1970-01-01
  0
+ 0000-00-00
 (2 rows)
 
 select * from test77 union select * from test32;
@@ -48324,8 +48326,8 @@ select * from test78 union select * from test30;
 select * from test78 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test78 union select * from test32;
@@ -48950,8 +48952,8 @@ select * from test79 union select * from test30;
 select * from test79 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test79 union select * from test32;
@@ -49571,8 +49573,8 @@ select * from test80 union select * from test30;
 select * from test80 union select * from test31;
     num     
 ------------
- 1970-01-01
  
+ 0000-00-00
 (2 rows)
 
 select * from test80 union select * from test32;
@@ -50204,7 +50206,7 @@ select * from test81 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test81 union select * from test32;
@@ -50816,7 +50818,7 @@ select * from test82 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test82 union select * from test32;
@@ -51423,8 +51425,8 @@ select * from test83 union select * from test30;
 select * from test83 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test83 union select * from test32;
@@ -52049,8 +52051,8 @@ select * from test84 union select * from test30;
 select * from test84 union select * from test31;
     num     
 ------------
- 1970-01-01
  -
+ 0000-00-00
 (2 rows)
 
 select * from test84 union select * from test32;
@@ -52680,7 +52682,7 @@ select * from test85 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test85 union select * from test32;
@@ -53292,7 +53294,7 @@ select * from test86 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test86 union select * from test32;
@@ -53904,7 +53906,7 @@ select * from test87 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test87 union select * from test32;
@@ -54516,7 +54518,7 @@ select * from test88 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test88 union select * from test32;
@@ -55128,7 +55130,7 @@ select * from test89 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test89 union select * from test32;
@@ -55740,7 +55742,7 @@ select * from test90 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test90 union select * from test32;
@@ -56352,7 +56354,7 @@ select * from test91 union select * from test31;
     num     
 ------------
  
- 1970-01-01
+ 0000-00-00
 (2 rows)
 
 select * from test91 union select * from test32;
