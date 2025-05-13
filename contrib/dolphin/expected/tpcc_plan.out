@@ -456,10 +456,11 @@ prepare s1 as UPDATE customer SET c_balance = c_balance + ? , c_delivery_cnt = c
 explain (costs off) execute s1 using 1, 2, 3, 4;
                               QUERY PLAN                               
 -----------------------------------------------------------------------
+ [Bypass]
  Update on customer
    ->  Index Scan using customer_pkey on customer
          Index Cond: ((c_w_id = $4) AND (c_d_id = $3) AND (c_id = $2))
-(3 rows)
+(4 rows)
 
 prepare s1 as SELECT d_next_o_id FROM district WHERE d_id = ? AND d_w_id = ?;
 explain (costs off) execute s1 using 1, 2;
