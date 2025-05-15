@@ -106,6 +106,7 @@ REGRESS = scan\
           cypher_with \
           cypher_vle \
           cypher_union \
+          cypher_merge \
           age_load \
           drop
 
