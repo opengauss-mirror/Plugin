@@ -146,6 +146,79 @@ SELECT
     round(`text`, `text`)
 FROM t1 order by c1;
 
+SELECT mod(`int1`, `int1`) FROM t1;
+SELECT mod(`uint1`, `uint1`) FROM t1;
+SELECT mod(`int2`, `int2`) FROM t1;
+SELECT mod(`uint2`, `uint2`) FROM t1;
+SELECT mod(`int4`, `int4`) FROM t1;
+SELECT mod(`uint4`, `uint4`) FROM t1;
+SELECT mod(`int8`, `int8`) FROM t1;
+SELECT mod(`uint8`, `uint8`) FROM t1;
+SELECT mod(`float4`, `float4`) FROM t1;
+SELECT mod(`float8`, `float8`) FROM t1;
+SELECT mod(`numeric`, `numeric`) FROM t1;
+SELECT mod(`bit1`, `bit1`) FROM t1;
+SELECT mod(`bit64`, `bit64`) FROM t1;
+SELECT mod(`boolean`, `boolean`) FROM t1;
+SELECT mod(`char`, `char`) FROM t1;
+SELECT mod(`varchar`, `varchar`) FROM t1;
+SELECT mod(`binary`, `binary`) FROM t1;
+SELECT mod(`varbinary`, `varbinary`) FROM t1;
+SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
+SELECT mod(`blob`, `blob`) FROM t1;
+SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
+SELECT mod(`longblob`, `longblob`) FROM t1;
+SELECT mod(`text`, `text`) FROM t1;
+
+SELECT pow(`int1`, `int1`) FROM t1;
+SELECT pow(`uint1`, `uint1`) FROM t1;
+SELECT pow(`int2`, `int2`) FROM t1;
+SELECT pow(`uint2`, `uint2`) FROM t1;
+SELECT pow(`int4`, `int4`) FROM t1;
+SELECT pow(`uint4`, `uint4`) FROM t1;
+SELECT pow(`int8`, `int8`) FROM t1;
+SELECT pow(`uint8`, `uint8`) FROM t1;
+SELECT pow(`float4`, `float4`) FROM t1;
+SELECT pow(`float8`, `float8`) FROM t1;
+SELECT pow(`numeric`, `numeric`) FROM t1;
+SELECT pow(`bit1`, `bit1`) FROM t1;
+SELECT pow(`bit64`, `bit64`) FROM t1;
+SELECT pow(`boolean`, `boolean`) FROM t1;
+SELECT pow(`char`, `char`) FROM t1;
+SELECT pow(`varchar`, `varchar`) FROM t1;
+SELECT pow(`binary`, `binary`) FROM t1;
+SELECT pow(`varbinary`, `varbinary`) FROM t1;
+SELECT pow(`tinyblob`, `tinyblob`) FROM t1;
+SELECT pow(`blob`, `blob`) FROM t1;
+SELECT pow(`mediumblob`, `mediumblob`) FROM t1;
+SELECT pow(`longblob`, `longblob`) FROM t1;
+SELECT pow(`text`, `text`) FROM t1;
+
+SELECT power(`int1`, `int1`) FROM t1;
+SELECT power(`uint1`, `uint1`) FROM t1;
+SELECT power(`int2`, `int2`) FROM t1;
+SELECT power(`uint2`, `uint2`) FROM t1;
+SELECT power(`int4`, `int4`) FROM t1;
+SELECT power(`uint4`, `uint4`) FROM t1;
+SELECT power(`int8`, `int8`) FROM t1;
+SELECT power(`uint8`, `uint8`) FROM t1;
+SELECT power(`float4`, `float4`) FROM t1;
+SELECT power(`float8`, `float8`) FROM t1;
+SELECT power(`numeric`, `numeric`) FROM t1;
+SELECT power(`bit1`, `bit1`) FROM t1;
+SELECT power(`bit64`, `bit64`) FROM t1;
+SELECT power(`boolean`, `boolean`) FROM t1;
+SELECT power(`char`, `char`) FROM t1;
+SELECT power(`varchar`, `varchar`) FROM t1;
+SELECT power(`binary`, `binary`) FROM t1;
+SELECT power(`varbinary`, `varbinary`) FROM t1;
+SELECT power(`tinyblob`, `tinyblob`) FROM t1;
+SELECT power(`blob`, `blob`) FROM t1;
+SELECT power(`mediumblob`, `mediumblob`) FROM t1;
+SELECT power(`longblob`, `longblob`) FROM t1;
+SELECT power(`text`, `text`) FROM t1;
+
+
 \x
 SELECT
     pg_typeof(rand(`int1`)),
@@ -198,6 +271,78 @@ SELECT
     pg_typeof(round(`longblob`)),
     pg_typeof(round(`text`))
 FROM t1 where c1 = 1;
+
+SELECT pg_typeof(mod(`int1`,`int1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`int2`,`int2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`int4`,`int4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`int8`,`int8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`float4`,`float4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`float8`,`float8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`char`,`char`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`binary`,`binary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`blob`,`blob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(mod(`text`,`text`)) FROM t1 where c1 = 1;
+
+SELECT pg_typeof(pow(`int1`,`int1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`int2`,`int2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`int4`,`int4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`int8`,`int8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`float4`,`float4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`float8`,`float8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`char`,`char`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`binary`,`binary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`blob`,`blob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(pow(`text`,`text`)) FROM t1 where c1 = 1;
+
+SELECT pg_typeof(power(`int1`,`int1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`int2`,`int2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`int4`,`int4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`int8`,`int8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`float4`,`float4`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`float8`,`float8`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`char`,`char`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`binary`,`binary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`blob`,`blob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+SELECT pg_typeof(power(`text`,`text`)) FROM t1 where c1 = 1;
 
 drop table t1;
 

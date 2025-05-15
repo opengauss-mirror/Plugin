@@ -420,6 +420,544 @@ LINE 19:     round(`binary`, `binary`),
              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: round
+SELECT mod(`int1`, `int1`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 0
+
+SELECT mod(`uint1`, `uint1`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`int2`, `int2`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 0
+
+SELECT mod(`uint2`, `uint2`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`int4`, `int4`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 0
+
+SELECT mod(`uint4`, `uint4`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`int8`, `int8`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 0
+
+SELECT mod(`uint8`, `uint8`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`float4`, `float4`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0.00000
+-[ RECORD 3 ]
+mod | 0.00
+
+SELECT mod(`float8`, `float8`) FROM t1;
+-[ RECORD 1 ]---------
+mod | 0
+-[ RECORD 2 ]---------
+mod | 0.00000000000000
+-[ RECORD 3 ]---------
+mod | 0.00000000
+
+SELECT mod(`numeric`, `numeric`) FROM t1;
+-[ RECORD 1 ]-
+mod | 0.000000
+-[ RECORD 2 ]-
+mod | 0.000000
+-[ RECORD 3 ]-
+mod | 0.000000
+
+SELECT mod(`bit1`, `bit1`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`bit64`, `bit64`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 0
+
+SELECT mod(`boolean`, `boolean`) FROM t1;
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 0
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`char`, `char`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0.000
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`varchar`, `varchar`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0.000
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`binary`, `binary`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`varbinary`, `varbinary`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
+ERROR:  function mod(tinyblob, tinyblob) is not unique
+LINE 1: SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
+               ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: mod
+SELECT mod(`blob`, `blob`) FROM t1;
+ERROR:  function mod(blob, blob) is not unique
+LINE 1: SELECT mod(`blob`, `blob`) FROM t1;
+               ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: mod
+SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
+ERROR:  function mod(mediumblob, mediumblob) is not unique
+LINE 1: SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
+               ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: mod
+SELECT mod(`longblob`, `longblob`) FROM t1;
+ERROR:  function mod(longblob, longblob) is not unique
+LINE 1: SELECT mod(`longblob`, `longblob`) FROM t1;
+               ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: mod
+SELECT mod(`text`, `text`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT pow(`int1`, `int1`) FROM t1;
+-[ RECORD 1 ]----------------
+pow | 1
+-[ RECORD 2 ]----------------
+pow | 1.524307411995723e+267
+-[ RECORD 3 ]----------------
+pow | -6.560356474884124e-268
+
+SELECT pow(`uint1`, `uint1`) FROM t1;
+-[ RECORD 1 ]------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+-[ RECORD 2 ]------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pow | 46531388344983681457769984555620005635274427815488751368772861643065273360461098097690597702647394229975161523887729348709679192202790820272357752329882392140552515610822058736740145045150003072264722464746837070302159356661765043244993104360887623976285955058200326531849137668562738184397385361179287309286327712528995820702180594566008294593820621769951491324907014215176509758404760451335847252744697820515292329680698271481385779516652518207263143889034764775414387732372812840456880885163361037485452406176311868267428358492408075197688911053603714883403374930891951109790394269793978310190141201019287109375.0000000000000000
+-[ RECORD 3 ]------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+
+SELECT pow(`int2`, `int2`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`uint2`, `uint2`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pow
+SELECT pow(`int4`, `int4`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`uint4`, `uint4`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pow
+SELECT pow(`int8`, `int8`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`uint8`, `uint8`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pow
+SELECT pow(`float4`, `float4`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: pow
+SELECT pow(`float8`, `float8`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: pow
+SELECT pow(`numeric`, `numeric`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: pow
+SELECT pow(`bit1`, `bit1`) FROM t1;
+-[ RECORD 1 ]-----------
+pow | 1.0000000000000000
+-[ RECORD 2 ]-----------
+pow | 1.0000000000000000
+-[ RECORD 3 ]-----------
+pow | 1.0000000000000000
+
+SELECT pow(`bit64`, `bit64`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pow
+SELECT pow(`boolean`, `boolean`) FROM t1;
+-[ RECORD 1 ]-----------
+pow | 1.0000000000000000
+-[ RECORD 2 ]-----------
+pow | 1.0000000000000000
+-[ RECORD 3 ]-----------
+pow | 1.0000000000000000
+
+SELECT pow(`char`, `char`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: pow
+-[ RECORD 1 ]-------------------------------------------------------------------------------------------------------------
+pow | 7886922569204659943289130380565552069998488942920119408388828068713727087076260527969100818539057884606592610342.604
+-[ RECORD 2 ]-------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+-[ RECORD 3 ]-------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+
+SELECT pow(`varchar`, `varchar`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: pow
+-[ RECORD 1 ]-------------------------------------------------------------------------------------------------------------
+pow | 7886922569204659943289130380565552069998488942920119408388828068713727087076260527969100818539057884606592610342.604
+-[ RECORD 2 ]-------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+-[ RECORD 3 ]-------------------------------------------------------------------------------------------------------------
+pow | 1.0000000000000000
+
+SELECT pow(`binary`, `binary`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`varbinary`, `varbinary`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`tinyblob`, `tinyblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`blob`, `blob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`mediumblob`, `mediumblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`longblob`, `longblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pow
+SELECT pow(`text`, `text`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pow
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pow
+SELECT power(`int1`, `int1`) FROM t1;
+-[ RECORD 1 ]------------------
+power | 1
+-[ RECORD 2 ]------------------
+power | 1.524307411995723e+267
+-[ RECORD 3 ]------------------
+power | -6.560356474884124e-268
+
+SELECT power(`uint1`, `uint1`) FROM t1;
+-[ RECORD 1 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+-[ RECORD 2 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+power | 46531388344983681457769984555620005635274427815488751368772861643065273360461098097690597702647394229975161523887729348709679192202790820272357752329882392140552515610822058736740145045150003072264722464746837070302159356661765043244993104360887623976285955058200326531849137668562738184397385361179287309286327712528995820702180594566008294593820621769951491324907014215176509758404760451335847252744697820515292329680698271481385779516652518207263143889034764775414387732372812840456880885163361037485452406176311868267428358492408075197688911053603714883403374930891951109790394269793978310190141201019287109375.0000000000000000
+-[ RECORD 3 ]--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+
+SELECT power(`int2`, `int2`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`uint2`, `uint2`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: power
+SELECT power(`int4`, `int4`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`uint4`, `uint4`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: power
+SELECT power(`int8`, `int8`) FROM t1;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`uint8`, `uint8`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: power
+SELECT power(`float4`, `float4`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: power
+SELECT power(`float8`, `float8`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: power
+SELECT power(`numeric`, `numeric`) FROM t1;
+ERROR:  a negative number raised to a non-integer power yields a complex result
+CONTEXT:  referenced column: power
+SELECT power(`bit1`, `bit1`) FROM t1;
+-[ RECORD 1 ]-------------
+power | 1.0000000000000000
+-[ RECORD 2 ]-------------
+power | 1.0000000000000000
+-[ RECORD 3 ]-------------
+power | 1.0000000000000000
+
+SELECT power(`bit64`, `bit64`) FROM t1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: power
+SELECT power(`boolean`, `boolean`) FROM t1;
+-[ RECORD 1 ]-------------
+power | 1.0000000000000000
+-[ RECORD 2 ]-------------
+power | 1.0000000000000000
+-[ RECORD 3 ]-------------
+power | 1.0000000000000000
+
+SELECT power(`char`, `char`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: power
+-[ RECORD 1 ]---------------------------------------------------------------------------------------------------------------
+power | 7886922569204659943289130380565552069998488942920119408388828068713727087076260527969100818539057884606592610342.604
+-[ RECORD 2 ]---------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+-[ RECORD 3 ]---------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+
+SELECT power(`varchar`, `varchar`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: power
+-[ RECORD 1 ]---------------------------------------------------------------------------------------------------------------
+power | 7886922569204659943289130380565552069998488942920119408388828068713727087076260527969100818539057884606592610342.604
+-[ RECORD 2 ]---------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+-[ RECORD 3 ]---------------------------------------------------------------------------------------------------------------
+power | 1.0000000000000000
+
+SELECT power(`binary`, `binary`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`varbinary`, `varbinary`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`tinyblob`, `tinyblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`blob`, `blob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`mediumblob`, `mediumblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`longblob`, `longblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: power
+SELECT power(`text`, `text`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: power
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: power
 \x
 SELECT
     pg_typeof(rand(`int1`)),
@@ -524,6 +1062,464 @@ CONTEXT:  referenced column: pg_typeof
  bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | double precision | double precision | number    | number    | number    | bigint    | double precision | double precision | double precision | double precision | double precision | double precision | double precision | double precision | double precision
 (1 row)
 
+SELECT pg_typeof(mod(`int1`,`int1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`int2`,`int2`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ smallint
+(1 row)
+
+SELECT pg_typeof(mod(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`int4`,`int4`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+SELECT pg_typeof(mod(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`int8`,`int8`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+SELECT pg_typeof(mod(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`float4`,`float4`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`float8`,`float8`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`char`,`char`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`binary`,`binary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(mod(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+ERROR:  function mod(tinyblob, tinyblob) is not unique
+LINE 1: SELECT pg_typeof(mod(`tinyblob`,`tinyblob`)) FROM t1 where c...
+                         ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(mod(`blob`,`blob`)) FROM t1 where c1 = 1;
+ERROR:  function mod(blob, blob) is not unique
+LINE 1: SELECT pg_typeof(mod(`blob`,`blob`)) FROM t1 where c1 = 1;
+                         ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(mod(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+ERROR:  function mod(mediumblob, mediumblob) is not unique
+LINE 1: SELECT pg_typeof(mod(`mediumblob`,`mediumblob`)) FROM t1 whe...
+                         ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(mod(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+ERROR:  function mod(longblob, longblob) is not unique
+LINE 1: SELECT pg_typeof(mod(`longblob`,`longblob`)) FROM t1 where c...
+                         ^
+HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(mod(`text`,`text`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`int1`,`int1`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`int2`,`int2`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`int4`,`int4`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`int8`,`int8`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`float4`,`float4`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`float8`,`float8`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(pow(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`char`,`char`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(pow(`binary`,`binary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`blob`,`blob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(pow(`text`,`text`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`int1`,`int1`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`uint1`,`uint1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`int2`,`int2`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`uint2`,`uint2`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`int4`,`int4`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`uint4`,`uint4`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`int8`,`int8`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`uint8`,`uint8`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`float4`,`float4`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`float8`,`float8`)) FROM t1 where c1 = 1;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+SELECT pg_typeof(power(`numeric`,`numeric`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`bit1`,`bit1`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`bit64`,`bit64`)) FROM t1 where c1 = 1;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`boolean`,`boolean`)) FROM t1 where c1 = 1;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`char`,`char`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`varchar`,`varchar`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+SELECT pg_typeof(power(`binary`,`binary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`varbinary`,`varbinary`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`blob`,`blob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`longblob`,`longblob`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: pg_typeof
+SELECT pg_typeof(power(`text`,`text`)) FROM t1 where c1 = 1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: pg_typeof
 drop table t1;
 create table bit_test (`bit1` bit(1), `bit6` bit(6), `bit8` bit(8), `bit15` bit(15), `bit16` bit(16));
 insert into bit_test values (1, 0x33, 0x68, 0x4d45, 0x5400);
