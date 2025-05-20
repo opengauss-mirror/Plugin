@@ -134,7 +134,6 @@ RETURN $var
 $$, $1) AS t(i agtype);
 EXECUTE cypher_parameter_invalid_argument('[1]');
 ERROR:  array index must resolve to an integer value
-CONTEXT:  referenced column: i
 -- missing parameters argument
 PREPARE cypher_missing_params_argument(int) AS
 SELECT $1, * FROM cypher('expr', $$
