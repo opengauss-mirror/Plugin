@@ -3588,7 +3588,7 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
         ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("NOT ROTATE in from clause error")));
     }
     if (rte->alias)
-        appendStringInfo(&from_clause_sql, "AS %s ", rte->alias->aliasname);
+        appendStringInfo(&from_clause_sql, "AS %s ", quote_identifier(rte->alias->aliasname));
     List *stmt_targetList = list_copy(stmt->targetList);
     /* remove target in colNameList */
     stmt_targetList = removeTargetListByNameList(stmt_targetList, stmt->unrotateInfo->colNameList);
@@ -3779,7 +3779,12 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
 
     /* rewrite unrotate clause as a subquery */
     RangeSubselect *subselect = makeNode(RangeSubselect);
-    Alias *sub_alias = makeAlias("unrotate_rewrite", NIL);
+    Alias *sub_alias;
+    if (stmt->unrotateInfo->alias == NULL) {
+        sub_alias = makeAlias("unrotate_rewrite", NIL);
+    } else {
+        sub_alias = (Alias *)copyObject(stmt->unrotateInfo->alias);
+    }
     subselect->subquery = (Node *)linitial(parsetree_list);
     subselect->alias = sub_alias;
 
