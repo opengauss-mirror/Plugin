@@ -358,17 +358,17 @@ explain (costs off) execute s1 using 1.23, 1.23;
 
 prepare s1 as select * from test1 where c2 = ? + ? - ?;
 explain (costs off) execute s1 using 1, 2, 3;
-                      QUERY PLAN                       
--------------------------------------------------------
- Seq Scan on test1
-   Filter: ((c2)::double precision = (($1 + $2) - $3))
+                    QUERY PLAN                     
+---------------------------------------------------
+ Index Scan using idx10 on test1
+   Index Cond: (c2 = ((($1 + $2) - $3))::smallint)
 (2 rows)
 
 explain (costs off) execute s1 using 1.23, 1.23, 1.23;
-                      QUERY PLAN                       
--------------------------------------------------------
- Seq Scan on test1
-   Filter: ((c2)::double precision = (($1 + $2) - $3))
+                    QUERY PLAN                     
+---------------------------------------------------
+ Index Scan using idx10 on test1
+   Index Cond: (c2 = ((($1 + $2) - $3))::smallint)
 (2 rows)
 
 create table test_type_table
