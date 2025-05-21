@@ -5902,8 +5902,8 @@ static Pattern_Prefix_Status like_fixed_prefix(
     bool locale_is_c = false;
 
     if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
-        (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
-            typeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary"))) {
+        (typeId == BINARYOID ||
+            typeId == VARBINARYOID)) {
         typeId = BYTEAOID;
     }
 

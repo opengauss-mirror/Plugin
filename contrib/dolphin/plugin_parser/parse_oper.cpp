@@ -435,21 +435,6 @@ bool IsTextType(Oid attr_type)
 
 
 #ifdef DOLPHIN
-bool IsUnsignedIntType(Oid typeoid)
-{
-    if (typeoid == InvalidOid) {
-        return false;
-    }
-
-    if (typeoid == UINT1OID ||
-        typeoid == UINT2OID ||
-        typeoid == UINT4OID ||
-        typeoid == UINT8OID) {
-        return true;
-    }
-    return false;
-}
-
 bool IsFloatType(Oid typeoid)
 {
     switch (typeoid) {

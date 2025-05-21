@@ -24905,15 +24905,19 @@ void CheckValuePartitionKeyType(FormData_pg_attribute* attrs, List* pos)
 #ifdef DOLPHIN
 int CheckAddedType(Oid typoid)
 {
-    if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
+    /* not new created type, just return */
+    if (typoid < FirstNormalObjectId) {
+        return INVALID_OID;
+    }
+    if (typoid == UINT1OID){
         return UINT1_OID;
-    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")){
+    } else if (typoid == UINT2OID){
         return UINT2_OID;
-    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")){
+    } else if (typoid == UINT4OID){
         return UINT4_OID;
-    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")){
+    } else if (typoid == UINT8OID){
         return UINT8_OID;
-    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "year")){
+    } else if (typoid == YEAROID){
         return YEAR_OID;
     }
     return INVALID_OID;
@@ -34936,8 +34940,7 @@ void CheckAutoIncrementDatatype(Oid typid, const char* colname)
             break;
         default:
 #ifdef DOLPHIN
-            if (typid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") || typid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-                typid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || typid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            if (IsUnsignedIntType(typid)) {
                 break;
             }
 #endif

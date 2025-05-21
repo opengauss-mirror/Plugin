@@ -5227,8 +5227,8 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
             break;
         }
         default: {
-            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            if (valuetypid == UINT4OID ||
+                valuetypid == UINT8OID) {
                 uint64 uint_val = DatumGetUInt64(value);
                 if (uint_val > (uint64)INT_MAX) {
                     ereport((!can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING, 
@@ -5237,13 +5237,13 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
                     *time = DatumGetTimeADT(DirectFunctionCall1Coll(int32_b_format_time, InvalidOid,
                                    value, can_ignore));
                 }
-            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+            } else if (valuetypid == YEAROID) {
                 *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
                                         DirectFunctionCall1(year_integer, value)));
-            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+            } else if (valuetypid == UINT1OID) {
                 *time = DatumGetTimeADT(DirectFunctionCall1Coll(uint8_b_format_time, InvalidOid,
                                    value, can_ignore));
-            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+            } else if (valuetypid == UINT2OID) {
                 *time = DatumGetTimeADT(DirectFunctionCall1Coll(uint16_b_format_time, InvalidOid,
                                    value, can_ignore));
             } else {
@@ -5357,10 +5357,7 @@ Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, D
                                             NUMERICOID, datetime, date);
         }
         default: {
-            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            if (IsUnsignedIntType(valuetypid)) {
                 uint64 uint_val = DatumGetUInt64(value);
                 if (uint_val >= (uint64)pow_of_10[8]) {
                     convert_to_datetime(value, valuetypid, datetime);
@@ -5646,18 +5643,18 @@ Datum time_mysql(PG_FUNCTION_ARGS)
             break;
         }
         default: {
-            if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
-                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+            if (original_type == UINT1OID ||
+                original_type == UINT2OID) {
                     int32 int_time = PG_GETARG_INT32(0);
                     if (check_b_format_int_time_range((int64)int_time)) {
                             result_isnull = true;
                     }
-                } else if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                } else if (original_type == UINT4OID) {
                     uint32 int_time = PG_GETARG_UINT32(0);
                     if (check_b_format_int_time_range((int64)int_time)) {
                             result_isnull = true;
                     }
-                } else if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                } else if (original_type == UINT8OID) {
                     uint64 int_time = PG_GETARG_TRANSACTIONID(0);
                     if (int_time > (uint64)pow_of_10[14]) result_isnull = true;
                     if (int_time >= (uint64)pow_of_10[10] && check_b_format_int_date_range(int_time)) {

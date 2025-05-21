@@ -10270,11 +10270,8 @@ enum CmpMode {BETWEEN_AND, SYMMETRIC_BETWEEN_AND, NOT_BETWEEN_AND, NOT_SYMMETRIC
 
 static bool is_unsigned_intType(Oid oid)
 {
-    if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "year") ||
+    if (IsUnsignedIntType(oid) ||
+        oid == YEAROID ||
         oid == BITOID || oid == BOOLOID) {
         return true;
     }

@@ -889,7 +889,7 @@ static bool check_wait_timeout(int* newval, void** extra, GucSource source)
 
 BSqlPluginContext* GetSessionContext()
 {
-    if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
+    if (unlikely(u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL)) {
         init_session_vars();
     }
     return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];

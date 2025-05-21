@@ -389,7 +389,7 @@ const TypeItem* GetItemByTypeOid(Oid oid)
         AutoMutexLock marcoHashLock(&gMarcoHashLock);
         marcoHashLock.lock();
         if (b_typoid2DolphinMarcoHash == NULL) {
-        InitTypoid2DolphinMacroHtab();
+            InitTypoid2DolphinMacroHtab();
         }
         marcoHashLock.unLock();
     }

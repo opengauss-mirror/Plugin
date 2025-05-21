@@ -279,4 +279,8 @@ typedef enum {
     YEAR_OID
 } addedType;
 
+inline bool IsUnsignedIntType(Oid oid)
+{
+    return oid == UINT4OID || oid == UINT1OID || oid == UINT2OID || oid == UINT8OID;
+}
 #endif

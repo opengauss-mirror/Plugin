@@ -2914,10 +2914,7 @@ static void getCategory(Oid type, TYPCATEGORY* category)
         *category = TYPCATEGORY_COMPOSITE;
     } else if (type == JSONOID || type == JSONBOID) {
         *category = TYPCATEGORY_JSON;
-    } else if (type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+    } else if (IsUnsignedIntType(type)) {
         *category = TYPCATEGORY_NUMERIC;
     } else {
         *category = TypeCategory(type);
@@ -2927,15 +2924,12 @@ static void getCategory(Oid type, TYPCATEGORY* category)
 static void getCastFunc(Oid val_type, Oid* typoutput, Oid* castfunc)
 {
     if (val_type > FirstNormalObjectId &&
-        (val_type != get_typeoid(PG_CATALOG_NAMESPACE, "binary") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "longblob") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint1") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint2") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint4") &&
-        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
+        (val_type != BINARYOID &&
+        val_type != VARBINARYOID &&
+        val_type != TINYBLOBOID &&
+        val_type != MEDIUMBLOBOID &&
+        val_type != LONGBLOBOID &&
+        !IsUnsignedIntType(val_type))) {
         HeapTuple tuple;
         Form_pg_cast castForm;
         tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));

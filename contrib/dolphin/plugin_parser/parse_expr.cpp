@@ -4345,28 +4345,28 @@ static FieldType type_to_index(Oid oid)
         case ANYENUMOID:
             return FIELD_TYPE_ENUM;
         default:
-            if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+            if (oid == UINT1OID) {
                 return FIELD_TYPE_TINY;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+            } else if (oid == UINT2OID) {
                 return FIELD_TYPE_SHORT;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+            } else if (oid == UINT4OID) {
                 return FIELD_TYPE_LONG;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            } else if (oid == UINT8OID) {
                 return FIELD_TYPE_LONGLONG;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+            } else if (oid == YEAROID) {
                 return FIELD_TYPE_YEAR;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
-                       oid == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary")) {
+            } else if (oid == BINARYOID ||
+                       oid == VARBINARYOID) {
                 /*
                  * this is a new field type which MySQL doesn't have, use to distinguish
                  * char/varchar and binary/varbinary
                  */
                 return FIELD_TYPE_BIN_STRING;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob")) {
+            } else if (oid == TINYBLOBOID) {
                 return FIELD_TYPE_TINY_BLOB;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob")) {
+            } else if (oid == MEDIUMBLOBOID) {
                 return FIELD_TYPE_MEDIUM_BLOB;
-            } else if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "longblob")) {
+            } else if (oid == LONGBLOBOID) {
                 return FIELD_TYPE_LONG_BLOB;
             } else if (type_is_enum(oid)) {
                 return FIELD_TYPE_ENUM;
@@ -4410,11 +4410,8 @@ CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag, bool *is_temporal_type
     if (is_temporal_type != NULL) {
         *is_temporal_type = false;
     }
-    if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) { /* year is unsigned too */
+    if (IsUnsignedIntType(oid) ||
+        oid == YEAROID) { /* year is unsigned too */
         *unsigned_flag = true;
         return CMP_INT_TYPE;
     }
@@ -4455,11 +4452,11 @@ CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag, bool *is_temporal_type
         case ANYENUMOID:
             return CMP_STRING_TYPE;
         default:
-            if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
-                oid == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") ||
-                oid == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") ||
-                oid == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") ||
-                oid == get_typeoid(PG_CATALOG_NAMESPACE, "longblob") ||
+            if (oid == BINARYOID ||
+                oid == VARBINARYOID ||
+                oid == TINYBLOBOID ||
+                oid == MEDIUMBLOBOID ||
+                oid == LONGBLOBOID ||
                 type_is_enum(oid) || type_is_set(oid)) {
                 return CMP_STRING_TYPE;
             }

@@ -7669,17 +7669,14 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             break;
         }
         default: {
-            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
-                    uint64 uint_val = DatumGetUInt64(value);
-                    if (uint_val > (uint64)LONG_LONG_MAX) {
-                        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                                        errmsg("timestamp out of range:: \"%lu\"", uint_val)));
-                    } else {
-                        *datetime = DatumGetTimeADT(DirectFunctionCall1(int64_b_format_datetime, value));
-                    }
+            if (IsUnsignedIntType(valuetypid)) {
+                uint64 uint_val = DatumGetUInt64(value);
+                if (uint_val > (uint64)LONG_LONG_MAX) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                    errmsg("timestamp out of range:: \"%lu\"", uint_val)));
+                } else {
+                    *datetime = DatumGetTimeADT(DirectFunctionCall1(int64_b_format_datetime, value));
+                }
             } else {
                 ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
             }
@@ -7911,16 +7908,16 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
             }
         }
         default: {
-            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+            if (valuetypid == UINT1OID || 
+                valuetypid == UINT2OID || 
+                valuetypid == YEAROID) {
                 convert_to_time(value, valuetypid, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time, can_ignore);
                 return TIMEOID;
-            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+            } else if (valuetypid == UINT4OID) {
                 convert_to_time(value, valuetypid, time, can_ignore);
                 return TIMEOID;
-            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            } else if (valuetypid == UINT8OID) {
                 uint64 number = DatumGetUInt64(value);
                 if (number >= (uint64)pow_of_10[10]) {
                     convert_to_datetime(value, valuetypid, datetime);
