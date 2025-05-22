@@ -1021,6 +1021,18 @@ bool coerce_param_to_column_type(ParseState* pstate, Node* ltree, Node* rtree, O
         return true;
     }
 
+    /* left is column and right is expr */
+    if (IsA(ltree, Var) && IsA(rtree, OpExpr)) {
+        *rtypeId = *ltypeId;
+        return true;
+    }
+
+    /* left is expr and right is column */
+    if (IsA(rtree, Var) && IsA(ltree, OpExpr)) {
+        *ltypeId = *rtypeId;
+        return true;
+    }
+
     return false;
 }
 #endif

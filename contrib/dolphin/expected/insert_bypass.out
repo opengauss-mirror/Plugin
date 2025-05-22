@@ -1,0 +1,57 @@
+create schema insert_bypass;
+set current_schema to 'insert_bypass';
+drop table if exists warehouse;
+NOTICE:  table "warehouse" does not exist, skipping
+create table warehouse (
+w_id smallint not null,
+w_name varchar(10), 
+w_street_1 varchar(20), 
+w_street_2 varchar(20), 
+w_city varchar(20), 
+w_state char(2), 
+w_zip char(9), 
+w_tax decimal(4,2), 
+w_ytd decimal(12,2),
+primary key (w_id) ) Engine=InnoDB;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "warehouse_pkey" for table "warehouse"
+drop table if exists district;
+NOTICE:  table "district" does not exist, skipping
+create table district (
+d_id tinyint not null, 
+d_w_id smallint not null, 
+d_name varchar(10), 
+d_street_1 varchar(20), 
+d_street_2 varchar(20), 
+d_city varchar(20), 
+d_state char(2), 
+d_zip char(9), 
+d_tax decimal(4,2), 
+d_ytd decimal(12,2), 
+d_next_o_id int,
+primary key (d_w_id, d_id) ) Engine=InnoDB;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "district_pkey" for table "district"
+ALTER TABLE district  ADD CONSTRAINT fkey_district_1 FOREIGN KEY(d_w_id) REFERENCES warehouse(w_id);
+insert into warehouse values (1, 1, 1, 1, 1, 1, 1, 1, 1);
+prepare s1 as INSERT INTO district values(?,?,?,?,?,?,?,?,?,?,?);
+explain (costs off) execute s1 using 1,1,1,1,1,1,1,1,1,1,1;
+     QUERY PLAN     
+--------------------
+ Insert on district
+   ->  Result
+(2 rows)
+
+SET FOREIGN_KEY_CHECKS=0;
+set opfusion_debug_mode = 'log';
+prepare s1 as INSERT INTO district values(?,?,?,?,?,?,?,?,?,?,?);
+explain (costs off) execute s1 using 1,1,1,1,1,1,1,1,1,1,1;
+     QUERY PLAN     
+--------------------
+ [Bypass]
+ Insert on district
+   ->  Result
+(3 rows)
+
+drop table district;
+drop table warehouse;
+drop schema insert_bypass cascade;
+reset current_schema;

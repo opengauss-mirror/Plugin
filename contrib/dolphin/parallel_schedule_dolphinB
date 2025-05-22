@@ -92,4 +92,4 @@ test: db_b_parser2 test_shows_1 test_charset_collate charset_utf8mb4_b_db charse
 
 test: in_test eq_all_subquery alter_tables
 
-test: prepare_index_con tpcc_plan
+test: insert_bypass prepare_index_con tpcc_plan
