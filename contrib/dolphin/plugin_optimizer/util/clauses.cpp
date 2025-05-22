@@ -1147,7 +1147,7 @@ static bool check_concat_satisfies_immutable(Oid funcid, List* args)
                     if (
 #ifdef DOLPHIN
                         /* some dolphin new created type */
-                        typ == YEAROID || typ == UINT1OID || typ == UINT2OID || typ == UINT4OID || typ == UINT8OID ||
+                        typ == YEAROID || IsUnsignedIntType(typ) ||
 #endif
                         type_is_set(typ) || type_is_enum(typ)) {
                         break;

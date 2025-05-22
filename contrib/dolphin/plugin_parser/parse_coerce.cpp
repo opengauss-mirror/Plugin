@@ -645,10 +645,7 @@ static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext
     if (ccontext == COERCION_EXPLICIT &&
         ((ENABLE_B_CMPT_MODE && (destoid == INT8OID || destoid == TIMEOID || destoid == TIMESTAMPOID ||
         destoid == TIMESTAMPTZOID || destoid == DATEOID)) ||
-        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
+        IsUnsignedIntType(destoid))) {
         *srcoid = TEXTOID;
         *changed = true;
         return true;
@@ -3636,16 +3633,22 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
 #ifdef DOLPHIN
 Oid findUnsignedExplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
 {
+    /* not new created type, just return */
+    if (targetTypeId < FirstNormalObjectId) {
+        return funcid;
+    }
     int row = INVALID_ROW;
     int col = INVALID_COLUMN;
-    if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+    if (targetTypeId == UINT4OID) {
         col = UINT4;
-    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+    } else if (targetTypeId == UINT1OID) {
         col = UINT1;
-    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+    } else if (targetTypeId == UINT2OID) {
         col = UINT2;
-    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+    } else if (targetTypeId == UINT8OID) {
         col = UINT8;
+    } else {
+        return funcid;
     }
     switch (sourceTypeId) {
         case INT1OID:
@@ -3693,15 +3696,15 @@ Oid findUnsignedExplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
         default:
             break;
     }
-    if (row == INVALID_ROW && (sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
-        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") ||
-        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") ||
-        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") ||
-        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob"))) {
+    if (row == INVALID_ROW && (sourceTypeId == BINARYOID ||
+        sourceTypeId == VARBINARYOID ||
+        sourceTypeId == TINYBLOBOID ||
+        sourceTypeId == MEDIUMBLOBOID ||
+        sourceTypeId == LONGBLOBOID)) {
         row = VARLENA;
     }
 
-    if (row != INVALID_ROW && col != INVALID_COLUMN) {
+    if (row != INVALID_ROW) {
         return get_func_oid(castFunction[row][col], PG_CATALOG_NAMESPACE, NULL);
     }
     return funcid;
@@ -3745,19 +3748,25 @@ int findSignedFunctionIdx(Oid typeId)
         default:
             break;
     }
-    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+
+    /* other builtin type, just return invalid idx */
+    if (typeId < FirstNormalObjectId) {
+        return S_INVALID_IDX;
+    }
+
+    if (typeId == UINT8OID) {
         return S_UINT8;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+    } else if (typeId == YEAROID) {
         return S_YEAR;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary")) {
+    } else if (typeId == BINARYOID) {
         return S_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary")) {
+    } else if (typeId == VARBINARYOID) {
         return S_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob")) {
+    } else if (typeId == TINYBLOBOID) {
         return S_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob")) {
+    } else if (typeId == MEDIUMBLOBOID) {
         return S_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob")) {
+    } else if (typeId == LONGBLOBOID) {
         return S_VARLENA;
     }
     return S_INVALID_IDX;
@@ -3795,13 +3804,13 @@ int findNumTimeFunctionIdx(Oid typeId)
         default:
             break;
     }
-    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+    if (typeId == UINT1OID) {
         return N_UINT1;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+    } else if (typeId == UINT2OID) {
         return N_UINT2;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+    } else if (typeId == UINT4OID) {
         return N_UINT4;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+    } else if (typeId == UINT8OID) {
         return N_UINT8;
     } else {
         return N_INVALID_IDX;
@@ -3886,25 +3895,25 @@ int findEnumFunctionIdx(Oid typeId)
         default:
             break;
     }
-    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+    if (typeId == UINT4OID) {
         return E_UINT4;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+    } else if (typeId == UINT1OID) {
         return E_UINT1;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+    } else if (typeId == UINT2OID) {
         return E_UINT2;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+    } else if (typeId == UINT8OID) {
         return E_UINT8;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+    } else if (typeId == YEAROID) {
         return E_YEAR;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary")) {
+    } else if (typeId == BINARYOID) {
         return E_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary")) {
+    } else if (typeId == VARBINARYOID) {
         return E_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob")) {
+    } else if (typeId == TINYBLOBOID) {
         return E_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob")) {
+    } else if (typeId == MEDIUMBLOBOID) {
         return E_VARLENA;
-    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob")) {
+    } else if (typeId == LONGBLOBOID) {
         return E_VARLENA;
     }
     return INVALID_IDX;
@@ -4065,13 +4074,16 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     HeapTuple tuple;
 
     *funcid = InvalidOid;
+    int32 typmode = -1;
+    char sourceTypeType = TYPTYPE_INVALID;
+    char targetTypeType = TYPTYPE_INVALID;
 
     /* Perhaps the types are domains; if so, look at their base types */
     if (OidIsValid(sourceTypeId)) {
-        sourceTypeId = getBaseType(sourceTypeId);
+        sourceTypeId = getBaseTypeAndOtherAttr(sourceTypeId, &typmode, &sourceTypeType);
     }
     if (OidIsValid(targetTypeId)) {
-        targetTypeId = getBaseType(targetTypeId);
+        targetTypeId = getBaseTypeAndOtherAttr(targetTypeId, &typmode, &targetTypeType);
     }
 
     /* Domains are always coercible to and from their base type */
@@ -4080,26 +4092,26 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     }
 
     /* target is an actual set or enum type, change it to anyset or anyenum to find the path */
-    if (targetTypeId != ANYSETOID && type_is_set(targetTypeId)) {
+    if (targetTypeId != ANYSETOID && targetTypeType == TYPTYPE_SET) {
         targetTypeId = ANYSETOID;
     }
 
-    if (sourceTypeId != ANYSETOID && type_is_set(sourceTypeId)) {
+    if (sourceTypeId != ANYSETOID && sourceTypeType == TYPTYPE_SET) {
         sourceTypeId = ANYSETOID;
     }
 
 #ifdef DOLPHIN
-    if (type_is_enum(sourceTypeId) &&
-        type_is_enum(targetTypeId) &&
+    if (sourceTypeType == TYPTYPE_ENUM &&
+        targetTypeType == TYPTYPE_ENUM &&
         IsEquivalentEnums(sourceTypeId, targetTypeId)) {
         return COERCION_PATH_COERCEVIAIO;
     }
 
-    if (sourceTypeId != ANYENUMOID && type_is_enum(sourceTypeId)) {
+    if (sourceTypeId != ANYENUMOID && sourceTypeType == TYPTYPE_ENUM) {
         sourceTypeId = ANYENUMOID;
     }
 
-    if (targetTypeId != ANYENUMOID && type_is_enum(targetTypeId)) {
+    if (targetTypeId != ANYENUMOID && targetTypeType == TYPTYPE_ENUM) {
         targetTypeId = ANYENUMOID;
     }
 #endif

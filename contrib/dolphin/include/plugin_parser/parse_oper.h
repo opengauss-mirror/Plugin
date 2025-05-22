@@ -51,7 +51,6 @@ extern Oid oprfuncid(Operator op);
 extern bool IsIntType(Oid typeoid);
 extern bool IsCharType(Oid typeoid);
 #ifdef DOLPHIN
-extern bool IsUnsignedIntType(Oid typeoid);
 extern bool IsFloatType(Oid typeoid);
 extern bool IsNumericType(Oid typeoid);
 extern bool IsDolphinStringType(Oid typeoid);

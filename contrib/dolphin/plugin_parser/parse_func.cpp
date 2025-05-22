@@ -1027,13 +1027,13 @@ int GetPriority(Oid typeoid)
 
         default:
 #ifdef DOLPHIN
-            if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+            if (typeoid == UINT4OID) {
                 result = 3;
-            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+            } else if (typeoid == UINT1OID) {
                 result = 1;
-            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+            } else if (typeoid == UINT2OID) {
                 result = 2;
-            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+            } else if (typeoid == UINT8OID) {
                 result = 4;
             } else 
 #endif
