@@ -80,6 +80,10 @@ static void begin_cypher_merge(ExtensiblePlanState *node, EState *estate,
     subplan = (Plan*)linitial(css->cs->extensible_plans);
     node->ss.ps.lefttree = ExecInitNode(subplan, estate, eflags);
 
+    ResultState* rs = (ResultState *)node->ss.ps.lefttree;
+    TupleTableSlot* slot = rs->ps.ps_ResultTupleSlot;
+    ExecStoreAllNullTuple(slot);
+
     ExecAssignExprContext(estate, &node->ss.ps);
 
     ExecInitScanTupleSlot(estate, &node->ss);
