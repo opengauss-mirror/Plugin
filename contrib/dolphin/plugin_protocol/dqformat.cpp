@@ -52,7 +52,7 @@
 #define PACKETOFFSET_4 4
 #define PACKETOFFSET_8 8
 
-static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
                                                    com_stmt_exec_request *req, StringInfo buf);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
 
@@ -413,7 +413,7 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
     dq_putmessage(buf->data, buf->len);
 }
 
-static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
                                                    com_stmt_exec_request *req, StringInfo buf)
 {
     com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
@@ -470,7 +470,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
             case DOLPHIN_TYPE_BIT:
             case DOLPHIN_TYPE_DECIMAL:
             case DOLPHIN_TYPE_NEWDECIMAL: {
-                const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
+                const TypeItem* item = GetItemByTypeOid(psrc->param_types[i]);
                 switch (item->dolphin_type_id) {
                     case DOLPHIN_TYPE_BIT: {
                         parameters[i].type = TYPE_HEX;
@@ -559,20 +559,23 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
 
 com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
 {
-    char stmt_name[NAMEDATALEN];
     com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
     dq_get_int4(buf, &req->statement_id);
     dq_get_int1(buf, &req->flags);
     dq_get_int4(buf, &req->iteration_count);
-    int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", req->statement_id);
-    securec_check_ss(rc, "\0", "\0");
-    PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
+    PreparedStatement *pstmt = NULL;
+    CachedPlanSource *psrc = NULL;
+    char stmt_name[NAMEDATALEN];
+    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, req->statement_id);
+    securec_check_ss(rc, "", "");
+
+    get_prepared_statement(stmt_name, &pstmt, &psrc);
     int param_count = 0;
     if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
         uint64 len;
         param_count = dq_get_int_lenenc(buf, (void *)&len);
     } else {
-        param_count = pstmt->plansource->num_params;
+        param_count = psrc->num_params;
     }
     if (param_count > 0) {
         int len = (param_count + 7) / 8;
@@ -581,21 +584,21 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
         if (req->new_params_bind_flag) {
             /* malloc private data using u_sess->cache_mem_cxt */
             MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-            InputStmtParam *parameter_types = (InputStmtParam *)palloc0(sizeof(InputStmtParam));
+            InputStmtParam *parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
             parameter_types->count = param_count;
-            parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
+            parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
             for (int i = 0; i < param_count; i++) {
                 dq_get_int2(buf, &parameter_types->itypes[i]);
                 if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
                     /*At present, there is no stored parameter name, only read and not used.
                     It will be automatically released after completion*/
-                    char* parameter_name = dq_get_string_lenenc(buf);
+                    (void)dq_get_string_lenenc(buf);
                 }
             }
             SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
             (void)MemoryContextSwitchTo(oldcontext);
         }
-        com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, pstmt, req, buf);
+        com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, psrc, req, buf);
         req->parameter_values = parameters;
         req->param_count = param_count;
     }    

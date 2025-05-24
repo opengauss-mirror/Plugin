@@ -265,7 +265,7 @@ static inline char* dq_get_string_len(StringInfo msg, int len)
     }
     
     if (len > 0) {
-        char *buf = (char*) palloc0(len + 1);
+        char *buf = (char*) palloc(len + 1);
         int rcs = memcpy_s(buf, len, &msg->data[msg->cursor], len);
         securec_check(rcs, "\0", "\0");
         msg->cursor += len;
