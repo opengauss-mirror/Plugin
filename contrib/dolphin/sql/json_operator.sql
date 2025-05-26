@@ -99,5 +99,20 @@ select name_value, convert((name_value->>'$.i18nValue'),json)il8_value from (sel
 drop table test_json;
 reset standard_conforming_strings;
 
+
+set standard_conforming_strings = on;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+drop table test_json;
+
+set standard_conforming_strings = off;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+drop table test_json;
+
+reset standard_conforming_strings;
+
 drop schema test_operator cascade;
 reset current_schema;
