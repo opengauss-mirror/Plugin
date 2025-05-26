@@ -37,8 +37,9 @@
 #define EXPLAIN_TAG_LEN 7
 
 static int execute_text_protocol_sql(const char* sql);
-static int execute_com_stmt_prepare(const char *client_sql);
-static int execute_binary_protocol_req(com_stmt_exec_request *request);
+static int execute_com_stmt_prepare(StringInfo buf);
+static void execute_binary_protocol_req_process_b(StringInfo buf);
+static void execute_binary_protocol_req_process_e();
 static void remove_cached_stmt_data(uint32 *statement_id);
 static void execute_com_stmt_close(StringInfo buf);
 static void execute_com_stmt_reset(StringInfo buf);
@@ -172,15 +173,13 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         case COM_STMT_PREPARE: {
-            char *sql = dq_get_string_eof(buf);
-            execute_com_stmt_prepare(sql);
+            execute_com_stmt_prepare(buf);
             break;
         }
         case COM_STMT_EXECUTE: {
             GetSessionContext()->is_binary_proto = true;
-            com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
-            execute_binary_protocol_req(req);
-            free_com_stmt_exec_request(req);
+            execute_binary_protocol_req_process_b(buf);
+            execute_binary_protocol_req_process_e();
             GetSessionContext()->is_binary_proto = false;
             break;
         }
@@ -381,8 +380,10 @@ int execute_text_protocol_sql(const char *sql)
     return 0;
 }
 
-int execute_com_stmt_prepare(const char *client_sql)
+int execute_com_stmt_prepare(StringInfo buf)
 {
+    OgRecordAutoController _local_opt(SRT6_P);
+    char *client_sql = dq_get_string_eof(buf);
     CachedPlanSource *psrc = NULL;
     PreparedStatement *pstmt = NULL;
     int32 statement_id = gs_atomic_add_32(&g_proto_ctx.statement_id, 1);
@@ -390,6 +391,7 @@ int execute_com_stmt_prepare(const char *client_sql)
     int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, statement_id);
     securec_check_ss(rc, "", "");
 
+    exec_pre_parse_message();
     exec_parse_message(client_sql, stmt_name, NULL, NULL, NULL, 0, false);
     get_prepared_statement(stmt_name, &pstmt, &psrc);
     int column_count = psrc->resultDesc == NULL ? 0 : psrc->resultDesc->natts;
@@ -417,10 +419,13 @@ int execute_com_stmt_prepare(const char *client_sql)
         send_network_eof_packet(sql);
     }
     DestroyStringInfo(sql);
+    pfree_ext(client_sql);
+    exec_after_parse_message(stmt_name);
     return 0;
 }
 
-void dolphin_get_param_list_info(PqBindMessage* pqBindMessage, CachedPlanSource* psrc, ParamListInfo* params)
+void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* psrc, ParamListInfo* params,
+    MemoryContext paramCtx, MemoryContext valueCtx)
 {
     int numParams = pqBindMessage->numParams;
     /*
@@ -430,6 +435,7 @@ void dolphin_get_param_list_info(PqBindMessage* pqBindMessage, CachedPlanSource*
         return;
     }
 
+    MemoryContext oldCtx = MemoryContextSwitchTo(paramCtx);
     if (*params == NULL) {
         *params = (ParamListInfo)palloc(offsetof(ParamListInfoData, params) + numParams * sizeof(ParamExternData));
         /* we have static list of params, so no hooks needed */
@@ -442,8 +448,9 @@ void dolphin_get_param_list_info(PqBindMessage* pqBindMessage, CachedPlanSource*
         (*params)->uParamInfo = DEFUALT_INFO;
         (*params)->params_lazy_bind = false;
     }
-    com_stmt_param *param = (com_stmt_param *)pqBindMessage->pvalue;
 
+    MemoryContextSwitchTo(valueCtx);
+    com_stmt_param *param = (com_stmt_param *)pqBindMessage->pvalue;
     for (int i = 0; i < numParams; i++) {
         bool isNull = false;
         Datum pval = 0;
@@ -488,6 +495,7 @@ void dolphin_get_param_list_info(PqBindMessage* pqBindMessage, CachedPlanSource*
                 break;
             }
             case TYPE_HEX: {
+                sendType = VARBITOID;
                 size_t value_len = strlen(param[i].value.text);
                 StringInfo sql = makeStringInfo();
                 appendStringInfo(sql, "x'");
@@ -556,30 +564,46 @@ void dolphin_get_param_list_info(PqBindMessage* pqBindMessage, CachedPlanSource*
         (*params)->params[i].ptype = ptype;
         (*params)->params[i].tabInfo = NULL;
     }
+    MemoryContextSwitchTo(oldCtx);
 }
 
-int execute_binary_protocol_req(com_stmt_exec_request *request)
+static void execute_binary_protocol_req_process_b(StringInfo buf)
 {
+    OgRecordAutoController _local_opt_b(SRT7_B);
+
+    exec_pre_bind_message();
+
+    com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
     char stmt_name[NAMEDATALEN];
-    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, request->statement_id);
+    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, req->statement_id);
     securec_check_ss(rc, "", "");
-    PqBindMessage pqBindMessage;
+    BindMessage pqBindMessage;
     pqBindMessage.portalName = "";
     pqBindMessage.stmtName = stmt_name;
     pqBindMessage.numPFormats = 0;
     pqBindMessage.pformats = NULL;
-    pqBindMessage.numParams = request->param_count;
+    pqBindMessage.numParams = req->param_count;
     pqBindMessage.plength = NULL;
-    pqBindMessage.pvalue = (const char**)request->parameter_values;
+    pqBindMessage.pvalue = (const char**)req->parameter_values;
     pqBindMessage.numRFormats = 0;
     pqBindMessage.rformats = NULL;
 
+    exec_bind_message(&pqBindMessage, NULL, NULL, false, dolphin_get_param_list_info);
+    free_com_stmt_exec_request(req);
+}
+
+static void execute_binary_protocol_req_process_e()
+{
+    OgRecordAutoController _local_opt_e(SRT8_E);
     /* set use_parame to true, so in opfusion state it will send row desc, check OpFusion::setReceiver */
     u_sess->param_cxt.use_parame = true;
-    exec_bind_message(&pqBindMessage, NULL, NULL, false, dolphin_get_param_list_info);
-    exec_execute_message(pqBindMessage.portalName, FETCH_ALL, false);
+    if (exec_pre_execute_message("", FETCH_ALL, false)) {
+        u_sess->param_cxt.use_parame = false;
+        return;
+    }
+
+    exec_execute_message("", FETCH_ALL, false);
     u_sess->param_cxt.use_parame = false;
-    return 0;
 }
 
 void remove_cached_stmt_data(uint32 *statement_id)
