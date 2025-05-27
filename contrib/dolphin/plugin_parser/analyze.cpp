@@ -3549,6 +3549,26 @@ char* AConstToString(A_Const *con)
     return buf.data;
 }
 
+bool get_column_name(Node* node, char** column_name)
+{
+    if (node == NULL) {
+        return false;
+    }
+    if (IsA(node, A_Const)) {
+        A_Const* a_const = (A_Const*)node;
+        *column_name = pstrdup(AConstToString(a_const));
+        return true;
+    } else if (IsA(node, ColumnRef)) {
+        Node *field = (Node *)linitial(((ColumnRef *)node)->fields);
+        if (IsA(field, A_Star))
+            return false;
+        *column_name = pstrdup(strVal((Value *)field));
+        return true;
+    } else {
+        return raw_expression_tree_walker(node, (bool (*)())get_column_name, (void*)column_name);
+    }
+}
+
 static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
 {
     List *parsetree_list;
@@ -3599,14 +3619,14 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
     foreach(targetCell, stmt_targetList) {
         ResTarget *resTarget1 = (ResTarget *)lfirst(targetCell);
         if (IsA(resTarget1->val, ColumnRef)) {
-        ColumnRef *cref = (ColumnRef *)resTarget1->val;
-        Node *field = (Node *)linitial(cref->fields);
-        if (IsA(field, A_Star)) {
-            if (!targetList) {
-                aStarList = list_make1(lfirst(targetCell));
-                targetList = transformTargetList(pstate1, aStarList, EXPR_KIND_SELECT_TARGET);
-                free_parsestate(pstate1);
-                break;
+            ColumnRef *cref = (ColumnRef *)resTarget1->val;
+            Node *field = (Node *)linitial(cref->fields);
+            if (IsA(field, A_Star)) {
+                if (!targetList) {
+                    aStarList = list_make1(lfirst(targetCell));
+                    targetList = transformTargetList(pstate1, aStarList, EXPR_KIND_SELECT_TARGET);
+                    free_parsestate(pstate1);
+                    break;
                 }
             }
         }
@@ -3631,15 +3651,8 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
                 for (targetCell = list_head(stmt_targetList); targetCell; targetCell = next) {
                     ResTarget *rt = (ResTarget *)lfirst(targetCell);
                     char* colName1 = NULL;
-                    if (IsA(rt->val, A_Const)) {
-                        A_Const* a_const = (A_Const*)rt->val;
-                        colName1 = AConstToString(a_const);
-                    } else {
-                    Node *field = (Node *)linitial(((ColumnRef *)rt->val)->fields);
-                    if (IsA(field, A_Star))
+                    if (!get_column_name(rt->val, &colName1))
                         continue;
-                        colName1 = pstrdup(strVal((Value *)field));
-                    }
                     next = lnext(targetCell);
                     if (strcmp(colName1, colName) == 0)
                         stmt_targetList = list_delete_cell(stmt_targetList, targetCell, prev);
@@ -3677,15 +3690,15 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
                 appendStringInfo(&union_all_sql, "'%s', ", res_name);
                 pfree(res_name);
             } else {
-            ColumnRef *cref = (ColumnRef *)resTarget1->val;
-            Node *field = (Node *)linitial(cref->fields);
-            if (IsA(field, A_Star)) {
-                foreach (cell1, targetList) {
-                    TargetEntry *te = (TargetEntry *)lfirst(cell1);
-                    appendStringInfo(&union_all_sql, "%s, ", te->resname);
-                }
-            } else
-                appendStringInfo(&union_all_sql, "%s, ", strVal((Value *)field));
+                ColumnRef *cref = (ColumnRef *)resTarget1->val;
+                Node *field = (Node *)linitial(cref->fields);
+                if (IsA(field, A_Star)) {
+                    foreach (cell1, targetList) {
+                        TargetEntry *te = (TargetEntry *)lfirst(cell1);
+                        appendStringInfo(&union_all_sql, "%s, ", te->resname);
+                    }
+                } else
+                    appendStringInfo(&union_all_sql, "%s, ", strVal((Value *)field));
             }
         }
 
@@ -3772,6 +3785,10 @@ static Query* transformUnrotateStmt(ParseState* pstate, SelectStmt* stmt)
     }
     appendStringInfo(&union_all_sql, ";");
     pfree_ext(from_clause_sql.data);
+
+    list_free_ext(stmt->targetList);
+    stmt->targetList = list_copy(stmt_targetList);
+
     list_free_ext(stmt_targetList);
     list_free_ext(aStarList);
     list_free_ext(targetList);
