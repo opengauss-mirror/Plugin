@@ -1483,7 +1483,8 @@ typedef enum ConstrType { /* types of constraints */
     CONSTR_ATTR_DEFERRED,
     CONSTR_ATTR_IMMEDIATE,
     CONSTR_GENERATED,
-    CONSTR_AUTO_INCREMENT
+    CONSTR_AUTO_INCREMENT,
+    CONSTR_IDENTITY
 } ConstrType;
 
 typedef struct Constraint {
