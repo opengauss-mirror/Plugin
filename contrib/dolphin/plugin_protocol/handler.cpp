@@ -470,7 +470,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
                 break;
             }
             case TYPE_INT8: {
-                appendStringInfo(sql, "%lu", request->parameter_values[i].value.i8);
+                appendStringInfo(sql, "%lld", (int64)(request->parameter_values[i].value.i8));
                 break;
             }
             case TYPE_FLOAT: {
