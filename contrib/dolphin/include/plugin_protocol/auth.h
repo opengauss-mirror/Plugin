@@ -27,8 +27,8 @@
 #include "openssl/ssl.h"
 #include "openssl/dh.h"
 
-extern int dophin_conn_handshake(Port* port);
-extern void dophin_client_authentication(Port* port);
+extern int dolphin_conn_handshake(Port* port);
+extern void dolphin_client_authentication(Port* port);
 bool tls_secure_initialize();
 int TlsSecureOpen(Port* port);
 

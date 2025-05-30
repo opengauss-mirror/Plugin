@@ -48,7 +48,7 @@
 
 extern int dq_putmessage(const char* packet, size_t len); 
 extern int dq_getmessage(StringInfo s, uint32 maxlen); 
-extern int dq_special_getmessage(StringInfo buf, Port* port);
+extern int dq_special_getmessage(StringInfo buf);
 
 static inline void dq_append_int_len(StringInfo buf, uint64 num, int len)
 {

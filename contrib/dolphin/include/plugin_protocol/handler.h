@@ -28,7 +28,7 @@
 extern void proc_exit(int code);
 
 extern void dophin_send_ready_for_query(CommandDest dest);
-extern void dophin_send_message(ErrorData *edata);
+extern void dolphin_send_message(ErrorData *edata);
 extern int dophin_read_command(StringInfo buf);
 extern void dolphin_end_command(const char *completionTag);
 extern int dolphin_process_command(StringInfo buf);
