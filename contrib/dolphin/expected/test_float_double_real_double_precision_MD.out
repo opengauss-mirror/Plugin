@@ -147,6 +147,15 @@ select a, b, c, d from test3;
  9007199254740996 | 9007199254740996 | 9007199254740996 | 9007199254740996
 (6 rows)
 
+\d test3
+    Table "double_precision.test3"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ a      | double precision | 
+ b      | double precision | 
+ c      | double precision | 
+ d      | double precision | 
+
 create table test4(a float(100, 50), b double(100, 50),c real(100, 50), d double precision(100, 50));
 insert into test4 values(99999999999999999999999999999999999999999999999999.99999999999999999999999999999999999999999999999999,
 99999999999999999999999999999999999999999999999999.99999999999999999999999999999999999999999999999999,
@@ -170,15 +179,12 @@ create table test5(a double precision(3.6, 1.6));
 ERROR:  syntax error at or near "3.6"
 LINE 1: create table test5(a double precision(3.6, 1.6));
                                               ^
-create table test5(a double(3.6, 1.6));
-\d test3;
-    Table "double_precision.test3"
- Column |       Type       | Modifiers 
---------+------------------+-----------
- a      | double precision | 
- b      | double precision | 
- c      | double precision | 
- d      | double precision | 
+create table test5(a double(3.5, 1.4));
+\d test5
+  Table "double_precision.test5"
+ Column |     Type     | Modifiers 
+--------+--------------+-----------
+ a      | numeric(4,1) | 
 
 drop schema double_precision cascade;
 NOTICE:  drop cascades to 6 other objects
