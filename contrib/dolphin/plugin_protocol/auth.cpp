@@ -123,7 +123,7 @@ static const char tls_cipher_blocked[] = { "!aNULL:"
 static void dophin_hba_authentication(Port *prot);
 static bool exec_mysql_password_auth(Port *port);
 
-int dophin_conn_handshake(Port* port)
+int dolphin_conn_handshake(Port* port)
 {
     if (t_thrd.postmaster_cxt.HaShmData->current_mode == STANDBY_MODE &&
         (!g_instance.attr.attr_network.dolphin_hot_standby || !g_instance.attr.attr_storage.EnableHotStandby)) {
@@ -132,23 +132,31 @@ int dophin_conn_handshake(Port* port)
     }
 
     StringInfo buf = makeStringInfo();
-    next_seqid = 0;
+    u_sess->proc_cxt.nextSeqid = 0;
     temp_Conn_Mysql_Info = (conn_mysql_infoP_t)palloc(sizeof(conn_mysql_info_t));
 
     // send handshakev10 packet
     network_mysqld_auth_challenge *challenge = make_mysqld_handshakev10_packet(temp_Conn_Mysql_Info->conn_scramble);
     send_auth_challenge_packet(buf, challenge);
+
+    pfree(challenge->auth_plugin_name);
+    pfree(challenge->server_version_str);
+    pfree(challenge);
     
     // flush send buffer data to client
     pq_flush();
 
     // read user login request packet
-    if (dq_special_getmessage(buf, port) != STATUS_OK) {
+    if (dq_special_getmessage(buf) != STATUS_OK) {
+        DestroyStringInfo(buf);
         return EOF;
     }
     
     // read authreq packet
     network_mysqld_auth_request *authreq = read_login_request(buf, port);
+
+    DestroyStringInfo(buf);
+
     if (authreq == NULL) {
         return EOF;
     }
@@ -170,29 +178,25 @@ int dophin_conn_handshake(Port* port)
     if (authreq->schema) {
         StringInfo search_path = makeStringInfo();
         appendStringInfo(search_path, "\"$user\",%s", authreq->schema);
-        u_sess->attr.attr_common.namespace_search_path = search_path->data; 
-    } 
+        SetConfigOption("search_path", search_path->data, PGC_SUSET, PGC_S_OVERRIDE);
+        DestroyStringInfo(search_path);
+    }
 
-    pfree(challenge->auth_plugin_name);
-    pfree(challenge->server_version_str);
-    pfree(challenge);
     pfree(authreq);
-    DestroyStringInfo(buf);
-
     return STATUS_OK;
 }
 
-void dophin_client_authentication(Port *port)
+void dolphin_client_authentication(Port *port)
 {
     dophin_hba_authentication(port);
 
     network_mysqld_ok_packet_t *ok_packet = make_ok_packet();
     StringInfo buf = makeStringInfo();
-    send_network_ok_packet(buf, ok_packet); 
+    send_network_ok_packet(buf, ok_packet);
     pq_flush();
 
     pfree(ok_packet);
-    DestroyStringInfo(buf); 
+    DestroyStringInfo(buf);
 }
 
 void dophin_hba_authentication(Port *port)
