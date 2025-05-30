@@ -24,7 +24,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
     endif
   endif
 endif
-OBJS = bool.o cash.o date.o datetime.o \
+OBJS = arrayutils.o bool.o cash.o date.o datetime.o \
 	enum.o float.o format_type.o \
 	int.o int8.o int16.o \
 	json.o jsonfuncs.o like.o lockfuncs.o \

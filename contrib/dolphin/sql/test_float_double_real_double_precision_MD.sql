@@ -54,6 +54,7 @@ insert into test3 values(9007199254740991, 9007199254740991, 9007199254740991, 9
 (9007199254740995, 9007199254740995, 9007199254740995, 9007199254740995),
 (9007199254740996, 9007199254740996, 9007199254740996, 9007199254740996);
 select a, b, c, d from test3;
+\d test3
 
 create table test4(a float(100, 50), b double(100, 50),c real(100, 50), d double precision(100, 50));
 insert into test4 values(99999999999999999999999999999999999999999999999999.99999999999999999999999999999999999999999999999999,
@@ -65,8 +66,8 @@ select a, b, c, d from test4;
 create table test5(a float(3.6, 1.6));
 create table test5(a real(3.6, 1.6));
 create table test5(a double precision(3.6, 1.6));
-create table test5(a double(3.6, 1.6));
-\d test3;
+create table test5(a double(3.5, 1.4));
+\d test5
 
 drop schema double_precision cascade;
 reset current_schema;

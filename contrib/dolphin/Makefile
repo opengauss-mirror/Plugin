@@ -32,7 +32,7 @@ $(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/p
 $(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o \
 $(parser)/parse_describe.o $(parser)/parse_show.o $(parser)/parse_show_create.o $(parser)/parse_checksum.o $(parser)/parse_flush.o
 
-OBJS += $(adt)/bool.o $(adt)/cash.o $(adt)/date.o $(adt)/datetime.o\
+OBJS += $(adt)/arrayutils.o $(adt)/bool.o $(adt)/cash.o $(adt)/date.o $(adt)/datetime.o\
 $(adt)/enum.o $(adt)/float.o $(adt)/format_type.o\
 $(adt)/int.o $(adt)/int8.o $(adt)/int16.o\
 $(adt)/json.o $(adt)/jsonfuncs.o $(adt)/like.o $(adt)/lockfuncs.o\

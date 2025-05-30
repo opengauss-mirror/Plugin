@@ -8,6 +8,7 @@ Readme.md
 a_compat.cpp
 analyze.cpp
 analyze.h
+arrayutils.cpp
 auth.cpp
 auth.h
 bool.cpp
