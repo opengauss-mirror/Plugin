@@ -764,7 +764,7 @@ select * from partition_v1;
  b      | integer |           | plain   | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p1);
+   FROM partition_t1 PARTITION(p1);
 
 drop table partition_t1;
 select * from partition_v1;
@@ -780,7 +780,7 @@ CONTEXT:  referenced column: pg_get_viewdef
  b      | integer |           | plain   | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p1);
+   FROM partition_t1 PARTITION(p1);
 
 create table partition_t1 (a int, b int)
 partition by range(a)
@@ -802,7 +802,7 @@ select * from partition_v1;
  b      | integer |           | plain   | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p1);
+   FROM partition_t1 PARTITION(p1);
 
 -- less partition and different partition type
 drop table partition_t1;
@@ -827,7 +827,7 @@ select * from partition_v1;
  b      | character(20) |           | extended | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p1);
+   FROM partition_t1 PARTITION(p1);
 
 drop table partition_t1 cascade;
 NOTICE:  drop cascades to view partition_v1
@@ -878,7 +878,7 @@ select * from partition_v1;
  sales_amt  | integer               |           | plain    | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p_201901);
+   FROM partition_t1 PARTITION(p_201901);
 
 select * from partition_v2;
  month_code | dept_code | user_no | sales_amt 
@@ -972,7 +972,7 @@ CONTEXT:  referenced column: pg_get_viewdef
  sales_amt  | integer               |           | plain    | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p_201901);
+   FROM partition_t1 PARTITION(p_201901);
 
 select * from partition_v2;
 ERROR:  The view partition_v2 is invalid, please make it valid before operation.
@@ -1083,7 +1083,7 @@ select * from partition_v1;
  sales_amt  | integer               |           | plain    | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p_201901);
+   FROM partition_t1 PARTITION(p_201901);
 
 select * from partition_v2;
  month_code | dept_code | user_no | sales_amt 
@@ -1199,7 +1199,7 @@ select * from partition_v1;
  sales_amt  | character varying(30) |           | extended | 
 View definition:
  SELECT  *
-   FROM partition_t1 PARTITION (p_201901);
+   FROM partition_t1 PARTITION(p_201901);
 
 select * from partition_v2;
  month_code | dept_code | user_no | sales_amt 

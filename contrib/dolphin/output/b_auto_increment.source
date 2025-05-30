@@ -612,6 +612,17 @@ create table test (a int, b int AUTO_INCREMENT,KEY `b`(`b`));
 NOTICE:  CREATE TABLE will create implicit sequence "test_b_seq" for serial column "test.b"
 alter table test add primary key(a);
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_pkey" for table "test"
+--test maxvalue
+drop table test;
+create table test(a int AUTO_INCREMENT PRIMARY KEY);
+NOTICE:  CREATE TABLE will create implicit sequence "test_a_seq" for serial column "test.a"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
+select maximum_value from information_schema.sequences where sequence_name = 'test_a_seq';
+    maximum_value    
+---------------------
+ 9223372036854775807
+(1 row)
+
 \c postgres
 drop database if exists dolphin_autoinc;
 drop database if exists dolphin_autoinc_restore;

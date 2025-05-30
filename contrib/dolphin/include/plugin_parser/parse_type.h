@@ -58,7 +58,7 @@ extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ig
 extern Datum stringTypeDatumCompatibleNullResult(Type tp, char* string, int32 atttypmod, bool can_ignore,
     CoercionContext ccontext, bool* result_isnull);
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
-void DefineAnonymousEnum(TypeName * typname, Oid collations);
+Oid DefineAnonymousEnum(TypeName* typname, Oid collations);
 extern Datum GetEnumDefineStr(Oid enumOid);
 extern bool IsAnonymousEnum(Oid enumOid);
 extern Datum InputFunctionCallCompatibleNullResult(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod,

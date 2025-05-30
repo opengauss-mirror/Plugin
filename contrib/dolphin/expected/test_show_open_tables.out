@@ -1,3 +1,10 @@
+alter system set enable_stmt_track=off;
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- init
 create user user1 with sysadmin password 'Show@123';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
@@ -409,3 +416,10 @@ SHOW OPEN TABLES FROM show_open_tables_scm;
 ERROR:  syntax error at or near "TABLES"
 LINE 1: SHOW OPEN TABLES FROM show_open_tables_scm;
                   ^
+alter system set enable_stmt_track=on;
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+

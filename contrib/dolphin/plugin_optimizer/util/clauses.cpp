@@ -1101,6 +1101,65 @@ static bool func_meet_check_conditon(Oid functionid, check_function_context* con
         return false;
     }
 }
+
+static bool check_concat_satisfies_immutable(Oid funcid, List* args)
+{
+    /* handle some special func */
+    if (funcid == CONCATFUNCOID || funcid == CONCATWSFUNCOID) {
+        ListCell* arg = NULL;
+        foreach (arg, args) {
+            Oid typ = exprType((Node*)lfirst(arg));
+            /*
+             * binary: not ok, bytea_output will affect the result. raw, etc...
+             * binary: BINARY, VARBINARY, BLOB, TINYBLOB, MEDIUMBLOB, LONGBLOB, bit. althought the concat_internal treat
+             *          them specially, but the concat result is blob, so the result still affect by bytea_output.
+             * time: not ok, DateStyle will affect the result. time, timestamp, date, etc...
+             * num: ok, integer, float, numeric
+             * bool: ok
+             * string: ok, char/varchar/text/xml/json/set/enum/xml/unknown, etc...
+             */
+            switch (typ) {
+                case BOOLOID:
+                case CHAROID:
+                case NAMEOID:
+                case INT1OID:
+                case INT2OID:
+                case INT4OID:
+                case INT8OID:
+                case INT16OID:
+                case TEXTOID:
+                case OIDOID:
+                case CLOBOID:
+                case JSONOID:
+                case XMLOID:
+                case UNKNOWNOID:
+                case VARCHAROID:
+                case VARBITOID:
+                case CSTRINGOID:
+                case JSONBOID:
+                case NVARCHAR2OID:
+                case XIDOID:
+                case SHORTXIDOID:
+                    break;
+                default:
+                    if (
+#ifdef DOLPHIN
+                        /* some dolphin new created type */
+                        typ == YEAROID || typ == UINT1OID || typ == UINT2OID || typ == UINT4OID || typ == UINT8OID ||
+#endif
+                        type_is_set(typ) || type_is_enum(typ)) {
+                        break;
+                    }
+                    /* other case, return false directly */
+                    return false;
+            }
+        }
+        /* all args outfunc are immutable, return true */
+        return true;
+    }
+    return false;
+}
+
 /*
  * @Discription : walk through the node structure to find it contains specified
  *                function which meet the input condition
@@ -1119,8 +1178,15 @@ static bool contain_specified_functions_walker(Node* node, check_function_contex
         }
         FuncExpr* expr = (FuncExpr*)node;
 
-        if (func_meet_check_conditon(expr->funcid, context))
+        if (func_meet_check_conditon(expr->funcid, context)) {
+#ifdef DOLPHIN
+            if (context->checktype == CONTAIN_MUTABLE_FUNCTION &&
+                check_concat_satisfies_immutable(expr->funcid, expr->args)) {
+                return false;
+            }
+#endif
             return true;
+        }
         /* else fall through to check args */
     } else if (IsA(node, OpExpr)) {
         OpExpr* expr = (OpExpr*)node;
@@ -4230,61 +4296,7 @@ static bool is_safe_simplify_func(Oid funcid, List *args)
         }
     }
 
-    /* handle some special func */
-    if (funcid == CONCATFUNCOID || funcid == CONCATWSFUNCOID) {
-        ListCell* arg = NULL;
-        foreach (arg, args) {
-            Oid typ = exprType((Node*)lfirst(arg));
-            /*
-             * binary: not ok, bytea_output will affect the result. raw, etc...
-             * binary: BINARY, VARBINARY, BLOB, TINYBLOB, MEDIUMBLOB, LONGBLOB, bit. althought the concat_internal treat
-             *          them specially, but the concat result is blob, so the result still affect by bytea_output.
-             * time: not ok, DateStyle will affect the result. time, timestamp, date, etc...
-             * num: ok, integer, float, numeric
-             * bool: ok
-             * string: ok, char/varchar/text/xml/json/set/enum/xml/unknown, etc...
-             */
-            switch (typ) {
-                case BOOLOID:
-                case CHAROID:
-                case NAMEOID:
-                case INT1OID:
-                case INT2OID:
-                case INT4OID:
-                case INT8OID:
-                case INT16OID:
-                case TEXTOID:
-                case OIDOID:
-                case CLOBOID:
-                case JSONOID:
-                case XMLOID:
-                case UNKNOWNOID:
-                case VARCHAROID:
-                case VARBITOID:
-                case CSTRINGOID:
-                case JSONBOID:
-                case NVARCHAR2OID:
-                case XIDOID:
-                case SHORTXIDOID:
-                    break;
-                default:
-                    if (
-#ifdef DOLPHIN
-                        /* some dolphin new created type */
-                        typ == YEAROID || typ == UINT1OID || typ == UINT2OID || typ == UINT4OID || typ == UINT8OID ||
-#endif
-                        type_is_set(typ) || type_is_enum(typ)) {
-                        break;
-                    }
-                    /* other case, return false directly */
-                    return false;
-            }
-        }
-        /* all args outfunc are immutable, return true */
-        return true;
-    }
-
-    return false;
+    return check_concat_satisfies_immutable(funcid, args);
 }
 
 /*
