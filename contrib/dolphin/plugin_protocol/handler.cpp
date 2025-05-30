@@ -101,11 +101,14 @@ void dolphin_end_command(const char *completionTag)
     DestroyStringInfo(buf);
 }
 
-void dophin_send_message(ErrorData *edata)
+void dolphin_send_message(ErrorData *edata)
 {
-    if (edata->elevel < ERROR) return;
-    
-    network_mysqld_err_packet_t *err_packet = (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
+    if (edata->elevel < ERROR) {
+        return;
+    }
+
+    network_mysqld_err_packet_t *err_packet =
+        (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
     err_packet->errcode = edata->sqlerrcode;
     err_packet->errmsg = edata->message;
     err_packet->sqlstate = "HY000";   // convert errcode to mysql SQLSTATE later
@@ -503,7 +506,15 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
 void remove_cached_stmt_data(uint32 *statement_id)
 {
     if (GetSessionContext()->b_sendBlobHash) {
-        (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id, HASH_REMOVE, NULL);
+        HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id,
+                                                            HASH_REMOVE, NULL);
+        if (entry != NULL) {
+            for (int i = 0; i < entry->value->count; i++) {
+                pfree_ext(entry->value->data[i]);
+            }
+            pfree_ext(entry->value->data);
+            pfree_ext(entry->value);
+        }
     }
     if (GetSessionContext()->b_stmtInputTypeHash) {
         HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,

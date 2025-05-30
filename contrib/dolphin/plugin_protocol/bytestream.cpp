@@ -27,8 +27,7 @@
 
 #include "plugin_protocol/bytestream.h"
 #include "plugin_postgres.h"
-
-THR_LOCAL uint8 next_seqid;
+#include "pgstat.h"
 
 int dq_putmessage(const char *packet, size_t len)
 {
@@ -40,7 +39,7 @@ int dq_putmessage(const char *packet, size_t len)
     // put header size
     StringInfo header = makeStringInfo();
     dq_append_payload_len(header, len);
-    dq_append_sequence_id(header, next_seqid++); 
+    dq_append_sequence_id(header, u_sess->proc_cxt.nextSeqid++);
 
     if (internal_putbytes(header->data, header->len)) {
         goto fail;
@@ -60,56 +59,89 @@ fail:
     return EOF;
 }
 
-int dq_special_getmessage(StringInfo buf, Port* port)
+/* In contrast to pq_recvbuf, receive messages of a specific length and do not read more data */
+static int dolphin_pq_getbytes(char* s, size_t len)
 {
-    uint32  nDataLen = 0;
-    int     nSizeRecved = 0;
-    int     nSizeRecvedTemp = 0;
-    int		loopTimes = 0;
-    uint8   ser_num = 0;
+    /* Ensure that we're in blocking mode */
+    pq_set_nonblocking(false);
+
+    /* Can fill buffer from PqRecvLength and upwards */
+    while (len > 0) {
+        int r;
+
+        WaitState oldStatus = pgstat_report_waitstatus(STATE_WAIT_COMM);
+        r = secure_read(u_sess->proc_cxt.MyProcPort, s, len);
+        (void)pgstat_report_waitstatus(oldStatus);
+
+        if (r < 0) {
+            if (errno == EINTR) {
+                continue; /* Ok if interrupted */
+            }
+
+            /*
+             * Careful: an ereport() that tries to write to the client would
+             * cause recursion to here, leading to stack overflow and core
+             * dump!  This message must go *only* to the postmaster log.
+             */
+            ereport(COMMERROR,
+                (errcode_for_socket_access(), errmsg("could not receive data from client: %s", gs_comm_strerror())));
+            return EOF;
+        }
+        if (r == 0) {
+            /*
+             * EOF detected.  We used to write a log message here, but it's
+             * better to expect the ultimate caller to do that.
+             */
+            return EOF;
+        }
+
+        s += r;
+        len -= r;
+    }
+    return 0;
+}
+
+int dq_special_getmessage(StringInfo buf)
+{
+    uint32 len;
+    uint8 seq_id;
 
     resetStringInfo(buf);
     enlargeStringInfo(buf, PROTO_PAYLOAD_LEN);
-    // Read packet length
-    nSizeRecved = recv(port->sock, buf->data, PROTO_PAYLOAD_LEN, 0);
-    if (PROTO_PAYLOAD_LEN > nSizeRecved) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Failed to receive data")));
+    // Read PROTO_PAYLOAD_LEN bytes from recvbuf
+    if (dolphin_pq_getbytes(buf->data, PROTO_PAYLOAD_LEN) == EOF) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
+                            errmsg("unexpected EOF within PROTO_PAYLOAD_LEN word")));
         return EOF;
     }
     buf->len = PROTO_PAYLOAD_LEN;
-    dq_get_payload_len(buf, &nDataLen);
+    dq_get_payload_len(buf, &len);
     //Disconnect and report an error when the received data length exceeds the required upper limit
-    if (PROTO_RECV_BUFFER_SIZE < nDataLen) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
-        return EOF;
-    }
-    nSizeRecved = recv(port->sock, (char *)&ser_num, 1, 0);
-    if (ser_num != 1) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
-        return EOF;
-    }
-    next_seqid = ++ser_num;
-    resetStringInfo(buf);
-    enlargeStringInfo(buf, nDataLen);
-    // read data
-    nSizeRecved = 0;
-    while (nSizeRecved < nDataLen) {
-        loopTimes++;
-        nSizeRecvedTemp = recv(port->sock, buf->data + nSizeRecved, nDataLen - nSizeRecved, 0);
-        if (nSizeRecvedTemp <= 0 || loopTimes > nDataLen) {
-            break;
-        } else {
-            nSizeRecved += nSizeRecvedTemp;
-        }
-    }
-    if (nSizeRecved != nDataLen) {
+    if (PROTO_RECV_BUFFER_SIZE < len) {
         ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("Abnormal data reception")));
         return EOF;
     }
 
-    buf->len = nDataLen;
-    buf->cursor = 0;
-    buf->data[nSizeRecved] = '\0';
+    // read one byte sequence id
+    if (dolphin_pq_getbytes((char*)&seq_id, 1) == EOF || seq_id != 1) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within seq_id word")));
+        return EOF;
+    }
+    u_sess->proc_cxt.nextSeqid = ++seq_id;
+    resetStringInfo(buf);
+    enlargeStringInfo(buf, len);
+    if (len > 0) {
+        // read playload_lenght bytes into buf->data
+        if (dolphin_pq_getbytes(buf->data, len) == EOF) {
+            ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+            return EOF;
+        }
+
+        buf->len = len;
+        buf->cursor = 0;
+        buf->data[len] = '\0';
+    }
+
     return 0;
 }
 
@@ -137,7 +169,7 @@ int dq_getmessage(StringInfo buf, uint32 maxlen)
         ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within seq_id word")));
         return EOF; 
     }
-    next_seqid = ++seq_id;
+    u_sess->proc_cxt.nextSeqid = ++seq_id;
 
     // Read rest of payload length bytes into buf
     if (len > 0) {

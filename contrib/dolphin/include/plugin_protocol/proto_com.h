@@ -24,8 +24,6 @@
 
 #include "c.h"
 
-extern THR_LOCAL uint8 next_seqid;
-
 typedef struct dolphin_proto_ctx {
     char *server_name;
     NameData database_name;
