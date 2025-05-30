@@ -321,6 +321,60 @@ public class MySQLJdbcPrepareTest {
             p3.setString(1, "abc");
             p3.executeUpdate();
             p3.close();
+
+            statement.executeUpdate("drop table if exists test_prepare");
+            statement.executeUpdate("create table test_prepare (id int)");
+            statement.executeUpdate("insert into test_prepare values(-999)");
+            statement.executeUpdate("insert into test_prepare values(-1)");
+            statement.executeUpdate("insert into test_prepare values(-2147483648)");
+            statement.executeUpdate("insert into test_prepare values(2147483647)");
+
+            PreparedStatement p4 = connection.prepareStatement("select * from test_prepare where id = ?");
+            p4.setLong(1, -999);
+            resultSet = p4.executeQuery();
+            print_res(resultSet);
+
+            p4.setLong(1, -1);
+            resultSet = p4.executeQuery();
+            print_res(resultSet);
+
+            p4.setLong(1, -2147483648);
+            resultSet = p4.executeQuery();
+            print_res(resultSet);
+
+            p4.setLong(1, 2147483647);
+            resultSet = p4.executeQuery();
+            print_res(resultSet);
+
+            statement.executeUpdate("drop table if exists test_prepare");
+            statement.executeUpdate("create table test_prepare (id bigint)");
+            statement.executeUpdate("insert into test_prepare values(9223372036854775807)");
+            statement.executeUpdate("insert into test_prepare values(-9223372036854775808)");
+            statement.executeUpdate("insert into test_prepare values(-999)");
+            statement.executeUpdate("insert into test_prepare values(-1)");
+            statement.executeUpdate("insert into test_prepare values(999)");
+
+            PreparedStatement p5 = connection.prepareStatement("select * from test_prepare where id = ?");
+            p5.setLong(1, 9223372036854775807L);
+            resultSet = p5.executeQuery();
+            print_res(resultSet);
+
+            p5.setLong(1, -9223372036854775808L);
+            resultSet = p5.executeQuery();
+            print_res(resultSet);
+
+            p5.setLong(1, -999);
+            resultSet = p5.executeQuery();
+            print_res(resultSet);
+
+            p5.setLong(1, -1);
+            resultSet = p5.executeQuery();
+            print_res(resultSet);
+
+            p5.setLong(1, 999);
+            resultSet = p5.executeQuery();
+            print_res(resultSet);
+
         }
     }
 }
