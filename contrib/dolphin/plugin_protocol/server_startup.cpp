@@ -117,9 +117,9 @@ SSL_CTX* g_tls_ctx = NULL;
 static ProtocolExtensionConfig dolphin_protocol_config = {
     true,
     pq_init,
-    dophin_conn_handshake, /* fn_start */
-    dophin_client_authentication, /* fn_authenticate */
-    dophin_send_message,  /* fn_send_message */
+    dolphin_conn_handshake, /* fn_start */
+    dolphin_client_authentication, /* fn_authenticate */
+    dolphin_send_message,  /* fn_send_message */
     NULL,
     dolphin_comm_reset,  /* fn_comm_reset */
     dophin_send_ready_for_query, /* fn_send_ready_for_query */
