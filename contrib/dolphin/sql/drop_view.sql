@@ -1,0 +1,79 @@
+create database drop_view_database with dbcompatibility = 'B';
+\c drop_view_database
+create table test(id int, name varchar(20));
+insert into test values(1, 'test1'), (2, 'test2'), (3, 'test3');
+create view view1 as select * from test;
+create view view2 as select id from test;
+create view view3 as select name from test;
+create view view4 as select v1.id as id1, v1.name as name1, v2.id from view1 as v1 cross join view2 as v2;
+create view view5 as select * from test;
+create view view6 as select id from test;
+select * from view4;
+create table table_view1 as select * from view1;
+select * from table_view1;
+
+drop view if exists view1;
+select * from view4;
+create view view1 as select * from test;
+select * from view4;
+drop view if exists view2, view3;
+create view view2 as select id from test;
+create view view3 as select name from test;
+drop view if exists view5, view6;
+create view view5 as select * from test;
+create view view6 as select id from test;
+
+drop view if exists view1 restrict;
+select * from view4;
+create view view1 as select * from test;
+select * from view4;
+drop view if exists view2, view3 restrict;
+create view view2 as select id from test;
+create view view3 as select name from test;
+drop view if exists view5, view6 restrict;
+create view view5 as select * from test;
+create view view6 as select id from test;
+
+drop view view1 restrict;
+select * from view4;
+create view view1 as select * from test;
+select * from view4;
+drop view view2, view3 restrict;
+create view view2 as select id from test;
+create view view3 as select name from test;
+drop view view5, view6 restrict;
+create view view5 as select * from test;
+create view view6 as select id from test;
+
+drop view if exists view1 cascade;
+select * from view4;
+create view view1 as select * from test;
+-- mysql can query view4, but openGauss error for view4 does not exist
+select * from view4;
+drop view if exists view2, view3 cascade;
+create view view2 as select id from test;
+create view view3 as select name from test;
+drop view if exists view5, view6 cascade;
+create view view5 as select * from test;
+create view view6 as select id from test;
+
+drop view view1 cascade;
+select * from view4;
+create view view1 as select * from test;
+-- mysql can query view4, but openGauss error for view4 does not exist
+select * from view4;
+drop view view2, view3 cascade;
+create view view2 as select id from test;
+create view view3 as select name from test;
+drop view view5, view6 cascade;
+create view view5 as select * from test;
+create view view6 as select id from test;
+
+truncate table test;
+select * from test;
+insert into test values(1, 'test1'), (2, 'test2'), (3, 'test3');
+truncate test;
+select * from test;
+
+\c postgres
+drop database drop_view_database;

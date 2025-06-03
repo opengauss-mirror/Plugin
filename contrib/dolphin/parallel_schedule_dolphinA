@@ -95,3 +95,5 @@ test: user_host_test sqlmode_having is_clause null-safe_eq_in null-safe_eq_like 
 test: test_show_open_tables
 test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
 test: test_show_open_tables_cleanup
+
+test: drop_view
