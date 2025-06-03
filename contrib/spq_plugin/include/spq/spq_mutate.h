@@ -34,4 +34,5 @@ extern bool is_plan_node(Node *node);
 extern void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob);
 extern Plan *replace_motion_stream_recurse(PlannerInfo* root, SpqSliceContext *result, Plan *plan, bool &top, bool fromdml = false);
 
+extern Plan* spq_set_plan_references(PlannerInfo* root, Plan* plan);
 #endif /* SPQ_MUTATE_H */

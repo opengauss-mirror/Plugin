@@ -317,6 +317,17 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
             return (Node *)newspqseqscan;
             break;
         }
+#ifdef ENABLE_HTAP
+        case T_SpqCStoreScan: {
+            SpqCStoreScan *spqcstorescan = (SpqCStoreScan *)node;
+            SpqCStoreScan *newspqcstorescan;
+
+            FLATCOPY(newspqcstorescan, spqcstorescan, SpqCStoreScan);
+            SCANMUTATE(newspqcstorescan, spqcstorescan);
+            return (Node *)newspqcstorescan;
+            break;
+        }
+#endif
 
             // 		case T_DynamicSeqScan:
             // 			{

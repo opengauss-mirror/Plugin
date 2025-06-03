@@ -1165,3 +1165,184 @@ void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal
     InitRemoteNodeDefinition(result);
     pfree_ext(subplan_ids);
 }
+
+#ifdef ENABLE_HTAP
+static void spq_set_dummy_tlist_references(Plan *plan, int rtoffset)
+{
+    List *output_targetlist = NIL;
+    ListCell *l = NULL;
+
+    foreach (l, plan->targetlist) {
+        TargetEntry *tle = (TargetEntry *)lfirst(l);
+        Var *oldvar = (Var *)tle->expr;
+        Var *newvar = NULL;
+
+        newvar = makeVar(OUTER_VAR, tle->resno, exprType((Node *)oldvar), exprTypmod((Node *)oldvar),
+                         exprCollation((Node *)oldvar), 0);
+        if (IsA(oldvar, Var)) {
+            newvar->varnoold = oldvar->varno + rtoffset;
+            newvar->varoattno = oldvar->varattno;
+        } else {
+            newvar->varnoold = 0; /* wasn't ever a plain Var */
+            newvar->varoattno = 0;
+        }
+
+        tle = flatCopyTargetEntry(tle);
+        tle->expr = (Expr *)newvar;
+        output_targetlist = lappend(output_targetlist, tle);
+    }
+    plan->targetlist = output_targetlist;
+
+    /* We don't touch plan->qual here */
+}
+
+static Plan *spq_set_plan_refs(PlannerInfo *root, Plan *plan, int rtoffset)
+{
+    if (plan == NULL)
+        return NULL;
+
+    /*
+     * Plan-type-specific fixes
+     */
+    switch (nodeTag(plan)) {
+        case T_VecToRow:
+        case T_RowToVec:
+            /*
+             * These plan types don't actually bother to evaluate their
+             * targetlists, because they just return their unmodified input
+             * tuples.	Even though the targetlist won't be used by the
+             * executor, we fix it up for possible use by EXPLAIN (not to
+             * mention ease of debugging --- wrong varnos are very confusing).
+             */
+            spq_set_dummy_tlist_references(plan, rtoffset);
+
+            /*
+             * Since these plan types don't check quals either, we should not
+             * find any qual expression attached to them.
+             */
+            AssertEreport(plan->qual == NIL, MOD_OPT, "qual should be null");
+            break;
+        case T_Append:
+        case T_VecAppend: {
+            Append *splan = (Append *)plan;
+
+            /*
+             * Append, like Sort et al, doesn't actually evaluate its
+             * targetlist or check quals.
+             */
+            spq_set_dummy_tlist_references(plan, rtoffset);
+            AssertEreport(splan->plan.qual == NIL, MOD_OPT, "qual should be null");
+            ListCell *l = NULL;
+            foreach (l, splan->appendplans) {
+                lfirst(l) = spq_set_plan_refs(root, (Plan *)lfirst(l), rtoffset);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /*
+     * Now recurse into child plans, if any
+     *
+     * NOTE: it is essential that we recurse into child plans AFTER we set
+     * subplan references in this plan's tlist and quals.  If we did the
+     * reference-adjustments bottom-up, then we would fail to match this
+     * plan's var nodes against the already-modified nodes of the children.
+     */
+    plan->lefttree = spq_set_plan_refs(root, plan->lefttree, rtoffset);
+    plan->righttree = spq_set_plan_refs(root, plan->righttree, rtoffset);
+
+    return plan;
+}
+
+Plan *spq_set_plan_references(PlannerInfo *root, Plan *plan)
+{
+    PlannerGlobal *glob = root->glob;
+    int rtoffset = list_length(glob->finalrtable);
+    ListCell *lc = NULL;
+
+    /*
+     * In the flat rangetable, we zero out substructure pointers that are not
+     * needed by the executor; this reduces the storage space and copying cost
+     * for cached plans.  We keep only the alias and eref Alias fields, which
+     * are needed by EXPLAIN, and the selectedCols and modifiedCols bitmaps,
+     * which are needed for executor-startup permissions checking and for
+     * trigger event checking.
+     */
+    foreach (lc, root->parse->rtable) {
+        RangeTblEntry *rte = (RangeTblEntry *)lfirst(lc);
+        RangeTblEntry *newrte = NULL;
+
+        /* flat copy to duplicate all the scalar fields */
+        newrte = (RangeTblEntry *)palloc(sizeof(RangeTblEntry));
+        errno_t rc = memcpy_s(newrte, sizeof(RangeTblEntry), rte, sizeof(RangeTblEntry));
+        securec_check(rc, "\0", "\0");
+
+        /*
+         * zap unneeded sub-structure, keep nerte->securityQuals here
+         * because we need this information when execute explain query.
+         */
+        newrte->subquery = NULL;
+        newrte->joinaliasvars = NIL;
+        newrte->funcexpr = NULL;
+        newrte->funccoltypes = NIL;
+        newrte->funccoltypmods = NIL;
+        newrte->funccolcollations = NIL;
+        newrte->values_lists = NIL;
+        newrte->values_collations = NIL;
+        newrte->ctecoltypes = NIL;
+        newrte->ctecoltypmods = NIL;
+        newrte->ctecolcollations = NIL;
+
+        glob->finalrtable = lappend(glob->finalrtable, newrte);
+
+        /*
+         * If it's a plain relation RTE, add the table to relationOids.
+         *
+         * We do this even though the RTE might be unreferenced in the plan
+         * tree; this would correspond to cases such as views that were
+         * expanded, child tables that were eliminated by constraint
+         * exclusion, etc.	Schema invalidation on such a rel must still force
+         * rebuilding of the plan.
+         *
+         * Note we don't bother to avoid duplicate list entries.  We could,
+         * but it would probably cost more cycles than it would save.
+         */
+        if (newrte->rtekind == RTE_RELATION)
+            glob->relationOids = lappend_oid(glob->relationOids, newrte->relid);
+    }
+
+    /*
+     * Check for RT index overflow; it's very unlikely, but if it did happen,
+     * the executor would get confused by varnos that match the special varno
+     * values.
+     */
+    if (IS_SPECIAL_VARNO(list_length(glob->finalrtable)))
+        ereport(ERROR, (errmodule(MOD_OPT), (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                                             errmsg("too many range table entries when set plan reference."))));
+
+    /*
+     * Adjust RT indexes of PlanRowMarks and add to final rowmarks list
+     */
+    foreach (lc, root->rowMarks) {
+        PlanRowMark *rc = (PlanRowMark *)lfirst(lc);
+        PlanRowMark *newrc = NULL;
+
+        AssertEreport(IsA(rc, PlanRowMark), MOD_OPT, "type plan row mark is required.");
+
+        /* flat copy is enough since all fields are scalars */
+        newrc = (PlanRowMark *)palloc(sizeof(PlanRowMark));
+        errno_t ret = memcpy_s(newrc, sizeof(PlanRowMark), rc, sizeof(PlanRowMark));
+        securec_check(ret, "\0", "\0");
+        /* adjust indexes ... but *not* the rowmarkId */
+        newrc->rti += rtoffset;
+        newrc->prti += rtoffset;
+
+        glob->finalrowmarks = lappend(glob->finalrowmarks, newrc);
+    }
+
+    /* Now fix the Plan tree */
+    return spq_set_plan_refs(root, plan, rtoffset);
+}
+#endif

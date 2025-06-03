@@ -53,6 +53,12 @@
 /* SPQ: for shareindexscan */
 #include "naucrates/dxl/operators/CDXLPhysicalShareIndexScan.h"
 
+#ifdef ENABLE_HTAP
+#include "access/htap/imcs_hash_table.h"
+#include "storage/cu.h"
+#endif
+#include "optimizer/var.h"
+
 using namespace spqdxl;
 using namespace spqos;
 using namespace spqopt;
@@ -564,6 +570,75 @@ CTranslatorDXLToPlStmt::SetParamIds(Plan *plan)
 	plan->allParam = bitmapset;
 }
 
+#ifdef ENABLE_HTAP
+static BOOL TryCreateSPQCstoreScan(RangeTblEntry *rte, List *targetlist_out, Index index, bool isShareScan)
+{
+    if (!u_sess->attr.attr_sql.enable_imcsscan) {
+        return false;
+    }
+
+    IMCSDesc *imcsDesc = IMCS_HASH_TABLE->GetImcsDesc(rte->relid);
+    if (imcsDesc == NULL) {
+        return false;
+    }
+
+    if (imcsDesc->imcsStatus != IMCS_POPULATE_COMPLETE) {
+        return false;
+    }
+
+    if (imcsDesc->isShmNotEnough) {
+        ereport(WARNING, (errmsg("IMCStore vacuum failed: can't prealloc share memory, "
+            "please unimcstored. Otherwise local memory expansion may occur.")));
+    }
+
+    const char* htapClusterMap = g_instance.attr.attr_sql.ss_htap_cluster_map;
+    const char* curSpqClusterMap = u_sess->attr.attr_spq.gauss_cluster_map;
+    if (strcmp(htapClusterMap, curSpqClusterMap) != 0) {
+        ereport(WARNING, (errmsg("If want to enable Spq Cstore Scan, "
+                                 "ss_htap_cluster_map and spqplugin.cluster_map must be the same.")));
+        return false;
+    }
+
+    if (isShareScan && !imcsDesc->populateInShareMem) {
+        return false;
+    }
+
+    // get all imcstored attrs
+    Bitmapset *imcstore_attrs = NULL;
+    for (int i = 0; i < imcsDesc->imcsAttsNum->dim1; ++i) {
+        imcstore_attrs =
+            bms_add_member(imcstore_attrs, imcsDesc->imcsAttsNum->values[i] - FirstLowInvalidHeapAttributeNumber);
+    }
+
+    ListCell *lc;
+
+    List *exprs = NIL;
+    foreach (lc, targetlist_out) {
+        TargetEntry *target_entry = (TargetEntry *)lfirst(lc);
+        exprs = lappend(exprs, target_entry->expr);
+    }
+
+    // get all scan attrs
+    Bitmapset *scan_attrs = NULL;
+    pull_varattnos((Node *)exprs, index, &scan_attrs);
+
+    if (scan_attrs == NULL) {
+        bms_free_ext(imcstore_attrs);
+        return false;
+    }
+
+    if (!bms_is_subset(scan_attrs, imcstore_attrs)) {
+        bms_free_ext(scan_attrs);
+        bms_free_ext(imcstore_attrs);
+        return false;
+    }
+
+    bms_free_ext(scan_attrs);
+    bms_free_ext(imcstore_attrs);
+
+    return true;
+}
+#endif
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -599,6 +674,10 @@ CTranslatorDXLToPlStmt::TranslateDXLTblScan(
 	rte->requiredPerms |= ACL_SELECT;
 	m_dxl_to_plstmt_context->AddRTE(rte);
 
+	// translate proj list and filter
+	CDXLNode *project_list_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexProjList];
+	CDXLNode *filter_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexFilter];
+
 	Plan *plan = NULL;
 	Plan *plan_return = NULL;
 	if (IMDRelation::ErelstorageExternal == md_rel->RetrieveRelStorageType())
@@ -631,18 +710,32 @@ CTranslatorDXLToPlStmt::TranslateDXLTblScan(
 		plan = &(ext_scan->scan.plan);
 		plan_return = (Plan *) ext_scan;
 #endif
-	}
-	else
-	{
-		// create seq scan node
-        SpqSeqScan *spq_scan = MakeNode(SpqSeqScan);
-        spq_scan->scan.scanrelid = index;
-        spq_scan->isFullTableScan = false;
-        spq_scan->isAdaptiveScan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
-        spq_scan->isDirectRead = u_sess->attr.attr_spq.spq_enable_direct_read;
-        spq_scan->DirectReadBlkNum = InvalidBlockNumber;
-        plan = &(spq_scan->scan.plan);
-        plan_return = (Plan *) spq_scan;
+	} else {
+#ifdef ENABLE_HTAP
+        // translate proj list
+        List *targetlist_out = TranslateDXLProjList(project_list_dxlnode,
+            &base_table_context,  // base table translation context
+            NULL, output_context);
+
+		if (TryCreateSPQCstoreScan(rte, targetlist_out, index, false)) {
+			SpqCStoreScan *spq_scan = MakeNode(SpqCStoreScan);
+			spq_scan->isAdaptiveScan = false;
+			spq_scan->scanrelid = index;
+			plan = &(spq_scan->plan);
+			plan_return = (Plan *)spq_scan;
+		} else
+#endif
+		{
+			// create seq scan node
+        	SpqSeqScan *spq_scan = MakeNode(SpqSeqScan);
+			spq_scan->scan.scanrelid = index;
+			spq_scan->isFullTableScan = false;
+			spq_scan->isAdaptiveScan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
+			spq_scan->isDirectRead = u_sess->attr.attr_spq.spq_enable_direct_read;
+			spq_scan->DirectReadBlkNum = InvalidBlockNumber;
+			plan = &(spq_scan->scan.plan);
+			plan_return = (Plan *) spq_scan;
+		}
 	}
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
 	// //plan->nMotionNodes = 0;
@@ -656,10 +749,6 @@ CTranslatorDXLToPlStmt::TranslateDXLTblScan(
 
 	// a table scan node must have 2 children: projection list and filter
 	SPQOS_ASSERT(2 == tbl_scan_dxlnode->Arity());
-
-	// translate proj list and filter
-	CDXLNode *project_list_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexProjList];
-	CDXLNode *filter_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexFilter];
 
 	TranslateProjListAndFilter(
 		project_list_dxlnode, filter_dxlnode,
@@ -6364,6 +6453,26 @@ CTranslatorDXLToPlStmt::TranslateDXLTblShareScan(
     m_dxl_to_plstmt_context->AddRTE(rte);
     Plan *plan = NULL;
     Plan *plan_return = NULL;
+
+	// translate proj list and filter
+    CDXLNode *project_list_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexProjList];
+    CDXLNode *filter_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexFilter];
+
+#ifdef ENABLE_HTAP
+    // translate proj list
+    List *targetlist_out = TranslateDXLProjList(project_list_dxlnode,
+                                                &base_table_context,  // base table translation context
+                                                NULL, output_context);
+
+    if (TryCreateSPQCstoreScan(rte, targetlist_out, index, true)) {
+        SpqCStoreScan *spq_scan = MakeNode(SpqCStoreScan);
+        spq_scan->isShareScan = true;
+        spq_scan->isAdaptiveScan = false;
+        spq_scan->scanrelid = index;
+        plan = &(spq_scan->plan);
+        plan_return = (Plan *)spq_scan;
+    } else
+#endif
     {
         // create seq scan node
         SpqSeqScan *spq_scan = MakeNode(SpqSeqScan);
@@ -6384,10 +6493,6 @@ CTranslatorDXLToPlStmt::TranslateDXLTblShareScan(
 
     // a table scan node must have 2 children: projection list and filter
     SPQOS_ASSERT(2 == tbl_scan_dxlnode->Arity());
-
-    // translate proj list and filter
-    CDXLNode *project_list_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexProjList];
-    CDXLNode *filter_dxlnode = (*tbl_scan_dxlnode)[EdxltsIndexFilter];
 
     TranslateProjListAndFilter(
         project_list_dxlnode,
