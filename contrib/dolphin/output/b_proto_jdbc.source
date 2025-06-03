@@ -151,10 +151,13 @@ c28:GEOMETRY:((1000,0),(200,3))
 c29:VARCHAR:text
 c30:DECIMAL:20.000
 c31:JSON:{"k": "v"}
-c32:CHAR:a
-c33:CHAR:a
 c34:CHAR:c
 c35:CHAR:openGauss name
+insert point failed: parameter $1 of type integer cannot be coerced to the expected type point
+c1:CHAR:a
+c2:CHAR:b
+c1:CHAR:a
+c2:CHAR:b
 Tables_in_proto_user:CHAR:t3
 Name:CHAR:t3
 Engine:VARCHAR:ASTORE
@@ -422,8 +425,6 @@ c28:GEOMETRY:null
 c29:VARCHAR:null
 c30:DECIMAL:null
 c31:JSON:null
-c32:CHAR:null
-c33:CHAR:null
 c34:CHAR:null
 c35:CHAR:null
 update failed:invalid input syntax for type double precision: "abc"
@@ -439,9 +440,9 @@ id:BIGINT:-1
 id:BIGINT:999
 Errcode for preparement not support:1295
 select * from t3;
- c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |    c24     |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 | c34 |      c35       
-----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+------------+------------+------------+----------+--------------------+------+--------+------------+-----+-----+-----+----------------
-  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | \x626c6f62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a   | c   | openGauss name
+ c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |    c24     |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c34 |      c35       
+----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+------------+------------+------------+----------+--------------------+------+--------+------------+-----+----------------
+  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | \x626c6f62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | c   | openGauss name
 (1 row)
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTinyInt1IsBitTest localhost $dp db_jdbc proto_user Gauss@123

@@ -26,6 +26,7 @@
 #include "executor/spi_priv.h"
 #include "commands/prepare.h"
 #include "commands/sequence.h"
+#include "utils/builtins.h"
 
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
@@ -119,6 +120,7 @@ void dolphin_send_message(ErrorData *edata)
 
     pfree(err_packet);
     DestroyStringInfo(buf);
+    pq_flush();
 }
 
 int dophin_read_command(StringInfo buf)
@@ -180,6 +182,7 @@ int dolphin_process_command(StringInfo buf)
             GetSessionContext()->is_binary_proto = true;
             execute_binary_protocol_req_process_b(buf);
             execute_binary_protocol_req_process_e();
+            exec_sync_message();
             GetSessionContext()->is_binary_proto = false;
             break;
         }
@@ -495,19 +498,15 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
                 break;
             }
             case TYPE_HEX: {
-                sendType = VARBITOID;
-                size_t value_len = strlen(param[i].value.text);
-                StringInfo sql = makeStringInfo();
-                appendStringInfo(sql, "x'");
-                for (size_t j = 0; j < value_len; j++) {
-                    appendStringInfo(sql, "%x", param[i].value.text[j]);
+                if (param[i].value.text == NULL) {
+                    isNull = true;
+                    break;
                 }
-                appendStringInfo(sql, "'");
+                sendType = BITOID;
                 Oid typinput;
                 Oid typioparam;
-                getTypeInputInfo(VARBITOID, &typinput, &typioparam);
-                pval = OidInputFunctionCall(typinput, (char*)sql->data, typioparam, -1);
-                DestroyStringInfo(sql);
+                getTypeInputInfo(sendType, &typinput, &typioparam);
+                pval = OidInputFunctionCall(typinput, (char*)param[i].value.text, typioparam, -1);
                 break;
             }
             default:
@@ -518,14 +517,15 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
         if (!isNull && sendType != InvalidOid && sendType != ptype) {
             /* maybe we have better way to deal with these data type transform? */
             Oid castFunc;
-            /*
-             * actually we can use COERCION_EXPLICIT here, but in find_coercion_pathway, COERCION_EXPLICIT will do many
-             * other things we don't want, so just give COERCION_EXPLICIT, it's seems ok now.
-             */
-            CoercionPathType pathtype = find_coercion_pathway(ptype, sendType, COERCION_ASSIGNMENT, &castFunc);
+            CoercionPathType pathtype = find_coercion_pathway(ptype, sendType, COERCION_EXPLICIT, &castFunc);
             switch (pathtype) {
                 case COERCION_PATH_NONE:
-                    ereport(ERROR, (errmsg("could not cast source type: %d to target type: %d.", sendType, ptype)));
+                    ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("parameter $%d of type %s cannot be coerced to the expected type %s",
+                            i + 1,
+                            format_type_be(sendType),
+                            format_type_be(ptype)),
+                        errhint("You will need to rewrite or cast the expression.")));
                     break;
                 case COERCION_PATH_FUNC:
                     pval = OidFunctionCall1(castFunc, pval);
@@ -639,6 +639,7 @@ void execute_com_stmt_reset(StringInfo buf)
 
 void execute_com_stmt_close(StringInfo buf)
 {
+    OgRecordAutoController _local_opt(SRT11_C);
     uint32 statement_id;
     char stmt_name[NAMEDATALEN];
     dq_get_int4(buf, &statement_id);

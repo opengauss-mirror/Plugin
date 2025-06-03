@@ -160,7 +160,8 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
      * descriptor of the tuples.
      */
     if (myState->sendDescrip) {
-        myState->pub.sendRowDesc(&myState->buf, typeinfo, myState->target_list, NULL);
+        List *target_list = myState->portal != NULL ? FetchPortalTargetList(myState->portal) : myState->target_list;
+        myState->pub.sendRowDesc(&myState->buf, typeinfo, target_list, NULL);
     }
 }
 
