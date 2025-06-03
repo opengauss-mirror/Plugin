@@ -789,8 +789,36 @@ select * from t_nvarchar2;
  123456789123456789
 (3 rows)
 
+-- test typecast with foreign key
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+create table t1(
+    column1 int ,
+    column2 char(10) primary Key,
+    column3 int,
+    unique(column1)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t1_column1_key" for table "t1"
+insert into t1 values(1,'df',22.22);
+insert into t1 values(2,'df1',22.22);
+insert into t1 values(3,'df2',22.22);
+drop table if exists t2;
+NOTICE:  table "t2" does not exist, skipping
+create table t2(
+    column1 int unique,
+    column2 char(10) primary Key
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t2_column1_key" for table "t2"
+insert into t2 values(1,'df');
+insert into t2 values(2,'dfd');
+insert into t2 values(3,'sdf');
+alter table t2 add foreign Key (column1) references t1(column2);
+ERROR:  insert or update on table "t2" violates foreign key constraint "t2_column1_fkey"
+DETAIL:  Key (column1)=(1) is not present in table "t1".
 drop schema sql_ignore_type_transform_test cascade;
-NOTICE:  drop cascades to 14 other objects
+NOTICE:  drop cascades to 16 other objects
 DETAIL:  drop cascades to table t
 drop cascades to table t_tinyint
 drop cascades to table t_smallint
@@ -805,4 +833,6 @@ drop cascades to table t_character
 drop cascades to table t_varchar2
 drop cascades to table t_nvarchar2
 drop cascades to table t_text
+drop cascades to table t1
+drop cascades to table t2
 reset current_schema;
