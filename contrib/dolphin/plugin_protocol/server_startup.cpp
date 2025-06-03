@@ -68,8 +68,8 @@ TypeItem b_type_items[] = {
     {"bpchar", DOLPHIN_TYPE_STRING, BPCHAROID, 0, 0x2d},                          // bpchar
     {"binary", DOLPHIN_TYPE_STRING, 0, BINARY_FLAG, COLLATE_BINARY},              // binary
     // varchar type
-    {"varchar", DOLPHIN_TYPE_VARCHAR, VARCHAROID, 0, 0x2d},                       // varchar
-    {"nvarchar2", DOLPHIN_TYPE_VARCHAR, NVARCHAR2OID, 0, 0x2d},                   // nvarchar
+    {"varchar", DOLPHIN_TYPE_VAR_STRING, VARCHAROID, 0, 0x2d},                       // varchar
+    {"nvarchar2", DOLPHIN_TYPE_VAR_STRING, NVARCHAR2OID, 0, 0x2d},                   // nvarchar
     {"varbinary", DOLPHIN_TYPE_VAR_STRING, 0, BINARY_FLAG, COLLATE_BINARY},       // varbinary
     {"bytea", DOLPHIN_TYPE_VAR_STRING, BYTEAOID, BINARY_FLAG, COLLATE_BINARY},    // varbinary
     // date and time
@@ -537,8 +537,13 @@ void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
         InitStmtParamTypesTable();
     }
 
+    bool found = false;
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_ENTER, NULL);
+                                                                          &stmt_id, HASH_ENTER, &found);
+    if (found) {
+        pfree_ext(entry->value->itypes);
+        pfree_ext(entry->value);
+    }
     entry->value = value;
 }
 

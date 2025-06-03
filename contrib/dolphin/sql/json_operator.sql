@@ -53,5 +53,36 @@ create table t(jsondate json);
 insert into t values( '{"goodsId": "19934345435346", "categoryId": "C456", "modelType": "MT01", "demandOutOrderId": "D789", "chargeModeCode": ""}');
 select jsondate->>'$.chargeModeCode'from t;
 
+
+set standard_conforming_strings = off;
+
+create table test_json(c1 json);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\b方就地"},"defaultValue":"BreakerClass"}');
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\f方就地"},"defaultValue":"BreakerClass"}');
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\r方就地"},"defaultValue":"BreakerClass"}');
+
+select c1->>'$.i18nValue'  from test_json order by 1;
+select convert((c1->>'$.i18nValue'),json) il8_value from test_json;
+select name_value, convert((name_value->>'$.i18nValue'),json)il8_value from (select CONVERT(c1 , json) name_value  from test_json) enlight_dim_model_point_detail;
+
+drop table test_json;
+reset standard_conforming_strings;
+
+
+set standard_conforming_strings = on;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+drop table test_json;
+
+set standard_conforming_strings = off;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+drop table test_json;
+
+reset standard_conforming_strings;
+
 drop schema test_operator cascade;
 reset current_schema;

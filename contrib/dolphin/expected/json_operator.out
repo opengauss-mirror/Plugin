@@ -1,6 +1,5 @@
 create schema test_operator;
 set current_schema to 'test_operator';
-
 drop table if exists test1;
 NOTICE:  table "test1" does not exist, skipping
 create table test1(data json);
@@ -151,7 +150,6 @@ select data->>'c' from test2;
  susan
 (3 rows)
 
-
 -- test for precedence
 CREATE TABLE `dept` (
   `id` int(11) NOT NULL,
@@ -165,7 +163,6 @@ insert into dept VALUES(2,'部门2','{"deptName": "部门2", "deptId": "2", "dep
 insert into dept VALUES(3,'部门3','{"deptName": "部门3", "deptId": "3", "deptLeaderId": "5"}');
 insert into dept VALUES(4,'部门4','{"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}');
 insert into dept VALUES(5,'部门5','{"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}');
-
 select * from dept where json_value->>'$.deptId' is not null;
  id | dept  |                        json_value                         
 ----+-------+-----------------------------------------------------------
@@ -176,7 +173,6 @@ select * from dept where json_value->>'$.deptId' is not null;
   5 | 部门5 | {"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}
 (5 rows)
 
-
 select * from dept where json_value->'$.deptId' is not null;
  id | dept  |                        json_value                         
 ----+-------+-----------------------------------------------------------
@@ -186,7 +182,6 @@ select * from dept where json_value->'$.deptId' is not null;
   4 | 部门4 | {"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}
   5 | 部门5 | {"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}
 (5 rows)
-
 
 select '[{"f1":[1,2,3]},[{"f2":null}]]'::jsonb -> 1;
     ?column?    
@@ -206,7 +201,6 @@ select '{"cc":{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}}'::jsonb -> 'aa';
  
 (1 row)
 
-
 create table t(jsondate json);
 insert into t values( '{"goodsId": "19934345435346", "categoryId": "C456", "modelType": "MT01", "demandOutOrderId": "D789", "chargeModeCode": ""}');
 select jsondate->>'$.chargeModeCode'from t;
@@ -215,7 +209,82 @@ select jsondate->>'$.chargeModeCode'from t;
  
 (1 row)
 
+set standard_conforming_strings = off;
+create table test_json(c1 json);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\b方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\f方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\r方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+select c1->>'$.i18nValue'  from test_json order by 1;
+                      ?column?                       
+-----------------------------------------------------
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+(4 rows)
 
+select convert((c1->>'$.i18nValue'),json) il8_value from test_json;
+                      il8_value                      
+-----------------------------------------------------
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+(4 rows)
+
+select name_value, convert((name_value->>'$.i18nValue'),json)il8_value from (select CONVERT(c1 , json) name_value  from test_json) enlight_dim_model_point_detail;
+                                          name_value                                          |                      il8_value                      
+----------------------------------------------------------------------------------------------+-----------------------------------------------------
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\b方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\b方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\f方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\f方就地"}
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\r方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\r方就地"}
+(4 rows)
+
+drop table test_json;
+reset standard_conforming_strings;
+set standard_conforming_strings = on;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+                                           name_value                                           |                       il8_value                       
+------------------------------------------------------------------------------------------------+-------------------------------------------------------
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\\\\方就地"}
+(1 row)
+
+drop table test_json;
+set standard_conforming_strings = off;
+create table test_json(name_value text);
+insert into test_json values ('{"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\\\方就地"},"defaultValue":"BreakerClass"}');
+WARNING:  nonstandard use of \\ in a string literal
+LINE 1: insert into test_json values ('{"i18nValue":{"en_US":"Breake...
+                                      ^
+HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
+SELECT name_value, CONVERT( JSON_UNQUOTE(JSON_EXTRACT(name_value, '$.i18nValue')), JSON ) AS il8_value FROM ( SELECT CONVERT(name_value, JSON) AS name_value FROM test_json ) enlight_dim_model_point_detail;
+                                          name_value                                          |                      il8_value                      
+----------------------------------------------------------------------------------------------+-----------------------------------------------------
+ {"i18nValue":{"en_US":"BreakerClass","zh_CN":"DEV远\\方就地"},"defaultValue":"BreakerClass"} | {"en_US": "BreakerClass", "zh_CN": "DEV远\\方就地"}
+(1 row)
+
+drop table test_json;
+reset standard_conforming_strings;
 drop schema test_operator cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test1

@@ -2536,6 +2536,40 @@ static void CheckSingleSign(char *inStr, int &x)
     }
 }
 
+static inline text* format_json_result(char* input, int mode, Oid valtype)
+{
+    text* result = NULL;
+    if (mode == 2) {
+        // no need to do the escapefor json type
+        if (valtype == JSONOID || valtype == JSONBOID) {
+            char *str2 = unescape_unicode(input);
+            result = cstring_to_text(str2);
+            pfree(str2);
+        } else {
+            char *str2 = scanstr(input);
+            char *str3 = unescape_unicode(str2);
+            char *str4 = scanstr(str3);
+            result = cstring_to_text(str4);
+            pfree(str2);
+            pfree(str3);
+            pfree(str4);
+        }
+    } else {
+        if (valtype == JSONOID || valtype == JSONBOID) {
+            char *str2 = unescape_unicode(input);
+            result = cstring_to_text(str2);
+            pfree(str2);
+        } else {
+            char *str2 = unescape_unicode(input);
+            char *str3 = scanstr(str2);
+            result = cstring_to_text(str3);
+            pfree(str2);
+            pfree(str3);
+        }
+    }
+    return result;
+}
+
 Datum json_unquote(PG_FUNCTION_ARGS)
 {
     Oid valtype;
@@ -2580,15 +2614,10 @@ Datum json_unquote(PG_FUNCTION_ARGS)
                 ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                                 errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
             } else {
-                char *str2 = scanstr(str1);
-                char *str3 = unescape_unicode(str2);
-                char *str4 = scanstr(str3);
-                result = cstring_to_text(str4);
+                result = format_json_result(str1, x, valtype);
             }
         } else if (x == 0 || x == 1) {
-            char *str2 = unescape_unicode(str);
-            char *str3 = scanstr(str2);
-            result = cstring_to_text(str3);
+            result = format_json_result(str, x, valtype);
         } else {
             pfree(str1);
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),

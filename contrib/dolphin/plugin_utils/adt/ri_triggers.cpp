@@ -246,6 +246,12 @@ static Datum RI_FKey_check(PG_FUNCTION_ARGS)
     SPIPlanPtr qplan;
     int i;
 
+#ifdef DOLPHIN
+    if (!u_sess->attr.attr_common.foreign_key_checks) {
+        return PointerGetDatum(NULL);
+    }
+#endif
+
 #ifdef PGXC
     /*
      * Referential integrity is not supported on Coordinator as it has no data, so
@@ -2861,6 +2867,12 @@ static bool ri_PerformCheck(RI_QueryKey* qkey, SPIPlanPtr qplan, Relation fk_rel
     Datum vals[RI_MAX_NUMKEYS * 2];
     char nulls[RI_MAX_NUMKEYS * 2];
 
+#ifdef DOLPHIN
+    if (!u_sess->attr.attr_common.foreign_key_checks) {
+        return true;
+    }
+#endif
+
     /*
      * The query is always run against the FK table except when this is an
      * update/insert trigger on the FK table itself - either
@@ -2937,14 +2949,13 @@ static bool ri_PerformCheck(RI_QueryKey* qkey, SPIPlanPtr qplan, Relation fk_rel
     if (spi_result < 0)
         ereport(ERROR, (errcode(ERRCODE_SPI_EXECUTE_FAILURE), errmsg("SPI_execute_snapshot returned %d", spi_result)));
 
-    if (expect_OK >= 0 && spi_result != expect_OK && u_sess->attr.attr_common.foreign_key_checks)
+    if (expect_OK >= 0 && spi_result != expect_OK)
         ri_ReportViolation(
             qkey, constrname ? constrname : "", pk_rel, fk_rel, new_tuple ? new_tuple : old_tuple, NULL, true);
 
     /* XXX wouldn't it be clearer to do this part at the caller? */
     if (constrname != NULL && expect_OK == SPI_OK_SELECT &&
-        (SPI_processed == 0) == (qkey->constr_queryno == RI_PLAN_CHECK_LOOKUPPK) &&
-        u_sess->attr.attr_common.foreign_key_checks)
+        (SPI_processed == 0) == (qkey->constr_queryno == RI_PLAN_CHECK_LOOKUPPK))
         ri_ReportViolation(qkey, constrname, pk_rel, fk_rel, new_tuple ? new_tuple : old_tuple, NULL, false);
 
     return SPI_processed != 0;

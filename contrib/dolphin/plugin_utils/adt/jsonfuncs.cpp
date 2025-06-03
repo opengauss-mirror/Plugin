@@ -944,8 +944,7 @@ Datum json_object_field_text(PG_FUNCTION_ARGS)
                 PG_RETURN_TEXT_P(result);
             }
         } else if (x == 0 || x == 1) {
-            char *str2 = scanstr(str);
-            text *result = cstring_to_text(str2);
+            text *result = cstring_to_text(str);
             pfree(str1);
             PG_RETURN_TEXT_P(result);
         } else {

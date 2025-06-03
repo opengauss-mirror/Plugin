@@ -1460,6 +1460,16 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+    DefineCustomBoolVariable("dolphin.transform_unknown_param_type_as_column_type_first",
+                             gettext_noop("This variable indicates parsing the unknown param type to column type first."
+                             "for example, parse ? as c1 type for predicate where c1 = ?,"
+                             "to avoid index unavailable caused by implicit."),
+                             NULL,
+                             &GetSessionContext()->transform_unknown_param_type_as_column_type_first,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 #endif
 
 }
