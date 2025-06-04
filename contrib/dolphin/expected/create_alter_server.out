@@ -1,0 +1,161 @@
+-- mysql-fdw
+-- configure adding --enable-mysql-fdw
+-- gs_guc generate -S XXX -D $GAUSSHOME/bin -o usermapping
+create database create_alter_server_database with dbcompatibility = 'B';
+\c create_alter_server_database
+select oid, * from pg_foreign_data_wrapper;
+  oid  | fdwname  | fdwowner | fdwhandler | fdwvalidator | fdwacl | fdwoptions
+-------+----------+----------+------------+--------------+--------+------------
+ 15266 | dist_fdw |       10 |      15264 |        15265 |        |
+ 15271 | file_fdw |       10 |      15269 |        15270 |        |
+ 15276 | log_fdw  |       10 |      15274 |        15275 |        |
+ 15318 | mot_fdw  |       10 |      15316 |        15317 |        |
+(4 rows)
+
+create extension mysql_fdw;
+create extension mysql; --error
+ERROR:  could not open extension control file: No such file or directory
+select oid, * from pg_foreign_data_wrapper;
+  oid  |  fdwname  | fdwowner | fdwhandler | fdwvalidator | fdwacl | fdwoptions
+-------+-----------+----------+------------+--------------+--------+------------
+ 15266 | dist_fdw  |       10 |      15264 |        15265 |        |
+ 15271 | file_fdw  |       10 |      15269 |        15270 |        |
+ 15276 | log_fdw   |       10 |      15274 |        15275 |        |
+ 15318 | mot_fdw   |       10 |      15316 |        15317 |        |
+ 58008 | mysql_fdw |       10 |      58006 |        58007 |        |
+(5 rows)
+
+select oid, * from pg_foreign_server;
+  oid  |        srvname         | srvowner | srvfdw | srvtype | srvversion | srvacl | srvoptions
+-------+------------------------+----------+--------+---------+------------+--------+------------
+ 15267 | gsmpp_server           |       10 |  15266 |         |            |        |
+ 15272 | gsmpp_errorinfo_server |       10 |  15271 |         |            |        |
+ 15277 | log_srv                |       10 |  15276 |         |            |        |
+ 15319 | mot_server             |       10 |  15318 |         |            |        |
+(4 rows)
+
+create server server_test foreign data wrapper mysql options(host '127.0.0.1', port '3306', user 'foreign_server_test',
+password 'password@123', database 'my_db', owner 'test_user', socket 'my_socket');
+WARNING:  Option database will be deprecated.
+WARNING:  Option owner will be deprecated.
+WARNING:  Option socket will be deprecated.
+WARNING:  USER MAPPING for current user to server server_test created.
+create server server_test0 foreign data wrapper mysql options(host '127.0.0.1', port '3306', user 'foreign_server_test',
+password 'password@123', database 'my_db', owner 'test_user');
+WARNING:  Option database will be deprecated.
+WARNING:  Option owner will be deprecated.
+WARNING:  USER MAPPING for current user to server server_test0 created.
+create server server_test00 foreign data wrapper mysql_fdw options(host '127.0.0.1', port '3306', user 'foreign_server_test',
+password 'password@123', database 'my_db', owner 'test_user', socket 'my_socket');
+WARNING:  Option database will be deprecated.
+WARNING:  Option owner will be deprecated.
+WARNING:  Option socket will be deprecated.
+WARNING:  USER MAPPING for current user to server server_test00 created.
+select * from pg_user_mapping;
+ umuser | umserver |                                                     umoptions                                    
+--------+----------+--------------------------------------------------------------------------------------------------------------------
+     10 |    58010 | {username=foreign_server_test,password=encryptOptXUxjfBX5OOdOo9mw88p5B6hpFPaWG4DiKAhC2IxtcN4R5wT40YY12fKXIYw/Cu4U}
+     10 |    58012 | {username=foreign_server_test,password=encryptOptPhuWSlDQq8Q4gCEfJjC8ExWJlYLT/K2vsjWMjE74R1ijpfp369diQKdzKEAwQXVV}
+     10 |    58014 | {username=foreign_server_test,password=encryptOptSaysByQg7hh3Fn6iOKs09p+HuGHAl8U1S9WrEC9a0atSi6y1WQx/oFBqjejc/IC1}
+(3 rows)
+
+create user mapping for current_user server server_test; --error, user mapping exists
+ERROR:  user mapping "zb79" already exists for server server_test
+drop user mapping for current_user server server_test;
+create user mapping for current_user server server_test;
+create server server_test1 foreign data wrapper mysql_fdw options(host '127.0.0.1', port '3306', user 'foreign_server_test',
+password 'password@123', database 'my_db', owner 'test_user', socket 'my_socket');
+WARNING:  Option database will be deprecated.
+WARNING:  Option owner will be deprecated.
+WARNING:  Option socket will be deprecated.
+WARNING:  USER MAPPING for current user to server server_test1 created.
+create server server_test2 foreign data wrapper mysql_fdw;
+create server server_test3 foreign data wrapper mysql_fdw options(host '127.0.0.1');
+create server server_test4 foreign data wrapper mysql_fdw options(port '3306');
+create server server_test5 foreign data wrapper mysql_fdw options(my_param 'my_param'); --error
+ERROR:  invalid option "my_param"
+HINT:  Valid options in this context are: host, port, init_command, secure_auth, use_remote_estimate, ssl_key, ssl_cert, ssl_ca, ssl_capath, ssl_cipher
+select oid, * from pg_foreign_server;
+  oid  |        srvname         | srvowner | srvfdw | srvtype | srvversion | srvacl |         srvoptions
+-------+------------------------+----------+--------+---------+------------+--------+----------------------------
+ 15267 | gsmpp_server           |       10 |  15266 |         |            |        |
+ 15272 | gsmpp_errorinfo_server |       10 |  15271 |         |            |        |
+ 15277 | log_srv                |       10 |  15276 |         |            |        |
+ 15319 | mot_server             |       10 |  15318 |         |            |        |
+ 58010 | server_test            |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58012 | server_test0           |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58014 | server_test00          |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58017 | server_test1           |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58019 | server_test2           |       10 |  58008 |         |            |        |
+ 58020 | server_test3           |       10 |  58008 |         |            |        | {host=127.0.0.1}
+ 58021 | server_test4           |       10 |  58008 |         |            |        | {port=3306}
+(11 rows)
+
+alter server server_test options(host '192.168.0.1');
+alter server server_test options(port '3310');
+alter server server_test options(user 'foreign_server_test1');
+WARNING:  USER MAPPING for current user to server server_test altered.
+alter server server_test options(password 'password@1234');
+WARNING:  USER MAPPING for current user to server server_test altered.
+alter server server_test options(database 'my_db1');
+WARNING:  Option database will be deprecated.
+alter server server_test options(owner 'test_user1');
+WARNING:  Option owner will be deprecated.
+alter server server_test options(socket 'my_socket1');
+WARNING:  Option socket will be deprecated.
+alter server server_test options(my_param 'my_param'); --error
+ERROR:  invalid option "my_param"
+HINT:  Valid options in this context are: host, port, init_command, secure_auth, use_remote_estimate, ssl_key, ssl_cert, ssl_ca, ssl_capath, ssl_cipher
+select oid, * from pg_foreign_server;
+  oid  |        srvname         | srvowner | srvfdw | srvtype | srvversion | srvacl |          srvoptions
+-------+------------------------+----------+--------+---------+------------+--------+------------------------------
+ 15267 | gsmpp_server           |       10 |  15266 |         |            |        |
+ 15272 | gsmpp_errorinfo_server |       10 |  15271 |         |            |        |
+ 15277 | log_srv                |       10 |  15276 |         |            |        |
+ 15319 | mot_server             |       10 |  15318 |         |            |        |
+ 58012 | server_test0           |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58014 | server_test00          |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58017 | server_test1           |       10 |  58008 |         |            |        | {host=127.0.0.1,port=3306}
+ 58019 | server_test2           |       10 |  58008 |         |            |        |
+ 58020 | server_test3           |       10 |  58008 |         |            |        | {host=127.0.0.1}
+ 58021 | server_test4           |       10 |  58008 |         |            |        | {port=3306}
+ 58010 | server_test            |       10 |  58008 |         |            |        | {host=192.168.0.1,port=3310}
+(11 rows)
+
+drop server if exists server_test;
+ERROR:  cannot drop server server_test because other objects depend on it
+DETAIL:  user mapping for zb79 depends on server server_test
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+drop server if exists server_test cascade;
+NOTICE:  drop cascades to user mapping for zb79
+drop server server_test1;
+ERROR:  cannot drop server server_test1 because other objects depend on it
+DETAIL:  user mapping for zb79 depends on server server_test1
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+drop server server_test1 cascade;
+NOTICE:  drop cascades to user mapping for zb79
+drop server if exists my_server;
+NOTICE:  server "my_server" does not exist, skipping
+drop server my_server;
+ERROR:  server "my_server" does not exist
+drop extension mysql_fdw;
+ERROR:  cannot drop extension mysql_fdw because other objects depend on it
+DETAIL:  server server_test0 depends on foreign-data wrapper mysql_fdw
+user mapping for zb79 depends on server server_test0
+server server_test00 depends on foreign-data wrapper mysql_fdw
+user mapping for zb79 depends on server server_test00
+server server_test2 depends on foreign-data wrapper mysql_fdw
+server server_test3 depends on foreign-data wrapper mysql_fdw
+server server_test4 depends on foreign-data wrapper mysql_fdw
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+drop extension mysql_fdw cascade;
+NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to server server_test0
+drop cascades to user mapping for zb79
+drop cascades to server server_test00
+drop cascades to user mapping for zb79
+drop cascades to server server_test2
+drop cascades to server server_test3
+drop cascades to server server_test4
+\c postgres
+drop database create_alter_server_database;
