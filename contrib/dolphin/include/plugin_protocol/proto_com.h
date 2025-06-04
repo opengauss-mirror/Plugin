@@ -267,7 +267,7 @@ typedef struct InputStmtParam {
 
 typedef struct HashEntryStmtParamType {
     int32 stmt_id;
-    const InputStmtParam* value;
+    InputStmtParam* value;
 } HashEntryStmtParamType;
 
 typedef struct BlobParams {

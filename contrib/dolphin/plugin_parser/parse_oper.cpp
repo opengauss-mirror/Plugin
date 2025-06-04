@@ -980,6 +980,52 @@ Node* parse_get_last_srf(ParseState* pstate)
     return NULL;
 }
 
+#ifdef DOLPHIN
+/*
+ * coerce_param_to_column_type
+ *
+ * for case where column = ?, parse ? as column type.
+ *
+ */
+bool coerce_param_to_column_type(ParseState* pstate, Node* ltree, Node* rtree, Oid* ltypeId, Oid* rtypeId)
+{
+    if (!GetSessionContext()->transform_unknown_param_type_as_column_type_first) {
+        return false;
+    }
+
+    /* do nothing */
+    if (*ltypeId == *rtypeId) {
+        return false;
+    }
+
+    /* left is column and right is param */
+    if (IsA(ltree, Var) && IsA(rtree, Param) && ((Param*)rtree)->paramtype == UNKNOWNOID) {
+        *rtypeId = *ltypeId;
+        return true;
+    }
+
+    /* left is param and right is column */
+    if (IsA(rtree, Var) && IsA(ltree, Param) && ((Param*)ltree)->paramtype == UNKNOWNOID) {
+        *ltypeId = *rtypeId;
+        return true;
+    }
+
+    /* left is column and right is expr */
+    if (IsA(ltree, Var) && IsA(rtree, OpExpr)) {
+        *rtypeId = *ltypeId;
+        return true;
+    }
+
+    /* left is expr and right is column */
+    if (IsA(rtree, Var) && IsA(ltree, OpExpr)) {
+        *ltypeId = *rtypeId;
+        return true;
+    }
+
+    return false;
+}
+#endif
+
 /*
  *		Operator expression construction.
  *
@@ -1075,28 +1121,34 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
             }
         }
 #ifdef DOLPHIN
-        info.pstate = pstate;
-        info.opname = opname;
-        info.ltypeId = ltypeId;
-        info.rtypeId = rtypeId;
-        info.ltree = ltree;
-        info.rtree = rtree;
-        info.location = location;
-        info.inNumeric = inNumeric;
-        tup = GetDolphinOperatorTup(&info);
-        if (!HeapTupleIsValid(tup)) {
-            if ((IsJsonType(ltypeId) || IsJsonType(rtypeId)) && ENABLE_B_CMPT_MODE) {
-                DeconstructQualifiedName(opname, &schemaname, &opername);
-                jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
-            }
+        if (coerce_param_to_column_type(pstate, ltree, rtree, &ltypeId, &rtypeId)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
-            if (jsonTransfored && HeapTupleIsValid(tup)) {
-                newLeftTree = CreateCastForType(pstate, info.ltypeId, info.ltree, tup, location, true);
-                newRightTree = CreateCastForType(pstate, info.rtypeId, info.rtree, tup, location, false);
-            }
-        } else {
             newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);
             newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);
+        } else {
+            info.pstate = pstate;
+            info.opname = opname;
+            info.ltypeId = ltypeId;
+            info.rtypeId = rtypeId;
+            info.ltree = ltree;
+            info.rtree = rtree;
+            info.location = location;
+            info.inNumeric = inNumeric;
+            tup = GetDolphinOperatorTup(&info);
+            if (!HeapTupleIsValid(tup)) {
+                if ((IsJsonType(ltypeId) || IsJsonType(rtypeId)) && ENABLE_B_CMPT_MODE) {
+                    DeconstructQualifiedName(opname, &schemaname, &opername);
+                    jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+                }
+                tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
+                if (jsonTransfored && HeapTupleIsValid(tup)) {
+                    newLeftTree = CreateCastForType(pstate, info.ltypeId, info.ltree, tup, location, true);
+                    newRightTree = CreateCastForType(pstate, info.rtypeId, info.rtree, tup, location, false);
+                }
+            } else {
+                newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);
+                newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);
+            }
         }
 #else
         tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
