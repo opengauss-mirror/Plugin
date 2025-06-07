@@ -1406,6 +1406,9 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
             }
             if (g_instance.attr.attr_storage.enable_ustore && u_sess->attr.attr_sql.enable_default_ustore_table &&
                 relkind != RELKIND_MATVIEW && !IsSystemNamespace(relnamespace) && !assignedStorageType) {
+                if (hasOids) {
+                    ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("OIDS option is not supported for ustore table")));
+                }
                 DefElem *def2 = makeDefElem("storage_type", (Node *)makeString(TABLE_ACCESS_METHOD_USTORE_LOWER));
                 res = lappend(options, def2);
             }
@@ -31275,9 +31278,10 @@ static void checkSplitPointForSplit(SplitPartitionState* splitPart, Relation par
     splitPart->split_point = transformRangePartitionValueInternal(pstate, splitPart->split_point, true, true);
     pfree_ext(pstate);
 
+    bool partkeyIsFunc = IsPartKeyFunc(partTableRel, false, partTableRel->parentId != InvalidOid);
     List *tmp = splitPart->split_point;
-    splitPart->split_point =
-        transformConstIntoTargetType(partTableRel->rd_att->attrs, partMap->base.partitionKey, splitPart->split_point);
+    splitPart->split_point = transformConstIntoTargetType(partTableRel->rd_att->attrs, partMap->base.partitionKey,
+                                                          splitPart->split_point, partkeyIsFunc);
     list_free_ext(tmp);
 
     foreach (cell, splitPart->split_point) {
@@ -34093,7 +34097,8 @@ void CreateWeakPasswordDictionary(CreateWeakPasswordDictionaryStmt* stmt)
             values[Anum_gs_global_config_name - 1] = DirectFunctionCall1(namein, CStringGetDatum(name));
             values[Anum_gs_global_config_value - 1] = CStringGetTextDatum(pwd);
             tup = (HeapTuple) heap_form_tuple(RelationGetDescr(rel), values, nulls);
-            simple_heap_insert(rel, tup);           
+            simple_heap_insert(rel, tup);
+            heap_freetuple_ext(tup); 
         }
     }
     heap_close(rel, RowExclusiveLock);

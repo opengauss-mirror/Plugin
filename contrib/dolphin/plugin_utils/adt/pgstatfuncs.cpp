@@ -86,7 +86,10 @@
 #include "utils/json.h"
 #include "utils/jsonapi.h"
 #include "access/ondemand_extreme_rto/page_redo.h"
-
+#ifdef ENABLE_HTAP
+#include "access/htap/imcucache_mgr.h"
+#endif
+#include "access/parallel_recovery/dispatcher.h"
 #include "plugin_postgres.h"
 
 #define UINT32_ACCESS_ONCE(var) ((uint32)(*((volatile uint32*)&(var))))
@@ -418,7 +421,8 @@ static const char* WaitStateDesc[] = {
     "gtm set consistency point",     // STATE_GTM_SET_CONSISTENCY_POINT
     "wait sync bgworkers",           // STATE_WAIT_SYNC_BGWORKERS
     "stanby read recovery conflict", // STATE_STANDBY_READ_RECOVERY_CONFLICT
-    "standby get snapshot"           // STATE_STANDBY_GET_SNAPSHOT
+    "standby get snapshot",          // STATE_STANDBY_GET_SNAPSHOT
+    "wait dms"                       // STATE_WAIT_DMS
 };
 
 // description for WaitStatePhase enums.
@@ -450,6 +454,8 @@ const char* pgstat_get_waitstatusdesc(uint32 wait_event_info)
             return WaitStateDesc[STATE_WAIT_LOCK];
         case PG_WAIT_IO:
             return WaitStateDesc[STATE_WAIT_IO];
+        case PG_WAIT_DMS:
+            return WaitStateDesc[STATE_WAIT_DMS];
         default:
             return WaitStateDesc[STATE_WAIT_UNDEFINED];
     }
@@ -2942,16 +2948,12 @@ char* getThreadWaitStatusDesc(PgBackendStatus* beentry)
 
 static void GetBlockInfo(const PgBackendStatus* beentry, Datum values[], bool nulls[])
 {
+    uint32 waitevent = beentry->st_waitevent;
+    uint32 classId = waitevent & WAITEVENT_CLASS_MASK;
+
+    /* lock */
     struct LOCKTAG locktag = beentry->locallocktag.lock;
-
-    if (beentry->locallocktag.lock.locktag_lockmethodid == 0) {
-        nulls[NUM_PG_LOCKTAG_ID] = true;
-        nulls[NUM_PG_LOCKMODE_ID] = true;
-        nulls[NUM_PG_BLOCKSESSION_ID] = true;
-        return;
-    }
-
-    if ((beentry->st_waitevent & 0xFF000000) == PG_WAIT_LOCK) {
+    if (classId == PG_WAIT_LOCK && locktag.locktag_lockmethodid != 0) {
         char* blocklocktag = LocktagToString(locktag);
         values[NUM_PG_LOCKTAG_ID] = CStringGetTextDatum(blocklocktag);
         values[NUM_PG_LOCKMODE_ID] = CStringGetTextDatum(
@@ -2959,11 +2961,48 @@ static void GetBlockInfo(const PgBackendStatus* beentry, Datum values[], bool nu
                             beentry->locallocktag.mode));
         values[NUM_PG_BLOCKSESSION_ID] = Int64GetDatum(beentry->st_block_sessionid);
         pfree_ext(blocklocktag);
-    } else {
-        nulls[NUM_PG_LOCKTAG_ID] = true;
-        nulls[NUM_PG_LOCKMODE_ID] = true;
-        nulls[NUM_PG_BLOCKSESSION_ID] = true;
+        return;
     }
+
+    /* lwlock */
+    LWLockMode lwmode = beentry->lw_want_mode;
+    LWLock *lwlock = beentry->lw_want_lock;
+    if (classId == PG_WAIT_LWLOCK && lwlock != NULL) {
+        char buffer[64] = {0};
+        const char* modeStr = lwmode == LW_EXCLUSIVE ? "Exclusive" : "Shared";
+        LWLockExplainTag(lwlock, buffer, sizeof(buffer));
+        values[NUM_PG_LOCKTAG_ID] = CStringGetTextDatum(buffer);
+        values[NUM_PG_LOCKMODE_ID] = CStringGetTextDatum(modeStr);
+        nulls[NUM_PG_BLOCKSESSION_ID] = true;
+        return;
+    }
+
+    /* dms waitevent */
+    DMSWaiteventTarget dmsWaitTarget = beentry->dms_wait_target;
+    if (classId == PG_WAIT_DMS) {
+        if (waitevent == WAIT_EVENT_PCR_REQ_HEAP_PAGE || waitevent == WAIT_EVENT_DCS_TRANSFER_PAGE ||
+            waitevent == WAIT_EVENT_DCS_INVLDT_SHARE_COPY_PROCESS) {
+            char *dmsTag, *dmsMode;
+            decode_dms_waitevent_target(waitevent, beentry->dms_wait_target, &dmsTag, &dmsMode);
+
+            if (dmsTag != NULL) {
+                values[NUM_PG_LOCKTAG_ID] = CStringGetTextDatum(dmsTag);
+                values[NUM_PG_LOCKMODE_ID] = CStringGetTextDatum(dmsMode);
+                pfree(dmsTag);
+                pfree(dmsMode);
+            } else {
+                nulls[NUM_PG_LOCKTAG_ID] = true;
+                nulls[NUM_PG_LOCKMODE_ID] = true;
+            }
+            nulls[NUM_PG_BLOCKSESSION_ID] = true;
+            return;
+        }
+    }
+
+    /* unknown */
+    nulls[NUM_PG_LOCKTAG_ID] = true;
+    nulls[NUM_PG_LOCKMODE_ID] = true;
+    nulls[NUM_PG_BLOCKSESSION_ID] = true;
 }
 
 /*
@@ -13958,6 +13997,46 @@ Datum remote_double_write_stat(PG_FUNCTION_ARGS)
 #endif
 }
 
+Datum dispatch_stat_detail(PG_FUNCTION_ARGS)
+{
+    TupleDesc tupdesc;
+    Tuplestorestate *tupstore = BuildTupleResult(fcinfo, &tupdesc);
+    const uint32 dispatch_stat_detail_cols = 5;
+    Datum values[dispatch_stat_detail_cols] = {0};
+    bool nulls[dispatch_stat_detail_cols] = {0};
+    parallel_recovery::DispatchStat *stat = NULL;
+    uint32 realNum = 0;
+
+    if (IsParallelRedo() && RecoveryInProgress()) {
+        parallel_recovery::get_dispatch_stat_detail(&stat, &realNum);
+    }
+
+    for (uint32 i=0; i<realNum; ++i) {
+        uint32 k = 0;
+        values[k] = CStringGetTextDatum(stat[i].worker_name);
+        nulls[k++] = false;
+        pfree(stat[i].worker_name);
+        values[k] = UInt64GetDatum(stat[i].pid);
+        nulls[k++] = false;
+        values[k] = UInt32GetDatum(stat[i].entry_num);
+        nulls[k++] = false;
+        values[k] = Float4GetDatum(stat[i].percent);
+        nulls[k++] = false;
+        values[k] = CStringGetTextDatum(stat[i].detail);
+        nulls[k++] = false;
+        pfree(stat[i].detail);
+
+        tuplestore_putvalues(tupstore, tupdesc, values, nulls);
+    }
+
+    if (stat != NULL) {
+        pfree(stat);
+    }
+
+    tuplestore_donestoring(tupstore);
+    return (Datum)0;
+}
+
 Datum local_redo_time_count(PG_FUNCTION_ARGS)
 {
     TupleDesc tupdesc;
@@ -14949,6 +15028,89 @@ Datum dss_io_stat(PG_FUNCTION_ARGS)
     result = HeapTupleGetDatum(heap_tuple);
     PG_RETURN_DATUM(result); 
 }
+
+Datum get_realtime_build_log_ctrl_status(PG_FUNCTION_ARGS)
+{
+    if (!ENABLE_DMS) {
+        ereport(ERROR, (errmsg("This function only supports shared storage.")));
+    }
+    const int realtimeBuildCtrlStatColumnNum = 11;
+    const int shiftSpeed = 3;
+    Datum result;
+    TupleDesc tupdesc;
+    ReturnSetInfo* rsinfo = (ReturnSetInfo*)fcinfo->resultinfo;
+    MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
+    errno_t errorno = EOK;
+    int i = 0;
+    tupdesc = CreateTemplateTupleDesc(realtimeBuildCtrlStatColumnNum, false);
+    const char *attrNames[realtimeBuildCtrlStatColumnNum] = {
+        "ins_id", "current_rto", "prev_reply_time", "prev_calculate_time", "reply_time",
+        "period_total_build", "build_rate", "prev_build_ptr", "realtime_build_ptr",
+        "current_insert_ptr", "sleep_time"
+    };
+    Oid attr_types[realtimeBuildCtrlStatColumnNum] = {
+        INT4OID, INT8OID, TIMESTAMPTZOID, TIMESTAMPTZOID, TIMESTAMPTZOID,
+        INT8OID, INT8OID, TEXTOID, TEXTOID, TEXTOID, INT4OID
+    };
+
+    for (i = 0; i < realtimeBuildCtrlStatColumnNum; i++) {
+        TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), attrNames[i], attr_types[i], -1, 0);
+    }
+    tupdesc = BlessTupleDesc(tupdesc);
+
+    Tuplestorestate *tupstore = tuplestore_begin_heap(rsinfo->allowedModes & SFRM_Materialize_Random,
+                                                      false, u_sess->attr.attr_memory.work_mem);
+    MemoryContextSwitchTo(oldcontext);
+
+    if (SS_PRIMARY_ENABLE_TARGET_RTO) {
+        for (int instId = 0; instId < DMS_MAX_INSTANCES; instId++) {
+            realtime_build_ctrl_t rtBuildCtrl = g_instance.dms_cxt.SSRecoveryInfo.rtBuildCtrl[instId];
+            if (rtBuildCtrl.replyTime == 0) {
+                continue;
+            }
+
+            Datum values[realtimeBuildCtrlStatColumnNum];
+            bool nulls[realtimeBuildCtrlStatColumnNum] = {false};
+
+            char prevBuildPtr[MAXFNAMELEN];
+            char realtimeBuildPtr[MAXFNAMELEN];
+            char currentInsertPtr[MAXFNAMELEN];
+
+            errorno = snprintf_s(prevBuildPtr, sizeof(prevBuildPtr), sizeof(prevBuildPtr) - 1, "%X/%X",
+                       (uint32)(rtBuildCtrl.prevBuildPtr >> 32), (uint32)rtBuildCtrl.prevBuildPtr);
+            securec_check_ss(errorno, "", "");
+            errorno = snprintf_s(realtimeBuildPtr, sizeof(realtimeBuildPtr), sizeof(realtimeBuildPtr) - 1, "%X/%X",
+                       (uint32)(rtBuildCtrl.realtimeBuildPtr >> 32), (uint32)rtBuildCtrl.realtimeBuildPtr);
+            securec_check_ss(errorno, "", "");
+            XLogRecPtr currentInsertLsn = GetXLogInsertEndRecPtr();
+            errorno = snprintf_s(currentInsertPtr, sizeof(currentInsertPtr), sizeof(currentInsertPtr) - 1, "%X/%X",
+                       (uint32)(currentInsertLsn >> 32), (uint32)currentInsertLsn);
+            securec_check_ss(errorno, "", "");
+            i = 0;
+            values[i++] = Int32GetDatum(instId);
+            values[i++] = Int64GetDatum(rtBuildCtrl.currentRTO);
+            values[i++] = TimestampTzGetDatum(rtBuildCtrl.prevReplyTime);
+            values[i++] = TimestampTzGetDatum(rtBuildCtrl.prevCalculateTime);
+            values[i++] = TimestampTzGetDatum(rtBuildCtrl.replyTime);
+            values[i++] = Int64GetDatum(rtBuildCtrl.periodTotalBuild);
+            values[i++] = Int64GetDatum(rtBuildCtrl.buildRate >> shiftSpeed);
+            values[i++] = CStringGetTextDatum(prevBuildPtr);
+            values[i++] = CStringGetTextDatum(realtimeBuildPtr);
+            values[i++] = CStringGetTextDatum(currentInsertPtr);
+            values[i++] = Int32GetDatum(rtBuildCtrl.sleepTime);
+
+            tuplestore_putvalues(tupstore, tupdesc, values, nulls);
+        }
+    }
+    
+    tuplestore_donestoring(tupstore);
+    rsinfo->returnMode = SFRM_Materialize;
+    rsinfo->setResult = tupstore;
+    rsinfo->setDesc = tupdesc;
+    
+    return (Datum)0;
+}
+
 #ifdef ENABLE_MULTIPLE_NODES
 /* Get the head row of the view of index status */
 TupleDesc get_index_status_view_frist_row()
@@ -15092,7 +15254,7 @@ TupleDesc create_query_node_reform_info_tupdesc()
     TupleDescInitEntry(tupdesc, (AttrNumber)5, "is_reform_success", BOOLOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)6, "redo_start_time", TIMESTAMPTZOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)7, "rode_end_time", TIMESTAMPTZOID, -1, 0);
-    TupleDescInitEntry(tupdesc, (AttrNumber)8, "xlog_total_bytes", INT4OID, -1, 0);
+    TupleDescInitEntry(tupdesc, (AttrNumber)8, "xlog_total_bytes", INT8OID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)9, "hashmap_construct_time", TIMESTAMPTZOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)10, "action", TEXTOID, -1, 0);
     BlessTupleDesc(tupdesc);
@@ -15172,14 +15334,26 @@ Datum query_node_reform_info(PG_FUNCTION_ARGS)
             values[4] = BoolGetDatum(reform_info.reform_success);
 
             if (reform_info.reform_type == DMS_REFORM_TYPE_FOR_FAILOVER_OPENGAUSS) {
-                values[5] = TimestampTzGetDatum(reform_info.redo_start_time);
-                if (reform_info.redo_start_time > reform_info.redo_end_time) {
+                if (reform_info.redo_start_time == 0) {
+                    nulls[5] = true;
+                } else {
+                    values[5] = TimestampTzGetDatum(reform_info.redo_start_time);
+                }
+                if ((reform_info.redo_start_time > reform_info.redo_end_time) || reform_info.redo_end_time == 0) {
                     nulls[6] = true;
                 } else {
                     values[6] = TimestampTzGetDatum(reform_info.redo_end_time);
                 }
-                values[7] = UInt64GetDatum(reform_info.redo_total_bytes);
-                values[8] = TimestampTzGetDatum(reform_info.construct_hashmap);
+                if (reform_info.redo_total_bytes == 0) {
+                    nulls[7] = true;
+                } else {
+                    values[7] = UInt64GetDatum(reform_info.redo_total_bytes);
+                }
+                if (reform_info.construct_hashmap == 0) {
+                    nulls[8] = true;
+                } else {
+                    values[8] = TimestampTzGetDatum(reform_info.construct_hashmap);
+                }
             } else {
                 values[7] = UInt64GetDatum(-1);
                 nulls[5] = true;
