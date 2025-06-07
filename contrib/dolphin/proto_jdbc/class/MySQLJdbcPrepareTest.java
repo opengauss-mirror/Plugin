@@ -375,6 +375,12 @@ public class MySQLJdbcPrepareTest {
             resultSet = p5.executeQuery();
             print_res(resultSet);
 
+            try {
+                statement.executeUpdate("prepare s1 from 'begin'");
+            }  catch (SQLException e) {
+                // expect failed
+                System.out.println("Errcode for preparement not support:" + e.getErrorCode());
+            }
         }
     }
 }

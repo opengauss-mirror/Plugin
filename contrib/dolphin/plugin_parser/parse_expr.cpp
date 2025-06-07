@@ -2527,8 +2527,13 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs, con
     foreach (args, targs) {
         Node* arg = (Node*)lfirst(args);
         Oid cur_arg_typ = exprType(arg);
-        /* If some arg type is for openGauss only(like money, hash, etc..), try to use openGauss original routinue */
-        if (type_to_index(cur_arg_typ) == FIELD_TYPE_INVALID) {
+        /*
+         * If some arg type is for openGauss only(like money, hash, etc..), try to use openGauss original routinue.
+         *
+         * If Param arg exists, also do not use b_between_and function, because it cannot determine what exact type for
+         * Param just ANYOID.
+         */
+        if (type_to_index(cur_arg_typ) == FIELD_TYPE_INVALID || IsA(arg, Param)) {
             all_type_is_common = false;
             break;
         }
