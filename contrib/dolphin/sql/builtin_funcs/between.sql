@@ -234,6 +234,13 @@ select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /*
 select * from test where date between datetime and timestamp; /* exptected 1 */
 select * from test where datetime between date and timestamp; /* exptected 1 */
 
+/* test prepare */
+create table prepare_between_t1 (a int);
+insert into prepare_between_t1 values (1);
+prepare s1 from 'select * from prepare_between_t1 where a between ? and ?';
+execute s1 using 1,2;
+drop table prepare_between_t1;
+
 reset timezone;
 drop schema db_between cascade;
 reset current_schema;
