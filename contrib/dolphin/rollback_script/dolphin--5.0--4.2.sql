@@ -1,0 +1,80 @@
+DROP CAST IF EXISTS (UINT1 AS VARCHAR);
+DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT1);
+
+DROP CAST IF EXISTS (UINT2 AS VARCHAR);
+DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT2);
+
+DROP CAST IF EXISTS (UINT4 AS VARCHAR);
+DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT4);
+
+DROP CAST IF EXISTS (UINT8 AS VARCHAR);
+DROP FUNCTION IF EXISTS pg_catalog.TO_VARCHAR(UINT8);
+
+-- left/right for text type
+DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
+
+DROP FUNCTION IF EXISTS pg_catalog.left(varbinary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(binary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(bytea, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.left(bit, boolean);
+
+-- max/min for bool type
+DROP aggregate pg_catalog.max(boolean);
+DROP aggregate pg_catalog.min(boolean);
+DROP FUNCTION pg_catalog.bool_larger(boolean, boolean);
+DROP FUNCTION pg_catalog.bool_smaller(boolean, boolean);
+-- max/min for varchar type
+DROP aggregate pg_catalog.max(varchar);
+DROP aggregate pg_catalog.min(varchar);
+DROP FUNCTION pg_catalog.varchar_larger(varchar, varchar);
+DROP FUNCTION pg_catalog.varchar_smaller(varchar, varchar);
+-- max/min for binary type
+DROP aggregate pg_catalog.max(binary);
+DROP aggregate pg_catalog.min(binary);
+DROP FUNCTION pg_catalog.binary_larger(binary, binary);
+DROP FUNCTION pg_catalog.binary_smaller(binary, binary);
+-- max/min for varbinary type
+DROP aggregate pg_catalog.max(varbinary);
+DROP aggregate pg_catalog.min(varbinary);
+DROP FUNCTION pg_catalog.varbinary_larger(varbinary, varbinary);
+DROP FUNCTION pg_catalog.varbinary_smaller(varbinary, varbinary);
+
+-- bool to set and enum
+DROP CAST IF EXISTS (bool AS anyset) CASCADE;
+DROP FUNCTION pg_catalog.set(bool, int4);
+DROP FUNCTION pg_catalog.bool_enum(bool, int4, anyelement);
+
+-- xor between bool and bit,time
+DROP OPERATOR IF EXISTS pg_catalog.^(bool, bit);
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, bool);
+DROP OPERATOR IF EXISTS pg_catalog.^(time without time zone, bool);
+DROP OPERATOR IF EXISTS pg_catalog.^(bool, time without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_bit_xor(bool, bit);
+DROP FUNCTION IF EXISTS pg_catalog.op_bit_bool_xor(bit, bool);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_bool_xor(time, bool);
+DROP FUNCTION IF EXISTS pg_catalog.op_bool_time_xor(bool, time);
+
+-- reverse
+DROP FUNCTION IF EXISTS pg_catalog.reverse(bool);
+
+DROP CAST IF EXISTS (int16 AS text);
+DROP FUNCTION IF EXISTS pg_catalog.int16_text(int16);
+
+
+DROP CAST IF EXISTS (nvarchar2 AS uint1);
+DROP CAST IF EXISTS (nvarchar2 AS uint2);
+DROP CAST IF EXISTS (nvarchar2 AS uint4);
+DROP CAST IF EXISTS (nvarchar2 AS uint8);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint1(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint2(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint4(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_to_uint8(nvarchar2);
+--date function
+DROP FUNCTION IF EXISTS pg_catalog.subdate (time, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_days';
+DROP FUNCTION IF EXISTS pg_catalog.adddate (time, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_days';
+DROP FUNCTION IF EXISTS pg_catalog.b_db_date(time);
+DROP FUNCTION IF EXISTS pg_catalog.b_db_date(timestamp without time zone);
