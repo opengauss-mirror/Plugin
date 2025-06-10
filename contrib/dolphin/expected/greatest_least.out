@@ -104,9 +104,9 @@ SELECT GREATEST(date '2005-05-05', time '20:00:00');
 (1 row)
 
 select GREATEST(20010101, timestamp '99991230121212');
-      greatest       
----------------------
- 9999-12-30 12:12:12
+        greatest        
+------------------------
+--? 9999-12-30 12:12:12.*
 (1 row)
 
 drop schema greatest_least cascade;

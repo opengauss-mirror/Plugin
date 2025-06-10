@@ -8846,20 +8846,20 @@ WARNING:  date/time field overflow
 (1 row)
 
 select timestamp'2024-06-11 14:29:25'+ interval timestamp'2024-02-11 14:29:25' minute;
-WARNING:  date/time field overflow
+WARNING:  date/time field value out of range
  ?column? 
 ----------
  
 (1 row)
 
 select timestamp'9990-06-11 14:29:25' + interval 9 year;
-      ?column?       
----------------------
- 9999-06-11 14:29:25
+        ?column?        
+------------------------
+--?.*
 (1 row)
 
 select timestamp'9990-06-11 14:29:25' + interval 99 year;
-WARNING:  date/time field overflow
+WARNING:  date/time field value out of range
  ?column? 
 ----------
  

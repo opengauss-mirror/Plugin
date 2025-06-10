@@ -41049,8 +41049,8 @@ AexprConst_without_Sconst: Iconst
 			| TIMESTAMP SCONST
 				{
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("timestamp_cast");
-					n->colname = pstrdup("timestamp");
+					n->funcname = SystemFuncName("timestamptz_cast");
+					n->colname = pstrdup("timestamptz");
 					n->args = list_make4(makeStringConst($2, @2), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
