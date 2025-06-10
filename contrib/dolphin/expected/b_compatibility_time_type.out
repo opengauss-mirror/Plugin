@@ -967,9 +967,9 @@ select timestamp without time zone'1994-11-10 23:12:34.5678';
 (1 row)
 
 select timestamp'1994-11-10 23:12:34.5678';
-        timestamp         
---------------------------
- 1994-11-10 23:12:34.5678
+         timestamptz         
+-----------------------------
+--? 1994-11-10 23:12:34.5678.*
 (1 row)
 
 -- test timestamp

@@ -4,7 +4,7 @@ set dolphin.b_compatibility_mode=on;
 select extract(epoch from timestamp'2019-07-02 12:12:12.12121');
     date_part     
 ------------------
- 1562069532.12121
+--? 15620.*.12121
 (1 row)
 
 select extract(year from timestamp'2019-07-02 12:12:12.12121');

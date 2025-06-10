@@ -1100,14 +1100,14 @@ select cast('2022-05-05 20:59' as date);
 
 select timestamp'2022-05';
 ERROR:  invalid input syntax for type timestamp: "2022-05"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamp'2022-15-05 16:20:10';
 ERROR:  date/time field value out of range: "2022-15-05 16:20:10"
 HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamp'2022-05-05 16:60:10';
 ERROR:  date/time field value out of range: "2022-05-05 16:60:10"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 SET dolphin.sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 SET dolphin.b_compatibility_mode TO on;
 \pset null '<NULL>'
@@ -1750,7 +1750,7 @@ drop table t2;
 reset dolphin.sql_mode;
 select timestamp '2022-7-21';
 ERROR:  date/time field value out of range: "2022-7-21"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamptz '2022-7-21';
 ERROR:  date/time field value out of range: "2022-7-21"
 CONTEXT:  referenced column: timestamptz
@@ -1760,7 +1760,7 @@ CONTEXT:  referenced column: timestamp
 select timestamp '2022721';
 ERROR:  date/time field value out of range: "2022721"
 HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamptz '2022721';
 ERROR:  date/time field value out of range: "2022721"
 HINT:  Perhaps you need a different "datestyle" setting.
@@ -1770,9 +1770,9 @@ ERROR:  date/time field value out of range: "2022721"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: timestamp
 select timestamp'2028-12-31 1';
-      timestamp      
----------------------
- 2028-12-31 01:00:00
+      timestamptz       
+------------------------
+--? 2028-12-31 01:00:00.*
 (1 row)
 
 select timestamptz'2028-12-31 1';
@@ -1788,9 +1788,9 @@ select datetime'2028-12-31 1';
 (1 row)
 
 select timestamp '20220721111111';
-      timestamp      
----------------------
- 2022-07-21 11:11:11
+      timestamptz       
+------------------------
+--? 2022-07-21 11:11:11.*
 (1 row)
 
 select timestamptz '20220721111111';
@@ -1807,25 +1807,25 @@ select datetime '20220721111111';
 
 select timestamp '2022-7-21 a';
 ERROR:  date/time field value out of range: "2022-7-21 a"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamp '2022-7-21 12';
-      timestamp      
----------------------
- 2022-07-21 12:00:00
+      timestamptz       
+------------------------
+--? 2022-07-21 12:00:00.*
 (1 row)
 
 select timestamp '2022-7-21 12:1';
-      timestamp      
----------------------
- 2022-07-21 12:01:00
+      timestamptz       
+------------------------
+--? 2022-07-21 12:01:00.*
 (1 row)
 
 select timestamp '2022-7-21 60';
 ERROR:  invalid input syntax for type timestamp: "2022-7-21 60"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamp '2022-7-21 60:01:01';
 ERROR:  date/time field value out of range: "2022-7-21 60:01:01"
-CONTEXT:  referenced column: timestamp
+CONTEXT:  referenced column: timestamptz
 select timestamptz '2022-7-21 a';
 ERROR:  date/time field value out of range: "2022-7-21 a"
 CONTEXT:  referenced column: timestamptz
@@ -1863,6 +1863,18 @@ select date(smalldatetime '2022-01-01 12:30');
     date    
 ------------
  2022-01-01
+(1 row)
+
+select pg_typeof(timestamp '2002-10-10 00:00:00');
+        pg_typeof         
+--------------------------
+ timestamp with time zone
+(1 row)
+
+select pg_typeof('2002-10-10 00:00:00'::timestamp);
+        pg_typeof         
+--------------------------
+ timestamp with time zone
 (1 row)
 
 drop schema b_time_funcs cascade;
