@@ -1,0 +1,8 @@
+zhparser:
+  cpeName: zhparser
+  version: 1.2.3
+  url: 'https://github.com/hightman/scws'
+timescaledb:
+  cpeName: timescaledb
+  version: 1.7.4
+  url: 'https://github.com/timescale/timescaledb'
