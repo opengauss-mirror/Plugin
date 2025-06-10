@@ -2075,6 +2075,16 @@ CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
         return expr;
     }
 
+#ifdef DOLPHIN
+    if (IsA(expr, Param) && (type_is_set(targettype) || type_is_enum(targettype)) &&
+        pstate != NULL && pstate->p_coerce_param_hook != NULL) {
+        result = (*pstate->p_coerce_param_hook)(pstate, (Param*)expr, targettype, targettypmod, -1);
+        if (result != NULL) {
+            return result;
+        }
+    }
+#endif
+
     ereport(ERROR,
         (errcode(ERRCODE_UNDEFINED_FUNCTION),
             errmsg("failed to find conversion function from %s to %s",
