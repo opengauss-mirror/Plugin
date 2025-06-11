@@ -3,7 +3,6 @@ set current_schema to 'm_create_proc_type';
 DROP ROLE if EXISTS us2;
 NOTICE:  role "us2" does not exist, skipping
 CREATE ROLE us2 IDENTIFIED BY 'Aa@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL ON SCHEMA m_create_proc_type TO us2;
 SET ROLE us2 PASSWORD 'Aa@123456';
 set dolphin.sql_mode = 'sql_mode_strict,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero';

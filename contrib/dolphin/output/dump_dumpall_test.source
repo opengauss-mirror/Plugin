@@ -98,7 +98,6 @@ NOTICE:  view "view_created_with_definer_test" does not exist, skipping
 drop user if exists Test_User;
 NOTICE:  role "test_user" does not exist, skipping
 CREATE USER "Test_User" with password 'openGauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO "Test_User";
 CREATE DEFINER="Test_User" VIEW view_created_with_definer_test AS SELECT log(10, 100);
 SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;

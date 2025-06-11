@@ -14,7 +14,6 @@ alter system set dolphin.default_database_name=b_databaseproto;
 DROP USER IF EXISTS proto_user CASCADE;
 NOTICE:  role "proto_user" does not exist, skipping
 CREATE USER proto_user WITH PASSWORD 'Gauss@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO proto_user;
 GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
@@ -457,6 +456,15 @@ id
 ID
 VAL
 ID2
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTypeCanBeNullTest localhost $dp db_jdbc proto_user Gauss@123
+id
+1
+create_time
+2025-04-25 17:00:00
+update_time
+null
+remark
+test
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 \! rm @abs_builddir@/proto_jdbc/class/*.class

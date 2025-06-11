@@ -1,0 +1,679 @@
+create role lowuser password 'lowuser@123';
+create schema test_privileges;
+create table test_privileges.t1 (c1 int);
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'SELECT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INSERT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'UPDATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DELETE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'ALTER');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DROP');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'COMMENT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INDEX');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'VACUUM');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+alter default privileges in schema test_privileges grant SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on tables to public;
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'SELECT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INSERT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'UPDATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DELETE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'ALTER');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DROP');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'COMMENT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INDEX');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'VACUUM');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+create table test_privileges.t2 (c1 int);
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'SELECT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INSERT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'UPDATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DELETE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'ALTER');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DROP');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'COMMENT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INDEX');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'VACUUM');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+alter default privileges in schema test_privileges revoke SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on tables from public;
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'SELECT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INSERT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'UPDATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DELETE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'ALTER');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DROP');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'COMMENT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INDEX');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'VACUUM');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+create table test_privileges.t3 (c1 int);
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'SELECT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'INSERT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'UPDATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'DELETE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'ALTER');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'DROP');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'COMMENT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'INDEX');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t3', 'VACUUM');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+alter default privileges in schema test_privileges revoke grant option for SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on tables from public;
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'SELECT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INSERT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'UPDATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DELETE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'ALTER');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'DROP');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'COMMENT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'INDEX');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t2', 'VACUUM');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+create table test_privileges.t4 (c1 int);
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'SELECT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'INSERT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'UPDATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'DELETE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'ALTER');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'DROP');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'COMMENT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'INDEX');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t4', 'VACUUM');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on test_privileges.t1 to lowuser;
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'SELECT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INSERT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'UPDATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DELETE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'ALTER');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DROP');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'COMMENT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INDEX');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'VACUUM');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+REVOKE GRANT OPTION FOR SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on test_privileges.t1 from lowuser;
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'SELECT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INSERT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'UPDATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DELETE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'ALTER');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DROP');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'COMMENT');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INDEX');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'VACUUM');
+ has_table_privilege 
+---------------------
+ t
+(1 row)
+
+REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, ALTER, DROP, COMMENT, INDEX, VACUUM on test_privileges.t1 from lowuser;
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'SELECT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INSERT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'UPDATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DELETE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'TRUNCATE');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'REFERENCES');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'ALTER');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'DROP');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'COMMENT');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'INDEX');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+SELECT has_table_privilege('lowuser', 'test_privileges.t1', 'VACUUM');
+ has_table_privilege 
+---------------------
+ f
+(1 row)
+
+drop user lowuser;
+drop schema test_privileges cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table test_privileges.t1
+drop cascades to table test_privileges.t2
+drop cascades to table test_privileges.t3
+drop cascades to table test_privileges.t4

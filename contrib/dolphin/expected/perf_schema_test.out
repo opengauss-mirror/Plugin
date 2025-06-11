@@ -1,9 +1,7 @@
 --create mysql compatible database
 CREATE DATABASE mysqldb01 DBCOMPATIBILITY = 'B';
 CREATE USER monadmin01 monadmin PASSWORD 'Cmcc@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER user01 PASSWORD 'Cmcc@123';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 \c mysqldb01
 SET track_stmt_stat_level = 'L1,L0';
 SHOW track_stmt_stat_level;

@@ -806,7 +806,7 @@ static bool GreaterThanHour (List* int_type);
 %type <node>	grantee
 %type <list>	grantee_list
 %type <accesspriv> privilege routine_privilege temporary_privilege index_privilege
-%type <list>	privileges privilege_list db_privileges db_privilege_list
+%type <list>	privileges privilege_list db_privileges db_privilege_list defacl_privileges
 %type <list>    routine_privilege_list routine_privileges temporary_privilege_list temporary_privileges index_privilege_list index_privileges
 %type <dbpriv>  db_privilege
 %type <str>		privilege_str
@@ -17343,7 +17343,7 @@ RevokeStmt:
 					n->grantee_roles = list_make1(makeString($9));
 					$$ = (Node*)n;
 				}
-			| REVOKE GRANT OPTION FOR privileges ON privilege_target
+			| REVOKE GRANT OPTION FOR defacl_privileges ON privilege_target
 			FROM grantee_list opt_drop_behavior
 				{
 					GrantStmt *n = makeNode(GrantStmt);
@@ -17510,7 +17510,15 @@ index_privilege_list:
 	;
 
 index_target:
-		TABLE dolphin_qualified_name_list
+		dolphin_qualified_name_list
+			{
+				PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+				n->targtype = ACL_TARGET_OBJECT;
+				n->objtype = ACL_OBJECT_RELATION;
+				n->objs = $1;
+				$$ = n;
+			}
+		| TABLE dolphin_qualified_name_list
 			{
 				PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 				n->targtype = ACL_TARGET_OBJECT;
@@ -18243,12 +18251,17 @@ DefACLOption:
 				}
 		;
 
+defacl_privileges:
+			privileges
+			| index_privileges
+		;
+
 /*
  * This should match GRANT/REVOKE, except that individual target objects
  * are not mentioned and we only allow a subset of object types.
  */
 DefACLAction:
-			GRANT privileges ON defacl_privilege_target TO grantee_list
+			GRANT defacl_privileges ON defacl_privilege_target TO grantee_list
 			opt_grant_grant_option
 				{
 					GrantStmt *n = makeNode(GrantStmt);
@@ -18261,7 +18274,7 @@ DefACLAction:
 					n->grant_option = $7;
 					$$ = (Node*)n;
 				}
-			| REVOKE privileges ON defacl_privilege_target
+			| REVOKE defacl_privileges ON defacl_privilege_target
 			FROM grantee_list opt_drop_behavior
 				{
 					GrantStmt *n = makeNode(GrantStmt);
@@ -18275,7 +18288,7 @@ DefACLAction:
 					n->behavior = $7;
 					$$ = (Node *)n;
 				}
-			| REVOKE GRANT OPTION FOR privileges ON defacl_privilege_target
+			| REVOKE GRANT OPTION FOR defacl_privileges ON defacl_privilege_target
 			FROM grantee_list opt_drop_behavior
 				{
 					GrantStmt *n = makeNode(GrantStmt);

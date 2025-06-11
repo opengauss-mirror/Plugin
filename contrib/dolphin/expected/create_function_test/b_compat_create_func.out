@@ -3,7 +3,6 @@ set current_schema to 'b_compat_create_func';
 DROP ROLE if EXISTS us1;
 NOTICE:  role "us1" does not exist, skipping
 CREATE ROLE us1 IDENTIFIED BY 'Aa@123456';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL ON SCHEMA b_compat_create_func TO us1;
 SET ROLE us1 PASSWORD 'Aa@123456';
 create function func(n int) returns varchar(50) return (select n+1);
