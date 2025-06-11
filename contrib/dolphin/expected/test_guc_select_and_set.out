@@ -312,4 +312,33 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS;
 SET FOREIGN_KEY_CHECKS=0;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+show character_set_connection;
+ character_set_connection 
+--------------------------
+ UTF8
+(1 row)
+
+set character_set_connection = binary;
+ERROR:  character_set_connection can be changed when b_format_behavior_compat_options contains enable_multi_charset option
+set b_format_behavior_compat_options = 'enable_multi_charset';
+set character_set_connection = binary;
+show character_set_connection;
+ character_set_connection 
+--------------------------
+ SQL_ASCII
+(1 row)
+
+show collation_connection;
+ collation_connection 
+----------------------
+ binary
+(1 row)
+
+reset b_format_behavior_compat_options;
 drop schema test_guc_select_and_set cascade;
