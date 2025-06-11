@@ -150,4 +150,14 @@ SET FOREIGN_KEY_CHECKS=0;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
+show b_format_behavior_compat_options;
+show character_set_connection;
+set character_set_connection = binary;
+set b_format_behavior_compat_options = 'enable_multi_charset';
+set character_set_connection = binary;
+show character_set_connection;
+show collation_connection;
+
+reset b_format_behavior_compat_options;
+
 drop schema test_guc_select_and_set cascade;
