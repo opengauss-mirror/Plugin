@@ -2976,8 +2976,8 @@ Datum dolphin_bitposition(PG_FUNCTION_ARGS)
 
 static Datum GetPeakVarBit(PG_FUNCTION_ARGS, bool isLarger)
 {
-    VarBit* bit1 = (VarBit*)PG_GETARG_DATUM(0);
-    VarBit* bit2 = (VarBit*)PG_GETARG_DATUM(1);
+    VarBit* bit1 = (VarBit*)PG_GETARG_VARBIT_P(0);
+    VarBit* bit2 = (VarBit*)PG_GETARG_VARBIT_P(1);
 
     if (PG_ARGISNULL(0)) {
         if (PG_ARGISNULL(1)) {
