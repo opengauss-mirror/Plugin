@@ -128,5 +128,11 @@ drop table test_datetime;
 drop table t_if_005_1;
 drop table t_if_001;
 
+-- test if case in create table & insert
+drop table if exists t_if_015_04;
+create table t_if_015_04(c_01 int ,c_02 varchar(20) default if(1,'a','b'));
+insert into t_if_015_04 values (1,if(null,'asd',2)),(2,if(c_01>2,'a','3')),(null,if('123'=1,1,0));
+select * from t_if_015_04;
+
 drop schema db_b_if cascade;
 reset current_schema;

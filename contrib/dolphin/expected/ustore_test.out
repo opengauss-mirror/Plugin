@@ -9,5 +9,22 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_year_0005_01_p
 drop table if exists t_year_0005 cascade;
 drop table if exists t_year_0005_01 cascade;
 reset enable_default_ustore_table;
+-- test for excluding storage
+drop table if exists t_table_0018;
+NOTICE:  table "t_table_0018" does not exist, skipping
+create table t_table_0018(
+col01 int comment '首列',
+col02 int not null,
+col03 date default '2000-01-01 00:00:01',
+col04 varchar(255) unique,
+col05 varchar(10) check(length(col05)>=5),
+col06 int
+) with (storage_type = ustore);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_table_0018_col04_key" for table "t_table_0018"
+create index i_table_0018_01 on t_table_0018(col05);
+-- expect error
+create table t_table_0018_18 like t_table_0018 excluding storage;
+ERROR:  ubtree index is only supported for ustore
+drop table if exists t_table_0018;
 drop schema ustore_test cascade;
 reset current_schema;

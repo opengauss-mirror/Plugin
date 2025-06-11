@@ -415,6 +415,21 @@ select if(1,5 <> 3.14 or 0.5 >= 4,2) result;
 drop table test_datetime;
 drop table t_if_005_1;
 drop table t_if_001;
+-- test if case in create table & insert
+drop table if exists t_if_015_04;
+NOTICE:  table "t_if_015_04" does not exist, skipping
+create table t_if_015_04(c_01 int ,c_02 varchar(20) default if(1,'a','b'));
+insert into t_if_015_04 values (1,if(null,'asd',2)),(2,if(c_01>2,'a','3')),(null,if('123'=1,1,0));
+select * from t_if_015_04;
+ c_01 | c_02 
+------+------
+    1 | 2
+    2 | 3
+      | 0
+(3 rows)
+
 drop schema db_b_if cascade;
-NOTICE:  drop cascades to view test_view
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to view test_view
+drop cascades to table t_if_015_04
 reset current_schema;

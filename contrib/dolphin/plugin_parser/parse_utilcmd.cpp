@@ -4816,27 +4816,6 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
         }
     }
 
-    if (RelationIsRowFormat(rel) && (pg_strcasecmp(stmt->accessMethod, DEFAULT_INDEX_TYPE) == 0 ||
-        (pg_strcasecmp(stmt->accessMethod, DEFAULT_USTORE_INDEX_TYPE) == 0))) {
-        const char *accessMethod;
-        if (!RelationIsUstoreFormat(rel)) {
-            accessMethod = DEFAULT_INDEX_TYPE;
-        } else {
-            accessMethod = DEFAULT_USTORE_INDEX_TYPE;
-        }
-
-        if (pg_strcasecmp(stmt->accessMethod, accessMethod) != 0) {
-            ereport(NOTICE, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
-                errmsg("Index type %s is converted to index type %s.", stmt->accessMethod, accessMethod),
-                errcause("The index type does not match."), erraction("N/A")));  
-        }
-        if (RelationIsUstoreFormat(rel)) {
-            stmt->accessMethod = DEFAULT_USTORE_INDEX_TYPE;
-        } else {
-            stmt->accessMethod = DEFAULT_INDEX_TYPE;
-        }
-    }
-
 #ifdef DOLPHIN
     TransfromSortByNulls(stmt);
 #endif
