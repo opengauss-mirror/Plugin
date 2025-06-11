@@ -1853,3 +1853,193 @@ drop index test_table_idx1;
 drop index test_table_col_idx1;
 drop table test_table;
 drop table test_table_col;
+create schema IDX1;
+set search_path = 'IDX1';
+create table TT1(id int);
+create index idxTest1 on TT1(id);
+-- should fail, as shema name is case sensitive.
+reindex index idx1.idxTest1;
+ERROR:  schema "idx1" does not exist
+alter index idx1.idxTest1 rename to idxTest2;
+ERROR:  schema "idx1" does not exist
+drop index idx1.idxTest2;
+ERROR:  schema "idx1" does not exist
+-- should work, as shema name is case sensitive and index name is case ignored.
+reindex index IDX1.idxTest1;
+alter index IDX1.idxTest1 rename to idxTest2;
+drop index IDX1.idxTest2;
+create index idxTest1 on TT1(id);
+-- should fail.
+reindex index "idxTest1";
+ERROR:  relation "idxTest1" does not exist
+alter index "idxTest1" rename to "idxTest2";
+ERROR:  relation "idxTest1" does not exist
+drop index "idxTest2";
+ERROR:  index "idxTest2" does not exist
+-- should work.
+reindex index idxTest1;
+alter index idxTest1 rename to idxTest2;
+drop index idxTest2;
+create index idxTest1 on TT1(id);
+-- should work.
+reindex index "idxtest1";
+alter index "idxtest1" rename to "idxtest2";
+drop index "idxtest2";
+create index idxTest1 on TT1(id);
+-- should work.
+reindex index idxtest1;
+alter index idxtest1 rename to idxtest2;
+drop index idxtest2;
+create index idxTest1 on TT1(id);
+-- should fail.
+reindex index "IDXTEST1";
+ERROR:  relation "IDXTEST1" does not exist
+alter index "IDXTEST1" rename to "IDXTEST2";
+ERROR:  relation "IDXTEST1" does not exist
+drop index "IDXTEST2";
+ERROR:  index "IDXTEST2" does not exist
+-- should work.
+reindex index IDXTEST1;
+alter index IDXTEST1 rename to IDXTEST2;
+drop index IDXTEST2;
+create index IDX1.idxTest1 on TT1(id);
+-- should fail.
+reindex index IDX1."idxTest1";
+ERROR:  relation "IDX1.idxTest1" does not exist
+alter index IDX1."idxTest1" rename to "idxTest2";
+ERROR:  relation "IDX1.idxTest1" does not exist
+drop index IDX1."idxTest2";
+ERROR:  index "idxTest2" does not exist
+-- should work.
+reindex index IDX1.idxTest1;
+alter index IDX1.idxTest1 rename to idxTest2;
+drop index IDX1.idxTest2;
+create index IDX1.idxTest1 on TT1(id);
+-- should fail.
+reindex index "idxTest1";
+ERROR:  relation "idxTest1" does not exist
+alter index "idxTest1" rename to "idxTest2";
+ERROR:  relation "idxTest1" does not exist
+drop index "idxTest2";
+ERROR:  index "idxTest2" does not exist
+-- should work.
+reindex index idxTest1;
+alter index idxTest1 rename to idxTest2;
+drop index idxTest2;
+create index IDX1.idxTest1 on TT1(id);
+-- should work.
+reindex index idxtest1;
+alter index idxtest1 rename to idxtest2;
+drop index idxtest2;
+create index IDX1.idxTest1 on TT1(id);
+-- should fail.
+reindex index "IDXTEST1";
+ERROR:  relation "IDXTEST1" does not exist
+alter index "IDXTEST1" rename to "IDXTEST2";
+ERROR:  relation "IDXTEST1" does not exist
+drop index "IDXTEST2";
+ERROR:  index "IDXTEST2" does not exist
+-- should work.
+reindex index IDXTEST1;
+alter index IDXTEST1 rename to IDXTEST2;
+drop index IDXTEST2;
+set dolphin.lower_case_table_names to 1;
+create index idxTest1 on "TT1"(id);
+-- should work.
+reindex index "IDX1".idxTest1;
+alter index "IDX1".idxTest1 rename to idxTest2;
+drop index "IDX1".idxTest2;
+create index idxTest1 on "TT1"(id);
+-- should fail.
+reindex index "IDX1"."IDXTEST1";
+ERROR:  relation "IDX1.IDXTEST1" does not exist
+alter index "IDX1"."IDXTEST1" rename to "IDXTEST2";
+ERROR:  relation "IDX1.IDXTEST1" does not exist
+drop index "IDX1"."IDXTEST2";
+ERROR:  index "IDXTEST2" does not exist
+-- should work.
+reindex index "IDX1".IDXTEST1;
+alter index "IDX1".IDXTEST1 rename to IDXTEST2;
+drop index "IDX1".IDXTEST2;
+create index idxTest1 on "TT1"(id);
+-- should work.
+reindex index "IDX1".idxtest1;
+alter index "IDX1".idxtest1 rename to idxtest2;
+drop index "IDX1".idxtest2;
+create index idxTest1 on "TT1"(id);
+-- should work.
+reindex index "IDX1"."idxtest1";
+alter index "IDX1"."idxtest1" rename to "idxtest2";
+drop index "IDX1"."idxtest2";
+create index idxTest1 on "TT1"(id);
+-- should fail.
+reindex index "idxTest1";
+ERROR:  relation "idxTest1" does not exist
+alter index "idxTest1" rename to "idxTest2";
+ERROR:  relation "idxTest1" does not exist
+drop index "idxTest2";
+ERROR:  index "idxTest2" does not exist
+-- should work.
+reindex index idxTest1;
+alter index idxTest1 rename to idxTest2;
+drop index idxTest2;
+create index idxTest1 on "TT1"(id);
+-- should fail.
+reindex index "IDXTEST1";
+ERROR:  relation "IDXTEST1" does not exist
+alter index "IDXTEST1" rename to "IDXTEST2";
+ERROR:  relation "IDXTEST1" does not exist
+drop index "IDXTEST2";
+ERROR:  index "IDXTEST2" does not exist
+-- should work.
+reindex index IDXTEST1;
+alter index IDXTEST1 rename to IDXTEST2;
+drop index IDXTEST2;
+create index idxTest1 on "TT1"(id);
+-- should work.
+reindex index idxtest1;
+alter index idxtest1 rename to idxtest2;
+drop index idxtest2;
+create index idxTest1 on "TT1"(id);
+-- should work.
+reindex index "idxtest1";
+alter index "idxtest1" rename to "idxtest2";
+drop index "idxtest2";
+create index "IDX1".idxTest1 on "TT1"(id);
+-- should fail.
+reindex index "IDX1"."idxTest1";
+ERROR:  relation "IDX1.idxTest1" does not exist
+alter index "IDX1"."idxTest1" rename to "idxTest2";
+ERROR:  relation "IDX1.idxTest1" does not exist
+drop index "IDX1"."idxTest2";
+ERROR:  index "idxTest2" does not exist
+-- should work.
+reindex index "IDX1".idxTest1;
+alter index "IDX1".idxTest1 rename to idxTest2;
+drop index "IDX1".idxTest2;
+create index "IDX1".idxTest1 on "TT1"(id);
+-- should fail.
+reindex index "IDX1"."IDXTEST1";
+ERROR:  relation "IDX1.IDXTEST1" does not exist
+alter index "IDX1"."IDXTEST1" rename to "IDXTEST2";
+ERROR:  relation "IDX1.IDXTEST1" does not exist
+drop index "IDX1"."IDXTEST2";
+ERROR:  index "IDXTEST2" does not exist
+-- should work.
+reindex index "IDX1".IDXTEST1;
+alter index "IDX1".IDXTEST1 rename to IDXTEST2;
+drop index "IDX1".IDXTEST2;
+create index "IDX1".idxTest1 on "TT1"(id);
+-- should work.
+reindex index "IDX1".idxtest1;
+alter index "IDX1".idxtest1 rename to idxtest2;
+drop index "IDX1".idxtest2;
+create index "IDX1".idxTest1 on "TT1"(id);
+-- should work.
+reindex index "IDX1"."idxtest1";
+alter index "IDX1"."idxtest1" rename to "idxtest2";
+drop index "IDX1"."idxtest2";
+reset search_path;
+set dolphin.lower_case_table_names to 0;
+drop schema IDX1 cascade;
+NOTICE:  drop cascades to table "IDX1"."TT1"

@@ -790,7 +790,7 @@ static bool GreaterThanHour (List* int_type);
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collation collate_option
 
-%type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
+%type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name casesensitive_caseignore_qualified_name
 				qualified_trigger_name qualified_name_for_delete
 %type <str>		all_Op MathOp OptDbName
 %type <str>		SingleLineProcPart
@@ -833,7 +833,7 @@ static bool GreaterThanHour (List* int_type);
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
 				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
 				from_list_for_no_table_function
-				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
+				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list casesensitive_caseignore_any_name casesensitive_caseignore_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
@@ -4668,7 +4668,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX qualified_name alter_index_or_partition
+		|	ALTER INDEX casesensitive_caseignore_qualified_name alter_index_or_partition
 				{
 					if ($4->length == 1 && ((AlterTableCmd*)lfirst($4->head))->subtype == AT_RebuildIndex)
 					{
@@ -4710,7 +4710,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX IF_P EXISTS qualified_name alter_index_or_partition
+		|	ALTER INDEX IF_P EXISTS casesensitive_caseignore_qualified_name alter_index_or_partition
 				{
 					ListCell   *cell;
 					foreach(cell, $6)
@@ -16428,7 +16428,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->purge = $5;
 					$$ = (Node *)n;
 				}
-			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
+			| DROP INDEX IF_P EXISTS casesensitive_caseignore_any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -16449,7 +16449,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 
 					$$ = (Node *)n;
 				}
-			| DROP INDEX any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
+			| DROP INDEX casesensitive_caseignore_any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -16469,7 +16469,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					}
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior on_table opt_idx_algo
+			| DROP INDEX CONCURRENTLY casesensitive_caseignore_any_name_list opt_drop_behavior on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -16480,7 +16480,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->concurrent = true;
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY IF_P EXISTS any_name_list opt_drop_behavior on_table opt_idx_algo
+			| DROP INDEX CONCURRENTLY IF_P EXISTS casesensitive_caseignore_any_name_list opt_drop_behavior on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -16557,6 +16557,11 @@ dolphin_any_name_list:
 			| dolphin_any_name_list ',' dolphin_any_name			{ $$ = lappend($1, $3); }
 		;
 
+casesensitive_caseignore_any_name_list:
+			casesensitive_caseignore_any_name														{ $$ = list_make1($1); }
+			| casesensitive_caseignore_any_name_list ',' casesensitive_caseignore_any_name			{ $$ = lappend($1, $3); }
+		;
+
 any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 			| ColId attrs				{ $$ = lcons(makeString($1), $2); }
 		;
@@ -16598,6 +16603,46 @@ dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjNa
 					if (count == table_index) {
 						result = lappend(result, makeString(GetDolphinObjName(str, is_quoted)));
 					} else if (count == schema_index) {
+						result = lappend(result, makeString(GetDolphinSchemaName(str, is_quoted)));
+					} else {
+						/* other_names */
+						result = lappend(result, makeString(downcase_str(str, is_quoted)));
+					}
+					count++;
+				}
+				$$ = result;
+			}
+		;
+
+casesensitive_caseignore_any_name:
+		DolphinColId						{ $$ = list_make1(makeString(downcase_str($1->str, $1->is_quoted))); }
+		| DolphinColId dolphin_attrs
+			{
+				List* list = $2;
+				List* result = NIL;
+				ListCell * cell = NULL;
+				int length = list_length($2);
+				int count = 0;
+				int schema_index = -1;
+				switch (length) {
+					case 1:
+						/* schema_name.index_name */
+						result = lappend(result, makeString(GetDolphinSchemaName($1->str, $1->is_quoted)));
+						break;
+					case 2:
+						/* catalog_name.schema_name.index_name */
+						result = lappend(result, makeString(downcase_str($1->str, $1->is_quoted)));
+						/* fall through */
+					default:
+						schema_index = 0;
+						break;
+				}
+				foreach (cell, list) {
+					DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+					Value* value = (Value*)(dolphinString->node);
+					char* str = strVal(value);
+					bool is_quoted = dolphinString->is_quoted;
+					if (count == schema_index) {
 						result = lappend(result, makeString(GetDolphinSchemaName(str, is_quoted)));
 					} else {
 						/* other_names */
@@ -19572,32 +19617,7 @@ opt_idx_algo:
 	}
 
 opt_index_name:
-			index_name
-				{
-					$$ = makeRangeVar(NULL, $1, @1);
-				}
-			| ColId indirection
-				{
-					check_qualified_name($2, yyscanner);
-					$$ = makeRangeVar(NULL, NULL, @1);
-					const char* message = "improper qualified name (too many dotted names): %s";
-					switch (list_length($2))
-					{
-						case 1:
-							$$->catalogname = NULL;
-							$$->schemaname = $1;
-							$$->relname = strVal(linitial($2));
-							break;
-						default:
-    						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("improper qualified name (too many dotted names): %s",
-											NameListToString(lcons(makeString($1), $2))),
-									 parser_errposition(@1)));
-							break;
-					}
-				}
+			casesensitive_caseignore_qualified_name
 			| /*EMPTY*/								{ $$ = makeRangeVar(NULL, NULL, -1); }
 		;
 
@@ -23444,7 +23464,7 @@ ReindexStmt:
 					n->name = $6;
 					$$ = (Node *)n;
 				}
-			| REINDEX INDEX opt_concurrently qualified_name opt_force
+			| REINDEX INDEX opt_concurrently casesensitive_caseignore_qualified_name opt_force
 				{
 					ReindexStmt *n = makeNode(ReindexStmt);
 					n->kind = OBJECT_INDEX;
@@ -23453,7 +23473,7 @@ ReindexStmt:
 					n->name = NULL;
 					$$ = (Node *)n;
 				}
-			| REINDEX INDEX opt_concurrently qualified_name PARTITION ColId opt_force
+			| REINDEX INDEX opt_concurrently casesensitive_caseignore_qualified_name PARTITION ColId opt_force
 				{
 					ReindexStmt *n = makeNode(ReindexStmt);
 					n->kind  = OBJECT_INDEX_PARTITION;
@@ -23996,7 +24016,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER INDEX qualified_name RENAME TO name
+			| ALTER INDEX casesensitive_caseignore_qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_INDEX;
@@ -24006,7 +24026,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER INDEX IF_P EXISTS qualified_name RENAME TO name
+			| ALTER INDEX IF_P EXISTS casesensitive_caseignore_qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_INDEX;
@@ -24017,7 +24037,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					$$ = (Node *)n;
 				}
 
-			| ALTER INDEX qualified_name RENAME_PARTITION name TO name
+			| ALTER INDEX casesensitive_caseignore_qualified_name RENAME_PARTITION name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_PARTITION_INDEX;
@@ -24027,7 +24047,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER INDEX IF_P EXISTS qualified_name RENAME_PARTITION name TO name
+			| ALTER INDEX IF_P EXISTS casesensitive_caseignore_qualified_name RENAME_PARTITION name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_PARTITION_INDEX;
@@ -38610,6 +38630,48 @@ dolphin_qualified_name:
 							ereport(errstate,
 									(errcode(ERRCODE_SYNTAX_ERROR),
 									 errmsg("improper qualified name (too many dotted names): %s",
+											NameListToString(lcons(makeString($1->str), GetNameListFromDolphinString($2)))),
+									 parser_errposition(@1)));
+							break;
+					}
+				}
+		;
+
+/*
+ * for a casesensitive schema with a caseignore name	
+ */
+casesensitive_caseignore_qualified_name:
+			DolphinColId
+				{
+					$$ = makeRangeVar(NULL, downcase_str($1->str, $1->is_quoted), @1);
+				}
+			| DolphinColId dolphin_indirection
+				{
+					check_dolphin_qualified_name($2, yyscanner);
+					$$ = makeRangeVar(NULL, NULL, @1);
+					const char* message = "improper qualified name (too many dotted names)";
+					DolphinString* first = NULL;
+					DolphinString* second = NULL;
+					switch (list_length($2))
+					{
+						case 1:
+							$$->catalogname = NULL;
+							$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);
+							first = (DolphinString*)linitial($2);
+							$$->relname = downcase_str(first->str, first->is_quoted);
+							break;
+						case 2:
+							$$->catalogname = downcase_str($1->str, $1->is_quoted);
+							first = (DolphinString*)linitial($2);
+							second = (DolphinString*)lsecond($2);
+							$$->schemaname = GetDolphinSchemaName(first->str, first->is_quoted);
+							$$->relname = downcase_str(second->str, second->is_quoted);
+							break;
+						default:
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper qualified name (too many dotted names): %d, %s",list_length($2),
 											NameListToString(lcons(makeString($1->str), GetNameListFromDolphinString($2)))),
 									 parser_errposition(@1)));
 							break;
