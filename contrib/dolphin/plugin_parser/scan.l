@@ -817,7 +817,7 @@ other			.
 					BEGIN(xd);
 					startlit();
 #ifdef DOLPHIN
-					if (!SQL_MODE_ANSI_QUOTES()) {
+					if (!u_sess->attr.attr_common.IsInplaceUpgrade && !SQL_MODE_ANSI_QUOTES()) {
 						yyextra->warn_on_first_escape = true;
 						yyextra->saw_non_ascii = false;
 					}
@@ -843,7 +843,7 @@ other			.
 				}
 <xd>{xdstop}	{
 #ifdef DOLPHIN
-					if (SQL_MODE_ANSI_QUOTES()) {
+					if (u_sess->attr.attr_common.IsInplaceUpgrade || SQL_MODE_ANSI_QUOTES()) {
 #endif
 						char		   *ident;
 

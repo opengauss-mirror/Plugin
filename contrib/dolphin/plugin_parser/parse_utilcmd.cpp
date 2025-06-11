@@ -4695,7 +4695,11 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
 #endif
 
     /* default partition index is set to Global index */
-    if (RELATION_IS_PARTITIONED(rel) && !stmt->isPartitioned && DEFAULT_CREATE_GLOBAL_INDEX) {
+    if (RELATION_IS_PARTITIONED(rel) && !stmt->isPartitioned && DEFAULT_CREATE_GLOBAL_INDEX
+#ifdef DOLPHIN
+        && !u_sess->attr.attr_sql.enable_default_local_index
+#endif
+    ) {
         stmt->isGlobal = true;
     }
 
