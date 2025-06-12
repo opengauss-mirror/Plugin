@@ -52,7 +52,7 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
 static void printtup_shutdown(DestReceiver *self);
 static void printtup_destroy(DestReceiver *self);
 
-static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List* targetlist);
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats);
 static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int numAttrs);
 
 static void spi_sql_proc_dest_destroy(DestReceiver *self);
@@ -118,15 +118,15 @@ DestReceiver* dophin_printtup_create_DR(CommandDest dest)
     self->pub.rStartup = printtup_startup;
     self->pub.rShutdown = printtup_shutdown;
     self->pub.rDestroy = printtup_destroy;
+    self->pub.sendRowDesc = DolphinSendRowDescriptionMessage;
     self->pub.finalizeLocalStream = NULL;
     self->pub.mydest = dest;
     self->pub.tmpContext = NULL;
 
     /*
-     * Send T message automatically if DestRemote, but not if
-     * DestRemoteExecute
+     * Send T message automatically if DestRemote or DestRemoteExecute
      */
-    self->sendDescrip = (dest == DestRemote);
+    self->sendDescrip = (dest == DestRemote || dest == DestRemoteExecute);
 
     self->attrinfo = NULL;
     self->nattrs = 0;
@@ -160,11 +160,12 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
      * descriptor of the tuples.
      */
     if (myState->sendDescrip) {
-        SendRowDescriptionMessage(&myState->buf, typeinfo, myState->target_list);
+        List *target_list = myState->portal != NULL ? FetchPortalTargetList(myState->portal) : myState->target_list;
+        myState->pub.sendRowDesc(&myState->buf, typeinfo, target_list, NULL);
     }
 }
 
-static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist)
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats)
 {
     FormData_pg_attribute *attrs = typeinfo->attrs;
     int natts = typeinfo->natts;
@@ -1118,6 +1119,7 @@ DestReceiver* dophin_default_printtup_create_DR(CommandDest dest)
     self->pub.rStartup = dolphin_default_printtup_startup;
     self->pub.rShutdown = dolphin_default_printtup_shutdown;
     self->pub.rDestroy = dolphin_default_printtup_destroy;
+    self->pub.sendRowDesc = SendRowDescriptionMessage;
     self->pub.finalizeLocalStream = NULL;
     self->pub.mydest = dest;
     self->pub.tmpContext = NULL;

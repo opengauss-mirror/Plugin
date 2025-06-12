@@ -32,6 +32,7 @@
 
 #define C(x) x, sizeof(x) - 1
 #define param_isnull(PARAM, BITS) ((BITS)[(PARAM) / 8] & (1 << ((PARAM) % 8)))
+#define DOLPHIN_PROTOCOL_STMT_NAME_PREFIX "__dolphin_stmt_"
 
 typedef enum {
     NETWORK_MYSQLD_PROTOCOL_VERSION_41
