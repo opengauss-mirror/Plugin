@@ -2549,7 +2549,8 @@ static int DecodeTime(
 #endif
         }
 #ifdef DOLPHIN
-        else if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH))) {
+        else if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) ||
+            range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO))) {
             tm->tm_year = tm->tm_hour;
             tm->tm_mon = tm->tm_min;
             *tmask = DTK_M(YEAR) | DTK_M(MONTH);
@@ -2570,7 +2571,9 @@ static int DecodeTime(
                 *tmask = DTK_M(HOUR) | DTK_M(MINUTE);
             } else if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
                        range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
-                                 INTERVAL_MASK(SECOND))) {
+                                 INTERVAL_MASK(SECOND)) ||
+                       range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                 INTERVAL_MASK(SECOND) | INTERVAL_MASK(INTERVAL_TO))) {
                 tm->tm_sec = tm->tm_min;
                 tm->tm_min = tm->tm_hour;
                 tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
@@ -2636,13 +2639,17 @@ static int DecodeTime(
          */
 #ifdef DOLPHIN
         if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) ||
+            range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO)) ||
             range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR)) ||
             range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
             range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
             range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
             range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
             range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
-            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)))
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                INTERVAL_MASK(INTERVAL_TO))
+            )
             return DTERR_BAD_FORMAT;
 
         *fsec = 0;
@@ -2683,6 +2690,7 @@ static int DecodeTime(
     } else if (*cp == ':') {
 #ifdef DOLPHIN
         if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) ||
+            range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO)) ||
             range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR)) ||
             range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
             range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
@@ -3362,6 +3370,9 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                             break;
                         case INTERVAL_MASK(MONTH):
                         case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
+#ifdef DOLPHIN
+                        case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH) | INTERVAL_MASK(INTERVAL_TO):
+#endif
                             type = DTK_MONTH;
                             break;
                         case INTERVAL_MASK(DAY):
@@ -3380,6 +3391,10 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                         case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
                         case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
                         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+#ifdef DOLPHIN
+                        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                            INTERVAL_MASK(INTERVAL_TO):
+#endif
                             type = DTK_SECOND;
                             break;
 #ifdef DOLPHIN
