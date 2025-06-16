@@ -112,8 +112,7 @@ b  := 5;
 insert into test values (a + b);
 end;
 //
-ERROR:  syntax error at or near "declare
-b int"
+ERROR:  syntax error at or near "declare"
 LINE 2: declare
         ^
 delimiter ;

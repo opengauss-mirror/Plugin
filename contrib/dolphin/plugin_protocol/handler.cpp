@@ -99,7 +99,7 @@ void dolphin_end_command(const char *completionTag)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(u_sess->statement_cxt.current_row_count, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        make_ok_packet(u_sess->statement_cxt.current_row_count, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
         send_network_ok_packet(&buf, &ok_packet);
     }
     FreeStringInfo(&buf);
@@ -371,7 +371,7 @@ int execute_text_protocol_sql(const char *sql)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
         send_network_ok_packet(buf, &ok_packet);
     }
 

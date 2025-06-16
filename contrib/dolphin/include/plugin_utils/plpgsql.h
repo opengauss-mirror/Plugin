@@ -1347,6 +1347,8 @@ typedef struct PLpgSQL_execstate { /* Runtime execution data	*/
     bool pipelined_resistuple;
 
     MemoryContext proc_ctx;
+    List* tuptable_cxt_list;
+    int cur_tuptable_stack;
 } PLpgSQL_execstate;
 
 typedef struct PLpgSQL_pkg_execstate { /* Runtime execution data	*/
@@ -2072,6 +2074,9 @@ typedef struct AutoSessionPortalContextData {
 /* Context for exception block */
 typedef struct ExceptionContext {
     MemoryContext oldMemCxt;        /* CurrentMemoryContext saved at exception's entry */
+    MemoryContext cur_tuptable_cxt;
+    MemoryContext old_tuptable_cxt;
+    int old_tuptable_stack;
     ResourceOwner oldResOwner;      /* CurrentResourceOwner saved at exception's entry */
     TransactionId oldTransactionId; /* top transaction id saved at exception entry */
     SubTransactionId subXid;        /* exception subtransaction's id */

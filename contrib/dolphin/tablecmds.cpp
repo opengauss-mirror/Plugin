@@ -1362,6 +1362,12 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
                         errmsg("compresstype can not be used in segment table, "
                                "column table, view, unlogged table or temp table.")));
     }
+
+    if (tableCreateSupport.compressType && ENABLE_DMS) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Compression is not supported while DMS and DSS enabled.\n")));
+    }
+
     CheckCompressOption(&tableCreateSupport);
 
     if (isUstore && !isCStore && !hasCompression && !tableCreateSupport.compressType) {
@@ -3148,19 +3154,16 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     if (ENABLE_DMS && !u_sess->attr.attr_common.IsInplaceUpgrade) {
-        if ((relkind == RELKIND_RELATION && storage_type != SEGMENT_PAGE) ||
-            relkind == RELKIND_MATVIEW ||
+        if ((relkind == RELKIND_RELATION && storage_type != SEGMENT_PAGE
+            && (stmt->relation->relpersistence != RELPERSISTENCE_UNLOGGED)
+            && (stmt->relation->relpersistence != RELPERSISTENCE_TEMP)
+            && (stmt->relation->relpersistence != RELPERSISTENCE_GLOBAL_TEMP))||
             pg_strcasecmp(storeChar, ORIENTATION_ROW) != 0 ||
-            relkind == RELKIND_FOREIGN_TABLE ||
-            stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED ||
-            stmt->relation->relpersistence == RELPERSISTENCE_TEMP ||
-            stmt->relation->relpersistence == RELPERSISTENCE_GLOBAL_TEMP ||
             pg_strcasecmp(COMPRESSION_NO, StdRdOptionsGetStringData(std_opt, compression, COMPRESSION_NO)) != 0 ||
             IsCompressedByCmprsInPgclass((RelCompressType)stmt->row_compress)) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("Only support segment storage type and ASTORE while DMS and DSS enabled.\n"
-                "Foreign table, matview, temp table or unlogged table is not supported.\nCompression is not "
-                "supported.")));
+                errmsg("Only support segment storage ASTORE while DMS and DSS enabled.\n"
+                "Compression is not supported.")));
         }
     }
 
@@ -3169,6 +3172,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("Only support segment storage type while parameter enable_segment is ON.")));
     }
+
     CheckSegmentCompressOption(stmt->options, relkind, storage_type, storeChar);
 
     /*

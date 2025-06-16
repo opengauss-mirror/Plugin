@@ -2397,7 +2397,7 @@ static void get_index_list_info(Oid tableoid, StringInfo buf, const char* relnam
                     get_table_constraint_info(conForm, tup, buf, constriantid, relname);
                     appendStringInfo(buf, ";");
                 } else {
-                    appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
+                    appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0, true));
                 }
                 /* Cleanup */
                 ReleaseSysCache(tup);
@@ -2407,7 +2407,7 @@ static void get_index_list_info(Oid tableoid, StringInfo buf, const char* relnam
 #else
         } else {
 #endif
-            appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
+            appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0, true));
 
             /* If the index is clustered, we need to record that. */
             if (index->indisclustered) {
@@ -12925,6 +12925,7 @@ static char* generate_relation_name(Oid relid, List* namespaces, bool isNeedErro
             return NULL;
         }
     }
+        
     reltup = (Form_pg_class)GETSTRUCT(tp);
     relname = NameStr(reltup->relname);
 

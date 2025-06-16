@@ -1473,7 +1473,8 @@ typedef enum ConstrType { /* types of constraints */
     CONSTR_ATTR_DEFERRED,
     CONSTR_ATTR_IMMEDIATE,
     CONSTR_GENERATED,
-    CONSTR_AUTO_INCREMENT
+    CONSTR_AUTO_INCREMENT,
+    CONSTR_IDENTITY
 } ConstrType;
 
 typedef struct Constraint {
@@ -1603,6 +1604,10 @@ typedef struct ColumnRef {
     int indnum;   /* it is number of index for this column */
     int location; /* token location, or -1 if unknown */
 } ColumnRef;
+
+typedef struct {
+    List* columnRefs;
+}PullColumnRefContext;
 
 /*
  * TimeCapsuleClause - TIMECAPSULE appearing in a transformed FROM clause
