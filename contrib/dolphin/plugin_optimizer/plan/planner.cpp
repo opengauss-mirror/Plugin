@@ -94,6 +94,10 @@
 #include "instruments/instr_statement.h"
 #include "catalog/gs_collation.h"
 #include "replication/libpqsw.h"
+#if defined(ENABLE_HTAP) && defined(USE_SPQ)
+#include "executor/node/nodeSpqSeqscan.h"
+#include "vecexecutor/vecspqcstorescan.h"
+#endif
 
 #ifndef DOLPHIN
 /* Hook for plugins to get control in planner() */
@@ -7368,7 +7372,7 @@ static bool choose_hashed_grouping(PlannerInfo* root, double tuple_fraction, dou
      */
     tuple_fraction = tuple_fraction >= 1.0 ? tuple_fraction / dNumGroups[0] : tuple_fraction;
 
-    if (root->consider_sortgroup_agg && 
+    if (root->consider_sortgroup_agg &&
         compare_fractional_path_costs(&sort_group_p, &sorted_p, tuple_fraction) < 0) {
         /*sort group is cheaper, so use it*/
         copy_path_costsize(&sorted_p, &sort_group_p);
@@ -9246,6 +9250,9 @@ static bool has_column_store_relation(Plan* top_plan)
         case T_CStoreIndexHeapScan:
 #ifdef ENABLE_HTAP
         case T_IMCStoreScan:
+#ifdef USE_SPQ
+        case T_SpqCStoreScan:
+#endif
 #endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
@@ -9336,7 +9343,17 @@ static bool has_column_store_relation(Plan* top_plan)
                     return true;
             }
         } break;
-
+#ifdef USE_SPQ
+        case T_Sequence: {
+			Sequence* sequence = (Sequence*)top_plan;
+            ListCell* lc = NULL;
+            foreach (lc, sequence->subplans) {
+                Plan* plan = (Plan*)lfirst(lc);
+                if (has_column_store_relation(plan))
+                    return true;
+            }
+        } break;
+#endif
         default:
             if (outerPlan(top_plan)) {
                 if (has_column_store_relation(outerPlan(top_plan)))
@@ -9371,6 +9388,9 @@ bool is_vector_scan(Plan* plan)
         case T_CStoreIndexHeapScan:
         case T_CStoreIndexAnd:
         case T_CStoreIndexOr:
+#ifdef ENABLE_HTAP
+        case T_IMCStoreScan:
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
 #endif   /* ENABLE_MULTIPLE_NODES */
@@ -9461,6 +9481,11 @@ bool vector_engine_unsupport_expression_walker(Node* node, VectorPlanContext* pl
         case T_CoerceToDomain:
         case T_CoerceToDomainValue:
         case T_CurrentOfExpr:
+#ifdef USE_SPQ
+        case T_Sequence:
+        case T_ShareInputScan:
+        case T_AssertOp:
+#endif
             ereport(DEBUG2, (errmodule(MOD_OPT_PLANNER),
                 errmsg("Vectorize plan failed due to has unsupport expression: %d", nodeTag(node))));
             return true;
@@ -9560,7 +9585,8 @@ Plan* try_vectorize_plan(Plan* top_plan, Query* parse, bool from_subplan, Planne
      * Fallback to original non-vectorized plan, if either the GUC 'enable_vector_engine'
      * is turned off or the plan cannot go through vector_engine_walker.
      */
-    if (!u_sess->attr.attr_sql.enable_vector_engine ||
+    if (parse->has_rotate ||
+        !u_sess->attr.attr_sql.enable_vector_engine ||
         (subroot != NULL && subroot->is_under_recursive_tree) ||
         vector_engine_walker(top_plan, from_subplan) ||
         (ENABLE_PRED_PUSH_ALL(NULL) || (subroot != NULL && SUBQUERY_PREDPUSH(subroot)))) {
@@ -10161,6 +10187,19 @@ static bool vector_engine_walker_internal(Plan* result_plan, bool check_rescan, 
             if (vector_engine_walker_internal(result_plan->lefttree, check_rescan, planContext))
                 return true;
         } break;
+#ifdef USE_SPQ
+        case T_Result: {
+            Result* spqr = (Result*)result_plan;
+            if (vector_engine_unsupport_expression_walker((Node*)spqr->resconstantqual, planContext))
+                return true;
+            if (vector_engine_walker_internal(result_plan->lefttree, check_rescan, planContext))
+                return true;
+        } break;
+		case T_Sequence:
+		case T_ShareInputScan:
+        case T_AssertOp:
+			return true;
+#endif
         case T_PartIterator:
         case T_SetOp:
         case T_Group:
@@ -10268,7 +10307,7 @@ static bool vector_engine_walker_internal(Plan* result_plan, bool check_rescan, 
         } break;
 
         case T_AsofJoin: {
-           
+
             Join* j = (Join*)result_plan;
             if (j->jointype != JOIN_INNER)
                 return true;
@@ -10405,6 +10444,23 @@ static Plan* fallback_plan(Plan* result_plan)
             result_plan = (Plan*)make_vectorow(build_vector_plan(result_plan));
             break;
         /* vec_output was set to 'true' initially, change to 'false' in row plan */
+#if defined (ENABLE_HTAP) && defined(USE_SPQ)
+        case T_SpqCStoreScan: {
+            SpqSeqScan *spq_scan = makeNode(SpqSeqScan);
+            spq_scan->scan.scanrelid = ((Scan*)result_plan)->scanrelid;
+            spq_scan->isFullTableScan = false;
+            spq_scan->isAdaptiveScan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
+            spq_scan->isDirectRead = u_sess->attr.attr_spq.spq_enable_direct_read;
+            spq_scan->DirectReadBlkNum = InvalidBlockNumber;
+            Plan* spq_plan = &spq_scan->scan.plan;
+            copy_plan_costsize(spq_plan, result_plan);
+            spq_plan->targetlist = list_copy(result_plan->targetlist);
+            spq_plan->qual = list_copy(result_plan->qual);
+            spq_plan->dop = result_plan->dop;
+
+            result_plan = (Plan*) spq_scan;
+        } break;
+#endif
         case T_ForeignScan:
             result_plan->vec_output = false;
             break;
@@ -10436,6 +10492,11 @@ static Plan* fallback_plan(Plan* result_plan)
         case T_Group:
         case T_Unique:
         case T_BaseResult:
+#ifdef USE_SPQ
+        case T_Result:
+        case T_ShareInputScan:
+        case T_AssertOp:
+#endif
         case T_ProjectSet:
         case T_Sort:
         case T_SortGroup:
@@ -10457,7 +10518,20 @@ static Plan* fallback_plan(Plan* result_plan)
             result_plan->lefttree = fallback_plan(result_plan->lefttree);
             result_plan->righttree = fallback_plan(result_plan->righttree);
             break;
-
+#ifdef USE_SPQ
+        case T_Sequence: {
+            Sequence* sequence = (Sequence*)result_plan;
+            ListCell* lc = NULL;
+            foreach (lc, sequence->subplans) {
+                Plan* plan = (Plan*)lfirst(lc);
+                plan = (Plan*)fallback_plan(plan);
+                if (IsVecOutput(plan)) {
+                    plan = (Plan*)make_vectorow(plan);
+                }
+                lfirst(lc) = plan;
+            }
+        } break;
+#endif
         case T_Append: {
             Append* append = (Append*)result_plan;
             ListCell* lc = NULL;
@@ -10539,6 +10613,9 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
         case T_CStoreIndexScan:
 #ifdef ENABLE_HTAP
         case T_IMCStoreScan:
+#ifdef USE_SPQ
+        case T_SpqCStoreScan:
+#endif
 #endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
@@ -10610,6 +10687,9 @@ Plan* vectorize_plan(Plan* result_plan, bool ignore_remotequery, bool forceVecto
         case T_Group:
         case T_Unique:
         case T_BaseResult:
+#ifdef USE_SPQ
+        case T_Result:
+#endif
         case T_Sort:
         case T_StartWithOp:
         case T_Stream:
@@ -10807,6 +10887,9 @@ static Plan* build_vector_plan(Plan* plan)
         case T_CStoreIndexScan:
 #ifdef ENABLE_HTAP
         case T_IMCStoreScan:
+#ifdef USE_SPQ
+        case T_SpqCStoreScan:
+#endif
 #endif
 #ifdef ENABLE_MULTIPLE_NODES
         case T_TsStoreScan:
@@ -10829,6 +10912,11 @@ static Plan* build_vector_plan(Plan* plan)
         case T_BaseResult:
             plan->type = T_VecResult;
             break;
+#ifdef USE_SPQ
+        case T_Result:
+            plan->type = T_VecResult;
+            break;
+#endif
         case T_PartIterator:
             plan->type = T_VecPartIterator;
             break;
