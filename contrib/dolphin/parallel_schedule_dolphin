@@ -181,5 +181,5 @@ test: test_row_in test_std test_var_pop b_database_subquery test_lag_lead builti
 
 test: ignore_keyword_list
 
-test: prepare_index_con tpcc_plan
+test: prepare_index_con tpcc_plan parse_fusion
 

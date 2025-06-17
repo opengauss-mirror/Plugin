@@ -6857,6 +6857,46 @@ Datum TransformCstringToTarget(ColumnTypeForm& typeItem, char* string, bool hasI
     }
 }
 
+#ifdef DOLPHIN
+static Datum ConvertIntValueForDolphin(ColumnTypeForm& typeItem, int32 value, bool hasIgnore)
+{
+    Oid typeOid = typeItem.baseTypOid;
+    switch (typeOid) {
+        case INT4OID:
+            return Int32GetDatum(value);
+        case INT8OID:
+            return Int64GetDatum((int64)value);
+        case INT1OID:
+            if (unlikely(value < CHAR_MIN || value > CHAR_MAX)) {
+                if (hasIgnore || !SQL_MODE_STRICT()) {
+                    ereport(WARNING, (errmsg("tinyint out of range")));
+                    return Int8GetDatum((int8)(value < 0 ? CHAR_MIN : UCHAR_MAX));
+                }
+                ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+            }
+            return Int8GetDatum((int8)value);
+        case INT2OID:
+            if (unlikely(value < SHRT_MIN || value > SHRT_MAX)) {
+                if (hasIgnore || !SQL_MODE_STRICT()) {
+                    ereport(WARNING, (errmsg("smallint out of range")));
+                    return Int16GetDatum((int16)(value < 0 ? SHRT_MIN : SHRT_MAX));
+                }
+                ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+            }
+            return Int16GetDatum((int16)value);
+        default: {
+            char* inputStr = (char*)palloc(MAX_INT32_LEN + 1);
+            pg_ltoa(value, inputStr);
+            return OidInputFunctionCall(typeItem.typinput,
+                                        inputStr,
+                                        typeItem.ioParam,
+                                        typeItem.typmod,
+                                        hasIgnore);
+        }
+    }
+}
+#endif
+
 static Datum ConvertIntValue(ColumnTypeForm& typeItem, int32 value, bool hasIgnore)
 {
     switch (typeItem.baseTypOid) {
@@ -6911,7 +6951,11 @@ static Node* TransformAconstToTarget(A_Const* con, ColumnTypeForm& typeItem, boo
         case T_Integer: {
             int32 val = intVal(value);
             newcon->constisnull = false;
+#ifdef DOLPHIN
+            newcon->constvalue = ConvertIntValueForDolphin(typeItem, val, hasIgnore);
+#else
             newcon->constvalue = ConvertIntValue(typeItem, val, hasIgnore);
+#endif
             break;
         }
         case T_Float:
