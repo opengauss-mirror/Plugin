@@ -981,6 +981,7 @@ typedef enum AlterTableType {
     AT_ConvertCharset,
     AT_ResetPartitionno,
     AT_Imcstored,
+    AT_ImcstoredWithShm,
     AT_UnImcstored,
     AT_ModifyPartitionImcstored,
     AT_ModifyPartitionUnImcstored
@@ -2270,6 +2271,7 @@ typedef struct Query {
     ParentStmtType parentStmtType;
 #endif
     bool has_uservar;
+    bool has_rotate;
 } Query;
 
 /* ----------------------
