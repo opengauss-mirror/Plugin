@@ -309,6 +309,17 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
     {
         make_spq_remote_query(root, result, glob);
         result->is_spq_optmized = true;
+#ifdef ENABLE_HTAP
+        if (u_sess->attr.attr_sql.enable_imcsscan) {
+            // vectorize plan
+            if ((IS_STREAM_PLAN || (IS_PGXC_DATANODE && (!IS_STREAM || IS_STREAM_DATANODE))) &&
+                root->query_level == 1) {
+                /* remote query and windowagg do not support vectorize rescan, so fallback to row plan */
+                result->planTree = try_vectorize_plan(result->planTree, parse, false);
+            }
+            result->planTree = spq_set_plan_references(root, result->planTree);
+        }
+#endif
     }
     PG_CATCH();
     {

@@ -29,6 +29,9 @@
 #include "naucrates/init.h"
 #include "ddes/dms/ss_transaction.h"
 #include "optimizer/planmem_walker.h"
+#ifdef ENABLE_HTAP
+#include "executor/spq_cstorescan.h"
+#endif
 
 PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(spqplugin_invoke);
@@ -436,6 +439,9 @@ void _PG_init(void)
         init_spqindexscan_hook();
         init_spqindexonlyscan_hook();
         init_spqbitmapheapscan_hook();
+#ifdef ENABLE_HTAP
+        init_spqcstorescan_hook();
+#endif
 		spq_guc_init(&u_sess->spq_cxt);
     }
     HOOK_INIT = true;
@@ -450,6 +456,9 @@ void _PG_fini(void)
     restore_spqindexscan_hook();
     restore_spqindexonlyscan_hook();
     restore_spqbitmapheapscan_hook();
+#ifdef ENABLE_HTAP
+    restore_spqcstorescan_hook();
+#endif
 }
 
 void spqplugin_invoke(void)
