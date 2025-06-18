@@ -565,13 +565,17 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     dq_get_int4(buf, &req->iteration_count);
     PreparedStatement *pstmt = NULL;
     CachedPlanSource *psrc = NULL;
-    char stmt_name[NAMEDATALEN];
-    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, req->statement_id);
-    securec_check_ss(rc, "", "");
+    char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
+    char statement_id_str[MAX_INT32_LEN + 1];
+    uint32 client_capabilities = GetSessionContext()->Conn_Mysql_Info->client_capabilities;
+
+    pg_lltoa((int64)req->statement_id, statement_id_str);
+    int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
+    securec_check(rc, "", "");
 
     get_prepared_statement(stmt_name, &pstmt, &psrc);
     int param_count = 0;
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+    if (client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
         uint64 len;
         param_count = dq_get_int_lenenc(buf, (void *)&len);
     } else {
@@ -589,7 +593,7 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
             parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
             for (int i = 0; i < param_count; i++) {
                 dq_get_int2(buf, &parameter_types->itypes[i]);
-                if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+                if (client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
                     /*At present, there is no stored parameter name, only read and not used.
                     It will be automatically released after completion*/
                     (void)dq_get_string_lenenc(buf);
