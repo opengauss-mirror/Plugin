@@ -574,9 +574,12 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     exec_pre_bind_message();
 
     com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
-    char stmt_name[NAMEDATALEN];
-    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, req->statement_id);
-    securec_check_ss(rc, "", "");
+    char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
+    char statement_id_str[MAX_INT32_LEN + 1];
+
+    pg_lltoa((int64)req->statement_id, statement_id_str);
+    int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
+    securec_check(rc, "", "");
     BindMessage pqBindMessage;
     pqBindMessage.portalName = "";
     pqBindMessage.stmtName = stmt_name;
