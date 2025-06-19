@@ -70,5 +70,18 @@ INSERT INTO t_replace VALUES(3,3,'wangwu','m');
 REPLACE t_replace VALUES(1,1,(select name from t_replace where id =1),'f');
 REPLACE INTO t_replace SET id=3,t_id=3,name=(select name from t_replace where id=3);
 
+set dolphin.sql_mode ='';
+set sql_ignore_strategy='overwrite_null';
+
+create table tb_616(id int,col1 timestamp not null )
+partition by range(col1)
+interval('1 year')
+(
+partition p1 values less than('2022-12-12'),
+partition p2 values less than(maxvalue));
+insert into tb_616 values (1, null),(2,null);
+replace into tb_616 values (1, null),(2,null);
+drop table tb_616;
+
 drop schema db_replace cascade;
 reset current_schema;
