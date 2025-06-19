@@ -32,6 +32,11 @@ extern "C" void _PG_init(void);
 
 void _PG_init(void)
 {
+	if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errmsg("Currently age is not compatiable with thread pool. "),
+                        errhint("please disable thread pool by configuring "
+                                "enable_thread_pool = OFF. ")));
+    }
     register_ag_nodes();
     set_rel_pathlist_init();
     object_access_hook_init();
