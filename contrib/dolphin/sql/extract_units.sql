@@ -22,5 +22,13 @@ select extract(day_microsecond from timestamp'2019-07-02 12:12:12.12121');
 select extract(hour_microsecond from timestamp'2019-07-02 12:12:12.12121');
 select extract(minute_microsecond from timestamp'2019-07-02 12:12:12.12121');
 select extract(second_microsecond from timestamp'2019-07-02 12:12:12.12121');
+
+select extract(microsecond from date '2022-11-04');
+select extract(minute from date '2022-11-04');
+select extract(hour from date '2022-11-04');
+select extract(second_microsecond from date '2022-11-04');
+select extract(minute_microsecond from date '2022-11-04');
+select extract(minute_second from date '2022-11-04');
+
 reset current_schema;
 drop schema extract_units;
