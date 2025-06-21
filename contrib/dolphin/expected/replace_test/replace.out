@@ -69,6 +69,25 @@ REPLACE INTO t_replace SET id=3,t_id=3,name=(select name from t_replace where id
 ERROR:  REPLACE not support target relation in subselect.
 LINE 1: REPLACE INTO t_replace SET id=3,t_id=3,name=(select name fro...
                                                     ^
+set dolphin.sql_mode ='';
+set sql_ignore_strategy='overwrite_null';
+create table tb_616(id int,col1 timestamp not null )
+partition by range(col1)
+interval('1 year')
+(
+partition p1 values less than('2022-12-12'),
+partition p2 values less than(maxvalue));
+insert into tb_616 values (1, null),(2,null);
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (2, null).
+replace into tb_616 values (1, null),(2,null);
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+WARNING:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (2, null).
+drop table tb_616;
 drop schema db_replace cascade;
 NOTICE:  drop cascades to 7 other objects
 DETAIL:  drop cascades to table t1
