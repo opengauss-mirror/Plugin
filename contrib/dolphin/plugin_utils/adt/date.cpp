@@ -7165,6 +7165,44 @@ Datum b_extract_numeric(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(extract_internal(enum_unit, tm, fsec, time_sign));
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(b_extract_date);
+extern "C" DLL_PUBLIC Datum b_extract_date(PG_FUNCTION_ARGS);
+Datum b_extract_date(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    DateADT date = PG_GETARG_DATEADT(1);
+    struct pg_tm tt;
+    struct pg_tm *tm = &tt;
+    fsec_t fsec = 0;
+    int time_sign = 1;
+    b_units enum_unit;
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
+
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+
+    tm->tm_sec = 0;
+    tm->tm_min = 0;
+    tm->tm_hour = 0;
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+
+    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    if (!resolve_units(lowunits, &enum_unit)) {
+        ereport(ERROR,
+                (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("units \"%s\" not supported", lowunits)));
+    }
+
+    PG_RETURN_INT64(extract_internal(enum_unit, tm, fsec, time_sign));
+}
+
 /* Transfor TimeADT into float8 formate
  * exp: "10:22:33.456" -> 102233.456
  */
