@@ -18,6 +18,7 @@ insert into test values('datediff(''0000-01-01'', ''9999-12-31'')', datediff('00
 insert into test values('datediff(''9999-12-31'', ''0000-01-01'')', datediff('9999-12-31', '0000-01-01'));
 -- 类型
 insert into test values('datediff(date''2021-11-12'', date''2021-11-13'')', datediff(date'2021-11-13', date'2021-11-13'));
+insert into test values('datediff(cast(''0021-12-31 12:12:12'' as date), cast(''2022-01-01 10:10:10'' as date))', datediff(cast('0021-12-31 12:12:12' as date), cast('2022-01-01 10:10:10' as date)));
 insert into test values('datediff(cast(''2021-12-31 12:12:12'' as datetime), cast(''2022-01-01 10:10:10'' as datetime))', datediff(cast('2021-12-31 12:12:12' as datetime), cast('2022-01-01 10:10:10' as datetime)));
 insert into test values('datediff(20211112, 20211113)', datediff(20211112, 20211113));
 insert into test values('datediff(time''10:10:10'', ''2022-11-30'')', datediff(time'10:10:10', '2022-11-30'));
