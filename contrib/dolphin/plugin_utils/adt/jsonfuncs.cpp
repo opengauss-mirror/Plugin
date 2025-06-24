@@ -354,11 +354,10 @@ typedef enum {
     ERROR_ON_ERROR
 } OnErrorType;
 
-typedef enum {
-    JSON_PATH_NO_RELAX = 0,
-    JSON_PATH_ALLOW_RELAX,
-    JSON_PATH_RELAXED
-} JsonPathRelaxState;
+#define JSON_PATH_NO_RELAX 0x0
+#define JSON_PATH_RELAX_OBJECT 0x1
+#define JSON_PATH_ALLOW_RELAX 0x3
+#define JSON_PATH_RELAXED 0x4
 
 /* state for json_object_keys */
 typedef struct OkeysState {
@@ -476,7 +475,7 @@ struct OvalsState {
 
 struct JsonPathContext {
     text* topJson;
-    JsonPathRelaxState relax;
+    int relax;
 };
 
 struct JsonExistsPathContext {
@@ -4017,14 +4016,49 @@ static List* GetObjectValues(text* json)
     return resultList;
 }
 
-static void JPWalkArrayStep(JsonPathItem* path, text* json, void (*pwalker)(text*, void*), void* context)
+static void JsonPathIgnoreTailingZero(JsonPathItem* path)
+{
+    JsonPathItem* prevstep = path;
+    JsonPathItem* step = path;
+    JsonPathItem* tail = nullptr;
+    while (step->next) {
+        prevstep = step;
+        step = step->next;
+        if (step->type != JPI_ARRAY) {
+            tail = nullptr;
+            continue;
+        }
+        JsonPathArrayStep* as = (JsonPathArrayStep*)step;
+        if (as->indexes != NIL) {
+            ListCell* idxCell = nullptr;
+            foreach (idxCell, as->indexes) {
+                int index = lfirst_int(idxCell);
+                if (index == 0) {
+                    break;
+                }
+            }
+            /* Loop reaches the end, no zero in the list. */
+            if (idxCell == nullptr) {
+                tail = nullptr;
+                continue;
+            }
+        }
+        tail = tail == nullptr? prevstep : tail;
+    }
+    if (tail != nullptr) {
+        tail->next = nullptr;
+    }
+}
+
+static void JPWalkArrayStep(JsonPathItem* path, text* json,
+    void (*pwalker)(text*, void*), void* context)
 {
     JsonPathArrayStep* as = (JsonPathArrayStep*)path;
-    JsonPathRelaxState relax = ((JsonPathContext*)context)->relax;
+    int relax = ((JsonPathContext*)context)->relax;
     char* jsonType = text_to_cstring(DatumGetTextP(DirectFunctionCall1(json_typeof, PointerGetDatum(json))));
     text* result = NULL;
     if (strcmp(jsonType, "array") != 0) {
-        if (relax != JSON_PATH_ALLOW_RELAX) {
+        if (!(relax & JSON_PATH_ALLOW_RELAX) || (relax & JSON_PATH_RELAXED)) {
             return;
         } else {
             /* implicitly wrap a non-array object in an array */
@@ -4040,18 +4074,17 @@ static void JPWalkArrayStep(JsonPathItem* path, text* json, void (*pwalker)(text
                     return;
                 }
             }
-            ((JsonPathContext*)context)->relax = JSON_PATH_RELAXED;
+            ((JsonPathContext*)context)->relax |= JSON_PATH_RELAXED;
             JsonPathWalker(path->next, json, pwalker, context);
             return;
         }
     }
-    if (relax == JSON_PATH_RELAXED) {
-        ((JsonPathContext*)context)->relax = JSON_PATH_ALLOW_RELAX;
+    if (relax & JSON_PATH_RELAXED) {
+        ((JsonPathContext*)context)->relax &= JSON_PATH_ALLOW_RELAX;
     }
 
     if (as->indexes != NIL) {
         ListCell* idxCell = NULL;
-        int index;
 
         foreach (idxCell, as->indexes) {
             int index = lfirst_int(idxCell);
@@ -4067,19 +4100,19 @@ static void JPWalkArrayStep(JsonPathItem* path, text* json, void (*pwalker)(text
     }
 }
 
-static void JPWalkObjectStep(JsonPathItem* path, text* json, void (*pwalker)(text*, void*), void* context)
+static void JPWalkObjectStep(JsonPathItem* path, text* json,
+    void (*pwalker)(text*, void*), void* context)
 {
     JsonPathObjectStep* os = (JsonPathObjectStep*)path;
-    JsonPathRelaxState relax = ((JsonPathContext*)context)->relax;
+    int relax = ((JsonPathContext*)context)->relax;
     char* jsonType = text_to_cstring(DatumGetTextP(DirectFunctionCall1(json_typeof, PointerGetDatum(json))));
     text* result = NULL;
     if (strcmp(jsonType, "object") != 0) {
-        if (relax != JSON_PATH_ALLOW_RELAX || strcmp(jsonType, "array") != 0) {
+        if (!(relax & JSON_PATH_RELAX_OBJECT) || strcmp(jsonType, "array") != 0) {
             return;
         } else {
             /* implicitly unwrap the array */
             int length = DatumGetInt32(DirectFunctionCall1(json_array_length, PointerGetDatum(json)));
-            ((JsonPathContext*)context)->relax = JSON_PATH_RELAXED;
             for (int i = 0; i < length; i++) {
                 result = get_worker(json, NULL, i, NULL, NULL, -1, false);
                 JsonPathWalker(path, result, pwalker, context);
@@ -4102,20 +4135,14 @@ static void JPWalkObjectStep(JsonPathItem* path, text* json, void (*pwalker)(tex
     }
 }
 
-static bool JsonElemntType(text* json)
-{
-    char* jsonType = text_to_cstring(DatumGetTextP(DirectFunctionCall1(json_typeof, PointerGetDatum(json))));
-    return ((strcmp(jsonType, "object") != 0) && (strcmp(jsonType, "array") != 0));
-}
-
 static void JsonPathWalker(JsonPathItem* path, text* json, void (*pwalker)(text*, void*), void* context)
 {
     if (path == NULL) {
         pwalker(json, context);
         return;
-    } else if (json == NULL || !IsJsonText(json) || JsonElemntType(json)) {
+    } else if (json == NULL || !IsJsonText(json)) {
         /* allow redundant tailing [0] in syntax relaxation */
-        JsonPathRelaxState relax = ((JsonPathContext*)context)->relax;
+        int relax = ((JsonPathContext*)context)->relax;
         if (relax == JSON_PATH_NO_RELAX || path->type != JPI_ARRAY) {
             return;
         }
@@ -4208,6 +4235,7 @@ Datum json_path_exists(PG_FUNCTION_ARGS)
         context.cxt.topJson = json;
         context.cxt.relax = JSON_PATH_ALLOW_RELAX;
         context.result = false;
+        JsonPathIgnoreTailingZero(path);
         JsonPathWalker(path, json, (void (*)(text*, void*))JsonPathExistsPathWalker, (void*)(&context));
     }
 
@@ -4223,24 +4251,49 @@ static void ExpandJsonStringArray(JsonStringArray* array)
     }
 }
 
+static inline bool ValidJsonChar(char c)
+{
+    return (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+            ('0' <= c && c <= '9') || ('\200' <= c && c <= '\377'));
+}
+
+static void TrimString(char** lptr, char** rptr)
+{
+    while (!ValidJsonChar(**lptr)) {
+        (*lptr)++;
+    }
+    while (!ValidJsonChar(**rptr)) {
+        (*rptr)--;
+    }
+}
+
 static void SplitString(char* str, char delim, int strlen, JsonStringArray* results)
 {
     char* lptr = str;
     char* rptr = str;
 
     while (*rptr != '\0' && strlen != 0) {
-        if (*rptr == delim || strlen == 1) {
-            if (rptr != lptr || strlen == 1) {
-                ExpandJsonStringArray(results);
-                int len = (*rptr == delim) ? (rptr - lptr + 1) : (rptr - lptr + 2);
-                char* res = (char*)palloc(len * sizeof(char));
-                int rc = memcpy_s(res, len, lptr, len);
-                securec_check(rc, "\0", "\0");
-                res[len - 1] = '\0';
-                results->data[results->len++] = res;
-            }
-            lptr = rptr + 1;
+        if (*rptr != delim && strlen != 1) {
+            strlen--;
+            rptr++;
+            continue;
         }
+        if (rptr != lptr || strlen == 1) {
+            char* tlptr = lptr;
+            char* trptr = rptr;
+            TrimString(&tlptr, &trptr);
+            if (trptr < tlptr) {
+                return;
+            }
+            ExpandJsonStringArray(results);
+            int len = trptr - tlptr + 2;
+            char* res = (char*)palloc(len * sizeof(char));
+            int rc = memcpy_s(res, len, tlptr, len);
+            securec_check(rc, "\0", "\0");
+            res[len - 1] = '\0';
+            results->data[results->len++] = res;
+        }
+        lptr = rptr + 1;
         strlen--;
         rptr++;
     }
@@ -4358,7 +4411,6 @@ Datum json_textcontains(PG_FUNCTION_ARGS)
 
     JsonTextContainsContext context;
     context.cxt.topJson = json;
-    context.cxt.relax = JSON_PATH_NO_RELAX;
     context.result = false;
 
     if (!IsJsonText(json))
@@ -4367,6 +4419,7 @@ Datum json_textcontains(PG_FUNCTION_ARGS)
     char* target = pstrdup(raw);
     tok = strtok(target, ",");
     while (!(context.result) && tok != NULL) {
+        context.cxt.relax = JSON_PATH_RELAX_OBJECT;
         context.target = tok;
         JsonPathWalker(path, json, (void (*)(text*, void*))JsonTextContainsWalker, (void*)(&context));
         tok = strtok(NULL, ",");
@@ -4395,7 +4448,6 @@ Datum json_textcontains_text(PG_FUNCTION_ARGS)
 
     JsonTextContainsContext context;
     context.cxt.topJson = json;
-    context.cxt.relax = JSON_PATH_NO_RELAX;
     context.result = false;
 
     if (!IsJsonText(json))
@@ -4404,6 +4456,7 @@ Datum json_textcontains_text(PG_FUNCTION_ARGS)
     char* target = pstrdup(raw);
     tok = strtok(target, ",");
     while (!(context.result) && tok != NULL) {
+        context.cxt.relax = JSON_PATH_RELAX_OBJECT;
         context.target = tok;
         JsonPathWalker(path, json, (void (*)(text*, void*))JsonTextContainsWalker, (void*)(&context));
         tok = strtok(NULL, ",");

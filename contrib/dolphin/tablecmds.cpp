@@ -1279,7 +1279,7 @@ static List* AddDefaultOptionsIfNeed(List* options, const char relkind, CreateSt
     bool isUstore = false;
     bool assignedStorageType = false;
     bool segment = false;
-    TableCreateSupport tableCreateSupport{(int)COMPRESS_TYPE_NONE, false, false, false, false, false, true, false};
+    TableCreateSupport tableCreateSupport{(int)COMPRESS_TYPE_NONE, 0, false, false, false, false, true, false};
     bool hasOids = false;
     (void)isOrientationSet(options, NULL, false);
     foreach (cell, options) {
@@ -20267,7 +20267,7 @@ bool CheckTableSupportSetCompressedOptions(Relation rel)
     }
 
     if (!RelationIsPermanent(rel)) {
-        return false;        
+        return false;
     }
 
     if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
@@ -20390,9 +20390,11 @@ void static transfromIndexCompressedOptions(Relation rel, bytea* relOoption, Lis
             ListCell *opt = NULL;
             foreach (opt, defList) {
                 DefElem *def = (DefElem *)lfirst(opt);
-                if (pg_strcasecmp(def->defname, "compress_level") == 0) {
+                if (pg_strcasecmp(def->defname, "compress_level") == 0 &&
+                    (int)strtol(defGetString(def), NULL, 0) != 0) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-                                    errmsg("compress_level should be used with ZSTD or ZLIB algorithm.")));
+                                    errmsg("compress_level should be used with "
+                                           "ZSTD or ZLIB algorithm.")));
                 }
             }
         }
