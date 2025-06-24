@@ -1558,7 +1558,7 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
      * Since count(distinct) conversion can push down subquery, for sake of
      * duplicate of sublink pullup, we put it ahead of sublink pullup
      */
-    if (IS_STREAM_PLAN && parse->hasAggs) {
+    if (IS_STREAM_PLAN && parse->hasAggs && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
         convert_multi_count_distinct(root);
         DEBUG_QRW("After multi count distinct rewrite");
     }
