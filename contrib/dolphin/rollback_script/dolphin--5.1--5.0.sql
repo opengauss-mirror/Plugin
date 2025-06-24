@@ -6,3 +6,5 @@ DROP FUNCTION IF EXISTS pg_catalog.mod(char, char);
 DROP FUNCTION IF EXISTS pg_catalog.mod(varchar, varchar);
 
 drop function exists pg_catalog.b_extract (text, date);
+
+DROP FUNCTION IF EXISTS pg_catalog.datediff(date, date);

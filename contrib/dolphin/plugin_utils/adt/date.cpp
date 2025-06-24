@@ -213,6 +213,9 @@ PG_FUNCTION_INFO_V1_PUBLIC(datediff_time_n);
 extern "C" DLL_PUBLIC Datum datediff_time_n(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datediff_time_time);
 extern "C" DLL_PUBLIC Datum datediff_time_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_date_date);
+extern "C" DLL_PUBLIC Datum datediff_date_date(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(from_days_text);
 extern "C" DLL_PUBLIC Datum from_days_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_days_numeric);
@@ -6164,6 +6167,17 @@ Datum datediff_time_time(PG_FUNCTION_ARGS)
     timestamp2tm(datetime1, NULL, tm1, &fsec1, NULL, NULL);
     timestamp2tm(datetime2, NULL, tm2, &fsec2, NULL, NULL);
     PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_date_date(PG_FUNCTION_ARGS)
+{
+    DateADT date1 = PG_GETARG_DATEADT(0);
+    DateADT date2 = PG_GETARG_DATEADT(1);
+    struct pg_tm tm1;
+    struct pg_tm tm2;
+    j2date(date1 + POSTGRES_EPOCH_JDATE, &tm1.tm_year, &tm1.tm_mon, &tm1.tm_mday);
+    j2date(date2 + POSTGRES_EPOCH_JDATE, &tm2.tm_year, &tm2.tm_mon, &tm2.tm_mday);
+    PG_RETURN_INT32(datediff_internal(&tm1, &tm2));
 }
 
 static inline void from_days_internal(int64 days, Datum *result)
