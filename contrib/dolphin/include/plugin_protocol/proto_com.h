@@ -255,8 +255,13 @@ typedef struct TypeItem {
     uint charset_flag;            // charset
 } TypeItem;
 
+typedef struct b_typoidHashKey {
+    Oid db_oid;
+    Oid type_oid;
+} b_typoidHashKey;
+
 typedef struct HashEntryTypoid2TypeItem {
-    Oid oid;
+    b_typoidHashKey key;
     const TypeItem* item;
 } HashEntryTypoid2TypeItem;
 

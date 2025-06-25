@@ -53,31 +53,31 @@ select set_native_password('proto_user', 'Gauss@123', 'Gauss@123');
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123 new
 c1:INT
-c2:CHAR
+c2:INT UNSIGNED
 c3:TINYINT
-c4:CHAR
+c4:TINYINT UNSIGNED
 c5:SMALLINT
-c6:CHAR
+c6:SMALLINT UNSIGNED
 c7:BIGINT
-c8:CHAR
+c8:BIGINT UNSIGNED
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
 c12:BIT
 c13:CHAR
-c14:CHAR
+c14:BINARY
 c15:VARCHAR
 c16:VARCHAR
-c17:CHAR
-c18:CHAR
+c17:VARBINARY
+c18:YEAR
 c19:DATE
 c20:TIME
 c21:TIMESTAMP
 c22:DATETIME
-c23:CHAR
+c23:TINYTEXT
 c24:BLOB
-c25:CHAR
-c26:CHAR
+c25:MEDIUMTEXT
+c26:LONGTEXT
 c27:GEOMETRY
 c28:GEOMETRY
 c29:TINYTEXT
@@ -153,31 +153,31 @@ select set_native_password('proto_user', 'Gauss@456', 'Gauss@123');
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@456 new
 c1:INT
-c2:CHAR
+c2:INT UNSIGNED
 c3:TINYINT
-c4:CHAR
+c4:TINYINT UNSIGNED
 c5:SMALLINT
-c6:CHAR
+c6:SMALLINT UNSIGNED
 c7:BIGINT
-c8:CHAR
+c8:BIGINT UNSIGNED
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
 c12:BIT
 c13:CHAR
-c14:CHAR
+c14:BINARY
 c15:VARCHAR
 c16:VARCHAR
-c17:CHAR
-c18:CHAR
+c17:VARBINARY
+c18:YEAR
 c19:DATE
 c20:TIME
 c21:TIMESTAMP
 c22:DATETIME
-c23:CHAR
+c23:TINYTEXT
 c24:BLOB
-c25:CHAR
-c26:CHAR
+c25:MEDIUMTEXT
+c26:LONGTEXT
 c27:GEOMETRY
 c28:GEOMETRY
 c29:TINYTEXT
@@ -252,31 +252,31 @@ select replace(set_caching_sha2_password('proto_user', 'Gauss@456', 'Gauss@456')
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@456 new
 c1:INT
-c2:CHAR
+c2:INT UNSIGNED
 c3:TINYINT
-c4:CHAR
+c4:TINYINT UNSIGNED
 c5:SMALLINT
-c6:CHAR
+c6:SMALLINT UNSIGNED
 c7:BIGINT
-c8:CHAR
+c8:BIGINT UNSIGNED
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
 c12:BIT
 c13:CHAR
-c14:CHAR
+c14:BINARY
 c15:VARCHAR
 c16:VARCHAR
-c17:CHAR
-c18:CHAR
+c17:VARBINARY
+c18:YEAR
 c19:DATE
 c20:TIME
 c21:TIMESTAMP
 c22:DATETIME
-c23:CHAR
+c23:TINYTEXT
 c24:BLOB
-c25:CHAR
-c26:CHAR
+c25:MEDIUMTEXT
+c26:LONGTEXT
 c27:GEOMETRY
 c28:GEOMETRY
 c29:TINYTEXT
@@ -351,31 +351,31 @@ select replace(set_caching_sha2_password('proto_user', 'Gauss@123', 'Gauss@456')
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123 new
 c1:INT
-c2:CHAR
+c2:INT UNSIGNED
 c3:TINYINT
-c4:CHAR
+c4:TINYINT UNSIGNED
 c5:SMALLINT
-c6:CHAR
+c6:SMALLINT UNSIGNED
 c7:BIGINT
-c8:CHAR
+c8:BIGINT UNSIGNED
 c9:FLOAT
 c10:DOUBLE
 c11:BIT
 c12:BIT
 c13:CHAR
-c14:CHAR
+c14:BINARY
 c15:VARCHAR
 c16:VARCHAR
-c17:CHAR
-c18:CHAR
+c17:VARBINARY
+c18:YEAR
 c19:DATE
 c20:TIME
 c21:TIMESTAMP
 c22:DATETIME
-c23:CHAR
+c23:TINYTEXT
 c24:BLOB
-c25:CHAR
-c26:CHAR
+c25:MEDIUMTEXT
+c26:LONGTEXT
 c27:GEOMETRY
 c28:GEOMETRY
 c29:TINYTEXT
@@ -457,14 +457,68 @@ true
 false
 0
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTypeCanBeNullTest localhost $dp db_jdbc proto_user Gauss@123
-id
-1
-create_time
-2025-04-25 17:00:00
-update_time
-null
-remark
-test
+TINYINT: 0
+TINYINT UNSIGNED: 0
+SMALLINT: 0
+SMALLINT UNSIGNED: 0
+INT: 0
+INT UNSIGNED: 0
+BIGINT: 0
+BIGINT UNSIGNED: 0
+BIT: NULL
+BIT: NULL
+BIT: NULL
+FLOAT: NULL
+DOUBLE: 0.0
+DECIMAL: NULL
+DATE: NULL
+DATETIME: NULL
+TIMESTAMP: NULL
+TIME: NULL
+YEAR: NULL
+CHAR: NULL
+VARCHAR: NULL
+BINARY: NULL
+VARBINARY: NULL
+TINYTEXT: NULL
+BLOB: NULL
+MEDIUMTEXT: NULL
+LONGTEXT: NULL
+TINYTEXT: NULL
+CHAR: NULL
+CHAR: NULL
+JSON: NULL
+TINYINT: 0
+TINYINT UNSIGNED: 0
+SMALLINT: 0
+SMALLINT UNSIGNED: 0
+INT: 0
+INT UNSIGNED: 0
+BIGINT: 0
+BIGINT UNSIGNED: 0
+BIT: NULL
+BIT: NULL
+BIT: NULL
+FLOAT: NULL
+DOUBLE: 0.0
+DECIMAL: NULL
+DATE: NULL
+DATETIME: NULL
+TIMESTAMP: NULL
+TIME: NULL
+YEAR: NULL
+CHAR: NULL
+VARCHAR: NULL
+BINARY: NULL
+VARBINARY: NULL
+TINYTEXT: NULL
+BLOB: NULL
+MEDIUMTEXT: NULL
+LONGTEXT: NULL
+TINYTEXT: NULL
+CHAR: NULL
+CHAR: NULL
+JSON: NULL
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 \! rm @abs_builddir@/proto_jdbc/class/*.class

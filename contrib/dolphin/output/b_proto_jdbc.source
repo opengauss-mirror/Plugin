@@ -455,14 +455,68 @@ true
 false
 0
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTypeCanBeNullTest localhost $dp db_jdbc proto_user Gauss@123
-id
-1
-create_time
-2025-04-25 17:00:00.0
-update_time
-null
-remark
-test
+TINYINT: 0
+TINYINT UNSIGNED: 0
+SMALLINT: 0
+SMALLINT UNSIGNED: 0
+INT: 0
+INT UNSIGNED: 0
+BIGINT: 0
+BIGINT UNSIGNED: 0
+BIT: NULL
+BIT: NULL
+TINYINT: NULL
+FLOAT: NULL
+DOUBLE: 0.0
+DECIMAL: NULL
+DATE: NULL
+DATETIME: NULL
+TIMESTAMP: NULL
+TIME: NULL
+YEAR: NULL
+CHAR: NULL
+VARCHAR: NULL
+BINARY: NULL
+VARBINARY: NULL
+TINYBLOB: NULL
+BLOB: NULL
+MEDIUMBLOB: NULL
+LONGBLOB: NULL
+VARCHAR: NULL
+CHAR: NULL
+CHAR: NULL
+JSON: NULL
+TINYINT: 0
+TINYINT UNSIGNED: 0
+SMALLINT: 0
+SMALLINT UNSIGNED: 0
+INT: 0
+INT UNSIGNED: 0
+BIGINT: 0
+BIGINT UNSIGNED: 0
+BIT: NULL
+BIT: NULL
+TINYINT: NULL
+FLOAT: NULL
+DOUBLE: 0.0
+DECIMAL: NULL
+DATE: NULL
+DATETIME: NULL
+TIMESTAMP: NULL
+TIME: NULL
+YEAR: NULL
+CHAR: NULL
+VARCHAR: NULL
+BINARY: NULL
+VARBINARY: NULL
+TINYBLOB: NULL
+BLOB: NULL
+MEDIUMBLOB: NULL
+LONGBLOB: NULL
+VARCHAR: NULL
+CHAR: NULL
+CHAR: NULL
+JSON: NULL
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123
 select relname from pg_class where relname like '%autocommit_test%' order by relname;
      relname      
