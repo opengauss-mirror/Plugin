@@ -21,7 +21,7 @@ test: test_procedure_ddl_import_and_export test_function_ddl_import_and_export t
 # must be single test group, cause other connection will affect the result
 test: test_shows
 
-test: test_shows_1 test_shows_2 time_function_test
+test: test_shows_1 test_shows_2 time_function_test infomation_schema_test
 
 # must be single test group, cause other connection will affect the result
 test: test_shows_3
