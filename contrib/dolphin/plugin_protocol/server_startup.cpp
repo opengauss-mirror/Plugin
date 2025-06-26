@@ -24,6 +24,7 @@
 #include "utils/guc.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
+#include "utils/dynahash.h"
 #include "libpq/libpq.h"
 #include "executor/executor.h"
 #include "storage/ipc.h"
@@ -369,26 +370,37 @@ void server_listen_init(void)
 
 void InitTypoid2DolphinMacroHtab()
 {
-    InitDolphinMicroHashTable(b_ntype_items);
+    if (b_typoid2DolphinMarcoHash == NULL) {
+        InitDolphinMicroHashTable(b_ntype_items);
+    }
     for (int i = 0; i < b_ntype_items; i++) {
-        TypeItem* typeItem = &b_type_items[i];
+        TypeItem* typeItem = (TypeItem*)MemoryContextAlloc(b_typoid2DolphinMarcoHash->hcxt, sizeof(TypeItem));
+        typeItem->og_typname = b_type_items[i].og_typname;
+        typeItem->dolphin_type_id = b_type_items[i].dolphin_type_id;
+        typeItem->flags = b_type_items[i].flags;
+        typeItem->charset_flag = b_type_items[i].charset_flag;
+
         if (strlen(typeItem->og_typname) > MAX_TYPE_NAME_LEN) {
             ereport(ERROR, (errmsg("the type name length exceed the limit of %d", MAX_TYPE_NAME_LEN)));
         }
-        if (!OidIsValid(typeItem->og_type_oid)) {
-            typeItem->og_type_oid = get_typeoid(PG_CATALOG_NAMESPACE, typeItem->og_typname);
-        }
+        typeItem->og_type_oid = get_typeoid(PG_CATALOG_NAMESPACE, typeItem->og_typname);
         TypoidHashTableAccess(HASH_ENTER, typeItem->og_type_oid, typeItem);
     }
+}
+
+static inline bool JudgeCurDBNeedInit()
+{
+    /* Use an unchanging OID (OIDOID) to determine whether the database needs to be initialized. */
+    return b_typoid2DolphinMarcoHash == NULL || TypoidHashTableAccess(HASH_FIND, OIDOID, NULL) == NULL;
 }
 
 const TypeItem* GetItemByTypeOid(Oid oid)
 {
     // double check is used to solve concurrent error problems
-    if (b_typoid2DolphinMarcoHash == NULL) {
+    if (JudgeCurDBNeedInit()) {
         AutoMutexLock marcoHashLock(&gMarcoHashLock);
         marcoHashLock.lock();
-        if (b_typoid2DolphinMarcoHash == NULL) {
+        if (JudgeCurDBNeedInit()) {
             InitTypoid2DolphinMacroHtab();
         }
         marcoHashLock.unLock();
@@ -440,7 +452,11 @@ static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const T
         ereport(ERROR, (errmsg("the oid of data type is invalid")));
     }
 
-    result = (HashEntryTypoid2TypeItem*)hash_search(b_typoid2DolphinMarcoHash, &oid, action, &found);
+    b_typoidHashKey key;
+    key.db_oid = u_sess->proc_cxt.MyDatabaseId;
+    key.type_oid = oid;
+
+    result = (HashEntryTypoid2TypeItem*)hash_search(b_typoid2DolphinMarcoHash, &key, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
         result->item = item;
@@ -456,9 +472,9 @@ static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const T
 static void InitDolphinMicroHashTable(int size)
 {
     HASHCTL info = {0};
-    info.keysize = sizeof(Oid);
+    info.keysize = sizeof(b_typoidHashKey);
     info.entrysize = sizeof(HashEntryTypoid2TypeItem);
-    info.hash = oid_hash;
+    info.hash = tag_hash;
     info.hcxt = g_instance.instance_context;
     b_typoid2DolphinMarcoHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
                                             HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
