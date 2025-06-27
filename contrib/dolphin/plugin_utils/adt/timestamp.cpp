@@ -8004,12 +8004,11 @@ Datum time_format(PG_FUNCTION_ARGS)
 {
     text *time_text = PG_GETARG_TEXT_PP(0);
     text *format_text = PG_GETARG_TEXT_PP(1);
-    char buf[MAXDATELEN];          /* string for temporary storage */
-    char format[MAXDATELEN];       /* format string */
-    char str[MAXDATELEN];          /* return string */
+    char buf[MAXDATELEN] = "\0";          /* string for temporary storage */
+    char* format = NULL;       /* format string */
+    StringInfo str;          /* return string */
     char *ptr = NULL, *end = NULL; /* head and tail of format */
     char temp_ptr[2];
-    int remain = MAXDATELEN;       /* remaining buffer size of variable str */
     int insert_len = 0;            /* number of characters inserted into str */
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
@@ -8017,15 +8016,28 @@ Datum time_format(PG_FUNCTION_ARGS)
     int timeSign = 1;
     bool isNeg = false; /* positive or negative time */
     errno_t rc = EOK;
+    text* result;
 
     /* convert time_text and format_text into string from text */
     int len = VARSIZE_ANY_EXHDR(time_text);
     text_to_cstring_buffer(time_text, buf, sizeof(char) * (len + 1));
     len = VARSIZE_ANY_EXHDR(format_text);
+    format = (char *)palloc0(len + 1);
     text_to_cstring_buffer(format_text, format, sizeof(char) * (len + 1));
 
     /* is time_text in datetime or time format? */
-    str_to_pg_tm(buf, tt, fsec, timeSign);
+    char *str_time = buf;
+    int tm_type;
+    bool warnings = false, null_func_result = false;
+    int errlevel = (SQL_MODE_STRICT()) ? ERROR : WARNING;
+    cstring_to_time(str_time, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+    if (warnings || null_func_result) {
+        ereport(errlevel,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str_time)));
+        if (null_func_result) {
+            PG_RETURN_NULL();
+        }
+    }
 
     /* check whether it is a negative time */
     isNeg = (timeSign == -1);
@@ -8040,30 +8052,16 @@ Datum time_format(PG_FUNCTION_ARGS)
         fsec = 0;
     }
 
-    /* is time out of range? */
-    if (tm->tm_hour == TIME_MAX_HOUR && tm->tm_min == TIME_MAX_MINUTE &&
-        tm->tm_sec == TIME_MAX_SECOND && fsec > 0) {
-        ereport(ERROR,
-                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                 errmsg("date/time field value out of range: \"%s\"", str)));
-    }
-
+    str = makeStringInfo();
     if (isNeg) {
-        str[0] = '-';
-        str[1] = '\0';
-        remain--;
-    } else {
-        str[0] = '\0';
+        appendStringInfoChar(str, '-');
     }
 
     ptr = format;
     end = ptr + strlen(format);
     for (; ptr != end; ptr++) {
         if (*ptr != '%' || ptr + 1 == end) {
-            temp_ptr[0] = *ptr;
-            temp_ptr[1] = '\0';
-            insert_len = 1;
-            rc = strcat_s(str, remain, temp_ptr);
+            appendStringInfoChar(str, *ptr);
         } else {
             switch (*++ptr) {
                 case 'a':
@@ -8082,51 +8080,48 @@ Datum time_format(PG_FUNCTION_ARGS)
                     PG_RETURN_NULL();
                 case 'c':
                 case 'e':
-                    insert_len = 1;
-                    rc = strcat_s(str, remain, "0");
+                    appendStringInfoChar(str, '0');
                     break;
                 case 'd':
                 case 'm':
                 case 'y':
-                    insert_len = YEAR2_LEN;
-                    rc = strcat_s(str, remain, "00");
+                    appendStringInfo(str, "%s", "00");
                     break;
                 case 'Y':
-                    insert_len = YEAR4_LEN;
-                    rc = strcat_s(str, remain, "0000");
+                    appendStringInfo(str, "%s", "0000");
                     break;
                 case 'f':
                     insert_len = sprintf_s(buf, MAXDATELEN, "%06d", fsec);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'H': /* hours in range of 0..24 */
                     insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_hour);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'k': /* hours in range of 0..24 */
                     insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_hour);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
+                case 'l':
                 case 'h':
                 case 'I': /* hours in range of 0..12 */
                     hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;
                     insert_len = sprintf_s(buf, MAXDATELEN, "%02d", hours_i);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'i': /* minutes */
                     insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_min);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'p':
                     hours_i = tm->tm_hour % MAX_VALUE_24_CLOCK;
                     insert_len = AM_PM_LEN;
-                    rc = strcat_s(str, remain,
-                                  (hours_i < MAX_VALUE_12_CLOCK ? "AM" : "PM"));
+                    appendStringInfo(str, "%s", (hours_i < MAX_VALUE_12_CLOCK ? "AM" : "PM"));
                     break;
                 case 'r':
                     insert_len =
@@ -8135,32 +8130,31 @@ Datum time_format(PG_FUNCTION_ARGS)
                                   (tm->tm_hour + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK,
                                   tm->tm_min, tm->tm_sec);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'S':
                 case 's': /* seconds */
                     insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_sec);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 case 'T':
                     insert_len = sprintf_s(
                         buf, MAXDATELEN, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
                     securec_check_ss(insert_len, "", "");
-                    rc = strcat_s(str, remain, buf);
+                    appendStringInfo(str, "%s", buf);
                     break;
                 default:
-                    temp_ptr[0] = *ptr;
-                    temp_ptr[1] = '\0';
-                    insert_len = 1;
-                    rc = strcat_s(str, remain, temp_ptr);
+                    appendStringInfoChar(str, *ptr);
                     break;
-                }
+            }
         }
-        remain -= insert_len;
-        securec_check(rc, "", "");
     }
-    PG_RETURN_TEXT_P(cstring_to_text(str));
+    pfree_ext(format);
+    result = cstring_to_text_with_len(str->data, str->len);
+    DestroyStringInfo(str);
+    
+    PG_RETURN_TEXT_P(result);
 }
 
 /* 
