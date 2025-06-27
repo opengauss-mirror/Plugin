@@ -246,11 +246,6 @@ static void convertBitsToBytes(char* bitStr, StringInfo buf)
     }
 }
 
-static bool typeCanSendNull(Oid typid)
-{
-    return typid == TIMESTAMPOID;
-}
-
 static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
      /*
@@ -263,11 +258,7 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
         char *outputstr = NULL;
 
         if (slot->tts_isnull[i] || slot->tts_tupleDescriptor->attrs[i].attisdropped) {
-            if (typeCanSendNull(slot->tts_tupleDescriptor->attrs[i].atttypid)) {
-                dq_append_string_lenenc(buf, NULL);
-            } else {
-                dq_append_string_lenenc(buf, "");
-            }
+            dq_append_string_lenenc(buf, NULL);
             continue;
         }
 
