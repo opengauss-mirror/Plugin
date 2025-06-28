@@ -50,7 +50,7 @@ insert into func_test2(functionName, result) values('subtime(''10000-1-1 20:59:5
 ERROR:  date/time field value out of range: "10000-1-1 20:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''9999-12-31 20:59:59'', ''839:59:59'')', subtime('9999-12-31 20:59:59', '839:59:59') );
-ERROR:  date/time field value out of range: "839:59:59"
+ERROR:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: result
 -- SUBTIME ( time, time )
     -- 正常测试
@@ -90,10 +90,10 @@ insert into func_test2(functionName, result) values('subtime(''-838:59:59'', ''2
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''839:59:59'', ''837:59:59'')', subtime('839:59:59', '837:59:59') );
-ERROR:  date/time field value out of range: "839:59:59"
+ERROR:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-839:59:59'')', subtime('-837:59:59', '-839:59:59') );
-ERROR:  date/time field value out of range: "-839:59:59"
+ERROR:  truncated incorrect time value: "-839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
 ERROR:  time field value out of range
@@ -235,10 +235,10 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''-838:59:59'', ''
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''839:59:59'', ''837:59:59'')', TIMEDIFF('839:59:59', '837:59:59') );
-ERROR:  date/time field value out of range: "839:59:59"
+ERROR:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''-837:59:59'', ''-839:59:59'')', TIMEDIFF('-837:59:59', '-839:59:59') );
-ERROR:  date/time field value out of range: "-839:59:59"
+ERROR:  truncated incorrect time value: "-839:59:59"
 CONTEXT:  referenced column: result
 -- TIMEDIFF ( time, datetime ), TIMEDIFF ( time, datetime )
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', ''4:00'')', TIMEDIFF('2000-02-28 20:59:59', '4:00') );
@@ -280,10 +280,10 @@ insert into func_test2(functionName, result) values('TIME(''-838:59:59'')',TIME(
 -- 边界情况
 insert into func_test2(functionName, result) values('TIME(''838:0:0'')',TIME('838:0:0'));
 insert into func_test2(functionName, result) values('TIME(''839:0:0'')',TIME('839:0:0'));
-ERROR:  date/time field value out of range: "839:0:0"
+ERROR:  truncated incorrect time value: "839:0:0"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(''-839:0:0'')',TIME('-839:0:0'));
-ERROR:  date/time field value out of range: "-839:0:0"
+ERROR:  truncated incorrect time value: "-839:0:0"
 CONTEXT:  referenced column: result
 -- 异常格式
 insert into func_test2(functionName, result) values('TIME(''0:-1:0'')',TIME('0:-1:0'));
@@ -565,14 +565,20 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''20000229120000.
 insert into func_test2(functionName, result) values('TIMESTAMP(20000229120000.1234567)', TIMESTAMP(20000229120000.1234567));
 insert into func_test2(functionName, result) values('TIMESTAMP(20000229120000)', TIMESTAMP(20000229120000));
 -- 边界值
-insert into func_test2(functionName, result) values('TIMESTAMP(''0000-01-01'')', TIMESTAMP('0000-01-01')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31'')', TIMESTAMP('9999-12-31')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01'')', TIMESTAMP('10000-01-01')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24bc'')', TIMESTAMP('4714-11-24bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-23bc'')', TIMESTAMP('4714-11-23bc'));
+ERROR:  timestamp out of range: "4714-11-23bc"
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31'')', TIMESTAMP('294276-12-31'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-01-01'')', TIMESTAMP('294277-01-01'));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
-insert into func_test2(functionName, result) values('TIMESTAMP(''0000-01-01 00:00:00.000001'')', TIMESTAMP('0000-01-01 00:00:00.000001')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31 23:59:59.999999'')', TIMESTAMP('9999-12-31 23:59:59.999999')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01 00:00:00'')', TIMESTAMP('10000-01-01 00:00:00')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24 00:00:00.000000bc'')', TIMESTAMP('4714-11-24 00:00:00.000000bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-23 23:59:59.999999bc'')', TIMESTAMP('4714-11-23 23:59:59.999999bc'));
+ERROR:  timestamp out of range: "4714-11-23 23:59:59.999999bc"
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 23:59:59.999999'')', TIMESTAMP('294276-12-31 23:59:59.999999'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-01-01 00:00:00.000000'')', TIMESTAMP('294277-01-01 00:00:00.000000'));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
 -- 不同参数类型
@@ -602,11 +608,11 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 23:6
 ERROR:  date/time field value out of range: "2003-12-31 23:60:00"
 CONTEXT:  referenced column: result
     -- 日期越界
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01'',''25:00:00'')', TIMESTAMP('10000-01-01', '25:00:00')); 
-ERROR:  date/time field value out of range
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31'',''25:00:00'')', TIMESTAMP('294276-12-31', '25:00:00'));
+ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01 00:00:00'',''25:00:00'')', TIMESTAMP('10000-01-01 00:00:00', '25:00:00')); 
-ERROR:  date/time field value out of range
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-12-31'',''25:00:00'')', TIMESTAMP('294277-12-31', '25:00:00'));
+ERROR:  timestamp out of range: "294277-12-31"
 CONTEXT:  referenced column: result
     -- 主体功能
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31'',''12:00:00.9999995'')', TIMESTAMP('2003-12-31','12:00:00.9999995'));
@@ -619,16 +625,16 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 12:0
 insert into func_test2(functionName, result) values('TIMESTAMP(20031231120000,-120000)', TIMESTAMP(20031231120000,-120000));
 insert into func_test2(functionName, result) values('TIMESTAMP(20031231120000.000002,-120000.000001)', TIMESTAMP(20031231120000.000002,-120000.000001));
     -- 边界值
-insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31'',''838:59:59'')', TIMESTAMP('1000-12-31', '838:59:59')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''1000-01-01 00:00:00'',''839:00:00'')', TIMESTAMP('1000-12-31 00:00:00', '839:00:00')); 
-ERROR:  date/time field value out of range: "839:00:00"
+insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31'',''838:59:59'')', TIMESTAMP('1000-12-31', '838:59:59'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31 00:00:00'',''839:00:00'')', TIMESTAMP('1000-12-31 00:00:00', '839:00:00'));
+ERROR:  truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31'',''23:59:59.999999'')', TIMESTAMP('9999-12-31', '23:59:59.999999')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31 00:00:00'',''24:00:00'')', TIMESTAMP('9999-12-31 00:00:00', '24:00:00')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24bc'', ''00:00:00'')', TIMESTAMP('4714-11-24bc', '00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24 00:00:00bc'', ''-00:00:00.000001'')', TIMESTAMP('4714-11-24 00:00:00bc', '-00:00:00.000001'));
 ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
-insert into func_test2(functionName, result) values('TIMESTAMP(''0001-01-01'', ''00:00:00'')', TIMESTAMP('0001-01-01', '00:00:00')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''0001-01-01 00:00:00'', ''-00:00:00.000001'')', TIMESTAMP('0001-01-01 00:00:00', '-00:00:00.000001')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 00:00:00'',''23:59:59.999999'')', TIMESTAMP('294276-12-31 00:00:00', '23:59:59.999999'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 00:00:00'',''24:00:00.000000'')', TIMESTAMP('294276-12-31 00:00:00', '24:00:00.000000'));
 ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
     -- 不同参数类型
@@ -812,11 +818,7 @@ ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 -- 最小值
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01'')', TIMESTAMPADD(DAY,-1,'0001-01-01'));
-ERROR:  date/time field overflow
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01 00:00:00'')', TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00'));
-ERROR:  date/time field overflow
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(YEAR, 1,'0000-01-01 00:00:00'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(qtr, 1,'0000-01-01 00:00:00'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,1,''0000-01-01 14:25:59'')', TIMESTAMPADD(MONTH, 1,'0000-01-01 14:25:59'));
@@ -857,14 +859,8 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,0.001,'
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,-0.001,''2022-07-27 00:00:00'')', TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00'));
 -- 越界预判
 insert into func_test2(functionName, result) values('TIMESTAMPADD(year,1,time''23:59:59'')', TIMESTAMPADD(year,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,time''23:59:59'')', TIMESTAMPADD(qtr,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''23:59:59'')', TIMESTAMPADD(month,1,time'23:59:59'));
-ERROR:  time field value out of range
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME_FORMAT(''00:00:00'', ''%l %p'')', TIME_FORMAT('00:00:00', '%l %p'));
 insert into func_test2(functionName, result) values('TIME_FORMAT(''12:00:00'', ''%l %p'')', TIME_FORMAT('12:00:00', '%l %p'));
 insert into func_test2(functionName, result) values('TIME_FORMAT(''23:00:00'', ''%l %p'')', TIME_FORMAT('23:00:00', '%l %p'));
@@ -1047,10 +1043,10 @@ select * from func_test2;
  TIMESTAMP('20000229120000.1234567')                                                         | 2000-02-29 12:00:00.123457
  TIMESTAMP(20000229120000.1234567)                                                           | 2000-02-29 12:00:00.123457
  TIMESTAMP(20000229120000)                                                                   | 2000-02-29 12:00:00
- TIMESTAMP('0000-01-01')                                                                     | 0000-01-01 00:00:00
- TIMESTAMP('9999-12-31')                                                                     | 9999-12-31 00:00:00
- TIMESTAMP('0000-01-01 00:00:00.000001')                                                     | 0000-01-01 00:00:00.000001
- TIMESTAMP('9999-12-31 23:59:59.999999')                                                     | 9999-12-31 23:59:59.999999
+ TIMESTAMP('4714-11-24bc')                                                                   | 4714-11-24 00:00:00 BC
+ TIMESTAMP('294276-12-31')                                                                   | 294276-12-31 00:00:00
+ TIMESTAMP('4714-11-24 00:00:00.000000bc')                                                   | 4714-11-24 00:00:00 BC
+ TIMESTAMP('294276-12-31 23:59:59.999999')                                                   | 294276-12-31 23:59:59.999999
  TIMESTAMP(date'2003-01-01')                                                                 | 2003-01-01 00:00:00
  TIMESTAMP(cast('2007-12-10 23:59:59' as datetime))                                          | 2007-12-10 23:59:59
  TIMESTAMP(NULL, NULL)                                                                       | 
@@ -1065,8 +1061,8 @@ select * from func_test2;
  TIMESTAMP(20031231120000,-120000)                                                           | 2003-12-31 00:00:00
  TIMESTAMP(20031231120000.000002,-120000.000001)                                             | 2003-12-31 00:00:00.000001
  TIMESTAMP('1000-12-31','838:59:59')                                                         | 1001-02-03 22:59:59
- TIMESTAMP('9999-12-31','23:59:59.999999')                                                   | 9999-12-31 23:59:59.999999
- TIMESTAMP('0001-01-01', '00:00:00')                                                         | 0001-01-01 00:00:00
+ TIMESTAMP('4714-11-24bc', '00:00:00')                                                       | 4714-11-24 00:00:00 BC
+ TIMESTAMP('294276-12-31 00:00:00','23:59:59.999999')                                        | 294276-12-31 23:59:59.999999
  TIMESTAMP(date'2003-01-01', date'2000-01-01')                                               | 2003-01-01 00:00:00
  TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)) | 2007-12-11 22:59:58
  TIMESTAMPADD(YEAR,1,'2022-07-27')                                                           | 2023-07-27
@@ -1138,7 +1134,9 @@ select * from func_test2;
  TIMESTAMPADD(HOUR,B'11','2022-04-05')                                                       | 2022-04-05 03:00:00
  TIMESTAMPADD(HOUR,1,date'2022-04-05')                                                       | 2022-04-05 01:00:00
  TIMESTAMPADD(DAY,1,cast('2022-04-05' as datetime))                                          | 2022-04-06 00:00:00
- TIMESTAMPADD(DAY,1,time'14:30:00')                                                          | 38:30:00
+--?TIMESTAMPADD(DAY,1,time'14:30:00')                                                          | .*
+ TIMESTAMPADD(DAY,-1,'0001-01-01')                                                           | 0000-00-00
+ TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00')                                                  | 0000-00-00 00:00:00
  TIMESTAMPADD(YEAR,1,'0000-01-01 00:00:00')                                                  | 0001-01-01 00:00:00
  TIMESTAMPADD(qtr,1,'0000-01-01 00:00:00')                                                   | 0000-04-01 00:00:00
  TIMESTAMPADD(MONTH,1,'0000-01-01 14:25:59')                                                 | 0000-02-01 14:25:59
@@ -1169,6 +1167,9 @@ select * from func_test2;
  TIMESTAMPADD(SECOND,-1,'2022-07-27 00:00:00')                                               | 2022-07-26 23:59:59
  TIMESTAMPADD(SECOND,0.001,'2022-07-27 08:30:59.999')                                        | 2022-07-27 08:31:00
  TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00')                                           | 2022-07-26 23:59:59.999
+--?.*
+--?.*
+--?.*
  TIME_FORMAT('00:00:00', '%l %p')                                                            | 12 AM
  TIME_FORMAT('12:00:00', '%l %p')                                                            | 12 PM
  TIME_FORMAT('23:00:00', '%l %p')                                                            | 11 PM
@@ -1193,7 +1194,7 @@ CONTEXT:  referenced column: subtime
 (1 row)
 
 select subtime('839:59:59', '837:59:59');
-WARNING:  date/time field value out of range: "839:59:59"
+WARNING:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: subtime
  subtime  
 ----------
@@ -1201,7 +1202,7 @@ CONTEXT:  referenced column: subtime
 (1 row)
 
 select subtime('-837:59:59', '-839:59:59') ;
-WARNING:  date/time field value out of range: "-839:59:59"
+WARNING:  truncated incorrect time value: "-839:59:59"
 CONTEXT:  referenced column: subtime
  subtime  
 ----------
@@ -1242,10 +1243,10 @@ insert into func_test2(functionName, result) values('subtime(''-838:59:59'', ''2
 WARNING:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''839:59:59'', ''837:59:59'')', subtime('839:59:59', '837:59:59'));
-WARNING:  date/time field value out of range: "839:59:59"
+WARNING:  truncated incorrect time value: "839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-839:59:59'')', subtime('-837:59:59', '-839:59:59'));
-WARNING:  date/time field value out of range: "-839:59:59"
+WARNING:  truncated incorrect time value: "-839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
 WARNING:  time field value out of range
@@ -1255,6 +1256,15 @@ WARNING:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
 WARNING:  time field value out of range
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('subtime(B''0'',B''1'')', subtime(B'0',B'1'));
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101'));
+WARNING:  unsupported input data type: bit
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
+WARNING:  unsupported input data type: bit
 CONTEXT:  referenced column: result
 select * from func_test2 order by functionName;
              functionName             |   result   
@@ -1266,7 +1276,10 @@ select * from func_test2 order by functionName;
  subtime('-838:59:59', '25:00')       | -838:59:59
  subtime('838:59:59', '-25:00')       | 838:59:59
  subtime('839:59:59', '837:59:59')    | 01:00:00
-(7 rows)
+ subtime(B'0',B'1')                   | 
+ TIME(B'1')                           | 
+ TIMEDIFF(B'101', B'101')             | 
+(10 rows)
 
 set dolphin.b_compatibility_mode=on;
 set b_format_behavior_compat_options='enable_set_variables,enable_multi_charset';
@@ -1379,7 +1392,7 @@ select year(0);
 select c1, year(c2), year(c3), year(c4), year(c5), year(c6), year(c7), year(c8), year(c9), year(c10), year(c11) from t_bin order by c1;
 WARNING:  invalid input syntax for type timestamp: ""
 CONTEXT:  referenced column: year
-WARNING:  invalid input syntax for type timestamp: "��"
+--?WARNING:  invalid input syntax for type timestamp: .*
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "9"
 CONTEXT:  referenced column: year
@@ -2101,6 +2114,156 @@ select * from t2 order by c1;
   3 |    |    |    |    |   
 (3 rows)
 
+select TIME_FORMAT('838:59:59.999999','%f');
+WARNING:  Truncated incorrect time value: "838:59:59.999999"
+CONTEXT:  referenced column: time_format
+ time_format 
+-------------
+ 000000
+(1 row)
+
+select TIME_FORMAT('837:59:59.999999','%f');
+ time_format 
+-------------
+ 999999
+(1 row)
+
+select TIME_FORMAT('-838:59:59.999999','%f');
+WARNING:  Truncated incorrect time value: "-838:59:59.999999"
+CONTEXT:  referenced column: time_format
+ time_format 
+-------------
+ -000000
+(1 row)
+
+select TIME_FORMAT('-837:59:59.999999','%f');
+ time_format 
+-------------
+ -999999
+(1 row)
+
+select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:59
+(1 row)
+
+select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select TIMEDIFF(time'23:59:59','a1eebc99');
+WARNING:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:59
+(1 row)
+
+select TIMEDIFF(time'23:59:59','1aeebc99');
+WARNING:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 23:59:58
+(1 row)
+
+select timestampadd(microsecond, 1,'0000-1-1 00:00:00');
+        timestampadd        
+----------------------------
+ 0000-00-00 00:00:00.000001
+(1 row)
+
+select timestampadd(day,-1,'0001-01-01');
+ timestampadd 
+--------------
+ 0000-00-00
+(1 row)
+
+select timestampadd(week, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0000-00-00
+(1 row)
+
+select timestampadd(year, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0001-01-01
+(1 row)
+
+select timestampadd(month, 1, '0000-01-01');
+ timestampadd 
+--------------
+ 0000-02-01
+(1 row)
+
+select timestampadd(hour, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 01:00:00
+(1 row)
+
+select timestampadd(minute, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 00:01:00
+(1 row)
+
+select timestampadd(second, 1, '0000-01-01');
+    timestampadd     
+---------------------
+ 0000-00-00 00:00:01
+(1 row)
+
+show dolphin.sql_mode;
+ dolphin.sql_mode 
+------------------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
+create table test_diff(c1 time);
+insert into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+ERROR:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+ERROR:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+ERROR:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+insert into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+ERROR:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+WARNING:  Truncated incorrect time value: "01eebc99-9cob-4ef8-bb6d-6bb9bd380a11"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+WARNING:  Truncated incorrect time value: "a1eebc99"
+CONTEXT:  referenced column: timediff
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+WARNING:  Truncated incorrect time value: "1aeebc99"
+CONTEXT:  referenced column: timediff
+select * from test_diff;
+    c1    
+----------
+ 23:59:59
+ 
+ 23:59:59
+ 23:59:58
+(4 rows)
+
+drop table test_diff;
 drop table t_time;
 drop table t_char;
 drop table t1;

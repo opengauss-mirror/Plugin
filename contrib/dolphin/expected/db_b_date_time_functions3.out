@@ -1102,7 +1102,7 @@ CONTEXT:  referenced column: timediff
 (1 row)
 
 select timediff(time'11:11:11', 'asdcf');
-WARNING:  invalid input syntax for type time: "asdcf"
+WARNING:  Truncated incorrect time value: "asdcf"
 CONTEXT:  referenced column: timediff
  timediff 
 ----------
@@ -1118,7 +1118,7 @@ CONTEXT:  referenced column: timediff
 (1 row)
 
 select timediff('0000-00-00', time'00:00:01');
-WARNING:  invalid input syntax for type time: "0000-00-00"
+WARNING:  Truncated incorrect time value: "0000-00-00"
 CONTEXT:  referenced column: timediff
  timediff  
 -----------
@@ -1126,7 +1126,7 @@ CONTEXT:  referenced column: timediff
 (1 row)
 
 select timediff(time'00:00:01', '0000-00-00');
-WARNING:  invalid input syntax for type time: "0000-00-00"
+WARNING:  Truncated incorrect time value: "0000-00-00"
 CONTEXT:  referenced column: timediff
  timediff 
 ----------

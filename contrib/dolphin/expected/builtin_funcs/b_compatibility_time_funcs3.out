@@ -85,19 +85,23 @@ insert into func_test3(functionName,result) values('TO_DAYS(00101000001)',TO_DAY
 insert into func_test3(functionName,result) values('TO_DAYS(0000101000001)',TO_DAYS(0000101000001));      -- -三位年+双位日月+双位时分秒
 -- 边界测试
 -- 最小值
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1'')',TO_DAYS('0000-1-1'));
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1 00:00:00'')',TO_DAYS('0000-1-1 00:00:00'));
-insert into func_test3(functionName,result) values('TO_DAYS(''0000-0-0'')',TO_DAYS('0000-0-0'));
-ERROR:  date/time field value out of range: "0000-0-0"
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-24bc'')', TO_DAYS('4714-11-24bc'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-24 00:00:00.000000bc'')', TO_DAYS('4714-11-24 00:00:00.000000bc'));
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-23bc'')', TO_DAYS('4714-11-23bc'));
+ERROR:  timestamp out of range: "4714-11-23bc"
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
+insert into func_test3(functionName, result) values('TO_DAYS(''4714-11-23 23:59:59.999999bc'')', TO_DAYS('4714-11-23 23:59:59.999999bc'));
+ERROR:  timestamp out of range: "4714-11-23 23:59:59.999999bc"
 CONTEXT:  SQL function "to_days" during inlining
 referenced column: result
 -- 最大值
-insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31'')',TO_DAYS('9999-12-31'));
-insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31 23:59:59.999999'')',TO_DAYS('9999-12-31 23:59:59.999999'));
-insert into func_test3(functionName,result) values('TO_DAYS(''10000-1-1'')',TO_DAYS('10000-1-1'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294276-12-31'')', TO_DAYS('294276-12-31'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294276-12-31 23:59:59.999999'')', TO_DAYS('294276-12-31 23:59:59.999999'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294277-01-01'')', TO_DAYS('294277-01-01'));
 ERROR:  datetime value out of range
 CONTEXT:  referenced column: result
-insert into func_test3(functionName,result) values('TO_DAYS(''10000-1-1 00:00:00'')',TO_DAYS('10000-1-1 00:00:00'));
+insert into func_test3(functionName, result) values('TO_DAYS(''294277-01-01 00:00:00.000000'')', TO_DAYS('294277-01-01 00:00:00.000000'));
 ERROR:  datetime value out of range
 CONTEXT:  referenced column: result
 -- TO_SECONDS()
@@ -151,21 +155,23 @@ insert into func_test3(functionName, result) values('TO_SECONDS(20220801182030.8
 -- 任意分隔符参数
 insert into func_test3(functionName, result) values('TO_SECONDS(''0,1,1,0,0,0'')', TO_SECONDS('0,1,1,0,0,0'));
 -- 边界测试
--- 最大值
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31'')', TO_SECONDS('9999-12-31'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31 23:59:59'')', TO_SECONDS('9999-12-31 23:59:59'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31 23:59:59.999999'')', TO_SECONDS('9999-12-31 23:59:59.999999'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''10000-01-01'')', TO_SECONDS('10000-01-01'));
-ERROR:  date/time value out of range
-CONTEXT:  referenced column: result
 -- 最小值
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01'')', TO_SECONDS('0000-01-01'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01 00:00:00'')', TO_SECONDS('0000-01-01 00:00:00'));
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00'')', TO_SECONDS('0000-00-00'));
-ERROR:  date/time field value out of range: "0000-00-00"
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-24bc'')', TO_SECONDS('4714-11-24bc'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-24 00:00:00.000000bc'')', TO_SECONDS('4714-11-24 00:00:00.000000bc'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-23bc'')', TO_SECONDS('4714-11-23bc'));
+ERROR:  timestamp out of range: "4714-11-23bc"
 CONTEXT:  referenced column: result
-insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00 00:00:00'')', TO_SECONDS('0000-00-00 00:00:00'));
-ERROR:  date/time field value out of range: "0000-00-00 00:00:00"
+insert into func_test3(functionName, result) values('TO_SECONDS(''4714-11-23 23:59:59.999999bc'')', TO_SECONDS('4714-11-23 23:59:59.999999bc'));
+ERROR:  timestamp out of range: "4714-11-23 23:59:59.999999bc"
+CONTEXT:  referenced column: result
+-- 最大值
+insert into func_test3(functionName, result) values('TO_SECONDS(''294276-12-31'')', TO_SECONDS('294276-12-31'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''294276-12-31 23:59:59.999999'')', TO_SECONDS('294276-12-31 23:59:59.999999'));
+insert into func_test3(functionName, result) values('TO_SECONDS(''294277-01-01'')', TO_SECONDS('294277-01-01'));
+ERROR:  datetime value out of range
+CONTEXT:  referenced column: result
+insert into func_test3(functionName, result) values('TO_SECONDS(''294277-01-01 00:00:00.000000'')', TO_SECONDS('294277-01-01 00:00:00.000000'));
+ERROR:  datetime value out of range
 CONTEXT:  referenced column: result
 set timezone to 'PRC';
 -- UNIX_TIMESTAMP()
@@ -282,9 +288,9 @@ select * from func_test3;
  TO_DAYS(20220101010101)                                     | 738521
  TO_DAYS('20220101010101.000001')                            | 738521
  TO_DAYS(20220101010101.000002)                              | 738521
- TO_DAYS('00000000000-1-1')                                  | 1
- TO_DAYS('00000000000-00000000001-1')                        | 1
- TO_DAYS('00000000000-00000000001-0000000001')               | 1
+ TO_DAYS('00000000000-1-1')                                  | 0
+ TO_DAYS('00000000000-00000000001-1')                        | 0
+ TO_DAYS('00000000000-00000000001-0000000001')               | 0
  TO_DAYS(null)                                               | 
  TO_DAYS(date'2000-1-1')                                     | 730485
  TO_DAYS(cast('2022-2-2 2:2:2' as datetime))                 | 738553
@@ -300,10 +306,10 @@ select * from func_test3;
  TO_DAYS(0101000001)                                         | 730485
  TO_DAYS(00101000001)                                        | 730485
  TO_DAYS(0000101000001)                                      | 730485
- TO_DAYS('0000-1-1')                                         | 1
- TO_DAYS('0000-1-1 00:00:00')                                | 1
- TO_DAYS('9999-12-31')                                       | 3652424
- TO_DAYS('9999-12-31 23:59:59.999999')                       | 3652424
+ TO_DAYS('4714-11-24bc')                                     | -1721060
+ TO_DAYS('4714-11-24 00:00:00.000000bc')                     | -1721060
+ TO_DAYS('294276-12-31')                                     | 107482467
+ TO_DAYS('294276-12-31 23:59:59.999999')                     | 107482467
  TO_SECONDS('2022-07-27')                                    | 63826099200
  TO_SECONDS('20220727')                                      | 63826099200
  TO_SECONDS('2022-07-27 15:25:30')                           | 63826154730
@@ -320,12 +326,11 @@ select * from func_test3;
  TO_SECONDS(20220801)                                        | 63826531200
  TO_SECONDS(20220801182030)                                  | 63826597230
  TO_SECONDS(20220801182030.8888855)                          | 63826597230
- TO_SECONDS('0,1,1,0,0,0')                                   | 86400
- TO_SECONDS('9999-12-31')                                    | 315569433600
- TO_SECONDS('9999-12-31 23:59:59')                           | 315569519999
- TO_SECONDS('9999-12-31 23:59:59.999999')                    | 315569519999
- TO_SECONDS('0000-01-01')                                    | 86400
- TO_SECONDS('0000-01-01 00:00:00')                           | 86400
+ TO_SECONDS('0,1,1,0,0,0')                                   | 0
+ TO_SECONDS('4714-11-24bc')                                  | -148699584000
+ TO_SECONDS('4714-11-24 00:00:00.000000bc')                  | -148699584000
+ TO_SECONDS('294276-12-31')                                  | 9286485148800
+ TO_SECONDS('294276-12-31 23:59:59.999999')                  | 9286485235199
  UNIX_TIMESTAMP('2022-07-27')                                | 1658851200
  UNIX_TIMESTAMP('20220727')                                  | 1658851200
  UNIX_TIMESTAMP('2022-07-27 15:25:30')                       | 1658906730
@@ -374,7 +379,7 @@ select * from func_test3;
 --? UTC_TIMESTAMP(4)                                            | .*
 --? UTC_TIMESTAMP(5)                                            | .*
 --? UTC_TIMESTAMP(6)                                            | .*
-(101 rows)
+(100 rows)
 
 select to_seconds('-838:59:59');
 WARNING:  time zone displacement out of range: "-838:59:59"

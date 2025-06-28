@@ -4446,6 +4446,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     securec_check(rc, "\0", "\0");
     fsec = 0;
     warnings = false;
+    *null_func_result = false;
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
@@ -5058,7 +5059,7 @@ bool date_sub_days(DateADT date, int days, DateADT *result, bool is_add_func)
  * @Description: Subtract an interval from a date, giving a new date and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
  */
-bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func)
+bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
 {
     if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
         return false;
@@ -5072,11 +5073,8 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_ad
         return true;
 
     if (*result < B_FORMAT_DATEADT_FIRST_YEAR) {
-        if (is_add_func) {
-            *result = DATE_ALL_ZERO_VALUE;
-            return true;
-        }
-        return false;
+        *result = DATE_ALL_ZERO_VALUE;
+        return true;
     }
     
     return true;
@@ -5085,7 +5083,7 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_ad
 /**
  * Convert non-NULL values of the indicated types to the TimeADT value
  */
-void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore)
+void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore, bool* result_isnull)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
@@ -5175,11 +5173,14 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
             break;
         }
         case BITOID: {
-            if (SQL_MODE_STRICT()) {
-                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
-                                errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
-            }
+            int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+            ereport(errlevel, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
             *time = 0;
+            if (result_isnull != NULL) {
+                *result_isnull = true;
+                return;
+            }
             break;
         }
         default: {
@@ -5661,15 +5662,15 @@ Datum to_days(PG_FUNCTION_ARGS) {
         PG_RETURN_NULL();
     }
 
-    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                        errmsg("datetime value out of range")));
+    if (!IS_VALID_TIMESTAMP(datetime)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime value out of range")));
+        PG_RETURN_NULL();
     }
-    days = (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
 
-    if (datetime <= B_FORMAT_TIMESTAMP_ZERO_YEAR_LEAP_DAY) {
-        ++days;
-    }
+    /* To avoid overflow */
+    days = datetime > 0 ? (static_cast<uint64>(datetime) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY
+                        : (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
 
     PG_RETURN_INT64(days);
 }
@@ -6187,7 +6188,7 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
     span->month = -span->month;
     span->day = -span->day;
     span->time = -span->time;
-    return date_sub_interval(date, span, result, true);
+    return date_sub_interval(date, span, result);
 }
 
 /**

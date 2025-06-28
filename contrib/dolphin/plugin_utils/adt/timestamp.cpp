@@ -3156,7 +3156,7 @@ int tm2timestamp(struct pg_tm* tm, const fsec_t fsec, const int* tzp, Timestamp*
 
     /* Julian day routines are not correct for negative Julian days */
     if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
-        *result = 0; /* keep compiler quiet */
+        *result = TIMESTAMP_ZERO;
         return -1;
     }
 
@@ -3167,7 +3167,7 @@ int tm2timestamp(struct pg_tm* tm, const fsec_t fsec, const int* tzp, Timestamp*
     *result = date * USECS_PER_DAY + time;
     /* check for major overflow */
     if ((*result - time) / USECS_PER_DAY != date) {
-        *result = 0; /* keep compiler quiet */
+        *result = TIMESTAMP_ZERO;
         return -1;
     }
     /* check for just-barely overflow (okay except time-of-day wraps) */
@@ -7451,6 +7451,25 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             *datetime = DatumGetTimestamp(DirectFunctionCall1(date_timestamp, value));
             break;
         }
+        case TIMETZOID: {
+            // The conversion rule from Time to Timestamp is:
+            // Combining the current date withe the input time
+            pg_tm tt, *tm = &tt;
+            int tz = 0;
+            TimestampTz temp;
+            TimeTzADT* time = DatumGetTimeTzADTP(value);
+            GetCurrentDateTime(tm);
+            tm->tm_hour = tm->tm_min = tm->tm_sec = 0;  // Keep date only
+            tm2timestamp(tm, 0, &tz, &temp);
+
+#ifdef HAVE_INT64_TIMESTAMP
+            *datetime = time->time + (time->zone * 1000000.0) + temp;
+#else
+            *datetime = time->time + time->zone + temp;
+#endif
+            break;
+        }
+
         case TIMEOID: {
             // The conversion rule from Time to Timestamp is:
             // Combining the current date withe the input time
@@ -7688,7 +7707,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case INT4OID:
         case BOOLOID: 
         case BITOID: {
-            convert_to_time(value, valuetypid, time, can_ignore);
+            convert_to_time(value, valuetypid, time, can_ignore, result_isnull);
             check_b_format_time_range_with_ereport(*time);
             return TIMEOID;
         }
@@ -7801,10 +7820,15 @@ Datum subtime(PG_FUNCTION_ARGS)
     TimeADT time1, time2, res_time;
     Timestamp datetime1, datetime2, res_datetime;
     Oid val_type1, val_type2;
+    bool result_isnull = false;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
-    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, true);
+    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, true, &result_isnull);
+
+    if (result_isnull == true) {
+        PG_RETURN_NULL();
+    }
 
     switch (val_type2) {
         case TIMESTAMPOID:
@@ -7816,8 +7840,8 @@ Datum subtime(PG_FUNCTION_ARGS)
             val_type2 = TIMEOID;
             break;
         default:
-            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, true);
-            if (val_type2 == TIMESTAMPOID) {
+            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, true, &result_isnull);
+            if (val_type2 == TIMESTAMPOID || result_isnull == true) {
                 PG_RETURN_NULL();
             }
     }
@@ -7903,6 +7927,7 @@ Datum timediff(PG_FUNCTION_ARGS)
     Oid val_type1, val_type2;
     TimeADT result;
     int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+    bool result_isnull = false;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -7911,19 +7936,57 @@ Datum timediff(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int timeSign = 1;
+    int tm_type;
+    bool warnings = false, null_func_result = false;
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
     if (val_type1 == UNKNOWNOID && val_type2 == DATEOID) {
         val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
         val_type1 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(0)), &datetime1, &time1, val_type2);
     } else if (val_type1 == DATEOID && val_type2 == UNKNOWNOID) {
         val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
         val_type2 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(1)), &datetime2, &time2, val_type1);
+    } else if (val_type1 == UNKNOWNOID && val_type2 == TIMEOID) {
+        char *str = DatumGetCString(PG_GETARG_DATUM(0));
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+        if (warnings || null_func_result) {
+            ereport(errlevel,
+                    (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
+            if (null_func_result) {
+                PG_RETURN_NULL();
+            }
+        }
+        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, fcinfo->can_ignore, &result_isnull);
+        tm2time(tm, fsec, &time1);
+        val_type1 = TIMEOID;
+    } else if (val_type1 == TIMEOID && val_type2 == UNKNOWNOID) {
+        char *str = DatumGetCString(PG_GETARG_DATUM(1));
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+        if (warnings || null_func_result) {
+            ereport(errlevel,
+                    (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
+            if (null_func_result) {
+                PG_RETURN_NULL();
+            }
+        }
+        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, fcinfo->can_ignore, &result_isnull);
+        tm2time(tm, fsec, &time2);
+        val_type2 = TIMEOID;
     } else {
-        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
+        val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, fcinfo->can_ignore, &result_isnull);
         if (val_type1 == TIMEOID &&  time1 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
             PG_RETURN_NULL();
         }
-        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+        if (result_isnull == true) {
+            PG_RETURN_NULL();
+        }
+        val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, fcinfo->can_ignore, &result_isnull);
         if (val_type2 == TIMEOID &&  time2 == B_FORMAT_TIME_INVALID_VALUE_TAG) {
+            PG_RETURN_NULL();
+        }
+        if (result_isnull == true) {
             PG_RETURN_NULL();
         }
     }
@@ -8261,6 +8324,25 @@ bool determine_conversion(int dtk)
     }
 }
 
+
+bool is_conversion_from_time_to_datetime(int dtk, Oid expr_type)
+{
+    if (expr_type != TIMETZOID && expr_type != TIMEOID) {
+        return false;
+    }
+    switch (dtk) {
+        case DTK_DAY:
+        case DTK_WEEK:
+        case DTK_MONTH:
+        case DTK_QUARTER:
+        case DTK_YEAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
 /*
  * @Description: Internal operation function of timestamp_add_numeric() 
  * and timestamp_add_text() function.
@@ -8273,6 +8355,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
     Timestamp datetime, res_datetime;
     DateADT date, res_date;
     TimeADT time, res_time;
+    bool is_need_convert_to_datetime = is_conversion_from_time_to_datetime(unit, expr_type);
 
     NumericVar tmp;
     lldiv_t delta;
@@ -8302,17 +8385,20 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
         char *str = DatumGetCString(DirectFunctionCall1(year_out, expr));
         ereport(ERROR, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
     }
-    switch (expr_type) {
-        // when the input type is time or timetz
-        case TIMETZOID:
-        case TIMEOID:
-            convert_to_time(expr, expr_type, &time);
-            res_time = time_sub_interval(time, span);
-            PG_RETURN_TEXT_P(DirectFunctionCall1(time_text, TimeADTGetDatum(res_time)));
+
+    if (is_need_convert_to_datetime == false) {
+        switch (expr_type) {
+            // when the input type is time or timetz
+            case TIMETZOID:
+            case TIMEOID:
+                convert_to_time(expr, expr_type, &time);
+                res_time = time_sub_interval(time, span);
+                PG_RETURN_TEXT_P(DirectFunctionCall1(time_text, TimeADTGetDatum(res_time)));
+        }
     }
 
     bool conversion = determine_conversion(unit);
-    if (conversion) {
+    if (conversion || is_need_convert_to_datetime) {
         // With specific units, the return type is datetime
         convert_to_datetime(expr, expr_type, &datetime);
         check_b_format_datetime_range_with_ereport(datetime);
@@ -8323,7 +8409,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
 
     switch (expr_type) {
         case TIMESTAMPOID:
-            if (datetime_sub_interval(datetime, span, &res_datetime)) {
+            if (datetime_sub_interval(datetime, span, &res_datetime, true)) {
                 PG_RETURN_TEXT_P(DirectFunctionCall1(datetime_text, res_datetime));
             }
             break;
@@ -8461,8 +8547,13 @@ Datum timestamp_param1(PG_FUNCTION_ARGS)
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
 
-    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE)
+    if (datetime == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
+    }
+
+    if (IS_VALID_TIMESTAMP(datetime)) {
         PG_RETURN_TIMESTAMP(datetime);
+    }
 
     if (ENABLE_B_CMPT_MODE) {
         /*
@@ -8497,7 +8588,11 @@ Datum timestamp_param2(PG_FUNCTION_ARGS)
 
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
-    if (datetime < B_FORMAT_TIMESTAMP_FIRST_YEAR || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+    if (datetime == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
+    }
+
+    if (!IS_VALID_TIMESTAMP(datetime)) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                         errmsg("date/time field value out of range")));
     }
@@ -8507,28 +8602,13 @@ Datum timestamp_param2(PG_FUNCTION_ARGS)
     time_in_range(time);
 
     Timestamp result = datetime + time;
-    if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR || result > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                        errmsg("date/time field overflow")));
+    if (!IS_VALID_TIMESTAMP(result)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+        PG_RETURN_NULL();
     }
 
     PG_RETURN_TIMESTAMP(result);
-}
-
-/**
- * @Description: Calculate timestamps from '0000-00-00 00:00:00.000000' to the input arg,
- * while '0000-02-29' is invalid.
- * @return: Timestamps from '0000-00-00 00:00:00.000000' to the input arg.
- */
-Timestamp calc_timestamp_from_zero(Timestamp timestamp)
-{
-    if (B_FORMAT_TIMESTAMP_APART_LEFT <= timestamp && timestamp < B_FORMAT_TIMESTAMP_APART_RIGHT) {
-        return B_FORMAT_TIMESTAMP_MIN_VALUE;
-    } else if (timestamp < B_FORMAT_TIMESTAMP_APART_LEFT) {
-        return timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE + USECS_PER_DAY;
-    } else {
-        return timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE;
-    }
 }
 
 /**
@@ -8543,20 +8623,21 @@ Datum to_seconds(PG_FUNCTION_ARGS)
 
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &timestamp);
-    if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
-            PG_RETURN_NULL();
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
+    if (timestamp == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
-            PG_RETURN_NULL();
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
+
+    if (!IS_VALID_TIMESTAMP(timestamp)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime value out of range")));
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 /**
@@ -10592,39 +10673,6 @@ static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without
     return true;
 }
 
-/**
- * validate the result for str_to_date
- * return true if normal
- * return false if out of range
-*/
-static inline bool final_range_check(int return_type, struct pg_tm *tm, fsec_t *fsec)
-{
-    int dterr = 0;
-    bool no_zero_date_set = SQL_MODE_NO_ZERO_DATE();
-    if (return_type == DTK_DATE || return_type == DTK_DATE_TIME) {
-        if (!tm->tm_year && !tm->tm_mon && !tm->tm_mday) {  // case of '0000-00-00 xxx'
-            if (no_zero_date_set)
-                return false;
-        } else {
-            dterr = ValidateDateForBDatabase(false, tm);
-            if (dterr)
-                return false;
-        }
-        if (return_type == DTK_DATE_TIME) {
-            dterr =  ValidateTimeForBDatabase(true, tm, fsec);
-            if (dterr)
-                return false;
-        }
-    } else if (return_type == DTK_TIME) {
-        if (no_zero_date_set)
-            return false;
-        dterr = ValidateTimeForBDatabase(true, tm, fsec);
-        if (dterr)
-            return false;
-    }
-    return true;
-}
-
 // construct text result for str_to_date
 static inline Datum make_text_result(int return_type ,struct pg_tm *tm, fsec_t fsec, char *buf)
 {
@@ -11584,11 +11632,12 @@ Datum to_seconds_text(PG_FUNCTION_ARGS)
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(to_seconds_time);
@@ -11628,11 +11677,12 @@ Datum to_seconds_numeric(PG_FUNCTION_ARGS)
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
+
+    /* To avoid overflow */
+    int64 seconds = timestamp > 0 ? (static_cast<uint64>(timestamp) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC
+                                  : (timestamp - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
+
+    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, seconds));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_text);
