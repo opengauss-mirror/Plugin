@@ -337,13 +337,25 @@ select date_bool('2020-12-31 BC');
 select time_bool('838:59:59');
 select time_bool('-838:59:59');
 
--- 异常显示空测试
+-- timestamp(expr) 函数
+select timestamp('22-01-01');
+select timestamp('2022-01-01');
+select timestamp('2022-01-01 01:01:01');
+select timestamp('2022-01-01 01:01:01');
+-- 异常返回空
 select timestamp('2022-05');
 select timestamp('2022-05-05');
 select timestamp('2022-05-05 1');
 select timestamp('2023-13-15 1');
 select timestamp('2023-13-15 1:65');
 select timestamp('2022-05-05 1:55:61');
+
+-- timestamp(expr1, expr2) 函数
+select timestamp('22-01-01', '01:01:01');
+-- 异常返回空
+select timestamp('22-01-01', '22-01-01 01:01:01');
+
+-- 异常返回空场景汇总
 select date('2022-15-05');
 select date('2022-05-35');
 select date('2022-05-05 01');

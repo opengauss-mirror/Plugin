@@ -915,7 +915,32 @@ select time_bool('-838:59:59');
  t
 (1 row)
 
--- 异常显示空测试
+-- timestamp(expr) 函数
+select timestamp('22-01-01');
+      timestamp      
+---------------------
+ 2022-01-01 00:00:00
+(1 row)
+
+select timestamp('2022-01-01');
+      timestamp      
+---------------------
+ 2022-01-01 00:00:00
+(1 row)
+
+select timestamp('2022-01-01 01:01:01');
+      timestamp      
+---------------------
+ 2022-01-01 01:01:01
+(1 row)
+
+select timestamp('2022-01-01 01:01:01');
+      timestamp      
+---------------------
+ 2022-01-01 01:01:01
+(1 row)
+
+-- 异常返回空
 select timestamp('2022-05');
 WARNING:  invalid input syntax for type timestamp: "2022-05"
 CONTEXT:  referenced column: timestamp
@@ -960,6 +985,23 @@ CONTEXT:  referenced column: timestamp
  
 (1 row)
 
+-- timestamp(expr1, expr2) 函数
+select timestamp('22-01-01', '01:01:01');
+      timestamp      
+---------------------
+ 2022-01-01 01:01:01
+(1 row)
+
+-- 异常返回空
+select timestamp('22-01-01', '22-01-01 01:01:01');
+WARNING:  Truncated incorrect time value: '22-01-01 01:01:01'
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+-- 异常返回空场景汇总
 select date('2022-15-05');
 WARNING:  Incorrect datetime value: "2022-15-05"
 CONTEXT:  referenced column: date

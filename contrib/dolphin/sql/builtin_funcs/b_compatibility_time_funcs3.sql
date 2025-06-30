@@ -250,6 +250,7 @@ select time('23:65:66.8888');
 select time('0:0:0');
 select time('-1:-1:-1');
 select time('23:55:56.1234');
+select time('2000-01-01 23:55:56.1234');
 
 select cast('5555555' as time);
 select cast('55555555' as time);
@@ -477,6 +478,7 @@ select time('23:65:66.8888');
 select time('0:0:0');
 select time('-1:-1:-1');
 select time('23:55:56.1234');
+select time('2000-01-01 23:55:56.1234');
 
 set dolphin.b_compatibility_mode = true;
 create table test_time(t time);

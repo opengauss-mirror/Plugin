@@ -36,7 +36,7 @@ select second(timestamptz(6) '2021-11-4 16:30:44.3411');
      44
 (1 row)
 
-select microsecond(time '2021-11-4 16:30:44.3411');
+select microsecond(time('2021-11-4 16:30:44.3411'));
  microsecond 
 -------------
       341100
