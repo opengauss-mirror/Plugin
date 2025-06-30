@@ -89,14 +89,11 @@ extern bool time_in_without_overflow(const char *str, TimeADT *time, bool can_ig
 extern bool is_date_format(const char *str);
 extern Datum input_date_in(char* str, bool can_ignore);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
-extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func = false);
-#ifdef DOLPHIN
-extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore = false);
-#else
-extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
-#endif
+extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 
 #ifdef DOLPHIN
+extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore = false,
+    bool* result_isnull = NULL);
 extern int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 extern int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
 extern int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);

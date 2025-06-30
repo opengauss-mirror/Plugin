@@ -328,12 +328,14 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''20000229120000.
 insert into func_test2(functionName, result) values('TIMESTAMP(20000229120000.1234567)', TIMESTAMP(20000229120000.1234567));
 insert into func_test2(functionName, result) values('TIMESTAMP(20000229120000)', TIMESTAMP(20000229120000));
 -- 边界值
-insert into func_test2(functionName, result) values('TIMESTAMP(''0000-01-01'')', TIMESTAMP('0000-01-01')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31'')', TIMESTAMP('9999-12-31')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01'')', TIMESTAMP('10000-01-01')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''0000-01-01 00:00:00.000001'')', TIMESTAMP('0000-01-01 00:00:00.000001')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31 23:59:59.999999'')', TIMESTAMP('9999-12-31 23:59:59.999999')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01 00:00:00'')', TIMESTAMP('10000-01-01 00:00:00')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24bc'')', TIMESTAMP('4714-11-24bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-23bc'')', TIMESTAMP('4714-11-23bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31'')', TIMESTAMP('294276-12-31'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-01-01'')', TIMESTAMP('294277-01-01'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24 00:00:00.000000bc'')', TIMESTAMP('4714-11-24 00:00:00.000000bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-23 23:59:59.999999bc'')', TIMESTAMP('4714-11-23 23:59:59.999999bc'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 23:59:59.999999'')', TIMESTAMP('294276-12-31 23:59:59.999999'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-01-01 00:00:00.000000'')', TIMESTAMP('294277-01-01 00:00:00.000000'));
 -- 不同参数类型
 insert into func_test2(functionName, result) values('TIMESTAMP(date''2003-01-01'')', TIMESTAMP(date'2003-01-01'));
 insert into func_test2(functionName, result) values('TIMESTAMP(cast(''2007-12-10 23:59:59'' as datetime))', TIMESTAMP(cast('2007-12-10 23:59:59' as datetime))); 
@@ -350,8 +352,8 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''2003-2-29'',''2
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 24:00:00'',''25:00:00'')', TIMESTAMP('2003-12-31 24:00:00', '25:00:00')); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 23:60:00'',''25:00:00'')', TIMESTAMP('2003-12-31 23:60:00', '25:00:00')); 
     -- 日期越界
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01'',''25:00:00'')', TIMESTAMP('10000-01-01', '25:00:00')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01 00:00:00'',''25:00:00'')', TIMESTAMP('10000-01-01 00:00:00', '25:00:00')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31'',''25:00:00'')', TIMESTAMP('294276-12-31', '25:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294277-12-31'',''25:00:00'')', TIMESTAMP('294277-12-31', '25:00:00'));
     -- 主体功能
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31'',''12:00:00.9999995'')', TIMESTAMP('2003-12-31','12:00:00.9999995'));
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 12:00:00'',''32:00:00'')', TIMESTAMP('2003-12-31 12:00:00','32:00:00'));
@@ -363,12 +365,12 @@ insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 12:0
 insert into func_test2(functionName, result) values('TIMESTAMP(20031231120000,-120000)', TIMESTAMP(20031231120000,-120000));
 insert into func_test2(functionName, result) values('TIMESTAMP(20031231120000.000002,-120000.000001)', TIMESTAMP(20031231120000.000002,-120000.000001));
     -- 边界值
-insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31'',''838:59:59'')', TIMESTAMP('1000-12-31', '838:59:59')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''1000-01-01 00:00:00'',''839:00:00'')', TIMESTAMP('1000-12-31 00:00:00', '839:00:00')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31'',''23:59:59.999999'')', TIMESTAMP('9999-12-31', '23:59:59.999999')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31 00:00:00'',''24:00:00'')', TIMESTAMP('9999-12-31 00:00:00', '24:00:00')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''0001-01-01'', ''00:00:00'')', TIMESTAMP('0001-01-01', '00:00:00')); 
-insert into func_test2(functionName, result) values('TIMESTAMP(''0001-01-01 00:00:00'', ''-00:00:00.000001'')', TIMESTAMP('0001-01-01 00:00:00', '-00:00:00.000001')); 
+insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31'',''838:59:59'')', TIMESTAMP('1000-12-31', '838:59:59'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31 00:00:00'',''839:00:00'')', TIMESTAMP('1000-12-31 00:00:00', '839:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24bc'', ''00:00:00'')', TIMESTAMP('4714-11-24bc', '00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''4714-11-24 00:00:00bc'', ''-00:00:00.000001'')', TIMESTAMP('4714-11-24 00:00:00bc', '-00:00:00.000001'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 00:00:00'',''23:59:59.999999'')', TIMESTAMP('294276-12-31 00:00:00', '23:59:59.999999'));
+insert into func_test2(functionName, result) values('TIMESTAMP(''294276-12-31 00:00:00'',''24:00:00.000000'')', TIMESTAMP('294276-12-31 00:00:00', '24:00:00.000000'));
     -- 不同参数类型
 insert into func_test2(functionName, result) values('TIMESTAMP(date''2003-01-01'', date''2000-01-01'')', TIMESTAMP(date'2003-01-01', date'2000-01-01'));
 insert into func_test2(functionName, result) values('TIMESTAMP(cast(''2007-12-10 23:59:59'' as datetime), cast(''2007-12-10 22:59:59'' as datetime))', TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)));
@@ -565,6 +567,10 @@ insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-
 insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
 insert into func_test2(functionName, result) values('subtime(8375959.9999999, ''-1:00:00'')', subtime(8375959.9999999,'-1:00:00'));
 insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
+
+insert into func_test2(functionName, result) values('subtime(B''0'',B''1'')', subtime(B'0',B'1'));
+insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101'));
+insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
 select * from func_test2 order by functionName;
 
 set dolphin.b_compatibility_mode=on;
@@ -736,6 +742,37 @@ insert into t1 SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear
 insert into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
 select * from t1 order by c1;
 select * from t2 order by c1;
+
+select TIME_FORMAT('838:59:59.999999','%f');
+select TIME_FORMAT('837:59:59.999999','%f');
+select TIME_FORMAT('-838:59:59.999999','%f');
+select TIME_FORMAT('-837:59:59.999999','%f');
+select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+select TIMEDIFF(time'23:59:59','a1eebc99');
+select TIMEDIFF(time'23:59:59','1aeebc99');
+select timestampadd(microsecond, 1,'0000-1-1 00:00:00');
+select timestampadd(day,-1,'0001-01-01');
+select timestampadd(week, 1, '0000-01-01');
+select timestampadd(year, 1, '0000-01-01');
+select timestampadd(month, 1, '0000-01-01');
+select timestampadd(hour, 1, '0000-01-01');
+select timestampadd(minute, 1, '0000-01-01');
+select timestampadd(second, 1, '0000-01-01');
+
+show dolphin.sql_mode;
+reset dolphin.sql_mode;
+create table test_diff(c1 time);
+insert into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+insert into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a0eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','01eebc99-9cOb-4ef8-bb6d-6bb9bd380a11');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','a1eebc99');
+insert ignore into test_diff select TIMEDIFF(time'23:59:59','1aeebc99');
+select * from test_diff;
+drop table test_diff;
 
 drop table t_time;
 drop table t_char;
