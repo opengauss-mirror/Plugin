@@ -101,6 +101,7 @@ SELECT time'';
 SELECT time'1 09';
 SELECT time'0 099';
 SELECT time'-2 00000009';
+SELECT time'2000-01-01 23:01:01';
 
 -- 'hhmmss.fsec'
 SELECT time(1)'1.123456';
@@ -547,6 +548,7 @@ SELECT cast('20121010101010.555' as datetime);
 select cast(('2001-10-10 11:11:59.123456'::time(6)) as int);
 select cast(('2001-10-10 11:11:59.123456'::date) as int);
 select cast(('2001-10-10 11:11:59.123456'::datetime(6)) as bigint);
+select cast('2001-10-10 11:11:59.123456' as time);
 
 -- test time type operations
 select ('2001-10-10 11:11:59.123456'::time(6) + 1);
@@ -578,6 +580,7 @@ drop schema if exists test_schema;
 set dolphin.sql_mode = '';
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES('20220-01-01');
+INSERT INTO time_tbl VALUES('2001-10-10 11:11:59.123456');
 select * from time_tbl;
 DROP TABLE time_tbl;
 

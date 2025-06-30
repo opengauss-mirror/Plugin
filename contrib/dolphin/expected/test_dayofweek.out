@@ -43,7 +43,7 @@ select dayofweek('2022-06-28 00:00:00'::time) from dual;
 --?.*
 (1 row)
 
-select dayofweek(time '2022-06-28 00:00:00');
+select dayofweek(time('2022-06-28 00:00:00'));
  dayofweek 
 -----------
 --?.*
@@ -142,7 +142,7 @@ select dayofweek('2022-06-28 00:00:00'::time) from dual;
 --?.*
 (1 row)
 
-select dayofweek(time '2022-06-28 00:00:00');
+select dayofweek(time('2022-06-28 00:00:00'));
  dayofweek 
 -----------
 --?.*

@@ -8574,11 +8574,12 @@ Datum timestamp_param1(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
-/* 
- * @Description: Compatible with timestamp(expr1, expr2) function in mysql. 
+/**
+ * Compatible with timestamp(expr1, expr2) function in mysql. 
  * Adding the time expression expr2 to the date or datetime expression expr1 
  * and returns the result as a datetime value.
- * @return: datetime value.
+ *
+ * @return datetime value.
  */
 Datum timestamp_param2(PG_FUNCTION_ARGS)
 {
@@ -8599,6 +8600,9 @@ Datum timestamp_param2(PG_FUNCTION_ARGS)
 
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
     convert_to_time(PG_GETARG_DATUM(1), val_type, &time);
+    if (time == B_FORMAT_TIME_INVALID_VALUE_TAG) {
+        PG_RETURN_NULL();
+    }
     time_in_range(time);
 
     Timestamp result = datetime + time;
