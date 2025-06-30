@@ -1448,6 +1448,7 @@ static bool GreaterThanHour (List* int_type);
 %left		'(' ')'
 %nonassoc   TEXT_P
 %nonassoc   SCONST
+%nonassoc   N_TOK
 %left		EMPTY_FROM_CLAUSE
 %right		INTO
 %left		TYPECAST
@@ -39115,49 +39116,58 @@ AexprConst_without_Sconst: Iconst
 			| CHARACTER VARYING SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("varchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($3, @3, tmp);
 				}
 			| CHARACTER SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("bpchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| NVARCHAR SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| NVARCHAR2 SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| N_TOK SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typemod = -1;
+					tmp->charset = pg_valid_server_encoding("UTF8");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| NATIONAL VARCHAR SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
+					tmp->charset = pg_valid_server_encoding("UTF8");
 					tmp->location = @1;
 					$$ = makeStringConstCast($3, @3, tmp);
 				}
 			| VARCHAR SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("varchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| VARCHAR2 SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("varchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
@@ -39165,7 +39175,8 @@ AexprConst_without_Sconst: Iconst
 				{
 					char* tmp_str = (char *)($3 ? "varchar": "bpchar");
 					TypeName * tmp = SystemTypeName(tmp_str);
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
+					tmp->charset = pg_valid_server_encoding("UTF8");
 					tmp->location = @1;
 					$$ = makeStringConstCast($4, @4, tmp);
 				}
@@ -39173,21 +39184,22 @@ AexprConst_without_Sconst: Iconst
 				{
 					char* tmp_str = (char *)($3 ? "varchar": "bpchar");
 					TypeName * tmp = SystemTypeName(tmp_str);
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
+					tmp->charset = pg_valid_server_encoding("UTF8");
 					tmp->location = @1;
 					$$ = makeStringConstCast($4, @4, tmp);
 				}
 			| NCHAR VARYING SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("varchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($3, @3, tmp);
 				}
 			| NCHAR SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("bpchar"));
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
@@ -39195,13 +39207,14 @@ AexprConst_without_Sconst: Iconst
 				{
 					TypeName * tmp = SystemTypeName((char *)("bpchar"));
 					/* char defaults to char(1), varchar to no limit */
-					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| CHAR_P VARYING SCONST
 				{
 					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typemod = -1;
 					tmp->location = @1;
 					$$ = makeStringConstCast($3, @3, tmp);
 				}
