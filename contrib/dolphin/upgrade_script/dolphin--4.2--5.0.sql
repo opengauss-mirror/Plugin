@@ -63,17 +63,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.bool_enum(bool, int4, anyelement) RETURNS 
 CREATE OR REPLACE FUNCTION pg_catalog.set(bool, int4) RETURNS anyset LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'booltoset';
 CREATE CAST (bool AS anyset) WITH FUNCTION pg_catalog.set(bool, int4) AS ASSIGNMENT;
 
--- xor between bool and bit,time
-CREATE OR REPLACE FUNCTION pg_catalog.op_bool_bit_xor(bool, bit) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8xor($1::int8, $2::int8)::uint8';
-CREATE OR REPLACE FUNCTION pg_catalog.op_bit_bool_xor(bit, bool) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8xor($1::int8, $2::int8)::uint8';
-CREATE OPERATOR pg_catalog.^ (leftarg = bool, rightarg = bit, procedure = pg_catalog.op_bool_bit_xor);
-CREATE OPERATOR pg_catalog.^ (leftarg = bit, rightarg = bool, procedure = pg_catalog.op_bit_bool_xor);
-
-CREATE OR REPLACE FUNCTION pg_catalog.op_time_bool_xor(time, bool) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.time_int8_xor($1, $2::uint8)::uint8';
-CREATE OR REPLACE FUNCTION pg_catalog.op_bool_time_xor(bool, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_time_xor($1::uint8, $2)::uint8';
-CREATE OPERATOR pg_catalog.^ (leftarg = time without time zone, rightarg = bool, procedure = pg_catalog.op_time_bool_xor);
-CREATE OPERATOR pg_catalog.^ (leftarg = bool, rightarg = time without time zone, procedure = pg_catalog.op_bool_time_xor);
-
 -- reverse
 CREATE OR REPLACE FUNCTION pg_catalog.reverse(bool) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.reverse($1::text)::varchar $$;
  
