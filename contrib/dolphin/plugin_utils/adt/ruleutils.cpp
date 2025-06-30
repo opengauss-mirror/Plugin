@@ -12312,19 +12312,6 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         switch (rte->rtekind) {
             case RTE_RELATION: {
                 /* Normal relation RTE */
-#ifdef ODLPHIN
-                char *relname = NULL;
-                if (OidIsValid(rte->refSynOid)) {
-                    relname = GetQualifiedSynonymName(rte->refSynOid, true);
-                } else {
-                    relname = generate_relation_name(rte->relid, context->namespaces);
-                }
-                if (rte->inh) {
-                    appendStringInfo(buf, "%s", relname);
-                } else {
-                    appendStringInfo(buf, "ONLY (%s)", relname);
-                }
-#else
                 if (OidIsValid(rte->refSynOid)) {
                     appendStringInfo(buf, "%s%s", only_marker(rte), GetQualifiedSynonymName(rte->refSynOid, true));
                 } else {
@@ -12339,7 +12326,6 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
                     );
 #endif
                 }
-#endif
                 if (rte->orientation == REL_COL_ORIENTED || rte->orientation == REL_TIMESERIES_ORIENTED)
                     query->vec_output = true;
             } break;
