@@ -105,6 +105,8 @@ THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
 #ifdef USE_SPQ
 THR_LOCAL spq_planner_hook_type spq_planner_hook = NULL;
 #endif
+/* Hook for plugins to get control in planner() */
+THR_LOCAL planner_hook_type planner_hook = NULL;
 #endif
 
 #ifndef MIN
