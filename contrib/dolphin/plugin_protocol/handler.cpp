@@ -31,6 +31,7 @@
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
+#include "instruments/instr_handle_mgr.h"
 
 #define CHAR_SET_RESULTS_LEN 25
 #define SELECT_TAG_LEN 6
@@ -94,7 +95,7 @@ void dolphin_end_command(const char *completionTag)
             send_new_eof_packet(buf);
         }
     } else {
-        int64 affected_rows = u_sess->statement_cxt.current_row_count;
+        int64 affected_rows = BEENTRY_STMEMENET_CXT.current_row_count;
         uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
         network_mysqld_ok_packet_t *ok_packet = make_ok_packet(affected_rows, last_insert_id);
         send_network_ok_packet(buf, ok_packet); 
