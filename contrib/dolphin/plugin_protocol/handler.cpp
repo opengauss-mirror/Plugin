@@ -411,7 +411,7 @@ int execute_com_stmt_prepare(StringInfo buf)
         param_field->charsetnr = item->charset_flag;
         send_column_definition41_packet(sql, param_field);
     }
-    if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (param_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
         send_network_eof_packet(sql);
     }
     
