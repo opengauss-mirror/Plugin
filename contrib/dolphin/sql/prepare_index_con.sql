@@ -306,6 +306,33 @@ explain (costs off) execute s1 using '1';
 
 drop table test_type_table;
 
+
+
+set dolphin.transform_unknown_param_type_as_column_type_first = true;
+set enable_beta_opfusion = on;
+
+
+CREATE TABLE sbtest1 (id integer NOT NULL, k integer DEFAULT 0 NOT NULL, k1 int2 DEFAULT 0 NOT NULL, k2 float DEFAULT 0 NOT NULL, c character(120) DEFAULT ''::bpchar NOT NULL, pad character(60) DEFAULT ''::bpchar NOT NULL) WITH (orientation=row, compression=no);
+
+insert into sbtest1 values (generate_series(1,100), generate_series(1,100), generate_series(1,100), generate_series(1,100), 'a', 'a');
+
+CREATE INDEX k_1 ON sbtest1 USING btree (k) TABLESPACE pg_default;
+CREATE INDEX k_2 ON sbtest1 USING btree (k1) TABLESPACE pg_default;
+CREATE INDEX k_3 ON sbtest1 USING btree (k2) TABLESPACE pg_default;
+ALTER TABLE sbtest1 ADD CONSTRAINT sbtest1_pkey PRIMARY KEY USING btree (id);
+
+set opfusion_debug_mode = 'log';
+prepare p3 as select sum(k) from sbtest1 where id between $1 and $2;
+prepare p4 as select sum(k1) from sbtest1 where id between $1 and $2;
+prepare p5 as select sum(k2) from sbtest1 where id between $1 and $2;
+explain execute p3 (1, 100);
+execute p3 (1, 100);
+explain execute p4 (1, 100);
+execute p4 (1, 100);
+explain execute p5 (1, 100);
+execute p5 (1, 100);
+drop table sbtest1;
+
 drop schema prepare_index_con cascade;
 reset current_schema;
 
