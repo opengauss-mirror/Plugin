@@ -81,9 +81,9 @@ __attribute__((noreturn));
 static int report_agtype_context(agtype_lex_context *lex);
 static char *extract_mb_char(char *s);
 
-static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
-static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
-static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
 {
 #ifdef HAVE_INT64_TIMESTAMP
     tm->tm_hour = time / USECS_PER_HOUR;
@@ -112,7 +112,7 @@ recalc:
 
     return 0;
 }
-static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
 {
     TimeOffset trem = time->time;
 
