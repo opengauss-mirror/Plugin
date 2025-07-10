@@ -31,6 +31,8 @@
 
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/varlena.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define PRINTABLE_CHARS_COUNT 62
 #define HANDSHAKE_RESPONSE_RESERVED_BYTES 23
@@ -664,14 +666,27 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         }
         case DOLPHIN_TYPE_STRING: {
             /* since all MySQL unknown type are map to DOLPHIN_TYPE_STRING, we use type out func here */
-            if (thisState == NULL) {
+            if (unlikely(thisState == NULL)) {
                 /* should not happen */
                 ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
                     errmsg("There is no output function for type: %s(%u)", item->og_typname, item->og_type_oid)));
             }
-            char *val = OutputFunctionCall(&thisState->finfo, binval);
-            dq_append_string_lenenc(buf, val);
-            pfree_ext(val);
+
+            char *val = nullptr;
+            if (item->og_type_oid == BPCHAROID) {
+                val = output_text_to_cstring((text*)DatumGetPointer(binval));
+                if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                    trim_trailing_space(val);
+                }
+                dq_append_string_lenenc(buf, val);
+                if (val != u_sess->utils_cxt.varcharoutput_buffer) {
+                    pfree(val);
+                }
+            } else {
+                val = OutputFunctionCall(&thisState->finfo, binval);
+                dq_append_string_lenenc(buf, val);
+                pfree_ext(val);
+            }
             break;
         }
         case DOLPHIN_TYPE_VARCHAR:
@@ -713,9 +728,11 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         }
         case DOLPHIN_TYPE_DECIMAL:
         case DOLPHIN_TYPE_NEWDECIMAL: {
-            char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
+            char *val = output_numeric_out(DatumGetNumeric(binval));
             dq_append_string_lenenc(buf, val);
-            pfree_ext(val);
+            if (val != u_sess->utils_cxt.numericoutput_buffer) {
+                pfree_ext(val);
+            }
             break;
         }
         case DOLPHIN_TYPE_ENUM: {
