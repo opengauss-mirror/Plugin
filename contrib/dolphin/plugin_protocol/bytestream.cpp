@@ -37,11 +37,18 @@ int dq_putmessage(const char *packet, size_t len)
     t_thrd.libpq_cxt.PqCommBusy = true;
 
     // put header size
-    StringInfo header = makeStringInfo();
-    dq_append_payload_len(header, len);
-    dq_append_sequence_id(header, u_sess->proc_cxt.nextSeqid++);
+    char header[BYTE_4_LEN];
+    uint32 num = len;
+    int i = 0;
+    for (; i < BYTE_3_LEN; i++) {
+        uint8 ni = num & 0xff;
 
-    if (internal_putbytes(header->data, header->len)) {
+        header[i] = ni;
+        num >>= SHIFT_BYTE_STEP;
+    }
+    header[i] = u_sess->proc_cxt.nextSeqid++;
+
+    if (internal_putbytes(header, BYTE_4_LEN)) {
         goto fail;
     }
 
@@ -49,13 +56,10 @@ int dq_putmessage(const char *packet, size_t len)
         goto fail;
     }
     t_thrd.libpq_cxt.PqCommBusy = false;
-
-    DestroyStringInfo(header);
     return 0;
 
 fail:
     t_thrd.libpq_cxt.PqCommBusy = false;
-    pfree(header);
     return EOF;
 }
 
