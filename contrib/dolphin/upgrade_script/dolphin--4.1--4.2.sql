@@ -10,3 +10,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.op_time_bool_xor(time, bool) returns uint8
 CREATE OR REPLACE FUNCTION pg_catalog.op_bool_time_xor(bool, time) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_time_xor($1::uint8, $2)::uint8';
 CREATE OPERATOR pg_catalog.^ (leftarg = time without time zone, rightarg = bool, procedure = pg_catalog.op_time_bool_xor);
 CREATE OPERATOR pg_catalog.^ (leftarg = bool, rightarg = time without time zone, procedure = pg_catalog.op_bool_time_xor);
+
+CREATE OPERATOR CLASS uint1_ops_1
+    FOR TYPE uint1 USING hash family integer_ops AS
+        OPERATOR        1       =(int2, uint1),
+        OPERATOR        1       =(int, uint1);
+
+

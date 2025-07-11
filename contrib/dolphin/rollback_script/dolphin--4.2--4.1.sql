@@ -9,3 +9,5 @@ DROP FUNCTION IF EXISTS pg_catalog.op_bool_bit_xor(bool, bit);
 DROP FUNCTION IF EXISTS pg_catalog.op_bit_bool_xor(bit, bool);
 DROP FUNCTION IF EXISTS pg_catalog.op_time_bool_xor(time, bool);
 DROP FUNCTION IF EXISTS pg_catalog.op_bool_time_xor(bool, time);
+
+DROP OPERATOR CLASS IF EXISTS uint1_ops_1 USING hash;
