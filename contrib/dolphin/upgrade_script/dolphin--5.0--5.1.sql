@@ -8,3 +8,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.mod(varchar, varchar) RETURNS number LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.b_extract (text, date) RETURNS int8 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_extract_date';
 
 CREATE OR REPLACE FUNCTION pg_catalog.datediff(date, date) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'datediff_date_date';
+
+CREATE OPERATOR CLASS uint1_ops_1
+    FOR TYPE uint1 USING hash family integer_ops AS
+        OPERATOR        1       =(int2, uint1),
+        OPERATOR        1       =(int, uint1);
+
