@@ -411,6 +411,52 @@ select * from business_order bo
 reset enable_hashjoin;
 reset enable_nestloop;
 reset enable_mergejoin;
+set enable_hashjoin = on;
+set enable_nestloop = off;
+set enable_mergejoin = off;
+create table test_tbl1(col1 uint1, col2 smallint, col3 int, col4 bigint);
+create table test_tbl2(col1 uint1, col2 smallint, col3 int, col4 bigint);
+insert into test_tbl1 values(0,0,0,0), (1,1,1,1);
+insert into test_tbl2 values(0,0,0,0), (1,1,1,1);
+select * from test_tbl1 t1 join test_tbl2 t2 on t1.col2=t2.col1;
+ col1 | col2 | col3 | col4 | col1 | col2 | col3 | col4 
+------+------+------+------+------+------+------+------
+ 0    |    0 |    0 |    0 | 0    |    0 |    0 |    0
+ 1    |    1 |    1 |    1 | 1    |    1 |    1 |    1
+(2 rows)
+
+select * from test_tbl1 t1 join test_tbl2 t2 on t1.col3=t2.col1;
+ col1 | col2 | col3 | col4 | col1 | col2 | col3 | col4 
+------+------+------+------+------+------+------+------
+ 0    |    0 |    0 |    0 | 0    |    0 |    0 |    0
+ 1    |    1 |    1 |    1 | 1    |    1 |    1 |    1
+(2 rows)
+
+explain select * from test_tbl1 t1 join test_tbl2 t2 on t1.col2=t2.col1;
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Hash Join  (cost=50.84..268.65 rows=16471 width=30)
+   Hash Cond: (t1.col2 = t2.col1)
+   ->  Seq Scan on test_tbl1 t1  (cost=0.00..28.15 rows=1815 width=15)
+   ->  Hash  (cost=28.15..28.15 rows=1815 width=15)
+         ->  Seq Scan on test_tbl2 t2  (cost=0.00..28.15 rows=1815 width=15)
+(5 rows)
+
+explain select * from test_tbl1 t1 join test_tbl2 t2 on t1.col3=t2.col1;
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Hash Join  (cost=50.84..268.65 rows=16471 width=30)
+   Hash Cond: (t1.col3 = t2.col1)
+   ->  Seq Scan on test_tbl1 t1  (cost=0.00..28.15 rows=1815 width=15)
+   ->  Hash  (cost=28.15..28.15 rows=1815 width=15)
+         ->  Seq Scan on test_tbl2 t2  (cost=0.00..28.15 rows=1815 width=15)
+(5 rows)
+
+reset enable_hashjoin;
+reset enable_nestloop;
+reset enable_mergejoin;
+drop table test_tbl1;
+drop table test_tbl2;
 drop table if exists business_order;
 drop table if exists statement;
 drop table if exists user_invoice_account;

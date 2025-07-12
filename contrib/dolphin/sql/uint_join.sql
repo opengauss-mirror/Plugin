@@ -130,6 +130,29 @@ select * from business_order bo
 reset enable_hashjoin;
 reset enable_nestloop;
 reset enable_mergejoin;
+
+set enable_hashjoin = on;
+set enable_nestloop = off;
+set enable_mergejoin = off;
+create table test_tbl1(col1 uint1, col2 smallint, col3 int, col4 bigint);
+create table test_tbl2(col1 uint1, col2 smallint, col3 int, col4 bigint);
+
+insert into test_tbl1 values(0,0,0,0), (1,1,1,1);
+insert into test_tbl2 values(0,0,0,0), (1,1,1,1);
+
+select * from test_tbl1 t1 join test_tbl2 t2 on t1.col2=t2.col1;
+select * from test_tbl1 t1 join test_tbl2 t2 on t1.col3=t2.col1;
+
+explain select * from test_tbl1 t1 join test_tbl2 t2 on t1.col2=t2.col1;
+explain select * from test_tbl1 t1 join test_tbl2 t2 on t1.col3=t2.col1;
+
+reset enable_hashjoin;
+reset enable_nestloop;
+reset enable_mergejoin;
+
+drop table test_tbl1;
+drop table test_tbl2;
+
 drop table if exists business_order;
 drop table if exists statement;
 drop table if exists user_invoice_account;
