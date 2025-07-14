@@ -90,13 +90,13 @@ extern bool is_date_format(const char *str);
 extern Datum input_date_in(char* str, bool can_ignore);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
 extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
+extern int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
+extern int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 
 #ifdef DOLPHIN
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore = false,
     bool* result_isnull = NULL);
 extern int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
-extern int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
-extern int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 extern bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings, bool *null_func_result);
 extern bool check_b_format_int_time_range(int64 time);
 extern bool check_b_format_int_date_range(int64 time);
