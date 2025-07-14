@@ -2382,12 +2382,12 @@ int varstr_cmp(char* arg1, int len1, char* arg2, int len2, Oid collid)
      * slower, so we optimize the case where LC_COLLATE is C.  We also try to
      * optimize relatively-short strings by avoiding palloc/pfree overhead.
      */
-    if (lc_collate_is_c(collid)) {
+    if (is_b_format_collation(collid)) {
+        result = varstr_cmp_by_builtin_collations(arg1, len1, arg2, len2, collid);
+    } else if (lc_collate_is_c(collid)) {
         result = memcmp(arg1, arg2, Min(len1, len2));
         if ((result == 0) && (len1 != len2))
             result = (len1 < len2) ? -1 : 1;
-    } else if (is_b_format_collation(collid)) {
-        result = varstr_cmp_by_builtin_collations(arg1, len1, arg2, len2, collid);
     } else {
         char a1buf[TEXTBUFLEN];
         char a2buf[TEXTBUFLEN];
@@ -2953,21 +2953,21 @@ void varstr_sortsupport(SortSupport ssup, Oid collid, bool bpchar)
      * back on the slow method of having the sort code invoke bttextcmp() (in
      * the case of text) via the fmgr trampoline.
      */
-    if (lc_collate_is_c(collid)) {
+    if (is_b_format_collation(collid)) {
+        if (!bpchar) {
+            ssup->comparator = varstrfastcmp_builtin;
+        } else {
+            ssup->comparator = bpvarstrfastcmp_builtin;
+        }
+        collate_builtin = true;
+        abbreviate = false;
+    } else if (lc_collate_is_c(collid)) {
         if (!bpchar)
             ssup->comparator = varstrfastcmp_c;
         else
             ssup->comparator = bpcharfastcmp_c;
 
         collate_c = true;
-    } else if (is_b_format_collation(collid)) {
-        if (!bpchar) {
-            ssup->comparator = bpvarstrfastcmp_builtin;
-        } else {
-            ssup->comparator = varstrfastcmp_builtin;
-        }
-        collate_builtin = true;
-        abbreviate = false;
     }
 #ifdef WIN32
     else if (GetDatabaseEncoding() == PG_UTF8)
