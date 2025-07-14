@@ -24,6 +24,8 @@ drop table employees2;
 drop table employees3;
 drop table employees4;
 
+select * from information_schema.engines;
+
 reset current_schema;
 drop schema infomation_schema_test;
 
