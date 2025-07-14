@@ -2,6 +2,9 @@
  * This file and its contents are licensed under the Apache License 2.0.
  * Please see the included NOTICE for copyright information and
  * LICENSE-APACHE for a copy of the license.
+ *
+ * Portions Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+ * This file has been modified to adapt to openGauss.
  */
 #include <postgres.h>
 #include <nodes/plannodes.h>
