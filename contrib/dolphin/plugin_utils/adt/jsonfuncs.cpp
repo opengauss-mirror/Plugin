@@ -931,6 +931,60 @@ static void checksign_oper(char *inStr, int &x)
     }
 }
 
+
+/*
+ * check if json is object type
+ * json object is a string in {} format
+ * json object need to be printed with json_quoted = true in mysql
+ */
+bool is_json_object(char* input)
+{
+    char* s = input;
+    while (*s != '\0' && (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r'))
+        s++;
+    if (*s != '\0' && *s == '{')
+        return true;
+
+    return false;
+}
+
+Datum print_json(text *json_val)
+{
+    char *str = text_to_cstring(json_val);
+    char *str1 = NULL;
+    str1 = (char *)palloc(strlen(str) + 10);
+    int a = 0;
+    int b = 0;
+    int x = 0;
+    checksign_oper(str, x);
+    if (x == 2) {
+        delchar_oper(str, str1, a, b);
+        if (is_json_object(str1)) {
+            char *str2 = scanstr(str1);
+            text *result = cstring_to_text(str2);
+            pfree(str);
+            pfree(str1);
+            pfree(str2);
+            PG_RETURN_TEXT_P(result);
+        } else {
+            char *str2 = scanstr(str1);
+            char *str3 = scanstr(str2);
+            text *result = cstring_to_text(str3);
+            pfree(str);
+            pfree(str1);
+            pfree(str2);
+            pfree(str3);
+            PG_RETURN_TEXT_P(result);
+        }
+    } else {
+        text *result = cstring_to_text(str);
+        pfree(str);
+        pfree(str1);
+        PG_RETURN_TEXT_P(result);
+    }
+}
+
+
 Datum json_object_field_text(PG_FUNCTION_ARGS)
 {
     text *json = PG_GETARG_TEXT_P(0);
@@ -987,34 +1041,7 @@ Datum json_object_field_text(PG_FUNCTION_ARGS)
         }
         cJSON_Delete(root);
         cJSON_DeleteResultWrapper(res);
-        text *json_val = result;
-        char *str = text_to_cstring(json_val);
-        char *str1 = NULL;
-        str1 = (char *)palloc(strlen(str) + 10);
-        int a = 0;
-        int b = 0;
-        int x = 0;
-        checksign_oper(str, x);
-        if (x == 2) {
-            delchar_oper(str, str1, a, b);
-            if ((a == 2 && b == 1) || a >= 3) {
-                pfree(str1);
-                PG_RETURN_TEXT_P(NULL);
-            } else {
-                char *str2 = scanstr(str1);
-                char *str3 = scanstr(str2);
-                pfree(str1);
-                text *result = cstring_to_text(str3);
-                PG_RETURN_TEXT_P(result);
-            }
-        } else if (x == 0 || x == 1) {
-            text *result = cstring_to_text(str);
-            pfree(str1);
-            PG_RETURN_TEXT_P(result);
-        } else {
-            pfree(str1);
-            PG_RETURN_TEXT_P(NULL);
-        }
+        return print_json(result);
     }
 }
 #endif
