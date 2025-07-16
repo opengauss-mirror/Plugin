@@ -1,7 +1,15 @@
+read -s -p "Please enter password for container to start: " user_password
+echo
+
+if [ -z "$user_password" ]; then
+    echo "password is required for the test"
+    exit 1
+fi
+
 pid=$$
-docker run --rm --name testpgchparser-$pid -p 5432:5432 -d -e POSTGRES_PASSWORD=somepassword@debian-16 chparser/chparser:bookworm-16
+docker run --rm --name testpgchparser-$pid -p 5432:5432 -d -e POSTGRES_PASSWORD="$user_password" chparser/chparser:bookworm-16
 sleep 5
-export PGPASSWORD=somepassword@debian-16
+export PGPASSWORD="$user_password"
 psql -h 127.0.0.1 -X -a -q postgres postgres -f sql/chparser.sql | diff expected/chparser-debian.out -
 
 if [ $? -eq 0 ]

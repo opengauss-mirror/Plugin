@@ -8,14 +8,54 @@ import (
 	"os"
 	"strings"
 	"time"
+	"io/ioutil"
+	"encoding/json"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 )
 
-const (
-	connStr = "user=lhy dbname=postgres sslmode=disable password=Test@123"
-)
+type Config struct {
+	User     string `json:"user"`
+	DBName   string `json:"dbname"`
+	SSLMode  string `json:"sslmode"`
+	Password string `json:"password"`
+	// This is a vacant value by default, fill it within the tsbs/cmd/config.json, \
+	// you can also refer to tsbs/scripts/load_timescaledb.sh for a default configuration
+}
+
+func loadConfig() string {
+	config := Config{
+			SSLMode: "disable",
+	}
+
+	file, err := ioutil.ReadFile("../config.json")
+	if err != nil {
+			if os.IsNotExist(err) {
+					log.Fatal("config.json does not exist, please create tsbs/cmd/config.json")
+			}
+			log.Fatal("failed to read tsbs/cmd/config.json:", err)
+	}
+
+	if err := json.Unmarshal(file, &config); err != nil {
+			log.Fatal("failed to parse tsbs/cmd/config.json:", err)
+	}
+
+	if config.User == "" || config.DBName == "" || config.Password == "" {
+			log.Fatal("user, dbname and password must be provided in tsbs/cmd/config.json")
+	}
+
+	return buildConnStr(config)
+}
+
+func buildConnStr(c Config) string {
+	return "user=" + c.User +
+		   " dbname=" + c.DBName +
+		   " sslmode=" + c.SSLMode +
+		   " password=" + c.Password
+}
+
+var connStr = loadConfig()
 
 func main() {
 	db, err := sql.Open("pgx", connStr)
