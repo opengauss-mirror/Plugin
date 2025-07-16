@@ -1060,6 +1060,7 @@ static List* PreHandleTymod(List* origin);
 %type <ival>	ConstraintAttr_isValidate
 %type <str>		ExistingIndex
 
+%type <boolean> opt_with_boolean
 %type <list>	constraints_set_list
 %type <boolean> constraints_set_mode
 %type <boolean> OptRelative
@@ -3671,6 +3672,12 @@ opt_boolean_or_string:
 			| Dolphin_ColId_or_Sconst				{ $$ = $1; }
 			| BINARY								{ $$ = "binary"; }
 		;
+
+opt_with_boolean :
+			',' TRUE_P			{ $$ = TRUE; }
+			| ',' FALSE_P			{ $$ = FALSE; }
+			| /*EMPTY*/			{ $$ = FALSE; }
+
 
 /* Timezone values can be:
  * - a string such as 'pst8pdt'
@@ -38848,7 +38855,7 @@ func_expr_common_subexpr:
 
 					$$ = (Node *)n2;
 				}
-			| DATE_ADD_P '(' a_expr ',' a_expr_without_interval ')'
+			| DATE_ADD_P '(' a_expr ',' a_expr_without_interval opt_with_boolean ')'
 				{
 					FuncCall *n2 = makeNode(FuncCall);
 					n2->funcname = SystemFuncName("date_add");
@@ -38890,7 +38897,7 @@ func_expr_common_subexpr:
 
 					$$ = (Node *)n2;
 				}
-			| DATE_SUB_P '(' a_expr ',' a_expr_without_interval ')'
+			| DATE_SUB_P '(' a_expr ',' a_expr_without_interval opt_with_boolean ')'
 				{
 					FuncCall *n2 = makeNode(FuncCall);
 					n2->funcname = SystemFuncName("date_sub");
