@@ -109,7 +109,7 @@ class Jenkinsops():
 
 jenkins_url = 'http://0.0.0.0:8080/jenkins'
 username = 'Test'
-password = 'TestPwd@123'
+password = ''
 filename = "jenkinsslaves.xlsx"
 openGauss = Jenkinsops(jenkins_url, username, password)
 
@@ -121,7 +121,7 @@ def print_slaves():
 
 
 def add_slaves():
-    credential_slave = 'TestPwd@123'
+    credential_slave = password
     filename = "jenkinsslaves.xlsx"
     new_slaves = slaves_list(filename)
     for slave in new_slaves:

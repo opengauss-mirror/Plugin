@@ -20,12 +20,42 @@ package main
 
 import (
 	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"log"
 
 	_ "github.com/lib/pq"
 )
 
+type Config struct {
+	DBHost     string `json:"db_host"`
+	DBPort     int    `json:"db_port"`
+	DBName     string `json:"db_name"`
+	DBUser     string `json:"db_user"`
+	DBPassword string `json:"db_password"`
+	GraphName  string `json:"graph_name"`
+}
+
+func loadConfig() Config {
+	file, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+			log.Fatal("Failed to read config file:", err)
+	}
+
+	var config Config
+	if err := json.Unmarshal(file, &config); err != nil {
+			log.Fatal("Failed to parse config:", err)
+	}
+	return config
+}
+
+var config Config = loadConfig()
+
 // var dsn string = "host={host} port={port} dbname={dbname} user={username} password={password} sslmode=disable"
-var dsn string = "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=agens sslmode=disable"
+var dsn string = fmt.Sprintf(
+	"host=%s port=%d dbname=%s user=%s password=%s sslmode=disable",
+	config.DBHost, config.DBPort, config.DBName, config.DBUser, config.DBPassword,
+)
 
 // var graphName string = "{graph_path}"
 var graphName string = "testGraph"
