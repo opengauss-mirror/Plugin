@@ -2143,24 +2143,6 @@ typedef struct SISeg
 	ProcState	procState[FLEXIBLE_ARRAY_MEMBER];
 } SISeg;
 
-
-typedef struct pairingheap_node
-{
-	struct pairingheap_node *first_child;
-	struct pairingheap_node *next_sibling;
-	struct pairingheap_node *prev_or_parent;
-} pairingheap_node;
-
-typedef int (*pairingheap_comparator) (const pairingheap_node *a,
-												   const pairingheap_node *b,
-												   void *arg); 
-typedef struct pairingheap
-{
-	pairingheap_comparator ph_compare;	/* comparison function */
-	void	   *ph_arg;			/* opaque argument to ph_compare */
-	pairingheap_node *ph_root;	/* current root of the heap */
-} pairingheap;
-
 typedef struct OldSnapshotControlData
 {
 	/*
