@@ -262,6 +262,7 @@ typedef struct b_typoidHashKey {
 
 typedef struct HashEntryTypoid2TypeItem {
     b_typoidHashKey key;
+    char status;
     const TypeItem* item;
 } HashEntryTypoid2TypeItem;
 
