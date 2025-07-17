@@ -171,7 +171,7 @@ type AgeTx struct {
 }
 
 /**
-@param dsn host=127.0.0.1 port=5432 dbname=postgres user=postgres password=agens sslmode=disable
+@param dsn host=127.0.0.1 port=5432 dbname=postgres user=postgres password= sslmode=disable
 */
 func ConnectAge(graphName string, dsn string) (*Age, error) {
 	db, err := sql.Open("postgres", dsn)
