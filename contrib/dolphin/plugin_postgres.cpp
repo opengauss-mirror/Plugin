@@ -1711,8 +1711,7 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup, bool can_ignore)
             break;
         }
         case DATEOID: {
-            result = (Datum)DirectFunctionCall3Coll(date_in, InvalidOid, CStringGetDatum("0000-00-00"),
-                                                    ObjectIdGetDatum(0), Int32GetDatum(-1), can_ignore);
+            result = DateADTGetDatum(DATE_ALL_ZERO_VALUE);
             break;
         }
         case UUIDOID: {
