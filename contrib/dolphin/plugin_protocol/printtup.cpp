@@ -204,10 +204,10 @@ static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo,
         }
         
         // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i], NULL, oriColName);
-        send_column_definition41_packet(buf, field);
+        dolphin_column_definition field;
+        make_dolphin_column_definition(&attrs[i], NULL, oriColName, &field);
+        send_column_definition41_packet(buf, &field);
         pfree_ext(oriColName);
-        pfree(field);
     }
     
     // EOF packet

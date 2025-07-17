@@ -241,7 +241,7 @@ static inline uint8 dq_get_int_lenenc(StringInfo buf, void *num)
     dq_get_int1(buf, &first);
 
     if (first < 0xfb) {
-        *((uint32 *)num) = first;  
+        *((uint32 *)num) = first;
     } else if (first == 0xfc) {
         dq_get_int2(buf, (uint32 *)num);
     } else if (first == 0xfd) {
@@ -256,17 +256,27 @@ static inline uint8 dq_get_int_lenenc(StringInfo buf, void *num)
 static inline void dq_skip_bytes(StringInfo buf, int len)
 {
     buf->cursor += len;
-} 
+}
+
+static inline void dq_skip_string(StringInfo msg)
+{
+    uint64 len = 0;
+    uint8 first = dq_get_int_lenenc(msg, (void *)&len);
+    if (first != 0xfe) {
+        len = len & 0xffffffff;
+    }
+    dq_skip_bytes(msg, len);
+}
 
 static inline char* dq_get_string_len(StringInfo msg, int len)
 {
-    if (len < 0 || len > (msg->len - msg->cursor)) {
+    if (unlikely(len < 0 || len > (msg->len - msg->cursor))) {
         ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("insufficient data left in message")));
     }
-    
-    if (len > 0) {
+
+    if (likely(len > 0)) {
         char *buf = (char*) palloc(len + 1);
-        int rcs = memcpy_s(buf, len, &msg->data[msg->cursor], len);
+        int rcs = memcpy_sp(buf, len, &msg->data[msg->cursor], len);
         securec_check(rcs, "\0", "\0");
         msg->cursor += len;
         buf[len] = 0x00;
