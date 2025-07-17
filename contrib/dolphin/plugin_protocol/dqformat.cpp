@@ -321,9 +321,10 @@ void send_field_count_packet(StringInfo buf, int count)
     dq_putmessage(buf->data, buf->len);
 }
 
-dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName)
+void make_dolphin_column_definition(const char *name, char *tableName, dolphin_column_definition* field)
 {
-    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+    int rc = memset_s(field, sizeof(dolphin_column_definition), 0, sizeof(dolphin_column_definition));
+    securec_check(rc, "", "");
     // table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = name; 
     field->type = DOLPHIN_TYPE_VAR_STRING; // map to atttypid
@@ -332,15 +333,14 @@ dolphin_column_definition* make_dolphin_column_definition(const char *name, char
     field->table = tableName;
     field->org_table = tableName;
     field->charsetnr = 0x2d;
+}
 
-    return field;
-} 
-
-dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr,
-                                                          char *tableName, char *oriColName)
+void make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName, char *oriColName,
+    dolphin_column_definition* field)
 {
     // FIELD packet
-    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+    int rc = memset_s(field, sizeof(dolphin_column_definition), 0, sizeof(dolphin_column_definition));
+    securec_check(rc, "", "");
 
     // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = attr->attname.data;
@@ -370,8 +370,6 @@ dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute 
     } else {
         field->length = DOLPHIN_BLOB_LENGTH;
     }
-
-    return field;
 }
 
 void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field)
@@ -569,7 +567,7 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     CachedPlanSource *psrc = NULL;
     char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
     char statement_id_str[MAX_INT32_LEN + 1];
-    uint32 client_capabilities = GetSessionContext()->Conn_Mysql_Info->client_capabilities;
+    uint32 client_query_attr = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES;
 
     pg_lltoa((int64)req->statement_id, statement_id_str);
     int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
@@ -577,37 +575,39 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
 
     get_prepared_statement(stmt_name, &pstmt, &psrc);
     int param_count = 0;
-    if (client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+    if (client_query_attr) {
         uint64 len;
         param_count = dq_get_int_lenenc(buf, (void *)&len);
     } else {
         param_count = psrc->num_params;
     }
-    if (param_count > 0) {
-        int len = (param_count + 7) / 8;
-        req->null_bitmap = dq_get_string_len(buf, len);
-        dq_get_int1(buf, &req->new_params_bind_flag);
-        if (req->new_params_bind_flag) {
-            /* malloc private data using u_sess->cache_mem_cxt */
-            MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-            InputStmtParam *parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
-            parameter_types->count = param_count;
-            parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
-            for (int i = 0; i < param_count; i++) {
-                dq_get_int2(buf, &parameter_types->itypes[i]);
-                if (client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
-                    /*At present, there is no stored parameter name, only read and not used.
-                    It will be automatically released after completion*/
-                    (void)dq_get_string_lenenc(buf);
-                }
+    if (param_count <= 0) {
+        return req;
+    }
+
+    int len = (param_count + 7) / 8;
+    req->null_bitmap = dq_get_string_len(buf, len);
+    dq_get_int1(buf, &req->new_params_bind_flag);
+    if (req->new_params_bind_flag) {
+        /* malloc private data using u_sess->cache_mem_cxt */
+        MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+        InputStmtParam *parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
+        parameter_types->count = param_count;
+        parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
+        for (int i = 0; i < param_count; i++) {
+            dq_get_int2(buf, &parameter_types->itypes[i]);
+            if (client_query_attr) {
+                /*At present, there is no stored parameter name, only read and not used.
+                It will be automatically released after completion*/
+                dq_skip_string(buf);
             }
-            SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
-            (void)MemoryContextSwitchTo(oldcontext);
         }
-        com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, psrc, req, buf);
-        req->parameter_values = parameters;
-        req->param_count = param_count;
-    }    
+        SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
+        (void)MemoryContextSwitchTo(oldcontext);
+    }
+    com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, psrc, req, buf);
+    req->parameter_values = parameters;
+    req->param_count = param_count;
     return req;
 }
 
@@ -873,9 +873,9 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)
     // send column_count * column_definition packet
     for (int i = 0; i < natts; ++i) {
         // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
-        send_column_definition41_packet(buf, field);
-        pfree(field);
+        dolphin_column_definition field;
+        make_dolphin_column_definition(&attrs[i], NULL, NULL, &field);
+        send_column_definition41_packet(buf, &field);
     }
 
     // EOF packet
