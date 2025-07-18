@@ -571,5 +571,46 @@ select * from test_datetime;
 (3 rows)
 
 drop table test_datetime;
+drop table if exists t_dump_007 cascade;
+NOTICE:  table "t_dump_007" does not exist, skipping
+create table t_dump_007(id int, name varchar(200), age int, tel int, birth date primary key)
+partition by range(BIRTH)
+interval ('1 year')
+(partition p1 values less than('1970-01-01'),
+partition p2 values less than('1980-01-01'),
+partition p3 values less than('1990-01-01'),
+partition p4 values less than('2000-01-01'),
+partition p5 values less than('2010-01-01'),
+partition p6 values less than('2020-01-01'));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_dump_007_pkey" for table "t_dump_007"
+declare
+    i integer;
+begin
+    for i in 1..10 loop
+    insert into t_dump_007 values(i,'name_'||i,random()*100,random()*1000000,
+    to_timestamp(to_char(current_date - random()*365*interval '1 year','YYYY-MM-DD'),'YYYY-MM-DD'));
+    end loop;
+end;
+/
+drop table if exists t_dump_007 cascade;
+create table t_dump_007(birth date primary key, id int)
+partition by range(BIRTH)
+interval ('1 year')
+(partition p1 values less than('1970-01-01'),
+partition p2 values less than('1980-01-01'),
+partition p3 values less than('1990-01-01'),
+partition p4 values less than('2000-01-01'),
+partition p5 values less than('2010-01-01'),
+partition p6 values less than('2020-01-01'));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_dump_007_pkey" for table "t_dump_007"
+declare
+    i integer;
+begin
+    for i in 1..10 loop
+    insert into t_dump_007 values(to_timestamp(to_char(current_date - random()*365*interval '1 year','YYYY-MM-DD'),'YYYY-MM-DD'), i);
+    end loop;
+end;
+/
+drop table if exists t_dump_007 cascade;
 drop schema b_datetime_func_test1 cascade;
 reset current_schema;

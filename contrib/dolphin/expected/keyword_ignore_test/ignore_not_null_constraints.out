@@ -398,7 +398,6 @@ create table t_date(c date not null);
 insert ignore into t_date values (null);
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
-WARNING:  date/time field value out of range: "0000-00-00"
 select * from t_date;
      c      
 ------------
@@ -409,10 +408,8 @@ insert into t_date values('1991-01-01 08:00:00');
 update ignore t_date set c = null;
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
-WARNING:  date/time field value out of range: "0000-00-00"
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
-WARNING:  date/time field value out of range: "0000-00-00"
 select * from t_date;
      c      
 ------------
