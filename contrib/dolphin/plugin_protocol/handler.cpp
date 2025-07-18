@@ -390,6 +390,7 @@ int execute_com_stmt_prepare(StringInfo buf)
     char *client_sql = dq_get_string_eof(buf);
     CachedPlanSource *psrc = NULL;
     PreparedStatement *pstmt = NULL;
+    bool client_dep_eof = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF;
     int32 statement_id = gs_atomic_add_32(&g_proto_ctx.statement_id, 1);
     char stmt_name[NAMEDATALEN];
     int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, statement_id);
@@ -405,21 +406,23 @@ int execute_com_stmt_prepare(StringInfo buf)
     send_com_stmt_prepare_ok_packet(sql, statement_id, column_count, param_count);
 
     for (int i = 0; i < param_count; i++) {
-        dolphin_column_definition* param_field = make_dolphin_column_definition("?");
+        dolphin_column_definition param_field;
+        make_dolphin_column_definition("?", NULL, &param_field);
         const TypeItem* item = GetItemByTypeOid(psrc->param_types[i]);
-        param_field->type = item->dolphin_type_id;
-        param_field->charsetnr = item->charset_flag;
-        send_column_definition41_packet(sql, param_field);
+        param_field.type = item->dolphin_type_id;
+        param_field.charsetnr = item->charset_flag;
+        send_column_definition41_packet(sql, &param_field);
     }
-    if (param_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (param_count != 0 && !client_dep_eof) {
         send_network_eof_packet(sql);
     }
     
     for (int i = 0; i < column_count; i++) {
-        dolphin_column_definition* column_field = make_dolphin_column_definition("");
-        send_column_definition41_packet(sql, column_field);
+        dolphin_column_definition column_field;
+        make_dolphin_column_definition("", NULL, &column_field);
+        send_column_definition41_packet(sql, &column_field);
     }
-    if (column_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (column_count != 0 && !client_dep_eof) {
         send_network_eof_packet(sql);
     }
     DestroyStringInfo(sql);
@@ -682,11 +685,10 @@ void execute_com_field_list(char *tableName)
             HeapTuple spi_tuple = SPI_tuptable->vals[i];
             char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
             char *default_value = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Default"));
-            dolphin_column_definition *field = make_dolphin_column_definition(name, tableName);
-            field->default_value = default_value;
-            send_column_definition41_packet(buf, field);
-
-            pfree(field);
+            dolphin_column_definition field;
+            make_dolphin_column_definition(name, tableName, &field);
+            field.default_value = default_value;
+            send_column_definition41_packet(buf, &field);
         }
 
         /* EOF packet at end of all rows*/

@@ -157,10 +157,10 @@ void send_network_err_packet(StringInfo buf, network_mysqld_err_packet_t *err_pa
 
 void send_field_count_packet(StringInfo buf, int count);
 
-dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName = NULL);
+void make_dolphin_column_definition(const char *name, char *tableName, dolphin_column_definition* field);
 
-dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr,
-                                                          char *tableName = NULL, char *oriColName = NULL);
+void make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName, char *oriColName,
+    dolphin_column_definition* field);
 
 void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field);
 
