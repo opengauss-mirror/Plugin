@@ -1,0 +1,65 @@
+create schema test_mod;
+set current_schema to 'test_mod';
+set dolphin.b_compatibility_mode = on;
+select pg_typeof(mod(100.1, 1));
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select mod(100.1, 1);
+ mod 
+-----
+ 0.1
+(1 row)
+
+drop function if exists get_msec;
+NOTICE:  function get_msec() does not exist, skipping
+create or replace function get_msec ( n1 double precision)
+returns bigint
+language 'plpgsql'
+as $$
+declare
+val bigint;
+v1 double precision;
+begin
+set v1=mod(n1, 1);
+raise notice '%', v1;
+return 12;
+end$$;
+call get_msec(100.1);
+NOTICE:  0.1
+ get_msec 
+----------
+       12
+(1 row)
+
+drop function if exists get_msec;
+drop PROCEDURE if exists get_msec;
+NOTICE:  function get_msec() does not exist, skipping
+create or replace PROCEDURE get_msec ( n1 double precision)
+is
+v1 double precision;
+v2 text;
+begin
+set v1=mod(n1, 1);
+set v2= pg_typeof(mod(n1, 1));
+raise notice 'v1变量的值%', v1;
+raise notice 'v1变量的类型%', v2;
+raise notice '取模运算的值%', mod(n1, 1);
+raise notice '取模运算的类型%', pg_typeof(mod(n1, 1));
+end;
+/
+call get_msec(100.1);
+NOTICE:  v1变量的值0.1
+NOTICE:  v1变量的类型number
+NOTICE:  取模运算的值0.1
+NOTICE:  取模运算的类型number
+ get_msec 
+----------
+ 
+(1 row)
+
+drop PROCEDURE if exists get_msec;
+drop schema test_mod cascade;
+reset current_schema;

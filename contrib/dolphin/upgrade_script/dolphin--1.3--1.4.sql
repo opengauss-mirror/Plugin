@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION pg_catalog.mod(double precision, int) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(int, double precision) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';

@@ -1,11 +1,11 @@
 #!/bin/bash
 CMAKE_OPT="-DENABLE_MULTIPLE_NODES=OFF -DENABLE_PRIVATEGAUSS=OFF -DENABLE_THREAD_SAFETY=ON -DENABLE_LITE_MODE=ON"
 cpus_num=$(grep -w processor /proc/cpuinfo|wc -l)
-rm -f dolphin--1.3.sql
-touch dolphin--1.3.sql
-for i in `ls sql_script`; do cat sql_script/$i >> dolphin--1.3.sql; done
-for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--1.3.sql; done
-cat upgrade_script/dolphin--1.0--1.2.sql upgrade_script/dolphin--1.2--1.3.sql >> dolphin--1.3.sql
+rm -f dolphin--1.4.sql
+touch dolphin--1.4.sql
+for i in `ls sql_script`; do cat sql_script/$i >> dolphin--1.4.sql; done
+for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--1.4.sql; done
+cat upgrade_script/dolphin--1.0--1.2.sql upgrade_script/dolphin--1.2--1.3.sql upgrade_script/dolphin--1.3--1.4.sql >> dolphin--1.4.sql
 rm -f dolphin--1.0--1.2.sql
 cp upgrade_script/dolphin--1.0--1.2.sql dolphin--1.0--1.2.sql
 rm -f dolphin--1.2--1.0.sql
@@ -14,9 +14,13 @@ rm -f dolphin--1.2--1.3.sql
 cp upgrade_script/dolphin--1.2--1.3.sql dolphin--1.2--1.3.sql
 rm -f dolphin--1.3--1.2.sql
 cp rollback_script/dolphin--1.3--1.2.sql dolphin--1.3--1.2.sql
-rm -f dolphin--1.3--2.0.sql
+rm -f dolphin--1.3--1.4.sql
+cp upgrade_script/dolphin--1.2--1.3.sql dolphin--1.2--1.3.sql
+rm -f dolphin--1.4--1.3.sql
+cp rollback_script/dolphin--1.3--1.2.sql dolphin--1.3--1.2.sql
+rm -f dolphin--1.4--2.0.sql
 cp upgrade_script/dolphin--1.3--2.0.sql dolphin--1.3--2.0.sql
-rm -f dolphin--2.0--1.3.sql
+rm -f dolphin--2.0--1.4.sql
 cp rollback_script/dolphin--2.0--1.3.sql dolphin--2.0--1.3.sql
 rm -f dolphin--2.0--3.0.sql
 cp upgrade_script/dolphin--2.0--3.0.sql dolphin--2.0--3.0.sql
