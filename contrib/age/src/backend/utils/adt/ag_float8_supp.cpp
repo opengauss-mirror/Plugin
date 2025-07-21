@@ -2,6 +2,7 @@
  * For PostgreSQL Database Management System:
  * (formerly known as Postgres, then as Postgres95)
  *
+ * Portions Copyright (c) 2024 Huawei Technologies Co.,Ltd.
  * Portions Copyright (c) 1996-2010, The PostgreSQL Global Development Group
  *
  * Portions Copyright (c) 1994, The Regents of the University of California
