@@ -27,10 +27,12 @@
 #include "commands/prepare.h"
 #include "commands/sequence.h"
 #include "utils/builtins.h"
-
+#include "plugin_utils/varlena.h"
+#include "plugin_utils/int8.h"
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
+
 #include "instruments/instr_handle_mgr.h"
 
 #define CHAR_SET_RESULTS_LEN 25
@@ -431,6 +433,24 @@ int execute_com_stmt_prepare(StringInfo buf)
     return 0;
 }
 
+static inline Datum stringtype_input(Oid type, char* str)
+{
+    switch (type) {
+        case BPCHAROID:
+            PG_RETURN_BPCHAR_P(bpchar_input(str, strlen(str), -1));
+            break;
+        case VARCHAROID:
+            PG_RETURN_VARCHAR_P(varchar_input(str, strlen(str), -1));
+            break;
+        default: {
+            Oid typinput;
+            Oid typioparam;
+            getTypeInputInfo(type, &typinput, &typioparam);
+            return OidInputFunctionCall(typinput, (char*)str, typioparam, -1);
+        }
+    }
+}
+
 void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* psrc, ParamListInfo* params,
     MemoryContext paramCtx, MemoryContext valueCtx)
 {
@@ -466,10 +486,7 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
         switch (param[i].type) {
             case TYPE_STRING: {
                 if (param[i].value.text) {
-                    Oid typinput;
-                    Oid typioparam;
-                    getTypeInputInfo(ptype, &typinput, &typioparam);
-                    pval = OidInputFunctionCall(typinput, (char*)param[i].value.text, typioparam, -1);
+                    pval = stringtype_input(ptype, (char*)param[i].value.text);
                 } else {
                     isNull = true;
                 }
@@ -518,7 +535,9 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
                 break;
         }
 
-        if (!isNull && sendType != InvalidOid && sendType != ptype) {
+        if (!isNull && sendType == INT8OID && ptype == INT4OID) {
+            pval = int84_internal(DatumGetInt64(pval), false);
+        } else if (!isNull && sendType != InvalidOid && sendType != ptype) {
             /* maybe we have better way to deal with these data type transform? */
             Oid castFunc;
             CoercionPathType pathtype = find_coercion_pathway(ptype, sendType, COERCION_EXPLICIT, &castFunc);

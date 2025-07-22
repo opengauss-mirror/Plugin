@@ -414,10 +414,6 @@ extern "C" DLL_PUBLIC Datum dolphin_binaryout(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_varbinary);
 extern "C" DLL_PUBLIC Datum binary_varbinary(PG_FUNCTION_ARGS);
-
-extern BpChar* bpchar_input(const char* s, size_t len, int32 atttypmod);
-extern VarChar* varchar_input(const char* s, size_t len, int32 atttypmod);
-
 #endif
 
 /*****************************************************************************
