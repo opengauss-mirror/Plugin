@@ -9,8 +9,18 @@ CREATE OR REPLACE FUNCTION pg_catalog.b_extract (text, date) RETURNS int8 LANGUA
 
 CREATE OR REPLACE FUNCTION pg_catalog.datediff(date, date) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'datediff_date_date';
 
-CREATE OPERATOR CLASS uint1_ops_1
-    FOR TYPE uint1 USING hash family integer_ops AS
-        OPERATOR        1       =(int2, uint1),
-        OPERATOR        1       =(int, uint1);
-
+do $$
+DECLARE
+ans boolean;
+BEGIN
+    for ans in select case when count(*)=0 then true else false end as ans  from (select opcmethod from pg_opclass where opcname = 'uint1_ops_1')
+    LOOP
+        if ans = true then
+            CREATE OPERATOR CLASS uint1_ops_1
+               FOR TYPE uint1 USING hash family integer_ops AS
+                 OPERATOR        1       =(int2, uint1),
+                 OPERATOR        1       =(int, uint1);
+        end if;
+    exit;
+    END LOOP;
+END$$;
