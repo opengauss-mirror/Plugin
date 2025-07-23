@@ -175,8 +175,12 @@ int dq_getmessage(StringInfo buf, uint32 maxlen)
     }
     u_sess->proc_cxt.nextSeqid = ++seq_id;
 
-    // Read rest of payload length bytes into buf
-    if (len > 0) {
+    if (unlikely(len == 0)) {
+        return 0;
+    }
+
+    /* no enough room */
+    if (len >= buf->maxlen) {
         PG_TRY();
         {
             enlargeStringInfo(buf, len);
@@ -189,17 +193,17 @@ int dq_getmessage(StringInfo buf, uint32 maxlen)
             PG_RE_THROW();
         }
         PG_END_TRY();
-
-        // read playload_lenght bytes into buf->data
-        if (pq_getbytes(buf->data, len) == EOF) {
-            ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
-            return EOF;
-        }
-
-        buf->len = len;
-        buf->cursor = 0;
-        buf->data[len] = '\0';
     }
+
+    // read playload_lenght bytes into buf->data
+    if (pq_getbytes(buf->data, len) == EOF) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+        return EOF;
+    }
+
+    buf->len = len;
+    buf->cursor = 0;
+    buf->data[len] = '\0';
 
     return 0;
 }
