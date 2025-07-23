@@ -190,12 +190,12 @@ void dolphin_client_authentication(Port *port)
 {
     dophin_hba_authentication(port);
 
-    network_mysqld_ok_packet_t *ok_packet = make_ok_packet();
+    network_mysqld_ok_packet_t ok_packet;
+    make_ok_packet(0, 0, "", &ok_packet);
     StringInfo buf = makeStringInfo();
-    send_network_ok_packet(buf, ok_packet);
+    send_network_ok_packet(buf, &ok_packet);
     pq_flush();
 
-    pfree(ok_packet);
     DestroyStringInfo(buf);
 }
 

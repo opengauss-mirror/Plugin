@@ -86,24 +86,23 @@ void dophin_send_ready_for_query(CommandDest dest)
 
 void dolphin_end_command(const char *completionTag)
 {
-    StringInfo buf = makeStringInfo();
+    StringInfoData buf;
+    initStringInfo(&buf);
     if (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 ) {
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-            send_network_eof_packet(buf);
+            send_network_eof_packet(&buf);
         } else {
-            send_new_eof_packet(buf);
+            send_new_eof_packet(&buf);
         }
     } else {
-        int64 affected_rows = BEENTRY_STMEMENET_CXT.current_row_count;
-        uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
-        network_mysqld_ok_packet_t *ok_packet = make_ok_packet(affected_rows, last_insert_id);
-        send_network_ok_packet(buf, ok_packet); 
-        pfree(ok_packet);
+        network_mysqld_ok_packet_t ok_packet;
+        make_ok_packet(BEENTRY_STMEMENET_CXT.current_row_count, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        send_network_ok_packet(&buf, &ok_packet);
     }
-    DestroyStringInfo(buf);
+    FreeStringInfo(&buf);
 }
 
 void dolphin_send_message(ErrorData *edata)
@@ -371,10 +370,9 @@ int execute_text_protocol_sql(const char *sql)
             send_new_eof_packet(buf);
         }
     } else {
-        uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
-        network_mysqld_ok_packet_t *ok_packet = make_ok_packet(SPI_processed, last_insert_id);
-        send_network_ok_packet(buf, ok_packet); 
-        pfree(ok_packet);
+        network_mysqld_ok_packet_t ok_packet;
+        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        send_network_ok_packet(buf, &ok_packet);
     }
 
     DestroyStringInfo(buf);
@@ -593,10 +591,12 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
 static void execute_binary_protocol_req_process_b(StringInfo buf)
 {
     OgRecordAutoController _local_opt_b(SRT7_B);
+    PreparedStatement *pstmt = NULL;
+    CachedPlanSource *psrc = NULL;
 
     exec_pre_bind_message();
 
-    com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
+    com_stmt_exec_request *req = read_com_stmt_exec_request(buf, &pstmt, &psrc);
     char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
     char statement_id_str[MAX_INT32_LEN + 1];
 
@@ -614,7 +614,7 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     pqBindMessage.numRFormats = 0;
     pqBindMessage.rformats = NULL;
 
-    exec_bind_message(&pqBindMessage, NULL, NULL, false, dolphin_get_param_list_info);
+    exec_bind_message(&pqBindMessage, pstmt, psrc, false, dolphin_get_param_list_info);
     free_com_stmt_exec_request(req);
 }
 
@@ -638,19 +638,21 @@ void remove_cached_stmt_data(uint32 *statement_id)
         HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id,
                                                             HASH_REMOVE, NULL);
         if (entry != NULL) {
-            for (int i = 0; i < entry->value->count; i++) {
+            for (uint32 i = 0; i < entry->value->count; i++) {
                 pfree_ext(entry->value->data[i]);
             }
             pfree_ext(entry->value->data);
             pfree_ext(entry->value);
         }
     }
+
     if (GetSessionContext()->b_stmtInputTypeHash) {
-        HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-            (void*)statement_id, HASH_REMOVE, NULL);
+        HashEntryStmtParamType *entry = b_stmt_input_lookup(GetSessionContext()->b_stmtInputTypeHash, *statement_id);
         if (entry != NULL) {
-            pfree_ext(entry->value->itypes);
-            pfree_ext(entry->value);
+            InputStmtParam *param = entry->value;
+            b_stmt_input_delete_item(GetSessionContext()->b_stmtInputTypeHash, entry);
+            pfree_ext(param->itypes);
+            pfree_ext(param);
         }
     }
 }

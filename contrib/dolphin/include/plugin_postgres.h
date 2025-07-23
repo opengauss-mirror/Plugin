@@ -5,6 +5,7 @@
 #include "plugin_utils/fmgr.h"
 #include "replication/replicainternal.h"
 #include "plugin_protocol/auth.h"
+#include "plugin_protocol/proto_com.h"
 
 #define ENABLE_B_CMPT_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enableBCmptMode)
 #define ENABLE_NULLS_MINIMAL_POLICY_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enable_nulls_minimal_policy)
@@ -180,7 +181,7 @@ typedef struct BSqlPluginContext {
     bool is_schema_name;
     bool is_first_lable;
     bool is_b_declare;
-    struct HTAB* b_stmtInputTypeHash;
+    struct b_stmt_input_hash* b_stmtInputTypeHash;
     struct HTAB* b_sendBlobHash;
     char* useless_sql_mode;
     int useless_lower_case_table_names;

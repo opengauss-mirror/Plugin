@@ -55,7 +55,7 @@
 #define PACKETOFFSET_8 8
 
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
-                                                   com_stmt_exec_request *req, StringInfo buf);
+    com_stmt_exec_request *req, StringInfo buf, const InputStmtParam *stmt_param);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
 
 static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
@@ -196,18 +196,6 @@ network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
     return auth;
 }
 
-network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg)
-{
-    network_mysqld_ok_packet_t* ok_packet = (network_mysqld_ok_packet_t*)palloc0(sizeof(network_mysqld_ok_packet_t));
-    ok_packet->affected_rows = affected_rows;
-    ok_packet->insert_id = insert_id;
-    ok_packet->warnings = 0;
-    ok_packet->msg = msg;
-    ok_packet->server_status = SERVER_STATUS_AUTOCOMMIT;
-    
-    return ok_packet;
-}
-
 void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packet)
 {
     dq_append_int1(buf, 0x00);
@@ -223,10 +211,10 @@ void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packe
 void send_general_ok_packet()
 {
     StringInfo buf = makeStringInfo();
-    network_mysqld_ok_packet_t* ok_packet = make_ok_packet(0);
-    send_network_ok_packet(buf, ok_packet); 
+    network_mysqld_ok_packet_t ok_packet;
+    make_ok_packet(0, 0, "", &ok_packet);
+    send_network_ok_packet(buf, &ok_packet);
 
-    pfree(ok_packet);
     DestroyStringInfo(buf);
 }
 
@@ -253,21 +241,22 @@ void send_network_eof_packet(StringInfo buf)
 
 void send_new_eof_packet(StringInfo buf)
 {
+    uint32 client_capabilities = GetSessionContext()->Conn_Mysql_Info->client_capabilities;
     resetStringInfo(buf);
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF) {
+    if (client_capabilities & CLIENT_DEPRECATE_EOF) {
         dq_append_int1(buf, 0xfe);
     } else {
         dq_append_int1(buf, 0x00);
     }
     dq_append_int_lenenc(buf, 0);   //affected rows
     dq_append_int_lenenc(buf, 0);   //last insert-id
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_PROTOCOL_41) {
+    if (client_capabilities & CLIENT_PROTOCOL_41) {
         sendServerStatus(buf);
         dq_append_int2(buf, 0x00);       /* warning count *int<2>	warnings	number of warnings*/
-    } else if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_TRANSACTIONS) {
+    } else if (client_capabilities & CLIENT_TRANSACTIONS) {
         sendServerStatus(buf);
     }
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_SESSION_TRACK) {
+    if (client_capabilities & CLIENT_SESSION_TRACK) {
         dq_append_string_lenenc(buf, "", -1);        // string<lenenc>	info	human readable status information
     }
     if (SERVER_SESSION_STATE_CHANGED) {
@@ -414,12 +403,17 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
 }
 
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
-                                                   com_stmt_exec_request *req, StringInfo buf)
+    com_stmt_exec_request *req, StringInfo buf, const InputStmtParam *stmt_param)
 {
     com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
-    const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
+    if (stmt_param == NULL) {
+        stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
+    }
     for (int i = 0; i < param_count; i++) {
-        if (param_isnull(i, req->null_bitmap)) continue;
+        if (param_isnull(i, req->null_bitmap)) {
+            continue;
+        }
+        Assert(stmt_param->itypes != NULL);
         switch (stmt_param->itypes[i]) {
             case DOLPHIN_TYPE_LONG:
             case DOLPHIN_TYPE_INT24: {
@@ -557,14 +551,13 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSo
     return parameters;
 }
 
-com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
+com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf, PreparedStatement **pstmt,
+    CachedPlanSource **psrc)
 {
     com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
     dq_get_int4(buf, &req->statement_id);
     dq_get_int1(buf, &req->flags);
     dq_get_int4(buf, &req->iteration_count);
-    PreparedStatement *pstmt = NULL;
-    CachedPlanSource *psrc = NULL;
     char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
     char statement_id_str[MAX_INT32_LEN + 1];
     uint32 client_query_attr = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES;
@@ -573,25 +566,26 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
     securec_check(rc, "", "");
 
-    get_prepared_statement(stmt_name, &pstmt, &psrc);
+    get_prepared_statement(stmt_name, pstmt, psrc);
     int param_count = 0;
     if (client_query_attr) {
         uint64 len;
         param_count = dq_get_int_lenenc(buf, (void *)&len);
     } else {
-        param_count = psrc->num_params;
+        param_count = (*psrc)->num_params;
     }
     if (param_count <= 0) {
         return req;
     }
 
+    InputStmtParam *parameter_types = NULL;
     int len = (param_count + 7) / 8;
     req->null_bitmap = dq_get_string_len(buf, len);
     dq_get_int1(buf, &req->new_params_bind_flag);
     if (req->new_params_bind_flag) {
         /* malloc private data using u_sess->cache_mem_cxt */
         MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-        InputStmtParam *parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
+        parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
         parameter_types->count = param_count;
         parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
         for (int i = 0; i < param_count; i++) {
@@ -605,7 +599,7 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
         SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
         (void)MemoryContextSwitchTo(oldcontext);
     }
-    com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, psrc, req, buf);
+    com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, *psrc, req, buf, parameter_types);
     req->parameter_values = parameters;
     req->param_count = param_count;
     return req;
