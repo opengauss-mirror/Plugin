@@ -34,6 +34,17 @@
 #define param_isnull(PARAM, BITS) ((BITS)[(PARAM) / 8] & (1 << ((PARAM) % 8)))
 #define DOLPHIN_PROTOCOL_STMT_NAME_PREFIX "__dolphin_stmt_"
 
+#define SH_PREFIX b_stmt_input
+#define SH_ELEMENT_TYPE HashEntryStmtParamType
+#define SH_KEY_TYPE int32
+#define SH_KEY stmt_id
+#define SH_HASH_KEY(tb, key) murmurhash32(key)
+#define SH_EQUAL(tb, a, b) ((a) == (b))
+#define SH_SCOPE static inline
+#define SH_DEFINE
+#define SH_DECLARE
+#include "lib/simplehash.h"
+
 typedef enum {
     NETWORK_MYSQLD_PROTOCOL_VERSION_41
 } network_mysqld_protocol_t;
@@ -134,7 +145,14 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble);
 
 network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port);
 
-network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows = 0, uint64 insert_id = 0, char *msg = "");
+inline void make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg, network_mysqld_ok_packet_t* ok_packet)
+{
+    ok_packet->affected_rows = affected_rows;
+    ok_packet->insert_id = insert_id;
+    ok_packet->server_status = SERVER_STATUS_AUTOCOMMIT;
+    ok_packet->warnings = 0;
+    ok_packet->msg = msg;
+}
 
 void send_auth_switch_packet(StringInfo buf, char *scramble);
 
@@ -166,7 +184,8 @@ void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *
 
 void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params);
 
-com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf);
+com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf, PreparedStatement **pstmt,
+    CachedPlanSource **psrc);
 
 void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
 

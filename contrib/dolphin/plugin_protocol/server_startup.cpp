@@ -35,6 +35,8 @@
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/auth.h"
 #include "plugin_protocol/startup.h"
+#include "plugin_protocol/dqformat.h"
+
 #include "plugin_postgres.h"
 
 #define DOLPHINE_DEFAULT_SERVER_NAME "Dolphin-Server"
@@ -127,7 +129,6 @@ pthread_mutex_t gUserCachedLinesHashLock;
 const int b_ntype_items = sizeof(b_type_items) / sizeof(TypeItem);
 static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const TypeItem* item);
 static void InitSendBlobHashTable();
-static void InitStmtParamTypesTable();
 static void InitUserCachedLinesHashTable();
 
 static void AssignDatabaseName(const char* newval, void* extra);
@@ -542,39 +543,25 @@ static void InitUserCachedLinesHashTable()
                                         NAMEDATALEN, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-static void InitStmtParamTypesTable()
-{
-    HASHCTL info = {0};
-    info.keysize = sizeof(Oid);
-    info.entrysize = sizeof(HashEntryStmtParamType);
-    info.hash = oid_hash;
-    info.hcxt = u_sess->cache_mem_cxt;
-    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin stmt input type Table",
-                                                           PARAM_TYPE_PER_SESSION, &info,
-                                                           HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
-}
-
 const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
 {
-    if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable();
+    if (unlikely(GetSessionContext()->b_stmtInputTypeHash == NULL)) {
+        return NULL;
     }
 
-    bool found = false;
-    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_FIND, &found);
-    return found ? entry->value : NULL;
+    HashEntryStmtParamType *entry = b_stmt_input_lookup(GetSessionContext()->b_stmtInputTypeHash, stmt_id);
+    return entry != NULL ? entry->value : NULL;
 }
 
 void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
 {
     if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable();
+        GetSessionContext()->b_stmtInputTypeHash = (struct b_stmt_input_hash*)b_stmt_input_create(
+            u_sess->cache_mem_cxt, PARAM_TYPE_PER_SESSION, NULL);
     }
 
     bool found = false;
-    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_ENTER, &found);
+    HashEntryStmtParamType *entry = b_stmt_input_insert(GetSessionContext()->b_stmtInputTypeHash, stmt_id, &found);
     if (found) {
         pfree_ext(entry->value->itypes);
         pfree_ext(entry->value);

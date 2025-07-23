@@ -23,6 +23,7 @@
 #define _PROTO_COM
 
 #include "c.h"
+#include "utils/hashutils.h"
 
 typedef struct dolphin_proto_ctx {
     char *server_name;
@@ -274,6 +275,7 @@ typedef struct InputStmtParam {
 typedef struct HashEntryStmtParamType {
     int32 stmt_id;
     InputStmtParam* value;
+    char status;
 } HashEntryStmtParamType;
 
 typedef struct BlobParams {
@@ -289,7 +291,6 @@ typedef struct HashEntryBlob {
 
 extern void InitTypoid2DolphinMacroHtab();
 extern const TypeItem* GetItemByTypeOid(Oid oid);
-
 
 extern const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id);
 extern void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value);
