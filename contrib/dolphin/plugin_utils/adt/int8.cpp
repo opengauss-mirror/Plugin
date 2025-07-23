@@ -1214,19 +1214,19 @@ Datum int48(PG_FUNCTION_ARGS)
     PG_RETURN_INT64((int64)arg);
 }
 
-Datum int84(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+int32 int84_internal(int64 src, bool can_ignore)
 {
-    int64 arg = PG_GETARG_INT64(0);
     int32 result;
 
-    result = (int32)arg;
+    result = (int32)src;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != arg) {
+    if (unlikely((int64)result != src)) {
         /* keyword IGNORE has higher priority than sql mode */
-        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+        if (can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("integer out of range")));
-            if (arg < 0) {
+            if (src < 0) {
                 result = INT32_MIN;
             } else {
                 result = INT32_MAX;
@@ -1235,7 +1235,16 @@ Datum int84(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
         }
     }
-    PG_RETURN_INT32(result);
+    return result;
+}
+#endif
+
+Datum int84(PG_FUNCTION_ARGS)
+{
+    int64 arg = PG_GETARG_INT64(0);
+#ifdef DOLPHIN
+    PG_RETURN_INT32(int84_internal(arg, fcinfo->can_ignore));
+#endif
 }
 
 Datum int28(PG_FUNCTION_ARGS)

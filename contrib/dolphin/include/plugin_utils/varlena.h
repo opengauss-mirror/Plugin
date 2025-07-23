@@ -16,6 +16,8 @@ extern int32 binary_text_position(const char *b, size_t b_length, const char *s,
 bool is_type_with_date(Oid type);
 bool is_type_with_time(Oid type);
 extern CmpType agg_cmp_type(CmpType a, CmpType b);
+extern BpChar* bpchar_input(const char* s, size_t len, int32 atttypmod);
+extern VarChar* varchar_input(const char* s, size_t len, int32 atttypmod);
 #endif
 
 #endif
