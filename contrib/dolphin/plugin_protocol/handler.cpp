@@ -37,6 +37,7 @@
 #define SELECT_TAG_LEN 6
 #define SHOW_TAG_LEN 4
 #define EXPLAIN_TAG_LEN 7
+#define EXPLAIN_SUCCESS_TAG_LEN 15
 
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(StringInfo buf);
@@ -87,7 +88,8 @@ void dolphin_end_command(const char *completionTag)
     StringInfo buf = makeStringInfo();
     if (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
-        strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 ) {
+        (strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 &&
+        strncasecmp(completionTag, "EXPLAIN SUCCESS", EXPLAIN_SUCCESS_TAG_LEN) != 0)) {
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
             send_network_eof_packet(buf);
