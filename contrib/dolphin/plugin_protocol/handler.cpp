@@ -220,9 +220,9 @@ int dolphin_process_command(StringInfo buf)
             } else if (pg_strcasecmp((const char*)sql, "SELECT @@session.transaction_read_only") == 0) {
                 /* mysql driver will execute SELECT @@session.transaction_read_only first when commit or rollback
                  * but kernel cannot do any query operation on the aborted transaction
-                 * if we keep throwing error,
-                 * mysql driver cannot do the commit or rollback operation after transaction exception.
-                 * it cannot be tolerated, so we need to catch all the exception for sql SELECT @@session.transaction_read_only.
+                 * if we keep throwing error, mysql driver cannot do the
+                 * commit or rollback operation after transaction exception. it cannot be tolerated.
+                 * so we need to catch all the exception for sql SELECT @@session.transaction_read_only.
                  */
                 execute_select_transaction_read_only((const char*)sql);
             } else {
