@@ -138,6 +138,56 @@ static void free_com_stmt_exec_request(com_stmt_exec_request *req)
     pfree(req);
 }
 
+void response_transaction_read_only_info()
+{
+    errno_t rc = EOK;
+    bool client_deprecate_eof = false;
+
+    // FIELD_COUNT packet
+    StringInfo buf = makeStringInfo();
+    send_field_count_packet(buf, 1);
+
+    // FIELD packet
+    dolphin_column_definition field;
+    memset_s(&field, sizeof(field), 0, sizeof(field));
+    securec_check(rc, "\0", "\0");
+    field.name = pstrdup("?column?");
+    field.length = 1;
+    field.type = DOLPHIN_TYPE_TINY;
+    field.charsetnr = 0x2d;    // refer to b_type_items
+    send_column_definition41_packet(buf, &field);
+
+    // EOF packet
+    client_deprecate_eof = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF;
+    if (!client_deprecate_eof) {
+        send_network_eof_packet(buf);
+    }
+    resetStringInfo(buf);
+    dq_append_string_lenenc(buf, "1");  // return session.transaction_read_only as true
+
+    if (!client_deprecate_eof) {
+        send_network_eof_packet(buf);
+    } else {
+        send_new_eof_packet(buf);
+    }
+
+    DestroyStringInfo(buf);
+}
+
+void execute_select_transaction_read_only(const char* sql)
+{
+    PG_TRY();
+    {
+        execute_simple_query(sql);
+    }
+    PG_CATCH();
+    {
+        response_transaction_read_only_info();
+        FlushErrorState();
+    }
+    PG_END_TRY();
+}
+
 int dolphin_process_command(StringInfo buf)
 {
     GetSessionContext()->enableBCmptMode = true;
@@ -167,6 +217,14 @@ int dolphin_process_command(StringInfo buf)
             parse_query_bind_params(/*THD *thd, */0, &sql, &sql_len, TRUE, TRUE);
             if (strcmp((const char*)sql, "select @@version_comment limit 1") == 0) {
                 execute_text_protocol_sql("select \'dolphin\'");
+            } else if (pg_strcasecmp((const char*)sql, "SELECT @@session.transaction_read_only") == 0) {
+                /* mysql driver will execute SELECT @@session.transaction_read_only first when commit or rollback
+                 * but kernel cannot do any query operation on the aborted transaction
+                 * if we keep throwing error,
+                 * mysql driver cannot do the commit or rollback operation after transaction exception.
+                 * it cannot be tolerated, so we need to catch all the exception for sql SELECT @@session.transaction_read_only.
+                 */
+                execute_select_transaction_read_only((const char*)sql);
             } else {
                 execute_simple_query((const char*)sql);
             }

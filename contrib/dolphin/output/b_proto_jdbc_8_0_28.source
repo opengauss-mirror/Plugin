@@ -119,6 +119,9 @@ select * from t3 order by id;
 (3 rows)
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123 new
+before commit;
+result
+result
 select relname from pg_class where relname like '%autocommit_test%' order by relname;
      relname      
 ------------------
