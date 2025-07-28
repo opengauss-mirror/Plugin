@@ -1770,8 +1770,8 @@ void libraryDoPendingDeletes(bool isCommit)
      * protect process variable file_list and CFuncHash, avoid they be
      * concurrent changed of different thread.
      */
-    AutoMutexLock libraryLock(&dlerror_lock);
-    libraryLock.lock();
+    AutoRWLock libraryLock(&g_dlerror_lock_rw);
+    libraryLock.WrLock();
 
     ListCell* lc = NULL;
     foreach (lc, u_sess->cmd_cxt.PendingLibraryDeletes) {
@@ -1788,7 +1788,7 @@ void libraryDoPendingDeletes(bool isCommit)
 
     /* Reset PendingLibraryDeletes.*/
     ResetPendingLibraryDelete();
-    libraryLock.unLock();
+    libraryLock.UnLock();
 }
 
 /*
