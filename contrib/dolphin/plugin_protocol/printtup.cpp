@@ -985,6 +985,13 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         outputstr = u_sess->utils_cxt.vectoroutput_buffer;
                         PrintOutVector(outputstr, attr);
                         break;
+                    case F_TIMESTAMP_OUT: {
+                        outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+                        Timestamp ts = DatumGetTimestamp(attr);
+
+                        timestamp_out(ts, outputstr);
+                        break;
+                    }
                     default:
                         outputstr = OutputFunctionCall(&thisState->finfo, attr);
                         if (typeinfo->attrs[i].atttypid == YEAROID && strcmp(outputstr, "0") == 0) {
