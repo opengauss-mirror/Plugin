@@ -3,6 +3,7 @@ CREATE DATABASE c_utf8mb4_b_db WITH ENCODING 'utf8mb4' LC_COLLATE='C' LC_CTYPE='
 
 -- test _charset syntax
 -- -- test _charset COMPATIBILITY
+set dolphin.use_const_value_as_colname = false;
 SET b_format_behavior_compat_options = '';
 SHOW b_format_behavior_compat_options;
 SELECT _gbk'ABCD' = _utf8mb4'ABCD'; -- ERROR

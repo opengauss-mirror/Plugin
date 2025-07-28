@@ -271,12 +271,12 @@ call proc10();
 (18 rows)
 
 call proc11();
- member_code |  org_code   | org_name | breed_scope | ?column? | mbr_org_pbunum | allmbr_org_pbunum | mbr_org_amt | allmbr_org_amt 
--------------+-------------+----------+-------------+----------+----------------+-------------------+-------------+----------------
- 00683       | CH1BJST 004 |          | 04          | WEEK     |              1 |                 1 |        0.00 |           0.00
- 00683       | CH1BJST 004 |          | 05          | WEEK     |              1 |                 1 |        0.00 |           0.00
- 00683       | CH1BJST 004 |          | 07          | WEEK     |              1 |                 1 |        0.00 |           0.00
- 00683       | CH1BJST 004 |          | AL          | WEEK     |              1 |                 1 |        0.00 |           0.00
+ member_code |  org_code   | org_name | breed_scope | WEEK | mbr_org_pbunum | allmbr_org_pbunum | mbr_org_amt | allmbr_org_amt 
+-------------+-------------+----------+-------------+------+----------------+-------------------+-------------+----------------
+ 00683       | CH1BJST 004 |          | 04          | WEEK |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | 05          | WEEK |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | 07          | WEEK |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | AL          | WEEK |              1 |                 1 |        0.00 |           0.00
 (4 rows)
 
 set dolphin.sql_mode = default;

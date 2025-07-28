@@ -136,8 +136,8 @@ SELECT  * FROM J1_TBL  JOIN J2_TBL INNER JOIN J3_TBL INNER JOIN J4_TBL ON J1_TBL
 
 drop schema join_without_on cascade;
 NOTICE:  drop cascades to 4 other objects
-DETAIL:  drop cascades to table j1_tbl
-drop cascades to table j2_tbl
-drop cascades to table j3_tbl
-drop cascades to table j4_tbl
+DETAIL:  drop cascades to table "J1_TBL"
+drop cascades to table "J2_TBL"
+drop cascades to table "J3_TBL"
+drop cascades to table "J4_TBL"
 reset current_schema;

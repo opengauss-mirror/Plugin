@@ -1,3 +1,4 @@
+set dolphin.use_const_value_as_colname=false;
 create schema conv_cast_test;
 set current_schema to 'conv_cast_test';
 

@@ -1,3 +1,4 @@
+set dolphin.transform_unknown_param_type_as_column_type_first=false;
 -- test  distinct+orderby allows expressions and implicit columns
 -- 1. test default
 reset dolphin.sql_mode;

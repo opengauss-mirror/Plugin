@@ -1,5 +1,6 @@
 create schema db_b_parser4;
 set current_schema to 'db_b_parser4';
+set dolphin.use_const_value_as_colname = false;
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);

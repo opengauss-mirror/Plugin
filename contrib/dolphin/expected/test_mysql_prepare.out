@@ -1,3 +1,4 @@
+set dolphin.transform_unknown_param_type_as_column_type_first=false;
 create schema test_mysql_prepare;
 set current_schema to 'test_mysql_prepare';
 create table test(name text, age int);

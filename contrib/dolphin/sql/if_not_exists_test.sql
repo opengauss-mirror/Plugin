@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names=1;
 create schema test_if_not_exists;
 set current_schema to 'test_if_not_exists';
 

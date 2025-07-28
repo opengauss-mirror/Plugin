@@ -261,5 +261,5 @@ select concat(1.234::float8,'a');
 (1 row)
 
 drop schema db_nvarchar cascade;
-NOTICE:  drop cascades to table nvarchar_tbl
+NOTICE:  drop cascades to table "NVARCHAR_TBL"
 reset current_schema;

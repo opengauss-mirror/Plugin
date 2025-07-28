@@ -68,8 +68,8 @@ CREATE TABLE MULTI_KEYS_LIST
 SHOW CREATE TABLE T_CREATE_TABLE_PARTITION_002;
             Table             |                        Create Table                        
 ------------------------------+------------------------------------------------------------
- t_create_table_partition_002 | SET search_path = nulls_get_partition;                    +
-                              | CREATE TABLE t_create_table_partition_002 (               +
+ T_CREATE_TABLE_PARTITION_002 | SET search_path = "NULLS_GET_PARTITION";                  +
+                              | CREATE TABLE "T_CREATE_TABLE_PARTITION_002" (             +
                               |     "COL1" integer,                                       +
                               |     "COL2" integer                                        +
                               | )                                                         +
@@ -101,8 +101,8 @@ SHOW CREATE TABLE T_CREATE_TABLE_PARTITION_002;
 SHOW CREATE TABLE TABLE_LIST1;
     Table    |                      Create Table                       
 -------------+---------------------------------------------------------
- table_list1 | SET search_path = nulls_get_partition;                 +
-             | CREATE TABLE table_list1 (                             +
+ TABLE_LIST1 | SET search_path = "NULLS_GET_PARTITION";               +
+             | CREATE TABLE "TABLE_LIST1" (                           +
              |     "ID" integer,                                      +
              |     "ID2" integer                                      +
              | )                                                      +
@@ -136,8 +136,8 @@ SHOW CREATE TABLE TABLE_LIST1;
 SHOW CREATE TABLE MULTI_KEYS_LIST;
       Table      |                    Create Table                     
 -----------------+-----------------------------------------------------
- multi_keys_list | SET search_path = nulls_get_partition;             +
-                 | CREATE TABLE multi_keys_list (                     +
+ MULTI_KEYS_LIST | SET search_path = "NULLS_GET_PARTITION";           +
+                 | CREATE TABLE "MULTI_KEYS_LIST" (                   +
                  |     "F1" integer,                                  +
                  |     "F2" integer,                                  +
                  |     "F3" integer                                   +

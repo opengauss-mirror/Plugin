@@ -458,9 +458,9 @@ drop cascades to table keyword_test."end"
 drop cascades to table keyword_test."only"
 drop cascades to table keyword_test."verbose"
 drop cascades to table keyword_test.ast
-drop cascades to table keyword_test.partitioning
-drop cascades to table keyword_test.repair
-drop cascades to table keyword_test.rowtype
+drop cascades to table keyword_test."PARTITIONING"
+drop cascades to table keyword_test."REPAIR"
+drop cascades to table keyword_test."ROWTYPE"
 drop cascades to table keyword_test.ttt_test
 drop cascades to function keyword_test.sounds()
 drop cascades to table keyword_test."excluded"

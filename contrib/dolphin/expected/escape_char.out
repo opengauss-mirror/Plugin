@@ -1,3 +1,4 @@
+set dolphin.use_const_value_as_colname = false;
 create schema escape_char;
 set current_schema to 'escape_char';
 set dolphin.b_compatibility to on;

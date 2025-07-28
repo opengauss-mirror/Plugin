@@ -4,6 +4,7 @@ create table t1(a int,b int);
 insert into t1 values(10,11);
 insert into t1 values(12,13);
 set dolphin.b_compatibility_mode  = 0;
+set dolphin.use_const_value_as_colname = false;
 select a # b from t1;
  ?column? 
 ----------

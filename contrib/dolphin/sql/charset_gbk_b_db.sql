@@ -1,6 +1,7 @@
 CREATE DATABASE c_gbk_b_db WITH ENCODING 'gbk' LC_COLLATE='C' LC_CTYPE='C' DBCOMPATIBILITY 'B';
 \c c_gbk_b_db
 
+set dolphin.use_const_value_as_colname = false;
 SET b_format_behavior_compat_options = 'all';
 SHOW b_format_behavior_compat_options;
 -- ------------------------------------------

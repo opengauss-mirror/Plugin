@@ -1,5 +1,6 @@
 create schema ast_test;
 set current_schema to 'ast_test';
+set dolphin.use_const_value_as_colname = false;
 ast select * from test;
 ast create table test(id int);
 ast create table test(id int(5));

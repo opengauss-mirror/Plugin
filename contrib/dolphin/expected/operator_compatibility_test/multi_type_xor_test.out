@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names = 1;
 drop schema if exists multi_type_xor_test_schema cascade;
 NOTICE:  schema "multi_type_xor_test_schema" does not exist, skipping
 create schema multi_type_xor_test_schema;

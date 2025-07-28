@@ -1119,8 +1119,8 @@ void init_session_vars(void)
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
                                &GetSessionContext()->sqlModeString,
-                               "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
-                               "pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero",
+                               "sql_mode_full_group,sql_mode_strict,no_zero_date,error_for_division_by_zero,"
+                               "block_return_multi_results,escape_quotes,disable_escape_bytea",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
                                CheckSqlMode,
@@ -1145,7 +1145,7 @@ void init_session_vars(void)
                             gettext_noop("used to set the sensitive of identifier"),
                             NULL,
                             &GetSessionContext()->lower_case_table_names,
-                            1,
+                            0,
                             0,
                             2,
                             PGC_USERSET,
@@ -1178,8 +1178,8 @@ void init_session_vars(void)
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
                                &GetSessionContext()->useless_sql_mode,
-                               "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
-                               "pad_char_to_full_length",
+                               "sql_mode_full_group,sql_mode_strict,no_zero_date,error_for_division_by_zero,"
+                               "block_return_multi_results,escape_quotes,disable_escape_bytea",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
                                check_sql_mode,
@@ -1189,7 +1189,7 @@ void init_session_vars(void)
                             gettext_noop("used to set the sensitive of identifier"),
                             NULL,
                             &GetSessionContext()->useless_lower_case_table_names,
-                            1,
+                            0,
                             0,
                             2,
                             PGC_USERSET,
@@ -1468,7 +1468,7 @@ void init_session_vars(void)
                              gettext_noop("This variable indicates using a constant value as its output column name"),
                              NULL,
                              &GetSessionContext()->use_const_value_as_colname,
-                             false,
+                             true,
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
@@ -1495,12 +1495,11 @@ void init_session_vars(void)
                              "to avoid index unavailable caused by implicit."),
                              NULL,
                              &GetSessionContext()->transform_unknown_param_type_as_column_type_first,
-                             false,
+                             true,
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
 #endif
-
 }
 static void load_dblink_extension()
 {

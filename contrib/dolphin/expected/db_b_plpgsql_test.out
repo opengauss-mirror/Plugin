@@ -193,8 +193,8 @@ drop schema db_b_plpgsql_test cascade;
 NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to table tb_b_grammar_0038
 drop cascades to function proc_01()
-drop cascades to table j1_tbl
-drop cascades to table j2_tbl
+drop cascades to table "J1_TBL"
+drop cascades to table "J2_TBL"
 drop cascades to function peoc_165()
 drop cascades to table t_abort_050
 drop cascades to function fun_abort_050()
