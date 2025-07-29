@@ -106,5 +106,21 @@ select * from func_test;
 
 drop table if exists func_test cascade;
 drop table if exists t_year_0002 cascade;
+
+DROP FUNCTION IF EXISTS get_timestamp;
+CREATE OR REPLACE FUNCTION get_timestamp(data_time DATETIME, mesc INTEGER)
+RETURNS decimal(38, 12)
+LANGUAGE 'plpgsql'
+AS $$
+DECLARE
+BEGIN
+RETURN CAST(date_format(data_time,'%Y%m%d%H%i%s') AS BIGINT)+mesc/1000;
+END$$;
+
+select cast(get_timestamp('2021-01-01 11:22:33', 33) as datetime(3));
+select date_add(cast(get_timestamp('2021-01-01 11:22:33', 33) as datetime(3)) , interval 10 second);
+select date_add('2021-01-01 11:22:33.033', interval 10 second);
+DROP FUNCTION get_timestamp;
+
 drop schema b_compatibility_time_funcs_year cascade;
 reset current_schema;
