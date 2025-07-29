@@ -2037,13 +2037,9 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
     PG_RETURN_TIMESTAMPTZ(result);
 }
 
-/* timestamptz_out()
- * Convert a timestamp to external form.
- */
-Datum timestamptz_out(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+void timestamptz_out_internal(TimestampTz dt, char** result, bool print_tz)
 {
-    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
-    char* result = NULL;
     int tz;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
@@ -2055,11 +2051,26 @@ Datum timestamptz_out(PG_FUNCTION_ARGS)
     if (TIMESTAMP_NOT_FINITE(dt))
         EncodeSpecialTimestamp(dt, buf);
     else if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) == 0)
-        EncodeDateTimeForBDatabase(tm, fsec, true, tz, tzn, u_sess->time_cxt.DateStyle, buf);
+        EncodeDateTimeForBDatabase(tm, fsec, print_tz, tz, tzn, u_sess->time_cxt.DateStyle, buf);
     else
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 
-    result = pstrdup(buf);
+    *result = pstrdup(buf);
+}
+#endif
+
+/* timestamptz_out()
+ * Convert a timestamp to external form.
+ */
+Datum timestamptz_out(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    char* result = NULL;
+
+#ifdef DOLPHIN
+    timestamptz_out_internal(dt, &result, true);
+#endif
+
     PG_RETURN_CSTRING(result);
 }
 
@@ -8230,14 +8241,12 @@ Datum time_format(PG_FUNCTION_ARGS)
     char* format = NULL;       /* format string */
     StringInfo str;          /* return string */
     char *ptr = NULL, *end = NULL; /* head and tail of format */
-    char temp_ptr[2];
     int insert_len = 0;            /* number of characters inserted into str */
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
     int32 hours_i;      /* hour in range of 0..12 */
     int timeSign = 1;
     bool isNeg = false; /* positive or negative time */
-    errno_t rc = EOK;
     text* result;
 
     /* convert time_text and format_text into string from text */
@@ -12924,7 +12933,6 @@ bool MakeInterval(Datum val, Oid valType, Interval *itv, int int_type, int preci
     uint64 array[5] = {0};
     uint64 *array_p = array;
     int64 value = 0;
-    Datum datumVal;
     char *str_value = NULL;
 
     itv->time = 0;

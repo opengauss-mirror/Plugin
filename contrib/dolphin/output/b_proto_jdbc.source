@@ -103,6 +103,10 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01
+01:01:01
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
 Exception in thread "main" java.sql.SQLException: non-procedure CURSOR is not supported by mysql protocol.
 --?.*
 --?.*

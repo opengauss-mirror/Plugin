@@ -103,6 +103,10 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01.111112
+01:01:01.1111
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
 Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
 --?.*
 --?.*
@@ -206,6 +210,10 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01.111112
+01:01:01.1111
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
 Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
 --?.*
 --?.*
@@ -305,6 +313,10 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01.111112
+01:01:01.1111
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
 Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
 --?.*
 --?.*
@@ -404,6 +416,10 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01.111112
+01:01:01.1111
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
 Exception in thread "main" java.sql.SQLException: Statement.executeQuery() cannot issue statements that do not produce result sets.
 --?.*
 --?.*
