@@ -140,6 +140,20 @@ public class MySQLJdbcTest {
                 }
             }
             statement.executeQuery("desc (plan) select * from t3 order by id");
+            resultSet = statement.executeQuery("select time(timestamp'2022-1-1 1:1:1.1111116')");
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString(1));
+            }
+            statement.executeUpdate("create table test_tm (a time(4), b datetime(4), c timestamp(4));");
+            statement.executeUpdate("insert into test_tm values ('1:1:1.1111116', '2024-1-1 1:1:1.1111116', '2024-1-1 1:1:1.1111116');");
+            resultSet = statement.executeQuery("select * from test_tm");
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString(1));
+                System.out.println(resultSet.getString(2));
+                System.out.println(resultSet.getString(3));
+            }
+            statement.executeUpdate("drop table if exists test_tm");
+
             statement.executeQuery("START TRANSACTION;");
             statement.executeQuery("CURSOR cursor2 FOR VALUES(1,2),(0,3) ORDER BY 1;");
             statement.executeQuery("END;");

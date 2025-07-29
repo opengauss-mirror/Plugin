@@ -35,6 +35,7 @@
 #include "catalog/pg_proc.h"
 #include "access/datavec/vector.h"
 #include "plugin_utils/varlena.h"
+#include "plugin_utils/timestamp.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
@@ -337,6 +338,10 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
         if (is_binary_type(typeOid)) {
             bytea* barg = DatumGetByteaPP(attr);
             dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
+        } else if (typeOid == TIMESTAMPTZOID) {
+            timestamptz_out_internal(DatumGetTimestampTz(attr), &outputstr, false);
+            dq_append_string_lenenc(buf, outputstr);
+            pfree(outputstr);
         } else {
             bool need_free = false;
             outputstr = get_output_str(thisState, attr, &need_free);
