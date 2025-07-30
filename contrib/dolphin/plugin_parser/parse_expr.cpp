@@ -81,7 +81,6 @@ extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = f
 extern Node* makeAConst(Value* v, int location);
 extern Value* makeStringValue(char* str);
 extern VarBit* make_default_varbit_for_set(Oid settypoid);
-static Node* transformParamRef(ParseState* pstate, ParamRef* pref);
 static Node* transformAExprOp(ParseState* pstate, A_Expr* a);
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a);
 static Node* transformAExprOr(ParseState* pstate, A_Expr* a);
@@ -1675,7 +1674,7 @@ static Node* tryTransformFunc(ParseState* pstate, List* fields, int location)
     return result;
 }
 
-static Node* transformParamRef(ParseState* pstate, ParamRef* pref)
+Node* transformParamRef(ParseState* pstate, ParamRef* pref)
 {
     Node* result = NULL;
 

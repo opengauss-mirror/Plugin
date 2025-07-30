@@ -23,7 +23,7 @@ test: test_shows_3
 
 test: test_shows_4 test_shows_5
 
-test: b_database_var b_database_sum b_database_stddev parse_fusion
+test: b_database_var b_database_sum b_database_stddev parse_fusion tpcc_opt
 
 test: nvarchar regexp upsert zerofill test_set_charset test_optimize
 

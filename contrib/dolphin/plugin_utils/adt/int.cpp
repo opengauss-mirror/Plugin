@@ -42,6 +42,7 @@
 #include "utils/numeric.h"
 #include "utils/formatting.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/int8.h"
 #include "plugin_utils/tinyint.h"
 
 #define SAMESIGN(a, b) (((a) < 0) == ((b) < 0))
@@ -675,9 +676,12 @@ Datum int4pl(PG_FUNCTION_ARGS)
     int32 arg1 = PG_GETARG_INT32(0);
     int32 arg2 = PG_GETARG_INT32(1);
     int32 result;
-
+#ifdef DOLPHIN
+    result = int84_internal((int64)arg1 + (int64)arg2, fcinfo->can_ignore);
+#else
     if (unlikely(pg_add_s32_overflow(arg1, arg2, &result)))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+#endif
     PG_RETURN_INT32(result);
 }
 
@@ -686,9 +690,12 @@ Datum int4mi(PG_FUNCTION_ARGS)
     int32 arg1 = PG_GETARG_INT32(0);
     int32 arg2 = PG_GETARG_INT32(1);
     int32 result;
-
+#ifdef DOLPHIN
+    result = int84_internal((int64)arg1 - (int64)arg2, fcinfo->can_ignore);
+#else
     if (unlikely(pg_sub_s32_overflow(arg1, arg2, &result)))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+#endif
     PG_RETURN_INT32(result);
 }
 
@@ -697,9 +704,12 @@ Datum int4mul(PG_FUNCTION_ARGS)
     int32 arg1 = PG_GETARG_INT32(0);
     int32 arg2 = PG_GETARG_INT32(1);
     int32 result;
-
+#ifdef DOLPHIN
+    result = int84_internal((int64)arg1 * (int64)arg2, fcinfo->can_ignore);
+#else
     if (unlikely(pg_mul_s32_overflow(arg1, arg2, &result)))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+#endif
     PG_RETURN_INT32(result);
 }
 

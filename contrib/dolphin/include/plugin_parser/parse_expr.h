@@ -38,6 +38,7 @@ extern bool IsPseudoReturnColumn(const char *colname);
 extern bool IsStartWithFunction(FuncExpr* result);
 extern char *makeStartWithDummayColname(char *alias, char *column);
 extern Node* transformColumnRef(ParseState* pstate, ColumnRef* cref);
+extern Node* transformParamRef(ParseState* pstate, ParamRef* cref);
 extern void AddStartWithTargetRelInfo(ParseState* pstate, Node* relNode,
                                          RangeTblEntry* rte, RangeTblRef *rtr);
 extern void AdaptSWSelectStmt(ParseState *pstate, SelectStmt *stmt);

@@ -16,12 +16,15 @@
 #include "knl/knl_variable.h"
 
 #include "catalog/pg_type.h"
+#include "catalog/pg_operator.h"
 #include "commands/dbcommands.h"
 #include "funcapi.h"
 #include "miscadmin.h"
+#include "nodes/pg_list.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "parser/parsetree.h"
+#include "plugin_parser/parse_oper.h"
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_func.h"
@@ -126,20 +129,253 @@ TargetEntry* transformTargetEntry(ParseState* pstate, Node* node, Node* expr, Pa
     return makeTargetEntry((Expr*)expr, (AttrNumber)pstate->p_next_resno++, colname, resjunk);
 }
 
+#ifdef DOLPHIN
+static inline Node* TryTransformParamRef(ParseState* pstate, Node* node)
+{
+    if (node && IsA(node, ParamRef)) {
+        return transformParamRef(pstate, (ParamRef*)node);
+    }
+    return node;
+}
+
+static inline bool IsSimpleUpdateExprTargetOid(Oid oid)
+{
+    switch (oid) {
+        case INT4OID:
+        case INT8OID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool IsSatisfySimpleSelfUpdateModeType(ParseState* pstate, Node* node, const char* targetColName)
+{
+    if (!node) {
+        return false;
+    }
+    
+    switch (nodeTag(node)) {
+        case T_Param: {
+            Param* param = (Param*)node;
+            return IsSimpleUpdateExprTargetOid(param->paramtype);
+        }
+        case T_A_Const: {
+            A_Const* con = (A_Const*)node;
+            Value* value = &con->val;
+            return IsA(value, Integer);
+        }
+        case T_ColumnRef: {
+            ColumnRef* colRef = (ColumnRef*)node;
+            if (list_length(colRef->fields) != 1) {
+                return false;
+            }
+
+            Node* field1 = (Node*)linitial(colRef->fields);
+            AssertEreport(IsA(field1, String), MOD_OPT, "");
+            char* refName = strVal(field1);
+            if (strcmp(refName, targetColName) != 0) {
+                return false;
+            }
+
+            Relation rel = ((Relation)linitial2(pstate->p_target_relation));
+            Oid refOid = InvalidOid;
+            for (int i = 0; i < rel->rd_rel->relnatts; ++i) {
+                Form_pg_attribute att = &rel->rd_att->attrs[i];
+                if (namestrnacsecmp(&(att->attname), refName) == 0 && !att->attisdropped) {
+                    refOid = att->atttypid;
+                    break;
+                }
+            }
+
+            return IsSimpleUpdateExprTargetOid(refOid);
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+static inline bool IsUseFunctionDirectlyCase(Relation rel, Oid ltypeId, Oid rtypeId)
+{
+    /*
+     * Since there is a high probability that the partitioned table cannot use BYPASS,
+     * encapsulating the function call directly will be faster.
+     */
+    return RELATION_IS_PARTITIONED(rel) &&
+        ltypeId == INT4OID &&
+        rtypeId == INT4OID;
+}
+
+static Node* TransformArithmeticFuncArg(ParseState* pstate, Node* expr)
+{
+    switch (nodeTag(expr)) {
+        case T_Param:
+            return expr;
+        case T_A_Const: {
+            A_Const* con = (A_Const*)expr;
+            Value* val = &con->val;
+            return (Node*)make_const(pstate, val, con->location);
+        }
+        case T_ColumnRef: {
+            return transformColumnRef(pstate, (ColumnRef*)expr);
+        }
+        default: {
+            /* should not happen */
+            Assert(0);
+            return nullptr;
+        }
+    }
+}
+
+OpExpr* MakeArithmeticOpExpr(ParseState* pstate, A_Expr* expr, List* opname, Oid ltypeId, Oid rtypeId)
+{
+    const int location = expr->location;
+    HeapTuple tup = oper(pstate, opname, ltypeId, rtypeId, false, location, false);
+    Form_pg_operator opform = (Form_pg_operator)GETSTRUCT(tup);
+    if (unlikely(!OidIsValid(opform->oprcode))) {
+        ReleaseSysCache(tup);
+        return nullptr;
+    }
+
+    Oid actualArgTypes[2];
+    Oid declaredArgtypes[2];
+    actualArgTypes[0] = ltypeId;
+    actualArgTypes[1] = rtypeId;
+    declaredArgtypes[0] = opform->oprleft;
+    declaredArgtypes[1] = opform->oprright;
+    Oid rettype = enforce_generic_type_consistency(actualArgTypes, declaredArgtypes, 2, opform->oprresult, false);
+
+    OpExpr* opExpr = makeNode(OpExpr);
+    opExpr->opno = HeapTupleGetOid(tup);
+    opExpr->opfuncid = opform->oprcode;
+    opExpr->opresulttype = rettype;
+    opExpr->opretset = false;
+    opExpr->location = location;
+    opExpr->args = list_make2(expr->lexpr, expr->rexpr);
+
+    ReleaseSysCache(tup);
+    return opExpr;
+}
+
+static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, A_Expr* expr, const char* colName)
+{
+    /* only operator case */
+    if (expr->kind != AEXPR_OP) {
+        return nullptr;
+    }
+
+    /* check operator type */
+    if (list_length(expr->name) != 1) {
+        return nullptr;
+    }
+    char* opname = strVal(linitial(expr->name));
+    if (!opname ||  !opname[0] || opname[1] != '\0') {
+        return nullptr;
+    }
+
+    /*
+     * Assume it is the INT4 type first so that when the conditions are met,
+     * the INT4 type can directly use function calls to achieve the highest performance.
+     * In division scenarios, due to the precision difference between the two types (FLOAT8 and NUMERIC),
+     * there may be potential inconsistencies in values after truncation.
+     * Therefore, it is not supported for the time being.
+     */
+    Oid funcOid = InvalidOid;
+    switch (opname[0]) {
+        case '+': {
+            funcOid = F_INT4PL;
+            break;
+        }
+        case '-': {
+            funcOid = F_INT4MI;
+            break;
+        }
+        case '*': {
+            funcOid = F_INT4MUL;
+            break;
+        }
+        default:
+            return nullptr;
+    }
+
+    /* check relation */
+    Relation rel = ((Relation)linitial2(pstate->p_target_relation));
+    if (!rel || list_length(pstate->p_target_relation) > 1 ||
+        RELKIND_RELATION != rel->rd_rel->relkind) {
+        return nullptr;
+    }
+
+    /* check node types */
+    expr->lexpr = TryTransformParamRef(pstate, expr->lexpr);
+    if (!IsSatisfySimpleSelfUpdateModeType(pstate, expr->lexpr, colName)) {
+        return nullptr;
+    }
+    expr->rexpr = TryTransformParamRef(pstate, expr->rexpr);
+    if (!IsSatisfySimpleSelfUpdateModeType(pstate, expr->rexpr, colName)) {
+        return nullptr;
+    }
+
+    expr->lexpr = TransformArithmeticFuncArg(pstate, expr->lexpr);
+    expr->rexpr = TransformArithmeticFuncArg(pstate, expr->rexpr);
+    Oid ltypeId = exprType(expr->lexpr);
+    Oid rtypeId = exprType(expr->rexpr);
+    if (IsUseFunctionDirectlyCase(rel, ltypeId, rtypeId)) {
+        /* now we are ready to transform operator to function expr directly */
+        HeapTuple ftup = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcOid));
+        if (unlikely(!HeapTupleIsValid(ftup))) {
+            /* Should not happen.
+             * But it may occur if the database is corrupted for certain reasons.
+             */
+            ereport(ERROR,
+                (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                    errmsg("cache lookup failed for function %u", funcOid)));
+        }
+
+        Form_pg_proc pform = (Form_pg_proc)GETSTRUCT(ftup);
+        FuncExpr* funcexpr = makeNode(FuncExpr);
+        funcexpr->funcid = funcOid;
+        funcexpr->funcresulttype = pform->prorettype;
+        funcexpr->funcresulttype_orig = -1;
+        funcexpr->funcretset = pform->proretset;
+        funcexpr->funcvariadic = false;
+        funcexpr->funcformat = COERCE_EXPLICIT_CALL;
+        funcexpr->location = expr->location;
+        funcexpr->refSynOid = InvalidOid;
+        funcexpr->args = list_make2(expr->lexpr, expr->rexpr);
+
+        ReleaseSysCache(ftup);
+
+        return makeTargetEntry((Expr*)funcexpr, (AttrNumber)pstate->p_next_resno++, (char*)colName, false);
+    } else {
+        OpExpr* opExpr = MakeArithmeticOpExpr(pstate, expr, expr->name, ltypeId, rtypeId);
+        if (unlikely(!opExpr)) {
+            return nullptr;
+        }
+        
+        return makeTargetEntry((Expr*)opExpr, (AttrNumber)pstate->p_next_resno++, (char*)colName, false);
+    }
+}
+#endif
+
 /*
  * transformTargetList()
  * Turns a list of ResTarget's into a list of TargetEntry's.
- *
- * At this point, we don't care whether we are doing SELECT, INSERT,
- * or UPDATE; we just transform the given expressions (the "val" fields).
  */
-List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind exprKind)
+List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind exprKind
+#ifdef DOLPHIN
+    , bool isUpdateStmt
+#endif
+)
 {
     List* p_target = NIL;
     ListCell* o_target = NULL;
 
     foreach (o_target, targetlist) {
         ResTarget* res = (ResTarget*)lfirst(o_target);
+#ifdef DOLPHIN
+        TargetEntry* arithmeticOper = nullptr;
+#endif
 
         /*
          * Check for "something.*".  Depending on the complexity of the
@@ -169,6 +405,14 @@ List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind ex
                 continue;
             }
         }
+#ifdef DOLPHIN
+        else if (isUpdateStmt && IsA(res->val, A_Expr) &&
+            (arithmeticOper = TransformSimpleArithmeticOper(pstate, (A_Expr*) res->val, res->name))) {
+            p_target = lappend(p_target, arithmeticOper);
+            pstate->p_target_list = p_target;
+            continue;
+        }
+#endif
 
         /*
          * Not "something.*", so transform as a single expression
