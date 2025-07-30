@@ -1410,9 +1410,19 @@ select ts2 - ts1 from t_year0035;
 drop table t_year0035;
 -- test overflow
 select integer'2147481650' + year'1998';
-ERROR:  integer out of range
+WARNING:  integer out of range
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
 select year'1998' + integer'2147481650';
-ERROR:  integer out of range
+WARNING:  integer out of range
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
 select integer'-2147481651' - year'1997';
   ?column?   
 -------------

@@ -64,4 +64,8 @@ extern bool ValidateDependViewDetectRecursion(Oid viewOid, char objType, bool fo
 extern int specialAttNum(const char* attname);
 #endif
 
+#ifdef DOLPHIN
+int namestrnacsecmp(Name name, const char* str);
+#endif
+
 #endif /* PARSE_RELATION_H */

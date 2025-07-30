@@ -977,6 +977,38 @@ Node* parse_get_last_srf(ParseState* pstate)
 }
 
 #ifdef DOLPHIN
+static inline bool IsConstVarOrParam(Node* node)
+{
+    switch (nodeTag(node)) {
+        case T_Const:
+        case T_Var:
+        case T_Param:
+            return true;
+        default:
+            return false;
+    }
+}
+static bool IsBasicInt4PlusOrMinusOper(ParseState* pstate, List* opNameList,
+    Node* left, Node* right, Oid ltypeId, Oid rtypeId)
+{
+    if (pstate->p_expr_kind != EXPR_KIND_WHERE ||
+        ltypeId != INT4OID ||
+        rtypeId != INT4OID ||
+        list_length(opNameList) != 1 ||
+        !IsConstVarOrParam(left) ||
+        !IsConstVarOrParam(right)) {
+        return false;
+    }
+
+    char* name = strVal(linitial(opNameList));
+    if (name && name[1] == '\0' &&
+        (name[0] == '+' ||
+         name[0] == '-')) {
+        return true;
+    }
+    return false;
+}
+
 /*
  * coerce_param_to_column_type
  *
@@ -1117,6 +1149,21 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
             }
         }
 #ifdef DOLPHIN
+        /*
+         * Attempt to convert the addition and subtraction operations of int4 to those of int4 and int8.
+         * avoid external library function calls and achieve higher performance.
+         */
+        if (IsBasicInt4PlusOrMinusOper(pstate, opname, ltree, rtree, ltypeId, rtypeId)) {
+            /*
+             * To achieve the above objective, converting one node it's all we need.
+             */
+            if (IsA(ltree, Const)) {
+                ltypeId = INT8OID;
+            } else {
+                rtypeId = INT8OID;
+            }
+        }
+        
         if (coerce_param_to_column_type(pstate, ltree, rtree, &ltypeId, &rtypeId)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
             newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);

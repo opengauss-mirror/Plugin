@@ -16,7 +16,11 @@
 
 #include "plugin_parser/parse_node.h"
 
-extern List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind exprKind);
+extern List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind exprKind
+#ifdef DOLPHIN
+    , bool isUpdateStmt=false
+#endif
+);
 extern List* transformExpressionList(ParseState* pstate, List* exprlist, ParseExprKind exprKind);
 extern void markTargetListOrigins(ParseState* pstate, List* targetlist);
 extern void resolveTargetListUnknowns(ParseState* pstate, List* targetlist);
