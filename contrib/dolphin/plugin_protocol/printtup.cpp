@@ -37,6 +37,7 @@
 #include "catalog/pg_proc.h"
 #include "access/datavec/vector.h"
 #include "plugin_utils/float.h"
+#include "plugin_utils/timestamp.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
@@ -280,6 +281,10 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
             typeOid == RAWOID || typeOid == BYTEAOID) {
             bytea* barg = DatumGetByteaPP(attr);
             dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
+        } else if (typeOid == TIMESTAMPTZOID) {
+            timestamptz_out_internal(DatumGetTimestampTz(attr), &outputstr, false);
+            dq_append_string_lenenc(buf, outputstr);
+            pfree(outputstr);
         } else {
             outputstr = OutputFunctionCall(&thisState->finfo, attr);
             if (typeOid == BITOID) {
