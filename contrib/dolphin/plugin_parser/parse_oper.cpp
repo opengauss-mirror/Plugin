@@ -526,6 +526,11 @@ inline bool IsString(Oid typeoid)
     return ((typeoid == BPCHAROID) || (typeoid == VARCHAROID) || (typeoid == NVARCHAR2OID) ||
             (typeoid == CLOBOID) || (typeoid == TEXTOID) || (typeoid == UNKNOWNOID) || (typeoid == BINARYOID) || (typeoid == VARBINARYOID));
 }
+
+inline bool IsGreaterThanFloat8(Oid typeoid)
+{
+    return typeoid == INT8OID || typeoid == UINT8OID || typeoid == NUMERICOID;
+}
 #endif
 
 /* oper() -- search for a binary operator
@@ -644,11 +649,15 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             /*
             compare with numeric/int/float string transform to float
             */
-            if ((IsNumber(ltypeId) && IsString(rtypeId)) || (IsNumber(rtypeId) && IsString(ltypeId))) {
+            // int8 cannot coerce to float8 due to bigger precision
+            if (IsGreaterThanFloat8(ltypeId) && IsTextType(rtypeId)) {
+                rtypeId = NUMERICOID;
+            } else if (IsGreaterThanFloat8(rtypeId) && IsTextType(ltypeId)) {
+                ltypeId = NUMERICOID;
+            } else if ((IsNumber(ltypeId) && IsString(rtypeId)) || (IsNumber(rtypeId) && IsString(ltypeId))) {
                 ltypeId = FLOAT8OID;
                 rtypeId = FLOAT8OID;
-            }
-            if (ltypeId == ANYENUMOID && rtypeId == UNKNOWNOID) {
+            } else if (ltypeId == ANYENUMOID && rtypeId == UNKNOWNOID) {
                 rtypeId = TEXTOID;
             } else if (ltypeId == UNKNOWNOID && rtypeId == ANYENUMOID){
                 ltypeId = TEXTOID;
