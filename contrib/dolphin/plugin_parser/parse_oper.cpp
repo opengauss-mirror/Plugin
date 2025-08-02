@@ -988,22 +988,20 @@ static inline bool IsConstVarOrParam(Node* node)
             return false;
     }
 }
+
 static bool IsBasicInt4PlusOrMinusOper(ParseState* pstate, List* opNameList,
     Node* left, Node* right, Oid ltypeId, Oid rtypeId)
 {
-    if (pstate->p_expr_kind != EXPR_KIND_WHERE ||
-        ltypeId != INT4OID ||
-        rtypeId != INT4OID ||
-        list_length(opNameList) != 1 ||
-        !IsConstVarOrParam(left) ||
-        !IsConstVarOrParam(right)) {
+    if (list_length(opNameList) != 1) {
         return false;
     }
 
     char* name = strVal(linitial(opNameList));
-    if (name && name[1] == '\0' &&
-        (name[0] == '+' ||
-         name[0] == '-')) {
+    if (name && (name[0] == '+' || name[0] == '-') &&  name[1] == '\0' &&
+        ltypeId == INT4OID &&
+        rtypeId == INT4OID &&
+        IsConstVarOrParam(left) &&
+        IsConstVarOrParam(right)) {
         return true;
     }
     return false;

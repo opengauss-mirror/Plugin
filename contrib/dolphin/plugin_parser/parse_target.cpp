@@ -149,6 +149,18 @@ static inline bool IsSimpleUpdateExprTargetOid(Oid oid)
     }
 }
 
+static Oid GetColumnType(Relation rel, const char* targetName)
+{
+    for (int i = 0; i < rel->rd_rel->relnatts; ++i) {
+        Form_pg_attribute att = &rel->rd_att->attrs[i];
+        if (namestrncasecmp(&(att->attname), targetName) == 0 && !att->attisdropped) {
+            return att->atttypid;
+        }
+    }
+
+    return InvalidOid;
+}
+
 static bool IsSatisfySimpleSelfUpdateModeType(ParseState* pstate, Node* node, const char* targetColName)
 {
     if (!node) {
@@ -174,21 +186,7 @@ static bool IsSatisfySimpleSelfUpdateModeType(ParseState* pstate, Node* node, co
             Node* field1 = (Node*)linitial(colRef->fields);
             AssertEreport(IsA(field1, String), MOD_OPT, "");
             char* refName = strVal(field1);
-            if (strcmp(refName, targetColName) != 0) {
-                return false;
-            }
-
-            Relation rel = ((Relation)linitial2(pstate->p_target_relation));
-            Oid refOid = InvalidOid;
-            for (int i = 0; i < rel->rd_rel->relnatts; ++i) {
-                Form_pg_attribute att = &rel->rd_att->attrs[i];
-                if (namestrnacsecmp(&(att->attname), refName) == 0 && !att->attisdropped) {
-                    refOid = att->atttypid;
-                    break;
-                }
-            }
-
-            return IsSimpleUpdateExprTargetOid(refOid);
+            return strncasecmp(refName, targetColName, NAMEDATALEN) == 0;
         }
         default: {
             return false;
@@ -258,10 +256,12 @@ OpExpr* MakeArithmeticOpExpr(ParseState* pstate, A_Expr* expr, List* opname, Oid
     return opExpr;
 }
 
-static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, A_Expr* expr, const char* colName)
+static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, ResTarget* res)
 {
+    A_Expr* expr = (A_Expr*) res->val;
+    char* colName =  res->name;
     /* only operator case */
-    if (expr->kind != AEXPR_OP) {
+    if (expr->kind != AEXPR_OP || res->indirection || !colName) {
         return nullptr;
     }
 
@@ -320,7 +320,22 @@ static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, A_Expr* ex
     expr->rexpr = TransformArithmeticFuncArg(pstate, expr->rexpr);
     Oid ltypeId = exprType(expr->lexpr);
     Oid rtypeId = exprType(expr->rexpr);
-    if (IsUseFunctionDirectlyCase(rel, ltypeId, rtypeId)) {
+
+    /* check column type */
+    Oid targetColOid = GetColumnType(rel, colName);
+    if (!IsSimpleUpdateExprTargetOid(targetColOid)) {
+        return nullptr;
+    }
+    
+    /*
+     * When the target column is INT8, if there are nodes with INT8, the optimization path can be used directly.
+     * otherwise, it is better to use the compatibility path.
+     * */
+    if (targetColOid == INT8OID && ltypeId == INT4OID && rtypeId == INT4OID) {
+        Node* lastSrf = parse_get_last_srf(pstate);
+        Expr* opExpr = make_op(pstate, expr->name, expr->lexpr, expr->rexpr, lastSrf, expr->location);
+        return makeTargetEntry(opExpr, (AttrNumber)pstate->p_next_resno++, (char*)colName, false);
+    } else if (IsUseFunctionDirectlyCase(rel, ltypeId, rtypeId)) {
         /* now we are ready to transform operator to function expr directly */
         HeapTuple ftup = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcOid));
         if (unlikely(!HeapTupleIsValid(ftup))) {
@@ -407,7 +422,7 @@ List* transformTargetList(ParseState* pstate, List* targetlist, ParseExprKind ex
         }
 #ifdef DOLPHIN
         else if (isUpdateStmt && IsA(res->val, A_Expr) &&
-            (arithmeticOper = TransformSimpleArithmeticOper(pstate, (A_Expr*) res->val, res->name))) {
+            (arithmeticOper = TransformSimpleArithmeticOper(pstate, res))) {
             p_target = lappend(p_target, arithmeticOper);
             pstate->p_target_list = p_target;
             continue;
