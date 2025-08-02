@@ -21,7 +21,7 @@ SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
 
 -- ****************************************************************************************************************************************************************************************************************
-\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
+\! javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
 -- wrong password before setting set_native_password
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user wrong_pass@123 new
 
