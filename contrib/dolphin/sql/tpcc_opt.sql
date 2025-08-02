@@ -252,3 +252,53 @@ select * from qual_arithmetic_expr_t where n = a + a;
 select * from qual_arithmetic_expr_t where n = 1 + b;
 select * from qual_arithmetic_expr_t where n = b + 1;
 drop table if exists qual_arithmetic_expr_t;
+
+-- case16: test out of int range by ok
+drop table if exists update_arithmetic_expr_t;
+create table update_arithmetic_expr_t(
+    n int,
+    a int,
+    b int8
+);
+insert into update_arithmetic_expr_t values(1, 1, 1);
+insert into update_arithmetic_expr_t values(2, 2, 2);
+insert into update_arithmetic_expr_t values(3, 3, 3);
+insert into update_arithmetic_expr_t values(4, 4, 4);
+
+update update_arithmetic_expr_t set b=9223372036854775000 + 666 where n = 1; -- ok
+update update_arithmetic_expr_t set b=2147483647 + 666 where n = 1; -- ok
+update update_arithmetic_expr_t set b=-2147483648 - b where n = 3; -- ok
+update update_arithmetic_expr_t set b=-b-2147483648 where n = 4; -- ok
+select * from update_arithmetic_expr_t order by n;
+
+-- case17: test null value
+drop table if exists update_arithmetic_expr_t;
+create table update_arithmetic_expr_t(
+    n int,
+    a int,
+    b int8
+);
+insert into update_arithmetic_expr_t values(1, null, null);
+insert into update_arithmetic_expr_t values(2, null, null);
+insert into update_arithmetic_expr_t values(3, null, null);
+
+update update_arithmetic_expr_t set b=9223372036854775000 + 666 where n = 1; -- ok
+update update_arithmetic_expr_t set b=2147483647 + 666 where n = 2; -- ok
+update update_arithmetic_expr_t set b=-2147483648 - b where n = 3; -- ok
+select * from update_arithmetic_expr_t order by n;
+
+-- case18:  test null with default
+drop table if exists update_arithmetic_expr_t;
+create table update_arithmetic_expr_t(
+    n int,
+    a int default 10,
+    b int8 default 10
+);
+insert into update_arithmetic_expr_t values(1, null, null);
+insert into update_arithmetic_expr_t values(2, null, null);
+insert into update_arithmetic_expr_t values(3, null, null);
+
+update update_arithmetic_expr_t set b=9223372036854775000 + 666 where n = 1; -- ok
+update update_arithmetic_expr_t set b=2147483647 + 666 where n = 2; -- ok
+update update_arithmetic_expr_t set b=-2147483648 - b where n = 3; -- ok
+select * from update_arithmetic_expr_t order by n;

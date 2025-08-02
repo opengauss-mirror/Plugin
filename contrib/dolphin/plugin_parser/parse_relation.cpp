@@ -99,7 +99,7 @@ static int specialAttNum(const char* attname);
 #endif
 
 #ifdef DOLPHIN
-int namestrnacsecmp(Name name, const char* str)
+int namestrncasecmp(Name name, const char* str)
 {
     if (name == NULL && str == NULL)
         return 0;
@@ -3507,7 +3507,7 @@ int attnameAttNum(Relation rd, const char* attname, bool sysColOK)
         Form_pg_attribute att = &rd->rd_att->attrs[i];
 
 #ifdef DOLPHIN
-        if (namestrnacsecmp(&(att->attname), attname) == 0 && !att->attisdropped) {
+        if (namestrncasecmp(&(att->attname), attname) == 0 && !att->attisdropped) {
 #else
         if (namestrcmp(&(att->attname), attname) == 0 && !att->attisdropped) {
 #endif
