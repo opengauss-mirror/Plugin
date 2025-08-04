@@ -972,6 +972,20 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
                         need_free = !check_need_free_varchar_output(outputstr);
                         break;
+                    case F_FLOAT4OUT: {
+                        outputstr = u_sess->utils_cxt.float4output_buffer;
+                        pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
+                        pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
+                                                    (void*)&thisState->convert_finfo);
+                        continue;
+                    }
+                    case F_FLOAT8OUT: {
+                        outputstr = u_sess->utils_cxt.float8output_buffer;
+                        dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
+                        pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
+                                                    (void *)&thisState->convert_finfo);
+                        continue;
+                    }
                     case F_NUMERIC_OUT: 
                         outputstr = output_numeric_out(DatumGetNumeric(attr));
                         need_free = !check_need_free_numeric_output(outputstr);
