@@ -201,6 +201,8 @@ static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
 static void SpiMultiSelectException();
 extern DestReceiver* dophin_default_printtup_create_DR(CommandDest dest);
 
+static ProtocolExtensionConfig dolphin_protocol_config = default_protocol_config;
+
 static const struct config_enum_entry cmpt_version_options[] = {
     {"5.7", MYSQL_VERSION_5_7, false},
     {"8.0", MYSQL_VERSION_8_0, false},
@@ -368,7 +370,8 @@ void init_plugin_object()
     u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
     u_sess->hook_cxt.groupingplannerHook = (void*)grouping_planner;
     if (u_sess->proc_cxt.MyProcPort->protocol_config == &default_protocol_config) {
-        u_sess->proc_cxt.MyProcPort->protocol_config->fn_printtup_create_DR = dophin_default_printtup_create_DR;
+        dolphin_protocol_config.fn_printtup_create_DR = dophin_default_printtup_create_DR;
+        u_sess->proc_cxt.MyProcPort->protocol_config = &dolphin_protocol_config;
     }
     u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
     u_sess->hook_cxt.noAutoValueOnZeroHook = (void*)NoAutoValueOnZero;
@@ -380,7 +383,6 @@ void init_plugin_object()
     u_sess->hook_cxt.deparseCollectedCommandHook = (void*)DeparseCollectedCommand;
     set_default_guc();
 
-   
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
         u_sess->proc_cxt.MyProcPort->database_name) {
         init_dolphin_proto(u_sess->proc_cxt.MyProcPort->database_name);
