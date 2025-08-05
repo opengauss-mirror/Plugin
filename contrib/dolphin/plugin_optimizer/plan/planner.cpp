@@ -2901,6 +2901,27 @@ static bool has_ts_func(List* tlist)
 }
 #endif
 
+static bool need_pullup_userset_before_sort(List* sub_tlist)
+{
+    if (!DB_IS_CMPT(B_FORMAT) || !(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES))
+        return false;
+
+    /* 
+     * have user set node but referenced by order by
+     */
+    int target_len = list_length(sub_tlist);
+    bool result = false;
+    for (int i = 0; i < target_len; i++) {
+        TargetEntry* tle = (TargetEntry*)list_nth(sub_tlist, i);
+        if (IsA(tle->expr, UserSetElem)) {
+            if (tle->ressortgroupref != 0) 
+               return false;
+            result = true;
+        }
+    }
+    return result;
+}
+
 static void process_sort(Query* parse, PlannerInfo* root, PlannerTargets* plannerTargets, Plan** resultPlan, 
     List* tlist, List* collectiveGroupExpr, List** currentPathKeys, double limitTuples, FDWUpperRelCxt* ufdwCxt) 
 {
@@ -3004,6 +3025,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
         return ((grouping_plannerFunc)(u_sess->hook_cxt.groupingplannerHook))(root, tuple_fraction);
     }
 #endif
+    bool pullup_userset_before_sort = false;
     Query* parse = root->parse;
     List* tlist = parse->targetList;
     int64 offset_est = 0;
@@ -3694,8 +3716,12 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     /*
                      * Otherwise, just replace the subplan's flat tlist with
                      * the desired tlist.
+                     * but with the user var, we cannot push down into subtree in b format
                      */
-                    result_plan->targetlist = sub_tlist;
+                    if (parse->sortClause)
+                        pullup_userset_before_sort = need_pullup_userset_before_sort(sub_tlist);
+                    if (!pullup_userset_before_sort)
+                        result_plan->targetlist = sub_tlist;
 
                     if (IsA(result_plan, PartIterator)) {
                         /*
@@ -4939,6 +4965,9 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
         process_rowMarks(parse, &result_plan, root, &current_pathkeys, ufdwCxt);
     }
 
+    if (pullup_userset_before_sort) {
+        result_plan = (Plan*)make_result(root, tlist, NULL, result_plan);
+    }
     /*
      * Finally, if there is a LIMIT/OFFSET clause, add the LIMIT node.
      */

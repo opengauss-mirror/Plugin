@@ -75,9 +75,9 @@ test: b_do_statment revoke option test_table_index test_float_double_real_double
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace multi_select_in_proc
 
-test: network2 use_dbname view_definer_test insert_set show_variables b_auto_increment nulls_get_partition null_in_partitions
+test: network2 use_dbname view_definer_test insert_set show_variables b_auto_increment nulls_get_partition null_in_partitions partition_test1
 
-test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test partition_no_key
+test: partition_test2 partition_test3 partition_test4 partition_maxvalue_test partition_no_key
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
 
