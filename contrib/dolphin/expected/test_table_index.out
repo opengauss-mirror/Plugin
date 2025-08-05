@@ -381,7 +381,7 @@ SUBPARTITION p_201902_b VALUES ( '2' )
  user_no    | character varying(30) | not null  | extended |              | 
  sales_amt  | integer               |           | plain    |              | 
 Indexes:
-    "subpart_btree_idx" btree ((sales_amt OPERATOR(dolphin_catalog.+) 1) DESC, dept_code) LOCAL TABLESPACE pg_default
+    "subpart_btree_idx" btree ((sales_amt OPERATOR(dolphin_catalog.+) 1::bigint) DESC, dept_code) LOCAL TABLESPACE pg_default
 Partition By LIST(month_code) Subpartition By LIST(dept_code)
 Number of partitions: 2 (View pg_partition to check each partition range.)
 Number of subpartitions: 4 (View pg_partition to check each subpartition range.)
@@ -467,7 +467,7 @@ alter table  t1 add key idx_a_b_expr_t1 using btree((abs(a+b) + a) desc);
  a      | integer |           | plain   |              | 
  b      | integer |           | plain   |              | 
 Indexes:
-    "idx_a_b_expr_t1" btree ((abs(a OPERATOR(dolphin_catalog.+) b) OPERATOR(dolphin_catalog.+) a) DESC) TABLESPACE pg_default
+    "idx_a_b_expr_t1" btree ((abs(a OPERATOR(dolphin_catalog.+) b::bigint) OPERATOR(dolphin_catalog.+) a) DESC) TABLESPACE pg_default
     "idx_a_b_t1" btree (a, b DESC) TABLESPACE pg_default
     "t1_a_b_idx" btree (a, b) TABLESPACE pg_default
 Has OIDs: no

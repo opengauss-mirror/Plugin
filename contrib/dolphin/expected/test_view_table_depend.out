@@ -406,7 +406,7 @@ View definition:
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM v1;
 
 drop table t1;
@@ -445,7 +445,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT v1.c1 OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM v1;
 
 select * from v1;
@@ -523,7 +523,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM t1;
 
 drop table t1;
@@ -543,7 +543,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1 AS "?column?"
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) 1::bigint AS "?column?"
    FROM t1;
 
 select * from v1;
@@ -597,7 +597,7 @@ View "test_view_table_depend.v1"
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2 AS "?column?"
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2::bigint AS "?column?"
    FROM t1
   CROSS JOIN t2;
 
@@ -618,7 +618,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 ----------+--------+-----------+---------+-------------
  ?column? | bigint |           | plain   | 
 View definition:
- SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2 AS "?column?"
+ SELECT t1.c1 OPERATOR(dolphin_catalog.+) t2.c2::bigint AS "?column?"
    FROM t1
   CROSS JOIN t2;
 

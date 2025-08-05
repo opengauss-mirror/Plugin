@@ -187,13 +187,13 @@ select * from
   cast(1+2 as int4) as i4,
   cast(1+2 as int8) as i8;
 select pg_get_viewdef('tt20v', true);
-                              pg_get_viewdef                              
---------------------------------------------------------------------------
-  SELECT  *                                                              +
-    FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col),      +
-     text_date('now'::text) d(d),                                        +
-     CAST((1 OPERATOR(dolphin_catalog.+) 2)::integer AS integer) i4(i4), +
-     CAST(1 OPERATOR(dolphin_catalog.+) 2 AS bigint) i8(i8);
+                                  pg_get_viewdef                                  
+----------------------------------------------------------------------------------
+  SELECT  *                                                                      +
+    FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col),              +
+     text_date('now'::text) d(d),                                                +
+     CAST((1::bigint OPERATOR(dolphin_catalog.+) 2)::integer AS integer) i4(i4), +
+     CAST(1::bigint OPERATOR(dolphin_catalog.+) 2 AS bigint) i8(i8);
 (1 row)
 
 drop view tt20v;
