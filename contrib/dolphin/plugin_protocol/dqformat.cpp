@@ -659,13 +659,6 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             break;
         }
         case DOLPHIN_TYPE_STRING: {
-            /* since all MySQL unknown type are map to DOLPHIN_TYPE_STRING, we use type out func here */
-            if (unlikely(thisState == NULL)) {
-                /* should not happen */
-                ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
-                    errmsg("There is no output function for type: %s(%u)", item->og_typname, item->og_type_oid)));
-            }
-
             char *val = nullptr;
             if (item->og_type_oid == BPCHAROID) {
                 val = output_text_to_cstring((text*)DatumGetPointer(binval));
@@ -677,7 +670,10 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
                     pfree(val);
                 }
             } else {
-                val = OutputFunctionCall(&thisState->finfo, binval);
+                Oid typoutput;
+                bool typIsVarlena = false;
+                getTypeOutputInfo(item->og_type_oid, &typoutput, &typIsVarlena);
+                val = OidOutputFunctionCall(typoutput, binval);
                 dq_append_string_lenenc(buf, val);
                 pfree_ext(val);
             }
@@ -715,6 +711,8 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
                 val = DatumGetCString(DirectFunctionCall1(line_out, binval));
             } else if (item->og_type_oid == POLYGONOID) {
                 val = DatumGetCString(DirectFunctionCall1(poly_out, binval));
+            } else {
+                ereport(ERROR, (errmsg("unsupport geometry type: %u", item->og_type_oid)));
             }
             dq_append_string_lenenc(buf, val);
             pfree_ext(val);
