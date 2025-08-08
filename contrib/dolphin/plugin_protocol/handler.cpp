@@ -673,6 +673,7 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     pqBindMessage.pvalue = (const char**)req->parameter_values;
     pqBindMessage.numRFormats = 0;
     pqBindMessage.rformats = NULL;
+    pqBindMessage.needFormat = false;
 
     exec_bind_message(&pqBindMessage, pstmt, psrc, false, dolphin_get_param_list_info);
     free_com_stmt_exec_request(req);

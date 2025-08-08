@@ -343,9 +343,9 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
     DR_printtup *myState = (DR_printtup *)self;
     StringInfo buf = &myState->buf;
     int natts = typeinfo->natts;
-
+    bool is_binary_proto = GetSessionContext()->is_binary_proto;
     /* Set or update my derived attribute info, if needed */
-    if (myState->attrinfo != typeinfo || myState->nattrs != natts) {
+    if (!is_binary_proto && (myState->attrinfo != typeinfo || myState->nattrs != natts)) {
         printtup_prepare_info(myState, typeinfo, natts);
     }
 
@@ -356,7 +356,7 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
 
     resetStringInfo(buf);
 
-    if (!GetSessionContext()->is_binary_proto) {
+    if (!is_binary_proto) {
         send_textproto(slot, myState, natts, buf);
     } else {
         send_binaryproto(slot, myState, natts, buf);
@@ -372,7 +372,6 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
  */
 static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int numAttrs)
 {
-
     int16 *formats = myState->portal != NULL ? myState->portal->formats : myState->formats;
     int i;
 
@@ -387,7 +386,6 @@ static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int 
     if (numAttrs <= 0) {
         return;
     }
-
 
     if (myState->portal != NULL && myState->portal->tupDesc != NULL) {
 #ifdef USE_ASSERT_CHECKING
