@@ -93,7 +93,8 @@ static void do_actual_analyze(VacuumStmt* vacstmt, const char* relStr, StringInf
         MemoryContextSwitchTo(currentContext);
 
         ErrorData* edata = CopyErrorData();
-
+#define ERROR_VALUE_START_IDX 2
+        idx = ERROR_VALUE_START_IDX; /* if it has failed in TRY block, reassign the two columns afterward. */
         values[idx++] = CStringGetTextDatum("Error");
         values[idx++] = CStringGetTextDatum(pstrdup(edata->message));
 
