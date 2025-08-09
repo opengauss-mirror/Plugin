@@ -647,7 +647,7 @@ static Datum ExecEvalScalarVar(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-         (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+         (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }
@@ -6941,7 +6941,7 @@ ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
             ereport(ERROR,
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
                     errmsg("unrecognized node type: %d when initializing expression.", (int)nodeTag(node))));
-           state = NULL; /* keep compiler quiet */
+           state = (ExprState*)makeNode(ExprState); /* keep compiler quiet */
            break;
    }
 
@@ -7835,7 +7835,7 @@ static Datum ExecEvalPriorExpr(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }
