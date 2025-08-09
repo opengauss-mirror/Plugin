@@ -4368,7 +4368,7 @@ PLpgSQL_variable* plpgsql_build_variable(const char* refname, int lineno, PLpgSQ
             ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
                     errmsg("unrecognized ttype: %d, when build variable in PLSQL, this situation should not occur.",
                         dtype->ttype)));
-            result = NULL; /* keep compiler quiet */
+            result = (PLpgSQL_variable*)palloc0(sizeof(PLpgSQL_variable)); /* keep compiler quiet */
             break;
     }
     result->isImplicit = isImplicit;

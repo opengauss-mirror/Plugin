@@ -5801,11 +5801,13 @@ static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintLis
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE), errmsg("unrecognized node type: %d", (int)nodeTag(con))));
         switch (con->contype) {
             case CONSTR_ATTR_DEFERRABLE:
-                if (!SUPPORTS_ATTRS(lastprimarycon))
+                if (!SUPPORTS_ATTRS(lastprimarycon)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
                             errmsg("misplaced DEFERRABLE clause"),
                             parser_errposition(cxt->pstate, con->location)));
+                    break; /* keep static check quiet */
+                }
                 if (saw_deferrability)
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
@@ -5816,11 +5818,13 @@ static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintLis
                 break;
 
             case CONSTR_ATTR_NOT_DEFERRABLE:
-                if (!SUPPORTS_ATTRS(lastprimarycon))
+                if (!SUPPORTS_ATTRS(lastprimarycon)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
                             errmsg("misplaced NOT DEFERRABLE clause"),
                             parser_errposition(cxt->pstate, con->location)));
+                    break; /* keep static check quiet */
+                }
                 if (saw_deferrability)
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
@@ -5836,11 +5840,13 @@ static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintLis
                 break;
 
             case CONSTR_ATTR_DEFERRED:
-                if (!SUPPORTS_ATTRS(lastprimarycon))
+                if (!SUPPORTS_ATTRS(lastprimarycon)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
                             errmsg("misplaced INITIALLY DEFERRED clause"),
                             parser_errposition(cxt->pstate, con->location)));
+                    break; /* keep static check quiet */
+                }
                 if (saw_initially)
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
@@ -5862,11 +5868,13 @@ static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintLis
                 break;
 
             case CONSTR_ATTR_IMMEDIATE:
-                if (!SUPPORTS_ATTRS(lastprimarycon))
+                if (!SUPPORTS_ATTRS(lastprimarycon)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
                             errmsg("misplaced INITIALLY IMMEDIATE clause"),
                             parser_errposition(cxt->pstate, con->location)));
+                    break; /* keep static check quiet */
+                }
                 if (saw_initially)
                     ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),

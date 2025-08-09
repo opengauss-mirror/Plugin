@@ -1647,7 +1647,6 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
     char fn_type;
     Oid res_type;
     ListCell* lc = NULL;
-    bool gs_encrypted_proc_was_created = false;
     CommandCounterIncrement();
     if (modify_target_list != NULL)
         *modify_target_list = false; /* initialize for no change */
@@ -1789,6 +1788,9 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
         List* junk_attrs = NIL; /* new junk tlist entries */
         Datum* all_types_orig = NULL; /* original data types for gs_encrypted_proc */
         Datum* all_types = NULL; /* will be used for replace data types in pg_proc */
+
+#define HAS_INITED_TYPES_ARRAY (all_types_orig && all_types)
+
         /*
          * If the target list is of length 1, and the type of the varnode in
          * the target list matches the declared return type, this is okay.
@@ -1887,7 +1889,7 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
 
             tle_type = exprType((Node*)tle->expr);
             att_type = attr->atttypid;
-            if (gs_encrypted_proc_was_created && !IsClientLogicType(tle_type)) {
+            if (HAS_INITED_TYPES_ARRAY && !IsClientLogicType(tle_type)) {
                 all_types_orig[col_index - 1] = -1;
                 all_types[col_index - 1] = ObjectIdGetDatum(att_type);
             }
@@ -1902,7 +1904,7 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
                                 format_type_be(att_type),
                                 tup_log_cols)));
                 }
-                if (!gs_encrypted_proc_was_created) {
+                if (!HAS_INITED_TYPES_ARRAY) {
                     all_types_orig = (Datum*)palloc(tup_natts * sizeof(Datum));
                     all_types = (Datum*)palloc(tup_natts * sizeof(Datum));
                     /* if the column result type is diffent than the function table reuslt type */
@@ -1923,7 +1925,6 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
                 }
                 all_types_orig[col_index - 1] = ObjectIdGetDatum(att_type);
                 all_types[col_index - 1] = ObjectIdGetDatum(tle_type);
-                gs_encrypted_proc_was_created = true;
             } else if (!IsBinaryCoercible(tle_type, att_type) &&
                 /*
                  * if the data type mismatch is because of it is client_logic, it's OK at this point
@@ -1950,7 +1951,7 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
                 new_tlist = lappend(new_tlist, tle);
             }
         }
-        if (gs_encrypted_proc_was_created) {
+        if (HAS_INITED_TYPES_ARRAY) {
             add_allargtypes_orig(func_id, all_types_orig, all_types, tup_natts, gsrelid);
         }
 
