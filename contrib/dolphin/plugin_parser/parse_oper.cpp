@@ -19,6 +19,7 @@
 #include "catalog/pg_operator.h"
 #ifdef DOLPHIN
 #include "catalog/pg_enum.h"
+#include "catalog/pg_cast.h"
 #include "executor/executor.h"
 #include "plugin_parser/parser.h"
 #endif
@@ -1016,6 +1017,18 @@ static bool IsBasicInt4PlusOrMinusOper(ParseState* pstate, List* opNameList,
     return false;
 }
 
+bool can_be_cast_as_implict(Oid sourceTypeId, Oid targetTypeId)
+{
+    HeapTuple tup = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(sourceTypeId), ObjectIdGetDatum(targetTypeId));
+    bool result = false;
+    if (HeapTupleIsValid(tup)) {
+        Form_pg_cast castForm = (Form_pg_cast)GETSTRUCT(tup);
+        result = castForm->castcontext == COERCION_CODE_IMPLICIT;
+        ReleaseSysCache(tup);
+    }
+    return result;
+}
+
 /*
  * coerce_param_to_column_type
  *
@@ -1046,13 +1059,13 @@ bool coerce_param_to_column_type(ParseState* pstate, Node* ltree, Node* rtree, O
     }
 
     /* left is column and right is expr */
-    if (IsA(ltree, Var) && IsA(rtree, OpExpr)) {
+    if (IsA(ltree, Var) && IsA(rtree, OpExpr) && can_be_cast_as_implict(*rtypeId, *ltypeId)) {
         *rtypeId = *ltypeId;
         return true;
     }
 
     /* left is expr and right is column */
-    if (IsA(rtree, Var) && IsA(ltree, OpExpr)) {
+    if (IsA(rtree, Var) && IsA(ltree, OpExpr) && can_be_cast_as_implict(*ltypeId, *rtypeId)) {
         *ltypeId = *rtypeId;
         return true;
     }

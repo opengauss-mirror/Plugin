@@ -1,0 +1,15 @@
+create schema transform_unknown_param_type_as_column_type;
+set current_schema to 'transform_unknown_param_type_as_column_type';
+set dolphin.transform_unknown_param_type_as_column_type_first= true;
+drop table if exists testforbit;
+NOTICE:  table "testforbit" does not exist, skipping
+create table testforbit(a bit,b bit);
+insert into testforbit values(b'1',b'1');
+insert into testforbit values(b'1',b'0');
+update testforbit set a=b'1'^b'1' where b=0;
+insert into testforbit values(b'1'^b'1',b'0'^b'1');
+delete testforbit where b=b'1'^b'1';
+reset dolphin.transform_unknown_param_type_as_column_type_first;
+drop schema transform_unknown_param_type_as_column_type cascade;
+NOTICE:  drop cascades to table testforbit
+reset current_schema;
