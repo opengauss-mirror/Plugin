@@ -3117,15 +3117,8 @@ ObjectAddress CreateCast(CreateCastStmt* stmt)
             (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                 errmsg("cast will be ignored because the target data type is a domain")));
 
-    /* Detemine the cast method */
-    if (stmt->func != NULL)
+    if (stmt->func != NULL) {
         castmethod = COERCION_METHOD_FUNCTION;
-    else if (stmt->inout)
-        castmethod = COERCION_METHOD_INOUT;
-    else
-        castmethod = COERCION_METHOD_BINARY;
-
-    if (castmethod == COERCION_METHOD_FUNCTION) {
         Form_pg_proc procstruct;
 
         funcid = LookupFuncNameTypeNames(stmt->func->funcname, stmt->func->funcargs, false);
@@ -3182,12 +3175,14 @@ ObjectAddress CreateCast(CreateCastStmt* stmt)
             ereport(ERROR, (errcode(ERRCODE_INVALID_OBJECT_DEFINITION), errmsg("cast function must not return a set")));
 
         ReleaseSysCache(tuple);
-    } else {
+    } else if (stmt->inout) {
+        castmethod = COERCION_METHOD_INOUT;
         funcid = InvalidOid;
         nargs = 0;
-    }
-
-    if (castmethod == COERCION_METHOD_BINARY) {
+    } else {
+        castmethod = COERCION_METHOD_BINARY;
+        funcid = InvalidOid;
+        nargs = 0;
         int16 typ1len;
         int16 typ2len;
         bool typ1byval = false;
