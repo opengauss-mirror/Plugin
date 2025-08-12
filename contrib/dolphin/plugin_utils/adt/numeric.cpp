@@ -21174,6 +21174,23 @@ void numeric_aggfn_info_change(Oid aggfn_oid, Oid *transfn_oid, Oid *transtype, 
     numeric_finalfn_info_change(aggfn_oid, finalfn_oid);
 }
 
+/*
+ * numeric_scale() -
+ *
+ *	Returns the scale, i.e. the count of decimal digits in the fractional part
+ */
+Datum
+numeric_scale(PG_FUNCTION_ARGS)
+{
+	Numeric	num = PG_GETARG_NUMERIC(0);
+
+	if (NUMERIC_IS_SPECIAL(num)){
+        PG_RETURN_NULL();
+    }
+
+	PG_RETURN_INT32(NUMERIC_DSCALE(num));
+}
+
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(bigint_any_value);
 extern "C" DLL_PUBLIC Datum bigint_any_value(PG_FUNCTION_ARGS);
