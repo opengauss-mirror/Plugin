@@ -224,14 +224,10 @@ orafce_replace_empty_strings(PG_FUNCTION_ARGS)
 											 values, nulls);
 	}
 
-	if (relname)
-		pfree(relname);
-	if (resetcols)
-		pfree(resetcols);
-	if (values)
-		pfree(values);
-	if (nulls)
-		pfree(nulls);
+	pfree_ext(relname);
+	pfree_ext(resetcols);
+	pfree_ext(values);
+	pfree_ext(nulls);
 
 	return PointerGetDatum(rettuple);
 }
@@ -326,14 +322,10 @@ orafce_replace_null_strings(PG_FUNCTION_ARGS)
 											 values, nulls);
 	}
 
-	if (relname)
-		pfree(relname);
-	if (resetcols)
-		pfree(resetcols);
-	if (values)
-		pfree(values);
-	if (nulls)
-		pfree(nulls);
+	pfree_ext(relname);
+	pfree_ext(resetcols);
+	pfree_ext(values);
+	pfree_ext(nulls);
 
 	return PointerGetDatum(rettuple);
 }
