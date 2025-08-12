@@ -372,8 +372,7 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 								 collation,
 								 (fmNodePtr) fa_aggstate,
 								 NULL);
-		if (number_types > 0)
-		{
+		if (number_types > 0 && types) {
 			Expr *expr;
 			int i;
 			build_aggregate_finalfn_expr(types,

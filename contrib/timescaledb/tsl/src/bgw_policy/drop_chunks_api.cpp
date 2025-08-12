@@ -227,6 +227,7 @@ drop_chunks_remove_policy(PG_FUNCTION_ARGS)
 					(errcode(ERRCODE_UNDEFINED_OBJECT),
 					 errmsg("OID %d does not refer to a hypertable or continuous aggregate",
 							table_oid)));
+			return 0; /* suppress the static check warnings */
 		}
 		else
 		{
