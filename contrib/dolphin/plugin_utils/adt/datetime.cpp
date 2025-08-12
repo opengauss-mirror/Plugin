@@ -5404,6 +5404,11 @@ int ParseIudDateTime(char* str, struct pg_tm* tm, fsec_t* fsec)
     return 0;
 }
 
+int GetValiddateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm)
+{
+    return ValidateDate(fmask, isjulian, is2digits, bc, tm);
+}
+
 #ifdef DOLPHIN
 /* Convert a double value into pg_tm based on 1970-01-01 00:00:00 UTC, in timezone 0.
  * Therefore, you may need to add the timezone offset outside.
