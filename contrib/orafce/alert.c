@@ -294,9 +294,11 @@ register_event(text *event_name)
 				new_receivers[i] = NOT_USED;
 		}
 
+		unsigned char oldNum = ev->max_receivers;
 		ev->max_receivers += 16;
-		if (ev->receivers)
+		if (oldNum > 0) {
 			ora_sfree(ev->receivers);
+		}
 
 		ev->receivers = new_receivers;
 

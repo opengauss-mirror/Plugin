@@ -236,8 +236,8 @@ dbms_random_string(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("unknown option '%s'", option),
 				 errhint("available option \"aAlLuUxXpP\"")));
-			/* be compiler a quiete */
-			charset = NULL;
+			/* keep compiler quiet */
+			charset = "";
 			chrset_size = 0;
 	}
 	
