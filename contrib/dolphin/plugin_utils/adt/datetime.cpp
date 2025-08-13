@@ -5406,7 +5406,11 @@ int ParseIudDateTime(char* str, struct pg_tm* tm, fsec_t* fsec)
 
 int GetValiddateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm)
 {
+#ifdef DOLPHIN
+    return ValidateDate(fmask, isjulian, is2digits, bc, false, tm, 0);
+#else
     return ValidateDate(fmask, isjulian, is2digits, bc, tm);
+#endif
 }
 
 #ifdef DOLPHIN
