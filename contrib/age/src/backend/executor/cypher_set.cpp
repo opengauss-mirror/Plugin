@@ -111,7 +111,7 @@ static HeapTuple update_entity_tuple(ResultRelInfo *resultRelInfo,
     Buffer buffer;
     bool errFlag = false;
 
-    ResultRelInfo *saved_resultRelInfo = saved_resultRelInfo;;
+    ResultRelInfo *saved_resultRelInfo = estate->es_result_relation_info;
     estate->es_result_relation_info = resultRelInfo;
     lockmode =  LockTupleExclusive;
 
