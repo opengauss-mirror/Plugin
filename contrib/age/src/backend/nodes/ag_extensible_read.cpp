@@ -647,9 +647,7 @@ bool skip_read_extern_fields = false;
 
 /* Routine exit. This if branch just keep compiler silent. */
 #define READ_DONE()      \
-    if (token != NULL) { \
-        token = NULL;    \
-    }                    \
+    token = NULL;        \
     return local_node
 
 #define READ_END() return local_node
@@ -871,6 +869,7 @@ static Bitmapset* _readBitmapset(void)
     token = pg_strtok(&length);
     if (token == NULL) {
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("incomplete Bitmapset structure")));
+        return result; /* suppress the static check warmings */
     }
     if (length != 1 || token[0] != '(') {
         ereport(ERROR,
@@ -915,6 +914,7 @@ void check_token_complete(const char* token, const int length)
 {
     if (token == NULL) {
         ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("incomplete array structure")));
+        return; /* suppress the static check warmings */
     }
 
     if (length != 1 || token[0] != '(') {
@@ -948,6 +948,7 @@ static uint64* _readUint64Array(int arrayLen)
     token = pg_strtok(&length);
     if (token == NULL) {
         ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("incomplete Bitmapset structure")));
+        return local_node; /* suppress the static check warmings */
     }
     if (length != 1 || token[0] != 'a') {
         ereport(ERROR,
@@ -992,6 +993,7 @@ static uint16* _readUint16Array(int arrayLen)
     token = pg_strtok(&length);
     if (token == NULL) {
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("incomplete Bitmapset structure")));
+        return local_node; /* suppress the static check warmings */
     }
     if (length != 1 || token[0] != 'a') {
         ereport(ERROR,
