@@ -1857,7 +1857,7 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
 
 #ifndef ENABLE_MULTIPLE_NODES
     if (u_sess->plsql_cxt.curr_compile_context != NULL) {
-        if (result != NULL && nodeTag(result) == T_FuncExpr) {
+        if (nodeTag(result) == T_FuncExpr) {
             FuncExpr* funcexpr = (FuncExpr*)result;
             SubCheckOutParam(targs, funcexpr->funcid);
         }
@@ -2018,16 +2018,11 @@ void CheckOutParamIsConst(PLpgSQL_expr* expr)
 
     (void)getMultiFuncInfo(expr->query, expr, true);
 
-    if (expr->func != NULL)
-        pfree_ext(expr->func);
-    if (estate->datums != NULL)
-        pfree_ext(estate->datums);
-    if (estate != NULL)
-        pfree_ext(estate);
+    pfree_ext(expr->func);
+    pfree_ext(estate->datums);
+    pfree_ext(estate);
     expr->func = NULL;
-
 }
-
 
 static Node* transformCaseExpr(ParseState* pstate, CaseExpr* c)
 {
@@ -2898,6 +2893,7 @@ static Node* transformPredictByFunction(ParseState* pstate, PredictByFunction* p
     if (model == NULL) {
         ereport(ERROR, (errmsg(
             "No model found with name %s", p->model_name)));
+        return (Node*)n; /* suppress the static check warmings */
     }
 
     // Locate the proper function according to the model name
@@ -3704,7 +3700,7 @@ static char *ColumnRefFindRelname(ParseState *pstate, const char *colname)
                         if (rte->rtekind == RTE_RELATION) {
                             if (rte->alias && rte->alias->aliasname) {
                                 relname = rte->alias->aliasname;
-                            } else if (rte->eref && rte->eref->aliasname) {
+                            } else if (rte->eref->aliasname) {
                                 /* should use eref->aliasname for SYNONYM*/
                                 relname = rte->eref->aliasname;
                             } else {
