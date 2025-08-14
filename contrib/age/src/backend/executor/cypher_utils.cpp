@@ -122,17 +122,20 @@ TupleTableSlot *populate_edge_tts(
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
     if (startid == NULL)
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge start_id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
 
     if (endid == NULL)
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge end_id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
 
     properties_isnull = properties == NULL;

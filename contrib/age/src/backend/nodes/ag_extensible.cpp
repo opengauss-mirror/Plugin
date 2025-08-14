@@ -2328,6 +2328,7 @@ static void _outFuncExpr(StringInfo str, FuncExpr* node)
 
         if (firstArg == NULL) {
             ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("seqname of nextval() is not found")));
+            return; /* suppress the static check warmings */
         }
 
         if (!IsA(firstArg, Const)) {
@@ -6675,6 +6676,7 @@ static const void* GetExtensibleNodeEntry(HTAB *htable, const char *extnodename,
                 (errcode(ERRCODE_UNDEFINED_OBJECT),
                 errmsg("ExtensibleNodeMethods \"%s\" was not registered",
                 extnodename)));
+        return NULL; /* suppress the static check warmings */
     }
 
     return entry->extnodemethods;
@@ -6951,6 +6953,7 @@ void* nodeRead_AG(char* token, int tok_len)
             token = pg_strtok(&tok_len);
             if (token == NULL) {
                 ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("unterminated List structure")));
+                return (void*)result; /* suppress the static check warmings */
             }
             if (tok_len == 1 && token[0] == 'i') {
                 /* List of integers */

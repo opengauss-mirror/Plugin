@@ -242,8 +242,8 @@ int create_edges_from_csv_file(char *file_path,
     {
         ereport(ERROR,
                 (errmsg("Failed to initialize csv parser\n")));
+        return EXIT_FAILURE; /* suppress the static check warmings */
     }
-
 
     csv_set_space_func(&p, is_space);
     csv_set_term_func(&p, is_term);
@@ -253,8 +253,8 @@ int create_edges_from_csv_file(char *file_path,
     {
         ereport(ERROR,
                 (errmsg("Failed to open %s\n", file_path)));
+        return EXIT_FAILURE; /* suppress the static check warmings */
     }
-
 
     memset((void*)&cr, 0, sizeof(csv_edge_reader));
     cr.alloc = 128;

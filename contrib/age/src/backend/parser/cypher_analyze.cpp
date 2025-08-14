@@ -262,6 +262,7 @@ static void convert_cypher_to_subquery(RangeTblEntry *rte, ParseState *pstate)
         ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
                         errmsg("a name constant is expected"),
                         parser_errposition(pstate, exprLocation(arg))));
+        return; /* suppress the static check warmings */
     }
 
     graph_oid = get_graph_oid(NameStr(*graph_name));
