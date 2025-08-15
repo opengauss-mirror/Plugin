@@ -707,7 +707,7 @@ static agtype_value *push_agtype_value_scalar(agtype_parse_state **pstate,
         (*pstate)->last_updated_value = NULL;
         break;
     case WAGT_KEY:
-        Assert(scalar_val->type == AGTV_STRING);
+        Assert(scalar_val && scalar_val->type == AGTV_STRING);
         append_key(*pstate, scalar_val);
         break;
     case WAGT_VALUE:

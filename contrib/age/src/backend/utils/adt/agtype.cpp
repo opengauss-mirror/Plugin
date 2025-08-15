@@ -70,6 +70,19 @@
 #define Float8LessOperator 672
 int work_mem = 1024;
 
+/*
+ * Since the header file is not included, static checking fails to recognize it, resulting in a warning.
+ * Therefore, this macro definition is added to suppress the static check warmings.
+ * */
+#ifndef PG_RETURN_NULL
+/* To return a NULL do this: */
+#define PG_RETURN_NULL()       \
+    do {                       \
+        fcinfo->isnull = true; \
+        return (Datum)0;       \
+    } while (0)
+#endif
+
 /* State structure for Percentile aggregate functions */
 typedef struct PercentileGroupAggState
 {
@@ -3291,7 +3304,7 @@ Datum agtype_access_operator(PG_FUNCTION_ARGS)
     object = DATUM_GET_AGTYPE_P(args[0]);
 
     /* if the object is a scalar, it must be a vertex or edge */
-    if (AGT_ROOT_IS_SCALAR(object))
+    if (AGT_ROOT_IS_SCALAR(object) && object != NULL)
     {
         agtype_value *scalar_value = NULL;
         agtype_value *property_value = NULL;
@@ -4040,19 +4053,23 @@ Datum agtype_typecast_vertex(PG_FUNCTION_ARGS)
     agtv_key.val.string.len = 2;
     agtv_graphid = find_agtype_value_from_container(&arg_agt->root,
                                                     AGT_FOBJECT, &agtv_key);
-    if (agtv_graphid == NULL || agtv_graphid->type != AGTV_INTEGER)
+    if (agtv_graphid == NULL || agtv_graphid->type != AGTV_INTEGER) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("vertex typecast object has invalid or missing id")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "label";
     agtv_key.val.string.len = 5;
     agtv_label = find_agtype_value_from_container(&arg_agt->root,
                                                   AGT_FOBJECT, &agtv_key);
-    if (agtv_label == NULL || agtv_label->type != AGTV_STRING)
+    if (agtv_label == NULL || agtv_label->type != AGTV_STRING) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("vertex typecast object has invalid or missing label")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "properties";
     agtv_key.val.string.len = 10;
@@ -4060,10 +4077,12 @@ Datum agtype_typecast_vertex(PG_FUNCTION_ARGS)
                                                        AGT_FOBJECT, &agtv_key);
     if (agtv_properties == NULL ||
         (agtv_properties->type != AGTV_OBJECT &&
-         agtv_properties->type != AGTV_BINARY))
+         agtv_properties->type != AGTV_BINARY)) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("vertex typecast object has invalid or missing properties")));
+        return 0; /* suppress the static check warmings */
+    }
 
     /* Hand it off to the build vertex routine */
     result = DirectFunctionCall3(_agtype_build_vertex,
@@ -4116,19 +4135,23 @@ Datum agtype_typecast_edge(PG_FUNCTION_ARGS)
     agtv_key.val.string.len = 2;
     agtv_graphid = find_agtype_value_from_container(&arg_agt->root,
                                                     AGT_FOBJECT, &agtv_key);
-    if (agtv_graphid == NULL || agtv_graphid->type != AGTV_INTEGER)
+    if (agtv_graphid == NULL || agtv_graphid->type != AGTV_INTEGER) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("edge typecast object has an invalid or missing id")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "label";
     agtv_key.val.string.len = 5;
     agtv_label = find_agtype_value_from_container(&arg_agt->root,
                                                   AGT_FOBJECT, &agtv_key);
-    if (agtv_label == NULL || agtv_label->type != AGTV_STRING)
+    if (agtv_label == NULL || agtv_label->type != AGTV_STRING) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("edge typecast object has an invalid or missing label")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "properties";
     agtv_key.val.string.len = 10;
@@ -4136,28 +4159,34 @@ Datum agtype_typecast_edge(PG_FUNCTION_ARGS)
                                                  AGT_FOBJECT, &agtv_key);
     if (agtv_properties == NULL ||
         (agtv_properties->type != AGTV_OBJECT &&
-         agtv_properties->type != AGTV_BINARY))
+         agtv_properties->type != AGTV_BINARY)) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("edge typecast object has invalid or missing properties")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "start_id";
     agtv_key.val.string.len = 8;
     agtv_startid = find_agtype_value_from_container(&arg_agt->root,
                                                     AGT_FOBJECT, &agtv_key);
-    if (agtv_startid == NULL || agtv_startid->type != AGTV_INTEGER)
+    if (agtv_startid == NULL || agtv_startid->type != AGTV_INTEGER) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("edge typecast object has an invalid or missing start_id")));
+        return 0; /* suppress the static check warmings */
+    }
 
     agtv_key.val.string.val = "end_id";
     agtv_key.val.string.len = 6;
     agtv_endid = find_agtype_value_from_container(&arg_agt->root,
                                                     AGT_FOBJECT, &agtv_key);
-    if (agtv_endid == NULL || agtv_endid->type != AGTV_INTEGER)
+    if (agtv_endid == NULL || agtv_endid->type != AGTV_INTEGER) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("edge typecast object has an invalid or missing end_id")));
+        return 0; /* suppress the static check warmings */
+    }
 
     /* Hand it off to the build edge routine */
     result = DirectFunctionCall5(_agtype_build_edge,
@@ -8688,21 +8717,22 @@ Datum age_agtype_larger_aggtransfn(PG_FUNCTION_ARGS)
     agtype_arg2 = get_one_agtype_from_variadic_args(fcinfo, 1, 1);
 
     /* return NULL if both are NULL */
-    if (agtype_arg1 == NULL && agtype_arg2 == NULL)
+    if (agtype_arg1 == NULL && agtype_arg2 == NULL) {
         PG_RETURN_NULL();
     /* if one is NULL, return the other */
-    if (agtype_arg1 != NULL && agtype_arg2 == NULL)
+    } else if (agtype_arg2 == NULL) {
         PG_RETURN_POINTER(agtype_arg1);
-    if (agtype_arg1 == NULL && agtype_arg2 != NULL)
+    } else if (agtype_arg1 == NULL) {
         PG_RETURN_POINTER(agtype_arg2);
+    } else {
+        /* test for max value */
+        test = compare_agtype_containers_orderability(&agtype_arg1->root,
+                                                    &agtype_arg2->root);
 
-    /* test for max value */
-    test = compare_agtype_containers_orderability(&agtype_arg1->root,
-                                                  &agtype_arg2->root);
+        agtype_larger = (test >= 0) ? agtype_arg1 : agtype_arg2;
 
-    agtype_larger = (test >= 0) ? agtype_arg1 : agtype_arg2;
-
-    PG_RETURN_POINTER(agtype_larger);
+        PG_RETURN_POINTER(agtype_larger);
+    }
 }
 
 PG_FUNCTION_INFO_V1(age_agtype_smaller_aggtransfn);
@@ -8720,21 +8750,22 @@ Datum age_agtype_smaller_aggtransfn(PG_FUNCTION_ARGS)
     agtype_arg2 = get_one_agtype_from_variadic_args(fcinfo, 1, 1);
 
     /* return NULL if both are NULL */
-    if (agtype_arg1 == NULL && agtype_arg2 == NULL)
+    if (agtype_arg1 == NULL && agtype_arg2 == NULL) {
         PG_RETURN_NULL();
     /* if one is NULL, return the other */
-    if (agtype_arg1 != NULL && agtype_arg2 == NULL)
+    } else if (agtype_arg2 == NULL) {
         PG_RETURN_POINTER(agtype_arg1);
-    if (agtype_arg1 == NULL && agtype_arg2 != NULL)
+    } else if (agtype_arg1 == NULL) {
         PG_RETURN_POINTER(agtype_arg2);
+    } else {
+        /* test for min value */
+        test = compare_agtype_containers_orderability(&agtype_arg1->root,
+                                                    &agtype_arg2->root);
 
-    /* test for min value */
-    test = compare_agtype_containers_orderability(&agtype_arg1->root,
-                                                  &agtype_arg2->root);
+        agtype_smaller = (test <= 0) ? agtype_arg1 : agtype_arg2;
 
-    agtype_smaller = (test <= 0) ? agtype_arg1 : agtype_arg2;
-
-    PG_RETURN_POINTER(agtype_smaller);
+        PG_RETURN_POINTER(agtype_smaller);
+    }
 }
 
 /* borrowed from PGs float8 routines for percentile_cont */

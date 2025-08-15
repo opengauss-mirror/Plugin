@@ -151,6 +151,7 @@ agtype_build_state *init_agtype_build_state(uint32 size, uint32 header_flag)
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("Invalid container type.")));
+        agtentry_count = 0; /* suppress the static check warmings */
     }
 
     agtentry_len = sizeof(agtentry) * agtentry_count;

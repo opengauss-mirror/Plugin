@@ -231,6 +231,7 @@ int create_labels_from_csv_file(char *file_path,
     {
         ereport(ERROR,
                 (errmsg("Failed to initialize csv parser\n")));
+        return EXIT_FAILURE; /* suppress the static check warmings */
     }
 
     csv_set_space_func(&p, is_space);
@@ -241,8 +242,8 @@ int create_labels_from_csv_file(char *file_path,
     {
         ereport(ERROR,
                 (errmsg("Failed to open %s\n", file_path)));
+        return EXIT_FAILURE; /* suppress the static check warmings */
     }
-
 
     memset((void*)&cr, 0, sizeof(csv_vertex_reader));
 
@@ -262,8 +263,6 @@ int create_labels_from_csv_file(char *file_path,
     }
     cr.adjust_id = adjust_id;
     cr.free_context = free_context; 
-
-
 
     while ((bytes_read=fread(buf, 1, 1024, fp)) > 0)
     {
