@@ -407,6 +407,7 @@ Query *transform_cypher_clause(cypher_parsestate *cpstate,
     }else
     {
         ereport(ERROR, (errmsg_internal("unexpected Node for cypher_clause")));
+        return NULL; /* suppress the static check warmings */
     }
 
     result->querySource = QSRC_ORIGINAL;
@@ -648,7 +649,7 @@ static Query *transform_cypher_union(cypher_parsestate *cpstate,
 static Node* transform_cypher_union_tree(cypher_parsestate *cpstate, cypher_clause *clause,
                                          bool isTopLevel, List **targetlist)
 {
-    bool isLeaf;
+    bool isLeaf = false;
 
     ParseState *pstate = (ParseState *)cpstate;
 
@@ -3218,7 +3219,7 @@ transform_entity *find_variable(cypher_parsestate *cpstate, char *name)
     foreach (lc, cpstate->entities)
     {
         transform_entity *entity = (transform_entity*)lfirst(lc);
-        char *entity_name;
+        char *entity_name = nullptr;
 
         if (entity->type == ENT_VERTEX)
         {
@@ -4786,9 +4787,7 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
          * the cypher relationship as we will need this for later and flag that
          * we have a variable reference.
          */
-        if ((te != NULL && entity != NULL) ||
-            (entity != NULL && previous_clause_var != NULL))
-        {
+        if (entity != NULL && (te || previous_clause_var)) {
             cr = (cypher_relationship *)entity->entity.rel;
             refs_var = true;
         }
@@ -5066,9 +5065,7 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
          * will need this information for later. Additionally, flag that we have
          * a variable reference.
          */
-        if ((te != NULL && entity != NULL) ||
-            (entity != NULL && previous_clause_var != NULL))
-        {
+        if (entity != NULL && (te || previous_clause_var)) {
             cn = (cypher_node *)entity->entity.node;
             refs_var = true;
          
