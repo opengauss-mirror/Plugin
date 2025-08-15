@@ -129,7 +129,26 @@ extern Datum generate_series_step_int8(PG_FUNCTION_ARGS);
 #ifdef DOLPHIN
 extern Datum dtoi8_floor(PG_FUNCTION_ARGS);
 extern Datum ftoi8_floor(PG_FUNCTION_ARGS);
-extern int32 int84_internal(int64 src, bool can_ignore);
+#include "plugin_commands/mysqlmode.h"
+inline int32 int84_internal(int64 src, bool can_ignore)
+{
+    int32 result = (int32)src;
+    /* Test for overflow by reverse-conversion. */
+    if (unlikely((int64)result != src)) {
+        /* keyword IGNORE has higher priority than sql mode */
+        if (can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("integer out of range")));
+            if (src < 0) {
+                result = INT32_MIN;
+            } else {
+                result = INT32_MAX;
+            }
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
+    }
+    return result;
+}
 #endif
 
 #ifndef MADLIB

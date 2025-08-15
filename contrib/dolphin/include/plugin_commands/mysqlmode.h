@@ -2,6 +2,7 @@
 #define MYSQLMODE_H
 
 #include "plugin_postgres.h"
+#include "knl/knl_thread.h"
 #include "utils/builtins.h"
 
 #define PG_RETURN_INT8(x) return Int8GetDatum(x)
