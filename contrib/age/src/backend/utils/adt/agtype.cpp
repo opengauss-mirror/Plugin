@@ -2146,17 +2146,15 @@ Datum make_path(List *path)
     foreach (lc, path)
     {
         agtype *agt= DATUM_GET_AGTYPE_P(PointerGetDatum(lfirst(lc)));
-        agtype_value *elem;
-        elem = get_ith_agtype_value_from_container(&agt->root, 0);
-
-        if (!agt)
-        {
+        if (!agt) {
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("argument must not be null")));
         }
-        else if (i % 2 == 1 && elem->type != AGTV_VERTEX)
-        {
+        agtype_value *elem;
+        elem = get_ith_agtype_value_from_container(&agt->root, 0);
+
+        if (i % 2 == 1 && elem->type != AGTV_VERTEX) {
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("argument %i must be a vertex", i)));
@@ -5196,7 +5194,7 @@ Datum age_tointeger(PG_FUNCTION_ARGS)
     char *string = NULL;
     bool is_valid = false;
     Oid type;
-    int64 result;
+    int64 result = 0;
 
     /* extract argument values */
     nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
@@ -5389,7 +5387,7 @@ Datum age_size(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     char *string = NULL;
     Oid type;
-    int64 result;
+    int64 result = 0;
 
     /* extract argument values */
     nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
@@ -5752,7 +5750,7 @@ Datum age_reverse(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     text *text_string = NULL;
     char *string = NULL;
-    int string_len;
+    int string_len = 0;
     Oid type;
 
     /* extract argument values */
@@ -5878,7 +5876,7 @@ Datum age_toupper(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     char *string = NULL;
     char *result = NULL;
-    int string_len;
+    int string_len = 0;
     Oid type;
     int i;
 
@@ -5968,7 +5966,7 @@ Datum age_tolower(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     char *string = NULL;
     char *result = NULL;
-    int string_len;
+    int string_len = 0;
     Oid type;
     int i;
 
@@ -6331,7 +6329,7 @@ Datum age_right(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     text *text_string = NULL;
     char *string = NULL;
-    int string_len;
+    int string_len = 0;
     Oid type;
 
     /* extract argument values */
@@ -6473,7 +6471,7 @@ Datum age_left(PG_FUNCTION_ARGS)
     agtype_value agtv_result;
     text *text_string = NULL;
     char *string = NULL;
-    int string_len;
+    int string_len = 0;
     Oid type;
 
     /* extract argument values */
