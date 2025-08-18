@@ -172,11 +172,9 @@ ListGraphId *new_graphid_stack(void)
 /* helper function to free a graphid stack's contents but, not the container */
 void free_graphid_stack(ListGraphId *stack)
 {
-    Assert(stack != NULL);
-
-    if (stack == NULL)
-    {
+    if (stack == NULL) {
         elog(ERROR, "free_graphid_stack: NULL stack");
+        return; /* suppress the static check warmings */
     }
 
     /* while there are entries */
@@ -204,11 +202,9 @@ void push_graphid_stack(ListGraphId *stack, graphid id)
 {
     GraphIdNode *new_node = NULL;
 
-    Assert(stack != NULL);
-
-    if (stack == NULL)
-    {
+    if (stack == NULL) {
         elog(ERROR, "push_graphid_stack: NULL stack");
+        return; /* suppress the static check warmings */
     }
 
     /* create the new element */
@@ -229,21 +225,17 @@ void push_graphid_stack(ListGraphId *stack, graphid id)
 graphid pop_graphid_stack(ListGraphId *stack)
 {
     GraphIdNode *node = NULL;
-    graphid id;
+    graphid id = 0;
 
-    Assert(stack != NULL);
-    Assert(stack->size != 0);
-
-    if (stack == NULL)
-    {
+    if (stack == NULL) {
         elog(ERROR, "pop_graphid_stack: NULL stack");
+        return id; /* suppress the static check warmings */
     }
 
-    if (stack->size <= 0)
-    {
+    if (stack->size <= 0) {
         elog(ERROR, "pop_graphid_stack: empty stack");
+        return id; /* suppress the static check warmings */
     }
-
 
     /* remove the element from the top of the stack */
     node = stack->head;

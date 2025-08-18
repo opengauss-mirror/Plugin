@@ -316,8 +316,7 @@ static VLE_local_context *get_cached_VLE_local_context(int64 vle_grammar_node_id
                  * If the context is good and isn't at the head of the cache,
                  * promote it to the head.
                  */
-                if (ggctx != NULL && vlelctx != prev)
-                {
+                if (ggctx != NULL && prev && vlelctx != prev) {
                     /* adjust the links to cut out the node */
                     prev->next = vlelctx->next;
                     /* point the context to the old head of the list */
@@ -734,6 +733,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     if (vlelctx->next_vertex == NULL)
     {
         elog(ERROR, "age_vle: empty graph");
+        return vlelctx; /* suppress the static check warmings */
     }
     /*
      * Get the start vertex id - this is an optional parameter and determines
@@ -763,6 +763,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("start vertex argument must be a vertex or the integer id")));
+            return vlelctx; /* suppress the static check warmings */
         }
         vlelctx->vsid = agtv_temp->val.int_value;
     }
@@ -1265,6 +1266,7 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
     if (ve == NULL)
     {
         elog(ERROR, "add_valid_vertex_edges: no vertex found");
+        return; /* suppress the static check warmings */
     }
 
     /* point to stacks */
@@ -1296,16 +1298,11 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
         graphid edge_id;
 
         /* get the edge_id from the next available edge*/
-        if (edge_out != NULL)
-        {
+        if (edge_out != NULL) {
             edge_id = get_graphid(edge_out);
-        }
-        else if (edge_in != NULL)
-        {
+        } else if (edge_in != NULL) {
             edge_id = get_graphid(edge_in);
-        }
-        else
-        {
+        } else if (edge_self != NULL) {
             edge_id = get_graphid(edge_self);
         }
 
@@ -1317,16 +1314,11 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
             is_edge_in_path(vlelctx, edge_id))
         {
             /* set to the next available edge */
-            if (edge_out != NULL)
-            {
+            if (edge_out != NULL) {
                 edge_out = next_GraphIdNode(edge_out);
-            }
-            else if (edge_in != NULL)
-            {
+            } else if (edge_in != NULL) {
                 edge_in = next_GraphIdNode(edge_in);
-            }
-            else
-            {
+            } else if (edge_self != NULL) {
                 edge_self = next_GraphIdNode(edge_self);
             }
             continue;
@@ -1377,16 +1369,11 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
             }
         }
         /* get the next working edge */
-        if (edge_out != NULL)
-        {
+        if (edge_out != NULL) {
             edge_out = next_GraphIdNode(edge_out);
-        }
-        else if (edge_in != NULL)
-        {
+        } else if (edge_in != NULL) {
             edge_in = next_GraphIdNode(edge_in);
-        }
-        else
-        {
+        } else if (edge_self != NULL) {
             edge_self = next_GraphIdNode(edge_self);
         }
     }
