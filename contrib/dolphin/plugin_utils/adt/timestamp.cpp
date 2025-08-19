@@ -3504,7 +3504,12 @@ Datum timestamp_sortsupport(PG_FUNCTION_ARGS)
 {
     SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
 
+#ifdef HAVE_INT64_TIMESTAMP
+    ssup->comparator = ssup_datum_signed_cmp;
+#else
     ssup->comparator = timestamp_fastcmp;
+#endif
+
     PG_RETURN_VOID();
 }
 

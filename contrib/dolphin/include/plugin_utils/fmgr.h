@@ -649,6 +649,7 @@ extern THR_LOCAL PGDLLIMPORT needs_fmgr_hook_type needs_fmgr_hook;
 extern THR_LOCAL PGDLLIMPORT fmgr_hook_type fmgr_hook;
 
 #define FmgrHookIsNeeded(fn_oid) (!needs_fmgr_hook ? false : (*needs_fmgr_hook)(fn_oid))
+#define TWO_ARGS 2
 
 // Define common stuff for vectorized expression //
 typedef enum SimpleOp {
