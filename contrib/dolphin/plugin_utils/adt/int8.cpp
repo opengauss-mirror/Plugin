@@ -1491,7 +1491,7 @@ ScalarVector* vint4mul(PG_FUNCTION_ARGS)
                 mask |= (!(arg1 >= (int32)SHRT_MIN && arg1 <= (int32)SHRT_MAX && arg2 >= (int32)SHRT_MIN &&
                              arg2 <= (int32)SHRT_MAX) &&
                          arg2 != 0 && ((result / arg2 != arg1) || (arg2 == -1 && arg1 < 0 && result < 0)));
-                presult[i] = result;
+                presult[i] = Int32GetDatum(result);
                 SET_NOTNULL(pflagsRes[i]);
             } else
                 SET_NULL(pflagsRes[i]);
@@ -1507,7 +1507,7 @@ ScalarVector* vint4mul(PG_FUNCTION_ARGS)
                     mask |= (!(arg1 >= (int32)SHRT_MIN && arg1 <= (int32)SHRT_MAX && arg2 >= (int32)SHRT_MIN &&
                                  arg2 <= (int32)SHRT_MAX) &&
                              arg2 != 0 && ((result / arg2 != arg1) || (arg2 == -1 && arg1 < 0 && result < 0)));
-                    presult[i] = result;
+                    presult[i] = Int32GetDatum(result);
                     SET_NOTNULL(pflagsRes[i]);
                 } else
                     SET_NULL(pflagsRes[i]);
@@ -1545,7 +1545,7 @@ ScalarVector* vint4mi(PG_FUNCTION_ARGS)
 
                 result = arg1 - arg2;
                 mask |= !SAMESIGN(arg1, arg2) && !SAMESIGN(result, arg1);
-                presult[i] = result;
+                presult[i] = Int32GetDatum(result);
                 SET_NOTNULL(pflagsRes[i]);
             } else
                 SET_NULL(pflagsRes[i]);
@@ -1559,7 +1559,7 @@ ScalarVector* vint4mi(PG_FUNCTION_ARGS)
 
                     result = arg1 - arg2;
                     mask |= !SAMESIGN(arg1, arg2) && !SAMESIGN(result, arg1);
-                    presult[i] = result;
+                    presult[i] = Int32GetDatum(result);
                     SET_NOTNULL(pflagsRes[i]);
                 } else
                     SET_NULL(pflagsRes[i]);
@@ -1598,7 +1598,7 @@ ScalarVector* vint4pl(PG_FUNCTION_ARGS)
 
                 result = arg1 + arg2;
                 mask |= SAMESIGN(arg1, arg2) && !SAMESIGN(result, arg1);
-                presult[i] = result;
+                presult[i] = Int32GetDatum(result);
                 SET_NOTNULL(pflagsRes[i]);
             } else
                 SET_NULL(pflagsRes[i]);
@@ -1612,7 +1612,7 @@ ScalarVector* vint4pl(PG_FUNCTION_ARGS)
 
                     result = arg1 + arg2;
                     mask |= SAMESIGN(arg1, arg2) && !SAMESIGN(result, arg1);
-                    presult[i] = result;
+                    presult[i] = Int32GetDatum(result);
                     SET_NOTNULL(pflagsRes[i]);
                 } else
                     SET_NULL(pflagsRes[i]);
