@@ -4365,7 +4365,8 @@ void RemoveObjectsonMainExecCN(DropStmt* drop, ObjectAddresses* objects, bool is
 static bool CheckClassFormPermission(Form_pg_class classform)
 {
     if (g_instance.attr.attr_common.allowSystemTableMods || u_sess->attr.attr_common.IsInplaceUpgrade ||
-        !IsSystemClass(classform)) {
+        !(IsSystemClass(classform) ||
+            (classform->relnamespace == PG_DB4AI_NAMESPACE && !strcmp(NameStr(classform->relname), "snapshot")))) {
         return true;
     }
     return false;
@@ -19470,6 +19471,21 @@ static void AlterTypeOwnerByTbl(Relation target_rel, Oid newOwnerId)
     }
 }
 
+static void CheckAuthForChangeTableOwner(Oid newOwnerId)
+{
+    if (GetUserId() != BOOTSTRAP_SUPERUSERID && newOwnerId == BOOTSTRAP_SUPERUSERID) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("Non-initial user is not allowed to change the table owner to initial owner.")));
+    }
+
+    if (g_instance.attr.attr_security.enablePrivilegesSeparate && superuser() &&
+        (isSecurityadmin(newOwnerId) || isAuditadmin(newOwnerId))) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("if enablePrivilegesSeparate is enabled, system admin is"
+                "not allowed to change the table owner to security admin audit admin.")));
+    }
+}
+
 /*
  * ALTER TABLE OWNER
  *
@@ -19488,6 +19504,8 @@ void ATExecChangeOwner(Oid relationOid, Oid newOwnerId, bool recursing, LOCKMODE
     Relation class_rel;
     HeapTuple tuple;
     Form_pg_class tuple_class;
+
+    CheckAuthForChangeTableOwner(newOwnerId);
 
     /*
      * Get exclusive lock till end of transaction on the target table. Use
@@ -24426,8 +24444,10 @@ static void RangeVarCallbackForAlterRelation(
     }
 
     /* No system table modifications unless explicitly allowed or during inplace upgrade. */
+    bool isSystemClass = IsSystemClass(classform) ||
+        (classform->relnamespace == PG_DB4AI_NAMESPACE && !strcmp(NameStr(classform->relname), "snapshot"));
     if (!(g_instance.attr.attr_common.allowSystemTableMods && relid >= FirstBootstrapObjectId) &&
-        !u_sess->attr.attr_common.IsInplaceUpgrade && IsSystemClass(classform)) {
+        !u_sess->attr.attr_common.IsInplaceUpgrade && isSystemClass) {
         ereport(ERROR,
             (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
                 errmsg("permission denied: \"%s\" is a system catalog", rv->relname)));
