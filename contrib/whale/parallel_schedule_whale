@@ -1,6 +1,0 @@
-# test about dbms
-test: gms_alert_session_A gms_alert_session_B gms_alert_session_C
-test: gms_output gms_utility gms_random
-test: gms_pipe_session_A gms_pipe_session_B gms_pipe
-test: aggregates charlen nlssort nvarchar2 orafce orafce2 regexp_func to_date_with_timezone
-test: varchar2 files plvdate_test plvstr_test
