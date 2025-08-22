@@ -30,7 +30,6 @@ show databases;
  information_schema
  db1
  db2
- db4ai
  dbe_pldebugger
  dbe_pldeveloper
  dbe_sql_util
@@ -40,7 +39,7 @@ show databases;
  public
  sqladvisor
  xmltype
-(13 rows)
+(12 rows)
 
 drop database db1;
 NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.

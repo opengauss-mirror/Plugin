@@ -66,7 +66,6 @@ show databases;
       Database      
 --------------------
  information_schema
- db4ai
  dbe_pldebugger
  dbe_pldeveloper
  dbe_sql_util
@@ -77,14 +76,13 @@ show databases;
  sqladvisor
  u1
  xmltype
-(12 rows)
+(11 rows)
 
 set role u2 password 'abc@1234';
 show databases;
       Database      
 --------------------
  information_schema
- db4ai
  dbe_pldebugger
  dbe_pldeveloper
  dbe_sql_util
@@ -95,7 +93,7 @@ show databases;
  sqladvisor
  u2
  xmltype
-(12 rows)
+(11 rows)
 
 \c contrib_regression
 drop user u1;
