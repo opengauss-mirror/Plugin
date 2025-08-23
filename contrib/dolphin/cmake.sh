@@ -26,11 +26,11 @@ cp rollback_script/dolphin--4.0--3.0.sql dolphin--4.0--3.0.sql
 rm -f dolphin--4.1--4.2.sql
 cp upgrade_script/dolphin--4.1--4.2.sql dolphin--4.1--4.2.sql
 rm -f dolphin--4.2--4.1.sql
-cp upgrade_script/dolphin--4.2--4.1.sql dolphin--4.2--4.1.sql
+cp rollback_script/dolphin--4.2--4.1.sql dolphin--4.2--4.1.sql
 rm -f dolphin--4.2--5.0.sql
 cp upgrade_script/dolphin--4.2--5.0.sql dolphin--4.2--5.0.sql
 rm -f dolphin--5.0--4.2.sql
-cp upgrade_script/dolphin--5.0--4.2.sql dolphin--5.0--4.2.sql
+cp rollback_script/dolphin--5.0--4.2.sql dolphin--5.0--4.2.sql
 rm -f dolphin--5.0--5.1.sql
 cp upgrade_script/dolphin--5.0--5.1.sql dolphin--5.0--5.1.sql
 rm -f dolphin--5.1--5.0.sql
