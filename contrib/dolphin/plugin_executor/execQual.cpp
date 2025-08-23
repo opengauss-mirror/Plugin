@@ -2912,7 +2912,7 @@ static Datum ExecMakeFunctionResultNoSets(
        }
    }
 
-    if (DB_IS_CMPT_BD) {
+    if (DB_IS_CMPT_BD && !COLLATION_HAS_INVALID_ENCODING(fcinfo->fncollation)) {
         func_encoding = get_valid_charset_by_collation(fcinfo->fncollation);
         db_encoding = GetDatabaseEncoding();
     }
@@ -6138,41 +6138,26 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent){
     }
     return state;
 }
+
+#ifdef DOLPHIN
+/*
+ * this func is very different with kernel one, since we only want to deal with some special nodes
+ * only. for other case, we will call kernel routine.
+ */
 ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
 {
-#ifndef DOLPHIN
-   if (u_sess->hook_cxt.execInitExprHook != NULL) {
-        ExprState* expr = ((execInitExprFunc)(u_sess->hook_cxt.execInitExprHook))(node, parent);
-        if (expr != NULL)
-            return expr;
-    }
-#endif
     ExprState* state = NULL;
 
-   gstrace_entry(GS_TRC_ID_ExecInitExpr);
-   if (node == NULL) {
-       gstrace_exit(GS_TRC_ID_ExecInitExpr);
-       return NULL;
-   }
+    gstrace_entry(GS_TRC_ID_ExecInitExpr);
+    if (node == NULL) {
+        gstrace_exit(GS_TRC_ID_ExecInitExpr);
+        return NULL;
+    }
 
-   /* Guard against stack overflow due to overly complex expressions */
-   check_stack_depth();
+    /* Guard against stack overflow due to overly complex expressions */
+    check_stack_depth();
 
-   switch (nodeTag(node)) {
-       case T_Var:
-           /* varattno == InvalidAttrNumber means it's a whole-row Var */
-           if (((Var*)node)->varattno == InvalidAttrNumber) {
-               WholeRowVarExprState* wstate = makeNode(WholeRowVarExprState);
-
-                wstate->parent = parent;
-                wstate->wrv_junkFilter = NULL;
-                state = (ExprState*)wstate;
-                state->evalfunc = (ExprStateEvalFunc)ExecEvalWholeRowVar;
-            } else {
-                state = (ExprState*)makeNode(ExprState);
-                state->evalfunc = ExecEvalScalarVar;
-            }
-            break;
+    switch (nodeTag(node)) {
         case T_Const:
         case T_UserVar:
         case T_SetVariableExpr:
@@ -6180,543 +6165,33 @@ ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
             state->is_flt_frame = false;
             state->evalfunc = ExecEvalConst;
             break;
-       case T_Param:
-           state = (ExprState*)makeNode(ExprState);
-           state->is_flt_frame = false;
-           switch (((Param*)node)->paramkind) {
-               case PARAM_EXEC:
-                   state->evalfunc = ExecEvalParamExec;
-                   break;
-               case PARAM_EXTERN:
-                   state->evalfunc = ExecEvalParamExtern;
-                   break;
-               default:
-                   ereport(ERROR,
-                           (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                            errmodule(MOD_EXECUTOR),
-                            errmsg("unrecognized paramkind: %d", (int)((Param*)node)->paramkind)));
-                   break;
-           }
-           break;
-       case T_CoerceToDomainValue:
-           state = (ExprState*)makeNode(ExprState);
-           state->evalfunc = ExecEvalCoerceToDomainValue;
-           break;
-       case T_CaseTestExpr:
-           state = (ExprState*)makeNode(ExprState);
-           state->is_flt_frame = false;
-           state->evalfunc = ExecEvalCaseTestExpr;
-           break;
-       case T_Aggref: {
-           Aggref* aggref = (Aggref*)node;
-           AggrefExprState* astate = makeNode(AggrefExprState);
+        case T_FieldSelect: {
+            FieldSelect* fselect = (FieldSelect*)node;
+            FieldSelectState* fstate = makeNode(FieldSelectState);
+            fstate->xprstate.is_flt_frame = false;
 
-           astate->xprstate.is_flt_frame = false;
-           astate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalAggref;
-           if (parent && (IsA(parent, AggState) || IsA(parent, VecAggState))) {
-               AggState* aggstate = (AggState*)parent;
-               int naggs;
+            fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalFieldSelect;
+            fstate->arg = ExecInitExprByRecursion(fselect->arg, parent);
+            fstate->argdesc = NULL;
+            state = (ExprState*)fstate;
+            } break;
+        case T_MinMaxExpr: {
+            MinMaxExpr* minmaxexpr = (MinMaxExpr*)node;
+            MinMaxExprState* mstate = makeNode(MinMaxExprState);
+            mstate->xprstate.is_flt_frame = false;
+            List* outlist = NIL;
+            ListCell* l = NULL;
+            TypeCacheEntry* typentry = NULL;
 
-               aggstate->aggs = lcons(astate, aggstate->aggs);
-               naggs = ++aggstate->numaggs;
+            mstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalMinMax;
+            foreach (l, minmaxexpr->args) {
+                Expr* e = (Expr*)lfirst(l);
+                ExprState* estate = NULL;
 
-               astate->aggdirectargs = (List*)ExecInitExprByRecursion((Expr*)aggref->aggdirectargs, parent);
-
-               astate->args = (List*)ExecInitExprByRecursion((Expr*)aggref->args, parent);
-               astate->aggfilter = ExecInitExprByRecursion((Expr *)aggref->aggfilter, parent);
-
-               /*
-                * Complain if the aggregate's arguments contain any
-                * aggregates; nested agg functions are semantically
-                * nonsensical.  (This should have been caught earlier,
-                * but we defend against it here anyway.)
-                */
-               if (naggs != aggstate->numaggs)
-                   ereport(ERROR,
-                           (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("aggregate function calls cannot be nested")));
-           } else {
-               /* planner messed up */
-               ereport(ERROR,
-                       (errcode(ERRCODE_INVALID_AGG), errmodule(MOD_OPT), errmsg("Aggref found in non-Agg plan node")));
-           }
-           state = (ExprState*)astate;
-       } break;
-       case T_GroupingFunc: {
-           GroupingFunc* grp_node = (GroupingFunc*)node;
-           GroupingFuncExprState* grp_state = makeNode(GroupingFuncExprState);
-           grp_state->xprstate.is_flt_frame = false;
-           Agg* agg = NULL;
-
-           if (parent && (IsA(parent, AggState) || IsA(parent, VecAggState))) {
-               grp_state->aggstate = (AggState*)parent;
-
-               agg = (Agg*)(parent->plan);
-
-               if (agg->groupingSets)
-                   grp_state->clauses = grp_node->cols;
-               else
-                   grp_state->clauses = NIL;
-
-               state = (ExprState*)grp_state;
-               state->evalfunc = (ExprStateEvalFunc)ExecEvalGroupingFuncExpr;
-           } else
-               ereport(ERROR,
-                       (errcode(ERRCODE_PLAN_PARENT_NOT_FOUND),
-                        errmodule(MOD_OPT),
-                        errmsg("parent of GROUPING is not Agg node")));
-       } break;
-       case T_GroupingId: {
-           GroupingIdExprState* grp_id_state = makeNode(GroupingIdExprState);
-           grp_id_state->xprstate.is_flt_frame = false;
-           if (parent == NULL || !IsA(parent, AggState) || !IsA(parent->plan, Agg)) {
-               ereport(ERROR,
-                       (errcode(ERRCODE_PLAN_PARENT_NOT_FOUND),
-                        errmodule(MOD_OPT),
-                        errmsg("parent of GROUPINGID is not Agg node")));
-           }
-           grp_id_state->aggstate = (AggState*)parent;
-           state = (ExprState*)grp_id_state;
-           state->evalfunc = (ExprStateEvalFunc)ExecEvalGroupingIdExpr;
-       } break;
-       case T_WindowFunc: {
-           WindowFunc* wfunc = (WindowFunc*)node;
-           WindowFuncExprState* wfstate = makeNode(WindowFuncExprState);
-           wfstate->xprstate.is_flt_frame = false;
-
-           wfstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalWindowFunc;
-           if (parent && (IsA(parent, WindowAggState) || IsA(parent, VecWindowAggState))) {
-               WindowAggState* winstate = (WindowAggState*)parent;
-               int nfuncs;
-
-               winstate->funcs = lcons(wfstate, winstate->funcs);
-               nfuncs = ++winstate->numfuncs;
-               if (wfunc->winagg)
-                   winstate->numaggs++;
-
-                wfstate->keep_args = (List*)ExecInitExprByRecursion((Expr*)wfunc->keep_args, parent);
-                wfstate->keep_first = wfunc->winkpfirst;
-                wfstate->args = (List*)ExecInitExprByRecursion((Expr*)wfunc->args, parent);
-
-               /*
-                * Complain if the windowfunc's arguments contain any
-                * windowfuncs; nested window functions are semantically
-                * nonsensical.  (This should have been caught earlier,
-                * but we defend against it here anyway.)
-                */
-               if (nfuncs != winstate->numfuncs)
-                   ereport(
-                       ERROR, (errcode(ERRCODE_WINDOWING_ERROR), errmsg("window function calls cannot be nested")));
-           } else {
-               /* planner messed up */
-               ereport(
-                   ERROR, (errcode(ERRCODE_WINDOWING_ERROR), errmsg("WindowFunc found in non-WindowAgg plan node")));
-           }
-           state = (ExprState*)wfstate;
-       } break;
-       case T_ArrayRef: {
-           ArrayRef* aref = (ArrayRef*)node;
-           ArrayRefExprState* astate = makeNode(ArrayRefExprState);
-           astate->xprstate.is_flt_frame = false;
-
-           astate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalArrayRef;
-           astate->refupperindexpr = (List*)ExecInitExprByRecursion((Expr*)aref->refupperindexpr, parent);
-           astate->reflowerindexpr = (List*)ExecInitExprByRecursion((Expr*)aref->reflowerindexpr, parent);
-           astate->refexpr = ExecInitExprByRecursion(aref->refexpr, parent);
-           astate->refassgnexpr = ExecInitExprByRecursion(aref->refassgnexpr, parent);
-           /* do one-time catalog lookups for type info */
-           astate->refattrlength = get_typlen(aref->refarraytype);
-           get_typlenbyvalalign(
-               aref->refelemtype, &astate->refelemlength, &astate->refelembyval, &astate->refelemalign);
-           state = (ExprState*)astate;
-       } break;
-       case T_FuncExpr: {
-           FuncExpr* funcexpr = (FuncExpr*)node;
-           FuncExprState* fstate = makeNode(FuncExprState);
-           fstate->xprstate.is_flt_frame = false;
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalFunc;
-
-
-           fstate->args = (List*)ExecInitExprByRecursion((Expr*)funcexpr->args, parent);
-           fstate->func.fn_oid = InvalidOid; /* not initialized */
-           fstate->is_plpgsql_func_with_outparam = is_function_with_plpgsql_language_and_outparam(funcexpr->funcid);
-           fstate->funcReturnsSet = false;
-           fstate->fmtstr = funcexpr->fmtstr;
-           fstate->nlsfmtstr = funcexpr->nlsfmtstr;
-           state = (ExprState*)fstate;
-       } break;
-       case T_OpExpr: {
-           OpExpr* opexpr = (OpExpr*)node;
-           FuncExprState* fstate = makeNode(FuncExprState);
-           fstate->xprstate.is_flt_frame = false;
-
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalOper;
-           fstate->args = (List*)ExecInitExprByRecursion((Expr*)opexpr->args, parent);
-           fstate->func.fn_oid = InvalidOid; /* not initialized */
-           fstate->funcReturnsSet = false;
-           state = (ExprState*)fstate;
-       } break;
-       case T_DistinctExpr: {
-           DistinctExpr* distinctexpr = (DistinctExpr*)node;
-           FuncExprState* fstate = makeNode(FuncExprState);
-           fstate->xprstate.is_flt_frame = false;
-
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalDistinct;
-           fstate->args = (List*)ExecInitExprByRecursion((Expr*)distinctexpr->args, parent);
-           fstate->func.fn_oid = InvalidOid; /* not initialized */
-           state = (ExprState*)fstate;
-       } break;
-       case T_NullIfExpr: {
-           NullIfExpr* nullifexpr = (NullIfExpr*)node;
-           FuncExprState* fstate = makeNode(FuncExprState);
-           fstate->xprstate.is_flt_frame = false;
-
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalNullIf;
-           fstate->args = (List*)ExecInitExprByRecursion((Expr*)nullifexpr->args, parent);
-           fstate->func.fn_oid = InvalidOid; /* not initialized */
-           state = (ExprState*)fstate;
-       } break;
-       case T_ScalarArrayOpExpr: {
-           ScalarArrayOpExpr* opexpr = (ScalarArrayOpExpr*)node;
-           ScalarArrayOpExprState* sstate = makeNode(ScalarArrayOpExprState);
-           sstate->fxprstate.xprstate.is_flt_frame = false;
-
-           sstate->fxprstate.xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalScalarArrayOp;
-           sstate->fxprstate.args = (List*)ExecInitExprByRecursion((Expr*)opexpr->args, parent);
-           sstate->fxprstate.func.fn_oid = InvalidOid; /* not initialized */
-           sstate->element_type = InvalidOid;          /* ditto */
-           state = (ExprState*)sstate;
-       } break;
-       case T_BoolExpr: {
-           BoolExpr* boolexpr = (BoolExpr*)node;
-           BoolExprState* bstate = makeNode(BoolExprState);
-           bstate->xprstate.is_flt_frame = false;
-
-           switch (boolexpr->boolop) {
-               case AND_EXPR:
-                   bstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalAnd;
-                   break;
-               case OR_EXPR:
-                   bstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalOr;
-                   break;
-               case NOT_EXPR:
-                   bstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalNot;
-                   break;
-               default:
-                   ereport(ERROR,
-                           (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                            errmodule(MOD_OPT),
-                            errmsg("unrecognized boolop: %d", (int)boolexpr->boolop)));
-                   break;
-           }
-           bstate->args = (List*)ExecInitExprByRecursion((Expr*)boolexpr->args, parent);
-           state = (ExprState*)bstate;
-       } break;
-       case T_SubPlan: {
-           SubPlan* subplan = (SubPlan*)node;
-           SubPlanState* sstate = NULL;
-
-           if (parent == NULL)
-               ereport(ERROR,
-                       (errcode(ERRCODE_PLAN_PARENT_NOT_FOUND),
-                        errmodule(MOD_OPT),
-                        errmsg("SubPlan found with no parent plan")));
-
-           sstate = ExecInitSubPlan(subplan, parent);
-
-           /* Add SubPlanState nodes to parent->subPlan */
-           parent->subPlan = lappend(parent->subPlan, sstate);
-
-           state = (ExprState*)sstate;
-       } break;
-       case T_AlternativeSubPlan: {
-           AlternativeSubPlan* asplan = (AlternativeSubPlan*)node;
-           AlternativeSubPlanState* asstate = NULL;
-
-           if (parent == NULL)
-               ereport(ERROR,
-                       (errcode(ERRCODE_PLAN_PARENT_NOT_FOUND),
-                        errmodule(MOD_OPT),
-                        errmsg("AlternativeSubPlan found with no parent plan")));
-
-           asstate = ExecInitAlternativeSubPlan(asplan, parent);
-
-           state = (ExprState*)asstate;
-       } break;
-       case T_FieldSelect: {
-           FieldSelect* fselect = (FieldSelect*)node;
-           FieldSelectState* fstate = makeNode(FieldSelectState);
-           fstate->xprstate.is_flt_frame = false;
-
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalFieldSelect;
-           fstate->arg = ExecInitExprByRecursion(fselect->arg, parent);
-           fstate->argdesc = NULL;
-           state = (ExprState*)fstate;
-       } break;
-       case T_FieldStore: {
-           FieldStore* fstore = (FieldStore*)node;
-           FieldStoreState* fstate = makeNode(FieldStoreState);
-           fstate->xprstate.is_flt_frame = false;
-
-           fstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalFieldStore;
-           fstate->arg = ExecInitExprByRecursion(fstore->arg, parent);
-           fstate->newvals = (List*)ExecInitExprByRecursion((Expr*)fstore->newvals, parent);
-           fstate->argdesc = NULL;
-           state = (ExprState*)fstate;
-       } break;
-       case T_RelabelType: {
-           RelabelType* relabel = (RelabelType*)node;
-           GenericExprState* gstate = makeNode(GenericExprState);
-           gstate->xprstate.is_flt_frame = false;
-
-           gstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalRelabelType;
-           gstate->arg = ExecInitExprByRecursion(relabel->arg, parent);
-           state = (ExprState*)gstate;
-       } break;
-       case T_CoerceViaIO: {
-           CoerceViaIO* iocoerce = (CoerceViaIO*)node;
-           CoerceViaIOState* iostate = makeNode(CoerceViaIOState);
-           iostate->xprstate.is_flt_frame = false;
-           Oid iofunc;
-           bool typisvarlena = false;
-
-           iostate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalCoerceViaIO;
-           iostate->arg = ExecInitExprByRecursion(iocoerce->arg, parent);
-           iostate->fmtstr = iocoerce->fmtstr;
-           iostate->nlsfmtstr = iocoerce->nlsfmtstr;
-           /* lookup the result type's input function */
-           getTypeInputInfo(iocoerce->resulttype, &iofunc, &iostate->intypioparam);
-           fmgr_info(iofunc, &iostate->infunc);
-           /* lookup the input type's output function */
-           getTypeOutputInfo(exprType((Node*)iocoerce->arg), &iofunc, &typisvarlena);
-           fmgr_info(iofunc, &iostate->outfunc);
-           state = (ExprState*)iostate;
-       } break;
-       case T_ArrayCoerceExpr: {
-           ArrayCoerceExpr* acoerce = (ArrayCoerceExpr*)node;
-           ArrayCoerceExprState* astate = makeNode(ArrayCoerceExprState);
-           astate->xprstate.is_flt_frame = false;
-
-           astate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalArrayCoerceExpr;
-           astate->arg = ExecInitExprByRecursion(acoerce->arg, parent);
-           astate->fmtstr = acoerce->fmtstr;
-           astate->nlsfmtstr = acoerce->nlsfmtstr;
-           astate->resultelemtype = get_element_type(acoerce->resulttype);
-           if (astate->resultelemtype == InvalidOid)
-               ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("target type is not an array")));
-           /* Arrays over domains aren't supported yet */
-           Assert(getBaseType(astate->resultelemtype) == astate->resultelemtype);
-           astate->elemfunc.fn_oid = InvalidOid; /* not initialized */
-           astate->amstate = (ArrayMapState*)palloc0(sizeof(ArrayMapState));
-           state = (ExprState*)astate;
-       } break;
-       case T_ConvertRowtypeExpr: {
-           ConvertRowtypeExpr* convert = (ConvertRowtypeExpr*)node;
-           ConvertRowtypeExprState* cstate = makeNode(ConvertRowtypeExprState);
-           cstate->xprstate.is_flt_frame = false;
-
-           cstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalConvertRowtype;
-           cstate->arg = ExecInitExprByRecursion(convert->arg, parent);
-           state = (ExprState*)cstate;
-       } break;
-       case T_CaseExpr: {
-           CaseExpr* caseexpr = (CaseExpr*)node;
-           CaseExprState* cstate = makeNode(CaseExprState);
-           cstate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-
-           cstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalCase;
-           cstate->arg = ExecInitExprByRecursion(caseexpr->arg, parent);
-           foreach (l, caseexpr->args) {
-               CaseWhen* when = (CaseWhen*)lfirst(l);
-               CaseWhenState* wstate = makeNode(CaseWhenState);
-
-               Assert(IsA(when, CaseWhen));
-               wstate->xprstate.evalfunc = NULL; /* not used */
-               wstate->xprstate.expr = (Expr*)when;
-               wstate->xprstate.is_flt_frame = false;
-               wstate->expr = ExecInitExprByRecursion(when->expr, parent);
-               wstate->result = ExecInitExprByRecursion(when->result, parent);
-               outlist = lappend(outlist, wstate);
-           }
-           cstate->args = outlist;
-           cstate->defresult = ExecInitExprByRecursion(caseexpr->defresult, parent);
-           state = (ExprState*)cstate;
-       } break;
-       case T_ArrayExpr: {
-           ArrayExpr* arrayexpr = (ArrayExpr*)node;
-           ArrayExprState* astate = makeNode(ArrayExprState);
-           astate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-
-           astate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalArray;
-           foreach (l, arrayexpr->elements) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           astate->elements = outlist;
-           /* do one-time catalog lookup for type info */
-           get_typlenbyvalalign(
-               arrayexpr->element_typeid, &astate->elemlength, &astate->elembyval, &astate->elemalign);
-           state = (ExprState*)astate;
-       } break;
-       case T_RowExpr: {
-           RowExpr* rowexpr = (RowExpr*)node;
-           RowExprState* rstate = makeNode(RowExprState);
-           rstate->xprstate.is_flt_frame = false;
-           FormData_pg_attribute* attrs = NULL;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-           int i;
-
-           rstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalRow;
-           /* Build tupdesc to describe result tuples */
-           if (rowexpr->row_typeid == RECORDOID) {
-               /* generic record, use runtime type assignment */
-               rstate->tupdesc = ExecTypeFromExprList(rowexpr->args, rowexpr->colnames);
-               BlessTupleDesc(rstate->tupdesc);
-               /* we won't need to redo this at runtime */
-           } else {
-               /* it's been cast to a named type, use that */
-               rstate->tupdesc = lookup_rowtype_tupdesc_copy(rowexpr->row_typeid, -1);
-           }
-           /* Set up evaluation, skipping any deleted columns */
-           Assert(list_length(rowexpr->args) <= rstate->tupdesc->natts);
-           attrs = rstate->tupdesc->attrs;
-           i = 0;
-           foreach (l, rowexpr->args) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               if (!attrs[i].attisdropped) {
-                   /*
-                    * Guard against ALTER COLUMN TYPE on rowtype since
-                    * the RowExpr was created.  XXX should we check
-                    * typmod too?	Not sure we can be sure it'll be the
-                    * same.
-                    */
-                   if (exprType((Node*)e) != attrs[i].atttypid)
-                       ereport(ERROR,
-                               (errcode(ERRCODE_DATATYPE_MISMATCH),
-                                errmsg("ROW() column has type %s instead of type %s",
-                                       format_type_be(exprType((Node*)e)),
-                                       format_type_be(attrs[i].atttypid))));
-               } else {
-                   /*
-                    * Ignore original expression and insert a NULL. We
-                    * don't really care what type of NULL it is, so
-                    * always make an int4 NULL.
-                    */
-                   e = (Expr*)makeNullConst(INT4OID, -1, InvalidOid);
-               }
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-               i++;
-           }
-           rstate->args = outlist;
-           state = (ExprState*)rstate;
-       } break;
-       case T_RowCompareExpr: {
-           RowCompareExpr* rcexpr = (RowCompareExpr*)node;
-           RowCompareExprState* rstate = makeNode(RowCompareExprState);
-           rstate->xprstate.is_flt_frame = false;
-           int nopers = list_length(rcexpr->opnos);
-           List* outlist = NIL;
-           ListCell* l = NULL;
-           ListCell* l2 = NULL;
-           ListCell* l3 = NULL;
-           int i;
-
-           rstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalRowCompare;
-           Assert(list_length(rcexpr->largs) == nopers);
-           outlist = NIL;
-           foreach (l, rcexpr->largs) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           rstate->largs = outlist;
-           Assert(list_length(rcexpr->rargs) == nopers);
-           outlist = NIL;
-           foreach (l, rcexpr->rargs) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           rstate->rargs = outlist;
-           Assert(list_length(rcexpr->opfamilies) == nopers);
-           rstate->funcs = (FmgrInfo*)palloc(nopers * sizeof(FmgrInfo));
-           rstate->collations = (Oid*)palloc(nopers * sizeof(Oid));
-           i = 0;
-           forthree(l, rcexpr->opnos, l2, rcexpr->opfamilies, l3, rcexpr->inputcollids)
-           {
-               Oid opno = lfirst_oid(l);
-               Oid opfamily = lfirst_oid(l2);
-               Oid inputcollid = lfirst_oid(l3);
-               int strategy;
-               Oid lefttype;
-               Oid righttype;
-               Oid proc;
-
-               get_op_opfamily_properties(opno, opfamily, false, &strategy, &lefttype, &righttype);
-               proc = get_opfamily_proc(opfamily, lefttype, righttype, BTORDER_PROC);
-
-               /*
-                * If we enforced permissions checks on index support
-                * functions, we'd need to make a check here.  But the
-                * index support machinery doesn't do that, and neither
-                * does this code.
-                */
-               fmgr_info(proc, &(rstate->funcs[i]));
-               rstate->collations[i] = inputcollid;
-               i++;
-           }
-           state = (ExprState*)rstate;
-       } break;
-       case T_CoalesceExpr: {
-           CoalesceExpr* coalesceexpr = (CoalesceExpr*)node;
-           CoalesceExprState* cstate = makeNode(CoalesceExprState);
-           cstate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-
-           cstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalCoalesce;
-           foreach (l, coalesceexpr->args) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           cstate->args = outlist;
-           state = (ExprState*)cstate;
-       } break;
-       case T_MinMaxExpr: {
-           MinMaxExpr* minmaxexpr = (MinMaxExpr*)node;
-           MinMaxExprState* mstate = makeNode(MinMaxExprState);
-           mstate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-           TypeCacheEntry* typentry = NULL;
-
-           mstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalMinMax;
-           foreach (l, minmaxexpr->args) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           mstate->args = outlist;
-#ifdef DOLPHIN
+                estate = ExecInitExprByRecursion(e, parent);
+                outlist = lappend(outlist, estate);
+            }
+            mstate->args = outlist;
             List* cmp_outlist = NIL;
             ListCell* cmp_l = NULL;
             foreach (cmp_l, minmaxexpr->cmpargs) {
@@ -6732,228 +6207,43 @@ ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
             } else {
                 typentry = lookup_type_cache(minmaxexpr->minmaxtype, TYPECACHE_CMP_PROC);
             }
-#else
-           /* Look up the btree comparison function for the datatype */
-           typentry = lookup_type_cache(minmaxexpr->minmaxtype, TYPECACHE_CMP_PROC);
-#endif
-           if (!OidIsValid(typentry->cmp_proc))
-               ereport(ERROR,
-                       (errcode(ERRCODE_UNDEFINED_FUNCTION),
-                        errmsg("could not identify a comparison function for type %s",
-                               format_type_be(minmaxexpr->minmaxtype))));
+            if (!OidIsValid(typentry->cmp_proc)) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_FUNCTION),
+                    errmsg("could not identify a comparison function for type %s",
+                           format_type_be(minmaxexpr->minmaxtype))));
+            }
 
-           /*
+            /*
             * If we enforced permissions checks on index support
             * functions, we'd need to make a check here.  But the index
             * support machinery doesn't do that, and neither does this
             * code.
             */
-           fmgr_info(typentry->cmp_proc, &(mstate->cfunc));
-           state = (ExprState*)mstate;
-       } break;
-       case T_XmlExpr: {
-           XmlExpr* xexpr = (XmlExpr*)node;
-           XmlExprState* xstate = makeNode(XmlExprState);
-           xstate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* arg = NULL;
-
-           xstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalXml;
-           outlist = NIL;
-           foreach (arg, xexpr->named_args) {
-               Expr* e = (Expr*)lfirst(arg);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           xstate->named_args = outlist;
-
-           outlist = NIL;
-           foreach (arg, xexpr->args) {
-               Expr* e = (Expr*)lfirst(arg);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-           xstate->args = outlist;
-
-           state = (ExprState*)xstate;
-       } break;
-       case T_NullTest: {
-           NullTest* ntest = (NullTest*)node;
-           NullTestState* nstate = makeNode(NullTestState);
-           nstate->xprstate.is_flt_frame = false;
-
-           nstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalNullTest;
-           nstate->arg = ExecInitExprByRecursion(ntest->arg, parent);
-           nstate->argdesc = NULL;
-           state = (ExprState*)nstate;
-       } break;
-        case T_NanTest: {
-            NanTest* ntest = (NanTest*)node;
-            NanTestState* nstate = makeNode(NanTestState);
-            nstate->xprstate.is_flt_frame = false;
-
-            nstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalNanTest;
-            nstate->arg = ExecInitExprByRecursion(ntest->arg, parent);
-            state = (ExprState*)nstate;
-       } break;
-        case T_InfiniteTest: {
-           InfiniteTest* itest = (InfiniteTest*)node;
-           InfiniteTestState* nstate = makeNode(InfiniteTestState);
-           nstate->xprstate.is_flt_frame = false;
-
-           nstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalInfiniteTest;
-           nstate->arg = ExecInitExprByRecursion(itest->arg, parent);
-           state = (ExprState*)nstate;
-       } break;
-       case T_HashFilter: {
-           HashFilter* htest = (HashFilter*)node;
-           HashFilterState* hstate = makeNode(HashFilterState);
-           hstate->xprstate.is_flt_frame = false;
-           List* outlist = NIL;
-           ListCell* l = NULL;
-           int idx = 0;
-
-           hstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalHashFilter;
-
-           foreach (l, htest->arg) {
-               Expr* e = (Expr*)lfirst(l);
-               ExprState* estate = NULL;
-
-               estate = ExecInitExprByRecursion(e, parent);
-               outlist = lappend(outlist, estate);
-           }
-
-           hstate->arg = outlist;
-           hstate->bucketMap = get_bucketmap_by_execnode(parent->plan->exec_nodes,
-                                                         parent->state->es_plannedstmt,
-                                                         &hstate->bucketCnt);
-           hstate->nodelist = (uint2*)palloc(list_length(htest->nodeList) * sizeof(uint2));
-           foreach (l, htest->nodeList)
-               hstate->nodelist[idx++] = lfirst_int(l);
-
-           state = (ExprState*)hstate;
-       } break;
-       case T_BooleanTest: {
-           BooleanTest* btest = (BooleanTest*)node;
-           GenericExprState* gstate = makeNode(GenericExprState);
-           gstate->xprstate.is_flt_frame = false;
-
-           gstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalBooleanTest;
-           gstate->arg = ExecInitExprByRecursion(btest->arg, parent);
-           state = (ExprState*)gstate;
-       } break;
-       case T_CoerceToDomain: {
-           CoerceToDomain* ctest = (CoerceToDomain*)node;
-           CoerceToDomainState* cstate = makeNode(CoerceToDomainState);
-           cstate->xprstate.is_flt_frame = false;
-
-           cstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalCoerceToDomain;
-           cstate->arg = ExecInitExprByRecursion(ctest->arg, parent);
-           cstate->constraints = GetDomainConstraints(ctest->resulttype);
-           state = (ExprState*)cstate;
-       } break;
-       case T_CurrentOfExpr:
-           state = (ExprState*)makeNode(ExprState);
-           state->is_flt_frame = false;
-           state->evalfunc = ExecEvalCurrentOfExpr;
-           break;
-       case T_TargetEntry: {
-           TargetEntry* tle = (TargetEntry*)node;
-           GenericExprState* gstate = makeNode(GenericExprState);
-           gstate->xprstate.is_flt_frame = false;
-
-           gstate->xprstate.evalfunc = NULL; /* not used */
-           gstate->arg = ExecInitExprByRecursion(tle->expr, parent);
-           state = (ExprState*)gstate;
-       } break;
-       case T_List: {
-           List* outlist = NIL;
-           ListCell* l = NULL;
-
-           foreach (l, (List*)node) {
-               outlist = lappend(outlist, ExecInitExprByRecursion((Expr*)lfirst(l), parent));
-           }
-           /* Don't fall through to the "common" code below */
-           gstrace_exit(GS_TRC_ID_ExecInitExpr);
-           return (ExprState*)outlist;
-       }
-       case T_Rownum: {
-           RownumState* rnstate = (RownumState*)makeNode(RownumState);
-           rnstate->xprstate.is_flt_frame = false;
-           rnstate->ps = parent;
-           state = (ExprState*)rnstate;
-           state->evalfunc = (ExprStateEvalFunc)ExecEvalRownum;
-       } break;
-       case T_PrefixKey: {
-            PrefixKey* pkey = (PrefixKey*)node;
-            PrefixKeyState* pstate = makeNode(PrefixKeyState);
-            Oid argtype = exprType((Node*)pkey->arg);
-
-            if (argtype == BYTEAOID || argtype == RAWOID || argtype == BLOBOID) {
-                pstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalPrefixBytea;
-                pstate->encoding = PG_INVALID_ENCODING;
-            } else {
-                Oid argcollation = exprCollation((Node*)pkey->arg);
-                pstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalPrefixText;
-                pstate->encoding = get_valid_charset_by_collation(argcollation);
-            }
-            pstate->arg = ExecInitExpr(pkey->arg, parent);
-            
-            state = (ExprState*)pstate;
-        } break;
-        case T_UserSetElem: {
-            UserSetElem* useexpr = (UserSetElem*)node;
-            UserSetElemState* usestate = (UserSetElemState*)makeNode(UserSetElemState);
-            usestate->use = useexpr;
-            state = (ExprState*)usestate;
-            state->evalfunc = (ExprStateEvalFunc)ExecEvalUserSetElm;
-            usestate->instate = ExecInitExpr((Expr *)useexpr->val, parent);
-            u_sess->exec_cxt.has_equal_uservar = true;
-        } break;
-       case T_PriorExpr:
-            state = (ExprState*)makeNode(ExprState);
-            state->evalfunc = ExecEvalPriorExpr;
-            break;
-
-        case T_CursorExpression: {
-            ListCell* l = NULL;
-            CursorExpression* cursor_expression = (CursorExpression*)node;
-            CursorExpressionState* dstate = makeNode(CursorExpressionState);
-            dstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalCursorExpression;
-            dstate->cursor_expression = cursor_expression;
-            List* outlist = NIL;
-            foreach (l, cursor_expression->param) {
-                Expr* e = (Expr*)lfirst(l);
-                ExprState* estate = NULL;
-                estate = ExecInitExprByRecursion(e, parent);
-                outlist = lappend(outlist, estate);
-            }
-            dstate->param = outlist;
-            state = (ExprState*)dstate;
-         } break;
-
-        
+            fmgr_info(typentry->cmp_proc, &(mstate->cfunc));
+            state = (ExprState*)mstate;
+            } break;
         default:
-            ereport(ERROR,
-                (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                    errmsg("unrecognized node type: %d when initializing expression.", (int)nodeTag(node))));
-           state = (ExprState*)makeNode(ExprState); /* keep compiler quiet */
-           break;
-   }
+            gstrace_exit(GS_TRC_ID_ExecInitExpr);
+            /*
+             * other case, call kernel routine instead. we can't just return NULL is this case,
+             * cause some plugin code will call ExecInitExprByRecursion directly(not from kernel code),
+             * so we must return a valid value.
+             */
+            return ((execInitExprFunc)(u_sess->hook_cxt.kernelExecInitExpr))(node, parent);
+    }
 
    /* Common code for all state-node types */
    state->expr = node;
 
-   if (nodeTag(node) != T_TargetEntry)
+   if (nodeTag(node) != T_TargetEntry) {
        state->resultType = exprType((Node*)node);
+   }
 
    gstrace_exit(GS_TRC_ID_ExecInitExpr);
    return state;
 }
+#endif
 
 /*
  * Call ExecInitExpr() on a list of expressions, return a list of ExprStates.
