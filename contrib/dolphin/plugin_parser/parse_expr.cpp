@@ -2639,6 +2639,17 @@ static inline bool is_neeed_replace_sum_function(List* args)
     }
     return false;
 }
+
+static inline bool is_neeed_replace_date_add_function(List* args)
+{
+    if (list_length(args) == 3) {
+       Oid type1 = exprType((Node*)linitial(args));
+       Oid type2 = exprType((Node*)lsecond(args));
+       return type1 == TIMEOID && type2 == INTERVALOID;
+    }
+    return false;
+}
+
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -2729,6 +2740,21 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     if (strcmp(objname, "sum") == 0 && SYSTEM_SCHEMA_NAME(schemaname) && is_neeed_replace_sum_function(targs)) {
         ReplaceBCmptFuncName(fn->funcname, objname, "sum", "sum_ext");
     }
+
+    /* keep the return value type same with mysql
+     * mysql return type is time in 5.7
+     * but return type is datetime in 8.0
+     */
+    if (SYSTEM_SCHEMA_NAME(schemaname) && GetSessionContext()->cmpt_version == MYSQL_VERSION_5_7 &&
+        is_neeed_replace_date_add_function(targs)) {
+        if (strcmp(objname, "date_add") == 0) {
+            ReplaceBCmptFuncName(fn->funcname, objname, "date_add", "date_add_time_interval_return_time");
+        }
+        if (strcmp(objname, "date_sub") == 0) {
+            ReplaceBCmptFuncName(fn->funcname, objname, "date_sub", "date_sub_time_interval_return_time");
+        }
+    }
+    
 #endif
     /* ... and hand off to ParseFuncOrColumn */
     result = ParseFuncOrColumn(pstate, fn->funcname, targs, last_srf, fn, fn->location, fn->call_func);

@@ -24,3 +24,8 @@ BEGIN
     exit;
     END LOOP;
 END$$;
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.date_add_time_interval_return_time (time, interval, boolean) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_interval';
+
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub_time_interval_return_time (time, interval, boolean) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_interval';

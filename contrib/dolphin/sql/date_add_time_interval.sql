@@ -48,5 +48,23 @@ drop table test1;
 drop table x1;
 drop table x2;
 
+create table testdate_add(d time);
+insert into testdate_add(d) values('2022-12-31 22:12:20');
+select * from testdate_add;
+
+set dolphin.cmpt_version = '5.7';
+select date_add(d,INTERVAL 2 DAY_MINUTE) from testdate_add;
+select date_sub(d,INTERVAL 2 DAY_HOUR) from testdate_add;
+select date_sub(date_add(d,INTERVAL 2 DAY_MINUTE),INTERVAL 2 DAY_HOUR) from testdate_add;
+select date_add(date_sub(d,INTERVAL 2 DAY_MINUTE),INTERVAL 2 DAY_HOUR) from testdate_add;
+
+set dolphin.cmpt_version = '8.0';
+select date_add(d,INTERVAL 2 DAY_MINUTE) from testdate_add;
+select date_sub(d,INTERVAL 2 DAY_HOUR) from testdate_add;
+select date_sub(date_add(d,INTERVAL 2 DAY_MINUTE),INTERVAL 2 DAY_HOUR) from testdate_add;
+select date_add(date_sub(d,INTERVAL 2 DAY_MINUTE),INTERVAL 2 DAY_HOUR) from testdate_add;
+
+drop table testdate_add;
+reset dolphin.cmpt_version;
 reset current_schema;
 drop schema date_add_time_interval;
