@@ -911,8 +911,9 @@ drop function alter_function_004;
 drop function alter_function_005;
 drop function alter_function_006;
 drop function alter_function_007;
+-- security definer function not allow alter owner
 \! @abs_bindir@/gs_restore -d restore_function_db -p @portstring@ @abs_bindir@/dump_function.tar >/dev/null 2>&1; echo $?
-0
+1
 \c restore_function_db
 show lc_collate;
  lc_collate 

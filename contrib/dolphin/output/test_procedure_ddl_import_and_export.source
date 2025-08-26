@@ -826,8 +826,9 @@ drop procedure alter_procedure_004;
 drop procedure alter_procedure_005;
 drop procedure alter_procedure_006;
 drop procedure alter_procedure_007;
+-- security definer function not allow alter owner
 \! @abs_bindir@/gs_restore -d restore_procedure_db -p @portstring@ @abs_bindir@/dump_procedure.tar >/dev/null 2>&1; echo $?
-0
+1
 \c restore_procedure_db
 show lc_collate;
  lc_collate 

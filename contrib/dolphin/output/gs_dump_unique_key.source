@@ -65,7 +65,10 @@ CREATE TABLE
 ALTER TABLE
 ALTER TABLE
 ALTER TABLE
+BEGIN
 CREATE TRIGGER
+ALTER TRIGGER
+COMMIT
 --?.*
 drop schema envision cascade;
 NOTICE:  drop cascades to 2 other objects
