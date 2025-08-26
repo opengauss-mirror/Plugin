@@ -40,6 +40,7 @@ extern void ComputeIndexAttrs(IndexInfo* indexInfo, Oid* typeOidP, Oid* collatio
     int16* colOptionP, List* attList, List* exclusionOpNames, Oid relId, const char* accessMethodName,
     Oid accessMethodId, bool amcanorder, bool isconstraint);
 extern List* ChooseIndexColumnNames(const List* indexElems);
+extern bool CheckMutability(Expr* expr, bool isIndexExpr = false);
 
 #ifdef ENABLE_MULTIPLE_NODES
 extern void mark_indisvalid_local(char* schname, char* idxname);
@@ -87,6 +88,7 @@ extern void RecompileFunction(CompileStmt* stmt);
 /* commands/operatorcmds.c */
 extern void CreatePackageCommand(CreatePackageStmt* parsetree, const char* queryString);
 extern void CreatePackageBodyCommand(CreatePackageBodyStmt* parsetree, const char* queryString);
+extern void HasPrivilegeAlter(Oid roleid, bool is_secdef);
 extern ObjectAddress AlterPackageOwner(List* name, Oid newOwnerId);
 extern void AlterFunctionOwnerByPkg(Oid package_oid, Oid newOwnerId);
 
