@@ -149,12 +149,6 @@ public:
 										 const RangeTblEntry *rte,
 										 BOOL *is_distributed_table = NULL);
 
-	// translate a RangeTableEntry into a CDXLLogicalTVF
-	static CDXLLogicalTVF *ConvertToCDXLLogicalTVF(CMemoryPool *mp,
-												   CMDAccessor *md_accessor,
-												   CIdGenerator *id_generator,
-												   const RangeTblEntry *rte);
-
 	// get column descriptors from a record type
 	static CDXLColDescrArray *GetColumnDescriptorsFromRecord(
 		CMemoryPool *mp, CIdGenerator *id_generator, List *col_names,
