@@ -321,11 +321,6 @@ private:
 										 ULONG	//current_query_level
 	);
 
-	// create a dxl node from a array of datums and project elements
-	CDXLNode *TranslateTVFToDXL(const RangeTblEntry *rte, ULONG rti,
-								ULONG  //current_query_level
-	);
-
 	// translate a derived table into a DXL logical operator
 	CDXLNode *TranslateDerivedTablesToDXL(const RangeTblEntry *rte, ULONG rti,
 										  ULONG current_query_level);
