@@ -47,62 +47,15 @@
 static bool
 excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, List *restrictinfos)
 {
-	RelOptInfo rel = {
-		.type = T_RelOptInfo,
-		.reloptkind = RELOPT_OTHER_MEMBER_REL,
-		.relids = 0,
-		.isPartitionedTable = false,
-		.partflag = {},
-		.rows = 0,
-		.encodedwidth = 0,
-		.encodednum =0,
-		.reltarget = 0,   
-    	.distribute_keys = 0, 
-    	.pathlist = 0,      
-    	.ppilist = 0,         
-    	.cheapest_gather_path = {},
-   		.cheapest_startup_path = {},
-    	.cheapest_total_path = {},
-    	.cheapest_total_parallel_path = {},
-    	.cheapest_total_single_path = {},
-    	.cheapest_unique_path = {},
-    	.cheapest_parameterized_paths = 0,
-    	.direct_lateral_relids = 0,
-    	.relid = rt_index,
-    	.reltablespace = 0,   
-    	.rtekind = {},     
-    	.min_attr=0, 
-    	.max_attr=0, 
-    	.attr_needed=0, 
-    	.attr_widths=0,  
-    	.lateral_vars=0, 
-    	.lateral_relids=0,
-    	.lateral_referencers = 0,
-    	.indexlist=0,
-		.statlist={},     
-    	.pages=0,  
-    	.tuples=0,       
-    	.multiple=0,    
-   	 	.allvisfrac=0,
- 		.pruning_result=0,
-    	.partItrs=0,                        
-    	.pruning_result_for_index_usable=0,
-    	.partItrs_for_index_usable=0, 
-    	.pruning_result_for_index_unusable=0,
-    	.partItrs_for_index_unusable=0, 
-    	.bucketInfo=0,
-    	.subplan=0, 
-   		.subroot={},
-   	 	.subplan_params=0,
-		.serverid=0,
-		.userid=0,
-		.useridiscurrent=false,
-    	.fdwroutine={}, 
-    	.fdw_private = 0,
-		.unique_for_rels={},
-		.non_unique_for_rels={},
-		.baserestrictinfo = restrictinfos,
-	};
+	RelOptInfo rel;
+	errno_t rc = memset_s(&rel, sizeof(RelOptInfo), 0, sizeof(RelOptInfo));
+	if (unlikely(EOK != rc)) {
+		elog(ERROR, "%s : %d : securec check error.", __FILE__, __LINE__);
+	}
+	rel.type = T_RelOptInfo;
+	rel.relid = rt_index;
+	rel.reloptkind = RELOPT_OTHER_MEMBER_REL;
+	rel.baserestrictinfo = restrictinfos;
 
 	return relation_excluded_by_constraints(root, &rel, rte);
 }
