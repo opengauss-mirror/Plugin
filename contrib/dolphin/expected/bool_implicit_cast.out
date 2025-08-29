@@ -170,6 +170,35 @@ CONTEXT:  referenced column: col1
 insert into t_enum select `text` from test_type_table;
 --?ERROR:  invalid input value for enum .*
 CONTEXT:  referenced column: col1
+select ' 2' = true , ' q' = true;
+WARNING:  invalid input syntax for type double precision: " q"
+LINE 1: select ' 2' = true , ' q' = true;
+                             ^
+ ?column? | ?column? 
+----------+----------
+ f        | f
+(1 row)
+
+select ' 2' != true , ' q' @= true;
+WARNING:  invalid input syntax for type double precision: " q"
+LINE 1: select ' 2' != true , ' q' @= true;
+                              ^
+ERROR:  operator does not exist: double precision @= integer
+LINE 1: select ' 2' != true , ' q' @= true;
+                                   ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select ' 1.0' = true , ' 1.000' = true, '1.001' = true;
+ ?column? | ?column? | ?column? 
+----------+----------+----------
+ t        | t        | f
+(1 row)
+
+select ' 1.0' > true , ' 1.000' < true, '1.001' <> true;
+ ?column? | ?column? | ?column? 
+----------+----------+----------
+ f        | f        | t
+(1 row)
+
 drop table test_type_table;
 drop table t_set;
 drop table t_enum;
