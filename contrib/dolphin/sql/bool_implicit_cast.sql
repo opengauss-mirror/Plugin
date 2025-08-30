@@ -135,7 +135,10 @@ insert into t_enum select `longblob` from test_type_table;
 -- error expect
 insert into t_enum select `text` from test_type_table;
 
-
+select ' 2' = true , ' q' = true;
+select ' 2' != true , ' q' @= true;
+select ' 1.0' = true , ' 1.000' = true, '1.001' = true;
+select ' 1.0' > true , ' 1.000' < true, '1.001' <> true;
 
 drop table test_type_table;
 drop table t_set;

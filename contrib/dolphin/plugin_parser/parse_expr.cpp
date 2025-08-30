@@ -173,6 +173,7 @@ bool IsStringType(Oid typeoid)
         case BPCHAROID:
         case VARCHAROID:
         case TEXTOID:
+        case UNKNOWNOID:
             return true;
         default:
             if (typeoid == BINARYOID ||
@@ -183,28 +184,51 @@ bool IsStringType(Oid typeoid)
     }
 }
 
-void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
+inline bool NeedToTransformBoolToIntType(Oid leftType)
+{
+    return (IsStringType(leftType) || leftType == BITOID ||
+        leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID);
+}
+
+inline bool NeedToTransformBoolToIntOp(const char * operator_name, Oid leftType, Oid rightType)
+{
+    /* pre short cut */
+    if (leftType != BOOLOID && rightType != BOOLOID)
+        return false;
+    if (GetSessionContext()->transform_unknown_param_type_as_column_type_first)
+        return false;
+    if (operator_name == NULL || strcmp(operator_name, "=") == 0)
+        return true;
+    if ((leftType == UNKNOWNOID && rightType == BOOLOID) ||
+        (leftType == BOOLOID && rightType == UNKNOWNOID))
+        return !(strcmp(operator_name, "||") == 0 || strcmp(operator_name, "~~") == 0 ||
+                strcmp(operator_name, "!~~") == 0);
+    return false;
+}
+void DealWithBoolType(ParseState** pstate, const char * operator_name, Node** lexpr, Node** rexpr)
 {
     Oid leftType = exprType(*lexpr);
     int32 leftTypmod = exprTypmod(*lexpr);
     Oid rightType = exprType(*rexpr);
     int32 rightTypmod = exprTypmod(*rexpr);
-    if ((IsStringType(leftType) || leftType == BITOID || leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID) && rightType == BOOLOID) {
-        *rexpr = coerce_to_target_type(
-            *pstate, *rexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, NULL, NULL, -1);
-        if (IsStringType(leftType)) {
-            *lexpr = coerce_to_target_type(
-                *pstate, *lexpr, leftType, FLOAT8OID, leftTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
-                NULL, NULL, -1);
-        }
-    }
-    if ((IsStringType(rightType) || rightType == BITOID || rightType == YEAROID || rightType == FLOAT8OID || rightType == FLOAT4OID) && leftType == BOOLOID) {
-        *lexpr = coerce_to_target_type(
-            *pstate, *lexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, NULL, NULL, -1);
-        if (IsStringType(rightType)) {
+    if (NeedToTransformBoolToIntOp(operator_name, leftType, rightType)) {
+        if (NeedToTransformBoolToIntType(leftType) && rightType == BOOLOID) {
             *rexpr = coerce_to_target_type(
-                *pstate, *rexpr, rightType, FLOAT8OID, rightTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
-                NULL, NULL, -1);
+                *pstate, *rexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, NULL, NULL, -1);
+            if (IsStringType(leftType)) {
+                *lexpr = coerce_to_target_type(
+                    *pstate, *lexpr, leftType, FLOAT8OID, leftTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
+                    NULL, NULL, -1);
+            }
+        }
+        if (NeedToTransformBoolToIntType(rightType) && leftType == BOOLOID) {
+            *lexpr = coerce_to_target_type(
+                *pstate, *lexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, NULL, NULL, -1);
+            if (IsStringType(rightType)) {
+                *rexpr = coerce_to_target_type(
+                    *pstate, *rexpr, rightType, FLOAT8OID, rightTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST,
+                    NULL, NULL, -1);
+            }
         }
     }
 }
@@ -1782,9 +1806,7 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
         rexpr = transformExprRecurse(pstate, rexpr);
 
 #ifdef DOLPHIN
-        if (strcmp(strVal(linitial(a->name)), "=") == 0) {
-            DealWithBoolType(&pstate, &lexpr, &rexpr);
-        }
+        DealWithBoolType(&pstate, strVal(linitial(a->name)), &lexpr, &rexpr);
         DealWithIntervalType(&pstate, &lexpr, &rexpr, strVal(linitial(a->name)));
         CoerceConstToTargetType(&pstate, &lexpr, &rexpr, a, strVal(linitial(a->name)));
 #endif
@@ -5755,7 +5777,7 @@ static Node* make_row_distinct_op(ParseState* pstate, List* opname, RowExpr* lro
 Expr* make_distinct_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int location)
 {
 #ifdef DOLPHIN
-    DealWithBoolType(&pstate, &ltree, &rtree);
+    DealWithBoolType(&pstate, NULL, &ltree, &rtree);
 #endif
     Expr* result = NULL;
     Node* last_srf = parse_get_last_srf(pstate);
