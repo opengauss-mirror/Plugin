@@ -308,13 +308,6 @@ private:
 			ctxt_translation_prev_siblings	// translation contexts of previous siblings
 	);
 
-	// translate DXL TVF into a SPQDB Function Scan node
-	Plan *TranslateDXLTvf(
-		const CDXLNode *tvf_dxlnode, CDXLTranslateContext *output_context,
-		CDXLTranslationContextArray *
-			ctxt_translation_prev_siblings	// translation contexts of previous siblings
-	);
-
 	Plan *TranslateDXLSubQueryScan(
 		const CDXLNode *subquery_scan_dxlnode,
 		CDXLTranslateContext *output_context,
@@ -457,11 +450,6 @@ private:
 		CDXLTranslationContextArray *child_contexts,
 		CDXLTranslateContext *output_context, bool is_eq_filters,
 		bool is_eq_filter_elems);
-
-	// create range table entry from a CDXLPhysicalTVF node
-	RangeTblEntry *TranslateDXLTvfToRangeTblEntry(
-		const CDXLNode *tvf_dxlnode, CDXLTranslateContext *output_context,
-		CDXLTranslateContextBaseTable *base_table_context);
 
 	// create range table entry from a CDXLPhysicalValueScan node
 	RangeTblEntry *TranslateDXLValueScanToRangeTblEntry(
