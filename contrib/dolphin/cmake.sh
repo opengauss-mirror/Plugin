@@ -5,7 +5,7 @@ rm -f dolphin--4.2.sql
 touch dolphin--4.2.sql
 for i in `ls sql_script`; do cat sql_script/$i >> dolphin--4.2.sql; done
 for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--4.2.sql; done
-cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql dolphin--4.1--4.2.sql >> dolphin--4.2.sql
+cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql >> dolphin--4.2.sql
 rm -f dolphin--1.0--1.1.sql
 cp upgrade_script/dolphin--1.0--1.1.sql dolphin--1.0--1.1.sql
 rm -f dolphin--1.1--1.0.sql
