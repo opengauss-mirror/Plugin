@@ -865,8 +865,8 @@ Datum input_timestamp_in(char* str, Oid typioparam, int32 typmod, bool can_ignor
     int tz;
     int dterr;
 
-    if (u_sess->attr.attr_common.enable_iud_fusion) {
-        if (u_sess && u_sess->parser_cxt.fmt_str) {
+    if (u_sess && u_sess->attr.attr_common.enable_iud_fusion) {
+        if (u_sess->parser_cxt.fmt_str) {
             text* fmt_txt = cstring_to_text(u_sess->parser_cxt.fmt_str);
             text* date_txt = cstring_to_text(str);
             do_to_timestamp(date_txt, fmt_txt, tm, &fsec, &tz);
