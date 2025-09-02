@@ -9610,7 +9610,8 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     if ((*((int128 *)DatumGetPointer((Datum)(&ret_round)))) >= PG_UINT64_MAX) {
                         appendStringInfoString(&str, MAX_UINT32_STR);
                     } else {
-                        quotient = (uint32)(round(use_convert_timevalue_to_scalar(value, valtype)));
+                        result_l = round(use_convert_timevalue_to_scalar(value, valtype));
+                        quotient = (uint32)result_l;
                         str = char_deal(str, quotient, remainder, remainders, times);
                     }
                     break;
