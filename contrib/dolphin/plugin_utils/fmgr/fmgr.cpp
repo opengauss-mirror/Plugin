@@ -3142,8 +3142,12 @@ void FreeFuncCallUDFInfo(FunctionCallInfoData* Fcinfo)
                 pfree_ext(Fcinfo->udfInfo.udfMsgBuf->data);
                 resetStringInfo(Fcinfo->udfInfo.udfMsgBuf);
             }
-            pfree_ext(Fcinfo->udfInfo.arg[i]);
-            pfree_ext(Fcinfo->udfInfo.null[i]);
+            if (Fcinfo->udfInfo.arg) {
+                pfree_ext(Fcinfo->udfInfo.arg[i]);
+            }
+            if (Fcinfo->udfInfo.null) {
+                pfree_ext(Fcinfo->udfInfo.null[i]);
+            }
         }
         pfree_ext(Fcinfo->udfInfo.arg);
         pfree_ext(Fcinfo->udfInfo.null);

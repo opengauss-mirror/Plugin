@@ -590,11 +590,11 @@ static void StrategyFuncMaxTimestamptz(ParallelFunctionState* state)
     TupleTableSlot* slot = NULL;
     TimestampTz* result = NULL;
 
+    Assert(state && state->tupstore);
     state->resultset = (TimestampTz*)palloc(sizeof(TimestampTz));
     result = (TimestampTz*)state->resultset;
     *result = 0;
 
-    Assert(state && state->tupstore);
     if (NULL == state->tupdesc) {
         /*
          * if there is only one coordinator, there is no remote coordinator, tupdesc
@@ -10219,9 +10219,11 @@ Datum gs_total_nodegroup_memory_detail(PG_FUNCTION_ARGS)
         SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
     }
 
-    pfree_ext(ngmemsize_ptr->ngmemsize);
-    pfree_ext(ngmemsize_ptr->ngname);
-    pfree_ext(ngmemsize_ptr);
+    if (ngmemsize_ptr != NULL) {
+        pfree_ext(ngmemsize_ptr->ngmemsize);
+        pfree_ext(ngmemsize_ptr->ngname);
+        pfree_ext(ngmemsize_ptr);
+    }
 
     /* do when there is no more left */
     SRF_RETURN_DONE(funcctx);

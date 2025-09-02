@@ -2520,7 +2520,7 @@ Oid* GetRelationDistributionNodes(PGXCSubCluster* subcluster, int* numnodes)
     }
 
     /* Build list of nodes from given group */
-    if (nodes == NULL && subcluster->clustertype == SUBCLUSTER_GROUP) {
+    if (nodes == NULL && subcluster != NULL && subcluster->clustertype == SUBCLUSTER_GROUP) {
         Assert(list_length(subcluster->members) == 1);
 
         foreach (lc, subcluster->members) {
@@ -5187,6 +5187,10 @@ void heap_truncate_one_rel(Relation rel)
     Oid toastrelid;
     LOCKMODE lockmode = AccessExclusiveLock;
 
+    if (!RelationIsValid(rel)) {
+        ereport(ERROR, (errmsg("truncate relation failed: Invalid relation.")));
+    }
+
     if (RELATION_IS_GLOBAL_TEMP(rel)) {
         if (!gtt_storage_attached(RelationGetRelid(rel)))
             return;
@@ -7807,10 +7811,10 @@ void heap_truncate_one_part(Relation rel, Oid partOid)
 int2 computeTupleBucketId(Relation rel, HeapTuple tuple)
 {
     TupleDesc tup_desc = rel->rd_att;
+    Assert(REALTION_BUCKETKEY_VALID(rel));
     int2vector* col_ids = rel->rd_bucketkey->bucketKey; /* vector of column id */
     MultiHashKey mkeys;
 
-    Assert(REALTION_BUCKETKEY_VALID(rel));
     mkeys.keyNum = (uint32)col_ids->dim1;
     mkeys.keyTypes = rel->rd_bucketkey->bucketKeyType;
     mkeys.locatorType = LOCATOR_TYPE_HASH;
