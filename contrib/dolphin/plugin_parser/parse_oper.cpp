@@ -1101,6 +1101,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
     char* opername = NULL;
     bool jsonTransfored = false;
     GetDolphinOperatorTupInfo info;
+    GetSessionContext()->is_cmp_op_stmt = true;
 #endif
     /* Select the operator */
     if (rtree == NULL) {
@@ -1303,6 +1304,10 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
     }
 
     ReleaseSysCache(tup);
+
+#ifdef DOLPHIN
+    GetSessionContext()->is_cmp_op_stmt = false;
+#endif
 
     return (Expr*)result;
 }

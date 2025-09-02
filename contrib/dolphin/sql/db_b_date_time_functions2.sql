@@ -673,6 +673,35 @@ select time_to_sec(cast('294277-01-1' as timestamp));
 select time_to_sec(cast('294278-01-1' as timestamp));
 select time_to_sec(cast('2001-13-29' as timestamp));
 
+create table test_date(c1 date);
+
+reset dolphin.sql_mode;
+insert into test_date values ('0000-00-00');
+insert ignore into test_date values ('0000-00-00');
+select * from test_date where c1 = '0000-00-00';
+delete from test_date where c1 = '0000-00-00';
+
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into test_date values ('0000-00-00');
+insert ignore into test_date values ('0000-00-00');
+select * from test_date where c1 = '0000-00-00';
+delete from test_date where c1 = '0000-00-00';
+
+set dolphin.sql_mode = 'no_zero_date';
+insert into test_date values ('0000-00-00');
+insert ignore into test_date values ('0000-00-00');
+select * from test_date where c1 = '0000-00-00';
+delete from test_date where c1 = '0000-00-00';
+
+set dolphin.sql_mode = '';
+insert into test_date values ('0000-00-00');
+insert ignore into test_date values ('0000-00-00');
+select * from test_date where c1 = '0000-00-00';
+delete from test_date where c1 = '0000-00-00';
+
+reset dolphin.sql_mode;
+drop table test_date;
+
 \c contrib_regression
 set dolphin.b_compatibility_mode = off;
 DROP DATABASE b_datetime_func_test2;

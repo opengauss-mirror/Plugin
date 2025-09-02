@@ -203,6 +203,7 @@ typedef struct BSqlPluginContext {
     bool treat_float_with_precision_as_float_type;
     bool transform_unknown_param_type_as_column_type_first;
     bool is_set_stmt;
+    bool is_cmp_op_stmt;
 #endif
 } bSqlPluginContext;
 
