@@ -38,6 +38,7 @@
 #include "access/datavec/vector.h"
 #include "plugin_utils/float.h"
 #include "plugin_utils/timestamp.h"
+#include "plugin_utils/varlena.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
@@ -803,9 +804,8 @@ bool is_req_from_gsql()
 
 bool inline is_type_support_not_escape_zero(Oid type)
 {
-    return BINARYOID == type;
+    return type >= FirstNormalObjectId && BINARYOID == type;
 }
-
 
 void dolphin_pq_sendcountedtext_binary_printtup(StringInfo buf, const char* str, int slen, int src_encoding, void* convert_finfo)
 {
@@ -959,14 +959,14 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
-                    case F_BPCHAROUT: 
-                        /* support dolphin customizing bpcharout */
-                        if (u_sess->attr.attr_sql.dolphin) {
-                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
-                            need_free = true;
-                            break;
+                    case F_BPCHAROUT:
+                        outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+                        if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                            trim_trailing_space(outputstr);
                         }
-                    case F_VARCHAROUT: 
+                        need_free = !check_need_free_varchar_output(outputstr);
+                        break;
+                    case F_VARCHAROUT:
                         outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
                         need_free = !check_need_free_varchar_output(outputstr);
                         break;
@@ -989,14 +989,8 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         need_free = !check_need_free_numeric_output(outputstr);
                         break;
                     case F_DATE_OUT:
-                        /* support dolphin customizing dateout */
-                        if (u_sess->attr.attr_sql.dolphin) {
-                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
-                            need_free = true;
-                        } else {
-                            outputstr = output_date_out(DatumGetDateADT(attr));
-                            need_free = !check_need_free_date_output(outputstr);
-                        }
+                        outputstr = output_date_out(DatumGetDateADT(attr));
+                        need_free = !check_need_free_date_output(outputstr);
                         break;
                     case F_VECTOR_OUT:
                         outputstr = u_sess->utils_cxt.vectoroutput_buffer;
