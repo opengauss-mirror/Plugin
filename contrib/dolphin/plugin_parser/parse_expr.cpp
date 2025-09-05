@@ -2765,7 +2765,8 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     /* we cannot modify the result type of the built-in function directly, so we need to replace 
      * it with a function equivalent to mysql
      */
-    if (strcmp(objname, "sum") == 0 && SYSTEM_SCHEMA_NAME(schemaname) && is_neeed_replace_sum_function(targs)) {
+    if (strcmp(objname, "sum") == 0 && SYSTEM_SCHEMA_NAME(schemaname) && is_neeed_replace_sum_function(targs) &&
+        get_func_oid("sum_ext", PG_CATALOG_NAMESPACE, NULL, false) != InvalidOid) {
         ReplaceBCmptFuncName(fn->funcname, objname, "sum", "sum_ext");
     }
 
@@ -2775,10 +2776,12 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
      */
     if (SYSTEM_SCHEMA_NAME(schemaname) && GetSessionContext()->cmpt_version == MYSQL_VERSION_5_7 &&
         is_neeed_replace_date_add_function(targs)) {
-        if (strcmp(objname, "date_add") == 0) {
+        if (strcmp(objname, "date_add") == 0 &&
+            get_func_oid("date_add_time_interval_return_time", PG_CATALOG_NAMESPACE, NULL, false) != InvalidOid) {
             ReplaceBCmptFuncName(fn->funcname, objname, "date_add", "date_add_time_interval_return_time");
         }
-        if (strcmp(objname, "date_sub") == 0) {
+        if (strcmp(objname, "date_sub") == 0 &&
+            get_func_oid("date_sub_time_interval_return_time", PG_CATALOG_NAMESPACE, NULL, false) != InvalidOid) {
             ReplaceBCmptFuncName(fn->funcname, objname, "date_sub", "date_sub_time_interval_return_time");
         }
     }
