@@ -2049,24 +2049,21 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
 }
 
 #ifdef DOLPHIN
-void timestamptz_out_internal(TimestampTz dt, char** result, bool print_tz)
+void timestamptz_out_internal(TimestampTz dt, char* result, bool print_tz)
 {
     int tz;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
     const char* tzn = NULL;
-    char buf[MAXDATELEN + 1];
-
     CheckNlsFormat();
 
-    if (TIMESTAMP_NOT_FINITE(dt))
-        EncodeSpecialTimestamp(dt, buf);
-    else if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) == 0)
-        EncodeDateTimeForBDatabase(tm, fsec, print_tz, tz, tzn, u_sess->time_cxt.DateStyle, buf);
-    else
+    if (TIMESTAMP_NOT_FINITE(dt)) {
+        EncodeSpecialTimestamp(dt, result);
+    } else if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) == 0) {
+        EncodeDateTimeForBDatabase(tm, fsec, print_tz, tz, tzn, u_sess->time_cxt.DateStyle, result);
+    } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
-
-    *result = pstrdup(buf);
+    }
 }
 #endif
 
@@ -2076,13 +2073,11 @@ void timestamptz_out_internal(TimestampTz dt, char** result, bool print_tz)
 Datum timestamptz_out(PG_FUNCTION_ARGS)
 {
     TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
-    char* result = NULL;
-
 #ifdef DOLPHIN
-    timestamptz_out_internal(dt, &result, true);
+    char result[MAXDATELEN + 1];
+    timestamptz_out_internal(dt, result, true);
+    PG_RETURN_CSTRING(pstrdup(result));
 #endif
-
-    PG_RETURN_CSTRING(result);
 }
 
 /*

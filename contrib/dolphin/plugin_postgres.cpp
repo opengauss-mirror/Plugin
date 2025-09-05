@@ -894,7 +894,7 @@ BSqlPluginContext* GetSessionContext()
     if (unlikely(u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL)) {
         init_session_vars();
     }
-    return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
+    return (BSqlPluginContext *)u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
 }
 
 void set_extension_index(uint32 index)

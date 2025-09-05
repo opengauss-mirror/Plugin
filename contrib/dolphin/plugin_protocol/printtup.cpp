@@ -253,6 +253,99 @@ static void convertBitsToBytes(char* bitStr, StringInfo buf)
     }
 }
 
+static inline bool is_binary_type(Oid type_oid)
+{
+    if (type_oid == BLOBOID || type_oid == RAWOID || type_oid == BYTEAOID) {
+        return true;
+    }
+
+    if (type_oid >= FirstNormalObjectId && (type_oid == BINARYOID || type_oid == VARBINARYOID ||
+        type_oid == TINYBLOBOID || type_oid == MEDIUMBLOBOID || type_oid == LONGBLOBOID)) {
+        return true;
+    }
+    return false;
+}
+
+static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free)
+{
+    char *outputstr = NULL;
+    Datum new_attr;
+    *need_free = false;
+    switch (state->typoutput) {
+        case F_INT4OUT: {
+            outputstr = u_sess->utils_cxt.int4output_buffer;
+            int length = 0;
+            pg_ltoa(DatumGetInt32(attr), outputstr, &length);
+            break;
+        }
+        case F_INT8OUT: {
+            outputstr = u_sess->utils_cxt.int8output_buffer;
+            int length = 0;
+            pg_lltoa(DatumGetInt64(attr), outputstr, &length);
+            break;
+        }
+        case F_BPCHAROUT:
+            outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+            if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                trim_trailing_space(outputstr);
+            }
+            *need_free = !check_need_free_varchar_output(outputstr);
+            break;
+        case F_VARCHAROUT:
+            outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+            *need_free = !check_need_free_varchar_output(outputstr);
+            break;
+        case F_FLOAT4OUT: {
+            outputstr = u_sess->utils_cxt.float4output_buffer;
+            pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
+            break;
+        }
+        case F_FLOAT8OUT: {
+            outputstr = u_sess->utils_cxt.float8output_buffer;
+            dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
+            break;
+        }
+        case F_NUMERIC_OUT:
+            new_attr = PointerGetDatum(DatumGetNumeric(attr));
+            outputstr = output_numeric_out((Numeric)new_attr);
+            *need_free = !check_need_free_numeric_output(outputstr);
+            if (DatumGetPointer(new_attr) != DatumGetPointer(attr)) {
+                pfree(DatumGetPointer(new_attr));
+            }
+            break;
+        case F_DATE_OUT:
+            outputstr = output_date_out(DatumGetDateADT(attr));
+            *need_free = !check_need_free_date_output(outputstr);
+            break;
+        case F_VECTOR_OUT:
+            outputstr = u_sess->utils_cxt.vectoroutput_buffer;
+            PrintOutVector(outputstr, attr);
+            break;
+        case F_TIMESTAMP_OUT: {
+            outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+            Timestamp ts = DatumGetTimestamp(attr);
+            timestamp_out(ts, outputstr);
+            break;
+        }
+        case F_TIMESTAMPTZ_OUT: {
+            outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+            Timestamp ts = DatumGetTimestampTz(attr);
+            timestamptz_out_internal(ts, outputstr, false);
+            break;
+        }
+        default: {
+            new_attr = state->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(attr)) : attr;
+            outputstr = OutputFunctionCall(&state->finfo, new_attr);
+            *need_free = true;
+            if (DatumGetPointer(new_attr) != DatumGetPointer(attr)) {
+                pfree(DatumGetPointer(new_attr));
+            }
+            break;
+        }
+    }
+    return outputstr;
+}
+
 static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
      /*
@@ -260,8 +353,7 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
      */
     for (int i = 0; i < natts; ++i) {
         PrinttupAttrInfo *thisState = myState->myinfo + i;
-        Datum origattr = slot->tts_values[i];
-        Datum attr = static_cast<uintptr_t>(0);
+        Datum attr = slot->tts_values[i];
         char *outputstr = NULL;
 
         if (slot->tts_isnull[i] || slot->tts_tupleDescriptor->attrs[i].attisdropped) {
@@ -269,37 +361,22 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
             continue;
         }
 
-        /*
-         * If we have a toasted datum, forcibly detoast it here to avoid
-         * memory leakage inside the type's output routine.
-         */
-        attr = thisState->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(origattr)) : origattr;
-
         Oid typeOid = slot->tts_tupleDescriptor->attrs[i].atttypid;
-        if (typeOid == BINARYOID || typeOid == VARBINARYOID ||
-            typeOid == TINYBLOBOID || typeOid == MEDIUMBLOBOID ||
-            typeOid == LONGBLOBOID || typeOid == BLOBOID ||
-            typeOid == RAWOID || typeOid == BYTEAOID) {
+        if (is_binary_type(typeOid)) {
             bytea* barg = DatumGetByteaPP(attr);
             dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
-        } else if (typeOid == TIMESTAMPTZOID) {
-            timestamptz_out_internal(DatumGetTimestampTz(attr), &outputstr, false);
-            dq_append_string_lenenc(buf, outputstr);
-            pfree(outputstr);
         } else {
-            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+            bool need_free = false;
+            outputstr = get_output_str(thisState, attr, &need_free);
             if (typeOid == BITOID) {
                 convertBitsToBytes(outputstr, buf);
             } else {
                 dq_append_string_lenenc(buf, outputstr);
             }
 
-            pfree(outputstr);
-        }
-
-        /* Clean up detoasted copy, if any */
-        if (DatumGetPointer(attr) != DatumGetPointer(origattr)) {
-            pfree(DatumGetPointer(attr));
+            if (need_free) {
+                pfree(outputstr);
+            }
         }
     }
 }
