@@ -199,6 +199,7 @@ static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
     PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
 static void SpiMultiSelectException();
+static bool CheckProcIsSelectProc();
 extern DestReceiver* dophin_default_printtup_create_DR(CommandDest dest);
 
 static ProtocolExtensionConfig dolphin_protocol_config = default_protocol_config;
@@ -365,6 +366,7 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginSpiReciverParamHook = (void*)SetSqlProcSpiStmtParams;
     u_sess->hook_cxt.pluginSpiExecuteMultiResHook = (void*)SpiIsExecMultiSelect;
     u_sess->hook_cxt.pluginMultiResExceptionHook = (void*)SpiMultiSelectException;
+    u_sess->hook_cxt.pluginCheckSelectProcHook = (void*)CheckProcIsSelectProc;
     u_sess->hook_cxt.getTypeZeroValueHook = (void*)DolphinGetTypeZeroValue;
     u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
     u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
@@ -565,6 +567,10 @@ static void SpiMultiSelectException()
     }
 }
 
+static bool CheckProcIsSelectProc()
+{
+    return SQL_MODE_AllOW_PROCEDURE_WITH_SELECT();
+}
 
 static bool CheckNullsMinimalPolicy(bool* newval, void** extra, GucSource source)
 {
