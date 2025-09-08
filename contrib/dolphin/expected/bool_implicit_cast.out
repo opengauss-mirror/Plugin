@@ -202,6 +202,11 @@ select ' 1.0' > true , ' 1.000' < true, '1.001' <> true;
 drop table test_type_table;
 drop table t_set;
 drop table t_enum;
+select trace from dbe_perf.get_statement_history('2020-12-01 09:25:22', '2025-12-31 23:54:41') where query like 'select%from users%';
+ trace 
+-------
+(0 rows)
+
 drop schema bool_implicit_cast cascade;
 NOTICE:  drop cascades to table t_v13
 reset current_schema;

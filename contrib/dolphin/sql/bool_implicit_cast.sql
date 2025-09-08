@@ -144,6 +144,8 @@ drop table test_type_table;
 drop table t_set;
 drop table t_enum;
 
+select trace from dbe_perf.get_statement_history('2020-12-01 09:25:22', '2025-12-31 23:54:41') where query like 'select%from users%';
+
 drop schema bool_implicit_cast cascade;
 reset current_schema;
 
