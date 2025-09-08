@@ -418,7 +418,7 @@ newParam		:({identifier}|{integer})
 
 newArray		:({identifier}|{integer}){space}*\]
 
-set_user_cont			[A-Za-z\377_0-9\$\.]
+set_user_cont			[A-Za-z\200-\377_0-9\$\.]
 set_user_escape_quote		[^']
 set_user_escape_dquote		[^"]
 set_user_escape_bquote		[^`]	
