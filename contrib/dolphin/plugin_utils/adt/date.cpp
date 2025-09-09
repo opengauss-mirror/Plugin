@@ -5688,10 +5688,13 @@ Datum to_days(PG_FUNCTION_ARGS) {
         ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime value out of range")));
         PG_RETURN_NULL();
     }
-
+    /* mysql '0000-02-29' illegal */
+    if (datetime >= B_FORMAT_TIMESTAMP_APART_RIGHT) {
+        datetime -= USECS_PER_DAY;
+    }
     /* To avoid overflow */
-    days = datetime > 0 ? (static_cast<uint64>(datetime) - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY
-                        : (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
+    days = datetime > 0 ? (static_cast<uint64>(datetime) - B_FORMAT_TIMESTAMP_BASE_VALUE) / USECS_PER_DAY
+                        : (datetime - B_FORMAT_TIMESTAMP_BASE_VALUE) / USECS_PER_DAY;
 
     PG_RETURN_INT64(days);
 }
@@ -7676,7 +7679,7 @@ Datum timetz_float8(PG_FUNCTION_ARGS)
     int64 temp = tmfsec2uint (tm);
     double res = temp + fsec / 1e6;
 
-    PG_RETURN_INT64(res);
+    PG_RETURN_FLOAT8(res);
 }
 
 /* cast timetz to numeric */
