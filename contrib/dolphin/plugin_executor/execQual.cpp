@@ -7194,6 +7194,8 @@ static AttrNumber GetInternalArrayAttnum(TupleDesc tupDesc, AttrNumber origVarAt
 }
 
 #define SPLIT_COUNT 2
+#define KEY_SPLIT_TAG "\007"
+#define KEY_SLASH_TAG "/"
 static Datum GetPriorValue(TupleTableSlot *slot, ExprState *exprstate, ExprContext *econtext, AttrNumber origAttnum,
                            bool *isnull)
 {
@@ -7214,8 +7216,10 @@ static Datum GetPriorValue(TupleTableSlot *slot, ExprState *exprstate, ExprConte
     int len = strlen(arrstr);
     int count = 0;
     int i = len - 1;
+    const char* spliter = (strstr(arrstr, KEY_SPLIT_TAG) == NULL) ?
+                            KEY_SLASH_TAG : KEY_SPLIT_TAG;
     for (; i >= 0 && count < SPLIT_COUNT; i--) {
-        if (arrstr[i] == '/') {
+        if (arrstr[i] == spliter[0]) {
             count++;
         }
     }
@@ -7224,7 +7228,7 @@ static Datum GetPriorValue(TupleTableSlot *slot, ExprState *exprstate, ExprConte
         Form_pg_attribute attr = TupleDescAttr(slot->tts_tupleDescriptor, origAttnum - 1);
         Oid typOid = attr->atttypid;
         int typmod = attr->atttypmod;
-        result = GetResultByType(strtok_s(&arrstr[i + 1], "/", &token_tmp), typOid, typmod);
+        result = GetResultByType(strtok_s(&arrstr[i + 1], spliter, &token_tmp), typOid, typmod);
     }
 
     /*

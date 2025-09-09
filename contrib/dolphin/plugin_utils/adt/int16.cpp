@@ -760,3 +760,15 @@ Datum int16div(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT8(result);
 }
+Datum int16um(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    int128 result;
+
+    if (unlikely(arg == PG_INT128_MIN)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int16 out of range")));
+    }
+    result = -arg;
+
+    PG_RETURN_INT128(result);
+}

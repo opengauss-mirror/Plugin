@@ -563,7 +563,8 @@ void generate_cheapest_and_sorted_path(PlannerInfo* root,
                                                  Path** cheapest_path, 
                                                  Path** sorted_path, 
                                                  double* num_groups, 
-                                                 bool has_groupby)
+                                                 bool has_groupby,
+                                                 bool has_limit)
 {
     Path* cheapestpath = NULL;
     Path* sortedpath = NULL;
@@ -595,8 +596,8 @@ void generate_cheapest_and_sorted_path(PlannerInfo* root,
         cheapestpath != linitial(final_rel->cheapest_total_path))
         sortedpath = NULL;
     else
-        sortedpath =
-            get_cheapest_fractional_path_for_pathkeys(final_rel->pathlist, root->query_pathkeys, NULL, tuple_fraction);
+        sortedpath = get_cheapest_fractional_path_for_pathkeys(
+            final_rel->pathlist, root->query_pathkeys, NULL, tuple_fraction, (has_groupby && has_limit));
 
     /* Don't return same path in both guises; just wastes effort */
     if (sortedpath == NULL || sortedpath == cheapestpath || sortedpath->hint_value < cheapestpath->hint_value) {

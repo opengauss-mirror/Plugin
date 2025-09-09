@@ -3135,7 +3135,7 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
 
     /* if non-immutable is specified, clear parallel_enable info */
     if (result_cache_item != NULL || procForm->provolatile != PROVOLATILE_IMMUTABLE) {
-        UpdatePgProcExt(funcOid, result_cache_item, (procForm->provolatile != PROVOLATILE_IMMUTABLE));
+        UpdatePgProcExt(funcOid, result_cache_item, tup, procForm->provolatile);
     }
 
     /* Recode time of alter funciton. */
