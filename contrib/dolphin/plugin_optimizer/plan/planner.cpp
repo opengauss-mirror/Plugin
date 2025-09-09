@@ -3399,7 +3399,8 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                                           &cheapest_path, 
                                           &sorted_path, 
                                           dNumGroups, 
-                                          has_groupby);
+                                          has_groupby,
+                                          (limit_tuples > 0));
         for_plugin_rel = final_rel;
         /* restore superset keys */
         root->dis_keys.superset_keys = superset_key;

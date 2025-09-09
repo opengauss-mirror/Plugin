@@ -3078,6 +3078,7 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
     foreach (lc, exprlist) {
         Expr* expr = (Expr*)lfirst(lc);
         ResTarget* col = NULL;
+        RangeTblEntry* rte = (RangeTblEntry*)linitial(pstate->p_target_rangetblentry);
 #ifndef ENABLE_MULTIPLE_NODES		
         /*
          * Rownum is not allowed in exprlist in INSERT statement.
@@ -3088,7 +3089,13 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
 
         expr = transformAssignedExpr(pstate, expr, EXPR_KIND_INSERT_TARGET, col->name, lfirst_int(attnos), col->indirection, col->location,
-            (Relation)linitial(pstate->p_target_relation), (RangeTblEntry*)linitial(pstate->p_target_rangetblentry));
+            (Relation)linitial(pstate->p_target_relation), rte);
+        if (rte->rtekind == RTE_SUBQUERY && IsA(expr, SetToDefault)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("inserting default value is not supported for subquery \"%s\"",
+                        rte->alias->aliasname)));
+        }
 
         result = lappend(result, expr);
 

@@ -1418,6 +1418,8 @@ typedef struct PLpgSQL_execstate { /* Runtime execution data	*/
     PLpgSqlTrycatchState trycatchState;
 
     MemoryContext proc_ctx;
+    List* tuptable_cxt_list;
+    int cur_tuptable_stack;
 } PLpgSQL_execstate;
 
 typedef struct PLpgSQL_pkg_execstate { /* Runtime execution data	*/

@@ -310,7 +310,6 @@ void stream_walker_context_init(shipping_context *context)
  */
 bool contains_column_tables(List* rtable)
 {
-    DISTRIBUTED_FEATURE_NOT_SUPPORTED();
     ListCell* item = NULL;
 
     foreach (item, rtable) {

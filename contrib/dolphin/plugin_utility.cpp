@@ -1293,7 +1293,7 @@ static void assemble_drop_sequence_msg(List* seqs, StringInfo str)
         schema_name = quote_identifier(nsp_name);
         seq_name = quote_identifier(rel_name);
 
-        Assert(seq_name != NULL && schema_name != NULL);
+        Assert(rel_name != NULL && nsp_name != NULL && seq_name != NULL && schema_name != NULL);
 
         rc = snprintf_s(
             query, sizeof(query), sizeof(query) - 1, "DROP SEQUENCE IF EXISTS %s.%s CASCADE;", schema_name, seq_name);

@@ -51,6 +51,7 @@ extern Datum int16mi(PG_FUNCTION_ARGS);
 extern Datum int16mul(PG_FUNCTION_ARGS);
 extern Datum int16div(PG_FUNCTION_ARGS);
 
+extern Datum int16um(PG_FUNCTION_ARGS);
 extern Datum int1_16(PG_FUNCTION_ARGS);
 extern Datum int16_1(PG_FUNCTION_ARGS);
 extern Datum int2_16(PG_FUNCTION_ARGS);

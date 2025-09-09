@@ -58,4 +58,16 @@ extern void transformStartWith(ParseState *pstate, ParseState *origin_pstate, Se
 extern void AddStartWithCTEPseudoReturnColumns(CommonTableExpr *cte, RangeTblEntry *rte, Index rte_index);
 extern void pretransformAggWithUserSet(ParseState* pstate, List** targetList, Node* groupClause, ParseExprKind exprKind);
 extern void setNamespaceLateralState(List *l_namespace, bool lateral_only, bool lateral_ok);
+
+typedef struct find_resjunk_var_context {
+    List *target_list;
+    int result;
+} find_resjunk_var_context;
+
+
+bool expression_args_tree_walker(Node* node, bool (*walker)(), void* context);
+bool contain_resjunk_var(Node* node, find_resjunk_var_context* context);
+bool is_var_resjunk(Var* var, List* targetlist);
+
+
 #endif /* PARSE_CLAUSE_H */

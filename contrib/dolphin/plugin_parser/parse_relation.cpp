@@ -803,6 +803,73 @@ searchRangeTableForCol(ParseState *pstate, char *colname, int location)
  * NULL, and we'll look it up here.  (This uglification of the API is
  * worthwhile because nearly all external callers have the RTE at hand.)
  */
+static void markRTEJoinForSelectPriv(ParseState* pstate, RangeTblEntry* rte, int rtindex, AttrNumber col)
+{
+    if (col == InvalidAttrNumber) {
+        /*
+            * A whole-row reference to a join has to be treated as whole-row
+            * references to the two inputs.
+            */
+        JoinExpr* j = NULL;
+
+        if (rtindex > 0 && rtindex <= list_length(pstate->p_joinexprs)) {
+            j = (JoinExpr*)list_nth(pstate->p_joinexprs, rtindex - 1);
+        } else {
+            j = NULL;
+        }
+        if (j == NULL) {
+            ereport(
+                ERROR, (errcode(ERRCODE_NO_DATA_FOUND), errmsg("could not find JoinExpr for whole-row reference")));
+        }
+        AssertEreport(IsA(j, JoinExpr), MOD_OPT, "");
+
+        /* Note: we can't see FromExpr here */
+        if (IsA(j->larg, RangeTblRef)) {
+            int varno = ((RangeTblRef*)j->larg)->rtindex;
+
+            markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
+        } else if (IsA(j->larg, JoinExpr)) {
+            int varno = ((JoinExpr*)j->larg)->rtindex;
+
+            markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
+        } else {
+            ereport(ERROR,
+                (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
+                    errmsg("unrecognized node type: %d", (int)nodeTag(j->rarg))));
+        }
+        if (IsA(j->rarg, RangeTblRef)) {
+            int varno = ((RangeTblRef*)j->rarg)->rtindex;
+
+            markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
+        } else if (IsA(j->rarg, JoinExpr)) {
+            int varno = ((JoinExpr*)j->rarg)->rtindex;
+
+            markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
+        } else {
+            ereport(ERROR,
+                (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
+                    errmsg("unrecognized node type: %d", (int)nodeTag(j->rarg))));
+        }
+    } else {
+        /*
+            * Regular join attribute, look at the alias-variable list.
+            *
+            * The aliasvar could be either a Var or a COALESCE expression,
+            * but in the latter case we should already have marked the two
+            * referent variables as being selected, due to their use in the
+            * JOIN clause.  So we need only be concerned with the simple Var
+            * case.
+            */
+        Var* aliasvar = NULL;
+
+        AssertEreport(col > 0 && col <= list_length(rte->joinaliasvars), MOD_OPT, "");
+        aliasvar = (Var*)list_nth(rte->joinaliasvars, col - 1);
+        if (IsA(aliasvar, Var)) {
+            markVarForSelectPriv(pstate, aliasvar, NULL);
+        }
+    }
+}
+
 static void markRTEForSelectPriv(ParseState* pstate, RangeTblEntry* rte, int rtindex, AttrNumber col)
 {
     if (rte == NULL) {
@@ -815,68 +882,10 @@ static void markRTEForSelectPriv(ParseState* pstate, RangeTblEntry* rte, int rti
         /* Must offset the attnum to fit in a bitmapset */
         rte->selectedCols = bms_add_member(rte->selectedCols, col - FirstLowInvalidHeapAttributeNumber);
     } else if (rte->rtekind == RTE_JOIN) {
-        if (col == InvalidAttrNumber) {
-            /*
-             * A whole-row reference to a join has to be treated as whole-row
-             * references to the two inputs.
-             */
-            JoinExpr* j = NULL;
-
-            if (rtindex > 0 && rtindex <= list_length(pstate->p_joinexprs)) {
-                j = (JoinExpr*)list_nth(pstate->p_joinexprs, rtindex - 1);
-            } else {
-                j = NULL;
-            }
-            if (j == NULL) {
-                ereport(
-                    ERROR, (errcode(ERRCODE_NO_DATA_FOUND), errmsg("could not find JoinExpr for whole-row reference")));
-            }
-            AssertEreport(IsA(j, JoinExpr), MOD_OPT, "");
-
-            /* Note: we can't see FromExpr here */
-            if (IsA(j->larg, RangeTblRef)) {
-                int varno = ((RangeTblRef*)j->larg)->rtindex;
-
-                markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
-            } else if (IsA(j->larg, JoinExpr)) {
-                int varno = ((JoinExpr*)j->larg)->rtindex;
-
-                markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
-            } else
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                        errmsg("unrecognized node type: %d", (int)nodeTag(j->rarg))));
-            if (IsA(j->rarg, RangeTblRef)) {
-                int varno = ((RangeTblRef*)j->rarg)->rtindex;
-
-                markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
-            } else if (IsA(j->rarg, JoinExpr)) {
-                int varno = ((JoinExpr*)j->rarg)->rtindex;
-
-                markRTEForSelectPriv(pstate, NULL, varno, InvalidAttrNumber);
-            } else {
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                        errmsg("unrecognized node type: %d", (int)nodeTag(j->rarg))));
-            }
-        } else {
-            /*
-             * Regular join attribute, look at the alias-variable list.
-             *
-             * The aliasvar could be either a Var or a COALESCE expression,
-             * but in the latter case we should already have marked the two
-             * referent variables as being selected, due to their use in the
-             * JOIN clause.  So we need only be concerned with the simple Var
-             * case.
-             */
-            Var* aliasvar = NULL;
-
-            AssertEreport(col > 0 && col <= list_length(rte->joinaliasvars), MOD_OPT, "");
-            aliasvar = (Var*)list_nth(rte->joinaliasvars, col - 1);
-            if (IsA(aliasvar, Var)) {
-                markVarForSelectPriv(pstate, aliasvar, NULL);
-            }
-        }
+        markRTEJoinForSelectPriv(pstate, rte, rtindex, col);
+    } else if (rte->rtekind == RTE_SUBQUERY && (rte->requiredPerms & (ACL_DELETE | ACL_UPDATE))) {
+        rte->requiredPerms |= ACL_SELECT;
+        rte->selectedCols = bms_add_member(rte->selectedCols, col - FirstLowInvalidHeapAttributeNumber);
     }
     /* other RTE types don't require privilege marking */
 }

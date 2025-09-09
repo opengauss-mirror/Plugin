@@ -51,9 +51,7 @@ extern bool get_number_of_groups(PlannerInfo* root, RelOptInfo* final_rel, doubl
 extern void update_tuple_fraction(PlannerInfo* root, RelOptInfo* final_rel, double* numdistinct);
 
 extern void generate_cheapest_and_sorted_path(PlannerInfo* root, RelOptInfo* final_rel, Path** cheapest_path, 
-    Path** sorted_path, double* num_groups, bool has_groupby);
-
-
+    Path** sorted_path, double* num_groups, bool has_groupby, bool has_limit);
 
 /*
  * prototypes for plan/planagg.c

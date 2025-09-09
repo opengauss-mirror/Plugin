@@ -1153,6 +1153,10 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
         rte = transformRangeSubselect(pstate, (RangeSubselect*)n);
         rtr = transformItem(pstate, rte, top_rte, top_rti, relnamespace);
 
+        if (addUpdateTable && !DB_IS_CMPT(A_FORMAT)) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("UPDATE/DELETE/INSERT through subquery is only supported in A-format database")));
+        }
         /* add startinfo if needed */
         if (pstate->p_addStartInfo) {
             AddStartWithTargetRelInfo(pstate, sw_backup, rte, rtr);
@@ -2632,6 +2636,10 @@ List* transformDistinctClause(ParseState* pstate, List** targetlist, List* sortC
             if (allowOrderbyExpr) {
                 continue;
             } else {
+                find_resjunk_var_context context = {*targetlist, false};
+                contain_resjunk_var((Node*)(tle->expr), &context);
+                if (!context.result)
+                    continue;
                 ereport(
                     ERROR,
                     (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
@@ -2663,6 +2671,258 @@ List* transformDistinctClause(ParseState* pstate, List** targetlist, List* sortC
     }
 
     return result;
+}
+
+bool is_var_resjunk(Var* var, List* targetlist)
+{
+    ListCell* tlitem = NULL;
+    foreach (tlitem, targetlist) {
+        TargetEntry* tle = (TargetEntry*)lfirst(tlitem);
+        if (IsA(tle->expr, Var)) {
+            Var* target_cell_expr = (Var*)tle->expr;
+            if (target_cell_expr->varno == var->varno &&
+                target_cell_expr->varattno == var->varattno &&
+                target_cell_expr->vartype == var->vartype &&
+                target_cell_expr->varlevelsup == var->varlevelsup)
+                return tle->resjunk;
+        }
+    }
+    /* not exist in targer list */
+    return true;
+}
+
+bool contain_resjunk_var(Node* node, find_resjunk_var_context* context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    /* Fix var node */
+    if (IsA(node, Var)) {
+        if (is_var_resjunk((Var*)node, context->target_list))  {
+            context->result = true;
+            return true;
+        }
+    }
+
+    return expression_args_tree_walker(node, (bool (*)())contain_resjunk_var, (void*)context);
+}
+
+bool expression_args_tree_walker(Node* node, bool (*walker)(), void* context)
+{
+    ListCell* temp = NULL;
+    bool (*p2walker)(void*, void*) = (bool (*)(void*, void*))walker;
+
+    /*
+     * The walker has already visited the current node, and so we need only
+     * recurse into any sub-nodes it has.
+     *
+     * We assume that the walker is not interested in List nodes per se, so
+     * when we expect a List we just recurse directly to self without
+     * bothering to call the walker.
+     */
+    if (node == NULL) {
+        return false;
+    }
+
+    /* Guard against stack overflow due to overly complex expressions */
+    check_stack_depth();
+
+    switch (nodeTag(node)) {
+        case T_Var:
+        case T_Const:
+        case T_Param:
+        case T_CoerceToDomainValue:
+        case T_CaseTestExpr:
+        case T_SetToDefault:
+        case T_CurrentOfExpr:
+        case T_RangeTblRef:
+        case T_SortGroupClause:
+        case T_GroupingId:
+        case T_Value:
+        case T_Integer:
+        case T_Float:
+        case T_String:
+        case T_BitString:
+        case T_TSQL_HexString:
+        case T_Null:
+        case T_PgFdwRemoteInfo:
+        case T_Rownum:
+        case T_UserVar:
+        case T_SetVariableExpr:
+        case T_TypeCast:
+#ifdef USE_SPQ
+        case T_DMLActionExpr:
+#endif
+            /* primitive node types with no expression subnodes */
+            break;
+        case T_WithCheckOption:
+            break;
+            
+        case T_Aggref: {
+            Aggref* expr = (Aggref*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_GroupingFunc: {
+            GroupingFunc* grouping = (GroupingFunc*)node;
+            return expression_args_tree_walker((Node*)grouping->args, walker, context);
+        }
+        
+        case T_WindowFunc: {
+            WindowFunc* expr = (WindowFunc*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_ArrayRef:
+            break;
+        
+        case T_FuncExpr: {
+            FuncExpr* expr = (FuncExpr*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_NamedArgExpr:
+            return p2walker(((NamedArgExpr*)node)->arg, context);
+        
+        case T_OpExpr:
+        case T_DistinctExpr:
+        case T_NullIfExpr: {
+            OpExpr* expr = (OpExpr*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_ScalarArrayOpExpr: {
+            ScalarArrayOpExpr* expr = (ScalarArrayOpExpr*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_BoolExpr: {
+            BoolExpr* expr = (BoolExpr*)node;
+            return expression_args_tree_walker((Node*)expr->args, walker, context);
+        }
+        
+        case T_SubLink:
+        case T_SubPlan:
+        case T_AlternativeSubPlan:
+            break;
+
+        case T_FieldSelect:
+            return p2walker(((FieldSelect*)node)->arg, context);
+            
+        case T_FieldStore: {
+            FieldStore* fstore = (FieldStore*)node;
+            return p2walker(fstore->arg, context);
+        }
+        
+        case T_RelabelType:
+            return p2walker(((RelabelType*)node)->arg, context);
+        case T_CoerceViaIO:
+            return p2walker(((CoerceViaIO*)node)->arg, context);
+        case T_ArrayCoerceExpr:
+            return p2walker(((ArrayCoerceExpr*)node)->arg, context);
+        case T_ConvertRowtypeExpr:
+            return p2walker(((ConvertRowtypeExpr*)node)->arg, context);
+        case T_CollateExpr:
+            return p2walker(((CollateExpr*)node)->arg, context);
+        case T_CaseExpr: {
+            CaseExpr* caseexpr = (CaseExpr*)node;
+            return p2walker(caseexpr->arg, context);
+        }
+        
+        case T_ArrayExpr:
+            break;
+        case T_RowExpr:
+            /* Assume colnames isn't interesting */
+            return p2walker(((RowExpr*)node)->args, context);
+            
+        case T_RowCompareExpr: {
+            RowCompareExpr* rcexpr = (RowCompareExpr*)node;
+            if (p2walker(rcexpr->largs, context)) {
+                return true;
+            }
+            if (p2walker(rcexpr->rargs, context)) {
+                return true;
+            }
+        }
+        case T_CoalesceExpr:
+            return p2walker(((CoalesceExpr*)node)->args, context);
+        case T_MinMaxExpr:
+            return p2walker(((MinMaxExpr*)node)->args, context);
+        case T_XmlExpr: {
+            XmlExpr* xexpr = (XmlExpr*)node;
+            /* we assume walker doesn't care about arg_names */
+            if (p2walker(xexpr->args, context)) {
+                return true;
+            }
+        }
+        case T_NullTest:
+            return p2walker(((NullTest*)node)->arg, context);
+        case T_NanTest:
+            return p2walker(((NanTest*)node)->arg, context);
+        case T_InfiniteTest:
+            return p2walker(((InfiniteTest*)node)->arg, context);
+        case T_HashFilter:
+            return p2walker(((HashFilter*)node)->arg, context);
+        case T_BooleanTest:
+            return p2walker(((BooleanTest*)node)->arg, context);
+        case T_CoerceToDomain:
+            return p2walker(((CoerceToDomain*)node)->arg, context);
+        case T_TargetEntry:
+            return p2walker(((TargetEntry*)node)->expr, context);
+        case T_Query:
+            /* Do nothing with a sub-Query, per discussion above */
+            break;
+        case T_WindowClause:
+            break;
+        case T_CommonTableExpr:
+            break;
+        case T_List:
+            foreach (temp, (List*)node) {
+                if (p2walker((Node*)lfirst(temp), context)) {
+                    return true;
+                }
+            }
+            break;
+        case T_FromExpr:
+        case T_UpsertExpr:
+        case T_JoinExpr:
+        case T_MergeAction:
+            break;
+
+        case T_SetOperationStmt: {
+            SetOperationStmt* setop = (SetOperationStmt*)node;
+
+            if (p2walker(setop->larg, context)) {
+                return true;
+            }
+            if (p2walker(setop->rarg, context)) {
+                return true;
+            }
+
+            /* groupClauses are deemed uninteresting */
+        }
+        case T_PlaceHolderVar:
+        case T_AppendRelInfo:
+            break;
+        case T_TableSampleClause: {
+            TableSampleClause* tsc = (TableSampleClause*)node;
+            return expression_tree_walker((Node*)tsc->args, walker, context);
+        }
+        
+        case T_TimeCapsuleClause:
+        case T_PlaceHolderInfo:
+        case T_AutoIncrement:
+            break;
+        case T_PrefixKey:
+            return p2walker(((PrefixKey*)node)->arg, context);
+        case T_UserSetElem:
+        case T_PriorExpr:
+        case T_CursorExpression:
+        default:
+            break;
+    }
+    return false;
 }
 
 /*
