@@ -107,6 +107,8 @@ postgres
 01:01:01
 2024-01-01 01:01:01.1111
 2024-01-01 01:01:01.1111
+affectedRows: 1
+generated key: 3
 Exception in thread "main" java.sql.SQLException: non-procedure CURSOR is not supported by mysql protocol.
 --?.*
 --?.*
