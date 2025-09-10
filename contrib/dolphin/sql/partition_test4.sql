@@ -371,5 +371,11 @@ copy slb_monitor_drop_part from stdin;
 select * from slb_monitor_drop_part;
 reset enable_opfusion;
 reset enable_partition_opfusion;
+create table t_list144(c1 int) partition by list(c1) (partition p1 values in (1));
+alter table t_list144 reorganize partition p1 into (partition p2 values in (1,3));
+alter table t_list144 add partition (partition np values in (4, 8));
+alter table t_list144 reorganize partition p2,np into ( partition p2 values in (6, 18), partition np values in (4, 8, 12) );
+drop table t_list144;
+
 drop schema partition_test4 cascade;
 reset current_schema;
