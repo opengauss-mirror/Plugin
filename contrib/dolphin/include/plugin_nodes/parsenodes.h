@@ -2485,6 +2485,11 @@ typedef struct GetDiagStmt {
     List *condNum;
 } GetDiagStmt;
 
+typedef struct IdentityCopyData {
+    int128 start;
+    int128 increment;
+} IdentityCopyData;
+
 #ifdef USE_SPQ
 typedef struct RangeTblFunction {
     NodeTag type;

@@ -919,7 +919,10 @@ PlannedStmt* standard_planner(Query* parse, int cursorOptions, ParamListInfo bou
     }
 
     /* Juse copy these fields only when the memory context total size meets the dropping condition. */
-    if (IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) {
+    uint64 optimize_memory_size = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
+    uint64 totalsize = u_sess->optimizer_query_memory + optimize_memory_size;
+    if (totalsize >= MEMORY_MAX_TOTAL_CONTEXT_THRESHOLD ||
+        IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) {
         top_plan = (Plan*)copyObject(top_plan);
         glob->finalrtable = (List*)copyObject(glob->finalrtable);
         glob->resultRelations = (List*)copyObject(glob->resultRelations);
