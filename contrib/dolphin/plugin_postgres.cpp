@@ -160,8 +160,8 @@ extern struct HTAB* b_oidHash;
 extern RegExternFunc b_plpgsql_function_table[3];
 extern int tmp_b_fmgr_nbuiltins;
 extern FmgrBuiltin tmp_b_fmgr_builtins[];
-extern void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool finalise_aggs, bool sortgroup_colno,
-    void* parserArg, bool qrw_phase, bool is_fqs);
+extern void deparse_query(Query* query, StringInfo buf, List* parentNamespace, bool finaliseAggs, bool sortgroupColno,
+    void* parserArg, bool qrwPhase, bool isFqs, IdentityCopyData* seqValue);
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);

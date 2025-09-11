@@ -92,6 +92,7 @@
 #include "rewrite/rewriteHandler.h"
 #include "rewrite/rewriteManip.h"
 #include "rewrite/rewriteSupport.h"
+#include "utils/int16.h"
 #include "utils/acl.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
@@ -150,6 +151,9 @@
 #define UNIQUE_OFFSET 7
 #define PRIMARY_KEY_OFFSET 11
 
+/* convert int128 integer to cstring. */
+#define IdentityInt16Out(x) (DatumGetCString(DirectFunctionCall1(int16out, Int128GetDatum(x))))
+
 #ifdef DOLPHIN
 #define  BEGIN_P_STR      " BEGIN_B_PROC " /* used in dolphin type proc body*/
 #define  BEGIN_P_LEN      14
@@ -182,6 +186,8 @@ typedef struct {
     bool is_fqs;          /* just for fqs query */
     bool is_upsert_clause;  /* just for upsert clause */
     bool skip_lock;       /* no need to lock relation for invalid view */
+    IdentityCopyData* seqValue; /* start/increment of source table identity
+                                   column's implict sequence in SELECT INTO clause. */
 } deparse_context;
 
 /*
@@ -6301,13 +6307,13 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
  * the current memory context.
  * ----------
  */
-void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool finalise_aggs, bool sortgroup_colno,
-    void* parserArg, bool qrw_phase, bool is_fqs)
+void deparse_query(Query* query, StringInfo buf, List* parentNamespace, bool finaliseAggs, bool sortgroupColno,
+    void* parserArg, bool qrwPhase, bool isFqs, IdentityCopyData* seqValue)
 {
 #ifndef DOLPHIN
     if (u_sess->hook_cxt.deparseQueryHook != NULL) {
-        ((deparse_query_func)(u_sess->hook_cxt.deparseQueryHook))(query, buf, parentnamespace,
-            finalise_aggs, sortgroup_colno, parserArg, qrw_phase, is_fqs);
+        ((deparse_query_func)(u_sess->hook_cxt.deparseQueryHook))(query, buf, parentNamespace,
+            finaliseAggs, sortgroupColno, parserArg, qrwPhase, isFqs);
         return;
     }
 #endif
@@ -6354,21 +6360,23 @@ void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool fin
 
     get_query_def(query,
         buf,
-        parentnamespace,
+        parentNamespace,
         NULL,
         PRETTYFLAG_PAREN,
         WRAP_COLUMN_DEFAULT,
         0
 #ifdef PGXC
         ,
-        finalise_aggs,
-        sortgroup_colno,
+        finaliseAggs,
+        sortgroupColno,
         parserArg
 #endif /* PGXC */
         ,
-        qrw_phase,
+        qrwPhase,
         false,
-        is_fqs);
+        isFqs,
+        false,
+        seqValue);
 
     PopOverrideSearchPath();
 }
@@ -6380,14 +6388,15 @@ void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool fin
  * the view represented by a SELECT query.
  * ----------
  */
-void get_query_def(Query* query, StringInfo buf, List* parentnamespace, TupleDesc resultDesc, int prettyFlags,
+void get_query_def(Query* query, StringInfo buf, List* parentNamespace, TupleDesc resultDesc, int prettyFlags,
     int wrapColumn, int startIndent
 #ifdef PGXC
     ,
-    bool finalise_aggs, bool sortgroup_colno, void* parserArg
+    bool finaliseAggs, bool sortgroupColno, void* parserArg
 #endif /* PGXC */
     ,
-    bool qrw_phase, bool viewdef, bool is_fqs, bool skip_lock)
+    bool qrwPhase, bool viewDef, bool isFqs, bool skipLock,
+    IdentityCopyData* seqValue)
 {
     deparse_context context;
     deparse_namespace dpns;
@@ -6403,27 +6412,28 @@ void get_query_def(Query* query, StringInfo buf, List* parentnamespace, TupleDes
      * querytree!For qrw phase, formal rewrite already add lock on relations,
      * and we don't want to change query tree again, so skip this.
      */
-    if (!qrw_phase && !skip_lock)
+    if (!qrwPhase && !skipLock)
         AcquireRewriteLocks(query, false);
 
     context.buf = buf;
-    context.namespaces = lcons(&dpns, list_copy(parentnamespace));
+    context.namespaces = lcons(&dpns, list_copy(parentNamespace));
     context.windowClause = NIL;
     context.windowTList = NIL;
-    context.varprefix = (parentnamespace != NIL || list_length(query->rtable) != 1);
+    context.varprefix = (parentNamespace != NIL || list_length(query->rtable) != 1);
     context.prettyFlags = prettyFlags;
     context.wrapColumn = wrapColumn;
     context.indentLevel = startIndent;
 #ifdef PGXC
-    context.finalise_aggs = finalise_aggs;
-    context.sortgroup_colno = sortgroup_colno;
+    context.finalise_aggs = finaliseAggs;
+    context.sortgroup_colno = sortgroupColno;
     context.parser_arg = parserArg;
 #endif /* PGXC */
-    context.qrw_phase = qrw_phase;
-    context.viewdef = viewdef;
-    context.is_fqs = is_fqs;
+    context.qrw_phase = qrwPhase;
+    context.viewdef = viewDef;
+    context.is_fqs = isFqs;
     context.is_upsert_clause = false;
-    context.skip_lock = skip_lock;
+    context.skip_lock = skipLock;
+    context.seqValue = seqValue;
 
     errno_t rc = memset_s(&dpns, sizeof(dpns), 0, sizeof(dpns));
     securec_check(rc, "", "");
@@ -8685,7 +8695,14 @@ static void get_utility_query_def(Query* query, deparse_context* context)
                         quote_identifier(coldef->colname),
                         format_type_with_typemod(tpname->typeOid, tpname->typemod));
                 }
-
+                if (DB_IS_CMPT(D_FORMAT) && coldef->is_serial) {
+                    Assert(context->seqValue != NULL);
+                    appendStringInfo(buf,
+                        " IDENTITY (%s, %s) ",
+                        IdentityInt16Out(context->seqValue->start),
+                        IdentityInt16Out(context->seqValue->increment));
+                    coldef->is_serial = false;
+                }
                 // add the compress mode for this column
                 switch (coldef->cmprs_mode) {
                     case ATT_CMPR_NOCOMPRESS:
