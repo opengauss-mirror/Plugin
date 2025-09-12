@@ -26051,6 +26051,12 @@ static void CheckPartitionValueConflictForAddPartition(Relation rel, Node *partD
     List *partKeyValueList = NIL;
     Oid existingPartOid = InvalidOid;
 
+#ifdef DOLPHIN
+    if (rel->partMap->isDirty) {
+        return;
+    }
+#endif
+
     incre_partmap_refcount(rel->partMap);
 
     int partNum = getNumberOfPartitions(rel);
@@ -30515,7 +30521,16 @@ static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
 
     bucketOid = RelationGetBucketOid(rel);
 
-    List *partitionNameList = list_concat(list_make1(destPartDefList), RelationGetPartitionNameList(rel));
+    List *partitionNameList = NULL;
+    /*
+     * Dirty partMap means relation has no partition after drop src partition,
+     * so it's no need to get partition list.
+     */
+    if (rel->partMap->isDirty) {
+        partitionNameList = destPartDefList;
+    } else {
+        partitionNameList = list_concat(list_copy(destPartDefList), RelationGetPartitionNameList(rel));
+    }
     foreach (cell, destPartDefList) {
         partDef = (PartitionDefState*)lfirst(cell);
         PartitionState *partitionState = makeNode(PartitionState);
@@ -30568,6 +30583,7 @@ static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
             (Node*)partDef,
             AccessExclusiveLock);
 
+        CacheInvalidateRelcache(rel);
         CommandCounterIncrement();
 
         if (RelationIsSubPartitioned(rel)) {

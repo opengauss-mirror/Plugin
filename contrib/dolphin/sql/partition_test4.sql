@@ -384,5 +384,11 @@ insert into tt1 values ('2001-01-01');
 insert into tt1 values ('2001-01-02');
 drop table tt1;
 
+create table t_list144(c1 int) partition by list(c1) (partition p1 values in (1));
+alter table t_list144 reorganize partition p1 into (partition p2 values in (1,3));
+alter table t_list144 add partition (partition np values in (4, 8));
+alter table t_list144 reorganize partition p2,np into ( partition p2 values in (6, 18), partition np values in (4, 8, 12) );
+drop table t_list144;
+
 drop schema partition_test4 cascade;
 reset current_schema;
