@@ -1,5 +1,6 @@
 set(EXTENSION "chparser")
 set(EXTVERSION "1.0")
+set(CMAKE_SKIP_RPATH TRUE)
 
 find_program(SCWS_EXECUTABLE NAMES scws)
 if (SCWS_EXECUTABLE)

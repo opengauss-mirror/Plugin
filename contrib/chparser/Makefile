@@ -19,9 +19,6 @@ check-scws-install:
 		exit 1; \
 	fi
 
-PG_CPPFLAGS = -I$(SCWS_HOME)/include/scws
-SHLIB_LINK = -lscws -L$(SCWS_HOME)/lib -Wl,-rpath -Wl,$(SCWS_HOME)/lib
-
 DATA = sql/$(EXTENSION)--$(EXTVERSION).sql
 DATA_TSEARCH = dict.utf8.xdb rules.utf8.ini
 
@@ -29,7 +26,7 @@ REGRESS = chparser
 
 SCWS_HOME ?= /usr/local
 PG_CPPFLAGS = -I$(SCWS_HOME)/include/scws 
-SHLIB_LINK = -lscws -L$(SCWS_HOME)/lib -Wl,-rpath -Wl,$(SCWS_HOME)/lib
+SHLIB_LINK = -lscws -L$(SCWS_HOME)/lib
 
 ifdef USE_PGXS
 PG_CONFIG ?= pg_config
