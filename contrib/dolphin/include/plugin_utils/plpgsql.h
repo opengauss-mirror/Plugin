@@ -594,6 +594,7 @@ typedef struct { /* Row variable */
     bool hasExceptionInit;
     bool atomically_null_object;
     List* nest_typnames;
+    bool* is_user_var;
 } PLpgSQL_row;
 
 typedef struct {

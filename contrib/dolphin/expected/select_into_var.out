@@ -1,0 +1,167 @@
+drop schema if exists select_into_var cascade;
+NOTICE:  schema "select_into_var" does not exist, skipping
+create schema select_into_var;
+set current_schema to 'select_into_var';
+set enable_set_variable_b_format = on;
+create table test(a int,b varchar(100), c varchar(100), d varchar(100));
+INSERT INTO test (a, b, c, d) VALUES ('100', 'Hello World', 'Tom', 'Cat');
+INSERT INTO test (a, b, c, d) VALUES ('200', 'Good Morning', 'Jack', 'Dog');
+INSERT INTO test (a, b, c, d) VALUES ('300', 'Happy New Year', 'Jenny', 'Monkey');
+begin
+select a,b into @num,@str from test;
+RAISE INFO '成功获取数据: num=%, str=%', @num, @str;
+end;
+/
+ERROR:  select result consisted of more than one row
+CONTEXT:  SQL statement "select a,b into @num,@str from test"
+PL/pgSQL function inline_code_block line 2 at SQL statement
+declare
+num int;
+str1 varchar(100);
+begin
+select a,b,c,d into num,@str,str1,@str2 from test;
+RAISE INFO '成功获取数据: num=%, str=%, str1=%, str2=%', num, @str, str1,@str2;
+end;
+/
+INFO:  成功获取数据: num=100, str=Hello World, str1=Tom, str2=Cat
+declare
+num int;
+str varchar(100);
+begin
+select a,b,c,d into num, str, @str1, @str2 from test;
+RAISE INFO '成功获取数据: num=%, str=%, str1=%, str2=%', num, str, @str1, @str2;
+end;
+/
+INFO:  成功获取数据: num=100, str=Hello World, str1=Tom, str2=Cat
+declare
+str1 varchar(100);
+str2 varchar(100);
+begin
+select a,b,c,d into @num, @str, str1, str2 from test;
+RAISE INFO '成功获取数据: num=%, str=%, str1=%, str2=%', @num, @str, str1, str2;
+end;
+/
+INFO:  成功获取数据: num=100, str=Hello World, str1=Tom, str2=Cat
+declare
+  num int;
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+declare
+  str varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, str, @str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, str, @str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+declare
+  num int;
+  str1 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+declare
+  num int;
+  str varchar(100);
+  str1 varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, str, str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, str, str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+declare
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+create table test2(a int,b varchar(100), c varchar(100), d varchar(100));
+INSERT INTO test2 (a, b, c, d) VALUES ('100', 'Hello World', 'Tom', 'Cat');
+INSERT INTO test2 (a, b, c, d) VALUES ('200', NULL, NULL, NULL);
+declare
+  num int;
+  cursor c_test is select a, b,c,d from test2;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str1=%, str2=%', num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str1=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=<NULL>, str1=<NULL>, str2=<NULL>
+create table test3(a int,b varchar(100));
+INSERT INTO test3 (a, b) VALUES ('100', 'Hello World');
+begin
+select a,b into @num,@str from test3;
+RAISE INFO '成功获取数据: num=%, str=%', @num, @str;
+end;
+/
+INFO:  成功获取数据: num=100, str=Hello World
+declare
+str varchar(100);
+begin
+select a,b into str,@num from test3;
+RAISE INFO '成功获取数据: num=%, str=%', @num, str;
+end;
+/
+INFO:  成功获取数据: num=Hello World, str=100
+drop table test;
+drop table test2;
+drop table test3;
+drop schema select_into_var cascade;
+reset current_schema;
