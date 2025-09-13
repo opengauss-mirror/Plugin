@@ -314,6 +314,23 @@ if (USE_OPENSSL)
   message(STATUS "Using OpenSSL version ${OPENSSL_VERSION}")
 endif (USE_OPENSSL)
 
+add_definitions(-DPGXC)
+add_definitions(-DUSE_SPQ)
+if(ENABLE_BBOX)
+  add_definitions(-DENABLE_BBOX)
+  message(STATUS "ENABLE_BBOX feature is enabled")
+endif()
+
+if(ENABLE_MOT)
+  add_definitions(-DENABLE_MOT)
+  message(STATUS "ENABLE_MOT feature is enabled")
+endif()
+
+if(ENABLE_HTAP)
+  add_definitions(-DENABLE_HTAP)
+  message(STATUS "HTAP feature is enabled")
+endif()
+
 if (UNIX)
   add_subdirectory(scripts)
 endif (UNIX)
@@ -341,28 +358,9 @@ if (IS_DIRECTORY ${PROJECT_SOURCE_DIR}/.git)
   configure_file(${PROJECT_SOURCE_DIR}/scripts/githooks/commit_msg.py ${PROJECT_SOURCE_DIR}/.git/hooks/commit-msg COPYONLY)
 endif()
 
-
-
-
 set(PROJECT_TRUNK_DIR ${CMAKE_SOURCE_DIR}/../..)
 set(PROJECT_OPENGS_DIR ${PROJECT_TRUNK_DIR} CACHE INTERNAL "")
 set(PROJECT_SRC_DIR ${PROJECT_OPENGS_DIR}/src CACHE INTERNAL "")
 set(Third_party_library $ENV{BINARYLIBS}/kernel/dependency/libobs/comm/include)
-add_definitions(-DPGXC)
-add_definitions(-DUSE_SPQ)
-if(ENABLE_BBOX)
-  add_definitions(-DENABLE_BBOX)
-  message(STATUS "ENABLE_BBOX feature is enabled")
-endif()
-
-if(ENABLE_MOT)
-  add_definitions(-DENABLE_MOT)
-  message(STATUS "ENABLE_MOT feature is enabled")
-endif()
-
-if(ENABLE_HTAP)
-  add_definitions(-DENABLE_HTAP)
-  message(STATUS "HTAP feature is enabled")
-endif()
 include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR} ${Third_party_library})
 
