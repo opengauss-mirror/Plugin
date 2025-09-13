@@ -1202,6 +1202,7 @@ typedef struct ColumnDef {
     bool is_not_null;          /* NOT NULL constraint specified? */
     bool is_from_type;         /* column definition came from table type */
     bool is_serial;            /* column is serial type or not */
+    bool is_identity;          /* column is identity or not */
     char storage;              /* attstorage setting, or 0 for default */
     int8 cmprs_mode;           /* compression method applied to this column */
     Node *raw_default;         /* default value (untransformed parse tree) */

@@ -2735,7 +2735,7 @@ Node* eval_const_expressions_mutator(Node* node, eval_const_expressions_context*
                     (*paramInfo->paramFetch)(paramInfo, param->paramid);
                 }
 
-                if (OidIsValid(prm->ptype)) {
+                if (OidIsValid(prm->ptype) && (prm->tabInfo == NULL || !prm->tabInfo->isnestedtable)) {
                     /* OK to substitute parameter value? */
                     if (context->estimate || (prm->pflags & PARAM_FLAG_CONST)) {
                         /*
