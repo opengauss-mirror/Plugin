@@ -8695,13 +8695,12 @@ static void get_utility_query_def(Query* query, deparse_context* context)
                         quote_identifier(coldef->colname),
                         format_type_with_typemod(tpname->typeOid, tpname->typemod));
                 }
-                if (DB_IS_CMPT(D_FORMAT) && coldef->is_serial) {
+                if (DB_IS_CMPT(D_FORMAT) && coldef->is_identity) {
                     Assert(context->seqValue != NULL);
                     appendStringInfo(buf,
                         " IDENTITY (%s, %s) ",
                         IdentityInt16Out(context->seqValue->start),
                         IdentityInt16Out(context->seqValue->increment));
-                    coldef->is_serial = false;
                 }
                 // add the compress mode for this column
                 switch (coldef->cmprs_mode) {
