@@ -1,0 +1,114 @@
+CREATE SCHEMA tools;
+SET SEARCH_PATH TO 'tools';
+SET spq.next_shard_id TO 1240000;
+SELECT * FROM run_command_on_workers(
+	'SELECT 1 + 1;'
+);
+ nodename  | nodeport | success | result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | 2
+ localhost |    58641 | t       | 2
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	$$SELECT '包含中文、 单双引号'' ""、换行符\n';$$
+);
+ nodename  | nodeport | success |              result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | 包含中文、 单双引号' ""、换行符\n
+ localhost |    58641 | t       | 包含中文、 单双引号' ""、换行符\n
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'CREATE TABLE IF NOT EXISTS worker_test(id INT, note TEXT);'
+);
+ nodename  | nodeport | success |    result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | CREATE TABLE
+ localhost |    58641 | t       | CREATE TABLE
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'CREATE INDEX IF NOT EXISTS idx_note ON worker_test(note);'
+);
+ nodename  | nodeport | success |    result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | CREATE INDEX
+ localhost |    58641 | t       | CREATE INDEX
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	$$INSERT INTO worker_test VALUES(1,'hello worker');$$
+);
+ nodename  | nodeport | success |   result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | INSERT 0 1
+ localhost |    58641 | t       | INSERT 0 1
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'SELECT row_to_json(worker_test) FROM worker_test LIMIT 1;'
+);
+ nodename  | nodeport | success |             result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | {"id":1,"note":"hello worker"}
+ localhost |    58641 | t       | {"id":1,"note":"hello worker"}
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'DROP TABLE IF EXISTS worker_test;'
+);
+ nodename  | nodeport | success |   result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | DROP TABLE
+ localhost |    58641 | t       | DROP TABLE
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	$q$
+	CREATE OR REPLACE FUNCTION greet(name TEXT) RETURNS TEXT AS $$
+	BEGIN RETURN 'HELLO, ' || name;END;
+	$$ LANGUAGE plpgsql;
+	$q$
+);
+ nodename  | nodeport | success |     result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | CREATE FUNCTION
+ localhost |    58641 | t       | CREATE FUNCTION
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'SELECT greet(''spq'');'
+);
+ nodename  | nodeport | success |   result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | HELLO, spq
+ localhost |    58641 | t       | HELLO, spq
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	$q$
+	CREATE OR REPLACE PROCEDURE hello_world()
+	AS
+	BEGIN
+		RAISE NOTICE 'Hello, openGauss!';
+	END;
+	$q$
+);
+ nodename  | nodeport | success |      result
+---------------------------------------------------------------------
+ localhost |    58639 | t       | CREATE PROCEDURE
+ localhost |    58641 | t       | CREATE PROCEDURE
+(2 rows)
+
+SELECT * FROM run_command_on_workers(
+	'CALL hello_world();'
+);
+ nodename  | nodeport | success | result
+---------------------------------------------------------------------
+ localhost |    58639 | t       |
+ localhost |    58641 | t       |
+(2 rows)
+
+DROP SCHEMA tools CASCADE;
+RESET SEARCH_PATH;

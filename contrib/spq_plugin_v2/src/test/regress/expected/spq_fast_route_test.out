@@ -1,0 +1,40 @@
+CREATE SCHEMA fast_route_test;
+SET search_path TO fast_route_test;
+SET spq.next_shard_id TO 1240000;
+SET spq.shard_count TO 2;
+CREATE TABLE fast_route_test(
+	id INT PRIMARY KEY,
+	name TEXT NOT NULL,
+	age INT CHECK(age > 0)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "fast_route_test_pkey" for table "fast_route_test"
+SELECT create_distributed_table('fast_route_test','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO fast_route_test VALUES(1, 'Alice', 25), (2, 'Bob', 30), (3, 'Jerry', 26);
+SELECT * FROM fast_route_test WHERE id = 1;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  25
+(1 row)
+
+EXPLAIN SELECT * FROM fast_route_test WHERE id = 1;
+                                                               QUERY PLAN
+---------------------------------------------------------------------
+ Spq extensible Adaptive  (cost=0.00..0.00 rows=0 width=0)
+   Task Count: 1
+   Tasks Shown: All
+   ->  Task
+         Node: host=localhost port=xxxxx dbname=regression
+         ->  Index Scan using fast_route_test_pkey_1240000 on fast_route_test_1240000 fast_route_test  (cost=0.00..8.27 rows=1 width=40)
+               Index Cond: (id = 1)
+(7 rows)
+
+EXPLAIN ANALYZE SELECT * FROM fast_route_test WHERE id = 1;
+ERROR:  Explain (analyze) command is not supported in current version.
+DROP SCHEMA fast_route_test CASCADE;
+NOTICE:  drop cascades to table fast_route_test
+RESET SEARCH_PATH;

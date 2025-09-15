@@ -15,11 +15,7 @@
 
 #include "lib/stringinfo.h"
 #include "nodes/parsenodes.h"
-#include "storage/fd.h"
-
-extern int CpuPriority;
-extern int CpuPriorityLogicalRepSender;
-extern int MaxHighPriorityBackgroundProcesess;
+#include "storage/smgr/fd.h"
 
 #define CPU_PRIORITY_INHERIT 1234
 
@@ -27,5 +23,4 @@ extern int MaxHighPriorityBackgroundProcesess;
 extern void SetOwnPriority(int priority);
 extern int GetOwnPriority(void);
 
-
-#endif   /* CITUS_PRIORITY_H */
+#endif /* CITUS_PRIORITY_H */

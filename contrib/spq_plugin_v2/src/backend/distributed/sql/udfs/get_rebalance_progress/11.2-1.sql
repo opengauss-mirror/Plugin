@@ -1,5 +1,3 @@
-DROP FUNCTION pg_catalog.get_rebalance_progress();
-
 CREATE OR REPLACE FUNCTION pg_catalog.get_rebalance_progress()
   RETURNS TABLE(sessionid integer,
                 table_name regclass,

@@ -18,22 +18,18 @@
 #include "distributed/recursive_planning.h"
 
 /* managed via guc.c */
-typedef enum
-{
-	LOCAL_JOIN_POLICY_NEVER = 0,
-	LOCAL_JOIN_POLICY_PREFER_LOCAL = 1,
-	LOCAL_JOIN_POLICY_PREFER_DISTRIBUTED = 2,
-	LOCAL_JOIN_POLICY_AUTO = 3,
+typedef enum {
+    LOCAL_JOIN_POLICY_NEVER = 0,
+    LOCAL_JOIN_POLICY_PREFER_LOCAL = 1,
+    LOCAL_JOIN_POLICY_PREFER_DISTRIBUTED = 2,
+    LOCAL_JOIN_POLICY_AUTO = 3,
 } LocalJoinPolicy;
 
-extern int LocalTableJoinPolicy;
-
-extern bool ShouldConvertLocalTableJoinsToSubqueries(List *rangeTableList);
-extern void RecursivelyPlanLocalTableJoins(Query *query,
-										   RecursivePlanningContext *context);
-extern List * RequiredAttrNumbersForRelation(RangeTblEntry *relationRte,
-											 PlannerRestrictionContext *
-											 plannerRestrictionContext);
-extern List * RequiredAttrNumbersForRelationInternal(Query *queryToProcess, int rteIndex);
+extern bool ShouldConvertLocalTableJoinsToSubqueries(List* rangeTableList);
+extern void RecursivelyPlanLocalTableJoins(Query* query,
+                                           RecursivePlanningContext* context);
+extern List* RequiredAttrNumbersForRelation(
+    RangeTblEntry* relationRte, PlannerRestrictionContext* plannerRestrictionContext);
+extern List* RequiredAttrNumbersForRelationInternal(Query* queryToProcess, int rteIndex);
 
 #endif /* LOCAL_DISTRIBUTED_JOIN_PLANNER_H */

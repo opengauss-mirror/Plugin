@@ -16,9 +16,7 @@
 
 #include "distributed/multi_physical_planner.h"
 
-
 typedef struct TupleDestination TupleDestination;
-
 
 /*
  * TupleDestinationStats holds the size related stats.
@@ -27,11 +25,9 @@ typedef struct TupleDestination TupleDestination;
  * of the intermediate results of complex subqueries and CTEs
  * so that we can put a limit on the size.
  */
-typedef struct TupleDestinationStats
-{
-	uint64 totalIntermediateResultSize;
+typedef struct TupleDestinationStats {
+    uint64 totalIntermediateResultSize;
 } TupleDestinationStats;
-
 
 /*
  * TupleDestination provides a generic interface for where to send tuples.
@@ -43,27 +39,25 @@ typedef struct TupleDestinationStats
  * accept a queryNumber parameter which denotes the index of the query that
  * tuple belongs to.
  */
-struct TupleDestination
-{
-	/* putTuple implements custom processing of a tuple */
-	void (*putTuple)(TupleDestination *self, Task *task,
-					 int placementIndex, int queryNumber,
-					 HeapTuple tuple, uint64 tupleLibpqSize);
+struct TupleDestination {
+    /* putTuple implements custom processing of a tuple */
+    void (*putTuple)(TupleDestination* self, Task* task, int placementIndex,
+                     int queryNumber, HeapTuple tuple, uint64 tupleLibpqSize);
 
-	/* tupleDescForQuery returns tuple descriptor for a query number. Can return NULL. */
-	TupleDesc (*tupleDescForQuery)(TupleDestination *self, int queryNumber);
+    /* tupleDescForQuery returns tuple descriptor for a query number. Can return NULL. */
+    TupleDesc (*tupleDescForQuery)(TupleDestination* self, int queryNumber);
 
-	/*
-	 * Used to enforce citus.max_intermediate_result_size, could be NULL
-	 * if the caller is not interested in the size.
-	 */
-	TupleDestinationStats *tupleDestinationStats;
+    /*
+     * Used to enforce spq.max_intermediate_result_size, could be NULL
+     * if the caller is not interested in the size.
+     */
+    TupleDestinationStats* tupleDestinationStats;
 };
 
-extern TupleDestination * CreateTupleStoreTupleDest(Tuplestorestate *tupleStore, TupleDesc
-													tupleDescriptor);
-extern TupleDestination * CreateTupleDestNone(void);
-extern DestReceiver * CreateTupleDestDestReceiver(TupleDestination *tupleDest,
-												  Task *task, int placementIndex);
+extern TupleDestination* CreateTupleStoreTupleDest(Tuplestorestate* tupleStore,
+                                                   TupleDesc tupleDescriptor);
+extern TupleDestination* CreateTupleDestNone(void);
+extern DestReceiver* CreateTupleDestDestReceiver(TupleDestination* tupleDest, Task* task,
+                                                 int placementIndex);
 
 #endif

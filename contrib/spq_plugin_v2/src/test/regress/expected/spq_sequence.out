@@ -1,0 +1,320 @@
+---------------------------------- simple sequece testcases ---------------------------
+---------------------------------- TEST 1: SIMPLE SEQUENCE  ------------------------------------
+CREATE TABLE t1 (id SERIAL PRIMARY KEY, name TEXT);
+NOTICE:  CREATE TABLE will create implicit sequence "t1_id_seq" for serial column "t1.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+\d t1;
+                         Table "public.t1"
+ Column |  Type   |                    Modifiers
+---------------------------------------------------------------------
+ id     | integer | not null default nextval('t1_id_seq'::regclass)
+ name   | text    |
+Indexes:
+    "t1_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+INSERT INTO t1(name) VALUES('aaaaaaaaaa'), ('bbbbbbbbb'), ('ccccccccccccc'), ('dddddddddddddd');
+SELECT * FROM t1 ORDER BY id;
+ id |      name
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa
+  2 | bbbbbbbbb
+  3 | ccccccccccccc
+  4 | dddddddddddddd
+(4 rows)
+
+-- error duplicated primary key
+INSERT INTO t1 VALUES(1, 'eeeeeeeeeeeeeeee');
+ERROR:  duplicate key value violates unique constraint "txx_pkey_xxxx"
+DETAIL:  Key (id)=(X) already exists.
+CONTEXT:  while executing command on localhost:xxxxx
+SELECT * FROM t1 ORDER BY id;
+ id |      name
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa
+  2 | bbbbbbbbb
+  3 | ccccccccccccc
+  4 | dddddddddddddd
+(4 rows)
+
+INSERT INTO t1 VALUES(5, 'eeeeeeeeeeeeeeee');
+SELECT * FROM t1 ORDER BY id;
+ id |       name
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa
+  2 | bbbbbbbbb
+  3 | ccccccccccccc
+  4 | dddddddddddddd
+  5 | eeeeeeeeeeeeeeee
+(5 rows)
+
+INSERT INTO t1(name) VALUES('aaaaaaaaaa'), ('bbbbbbbbb'), ('ccccccccccccc'), ('dddddddddddddd');
+ERROR:  duplicate key value violates unique constraint "txx_pkey_xxxx"
+DETAIL:  Key (id)=(X) already exists.
+CONTEXT:  while executing command on localhost:xxxxx
+INSERT INTO t1(name) VALUES('aaaaaaaaaa'), ('bbbbbbbbb'), ('ccccccccccccc'), ('dddddddddddddd');
+SELECT * FROM t1 ORDER BY id;
+ id |       name
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa
+  2 | bbbbbbbbb
+  3 | ccccccccccccc
+  4 | dddddddddddddd
+  5 | eeeeeeeeeeeeeeee
+  9 | aaaaaaaaaa
+ 10 | bbbbbbbbb
+ 11 | ccccccccccccc
+ 12 | dddddddddddddd
+(9 rows)
+
+DROP TABLE t1;
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+------------------------------ TEST 2: alter sequence owned to table --------------------------
+CREATE SEQUENCE seq1;
+CREATE SEQUENCE seq2 START WITH 1000;
+CREATE TABLE t1 (id INT DEFAULT nextval('seq1'), name TEXT, id2 INT DEFAULT nextval('seq2'));
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+\d t1;
+                  Table "public.t1"
+ Column |  Type   |             Modifiers
+---------------------------------------------------------------------
+ id     | integer | default nextval('seq1'::regclass)
+ name   | text    |
+ id2    | integer | default nextval('seq2'::regclass)
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+INSERT INTO t1(name) VALUES('aaaaaaaaaa'), ('bbbbbbbbb'), ('ccccccccccccc'), ('dddddddddddddd');
+SELECT * FROM t1 ORDER BY id, id2;
+ id |      name      | id2
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa     | 1000
+  2 | bbbbbbbbb      | 1001
+  3 | ccccccccccccc  | 1002
+  4 | dddddddddddddd | 1003
+(4 rows)
+
+--Note: no error
+INSERT INTO t1 VALUES(1, 'eeeeeeeeeeeeeeee');
+SELECT * FROM t1 ORDER BY id, id2;
+ id |       name       | id2
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa       | 1000
+  1 | eeeeeeeeeeeeeeee | 1004
+  2 | bbbbbbbbb        | 1001
+  3 | ccccccccccccc    | 1002
+  4 | dddddddddddddd   | 1003
+(5 rows)
+
+INSERT INTO t1 VALUES(5, 'eeeeeeeeeeeeeeee');
+INSERT INTO t1(name) VALUES('aaaaaaaaaa'), ('bbbbbbbbb'), ('ccccccccccccc'), ('dddddddddddddd');
+SELECT * FROM t1 ORDER BY id, id2;
+ id |       name       | id2
+---------------------------------------------------------------------
+  1 | aaaaaaaaaa       | 1000
+  1 | eeeeeeeeeeeeeeee | 1004
+  2 | bbbbbbbbb        | 1001
+  3 | ccccccccccccc    | 1002
+  4 | dddddddddddddd   | 1003
+  5 | eeeeeeeeeeeeeeee | 1005
+  5 | aaaaaaaaaa       | 1006
+  6 | bbbbbbbbb        | 1007
+  7 | ccccccccccccc    | 1008
+  8 | dddddddddddddd   | 1009
+(10 rows)
+
+ALTER SEQUENCE seq1 OWNED BY t1.id;
+\d t1
+                  Table "public.t1"
+ Column |  Type   |             Modifiers
+---------------------------------------------------------------------
+ id     | integer | default nextval('seq1'::regclass)
+ name   | text    |
+ id2    | integer | default nextval('seq2'::regclass)
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    |    Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+ public | t1         | BASE TABLE
+(2 rows)
+
+DROP TABLE t1;
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+DROP SEQUENCE seq2;
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+------------------------------ TEST 3: add new sequece to distributed table ----------------
+CREATE TABLE t1 (id INT, name TEXT);
+INSERT INTO t1 VALUES(1, 'aaaaaaaa'),(2, 'bbbbbbbbbb'),(3, 'cccccccccc'),(4, 'ddddddddddddddd');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+\d t1;
+      Table "public.t1"
+ Column |  Type   | Modifiers
+---------------------------------------------------------------------
+ id     | integer |
+ name   | text    |
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+CREATE SEQUENCE seq1;
+ALTER TABLE t1 ALTER COLUMN id SET DEFAULT nextval('seq1');
+ERROR:  cannot execute ALTER TABLE command involving partition column
+ALTER TABLE t1 add COLUMN id_new int not null DEFAULT nextval('seq1');
+ERROR:  cannot execute ADD COLUMN .. DEFAULT nextval('..') command with other subcommands/constraints
+HINT:  You can issue each subcommand separately
+ALTER TABLE t1 add COLUMN id_new integer;
+UPDATE t1 SET id_new = nextval('seq1');
+ERROR:  functions used in UPDATE queries on distributed tables must not be VOLATILE
+ALTER TABLE t1 ALTER COLUMN id_new SET DEFAULT nextval('seq1');
+\d t1;
+                  Table "public.t1"
+ Column |  Type   |             Modifiers
+---------------------------------------------------------------------
+ id     | integer |
+ name   | text    |
+ id_new | integer | default nextval('seq1'::regclass)
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+ALTER SEQUENCE seq1 OWNED BY t1.id_new;
+SELECT alter_distributed_table('t1','id_new', shard_count:=4);
+NOTICE:  shard count of the table is already 4
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ERROR:  the partition column of table public.txx_xxxx cannot be NULL
+CONTEXT:  SQL statement "INSERT INTO public.txx_xxxx SELECT * FROM public.t1"
+referenced column: alter_distributed_table
+INSERT INTO t1(id, name) VALUES (5, 'aaaaaaaa');
+SELECT * FROM t1 ORDER BY id;
+ id |      name       | id_new
+---------------------------------------------------------------------
+  1 | aaaaaaaa        |
+  2 | bbbbbbbbbb      |
+  3 | cccccccccc      |
+  4 | ddddddddddddddd |
+  5 | aaaaaaaa        |      1
+(5 rows)
+
+UPDATE t1 SET id_new=id;
+SELECT * FROM t1 ORDER BY id;
+ id |      name       | id_new
+---------------------------------------------------------------------
+  1 | aaaaaaaa        |      1
+  2 | bbbbbbbbbb      |      2
+  3 | cccccccccc      |      3
+  4 | ddddddddddddddd |      4
+  5 | aaaaaaaa        |      5
+(5 rows)
+
+SELECT alter_distributed_table('t1','id_new', shard_count:=4);
+NOTICE:  shard count of the table is already 4
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+\d t1;
+                  Table "public.t1"
+ Column |  Type   |             Modifiers
+---------------------------------------------------------------------
+ id     | integer |
+ name   | text    |
+ id_new | integer | default nextval('seq1'::regclass)
+Triggers:
+    truncate_trigger AFTER TRUNCATE ON t1 FOR EACH STATEMENT EXECUTE PROCEDURE spq_truncate_trigger()
+
+INSERT INTO t1(id, name) VALUES (5, 'aaaaaaaa');
+SELECT * FROM t1 ORDER BY id;
+ id |      name       | id_new
+---------------------------------------------------------------------
+  1 | aaaaaaaa        |      1
+  2 | bbbbbbbbbb      |      2
+  3 | cccccccccc      |      3
+  4 | ddddddddddddddd |      4
+  5 | aaaaaaaa        |      5
+  5 | aaaaaaaa        |      2
+(6 rows)
+
+SELECT setval('seq1', 100);
+ setval
+---------------------------------------------------------------------
+    100
+(1 row)
+
+INSERT INTO t1(id, name) VALUES (5, 'aaaaaaaa');
+SELECT * FROM t1 ORDER BY id_new;
+ id |      name       | id_new
+---------------------------------------------------------------------
+  1 | aaaaaaaa        |      1
+  2 | bbbbbbbbbb      |      2
+  5 | aaaaaaaa        |      2
+  3 | cccccccccc      |      3
+  4 | ddddddddddddddd |      4
+  5 | aaaaaaaa        |      5
+  5 | aaaaaaaa        |    101
+(7 rows)
+
+DROP TABLE t1;
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+

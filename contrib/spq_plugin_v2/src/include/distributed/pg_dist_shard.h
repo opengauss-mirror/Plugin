@@ -20,15 +20,14 @@
  *		pg_dist_shard definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_shard
-{
-	Oid logicalrelid;         /* logical relation id; references pg_class oid */
-	int64 shardid;            /* global shardId representing remote partition */
-	char shardstorage;        /* shard storage type; see codes below */
-#ifdef CATALOG_VARLEN           /* variable-length fields start here */
-	text shardalias_DROPPED;      /* dropped column, not in use */
-	text shardminvalue;        /* partition key's minimum value in shard */
-	text shardmaxvalue;        /* partition key's maximum value in shard */
+typedef struct FormData_pg_dist_shard {
+    Oid logicalrelid;        /* logical relation id; references pg_class oid */
+    int64 shardid;           /* global shardId representing remote partition */
+    char shardstorage;       /* shard storage type; see codes below */
+#ifdef CATALOG_VARLEN        /* variable-length fields start here */
+    text shardalias_DROPPED; /* dropped column, not in use */
+    text shardminvalue;      /* partition key's minimum value in shard */
+    text shardmaxvalue;      /* partition key's maximum value in shard */
 #endif
 } FormData_pg_dist_shard;
 
@@ -37,7 +36,7 @@ typedef struct FormData_pg_dist_shard
  *      the format of pg_dist_shards relation.
  * ----------------
  */
-typedef FormData_pg_dist_shard *Form_pg_dist_shard;
+typedef FormData_pg_dist_shard* Form_pg_dist_shard;
 
 /* ----------------
  *      compiler constants for pg_dist_shards
@@ -59,5 +58,4 @@ typedef FormData_pg_dist_shard *Form_pg_dist_shard;
 #define SHARD_STORAGE_TABLE 't'
 #define SHARD_STORAGE_VIRTUAL 'v'
 
-
-#endif   /* PG_DIST_SHARD_H */
+#endif /* PG_DIST_SHARD_H */

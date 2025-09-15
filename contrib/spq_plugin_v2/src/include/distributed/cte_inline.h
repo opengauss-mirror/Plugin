@@ -13,7 +13,7 @@
 
 #include "nodes/parsenodes.h"
 
-extern void RecursivelyInlineCtesInQueryTree(Query *query);
-extern bool QueryTreeContainsInlinableCTE(Query *queryTree);
+extern void RecursivelyInlineCtesInQueryTree(Query* query);
+extern bool QueryTreeContainsInlinableCTE(Query* queryTree);
 
 #endif /* CTE_INLINE_H */

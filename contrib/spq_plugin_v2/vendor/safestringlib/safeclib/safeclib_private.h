@@ -32,7 +32,7 @@
 #ifndef __SAFECLIB_PRIVATE_H__
 #define __SAFECLIB_PRIVATE_H__
 
-#include "citus_config.h"
+#include "spq_config.h"
 #ifdef __KERNEL__
 /* linux kernel environment */
 

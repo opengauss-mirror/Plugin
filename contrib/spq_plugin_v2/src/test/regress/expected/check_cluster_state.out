@@ -4,3 +4,20 @@ SELECT count(*) >= 1 as coordinator_exists  FROM pg_dist_node WHERE groupid = 0 
  t
 (1 row)
 
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema | Name | Definition | Size
+---------------------------------------------------------------------
+(0 rows)
+

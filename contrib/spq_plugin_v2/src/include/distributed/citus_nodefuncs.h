@@ -17,25 +17,25 @@
 #include "distributed/multi_physical_planner.h"
 
 /* citus_nodefuncs.c */
-extern void SetRangeTblExtraData(RangeTblEntry *rte, CitusRTEKind rteKind,
-								 char *fragmentSchemaName, char *fragmentTableName,
-								 List *tableIdList, List *funcColumnNames,
-								 List *funcColumnTypes, List *funcColumnTypeMods,
-								 List *funcCollations);
-extern void ModifyRangeTblExtraData(RangeTblEntry *rte, CitusRTEKind rteKind,
-									char *fragmentSchemaName, char *fragmentTableName,
-									List *tableIdList);
-extern void ExtractRangeTblExtraData(RangeTblEntry *rte, CitusRTEKind *rteKind,
-									 char **fragmentSchemaName, char **fragmentTableName,
-									 List **tableIdList);
-extern CitusRTEKind GetRangeTblKind(RangeTblEntry *rte);
+extern void SetRangeTblExtraData(RangeTblEntry* rte, CitusRTEKind rteKind,
+                                 char* fragmentSchemaName, char* fragmentTableName,
+                                 List* tableIdList, List* funcColumnNames,
+                                 List* funcColumnTypes, List* funcColumnTypeMods,
+                                 List* funcCollations);
+extern void ModifyRangeTblExtraData(RangeTblEntry* rte, CitusRTEKind rteKind,
+                                    char* fragmentSchemaName, char* fragmentTableName,
+                                    List* tableIdList);
+extern void ExtractRangeTblExtraData(RangeTblEntry* rte, CitusRTEKind* rteKind,
+                                     char** fragmentSchemaName, char** fragmentTableName,
+                                     List** tableIdList);
+extern CitusRTEKind GetRangeTblKind(RangeTblEntry* rte);
 
 extern void RegisterNodes(void);
 
-#define READFUNC_ARGS struct ExtensibleNode *node
+#define READFUNC_ARGS struct ExtensibleNode* node
 #define OUTFUNC_ARGS StringInfo str, const struct ExtensibleNode *raw_node
-#define COPYFUNC_ARGS struct ExtensibleNode *target_node, const struct \
-	ExtensibleNode *source_node
+#define COPYFUNC_ARGS \
+    struct ExtensibleNode *target_node, const struct ExtensibleNode *source_node
 
 extern void ReadUnsupportedCitusNode(READFUNC_ARGS);
 

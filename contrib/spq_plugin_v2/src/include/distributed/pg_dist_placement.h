@@ -21,13 +21,12 @@
  *		pg_dist_placement definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_placement
-{
-	int64 placementid;          /* global placementId on remote node */
-	int64 shardid;              /* global shardId on remote node */
-	int32 shardstate;           /* shard state on remote node; see ShardState */
-	int64 shardlength;          /* shard length on remote node; stored as bigint */
-	int32 groupid;              /* the group the shard is placed on */
+typedef struct FormData_pg_dist_placement {
+    int64 placementid; /* global placementId on remote node */
+    int64 shardid;     /* global shardId on remote node */
+    int32 shardstate;  /* shard state on remote node; see ShardState */
+    int64 shardlength; /* shard length on remote node; stored as bigint */
+    int32 groupid;     /* the group the shard is placed on */
 } FormData_pg_dist_placement;
 
 /* ----------------
@@ -35,7 +34,7 @@ typedef struct FormData_pg_dist_placement
  *		the format of pg_dist_placement relation.
  * ----------------
  */
-typedef FormData_pg_dist_placement *Form_pg_dist_placement;
+typedef FormData_pg_dist_placement* Form_pg_dist_placement;
 
 /* ----------------
  *		compiler constants for pg_dist_placement
@@ -48,5 +47,4 @@ typedef FormData_pg_dist_placement *Form_pg_dist_placement;
 #define Anum_pg_dist_placement_shardlength 4
 #define Anum_pg_dist_placement_groupid 5
 
-
-#endif   /* PG_DIST_PLACEMENT_H */
+#endif /* PG_DIST_PLACEMENT_H */

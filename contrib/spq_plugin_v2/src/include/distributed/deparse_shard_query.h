@@ -21,16 +21,14 @@
 
 #include "distributed/citus_custom_scan.h"
 
-
-extern void RebuildQueryStrings(Job *workerJob);
-extern bool UpdateRelationToShardNames(Node *node, List *relationShardList);
-extern void SetTaskQueryIfShouldLazyDeparse(Task *task, Query *query);
-extern void SetTaskQueryString(Task *task, char *queryString);
-extern void SetTaskQueryStringList(Task *task, List *queryStringList);
-extern char * TaskQueryString(Task *task);
-extern char * TaskQueryStringAtIndex(Task *task, int index);
-extern int GetTaskQueryType(Task *task);
-extern void AddInsertAliasIfNeeded(Query *query);
-
+extern void RebuildQueryStrings(Job* workerJob);
+extern bool UpdateRelationToShardNames(Node* node, List* relationShardList);
+extern void SetTaskQueryIfShouldLazyDeparse(Task* task, Query* query);
+extern void SetTaskQueryString(Task* task, char* queryString);
+extern void SetTaskQueryStringList(Task* task, List* queryStringList);
+extern char* TaskQueryString(Task* task);
+extern char* TaskQueryStringAtIndex(Task* task, int index);
+extern int GetTaskQueryType(Task* task);
+extern void AddInsertAliasIfNeeded(Query* query);
 
 #endif /* DEPARSE_SHARD_QUERY_H */

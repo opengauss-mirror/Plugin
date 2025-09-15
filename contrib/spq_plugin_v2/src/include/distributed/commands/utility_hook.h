@@ -22,32 +22,23 @@
 #include "distributed/version_compat.h"
 #include "distributed/worker_transaction.h"
 
-typedef enum
-{
-	CREATE_OBJECT_PROPAGATION_DEFERRED = 0,
-	CREATE_OBJECT_PROPAGATION_AUTOMATIC = 1,
-	CREATE_OBJECT_PROPAGATION_IMMEDIATE = 2
+typedef enum {
+    CREATE_OBJECT_PROPAGATION_DEFERRED = 0,
+    CREATE_OBJECT_PROPAGATION_AUTOMATIC = 1,
+    CREATE_OBJECT_PROPAGATION_IMMEDIATE = 2
 } CreateObjectPropagationOptions;
 
-typedef enum
-{
-	PROPSETCMD_INVALID = -1,
-	PROPSETCMD_NONE, /* do not propagate SET commands */
-	PROPSETCMD_LOCAL, /* propagate SET LOCAL commands */
-	PROPSETCMD_SESSION, /* propagate SET commands, but not SET LOCAL ones */
-	PROPSETCMD_ALL /* propagate all SET commands */
+typedef enum {
+    PROPSETCMD_INVALID = -1,
+    PROPSETCMD_NONE,    /* do not propagate SET commands */
+    PROPSETCMD_LOCAL,   /* propagate SET LOCAL commands */
+    PROPSETCMD_SESSION, /* propagate SET commands, but not SET LOCAL ones */
+    PROPSETCMD_ALL      /* propagate all SET commands */
 } PropSetCmdBehavior;
-extern PropSetCmdBehavior PropagateSetCommands;
-extern bool EnableDDLPropagation;
-extern int CreateObjectPropagationMode;
+
 extern bool EnableCreateTypePropagation;
-extern bool EnableCreateRolePropagation;
-extern bool EnableAlterRolePropagation;
-extern bool EnableAlterRoleSetPropagation;
 extern bool EnableAlterDatabaseOwner;
 extern int UtilityHookLevel;
-extern bool InDelegatedProcedureCall;
-
 
 /*
  * A DDLJob encapsulates the remote tasks and commands needed to process all or
@@ -55,51 +46,52 @@ extern bool InDelegatedProcedureCall;
  * the original DDL command string (for MX DDL propagation), and a task list of
  * DDL_TASK-type Tasks to be executed.
  */
-typedef struct DDLJob
-{
-	ObjectAddress targetObjectAddress;      /* target distributed object address */
+typedef struct DDLJob {
+    ObjectAddress targetObjectAddress; /* target distributed object address */
 
-	/*
-	 * Whether to commit and start a new transaction before sending commands
-	 * (only applies to CONCURRENTLY commands). This is needed for REINDEX CONCURRENTLY
-	 * and CREATE INDEX CONCURRENTLY on local shards, which would otherwise
-	 * get blocked waiting for the current transaction to finish.
-	 */
-	bool startNewTransaction;
+    /*
+     * Whether to commit and start a new transaction before sending commands
+     * (only applies to CONCURRENTLY commands). This is needed for REINDEX CONCURRENTLY
+     * and CREATE INDEX CONCURRENTLY on local shards, which would otherwise
+     * get blocked waiting for the current transaction to finish.
+     */
+    bool startNewTransaction;
 
-	/*
-	 * Command to run in MX nodes when metadata is synced
-	 * This is usually the initial (coordinator) DDL command string
-	 */
-	const char *metadataSyncCommand;
+    /*
+     * Command to run in MX nodes when metadata is synced
+     * This is usually the initial (coordinator) DDL command string
+     */
+    const char* metadataSyncCommand;
 
-	List *taskList;            /* worker DDL tasks to execute */
+    List* taskList; /* worker DDL tasks to execute */
 } DDLJob;
 
-extern ProcessUtility_hook_type PrevProcessUtility;
+extern THR_LOCAL ProcessUtility_hook_type PrevProcessUtility;
 
-extern void multi_ProcessUtility(PlannedStmt *pstmt, const char *queryString,
-								 bool readOnlyTree,
-								 ProcessUtilityContext context, ParamListInfo params,
-								 struct QueryEnvironment *queryEnv, DestReceiver *dest,
-								 QueryCompletion *completionTag
-								 );
-extern void ProcessUtilityParseTree(Node *node, const char *queryString,
-									ProcessUtilityContext context, ParamListInfo
-									params,
-									DestReceiver *dest,
-									QueryCompletion *completionTag
-									);
+extern void multi_ProcessUtility(processutility_context* processutility_cxt,
+                                 DestReceiver* dest,
+#ifdef PGXC
+                                 bool sentToRemote,
+#endif /* PGXC */
+                                 char* completionTag, ProcessUtilityContext context,
+                                 bool isCTAS);
+
+/*
+ * ProcessUtilityParseTree is a convenience method to create a PlannedStmt out of
+ * pieces of a utility statement before invoking ProcessUtility.
+ */
+void ProcessUtilityParseTree(Node* node, const char* queryString,
+                             ProcessUtilityContext context, ParamListInfo params,
+                             DestReceiver* dest);
+
 extern void MarkInvalidateForeignKeyGraph(void);
 extern void InvalidateForeignKeyGraphForDDL(void);
-extern List * DDLTaskList(Oid relationId, const char *commandString);
-extern List * NodeDDLTaskList(TargetWorkerSet targets, List *commands);
+extern List* DDLTaskList(Oid relationId, const char* commandString);
+extern List* NodeDDLTaskList(TargetWorkerSet targets, List* commands);
 extern bool AlterTableInProgress(void);
 extern bool DropSchemaOrDBInProgress(void);
 extern void UndistributeDisconnectedCitusLocalTables(void);
 extern void NotifyUtilityHookConstraintDropped(void);
 extern void ResetConstraintDropped(void);
-extern void ExecuteDistributedDDLJob(DDLJob *ddlJob);
-extern void ColumnarTableSetOptionsHook(Oid relationId, ColumnarOptions options);
-
+extern void ExecuteDistributedDDLJob(DDLJob* ddlJob);
 #endif /* MULTI_UTILITY_H */

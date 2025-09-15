@@ -16,17 +16,15 @@
 #include "nodes/primnodes.h"
 #include "utils/hsearch.h"
 
-
 typedef HTAB DistributionColumnMap;
 
+extern DistributionColumnMap* CreateDistributionColumnMap(void);
+extern void AddDistributionColumnForRelation(DistributionColumnMap* distributionColumns,
+                                             Oid relationId,
+                                             char* distributionColumnName);
+extern Var* GetDistributionColumnFromMap(DistributionColumnMap* distributionColumnMap,
+                                         Oid relationId);
+extern Var* GetDistributionColumnWithOverrides(Oid relationId,
+                                               DistributionColumnMap* overrides);
 
-extern DistributionColumnMap * CreateDistributionColumnMap(void);
-extern void AddDistributionColumnForRelation(DistributionColumnMap *distributionColumns,
-											 Oid relationId,
-											 char *distributionColumnName);
-extern Var * GetDistributionColumnFromMap(DistributionColumnMap *distributionColumnMap,
-										  Oid relationId);
-extern Var * GetDistributionColumnWithOverrides(Oid relationId,
-												DistributionColumnMap *overrides);
-
-#endif   /* DISTRIBUTION_COLUMN_HASH_H */
+#endif /* DISTRIBUTION_COLUMN_HASH_H */

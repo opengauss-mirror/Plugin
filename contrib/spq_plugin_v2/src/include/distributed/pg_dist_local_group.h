@@ -15,9 +15,8 @@
  *		pg_dist_local_group definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_local_group
-{
-	int groupid;
+typedef struct FormData_pg_dist_local_group {
+    int groupid;
 } FormData_pg_dist_local_group;
 
 /* ----------------
@@ -25,7 +24,7 @@ typedef struct FormData_pg_dist_local_group
  *      the format of pg_dist_local_group relation.
  * ----------------
  */
-typedef FormData_pg_dist_local_group *Form_pg_dist_local_group;
+typedef FormData_pg_dist_local_group* Form_pg_dist_local_group;
 
 /* ----------------
  *      compiler constants for pg_dist_local_group

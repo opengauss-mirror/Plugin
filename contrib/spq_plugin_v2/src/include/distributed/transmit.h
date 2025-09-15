@@ -15,13 +15,11 @@
 
 #include "lib/stringinfo.h"
 #include "nodes/parsenodes.h"
-#include "storage/fd.h"
-
+#include "storage/smgr/fd.h"
 
 /* Function declarations for transmitting files between two nodes */
-extern void RedirectCopyDataToRegularFile(const char *filename);
-extern void SendRegularFile(const char *filename);
-extern File FileOpenForTransmit(const char *filename, int fileFlags, int fileMode);
+extern void RedirectCopyDataToRegularFile(const char* filename);
+extern void SendRegularFile(const char* filename);
+extern File FileOpenForTransmit(const char* filename, int fileFlags, int fileMode);
 
-
-#endif   /* TRANSMIT_H */
+#endif /* TRANSMIT_H */

@@ -12,6 +12,6 @@
 #ifndef MERGE_EXECUTOR_H
 #define MERGE_EXECUTOR_H
 
-extern TupleTableSlot * NonPushableMergeCommandExecScan(CustomScanState *node);
+extern TupleTableSlot* NonPushableMergeCommandExecScan(ExtensiblePlanState* node);
 
 #endif /* MERGE_EXECUTOR_H */

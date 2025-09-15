@@ -3,12 +3,12 @@
 --
 CREATE FUNCTION pg_catalog.replicate_table_shards(
         relation regclass,
-        shard_replication_factor int default current_setting('citus.shard_replication_factor')::int,
+        shard_replication_factor int default current_setting('spq.shard_replication_factor')::int,
         max_shard_copies int default 1000000,
         excluded_shard_list bigint[] default '{}',
-        shard_transfer_mode citus.shard_transfer_mode default 'auto')
+        shard_transfer_mode __$spq$__.shard_transfer_mode default 'auto')
     RETURNS VOID
     AS 'MODULE_PATHNAME'
     LANGUAGE C STRICT;
-COMMENT ON FUNCTION pg_catalog.replicate_table_shards(regclass, int, int, bigint[], citus.shard_transfer_mode)
+COMMENT ON FUNCTION pg_catalog.replicate_table_shards(regclass, int, int, bigint[], __$spq$__.shard_transfer_mode)
     IS 'replicates under replicated shards of the the given table';

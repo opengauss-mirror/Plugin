@@ -1,0 +1,18 @@
+--
+-- MULTI_MASTER_PROTOCOL
+--
+-- Tests that check the metadata returned by the master node.
+SET citus.next_shard_id TO 740000;
+SELECT * FROM master_get_table_ddl_events('lineitem') order by 1;
+ERROR:  function master_get_table_ddl_events(unknown) does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+SELECT * FROM master_get_new_shardid();
+ERROR:  function master_get_new_shardid() does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+SELECT * FROM spq_get_active_worker_nodes();
+ node_name | node_port
+---------------------------------------------------------------------
+ localhost | xxxxx
+ localhost | xxxxx
+(2 rows)
+

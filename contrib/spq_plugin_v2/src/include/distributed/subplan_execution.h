@@ -11,13 +11,9 @@
 #ifndef SUBPLAN_EXECUTION_H
 #define SUBPLAN_EXECUTION_H
 
-
 #include "distributed/multi_physical_planner.h"
 
-extern int MaxIntermediateResult;
-extern int SubPlanLevel;
-
-extern void ExecuteSubPlans(DistributedPlan *distributedPlan);
+extern void ExecuteSubPlans(DistributedPlan* distributedPlan);
 
 /**
  * IntermediateResultsHashEntry is used to store which nodes need to receive
@@ -33,11 +29,10 @@ extern void ExecuteSubPlans(DistributedPlan *distributedPlan);
  * execution. Note that there can possibly be an item for the local node in the
  * NodeIdList.
  */
-typedef struct IntermediateResultsHashEntry
-{
-	char key[NAMEDATALEN];
-	List *nodeIdList;
-	bool writeLocalFile;
+typedef struct IntermediateResultsHashEntry {
+    char key[NAMEDATALEN];
+    List* nodeIdList;
+    bool writeLocalFile;
 } IntermediateResultsHashEntry;
 
 #endif /* SUBPLAN_EXECUTION_H */

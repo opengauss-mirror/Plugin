@@ -12,7 +12,6 @@
 
 #include "nodes/pg_list.h"
 
-extern List * ExecuteDependentTasks(List *taskList, Job *topLevelJob);
-
+extern List* ExecuteDependentTasks(List* taskList, Job* topLevelJob);
 
 #endif /* REPARTITION_JOIN_EXECUTION_H */

@@ -1,0 +1,176 @@
+CREATE TABLE IF NOT EXISTS public.pg_vector_collection(id BIGINT PRIMARY KEY, embedding vector(4));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pg_vector_collection_pkey" for table "pg_vector_collection"
+ALTER TABLE public.pg_vector_collection ALTER COLUMN embedding SET STORAGE PLAIN;
+ALTER TABLE public.pg_vector_collection SET (parallel_workers = 32);
+SELECT create_distributed_table('public.pg_vector_collection', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_shard;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+BEGIN;
+INSERT INTO public.pg_vector_collection VALUES(1,'[1, 1, 1, 1]');
+INSERT INTO public.pg_vector_collection VALUES(2,'[2, 2, 2, 2]');
+INSERT INTO public.pg_vector_collection VALUES(3,'[3, 3, 3, 3]');
+INSERT INTO public.pg_vector_collection VALUES(4,'[4, 4, 4, 4]');
+INSERT INTO public.pg_vector_collection VALUES(5,'[5, 5, 5, 5]');
+INSERT INTO public.pg_vector_collection VALUES(6,'[6, 6, 6, 6]');
+INSERT INTO public.pg_vector_collection VALUES(7,'[7, 7, 7, 7]');
+INSERT INTO public.pg_vector_collection VALUES(8,'[8, 8, 8, 8]');
+INSERT INTO public.pg_vector_collection VALUES(9,'[9, 9, 9, 9]');
+INSERT INTO public.pg_vector_collection VALUES(10,'[10, 10, 10, 10]');
+COMMIT;
+BEGIN;
+COPY public.pg_vector_collection FROM STDIN WITH delimiter '|';
+COMMIT;
+CREATE OR REPLACE FUNCTION generate_pg_vector_collection(count INTEGER)
+    RETURNS void
+    LANGUAGE plpgsql
+AS $$
+DECLARE
+   i INTEGER;
+BEGIN
+    FOR i IN 21 .. count LOOP
+        INSERT INTO public.pg_vector_collection(id, embedding) VALUES(i, ('[' || i || ',' || i || ',' || i || ',' || i || ']')::vector);
+    END LOOP;
+END;
+$$;
+SELECT generate_pg_vector_collection(9980);
+ generate_pg_vector_collection
+---------------------------------------------------------------------
+
+(1 row)
+
+DROP FUNCTION generate_pg_vector_collection;
+-- we use ip distance for testing, its distance has better differentiation.
+CREATE INDEX IF NOT EXISTS pg_vector_collection_embeding_index ON public.pg_vector_collection USING "hnsw" (embedding "vector_ip_ops") WITH ("m" = "16", "ef_construction" ="200");
+SET spq.explain_all_tasks TO ON;
+EXPLAIN SELECT * FROM public.pg_vector_collection ORDER BY id limit 2;
+                                                                                QUERY PLAN
+---------------------------------------------------------------------
+ Limit  (cost=1000.00..1000.01 rows=2 width=40)
+   ->  Sort  (cost=1000.00..1250.00 rows=100000 width=40)
+         Sort Key: remote_scan.id
+         ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=40)
+               Task Count: 4
+               Tasks Shown: All
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=0.00..0.12 rows=2 width=40)
+                           ->  Index Scan using pg_vector_collection_pkey_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=0.00..149.06 rows=2454 width=40)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=0.00..0.12 rows=2 width=40)
+                           ->  Index Scan using pg_vector_collection_pkey_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=0.00..150.28 rows=2535 width=40)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=0.00..0.12 rows=2 width=40)
+                           ->  Index Scan using pg_vector_collection_pkey_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=0.00..150.60 rows=2557 width=40)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=0.00..0.12 rows=2 width=40)
+                           ->  Index Scan using pg_vector_collection_pkey_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=0.00..148.76 rows=2434 width=40)
+(22 rows)
+
+EXPLAIN ANALYZE SELECT * FROM public.pg_vector_collection ORDER BY id limit 2;
+ERROR:  Explain (analyze) command is not supported in current version.
+EXPLAIN SELECT id FROM public.pg_vector_collection ORDER BY embedding <#> '[1,2,3,4]' limit 2;
+                                                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Limit  (cost=1000.00..1000.01 rows=2 width=16)
+   ->  Sort  (cost=1000.00..1250.00 rows=100000 width=16)
+         Sort Key: remote_scan.worker_column_2
+         ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=16)
+               Task Count: 4
+               Tasks Shown: All
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=12.73..12.82 rows=2 width=40)
+                           ->  Ann Index Scan using pg_vector_collection_embeding_index_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=12.73..127.41 rows=2454 width=40)
+                                 Order By: (embedding <#> '[1,2,3,4]'::vector)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=12.73..12.82 rows=2 width=40)
+                           ->  Ann Index Scan using pg_vector_collection_embeding_index_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=12.73..128.42 rows=2535 width=40)
+                                 Order By: (embedding <#> '[1,2,3,4]'::vector)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=12.73..12.82 rows=2 width=40)
+                           ->  Ann Index Scan using pg_vector_collection_embeding_index_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=12.73..128.69 rows=2557 width=40)
+                                 Order By: (embedding <#> '[1,2,3,4]'::vector)
+               ->  Task
+                     Node: host=localhost port=xxxxx dbname=regression
+                     ->  Limit  (cost=12.73..12.82 rows=2 width=40)
+                           ->  Ann Index Scan using pg_vector_collection_embeding_index_xxxxxx on pg_vector_collection_xxxxxx pg_vector_collection  (cost=12.73..127.16 rows=2434 width=40)
+                                 Order By: (embedding <#> '[1,2,3,4]'::vector)
+(26 rows)
+
+EXPLAIN ANALYZE SELECT id FROM public.pg_vector_collection ORDER BY embedding <#> '[1,2,3,4]' limit 2;
+ERROR:  Explain (analyze) command is not supported in current version.
+SET spq.explain_all_tasks TO DEFAULT;
+SELECT * FROM public.pg_vector_collection ORDER BY id limit 2;
+ id | embedding
+---------------------------------------------------------------------
+  1 | [1,1,1,1]
+  2 | [2,2,2,2]
+(2 rows)
+
+SELECT id FROM public.pg_vector_collection ORDER BY embedding <#> '[1,2,3,4]' limit 2;
+  id
+---------------------------------------------------------------------
+ 9980
+ 9979
+(2 rows)
+
+SELECT COUNT(*) FROM spq_tables;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+DROP TABLE public.pg_vector_collection;
+SELECT COUNT(*) FROM spq_tables;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_1_port
+SELECT
+    table_schema AS "Schema",
+    table_name AS "Name",
+    table_type AS "Type"
+FROM
+    information_schema.tables
+WHERE
+    table_schema = 'public'
+ORDER BY
+    table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+\c - - - :worker_2_port
+SELECT
+    table_schema AS "Schema",
+    table_name AS "Name",
+    table_type AS "Type"
+FROM
+    information_schema.tables
+WHERE
+    table_schema = 'public'
+ORDER BY
+    table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+\c - - - :master_port

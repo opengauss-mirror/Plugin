@@ -1,0 +1,327 @@
+----------------------- test 1: enum related -----------------------------
+-- create enum
+CREATE TYPE bugstatus AS ENUM ('create', 'modify', 'closed');
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_1_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_2_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :master_port
+-- alter enum add one value
+ALTER TYPE bugstatus ADD VALUE IF NOT EXISTS 'regress' BEFORE 'closed';
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_1_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_2_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | create  +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :master_port
+-- rename enum value
+ALTER TYPE bugstatus RENAME VALUE 'create' TO 'new';
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | new     +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_1_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | new     +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_2_port
+\dT+ bugstatus
+                                   List of data types
+ Schema |   Name    | Internal name | Size | Elements | Access privileges | Description 
+--------+-----------+---------------+------+----------+-------------------+-------------
+ public | bugstatus | bugstatus     | 4    | new     +|                   | 
+        |           |               |      | modify  +|                   | 
+        |           |               |      | regress +|                   | 
+        |           |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :master_port
+-- rename enum
+alter type bugstatus rename to bs;
+\dT+ bugstatus
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+ public | bs   | bs            | 4    | new     +|                   | 
+        |      |               |      | modify  +|                   | 
+        |      |               |      | regress +|                   | 
+        |      |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_1_port
+\dT+ bugstatus
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+ public | bs   | bs            | 4    | new     +|                   | 
+        |      |               |      | modify  +|                   | 
+        |      |               |      | regress +|                   | 
+        |      |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :worker_2_port
+\dT+ bugstatus
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+ public | bs   | bs            | 4    | new     +|                   | 
+        |      |               |      | modify  +|                   | 
+        |      |               |      | regress +|                   | 
+        |      |               |      | closed   |                   | 
+(1 row)
+
+\c - - - :master_port
+CREATE TABLE bug_reports (
+    id int PRIMARY KEY,
+    title TEXT NOT NULL,
+    status bs NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "bug_reports_pkey" for table "bug_reports"
+SELECT create_distributed_table('bug_reports', 'id', shard_count:=4);
+ create_distributed_table 
+--------------------------
+ 
+(1 row)
+
+INSERT INTO bug_reports VALUES (1, '页面错误1', 'new');
+INSERT INTO bug_reports VALUES (2, '页面错误2', 'modify');
+INSERT INTO bug_reports VALUES (3, '页面错误3', 'regress');
+INSERT INTO bug_reports VALUES (4, '页面错误4', 'closed');
+-- error
+INSERT INTO bug_reports VALUES (5, '接口问题5', 'open');
+ERROR:  invalid input value for enum bs: "open"
+LINE 1: INSERT INTO bug_reports VALUES (5, '接口问题5', 'open');
+                                                        ^
+CONTEXT:  referenced column: status
+select * from bug_reports order by id;
+ id |   title   | status  
+----+-----------+---------
+  1 | 页面错误1 | new
+  2 | 页面错误2 | modify
+  3 | 页面错误3 | regress
+  4 | 页面错误4 | closed
+(4 rows)
+
+-- drop enum error
+drop type bs;
+ERROR:  cannot drop type bs because other objects depend on it
+DETAIL:  table bug_reports column status depends on type bs
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+drop table bug_reports;
+-- success
+drop type bs;
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+\c - - - :worker_1_port
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+\c - - - :worker_2_port
+\dT+ bs
+                                List of data types
+ Schema | Name | Internal name | Size | Elements | Access privileges | Description 
+--------+------+---------------+------+----------+-------------------+-------------
+(0 rows)
+
+----------------------- test 2: composite type -----------------------------
+\c - - - :master_port
+create type address_type AS (
+    street varchar(100),
+    city varchar(50),
+    country varchar(50)
+);
+\c - - - :worker_1_port
+select count(1) from pg_type where typname = 'address_type';
+ count 
+-------
+     1
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_type where typname = 'address_type';
+ count 
+-------
+     1
+(1 row)
+
+\c - - - :master_port
+create table users (
+    id int primary key,
+    name varchar(100),
+    home_address address_type
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "users_pkey" for table "users"
+SELECT create_distributed_table('users', 'id', shard_count:=4);
+ create_distributed_table 
+--------------------------
+ 
+(1 row)
+
+insert into users values (1, 'BOB', ('456 Elm St', 'London', 'UK')::address_type);
+insert into users values (2, 'Tom', ('789 Elm St', 'New York', 'USA')::address_type);
+select * from users order by id;
+ id | name |         home_address          
+----+------+-------------------------------
+  1 | BOB  | ("456 Elm St",London,UK)
+  2 | Tom  | ("789 Elm St","New York",USA)
+(2 rows)
+
+alter type address_type add attribute c float;
+insert into users values (3, 'ZS', ('000 Elm St', 'Beijing', 'PRC', 8.8)::address_type);
+select * from users order by id;
+ id | name |          home_address          
+----+------+--------------------------------
+  1 | BOB  | ("456 Elm St",London,UK,)
+  2 | Tom  | ("789 Elm St","New York",USA,)
+  3 | ZS   | ("000 Elm St",Beijing,PRC,8.8)
+(3 rows)
+
+-- error
+drop type address_type;
+ERROR:  cannot drop type address_type because other objects depend on it
+DETAIL:  table users column home_address depends on type address_type
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+drop type address_type CASCADE;
+NOTICE:  drop cascades to table users column home_address
+select * from users order by id;
+ id | name 
+----+------
+  1 | BOB
+  2 | Tom
+  3 | ZS
+(3 rows)
+
+\c - - - :worker_1_port
+select count(1) from pg_type where typname = 'address_type';
+ count 
+-------
+     0
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_type where typname = 'address_type';
+ count 
+-------
+     0
+(1 row)
+
+\c - - - :master_port
+drop table users;
+-- test type alter schema
+\c - - - :master_port
+create type co AS (
+    x int,
+    y int
+);
+create schema s1;
+\c - - - :worker_1_port
+-- expect 0
+select count(1) from pg_type where typname = 'co' and typnamespace in (select oid from pg_namespace where nspname = 's1');
+ count 
+-------
+     0
+(1 row)
+
+\c - - - :master_port
+alter type co set schema s1;
+\c - - - :worker_1_port
+-- expect 1
+select count(1) from pg_type where typname = 'co' and typnamespace in (select oid from pg_namespace where nspname = 's1');
+ count 
+-------
+     1
+(1 row)
+
+\c - - - :master_port
+drop type s1.co;
+drop schema s1;

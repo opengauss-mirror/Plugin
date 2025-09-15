@@ -1,0 +1,30 @@
+--------------------- unsupported agg vs citus ----------------------------
+SELECT jsonb_cat_agg(i) FROM (VALUES ('[1,{"a":2}]'::jsonb), ('[null]'::jsonb), (NULL), ('["3",5,4]'::jsonb)) AS t(i);
+ERROR:  function jsonb_cat_agg(jsonb) does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: jsonb_cat_agg
+CREATE TABLE nulltable(id int);
+INSERT INTO nulltable values (0);
+SELECT pg_catalog.worker_partial_agg('string_agg(text,text)'::regprocedure, id) FROM nulltable;
+ERROR:  function pg_catalog.worker_partial_agg(regprocedure, integer) does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: worker_partial_agg
+SELECT pg_catalog.coord_combine_agg('sum(float8)'::regprocedure, id::text::cstring, null::text) FROM nulltable;
+ERROR:  function pg_catalog.coord_combine_agg(regprocedure, cstring, text) does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: coord_combine_agg
+DROP TABLE nulltable;
+------------------------ array_cat_agg -----------------------------------
+SELECT array_cat_agg(i) FROM (VALUES (ARRAY[1,2]), (NULL), (ARRAY[3,4])) AS t(i);
+ array_cat_agg
+---------------------------------------------------------------------
+ {1,2,3,4}
+(1 row)
+
+---------------------- json_cat_agg -------------------------------------
+SELECT json_cat_agg(i) FROM (VALUES ('[1,{"a":2}]'::json), ('[null]'::json), (NULL), ('["3",5,4]'::json)) AS t(i);
+         json_cat_agg
+---------------------------------------------------------------------
+ [1, {"a":2}, null, "3", 5, 4]
+(1 row)
+

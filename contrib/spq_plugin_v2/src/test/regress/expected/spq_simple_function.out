@@ -1,0 +1,196 @@
+-- check the cluster's start state
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- I am coordinator
+SELECT spq_is_coordinator();
+ spq_is_coordinator
+---------------------------------------------------------------------
+ t
+(1 row)
+
+----------------------- TEST 1: test for undistribute_table alter_distributed_table ------------------------------------------
+CREATE TABLE t1(id BIGINT PRIMARY KEY, a int, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 VALUES(1, 1,'a'), (2, 2,'a'), (3, 3, 'a'), (4, 4, 'a');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT count(1) FROM pg_dist_shard s JOIN pg_dist_shard_placement p ON s.shardid = p.shardid WHERE s.logicalrelid = 't1'::regclass;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+-- error wrong column name
+select alter_distributed_table('t1', 'b');
+ERROR:  column "b" of relation "t1" does not exist
+CONTEXT:  referenced column: alter_distributed_table
+-- error because has primary key constraint on column id
+select alter_distributed_table('t1', 'a');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+CONTEXT:  SQL statement "ALTER TABLE ONLY public.t1 ADD CONSTRAINT t1_pkey PRIMARY KEY (id)"
+referenced column: alter_distributed_table
+ERROR:  cannot create constraint on "t1"
+DETAIL:  Distributed relations cannot have UNIQUE, EXCLUDE, or PRIMARY KEY constraints that do not include the partition column (with an equality operator if EXCLUDE).
+CONTEXT:  SQL statement "ALTER TABLE ONLY public.t1 ADD CONSTRAINT t1_pkey PRIMARY KEY (id)"
+referenced column: alter_distributed_table
+-- error cannot create unique index on non-partition column
+create unique index on t1(a);
+ERROR:  creating unique indexes on non-partition columns is currently unsupported
+alter table t1 DROP CONSTRAINT t1_pkey;
+-- success alter distribute key
+select alter_distributed_table('t1', 'a');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+-- success alter shard count
+select alter_distributed_table('t1',shard_count:=8);
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT count(1) FROM pg_dist_shard s JOIN pg_dist_shard_placement p ON s.shardid = p.shardid WHERE s.logicalrelid = 't1'::regclass;
+ count
+---------------------------------------------------------------------
+     8
+(1 row)
+
+-- undistribute_table
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT count(1) FROM pg_dist_shard s JOIN pg_dist_shard_placement p ON s.shardid = p.shardid WHERE s.logicalrelid = 't1'::regclass;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+DROP TABLE t1;
+----------------------- TEST 2: test for spq_relation_size spq_table_size spq_total_relation_size ------------------------------------------
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t1 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+select spq_relation_size('t1');
+ spq_relation_size
+---------------------------------------------------------------------
+             24576
+(1 row)
+
+select spq_table_size('t1');
+ spq_table_size
+---------------------------------------------------------------------
+          24576
+(1 row)
+
+select spq_total_relation_size('t1');
+ spq_total_relation_size
+---------------------------------------------------------------------
+                   81920
+(1 row)
+
+SELECT logicalrelid,
+    pg_size_pretty(spq_relation_size(logicalrelid)) AS size1,
+    pg_size_pretty(spq_table_size(logicalrelid)) AS size2,
+    pg_size_pretty(spq_total_relation_size(logicalrelid)) AS size3
+FROM pg_dist_partition where logicalrelid = 't1'::regclass;
+ logicalrelid | size1 | size2 | size3
+---------------------------------------------------------------------
+ t1           | 24 kB | 24 kB | 80 kB
+(1 row)
+
+DROP TABLE t1;
+----------------------- TEST 3: test for generate as stored column ------------------------------------------
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100), fullname TEXT GENERATED ALWAYS AS (name || ' (user)') STORED);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t1 VALUES(1,'a'), (2,'b'), (3,'c'), (4,'d');
+select id, name, fullname from t1 order by id;
+ id |                                                 name                                                 | fullname
+---------------------------------------------------------------------
+  1 | a                                                                                                    | a (user)
+  2 | b                                                                                                    | b (user)
+  3 | c                                                                                                    | c (user)
+  4 | d                                                                                                    | d (user)
+(4 rows)
+
+-- error
+insert into t1 (id, name, fullname) values (5, 'e', 'full e');
+ERROR:  cannot insert into column "fullname"
+DETAIL:  Column "fullname" is a generated column.
+-- error can not distribute by a generate as stored column
+select alter_distributed_table('t1', 'fullname');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ERROR:  cannot distribute relation: txx_xxxx
+DETAIL:  Distribution column must not use GENERATED ALWAYS AS (...) STORED.
+CONTEXT:  referenced column: alter_distributed_table
+DROP TABLE t1;
+-- check the cluster's final state
+SELECT count(*) from spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+

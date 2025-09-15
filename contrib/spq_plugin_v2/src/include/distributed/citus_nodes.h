@@ -31,7 +31,7 @@
 #ifndef CITUS_NODES_H
 #define CITUS_NODES_H
 
-#include "nodes/extensible.h"
+#include "executor/node/nodeExtensible.h"
 
 /*
  * Citus Node Tags
@@ -40,86 +40,105 @@
  *
  * NOTE: This list must match CitusNodeTagNamesD from citus_nodefuncs.c
  */
-#define CITUS_NODE_TAG_START	1200
-typedef enum CitusNodeTag
-{
-	T_MultiNode = CITUS_NODE_TAG_START, /* FIXME: perhaps use something less predicable? */
-	T_MultiTreeRoot,
-	T_MultiProject,
-	T_MultiCollect,
-	T_MultiSelect,
-	T_MultiTable,
-	T_MultiJoin,
-	T_MultiPartition,
-	T_MultiCartesianProduct,
-	T_MultiExtendedOp,
-	T_Job,
-	T_MapMergeJob,
-	T_DistributedPlan,
-	T_DistributedSubPlan,
-	T_UsedDistributedSubPlan,
-	T_Task,
-	T_LocalPlannedStatement,
-	T_ShardInterval,
-	T_ShardPlacement,
-	T_RelationShard,
-	T_RelationRowLock,
-	T_DeferredErrorMessage,
-	T_GroupShardPlacement,
-	T_TableDDLCommand
+#define CITUS_NODE_TAG_START 1200
+typedef enum CitusNodeTag {
+    T_MultiNode =
+        CITUS_NODE_TAG_START, /* FIXME: perhaps use something less predicable? */
+    T_MultiTreeRoot,
+    T_MultiProject,
+    T_MultiCollect,
+    T_MultiSelect,
+    T_MultiTable,
+    T_MultiJoin,
+    T_MultiPartition,
+    T_MultiCartesianProduct,
+    T_MultiExtendedOp,
+    T_Job,
+    T_MapMergeJob,
+    T_DistributedPlan,
+    T_DistributedSubPlan,
+    T_UsedDistributedSubPlan,
+    T_Task,
+    T_LocalPlannedStatement,
+    T_ShardInterval,
+    T_ShardPlacement,
+    T_RelationShard,
+    T_RelationRowLock,
+    T_DeferredErrorMessage,
+    T_GroupShardPlacement,
+    T_TableDDLCommand
 } CitusNodeTag;
-
 
 extern const char** CitusNodeTagNames;
 
-
-typedef struct CitusNode
-{
-	ExtensibleNode extensible;
-	CitusNodeTag citus_tag; /* for quick type determination */
+typedef struct CitusNode {
+    ExtensibleNode extensible;
+    CitusNodeTag citus_tag; /* for quick type determination */
 } CitusNode;
 
-#define CitusNodeTag(nodeptr)		CitusNodeTagI((Node*) nodeptr)
+#define CitusNodeTag(nodeptr) CitusNodeTagI((Node*)nodeptr)
 
-static inline int
-CitusNodeTagI(Node *node)
+static inline int CitusNodeTagI(Node* node)
 {
-	if (!IsA(node, ExtensibleNode))
-	{
-		return nodeTag(node);
-	}
+    if (!IsA(node, EXTENSIBLE_NODE)) {
+        return nodeTag(node);
+    }
 
-	return ((CitusNode*)(node))->citus_tag;
+    return ((CitusNode*)(node))->citus_tag;
 }
 
-
 /* Citus variant of newNode(), don't use directly. */
-static inline CitusNode *
-CitusNewNode(size_t size, CitusNodeTag tag)
+static inline CitusNode* CitusNewNode(size_t size, CitusNodeTag tag)
 {
-	CitusNode	   *result;
+    CitusNode* result;
 
-	Assert(size >= sizeof(CitusNode));		/* need the ExtensibleNode and the tag, at least */
-	result = (CitusNode *) palloc0(size);
-	result->extensible.type = T_ExtensibleNode;
-	result->extensible.extnodename = CitusNodeTagNames[tag - CITUS_NODE_TAG_START];
-	result->citus_tag = (int) (tag);
+    Assert(size >= sizeof(CitusNode)); /* need the ExtensibleNode and the tag, at least */
+    result = (CitusNode*)palloc0(size);
 
-	return result;
+    result->extensible.type = T_EXTENSIBLE_NODE;
+    result->extensible.extnodename = CitusNodeTagNames[tag - CITUS_NODE_TAG_START];
+    result->citus_tag = (tag);
+
+    return result;
 }
 
 /*
  * IsA equivalent that compares node tags, including Citus-specific nodes.
  */
-#define CitusIsA(nodeptr,_type_)	(CitusNodeTag(nodeptr) == T_##_type_)
-
+#define CitusIsA(nodeptr, _type_) (CitusNodeTag(nodeptr) == T_##_type_)
 
 /*
  * CitusMakeNode is Citus variant of makeNode(). Use it to create nodes of
  * the types listed in the CitusNodeTag enum and plain NodeTag. Initializes
  * memory, besides the node tag, to 0.
  */
-#define CitusMakeNode(_type_) ((_type_ *) CitusNewNode(sizeof(_type_),T_##_type_))
+#define CitusMakeNode(_type_) ((_type_*)CitusNewNode(sizeof(_type_), T_##_type_))
 
+/*
+ * Typedef for parse location.  This is just an int, but this way
+ * gen_node_support.pl knows which fields should get special treatment for
+ * location values.
+ *
+ * -1 is used for unknown.
+ */
+typedef int ParseLoc;
+
+/*
+ * RoleSpec - a role name or one of a few special values.
+ */
+typedef enum RoleSpecType {
+    ROLESPEC_CSTRING,      /* role name is stored as a C string */
+    ROLESPEC_CURRENT_ROLE, /* role spec is CURRENT_ROLE */
+    ROLESPEC_CURRENT_USER, /* role spec is CURRENT_USER */
+    ROLESPEC_SESSION_USER, /* role spec is SESSION_USER */
+    ROLESPEC_PUBLIC,       /* role name is "public" */
+} RoleSpecType;
+
+typedef struct RoleSpec {
+    NodeTag type;
+    RoleSpecType roletype; /* Type of this rolespec */
+    char* rolename;        /* filled only for ROLESPEC_CSTRING */
+    ParseLoc location;     /* token location, or -1 if unknown */
+} RoleSpec;
 
 #endif /* CITUS_NODES_H */

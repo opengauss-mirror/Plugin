@@ -13,16 +13,17 @@
 
 #include "nodes/nodes.h"
 
-extern bool OverrideTableVisibility;
-extern bool EnableManualChangesToShards;
-extern char *ShowShardsForAppNamePrefixes;
+/* HideShardsMode is used to determine whether to hide shards */
+typedef enum HideShardsMode {
+    CHECK_APPLICATION_NAME,
+    HIDE_SHARDS_FROM_APPLICATION,
+    DO_NOT_HIDE_SHARDS
+} HideShardsMode;
 
-
-extern void HideShardsFromSomeApplications(Query *query);
+extern void HideShardsFromSomeApplications(Query* query);
 extern void ResetHideShardsDecision(void);
 extern void ErrorIfRelationIsAKnownShard(Oid relationId);
 extern void ErrorIfIllegallyChangingKnownShard(Oid relationId);
 extern bool RelationIsAKnownShard(Oid shardRelationId);
-
 
 #endif /* WORKER_SHARD_VISIBILITY_H */

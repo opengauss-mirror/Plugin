@@ -1,0 +1,57 @@
+CREATE SCHEMA copy_test;
+SET search_path TO copy_test;
+SET spq.shard_count TO 2;
+CREATE TABLE table_copy (
+	l_orderkey bigint not null,
+	l_partkey integer not null,
+	l_suppkey integer not null,
+	l_linenumber integer not null,
+	l_quantity decimal(15, 2) not null,
+	l_extendedprice decimal(15, 2) not null,
+	l_discount decimal(15, 2) not null,
+	l_tax decimal(15, 2) not null,
+	l_returnflag char(1) not null,
+	l_linestatus char(1) not null,
+	l_shipdate date not null,
+	l_commitdate date not null,
+	l_receiptdate date not null,
+	l_shipinstruct char(25) not null,
+	l_shipmode char(10) not null,
+	l_comment varchar(44) not null);
+SELECT create_distributed_table('table_copy', 'l_orderkey');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+\COPY table_copy FROM STDIN WITH DELIMITER '|'
+SELECT * FROM table_copy ORDER BY l_partkey;
+ l_orderkey  | l_partkey | l_suppkey | l_linenumber | l_quantity | l_extendedprice | l_discount | l_tax | l_returnflag | l_linestatus |        l_shipdate        |       l_commitdate       |      l_receiptdate       |      l_shipinstruct       | l_shipmode |                 l_comment
+---------------------------------------------------------------------
+         103 |     10426 |      2928 |            2 |      37.00 |        49447.54 |        .02 |   .07 | N            | O            | Tue Sep 17 00:00:00 1996 | Sat Jul 27 00:00:00 1996 | Fri Sep 20 00:00:00 1996 | TAKE BACK RETURN          | MAIL       | ies. quickly ironic requests use blithely
+ -1686493264 |     15110 |       113 |            5 |       2.00 |         2050.22 |        .03 |   .08 | R            | F            | Tue Apr 26 00:00:00 1994 | Tue Mar 15 00:00:00 1994 | Sun May 15 00:00:00 1994 | TAKE BACK RETURN          | MAIL       | e final, regular requests. carefully
+         103 |     28431 |      8432 |            3 |      23.00 |        31266.89 |        .01 |   .04 | N            | O            | Wed Sep 11 00:00:00 1996 | Wed Sep 18 00:00:00 1996 | Thu Sep 26 00:00:00 1996 | NONE                      | FOB        | ironic accou
+         103 |     29022 |      4027 |            4 |      32.00 |        30432.64 |        .01 |   .07 | N            | O            | Tue Jul 30 00:00:00 1996 | Tue Aug 06 00:00:00 1996 | Sun Aug 04 00:00:00 1996 | NONE                      | RAIL       | kages doze. special, regular deposit
+         100 |     38024 |      3031 |            4 |      14.00 |        13468.28 |        .06 |   .03 | N            | O            | Fri May 22 00:00:00 1998 | Fri May 01 00:00:00 1998 | Wed Jun 03 00:00:00 1998 | COLLECT COD               | MAIL       | y. furiously ironic ideas gr
+         100 |     46150 |      8655 |            3 |      46.00 |        50422.90 |        .03 |   .04 | N            | O            | Sat May 02 00:00:00 1998 | Fri Apr 10 00:00:00 1998 | Fri May 22 00:00:00 1998 | TAKE BACK RETURN          | SHIP       | ular accounts. even
+         100 |     53439 |       955 |            5 |      37.00 |        51519.91 |        .05 |  0.00 | N            | O            | Fri Mar 06 00:00:00 1998 | Thu Apr 16 00:00:00 1998 | Tue Mar 31 00:00:00 1998 | TAKE BACK RETURN          | TRUCK      | nd the quickly s
+         102 |     61158 |      8677 |            4 |      15.00 |        16787.25 |        .07 |   .07 | N            | O            | Mon Jun 02 00:00:00 1997 | Sun Jul 13 00:00:00 1997 | Wed Jun 04 00:00:00 1997 | DELIVER IN PERSON         | SHIP       | final packages. carefully even excu
+         100 |     62029 |      2030 |            1 |      28.00 |        27748.56 |        .04 |   .05 | N            | O            | Fri May 08 00:00:00 1998 | Wed May 13 00:00:00 1998 | Sun Jun 07 00:00:00 1998 | COLLECT COD               | TRUCK      | sts haggle. slowl
+          99 |     87114 |      4639 |            1 |      10.00 |        11011.10 |        .02 |   .01 | A            | F            | Wed May 18 00:00:00 1994 | Fri Jun 03 00:00:00 1994 | Mon May 23 00:00:00 1994 | COLLECT COD               | RAIL       | kages. requ
+         102 |     88914 |      3931 |            1 |      37.00 |        70407.67 |        .06 |  0.00 | N            | O            | Thu Jul 24 00:00:00 1997 | Sat Aug 02 00:00:00 1997 | Thu Aug 07 00:00:00 1997 | TAKE BACK RETURN          | SHIP       | ully across the ideas. final deposit
+          99 |    108338 |       849 |            4 |      36.00 |        48467.88 |        .09 |   .02 | A            | F            | Mon Jul 04 00:00:00 1994 | Sun Apr 17 00:00:00 1994 | Sat Jul 30 00:00:00 1994 | DELIVER IN PERSON         | AIR        | slyly. slyly e
+ -1995148554 |    112942 |      2943 |            1 |       9.00 |        17594.46 |        .04 |   .04 | N            | O            | Sat Aug 03 00:00:00 1996 | Fri May 31 00:00:00 1996 | Sun Aug 04 00:00:00 1996 | DELIVER IN PERSON         | TRUCK      | c realms print carefully car
+         100 |    115979 |      8491 |            2 |      22.00 |        43889.34 |       0.00 |   .07 | N            | O            | Wed Jun 24 00:00:00 1998 | Sun Apr 12 00:00:00 1998 | Mon Jun 29 00:00:00 1998 | DELIVER IN PERSON         | SHIP       | nto beans alongside of the fi
+         101 |    118282 |      5816 |            1 |      49.00 |        63713.72 |        .10 |  0.00 | N            | O            | Fri Jun 21 00:00:00 1996 | Mon May 27 00:00:00 1996 | Sat Jun 29 00:00:00 1996 | DELIVER IN PERSON         | REG AIR    | ts
+          99 |    123766 |      3767 |            2 |       5.00 |         8948.80 |        .02 |   .07 | R            | F            | Fri May 06 00:00:00 1994 | Sat May 28 00:00:00 1994 | Fri May 20 00:00:00 1994 | TAKE BACK RETURN          | RAIL       | ests cajole fluffily waters. blithe
+          99 |    134082 |      1622 |            3 |      42.00 |        46875.36 |        .02 |   .02 | A            | F            | Tue Apr 19 00:00:00 1994 | Wed May 18 00:00:00 1994 | Wed Apr 20 00:00:00 1994 | NONE                      | RAIL       | kages are fluffily furiously ir
+         101 |    138418 |      5958 |            3 |      12.00 |        17476.92 |        .06 |   .02 | N            | O            | Fri Mar 29 00:00:00 1996 | Sat Apr 20 00:00:00 1996 | Fri Apr 12 00:00:00 1996 | COLLECT COD               | MAIL       | . quickly regular
+         101 |    163334 |       883 |            2 |      36.00 |        50303.88 |       0.00 |   .01 | N            | O            | Sun May 19 00:00:00 1996 | Wed May 01 00:00:00 1996 | Tue Jun 04 00:00:00 1996 | DELIVER IN PERSON         | AIR        | tes. blithely pending dolphins x-ray f
+         102 |    169238 |      6787 |            2 |      34.00 |        44445.82 |        .03 |   .08 | N            | O            | Sat Aug 09 00:00:00 1997 | Mon Jul 28 00:00:00 1997 | Tue Aug 26 00:00:00 1997 | TAKE BACK RETURN          | SHIP       | eposits cajole across
+         102 |    182321 |      4840 |            3 |      25.00 |        35083.00 |        .01 |   .01 | N            | O            | Thu Jul 31 00:00:00 1997 | Thu Jul 24 00:00:00 1997 | Sun Aug 17 00:00:00 1997 | NONE                      | RAIL       | bits. ironic accoun
+         103 |    194658 |      2216 |            1 |       6.00 |        10515.90 |        .03 |   .05 | N            | O            | Fri Oct 11 00:00:00 1996 | Thu Jul 25 00:00:00 1996 | Mon Oct 28 00:00:00 1996 | NONE                      | FOB        | cajole. carefully ex
+(22 rows)
+
+DROP SCHEMA copy_test CASCADE;
+NOTICE:  drop cascades to table table_copy
+RESET SEARCH_PATH;

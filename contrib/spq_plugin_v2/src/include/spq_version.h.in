@@ -1,0 +1,34 @@
+/* This file is created manually */
+
+/* Spq full name as a string */
+#undef SPQ_NAME
+
+/* Spq edition as a string */
+#undef SPQ_EDITION
+
+/* Spq extension name in pg_extension */
+#undef SPQ_EXTENSION_NAME
+
+/* Extension version expected by this Spq build */
+#undef SPQ_EXTENSIONVERSION
+
+/* Spq major version as a string */
+#undef SPQ_MAJORVERSION
+
+/* Spq version as a string */
+#undef SPQ_VERSION
+
+/* Spq version as a number */
+#undef SPQ_VERSION_NUM
+
+/* A string containing the version number, platform, and C compiler */
+#undef SPQ_VERSION_STR
+
+/* Define to 1 if you have the `curl' library (-lcurl). */
+#undef HAVE_LIBCURL
+
+/* Define to 1 if you have the `liblz4' library (-llz4). */
+#undef HAVE_CITUS_LIBLZ4
+
+/* Define to 1 if you have the `libzstd' library (-lzstd). */
+#undef HAVE_LIBZSTD

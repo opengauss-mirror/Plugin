@@ -14,11 +14,11 @@ DECLARE
 BEGIN
 	WITH citus_nodes AS (
 		SELECT * FROM pg_dist_node
-		WHERE isactive AND nodecluster = current_setting('citus.cluster_name') AND groupid = 0
+		WHERE isactive AND nodecluster = current_setting('spq.cluster_name') AND groupid = 0
 		AND (
-			(current_setting('citus.use_secondary_nodes') = 'never' AND noderole = 'primary')
+			(current_setting('spq.use_secondary_nodes') = 'never' AND noderole = 'primary')
 			OR
-			(current_setting('citus.use_secondary_nodes') = 'always' AND noderole = 'secondary')
+			(current_setting('spq.use_secondary_nodes') = 'always' AND noderole = 'secondary')
 		)
 		ORDER BY nodename, nodeport
 	)
@@ -33,15 +33,15 @@ BEGIN
 		-- But when the coordinator is not added to metadata and this function
 		-- is called from a worker node, this will not be enough and we'll
 		-- not be able run on all nodes.
-		IF citus_is_coordinator() THEN
+		IF spq_is_coordinator() THEN
 			SELECT
-				array_append(nodenames, current_setting('citus.local_hostname')),
+				array_append(nodenames, current_setting('spq.local_hostname')),
 				array_append(ports, current_setting('port')::int),
 				array_append(commands, command)
 			INTO nodenames, ports, commands;
 		ELSE
 			RAISE EXCEPTION 'the coordinator is not added to the metadata'
-			USING HINT = 'Add the node as a coordinator by using: SELECT citus_set_coordinator_host(''<hostname>'')';
+			USING HINT = 'Add the node as a coordinator by using: SELECT spq_set_coordinator_host(''<hostname>'')';
 		END IF;
 	END IF;
 

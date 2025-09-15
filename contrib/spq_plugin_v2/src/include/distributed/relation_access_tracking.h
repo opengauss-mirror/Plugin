@@ -13,32 +13,26 @@
 #include "distributed/multi_physical_planner.h" /* access Task struct */
 #include "distributed/placement_connection.h"
 
-/* Config variables managed via guc.c */
-extern bool EnforceForeignKeyRestrictions;
-
-
 /* forward declare, to avoid dependency on ShardPlacement definition */
 struct ShardPlacement;
 
-typedef enum RelationAccessMode
-{
-	RELATION_NOT_ACCESSED,
+typedef enum RelationAccessMode {
+    RELATION_NOT_ACCESSED,
 
-	/* only valid for reference tables */
-	RELATION_REFERENCE_ACCESSED,
+    /* only valid for reference tables */
+    RELATION_REFERENCE_ACCESSED,
 
-	/*
-	 * Only valid for distributed tables and set
-	 * if table is accessed in parallel mode
-	 */
-	RELATION_PARALLEL_ACCESSED
+    /*
+     * Only valid for distributed tables and set
+     * if table is accessed in parallel mode
+     */
+    RELATION_PARALLEL_ACCESSED
 } RelationAccessMode;
 
-extern void InitRelationAccessHash(void);
 extern void ResetRelationAccessHash(void);
 extern void RecordRelationAccessIfNonDistTable(Oid relationId,
-											   ShardPlacementAccessType accessType);
-extern void RecordParallelRelationAccessForTaskList(List *taskList);
+                                               ShardPlacementAccessType accessType);
+extern void RecordParallelRelationAccessForTaskList(List* taskList);
 extern void RecordParallelSelectAccess(Oid relationId);
 extern void RecordParallelModifyAccess(Oid relationId);
 extern void RecordParallelDDLAccess(Oid relationId);
@@ -48,5 +42,12 @@ extern RelationAccessMode GetRelationSelectAccessMode(Oid relationId);
 extern bool ShouldRecordRelationAccess(void);
 extern bool ParallelQueryExecutedInTransaction(void);
 
+struct SessionRelationAccessCtx {
+    MemoryContext RelationAcessContext{nullptr};
+
+    HTAB* RelationAccessHash{nullptr};
+
+    void InitializeRelationAccessCtx();
+};
 
 #endif /* RELATION_ACCESS_TRACKING_H_ */

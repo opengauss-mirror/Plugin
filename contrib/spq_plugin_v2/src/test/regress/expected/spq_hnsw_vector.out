@@ -1,0 +1,439 @@
+SET spq.propagate_set_commands = 'local';
+-- L2
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t3 (id, val) VALUES (1,'[0,0,0]'), (2,'[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops);
+INSERT INTO t3 (id, val) VALUES (5, '[1,2,4]');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  2 | [1,2,3]
+  5 | [1,2,4]
+  3 | [1,1,1]
+  1 | [0,0,0]
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <-> (SELECT NULL::vector)) tt;
+                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t3  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <-> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+EXPLAIN SELECT COUNT(*) FROM t3;
+                                               QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=1000000000101.00..1000000000101.01 rows=1 width=8)
+                     ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=0)
+(8 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <-> (SELECT NULL::vector)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+SELECT COUNT(*) FROM t3;
+ count
+---------------------------------------------------------------------
+     5
+(1 row)
+
+COMMIT;
+TRUNCATE t3;
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id | val
+---------------------------------------------------------------------
+(0 rows)
+
+DROP TABLE t3;
+-- inner product
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t3 (id, val) VALUES (1, '[0,0,0]'), (2, '[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_ip_ops);
+INSERT INTO t3 (id, val) VALUES (5, '[1,2,4]');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t3 ORDER BY val <#> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <#> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  5 | [1,2,4]
+  2 | [1,2,3]
+  3 | [1,1,1]
+  1 | [0,0,0]
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <#> (SELECT NULL::vector)) tt;
+                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t3  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <#> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <#> (SELECT NULL::vector)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t3;
+-- cosine
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t3 (id, val) VALUES (1, '[0,0,0]'), (2, '[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_cosine_ops);
+INSERT INTO t3 (id, val) VALUES (5, '[1,2,4]');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t3 ORDER BY val <=> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <=> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  3 | [1,1,1]
+  2 | [1,2,3]
+  5 | [1,2,4]
+  1 | [0,0,0]
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <=> '[0,0,0]') tt;
+                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.28..10000000008.29 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t3  (cost=4.26..10000000008.27 rows=1 width=36)
+                           Order By: (val <=> '[0,0,0]'::vector)
+(9 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <=> (SELECT NULL::vector)) tt;
+                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t3  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <=> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <=> '[0,0,0]') tt;
+ count
+---------------------------------------------------------------------
+     3
+(1 row)
+
+SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <=> (SELECT NULL::vector)) tt;
+ count
+---------------------------------------------------------------------
+     3
+(1 row)
+
+COMMIT;
+DROP TABLE t3;
+-- L1
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t3 (id, val) VALUES (1, '[0,0,0]'), (2, '[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_l1_ops);
+INSERT INTO t3 (id, val) VALUES (5, '[1,2,4]');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t3 ORDER BY val <+> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <+> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  2 | [1,2,3]
+  5 | [1,2,4]
+  3 | [1,1,1]
+  1 | [0,0,0]
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <+> (SELECT NULL::vector)) tt;
+                                                        QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t3  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <+> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t3 ORDER BY val <+> (SELECT NULL::vector)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t3;
+-- iterative
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t3 (id, val) VALUES (1, '[0,0,0]'), (2, '[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops);
+BEGIN;
+SET local enable_seqscan = off;
+SET local hnsw.iterative_scan = strict_order;
+SET local hnsw.ef_search = 1;
+EXPLAIN SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  2 | [1,2,3]
+  3 | [1,1,1]
+  1 | [0,0,0]
+  4 |
+(4 rows)
+
+SET local hnsw.iterative_scan = relaxed_order;
+EXPLAIN SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  2 | [1,2,3]
+  3 | [1,1,1]
+  1 | [0,0,0]
+  4 |
+(4 rows)
+
+COMMIT;
+TRUNCATE t3;
+BEGIN;
+SET local enable_seqscan = off;
+SET local hnsw.iterative_scan = strict_order;
+SET local hnsw.ef_search = 1;
+SET local hnsw.iterative_scan = relaxed_order;
+EXPLAIN SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+                                              QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t3  (cost=10000000000.00..1000000002241.09 rows=1238 width=36)
+(8 rows)
+
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id | val
+---------------------------------------------------------------------
+(0 rows)
+
+COMMIT;
+DROP TABLE t3;
+-- unlogged
+CREATE UNLOGGED TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ERROR:  cannot distribute a unlogged table
+CONTEXT:  referenced column: create_distributed_table
+INSERT INTO t3 (id, val) VALUES (1, '[0,0,0]'), (2, '[1,2,3]'), (3, '[1,1,1]'), (4, NULL);
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops);
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+                                     QUERY PLAN
+---------------------------------------------------------------------
+ Ann Index Scan using t3_val_idx on t3  (cost=8.28..10000000012.33 rows=4 width=36)
+   Order By: (val <-> '[3,3,3]'::vector)
+(2 rows)
+
+SELECT * FROM t3 ORDER BY val <-> '[3,3,3]';
+ id |   val
+---------------------------------------------------------------------
+  2 | [1,2,3]
+  3 | [1,1,1]
+  1 | [0,0,0]
+(3 rows)
+
+COMMIT;
+DROP TABLE t3;
+-- options
+CREATE TABLE t3 (id int, val vector(3));
+SELECT create_distributed_table('t3', 'id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops) WITH (m = 1);
+ERROR:  value 1 out of bounds for option "m"
+DETAIL:  Valid values are between "2" and "100".
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops) WITH (m = 101);
+ERROR:  value 101 out of bounds for option "m"
+DETAIL:  Valid values are between "2" and "100".
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops) WITH (ef_construction = 3);
+ERROR:  value 3 out of bounds for option "ef_construction"
+DETAIL:  Valid values are between "4" and "1000".
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops) WITH (ef_construction = 1001);
+ERROR:  value 1001 out of bounds for option "ef_construction"
+DETAIL:  Valid values are between "4" and "1000".
+CREATE INDEX ON t3 USING hnsw (val vector_l2_ops) WITH (m = 16, ef_construction = 31);
+ERROR:  ef_construction must be greater than or equal to 2 * m
+BEGIN;
+SHOW hnsw.ef_search;
+ hnsw.ef_search
+---------------------------------------------------------------------
+
+(1 row)
+
+SET local hnsw.ef_search = 0;
+SET local hnsw.ef_search = 1001;
+SHOW hnsw.iterative_scan;
+ hnsw.iterative_scan
+---------------------------------------------------------------------
+
+(1 row)
+
+SET local hnsw.iterative_scan = on;
+COMMIT;
+DROP TABLE t3;
+SET spq.propagate_set_commands = DEFAULT;

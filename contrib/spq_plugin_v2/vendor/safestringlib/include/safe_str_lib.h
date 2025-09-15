@@ -245,9 +245,10 @@ strstr_s(char *dest, rsize_t dmax,
          const char *src, rsize_t slen, char **substring);
 
 
+/* FIXME: following function is conflicted with huawei's secure-C */
 /* string tokenizer */
-extern char *
-strtok_s(char *s1, rsize_t *s1max, const char *src, char **ptr);
+//extern char *
+//strtok_s(char *s1, rsize_t *s1max, const char *src, char **ptr);
 
 
 /* convert string to lowercase */

@@ -11,10 +11,9 @@
 #ifndef CITUS_ACQUIRE_LOCK_H
 #define CITUS_ACQUIRE_LOCK_H
 
-
 #include "postmaster/bgworker.h"
-
-BackgroundWorkerHandle * StartLockAcquireHelperBackgroundWorker(int backendToHelp,
-																int32 lock_cooldown);
-
+#ifdef DISABLE_OG_COMMENTS
+BackgroundWorkerHandle* StartLockAcquireHelperBackgroundWorker(int backendToHelp,
+                                                               int32 lock_cooldown);
+#endif
 #endif /* CITUS_ACQUIRE_LOCK_H */

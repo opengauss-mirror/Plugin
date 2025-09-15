@@ -34,6 +34,8 @@ then
 	fi
 fi
 
+echo "diff source file name, file1: $file1, file2: $file2"
+
 if test -z "${VANILLATEST:-}"
 then
 	touch "$file1"  # when adding a new test the expected file does not exist
@@ -46,9 +48,13 @@ then
 	fi
 	sed -Ef "$normalize_file" < "$file1" > "$file1.modified"
 	sed -Ef "$normalize_file" < "$file2" > "$file2.modified"
+	echo "diff result:"
+	"$DIFF" -w $args "$file1.modified" "$file2.modified"
+	echo "diff-filter result:"
 	"$DIFF" -w $args "$file1.modified" "$file2.modified" | LC_CTYPE=C.UTF-8 diff-filter "$BASEDIR/normalize.sed"
 	exit ${PIPESTATUS[0]}
 else
+	echo "directly diff"
 	exec "$DIFF" -w $args "$file1" "$file2"
 fi
 

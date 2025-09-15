@@ -19,16 +19,15 @@
  *		pg_dist_partition definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_partition
-{
-	Oid logicalrelid;    /* logical relation id; references pg_class oid */
-	char partmethod;     /* partition method; see codes below */
+typedef struct FormData_pg_dist_partition {
+    Oid logicalrelid;    /* logical relation id; references pg_class oid */
+    char partmethod;     /* partition method; see codes below */
 #ifdef CATALOG_VARLEN    /* variable-length fields start here */
-	text partkey;        /* partition key expression */
-	uint32 colocationid; /* id of the co-location group of particular table belongs to */
-	char repmodel;       /* replication model; see codes below */
+    text partkey;        /* partition key expression */
+    uint32 colocationid; /* id of the co-location group of particular table belongs to */
+    char repmodel;       /* replication model; see codes below */
 #endif
-	bool autoconverted;
+    bool autoconverted;
 } FormData_pg_dist_partition;
 
 /* ----------------
@@ -36,7 +35,7 @@ typedef struct FormData_pg_dist_partition
  *      the format of pg_dist_partitions relation.
  * ----------------
  */
-typedef FormData_pg_dist_partition *Form_pg_dist_partition;
+typedef FormData_pg_dist_partition* Form_pg_dist_partition;
 
 /* ----------------
  *      compiler constants for pg_dist_partitions
@@ -68,5 +67,4 @@ typedef FormData_pg_dist_partition *Form_pg_dist_partition;
 #define REPLICATION_MODEL_2PC 't'
 #define REPLICATION_MODEL_INVALID 'i'
 
-
-#endif   /* PG_DIST_PARTITION_H */
+#endif /* PG_DIST_PARTITION_H */

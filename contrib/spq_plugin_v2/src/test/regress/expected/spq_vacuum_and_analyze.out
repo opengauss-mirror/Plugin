@@ -1,0 +1,47 @@
+CREATE SCHEMA vacuum_and_analyze;
+SET search_path TO vacuum_and_analyze;
+SET spq.shard_count TO 2;
+CREATE TABLE test_vacuum_and_analyze(
+	id INT PRIMARY KEY,
+	name TEXT NOT NULL,
+	age INT CHECK(age > 0)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_vacuum_and_analyze_pkey" for table "test_vacuum_and_analyze"
+SELECT create_distributed_table('test_vacuum_and_analyze','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO test_vacuum_and_analyze VALUES(1, 'Alice', 25), (2, 'Bob', 30), (3, 'Jerry', 26);
+SELECT * FROM test_vacuum_and_analyze ORDER BY id;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  25
+  2 | Bob   |  30
+  3 | Jerry |  26
+(3 rows)
+
+UPDATE test_vacuum_and_analyze SET age = 35 WHERE id = 1;
+SELECT * FROM test_vacuum_and_analyze ORDER BY id;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  35
+  2 | Bob   |  30
+  3 | Jerry |  26
+(3 rows)
+
+DELETE FROM test_vacuum_and_analyze WHERE id = 2;
+SELECT * FROM test_vacuum_and_analyze ORDER BY id;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  35
+  3 | Jerry |  26
+(2 rows)
+
+analyze test_vacuum_and_analyze;
+vacuum test_vacuum_and_analyze;
+vacuum (analyze, freeze, full) test_vacuum_and_analyze;
+drop table test_vacuum_and_analyze;
+DROP SCHEMA vacuum_and_analyze CASCADE;
+SET search_path TO DEFAULT;

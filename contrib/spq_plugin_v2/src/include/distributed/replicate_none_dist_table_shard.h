@@ -13,7 +13,7 @@
 #define REPLICA_LOCAL_TABLE_SHARD_H
 
 extern void NoneDistTableReplicateCoordinatorPlacement(Oid noneDistTableId,
-													   List *targetNodeList);
+                                                       List* targetNodeList);
 extern void NoneDistTableDeleteCoordinatorPlacement(Oid noneDistTableId);
 extern void NoneDistTableDropCoordinatorPlacementTable(Oid noneDistTableId);
 

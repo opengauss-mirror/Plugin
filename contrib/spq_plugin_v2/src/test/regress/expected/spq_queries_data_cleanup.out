@@ -1,0 +1,8 @@
+DROP TABLE events_table;
+DROP TABLE users_table;
+DROP TABLE agg_results;
+DROP TABLE agg_results_fourth;
+DROP TABLE agg_results_second;
+DROP TABLE agg_results_third;
+DROP TABLE agg_results_window;
+DROP TABLE events_reference_table, users_reference_table;

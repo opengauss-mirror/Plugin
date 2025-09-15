@@ -15,8 +15,6 @@
 
 #include "fmgr.h"
 
+extern FmgrInfo* GetFunctionInfo(Oid typeId, Oid accessMethodId, int16 procedureId);
 
-extern FmgrInfo * GetFunctionInfo(Oid typeId, Oid accessMethodId, int16 procedureId);
-
-
-#endif   /* CITUS_FUNCTION_H */
+#endif /* CITUS_FUNCTION_H */

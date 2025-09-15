@@ -3,7 +3,6 @@
 -- to understand the impact of the change overall availability of the application and
 -- network trafic.
 --
-DROP FUNCTION pg_catalog.get_rebalance_table_shards_plan;
 CREATE OR REPLACE FUNCTION pg_catalog.get_rebalance_table_shards_plan(
         relation regclass default NULL,
         threshold float4 default NULL,
@@ -24,4 +23,3 @@ CREATE OR REPLACE FUNCTION pg_catalog.get_rebalance_table_shards_plan(
     LANGUAGE C VOLATILE;
 COMMENT ON FUNCTION pg_catalog.get_rebalance_table_shards_plan(regclass, float4, int, bigint[], boolean, name, float4)
     IS 'returns the list of shard placement moves to be done on a rebalance operation';
-

@@ -1,0 +1,34 @@
+-- Tests functions related to cluster membership
+-- add the first node to the cluster in transactional mode
+SELECT 1 FROM spq_add_node('localhost', :worker_1_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+SELECT 1 FROM spq_add_node('localhost', :worker_2_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+-- I am coordinator
+SELECT spq_is_coordinator();
+ spq_is_coordinator
+---------------------------------------------------------------------
+ t
+(1 row)
+
+-- make sure coordinator is always in metadata.
+SELECT spq_set_coordinator_host('localhost');
+ spq_set_coordinator_host
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+

@@ -11,7 +11,6 @@
 #ifndef PG_DIST_NODE_METADATA_H
 #define PG_DIST_NODE_METADATA_H
 
-
 /* ----------------
  *      compiler constants for pg_dist_node_metadata
  * ----------------

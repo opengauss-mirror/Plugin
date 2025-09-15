@@ -15,13 +15,10 @@
 
 #include "lib/stringinfo.h"
 
-
 #define PG_JOB_CACHE_DIR "pgsql_job_cache"
-
 
 extern void CleanupJobCacheDirectory(void);
 extern void CitusCreateDirectory(StringInfo directoryName);
-extern void CitusRemoveDirectory(const char *filename);
+extern void CitusRemoveDirectory(const char* filename);
 
-
-#endif   /* CITUS_DIRECTORY_H */
+#endif /* CITUS_DIRECTORY_H */

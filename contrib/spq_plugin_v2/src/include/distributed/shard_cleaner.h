@@ -11,61 +11,48 @@
 #ifndef CITUS_SHARD_CLEANER_H
 #define CITUS_SHARD_CLEANER_H
 
-#define MAX_BG_TASK_EXECUTORS 1000
-
-/* GUC to configure deferred shard deletion */
-extern int DeferShardDeleteInterval;
-extern int BackgroundTaskQueueCheckInterval;
-extern int MaxBackgroundTaskExecutors;
-extern double DesiredPercentFreeAfterMove;
-extern bool CheckAvailableSpaceBeforeMove;
-
-extern int NextOperationId;
-extern int NextCleanupRecordId;
+static constexpr int MAX_BG_TASK_EXECUTORS = 1000;
 
 extern int TryDropOrphanedResources(void);
 extern void DropOrphanedResourcesInSeparateTransaction(void);
-extern void ErrorIfCleanupRecordForShardExists(char *shardName);
+extern void ErrorIfCleanupRecordForShardExists(char* shardName);
 
 /* Members for cleanup infrastructure */
 typedef uint64 OperationId;
-extern OperationId CurrentOperationId;
 
 /*
  * CleanupResource represents the Resource type in cleanup records.
  */
-typedef enum CleanupObject
-{
-	CLEANUP_OBJECT_INVALID = 0,
-	CLEANUP_OBJECT_SHARD_PLACEMENT = 1,
-	CLEANUP_OBJECT_SUBSCRIPTION = 2,
-	CLEANUP_OBJECT_REPLICATION_SLOT = 3,
-	CLEANUP_OBJECT_PUBLICATION = 4,
-	CLEANUP_OBJECT_USER = 5
+typedef enum CleanupObject {
+    CLEANUP_OBJECT_INVALID = 0,
+    CLEANUP_OBJECT_SHARD_PLACEMENT = 1,
+    CLEANUP_OBJECT_SUBSCRIPTION = 2,
+    CLEANUP_OBJECT_REPLICATION_SLOT = 3,
+    CLEANUP_OBJECT_PUBLICATION = 4,
+    CLEANUP_OBJECT_USER = 5
 } CleanupObject;
 
 /*
  * CleanupPolicy represents the policy type for cleanup records.
  */
-typedef enum CleanupPolicy
-{
-	/*
-	 * Resources that are transient and always need clean up after the operation is completed.
-	 * (Example: Dummy Shards for Non-Blocking splits)
-	 */
-	CLEANUP_ALWAYS = 0,
+typedef enum CleanupPolicy {
+    /*
+     * Resources that are transient and always need clean up after the operation is
+     * completed. (Example: Dummy Shards for Non-Blocking splits)
+     */
+    CLEANUP_ALWAYS = 0,
 
-	/*
-	 * Resources that are cleanup only on failure.
-	 * (Example: Split Children for Blocking/Non-Blocking splits)
-	 */
-	CLEANUP_ON_FAILURE = 1,
+    /*
+     * Resources that are cleanup only on failure.
+     * (Example: Split Children for Blocking/Non-Blocking splits)
+     */
+    CLEANUP_ON_FAILURE = 1,
 
-	/*
-	 * Resources that need 'deferred' clean up only on success .
-	 * (Example: Parent child being split for Blocking/Non-Blocking splits)
-	 */
-	CLEANUP_DEFERRED_ON_SUCCESS = 2,
+    /*
+     * Resources that need 'deferred' clean up only on success .
+     * (Example: Parent child being split for Blocking/Non-Blocking splits)
+     */
+    CLEANUP_DEFERRED_ON_SUCCESS = 2,
 } CleanupPolicy;
 
 /* Global Constants */
@@ -88,9 +75,8 @@ extern OperationId RegisterOperationNeedingCleanup(void);
  * scenarios, since the records would roll back in case of failure.
  */
 extern void InsertCleanupRecordInCurrentTransaction(CleanupObject objectType,
-													char *objectName,
-													int nodeGroupId,
-													CleanupPolicy policy);
+                                                    char* objectName, int nodeGroupId,
+                                                    CleanupPolicy policy);
 
 /*
  * InsertCleanupRecordInSeparateTransaction inserts a new pg_dist_cleanup entry
@@ -100,15 +86,14 @@ extern void InsertCleanupRecordInCurrentTransaction(CleanupObject objectType,
  * completion (CLEANUP_ALWAYS) or on failure (CLEANUP_ON_FAILURE).
  */
 extern void InsertCleanupRecordInSubtransaction(CleanupObject objectType,
-												char *objectName,
-												int nodeGroupId,
-												CleanupPolicy policy);
+                                                char* objectName, int nodeGroupId,
+                                                CleanupPolicy policy);
 
 /*
  * FinalizeOperationNeedingCleanupOnSuccess is be called by an operation to signal
  * completion on success. This will trigger cleanup of appropriate resources
  * and cleanup records.
  */
-extern void FinalizeOperationNeedingCleanupOnSuccess(const char *operationName);
+extern void FinalizeOperationNeedingCleanupOnSuccess(const char* operationName);
 
 #endif /*CITUS_SHARD_CLEANER_H */

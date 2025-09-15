@@ -97,8 +97,8 @@ memmove_s (void *dest, rsize_t dmax, const void *src, rsize_t smax)
     uint8_t *dp;
     const uint8_t  *sp;
 
-    dp= dest;
-    sp = src;
+    dp= static_cast<uint8_t *>(dest);
+    sp = static_cast<uint8_t *>(const_cast<void *>(src));
 
     if (dp == NULL) {
         invoke_safe_mem_constraint_handler("memmove_s: dest is null",

@@ -94,8 +94,8 @@ memcmp_s (const void *dest, rsize_t dmax,
     const uint8_t *dp;
     const uint8_t *sp;
 
-    dp = dest;
-    sp = src;
+    dp = static_cast<uint8_t *>(const_cast<void *>(dest));
+    sp = static_cast<uint8_t *>(const_cast<void *>(src));
 
     /*
      * must be able to return the diff

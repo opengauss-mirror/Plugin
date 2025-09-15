@@ -12,9 +12,7 @@
 #ifndef TRANSACTION_IDENTIFIER_H
 #define TRANSACTION_IDENTIFIER_H
 
-
 #include "datatype/timestamp.h"
-
 
 /*
  * Citus identifies a distributed transaction with a triplet consisting of
@@ -30,16 +28,14 @@
  *  -  timestamp: The current timestamp of distributed transaction initiation
  *
  */
-typedef struct DistributedTransactionId
-{
-	int initiatorNodeIdentifier;
-	bool transactionOriginator;
-	uint64 transactionNumber;
-	TimestampTz timestamp;
+typedef struct DistributedTransactionId {
+    int initiatorNodeIdentifier;
+    bool transactionOriginator;
+    uint64 transactionNumber;
+    TimestampTz timestamp;
 } DistributedTransactionId;
 
-
-extern DistributedTransactionId * GetCurrentDistributedTransactionId(void);
+extern DistributedTransactionId* GetCurrentDistributedTransactionId(void);
 extern uint64 CurrentDistributedTransactionNumber(void);
 
 #endif /* TRANSACTION_IDENTIFIER_H */

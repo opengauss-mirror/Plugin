@@ -22,6 +22,7 @@
 
 #include "pg_version_compat.h"
 
+#define list_delete_last(list) list_truncate(list, list_length(list) - 1)
 
 /*
  * ListCellAndListWrapper stores a list and list cell.
@@ -29,10 +30,9 @@
  * in separate function calls, we need both the list and the current cell.
  * Therefore this wrapper stores both of them.
  */
-typedef struct ListCellAndListWrapper
-{
-	List *list;
-	ListCell *listCell;
+typedef struct ListCellAndListWrapper {
+    List* list;
+    ListCell* listCell;
 } ListCellAndListWrapper;
 
 /*
@@ -50,12 +50,11 @@ typedef struct ListCellAndListWrapper
  *	  - || true is used to always enter the loop when cell is not null even if
  *	    var is NULL.
  */
-#define foreach_declared_ptr(var, l) \
-	for (ListCell *(var ## CellDoNotUse) = list_head(l); \
-		 (var ## CellDoNotUse) != NULL && \
-		 (((var) = lfirst(var ## CellDoNotUse)) || true); \
-		 var ## CellDoNotUse = lnext(l, var ## CellDoNotUse))
-
+#define foreach_declared_ptr(var, l)                                                \
+    for (ListCell* var##CellDoNotUse = list_head(l);                                \
+         var##CellDoNotUse != NULL &&                                               \
+         (((var) = static_cast<decltype(var)>(lfirst(var##CellDoNotUse))) || true); \
+         var##CellDoNotUse = lnext(var##CellDoNotUse))
 
 /*
  * foreach_declared_int -
@@ -63,12 +62,10 @@ typedef struct ListCellAndListWrapper
  *	  ListCell, just a declared int variable to store the int of the cell in.
  *	  For explanation of how it works see foreach_declared_ptr.
  */
-#define foreach_declared_int(var, l) \
-	for (ListCell *(var ## CellDoNotUse) = list_head(l); \
-		 (var ## CellDoNotUse) != NULL && \
-		 (((var) = lfirst_int(var ## CellDoNotUse)) || true); \
-		 var ## CellDoNotUse = lnext(l, var ## CellDoNotUse))
-
+#define foreach_declared_int(var, l)                                                     \
+    for (ListCell* var##CellDoNotUse = list_head(l);                                     \
+         var##CellDoNotUse != NULL && (((var) = lfirst_int(var##CellDoNotUse)) || true); \
+         var##CellDoNotUse = lnext(var##CellDoNotUse))
 
 /*
  * foreach_declared_oid -
@@ -76,11 +73,10 @@ typedef struct ListCellAndListWrapper
  *	  ListCell, just a declared Oid variable to store the oid of the cell in.
  *	  For explanation of how it works see foreach_declared_ptr.
  */
-#define foreach_declared_oid(var, l) \
-	for (ListCell *(var ## CellDoNotUse) = list_head(l); \
-		 (var ## CellDoNotUse) != NULL && \
-		 (((var) = lfirst_oid(var ## CellDoNotUse)) || true); \
-		 var ## CellDoNotUse = lnext(l, var ## CellDoNotUse))
+#define foreach_declared_oid(var, l)                                                     \
+    for (ListCell* var##CellDoNotUse = list_head(l);                                     \
+         var##CellDoNotUse != NULL && (((var) = lfirst_oid(var##CellDoNotUse)) || true); \
+         var##CellDoNotUse = lnext(var##CellDoNotUse))
 
 /*
  * forboth_ptr -
@@ -88,16 +84,14 @@ typedef struct ListCellAndListWrapper
  *	  time, without needing a ListCell. It only needs two declared pointer
  *	  variables to store the pointer of each of the two cells in.
  */
-#define forboth_ptr(var1, l1, var2, l2) \
-	for (ListCell *(var1 ## CellDoNotUse) = list_head(l1), \
-		 *(var2 ## CellDoNotUse) = list_head(l2); \
-		 (var1 ## CellDoNotUse) != NULL && \
-		 (var2 ## CellDoNotUse) != NULL && \
-		 (((var1) = lfirst(var1 ## CellDoNotUse)) || true) && \
-		 (((var2) = lfirst(var2 ## CellDoNotUse)) || true); \
-		 var1 ## CellDoNotUse = lnext(l1, var1 ## CellDoNotUse), \
-		 var2 ## CellDoNotUse = lnext(l2, var2 ## CellDoNotUse) \
-		 )
+#define forboth_ptr(var1, l1, var2, l2)                                                  \
+    for (ListCell* var1##CellDoNotUse = list_head(l1),                                   \
+                   *var2##CellDoNotUse = list_head(l2);                                  \
+         var1##CellDoNotUse != NULL && var2##CellDoNotUse != NULL &&                     \
+         (((var1) = static_cast<decltype(var1)>(lfirst(var1##CellDoNotUse))) || true) && \
+         (((var2) = static_cast<decltype(var2)>(lfirst(var2##CellDoNotUse))) || true);   \
+         var1##CellDoNotUse = lnext(var1##CellDoNotUse),                                 \
+                   var2##CellDoNotUse = lnext(var2##CellDoNotUse))
 
 /*
  * forboth_ptr_oid -
@@ -106,16 +100,14 @@ typedef struct ListCellAndListWrapper
  *	  Oids. It does not need a ListCell to do this. It only needs two declared
  *	  variables to store the pointer and the Oid of each of the two cells in.
  */
-#define forboth_ptr_oid(var1, l1, var2, l2) \
-	for (ListCell *(var1 ## CellDoNotUse) = list_head(l1), \
-		 *(var2 ## CellDoNotUse) = list_head(l2); \
-		 (var1 ## CellDoNotUse) != NULL && \
-		 (var2 ## CellDoNotUse) != NULL && \
-		 (((var1) = lfirst(var1 ## CellDoNotUse)) || true) && \
-		 (((var2) = lfirst_oid(var2 ## CellDoNotUse)) || true); \
-		 var1 ## CellDoNotUse = lnext(l1, var1 ## CellDoNotUse), \
-		 var2 ## CellDoNotUse = lnext(l2, var2 ## CellDoNotUse) \
-		 )
+#define forboth_ptr_oid(var1, l1, var2, l2)                                              \
+    for (ListCell* var1##CellDoNotUse = list_head(l1),                                   \
+                   *var2##CellDoNotUse = list_head(l2);                                  \
+         var1##CellDoNotUse != NULL && var2##CellDoNotUse != NULL &&                     \
+         (((var1) = static_cast<decltype(var1)>(lfirst(var1##CellDoNotUse))) || true) && \
+         (((var2) = lfirst_oid(var2##CellDoNotUse)) || true);                            \
+         var1##CellDoNotUse = lnext(var1##CellDoNotUse),                                 \
+                   var2##CellDoNotUse = lnext(var2##CellDoNotUse))
 
 /*
  * forboth_int_oid -
@@ -124,16 +116,14 @@ typedef struct ListCellAndListWrapper
  *	  Oids. It does not need a ListCell to do this. It only needs two declared
  *	  variables to store the int and the Oid of each of the two cells in.
  */
-#define forboth_int_oid(var1, l1, var2, l2) \
-	for (ListCell *(var1 ## CellDoNotUse) = list_head(l1), \
-		 *(var2 ## CellDoNotUse) = list_head(l2); \
-		 (var1 ## CellDoNotUse) != NULL && \
-		 (var2 ## CellDoNotUse) != NULL && \
-		 (((var1) = lfirst_int(var1 ## CellDoNotUse)) || true) && \
-		 (((var2) = lfirst_oid(var2 ## CellDoNotUse)) || true); \
-		 var1 ## CellDoNotUse = lnext(l1, var1 ## CellDoNotUse), \
-		 var2 ## CellDoNotUse = lnext(l2, var2 ## CellDoNotUse) \
-		 )
+#define forboth_int_oid(var1, l1, var2, l2)                          \
+    for (ListCell* var1##CellDoNotUse = list_head(l1),               \
+                   *var2##CellDoNotUse = list_head(l2);              \
+         var1##CellDoNotUse != NULL && var2##CellDoNotUse != NULL && \
+         (((var1) = lfirst_int(var1##CellDoNotUse)) || true) &&      \
+         (((var2) = lfirst_oid(var2##CellDoNotUse)) || true);        \
+         var1##CellDoNotUse = lnext(var1##CellDoNotUse),             \
+                   var2##CellDoNotUse = lnext(var2##CellDoNotUse))
 
 /*
  * foreach_ptr_append -
@@ -156,24 +146,39 @@ typedef struct ListCellAndListWrapper
  *	    declared there.
  *	  - || true is used to always enter the loop even if var is NULL.
  */
-#define foreach_ptr_append(var, l) \
-	for (int var ## PositionDoNotUse = 0; \
-		 (var ## PositionDoNotUse) < list_length(l) && \
-		 (((var) = list_nth(l, var ## PositionDoNotUse)) || true); \
-		 var ## PositionDoNotUse ++)
+#define foreach_ptr_append(var, l)                                                    \
+    for (int var##PositionDoNotUse = 0;                                               \
+         var##PositionDoNotUse < list_length(l) &&                                    \
+         (((var) = static_cast<decltype(var)>(list_nth(l, var##PositionDoNotUse))) || \
+          true);                                                                      \
+         var##PositionDoNotUse++)
+
+#define declare_for_each_from size_t i_9527 = 0;
+#define for_each_from(cell, lst, N)                                        \
+    for ((cell) = static_cast<decltype(cell)>(list_head(lst)), i_9527 = 0; \
+         (cell) != NULL && i_9527 >= N; (cell) = lnext(cell), i_9527++)
+
+static inline int list_cell_number(const List* l, const ListCell* c)
+{
+    auto pos = 0;
+    for (auto lc = list_head(l); c != lc;
+         lc = static_cast<decltype(lc)>(lnext(lc)), pos++)
+        ;
+    return pos;
+}
 
 /* utility functions declaration shared within this module */
-extern List * SortList(List *pointerList,
-					   int (*ComparisonFunction)(const void *, const void *));
-extern void ** PointerArrayFromList(List *pointerList);
-extern HTAB * ListToHashSet(List *pointerList, Size keySize, bool isStringList);
-extern char * StringJoin(List *stringList, char delimiter);
-extern char * StringJoinParams(List *stringList, char delimiter,
-							   char *prefix, char *postfix);
-extern List * ListTake(List *pointerList, int size);
-extern void * safe_list_nth(const List *list, int index);
-extern List * GeneratePositiveIntSequenceList(int upTo);
-extern List * GenerateListFromElement(void *listElement, int listLength);
-extern List * list_filter_oid(List *list, bool (*keepElement)(Oid element));
+extern List* SortList(List* pointerList,
+                      int (*ComparisonFunction)(const void*, const void*));
+extern void** PointerArrayFromList(List* pointerList);
+extern HTAB* ListToHashSet(List* pointerList, Size keySize, bool isStringList);
+extern char* StringJoin(List* stringList, char delimiter);
+extern char* StringJoinParams(List* stringList, char delimiter, char* prefix,
+                              char* postfix);
+extern List* ListTake(List* pointerList, int size);
+extern void* safe_list_nth(const List* list, int index);
+extern List* GeneratePositiveIntSequenceList(int upTo);
+extern List* GenerateListFromElement(void* listElement, int listLength);
+extern List* list_filter_oid(List* list, bool (*keepElement)(Oid element));
 
 #endif /* CITUS_LISTUTILS_H */

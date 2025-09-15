@@ -78,7 +78,7 @@ mem_prim_set (void *dest, uint32_t len, uint8_t value)
 
     count = len;
 
-    dp = dest;
+    dp = static_cast<uint8_t *>(dest);
 
     value32 = value | (value << 8) | (value << 16) | (value << 24);
 
@@ -327,8 +327,8 @@ mem_prim_move (void *dest, const void *src, uint32_t len)
 #define wsize   sizeof(uint32_t)
 #define wmask   (wsize - 1)
 
-    uint8_t *dp = dest;
-    const uint8_t *sp = src;
+    uint8_t *dp = static_cast<uint8_t *>(dest);
+    const uint8_t *sp = static_cast<uint8_t *>(const_cast<void *>(src));
 
     uint32_t tsp;
 

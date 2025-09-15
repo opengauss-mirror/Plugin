@@ -19,29 +19,18 @@
 
 /* Adaptive executor repartitioning related defines */
 #define WORKER_CREATE_SCHEMA_QUERY "SELECT worker_create_schema (" UINT64_FORMAT ", %s);"
-#define WORKER_REPARTITION_CLEANUP_QUERY "SELECT worker_repartition_cleanup (" \
-	UINT64_FORMAT \
-	");"
-
+#define WORKER_REPARTITION_CLEANUP_QUERY \
+    "SELECT worker_repartition_cleanup (" UINT64_FORMAT ");"
 
 /* Enumeration that represents distributed executor types */
-typedef enum
-{
-	MULTI_EXECUTOR_INVALID_FIRST = 0,
-	MULTI_EXECUTOR_ADAPTIVE = 1,
-	MULTI_EXECUTOR_NON_PUSHABLE_INSERT_SELECT = 2,
-	MULTI_EXECUTOR_NON_PUSHABLE_MERGE_QUERY = 3
+typedef enum {
+    MULTI_EXECUTOR_INVALID_FIRST = 0,
+    MULTI_EXECUTOR_ADAPTIVE = 1,
+    MULTI_EXECUTOR_NON_PUSHABLE_INSERT_SELECT = 2,
+    MULTI_EXECUTOR_NON_PUSHABLE_MERGE_QUERY = 3
 } MultiExecutorType;
 
-
-/* Config variable managed via guc.c */
-extern int RemoteTaskCheckInterval;
-extern int TaskExecutorType;
-extern bool EnableRepartitionJoins;
-extern int MultiTaskQueryLogLevel;
-
-
 /* Function declarations common to more than one executor */
-extern MultiExecutorType JobExecutorType(DistributedPlan *distributedPlan);
+extern MultiExecutorType JobExecutorType(DistributedPlan* distributedPlan);
 
 #endif /* MULTI_SERVER_EXECUTOR_H */

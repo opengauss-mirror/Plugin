@@ -1,0 +1,304 @@
+-- ===================================================================
+-- test recursive planning functionality
+-- ===================================================================
+-- the subquery is safe to pushdown, should not
+-- recursively plan
+SET spq.enable_repartition_joins = ON;
+SELECT
+	user_id, value_1
+FROM
+	(SELECT user_id, value_1 FROM users_table) as foo
+ORDER BY 1 DESC, 2 DESC LIMIT 3;
+ user_id | value_1
+---------------------------------------------------------------------
+       6 |       5
+       6 |       5
+       6 |       3
+(3 rows)
+
+-- the subquery is safe to pushdown, should not
+-- recursively plan
+SELECT
+	sum(sel_val_1), sum(sel_val_2)
+FROM
+	(SELECT max(value_1) as  sel_val_1, min(value_2) as sel_val_2 FROM users_table GROUP BY user_id) as foo;
+ sum | sum
+---------------------------------------------------------------------
+  29 |   1
+(1 row)
+
+-- the subquery is safe to pushdown, should not
+-- recursively plan
+SELECT
+	min(user_id), max(value_1)
+FROM
+	(SELECT user_id, value_1 FROM users_table) as foo;
+ min | max
+---------------------------------------------------------------------
+   1 |   5
+(1 row)
+
+-- the subquery is safe to pushdown, should not
+-- recursively plan
+SELECT
+	min(user_id)
+FROM
+	(SELECT user_id, value_1 FROM users_table GROUP BY user_id, value_1) as bar;
+ min
+---------------------------------------------------------------------
+   1
+(1 row)
+
+-- the subquery is safe to pushdown, should not
+-- recursively plan
+SELECT
+	min(user_id), sum(max_value_1)
+FROM
+	(SELECT user_id, max(value_1) as max_value_1 FROM users_table GROUP BY user_id) as bar;
+ min | sum
+---------------------------------------------------------------------
+   1 |  29
+(1 row)
+
+-- subqueries in FROM clause with LIMIT should be recursively planned
+SELECT
+   user_id
+FROM
+    (SELECT
+    	DISTINCT users_table.user_id
+     FROM
+     	users_table, events_table
+     WHERE
+     	users_table.user_id = events_table.user_id AND
+     event_type IN (1,2,3,4)
+     ORDER BY 1 DESC LIMIT 5
+     ) as foo
+    ORDER BY 1 DESC;
+ user_id
+---------------------------------------------------------------------
+       6
+       5
+       4
+       3
+       2
+(5 rows)
+
+-- subqueries with only generate_series
+SELECT
+   *
+FROM
+    (SELECT
+        events_table.value_2
+     FROM
+        events_table
+    WHERE
+     event_type IN (1,2,3,4)
+     ORDER BY 1 DESC
+     LIMIT 5
+     ) as foo,
+    (
+        SELECT i FROM generate_series(0, 100) i
+    ) as bar
+    WHERE foo.value_2 = bar.i
+    ORDER BY 2 DESC, 1;
+ERROR:  syntax error at or near ")"
+-- subquery with aggregates without GROUP BY
+SELECT
+   *
+FROM
+    (SELECT
+        count(*)
+     FROM
+        events_table
+    WHERE
+     event_type IN (1,2,3,4)
+     ) as foo;
+ count
+---------------------------------------------------------------------
+    87
+(1 row)
+
+-- subquery having without GROUP BY
+SELECT
+   *
+FROM
+    (SELECT
+          SUM(events_table.user_id)
+     FROM
+        events_table
+    WHERE
+     event_type IN (1,2,3,4)
+    HAVING
+        MIN(value_2) > 2
+     ) as foo;
+ sum
+---------------------------------------------------------------------
+(0 rows)
+
+-- same query with alias in the subquery
+SELECT
+   DISTINCT ON (citus) citus, postgres, citus + 1 as c1, postgres-1 as p1
+FROM
+    (SELECT
+        users_table.value_2
+     FROM
+        users_table, events_table
+     WHERE
+        users_table.user_id = events_table.user_id AND
+     event_type IN (1,2,3,4)
+     GROUP BY users_table.value_2
+     ORDER BY 1 DESC
+     ) as foo(postgres),
+    (SELECT
+        users_table.user_id
+     FROM
+        users_table, events_table
+     WHERE
+        users_table.user_id = events_table.user_id AND
+     event_type IN (5,6,7,8)
+     ORDER BY 1 DESC
+     ) as bar (citus)
+    WHERE foo.postgres = bar.citus
+    ORDER BY 1 DESC, 2 DESC
+    LIMIT 3;
+ERROR:  cannot push down this subquery
+DETAIL:  A qurery including more than one distributed tables is not supported
+-- foo is replaced
+-- and the final query is real-time
+SELECT
+   *
+FROM
+    (SELECT
+    	users_table.value_2
+     FROM
+     	users_table, events_table
+     WHERE
+     	users_table.user_id = events_table.user_id AND
+     event_type IN (1,2,3,4)
+     GROUP BY users_table.value_2
+     ORDER BY 1 DESC
+     ) as foo,
+	(SELECT
+    	users_table.user_id
+     FROM
+     	users_table, events_table
+     WHERE
+     	users_table.user_id = events_table.user_id AND
+     event_type IN (5,6,7,8)
+     ORDER BY 1 DESC
+     ) as bar
+	WHERE foo.value_2 = bar.user_id
+	ORDER BY 2 DESC, 1 DESC
+	LIMIT 3;
+ERROR:  cannot push down this subquery
+DETAIL:  A qurery including more than one distributed tables is not supported
+-- subqueries in WHERE should be replaced
+SELECT DISTINCT user_id
+FROM users_table
+WHERE
+	user_id IN (SELECT DISTINCT value_2 FROM users_table WHERE value_1 >= 1 AND value_1 <= 20 ORDER BY 1 LIMIT 5)
+    ORDER BY 1 DESC;
+ user_id
+---------------------------------------------------------------------
+       4
+       3
+       2
+       1
+(4 rows)
+
+-- subquery in FROM -> FROM -> FROM should be replaced due to OFFSET
+SELECT
+	DISTINCT user_id
+FROM
+	(
+		SELECT users_table.user_id FROM users_table,
+							(
+								SELECT
+									event_type, user_id
+								FROM
+									(SELECT event_type, users_table.user_id FROM users_table,
+															(SELECT user_id, event_type FROM events_table WHERE value_2 < 3 OFFSET 3) as foo
+															WHERE foo.user_id = users_table.user_id
+															) bar
+							) as baz
+									WHERE baz.user_id = users_table.user_id
+	) as sub1
+	ORDER BY 1 DESC
+	LIMIT 3;
+ user_id
+---------------------------------------------------------------------
+       6
+       5
+       4
+(3 rows)
+
+-- subquery in FROM -> FROM -> WHERE should be replaced due to LIMIT
+SELECT user_id, array_length(events_table, 1)
+FROM (
+  SELECT user_id, array_agg(event ORDER BY time) AS events_table
+  FROM (
+    SELECT
+    	u.user_id, e.event_type::text AS event, e.time
+    FROM
+    	users_table AS u,
+        events_table AS e
+    WHERE u.user_id = e.user_id AND
+    		u.user_id IN
+    		(
+    			SELECT
+    				user_id
+    			FROM
+    				users_table
+    			WHERE value_2 >= 5
+			    AND  EXISTS (SELECT user_id FROM events_table WHERE event_type > 1 AND event_type <= 3 AND value_3 > 1 AND user_id = users_table.user_id)
+				AND  NOT EXISTS (SELECT user_id FROM events_table WHERE event_type > 3 AND event_type <= 4  AND value_3 > 1 AND user_id = users_table.user_id)
+				LIMIT 5
+    		)
+  ) t
+  GROUP BY user_id
+) q
+ORDER BY 2 DESC, 1;
+ERROR:  cannot push down this subquery
+DETAIL:  A qurery including more than one distributed tables is not supported
+-- we support queries with recurring tuples in the FROM
+-- clause and subquery in WHERE clause
+SELECT
+	*
+FROM
+	(
+		SELECT
+			users_table.user_id
+		FROM
+			users_table, (SELECT user_id FROM events_table) as evs
+		WHERE users_table.user_id = evs.user_id
+		ORDER BY 1
+		LIMIT 5
+	) as foo WHERE user_id IN (SELECT count(*) FROM users_table GROUP BY user_id);
+ user_id
+---------------------------------------------------------------------
+(0 rows)
+
+SET spq.enable_repartition_joins = default;
+CREATE TABLE dist(id int, value int);
+SELECT create_distributed_table('dist','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO dist SELECT i, i FROM generate_series(0,100) i;
+CREATE TABLE local(id int);
+INSERT INTO local SELECT i FROM generate_series(50,150) i;
+-- planner recursively plans local table in local-dist join and then the whole query is routed
+SELECT COUNT(*) FROM dist JOIN local USING(id)
+WHERE
+	dist.id IN (SELECT id FROM dist WHERE id = 55) AND
+    dist.id = 55 AND
+    dist.value IN (SELECT value FROM dist WHERE id = 55);
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+DROP TABLE dist;
+DROP TABLE local;

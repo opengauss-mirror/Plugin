@@ -17,12 +17,12 @@
 #include "utils/hsearch.h"
 #include "utils/relcache.h"
 
-extern List * GetForeignKeyConnectedRelationIdList(Oid relationId);
+extern List* GetForeignKeyConnectedRelationIdList(Oid relationId);
 extern bool ShouldUndistributeCitusLocalTable(Oid relationId);
-extern List * ReferencedRelationIdList(Oid relationId);
-extern List * ReferencingRelationIdList(Oid relationId);
+extern List* ReferencedRelationIdList(Oid relationId);
+extern List* ReferencingRelationIdList(Oid relationId);
 extern void SetForeignConstraintRelationshipGraphInvalid(void);
-extern bool OidVisited(HTAB *oidVisitedMap, Oid oid);
-extern void VisitOid(HTAB *oidVisitedMap, Oid oid);
+extern bool OidVisited(HTAB* oidVisitedMap, Oid oid);
+extern void VisitOid(HTAB* oidVisitedMap, Oid oid);
 
 #endif

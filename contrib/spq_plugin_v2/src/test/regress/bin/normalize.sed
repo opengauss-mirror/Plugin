@@ -324,4 +324,36 @@ s/\| CHECK ([a-zA-Z])(.*)/| CHECK \(\1\2\)/g
 # changed to a normalization rule when 17 becomes the minimum
 # supported Postgres version.
 
+s/pg_vector_collection_[0-9]+/pg_vector_collection_xxxxxx/g
+s/pg_vector_collection_pkey_[0-9]+/pg_vector_collection_pkey_xxxxxx/g
+s/pg_vector_collection_embeding_index_[0-9]+/pg_vector_collection_embeding_index_xxxxxx/g
+
 /DEBUG:  drop auto-cascades to type [a-zA-Z_]*.pg_temp_[0-9]*/d
+
+# for explain result in spq_vector testcases
+s/using t[0-9]+_val_idx_[0-9]+ on t[0-9]+_[0-9]+/using t_val_idx_xxxx on t_xxxx/g
+s/Seq Scan on t[0-9]+_[0-9]+ t/Seq Scan on t_xxxx t/g
+s/t[0-9]+_pkey_[0-9]+/txx_pkey_xxxx/g
+s/t[0-9]+_[0-9]+/txx_xxxx/g
+s/view\s*\| [a-zA-Z_0-9]* \|/view | xxx |/g
+s/sequence\s*\| [a-zA-Z_0-9]* \|/sequence | xxx |/g
+s/\s*List of relations\s*/List of relations/g
+s/idx_t1_a_[0-9]+/idx_t1_a_xx/g
+
+#    WARNING:  Query could not find the intermediate result file "10_1", it was mostly likely deleted due to an error in a parallel process within the same distributed transaction
+# will be replaced with
+#    WARNING:  Query could not find the intermediate result file "xx", it was mostly likely deleted due to an error in a parallel process within the same distributed transaction
+#   WARNING:  "function func(bigint)" has dependency on unsupported object "schema pg_temp_xxx"
+s/^(WARNING|ERROR)(:  Query could not find the intermediate result file ")[0-9]+_[0-9]+(", it was mostly likely deleted due to an error in a parallel process within the same distributed transaction)$/FIXME \1\2xx_xx\3/g
+
+# for explain result in spq_join testcases
+s/type numeric: "[^"]+"/type numeric: "XXXX"/g
+
+# for explain result in master_run_on_work, run_command_on_workers
+s/^([[:space:]]*)localhost[[:space:]]*\|[[:space:]]*[0-9]+/\1localhost | xxxxx/
+
+# for explain spq_alter_role_propagaion
+s/\(localhost,[0-9]+,/(localhost,xxxxx,/g
+
+# for explain result log by log_remote_commands
+s/[a-zA-Z_0-9]*@localhost/xxxxx@localhost/g

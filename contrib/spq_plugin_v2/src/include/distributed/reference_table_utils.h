@@ -21,18 +21,18 @@
 
 extern void EnsureReferenceTablesExistOnAllNodes(void);
 extern void EnsureReferenceTablesExistOnAllNodesExtended(char transferMode);
-extern bool HasNodesWithMissingReferenceTables(List **referenceTableList);
+extern bool HasNodesWithMissingReferenceTables(List** referenceTableList);
 extern uint32 CreateReferenceTableColocationId(void);
 extern uint32 GetReferenceTableColocationId(void);
-extern List * GetAllReplicatedTableList(void);
-extern List * ReplicatedPlacementsForNodeGroup(int32 groupId);
-extern char * DeleteShardPlacementCommand(uint64 placementId);
+extern List* GetAllReplicatedTableList(void);
+extern List* ReplicatedPlacementsForNodeGroup(int32 groupId);
+extern char* DeleteShardPlacementCommand(uint64 placementId);
 extern void DeleteAllReplicatedTablePlacementsFromNodeGroup(int32 groupId,
-															bool localOnly);
+                                                            bool localOnly);
 extern void DeleteAllReplicatedTablePlacementsFromNodeGroupViaMetadataContext(
-	MetadataSyncContext *context, int32 groupId, bool localOnly);
-extern int CompareOids(const void *leftElement, const void *rightElement);
-extern void ReplicateAllReferenceTablesToNode(WorkerNode *workerNode);
-extern void ErrorIfNotAllNodesHaveReferenceTableReplicas(List *workerNodeList);
+    MetadataSyncContext* context, int32 groupId, bool localOnly);
+extern int CompareOids(const void* leftElement, const void* rightElement);
+extern void ReplicateAllReferenceTablesToNode(WorkerNode* workerNode);
+extern void ErrorIfNotAllNodesHaveReferenceTableReplicas(List* workerNodeList);
 
 #endif /* REFERENCE_TABLE_UTILS_H_ */

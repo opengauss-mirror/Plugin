@@ -3,27 +3,16 @@
  *   utility functions to help with postgres' memory management primitives
  */
 
-#ifndef CITUS_MEMUTILS_H
-#define CITUS_MEMUTILS_H
+#ifndef SPQ_MEMUTILS_H
+#define SPQ_MEMUTILS_H
 
 #include "utils/palloc.h"
 
+namespace spq {
+/** The memory address alignment size is defined as 8 bytes, because some arm platform
+ instructions require at least 4 bytes alignment.*/
+constexpr int SHARE_MEM_ALIGN_SIZE = 8;
 
-/*
- * EnsureReleaseResource is an abstraction on MemoryContextRegisterResetCallback that
- * allocates the space for the MemoryContextCallback and registers it to the current
- * MemoryContext, ensuring the call of callback with arg as its argument during either the
- * Reset of Delete of a MemoryContext.
- */
-static inline void
-EnsureReleaseResource(MemoryContextCallbackFunction callback, void *arg)
-{
-	MemoryContextCallback *cb = MemoryContextAllocZero(CurrentMemoryContext,
-													   sizeof(MemoryContextCallback));
-	cb->func = callback;
-	cb->arg = arg;
-	MemoryContextRegisterResetCallback(CurrentMemoryContext, cb);
-}
+}  // namespace spq
 
-
-#endif /*CITUS_MEMUTILS_H */
+#endif /*SPQ_MEMUTILS_H */

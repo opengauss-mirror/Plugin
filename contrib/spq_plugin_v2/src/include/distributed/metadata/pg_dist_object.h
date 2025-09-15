@@ -17,25 +17,24 @@
 #ifndef PG_DIST_OBJECT_H
 #define PG_DIST_OBJECT_H
 
-
 /* ----------------
  *		pg_dist_object definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_object
-{
-	Oid classid;      /* class of the distributed object */
-	Oid objid;        /* object id of the distributed object */
-	int32 objsubid;   /* object sub id of the distributed object, eg. attnum */
+typedef struct FormData_pg_dist_object {
+    Oid classid;    /* class of the distributed object */
+    Oid objid;      /* object id of the distributed object */
+    int32 objsubid; /* object sub id of the distributed object, eg. attnum */
 
-#ifdef CATALOG_VARLEN           /* variable-length fields start here */
-	text type;
-	text[] object_names;
-	text[] object_arguments;
+#ifdef CATALOG_VARLEN /* variable-length fields start here */
+    text type;
+    text[] object_names;
+    text[] object_arguments;
 
-	uint32 distribution_argument_index; /* only valid for distributed functions/procedures */
-	uint32 colocationid;            /* only valid for distributed functions/procedures */
-	boolean forced_pushdown;        /* only valid for distributed functions */
+    uint32 distribution_argument_index; /* only valid for distributed functions/procedures
+                                         */
+    uint32 colocationid;     /* only valid for distributed functions/procedures */
+    boolean forced_pushdown; /* only valid for distributed functions */
 #endif
 } FormData_pg_dist_object;
 
@@ -44,7 +43,7 @@ typedef struct FormData_pg_dist_object
  *      the format of pg_dist_partitions relation.
  * ----------------
  */
-typedef FormData_pg_dist_object *Form_pg_dist_object;
+typedef FormData_pg_dist_object* Form_pg_dist_object;
 
 /* ----------------
  *      compiler constants for pg_dist_object

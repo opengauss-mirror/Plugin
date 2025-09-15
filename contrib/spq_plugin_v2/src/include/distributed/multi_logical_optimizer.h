@@ -18,7 +18,6 @@
 #include "distributed/multi_logical_planner.h"
 #include "distributed/relation_restriction_equivalence.h"
 
-
 /* Definitions local to logical plan optimizer */
 #define DIVISION_OPER_NAME "/"
 #define DISABLE_LIMIT_APPROXIMATION -1
@@ -46,7 +45,6 @@
 #define TOPN_ADD_AGGREGATE_NAME "topn_add_agg"
 #define TOPN_UNION_AGGREGATE_NAME "topn_union_agg"
 
-
 /*
  * AggregateType represents an aggregate function's type, where the function is
  * used in the context of a query. We use this function type to determine how to
@@ -56,80 +54,72 @@
  * of elements in the following AggregateNames array. This order needs to be
  * preserved.
  */
-typedef enum
-{
-	AGGREGATE_INVALID_FIRST = 0,
-	AGGREGATE_AVERAGE = 1,
-	AGGREGATE_MIN = 2,
-	AGGREGATE_MAX = 3,
-	AGGREGATE_SUM = 4,
-	AGGREGATE_COUNT = 5,
-	AGGREGATE_ARRAY_AGG = 6,
-	AGGREGATE_JSONB_AGG = 7,
-	AGGREGATE_JSONB_OBJECT_AGG = 8,
-	AGGREGATE_JSON_AGG = 9,
-	AGGREGATE_JSON_OBJECT_AGG = 10,
-	AGGREGATE_BIT_AND = 11,
-	AGGREGATE_BIT_OR = 12,
-	AGGREGATE_BOOL_AND = 13,
-	AGGREGATE_BOOL_OR = 14,
-	AGGREGATE_EVERY = 15,
-	AGGREGATE_HLL_ADD = 16,
-	AGGREGATE_HLL_UNION = 17,
-	AGGREGATE_TOPN_ADD_AGG = 18,
-	AGGREGATE_TOPN_UNION_AGG = 19,
-	AGGREGATE_ANY_VALUE = 20,
+typedef enum {
+    AGGREGATE_INVALID_FIRST = 0,
+    AGGREGATE_AVERAGE = 1,
+    AGGREGATE_MIN = 2,
+    AGGREGATE_MAX = 3,
+    AGGREGATE_SUM = 4,
+    AGGREGATE_COUNT = 5,
+    AGGREGATE_ARRAY_AGG = 6,
+    AGGREGATE_JSONB_AGG = 7,
+    AGGREGATE_JSONB_OBJECT_AGG = 8,
+    AGGREGATE_JSON_AGG = 9,
+    AGGREGATE_JSON_OBJECT_AGG = 10,
+    AGGREGATE_BIT_AND = 11,
+    AGGREGATE_BIT_OR = 12,
+    AGGREGATE_BOOL_AND = 13,
+    AGGREGATE_BOOL_OR = 14,
+    AGGREGATE_EVERY = 15,
+    AGGREGATE_HLL_ADD = 16,
+    AGGREGATE_HLL_UNION = 17,
+    AGGREGATE_TOPN_ADD_AGG = 18,
+    AGGREGATE_TOPN_UNION_AGG = 19,
+    AGGREGATE_ANY_VALUE = 20,
 
-	/* support for github.com/tvondra/tdigest */
-	AGGREGATE_TDIGEST_COMBINE = 21,
-	AGGREGATE_TDIGEST_ADD_DOUBLE = 22,
-	AGGREGATE_TDIGEST_PERCENTILE_ADD_DOUBLE = 23,
-	AGGREGATE_TDIGEST_PERCENTILE_ADD_DOUBLEARRAY = 24,
-	AGGREGATE_TDIGEST_PERCENTILE_TDIGEST_DOUBLE = 25,
-	AGGREGATE_TDIGEST_PERCENTILE_TDIGEST_DOUBLEARRAY = 26,
-	AGGREGATE_TDIGEST_PERCENTILE_OF_ADD_DOUBLE = 27,
-	AGGREGATE_TDIGEST_PERCENTILE_OF_ADD_DOUBLEARRAY = 28,
-	AGGREGATE_TDIGEST_PERCENTILE_OF_TDIGEST_DOUBLE = 29,
-	AGGREGATE_TDIGEST_PERCENTILE_OF_TDIGEST_DOUBLEARRAY = 30,
+    /* support for github.com/tvondra/tdigest */
+    AGGREGATE_TDIGEST_COMBINE = 21,
+    AGGREGATE_TDIGEST_ADD_DOUBLE = 22,
+    AGGREGATE_TDIGEST_PERCENTILE_ADD_DOUBLE = 23,
+    AGGREGATE_TDIGEST_PERCENTILE_ADD_DOUBLEARRAY = 24,
+    AGGREGATE_TDIGEST_PERCENTILE_TDIGEST_DOUBLE = 25,
+    AGGREGATE_TDIGEST_PERCENTILE_TDIGEST_DOUBLEARRAY = 26,
+    AGGREGATE_TDIGEST_PERCENTILE_OF_ADD_DOUBLE = 27,
+    AGGREGATE_TDIGEST_PERCENTILE_OF_ADD_DOUBLEARRAY = 28,
+    AGGREGATE_TDIGEST_PERCENTILE_OF_TDIGEST_DOUBLE = 29,
+    AGGREGATE_TDIGEST_PERCENTILE_OF_TDIGEST_DOUBLEARRAY = 30,
 
-	/* AGGREGATE_CUSTOM must come last */
-	AGGREGATE_CUSTOM_COMBINE = 31,
-	AGGREGATE_CUSTOM_ROW_GATHER = 32,
+    /* AGGREGATE_CUSTOM must come last */
+    AGGREGATE_CUSTOM_COMBINE = 31,
+    AGGREGATE_CUSTOM_ROW_GATHER = 32,
 } AggregateType;
 
-
-/* Enumeration for citus.coordinator_aggregation GUC */
-typedef enum
-{
-	COORDINATOR_AGGREGATION_DISABLED,
-	COORDINATOR_AGGREGATION_ROW_GATHER,
+/* Enumeration for spq.coordinator_aggregation GUC */
+typedef enum {
+    COORDINATOR_AGGREGATION_DISABLED,
+    COORDINATOR_AGGREGATION_ROW_GATHER,
 } CoordinatorAggregationStrategyType;
-
 
 /*
  * PushDownStatus indicates whether a node can be pushed down below its child
  * using the commutative and distributive relational algebraic properties.
  */
-typedef enum
-{
-	PUSH_DOWN_INVALID_FIRST = 0,
-	PUSH_DOWN_VALID = 1,
-	PUSH_DOWN_NOT_VALID = 2,
-	PUSH_DOWN_SPECIAL_CONDITIONS = 3
+typedef enum {
+    PUSH_DOWN_INVALID_FIRST = 0,
+    PUSH_DOWN_VALID = 1,
+    PUSH_DOWN_NOT_VALID = 2,
+    PUSH_DOWN_SPECIAL_CONDITIONS = 3
 } PushDownStatus;
-
 
 /*
  * PullUpStatus indicates whether a node can be pulled up above its parent using
  * the commutative and factorizable relational algebraic properties.
  */
-typedef enum
-{
-	PULL_UP_INVALID_FIRST = 0,
-	PULL_UP_VALID = 1,
-	PULL_UP_NOT_VALID = 2
+typedef enum {
+    PULL_UP_INVALID_FIRST = 0,
+    PULL_UP_VALID = 1,
+    PULL_UP_NOT_VALID = 2
 } PullUpStatus;
-
 
 /*
  * AggregateNames is an array that stores cstring names for aggregate functions;
@@ -142,42 +132,46 @@ typedef enum
  * Please note that the order of elements in this array is tied to the order of
  * values in the preceding AggregateType enum. This order needs to be preserved.
  */
-static const char *const AggregateNames[] = {
-	"invalid", "avg", "min", "max",
-	"sum", "count", "array_agg",
-	"jsonb_agg", "jsonb_object_agg",
-	"json_agg", "json_object_agg",
-	"bit_and", "bit_or", "bool_and", "bool_or", "every",
-	"hll_add_agg", "hll_union_agg",
-	"topn_add_agg", "topn_union_agg",
-	"any_value"
-};
-
-
-/* Config variable managed via guc.c */
-extern int LimitClauseRowFetchCount;
-extern double CountDistinctErrorRate;
-extern int CoordinatorAggregationStrategy;
-
+static const char* const AggregateNames[] = {"invalid",
+                                             "avg",
+                                             "min",
+                                             "max",
+                                             "sum",
+                                             "count",
+                                             "array_agg",
+                                             "jsonb_agg",
+                                             "jsonb_object_agg",
+                                             "json_agg",
+                                             "json_object_agg",
+                                             "bit_and",
+                                             "bit_or",
+                                             "bool_and",
+                                             "bool_or",
+                                             "every",
+                                             "hll_add_agg",
+                                             "hll_union_agg",
+                                             "topn_add_agg",
+                                             "topn_union_agg",
+                                             "any_value"};
 
 /* Function declaration for optimizing logical plans */
-extern void MultiLogicalPlanOptimize(MultiTreeRoot *multiTree);
+extern void MultiLogicalPlanOptimize(MultiTreeRoot* multiTree);
 
 /* Function declaration for getting partition method for the given relation */
 extern char PartitionMethod(Oid relationId);
 
 /* Function declaration for helper functions in subquery pushdown */
-extern bool GroupedByColumn(List *groupClauseList, List *targetList, Var *column);
-extern List * SubqueryMultiTableList(MultiNode *multiNode);
-extern List * GroupTargetEntryList(List *groupClauseList, List *targetEntryList);
-extern bool ExtractQueryWalker(Node *node, List **queryList);
-extern bool IsPartitionColumn(Expr *columnExpression, Query *query, bool skipOuterVars);
-extern void FindReferencedTableColumn(Expr *columnExpression, List *parentQueryList,
-									  Query *query, Var **column,
-									  RangeTblEntry **rteContainingReferencedColumn,
-									  bool skipOuterVars);
-extern char * WorkerColumnName(AttrNumber resno);
-extern bool IsGroupBySubsetOfDistinct(List *groupClauses, List *distinctClauses);
-extern bool TargetListHasAggregates(List *targetEntryList);
+extern bool GroupedByColumn(List* groupClauseList, List* targetList, Var* column);
+extern List* SubqueryMultiTableList(MultiNode* multiNode);
+extern List* GroupTargetEntryList(List* groupClauseList, List* targetEntryList);
+extern bool ExtractQueryWalker(Node* node, List** queryList);
+extern bool IsPartitionColumn(Expr* columnExpression, Query* query, bool skipOuterVars);
+extern void FindReferencedTableColumn(Expr* columnExpression, List* parentQueryList,
+                                      Query* query, Var** column,
+                                      RangeTblEntry** rteContainingReferencedColumn,
+                                      bool skipOuterVars);
+extern char* WorkerColumnName(AttrNumber resno);
+extern bool IsGroupBySubsetOfDistinct(List* groupClauses, List* distinctClauses);
+extern bool TargetListHasAggregates(List* targetEntryList);
 
-#endif   /* MULTI_LOGICAL_OPTIMIZER_H */
+#endif /* MULTI_LOGICAL_OPTIMIZER_H */

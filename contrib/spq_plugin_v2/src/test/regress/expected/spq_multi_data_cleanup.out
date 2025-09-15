@@ -1,0 +1,13 @@
+DROP TABLE events_table;
+DROP TABLE users_table;
+DROP TABLE agg_results;
+DROP TABLE agg_results_fourth;
+DROP TABLE agg_results_second;
+DROP TABLE agg_results_third;
+DROP TABLE agg_results_window;
+DROP TYPE user_composite_type;
+DROP TABLE events_reference_table;
+DROP TABLE users_reference_table;
+DROP TABLE lineitem;
+DROP TABLE orders;
+DROP TABLE orders_reference;

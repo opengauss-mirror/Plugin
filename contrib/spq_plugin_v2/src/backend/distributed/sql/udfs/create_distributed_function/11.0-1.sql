@@ -1,5 +1,3 @@
-DROP FUNCTION pg_catalog.create_distributed_function(regprocedure, text, text);
-
 CREATE OR REPLACE FUNCTION pg_catalog.create_distributed_function(function_name regprocedure,
 						       distribution_arg_name text DEFAULT NULL,
 						       colocate_with text DEFAULT 'default',

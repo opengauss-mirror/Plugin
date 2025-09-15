@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Citus copy of PostgreSQL's config/prep_buildtree
+# Spq copy of PostgreSQL's config/prep_buildtree
 #
 # This script prepares a Citus build tree for an out-of-tree/VPATH
 # build.  It is intended to be run by the configure script.

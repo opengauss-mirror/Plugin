@@ -1,0 +1,157 @@
+CREATE SCHEMA tools;
+SET SEARCH_PATH TO 'tools';
+SET spq.next_shard_id TO 1240000;
+-- test with invalid port, prevent OS dependent warning from being displayed
+SET client_min_messages to ERROR;
+SELECT * FROM master_run_on_worker(ARRAY['localhost']::text[], ARRAY['666']::int[],
+								   ARRAY['select count(*) from pg_dist_shard']::text[],
+								   false);
+ node_name | node_port | success |               result
+---------------------------------------------------------------------
+ localhost |       666 | f       | failed to connect to localhost:xxxxx
+(1 row)
+
+SELECT * FROM master_run_on_worker(ARRAY['localhost']::text[], ARRAY['666']::int[],
+								   ARRAY['select count(*) from pg_dist_shard']::text[],
+								   true);
+ node_name | node_port | success |               result
+---------------------------------------------------------------------
+ localhost |       666 | f       | failed to connect to localhost:xxxxx
+(1 row)
+
+RESET client_min_messages;
+-- store worker node name and port
+\set node_name '''localhost'''
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['SELECT 1 + 1;'],
+	FALSE
+);
+ node_name | node_port | success | result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | 2
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY[$q$SELECT '包含中文、 单双引号'' ""、换行符\n';$q$],
+	FALSE
+);
+ node_name | node_port | success |              result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | 包含中文、 单双引号' ""、换行符\n
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['CREATE TABLE IF NOT EXISTS worker_test(id INT, note TEXT);'],
+	FALSE
+);
+ node_name | node_port | success |    result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | CREATE TABLE
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['CREATE INDEX IF NOT EXISTS idx_note ON worker_test(note);'],
+	FALSE
+);
+ node_name | node_port | success |    result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | CREATE INDEX
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY[$q$INSERT INTO worker_test VALUES(1,'hello worker');$q$],
+	FALSE
+);
+ node_name | node_port | success |   result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | INSERT 0 1
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['SELECT row_to_json(worker_test) FROM worker_test LIMIT 1;'],
+	FALSE
+);
+ node_name | node_port | success |             result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | {"id":1,"note":"hello worker"}
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['DROP TABLE IF EXISTS worker_test;'],
+	FALSE
+);
+ node_name | node_port | success |   result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | DROP TABLE
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY[$q$
+	CREATE OR REPLACE FUNCTION greet(name TEXT) RETURNS TEXT AS $$
+	BEGIN RETURN 'HELLO, ' || name;END;
+	$$ LANGUAGE plpgsql;
+	$q$],
+	FALSE
+);
+ node_name | node_port | success |     result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | CREATE FUNCTION
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['SELECT greet(''spq'');'],
+	FALSE
+);
+ node_name | node_port | success |   result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | HELLO, spq
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY[$q$
+	CREATE OR REPLACE PROCEDURE hello_world()
+	AS
+	BEGIN
+		RAISE NOTICE 'Hello, openGauss!';
+	END;
+	$q$],
+	FALSE
+);
+ node_name | node_port | success |      result
+---------------------------------------------------------------------
+ localhost |     58639 | t       | CREATE PROCEDURE
+(1 row)
+
+SELECT * FROM master_run_on_worker(
+	ARRAY[:node_name]::text[],
+	ARRAY[:worker_1_port]::int[],
+	ARRAY['CALL hello_world();'],
+	FALSE
+);
+ node_name | node_port | success | result
+---------------------------------------------------------------------
+ localhost |     58639 | t       |
+(1 row)
+
+DROP SCHEMA tools CASCADE;
+RESET SEARCH_PATH;

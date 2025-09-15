@@ -1,0 +1,80 @@
+# This testcase must run in the first
+test: spq_cn_validate_metadata
+test: spq_variables
+# setup cluster with 2 DN and 1 CN
+test: spq_simple_cluster_setup
+
+# testcase for simple cluster manage
+test: spq_simple_cluster_manager
+
+# testcase for install precheck
+test: spq_install_precheck
+
+# testcase for simple fucntion
+test: spq_simple_function spq_agg_simple
+
+# testcases for schame operations
+test: spq_schema_propagate spq_schema_alter_propagate spq_distribution_type
+
+# testcase for vacuum and analyze
+test: spq_vacuum_and_analyze
+
+test: spq_sequence
+test: spq_type_propagate
+test: spq_table_propagate
+test: spq_view_propagate
+test: spq_role_propagate
+test: spq_alter_role_propagation
+
+# testcase for table operation 
+test: spq_curd spq_copy spq_select_into spq_fast_route_test spq_unsupport_foreignkey
+test: spq_join
+test: spq_table_size
+
+# testcase for broadcast function
+test: master_run_on_work
+test: run_command_on_workers
+test: spq_run_command_on_all_nodes
+test: spq_run_local_command
+
+# vector basic testcases:
+test: spq_btree spq_hnsw_sparsevec spq_hnsw_bit spq_hnsw_vector spq_ivfflat_vector spq_ivfflat_bit spq_deadlock
+test: spq_metadata
+
+# this testcase must be seperated
+test: spq_alter_distributed_table
+
+# testcase for vectorbenchmark
+test: spq_vectorbenchmark_query
+
+# testcase for rebalance
+test: spq_table_rebalance
+test: spq_background_rebalance
+
+# disable create distributed tables on partition table
+test: spq_partition_tables
+
+test: spq_fast_path_router_modify spq_function_with_case_when spq_hyperscale_tutorial spq_foreign_key_restriction_enforcement spq_forcedelegation_functions
+test: spq_issue_5099 spq_issue_6543 spq_issue_6592 spq_issue_7477 spq_issue_7705
+test: spq_function_create
+test: spq_functions
+
+# testcase from multi_schedule
+test: spq_multi_create_table
+test: spq_multi_master_protocol spq_multi_load_data spq_multi_behavioral_analytics_create_table
+test: spq_multi_behavioral_analytics_basics spq_multi_behavioral_analytics_single_shard_queries
+test: spq_multi_agg_approximate_distinct
+test: spq_multi_agg_distinct
+test: spq_multi_agg_type_conversion
+test: spq_multi_data_cleanup
+
+# load data for following basic queries
+test: spq_queries_data_load
+test: spq_subquery_basics spq_subquery_unsupported spq_subqueries_not_supported spq_subqueries_deep spq_subquery_complex_target_list spq_subquery_executors
+test: spq_subquery_and_cte spq_subquery_in_targetlist spq_subquery_in_where spq_subquery_local_tables spq_subquery_partitioning spq_subquery_prepared_statements spq_subquery_view
+test: spq_subquery_in_where_clause spq_subquery_in_where_reference_clause spq_subquery_misc spq_subquery_union spq_subquery_window_functions
+# cleanup all prepared data
+test: spq_queries_data_cleanup
+
+# check the cluster's final state
+test: check_cluster_state

@@ -1,0 +1,51 @@
+CREATE SCHEMA test_select_into;
+SET search_path TO test_select_into;
+SET spq.shard_count TO 2;
+CREATE TABLE source_dist_table(
+	id INT PRIMARY KEY,
+	name TEXT NOT NULL,
+	age INT CHECK(age > 0)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "source_dist_table_pkey" for table "source_dist_table"
+SELECT create_distributed_table('source_dist_table','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+CREATE TABLE target_dist_table(
+	id INT PRIMARY KEY,
+	name TEXT NOT NULL,
+	age INT CHECK(age > 0)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "target_dist_table_pkey" for table "target_dist_table"
+SELECT create_distributed_table('target_dist_table','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO source_dist_table VALUES(1, 'Alice', 25), (2, 'Bob', 30), (3, 'Jerry', 26);
+SELECT * FROM source_dist_table ORDER BY id;;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  25
+  2 | Bob   |  30
+  3 | Jerry |  26
+(3 rows)
+
+INSERT INTO target_dist_table (id, name, age)
+SELECT id, name, age FROM source_dist_table;
+SELECT * FROM target_dist_table ORDER BY id;;
+ id | name  | age
+---------------------------------------------------------------------
+  1 | Alice |  25
+  2 | Bob   |  30
+  3 | Jerry |  26
+(3 rows)
+
+DROP SCHEMA test_select_into CASCADE;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table source_dist_table
+drop cascades to table target_dist_table
+RESET SEARCH_PATH;

@@ -20,23 +20,23 @@
 
 #include "distributed/errormessage.h"
 
-typedef bool (*AddressPredicate)(const ObjectAddress *);
+typedef bool (*AddressPredicate)(const ObjectAddress*);
 
-extern List * GetUniqueDependenciesList(List *objectAddressesList);
-extern List * GetDependenciesForObject(const ObjectAddress *target);
-extern List * GetAllSupportedDependenciesForObject(const ObjectAddress *target);
-extern List * GetAllDependenciesForObject(const ObjectAddress *target);
-extern bool ErrorOrWarnIfAnyObjectHasUnsupportedDependency(List *objectAddresses);
-extern DeferredErrorMessage * DeferErrorIfAnyObjectHasUnsupportedDependency(const List *
-																			objectAddresses);
-extern List * GetAllCitusDependedDependenciesForObject(const ObjectAddress *target);
-extern List * OrderObjectAddressListInDependencyOrder(List *objectAddressList);
-extern bool SupportedDependencyByCitus(const ObjectAddress *address);
-extern List * GetPgDependTuplesForDependingObjects(Oid targetObjectClassId,
-												   Oid targetObjectId);
-extern List * GetDependingViews(Oid relationId);
+extern List* GetUniqueDependenciesList(List* objectAddressesList);
+extern List* GetDependenciesForObject(const ObjectAddress* target);
+extern List* GetAllSupportedDependenciesForObject(const ObjectAddress* target);
+extern List* GetAllDependenciesForObject(const ObjectAddress* target);
+extern bool ErrorOrWarnIfAnyObjectHasUnsupportedDependency(List* objectAddresses);
+extern DeferredErrorMessage* DeferErrorIfAnyObjectHasUnsupportedDependency(
+    const List* objectAddresses);
+extern List* GetAllCitusDependedDependenciesForObject(const ObjectAddress* target);
+extern List* OrderObjectAddressListInDependencyOrder(List* objectAddressList);
+extern bool SupportedDependencyByCitus(const ObjectAddress* address);
+extern List* GetPgDependTuplesForDependingObjects(Oid targetObjectClassId,
+                                                  Oid targetObjectId);
+extern List* GetDependingViews(Oid relationId);
 extern Oid GetDependingView(Form_pg_depend pg_depend);
-extern List * FilterObjectAddressListByPredicate(List *objectAddressList,
-												 AddressPredicate predicate);
+extern List* FilterObjectAddressListByPredicate(List* objectAddressList,
+                                                AddressPredicate predicate);
 
 #endif /* CITUS_DEPENDENCY_H */

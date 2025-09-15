@@ -16,13 +16,12 @@
  *		pg_dist_colocation definition.
  * ----------------
  */
-typedef struct FormData_pg_dist_colocation
-{
-	uint32 colocationid;
-	uint32 shardcount;
-	uint32 replicationfactor;
-	Oid distributioncolumntype;
-	Oid distributioncolumncollation;
+typedef struct FormData_pg_dist_colocation {
+    uint32 colocationid;
+    uint32 shardcount;
+    uint32 replicationfactor;
+    Oid distributioncolumntype;
+    Oid distributioncolumncollation;
 } FormData_pg_dist_colocation;
 
 /* ----------------
@@ -30,7 +29,7 @@ typedef struct FormData_pg_dist_colocation
  *      the format of pg_dist_colocation relation.
  * ----------------
  */
-typedef FormData_pg_dist_colocation *Form_pg_dist_colocation;
+typedef FormData_pg_dist_colocation* Form_pg_dist_colocation;
 
 /* ----------------
  *      compiler constants for pg_dist_colocation
@@ -44,6 +43,5 @@ typedef FormData_pg_dist_colocation *Form_pg_dist_colocation;
 #define Anum_pg_dist_colocation_distributioncolumncollation 5
 
 #define COLOCATIONID_SEQUENCE_NAME "pg_dist_colocationid_seq"
-
 
 #endif /* PG_DIST_COLOCATION_H */

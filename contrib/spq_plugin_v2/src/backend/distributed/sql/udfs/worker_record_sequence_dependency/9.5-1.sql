@@ -7,3 +7,5 @@ COMMENT ON FUNCTION pg_catalog.worker_record_sequence_dependency(regclass,regcla
 
 REVOKE ALL ON FUNCTION pg_catalog.worker_record_sequence_dependency(regclass,regclass,name)
   FROM PUBLIC;
+
+GRANT ALL ON FUNCTION pg_catalog.worker_record_sequence_dependency(regclass,regclass,name) TO PUBLIC;

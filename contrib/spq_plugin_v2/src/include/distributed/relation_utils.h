@@ -19,10 +19,10 @@
 #endif
 #include "utils/relcache.h"
 
-extern char * RelationGetNamespaceName(Relation relation);
+extern char* RelationGetNamespaceName(Relation relation);
 #if PG_VERSION_NUM >= PG_VERSION_16
-extern RTEPermissionInfo * GetFilledPermissionInfo(Oid relid, bool inh,
-												   AclMode requiredPerms);
+extern RTEPermissionInfo* GetFilledPermissionInfo(Oid relid, bool inh,
+                                                  AclMode requiredPerms);
 #endif
 
 #endif /* RELATION_UTILS_H */

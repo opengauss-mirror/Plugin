@@ -14,20 +14,17 @@
 
 #include "lib/stringinfo.h"
 #include "nodes/parsenodes.h"
-#include "nodes/pathnodes.h"
+#include "nodes/relation.h"
 #include "nodes/plannodes.h"
-
 
 /* Function declarations for building local plans on the coordinator node */
 struct DistributedPlan;
-struct CustomScan;
-extern Path * CreateCitusCustomScanPath(PlannerInfo *root, RelOptInfo *relOptInfo,
-										Index restrictionIndex, RangeTblEntry *rte,
-										CustomScan *remoteScan);
-extern PlannedStmt * PlanCombineQuery(struct DistributedPlan *distributedPlan,
-									  struct CustomScan *dataScan);
-extern bool FindCitusExtradataContainerRTE(Node *node, RangeTblEntry **result);
-extern bool ReplaceCitusExtraDataContainer;
-extern CustomScan *ReplaceCitusExtraDataContainerWithCustomScan;
+struct ExtensiblePlan;
+extern Path* CreateCitusCustomScanPath(PlannerInfo* root, RelOptInfo* relOptInfo,
+                                       Index restrictionIndex, RangeTblEntry* rte,
+                                       ExtensiblePlan* remoteScan);
+extern PlannedStmt* PlanCombineQuery(struct DistributedPlan* distributedPlan,
+                                     struct ExtensiblePlan* dataScan);
+extern bool FindCitusExtradataContainerRTE(Node* node, RangeTblEntry** result);
 
-#endif   /* COMBINE_QUERY_PLANNER_H */
+#endif /* COMBINE_QUERY_PLANNER_H */
