@@ -1,0 +1,136 @@
+SET spq.propagate_set_commands = 'local';
+-- hamming
+CREATE TABLE t1 (id int, val bit(3));
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t1 (id, val) VALUES (1, B'000'), (2, B'100'), (3, B'111'), (4, NULL);
+CREATE INDEX ON t1 USING hnsw (val bit_hamming_ops);
+INSERT INTO t1 (id, val) VALUES (5, B'110');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t1 ORDER BY val <~> B'111';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=21)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=21)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=10000000000.00..1000000000101.00 rows=1 width=13)
+(8 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t1 ORDER BY val <~> (SELECT NULL::bit)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t1  (cost=4.27..10000000008.28 rows=1 width=13)
+                           Order By: (val <~> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT * FROM t1 ORDER BY val <~> B'111';
+ id | val
+---------------------------------------------------------------------
+  3 | 111
+  5 | 110
+  2 | 100
+  1 | 000
+  4 |
+(5 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t1 ORDER BY val <~> (SELECT NULL::bit)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t1;
+-- jaccard
+CREATE TABLE t1 (id int, val bit(4));
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t1 (id, val) VALUES (1, B'0000'), (2, B'1100'), (3, B'1111'), (4, NULL);
+CREATE INDEX ON t1 USING hnsw (val bit_jaccard_ops);
+INSERT INTO t1 (id, val) VALUES (5, B'1110');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t1 ORDER BY val <%> B'1111';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=21)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=21)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=10000000000.00..1000000000101.00 rows=1 width=13)
+(8 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t1 ORDER BY val <%> (SELECT NULL::bit)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t1  (cost=4.27..10000000008.28 rows=1 width=13)
+                           Order By: (val <%> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT * FROM t1 ORDER BY val <%> B'1111';
+ id | val
+---------------------------------------------------------------------
+  3 | 1111
+  5 | 1110
+  2 | 1100
+  1 | 0000
+  4 |
+(5 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t1 ORDER BY val <%> (SELECT NULL::bit)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t1;
+-- varbit
+CREATE TABLE t1 (id int, val varbit(3));
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+CREATE INDEX ON t1 USING hnsw (val bit_hamming_ops);
+ERROR:  type not supported for hnsw index
+CREATE INDEX ON t1 USING hnsw ((val::bit(3)) bit_hamming_ops);
+CREATE INDEX ON t1 USING hnsw ((val::bit(64001)) bit_hamming_ops);
+ERROR:  column cannot have more than 64000 dimensions for hnsw index
+DROP TABLE t1;
+SET spq.propagate_set_commands = DEFAULT;

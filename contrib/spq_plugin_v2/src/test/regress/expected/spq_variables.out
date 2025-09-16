@@ -1,0 +1,48 @@
+SHOW spq.version;
+ spq.version
+---------------------------------------------------------------------
+ 2.0.0
+(1 row)
+
+SELECT name,setting FROM pg_settings WHERE name like 'spq.%';
+                     name                      |     setting
+---------------------------------------------------------------------
+ spq.cluster_name                              | default
+ spq.coordinator_aggregation_strategy          | row-gather
+ spq.desired_percent_disk_available_after_move | 10
+ spq.distributed_deadlock_detection_factor     | 2
+ spq.enable_binary_protocol                    | on
+ spq.enable_create_role_propagation            | on
+ spq.enable_deadlock_prevention                | on
+ spq.enable_local_execution                    | on
+ spq.enable_repartition_joins                  | off
+ spq.explain_all_tasks                         | off
+ spq.explain_analyze_sort_method               | taskId
+ spq.limit_clause_row_fetch_count              | -1
+ spq.local_hostname                            | localhost
+ spq.local_shared_pool_size                    | 100
+ spq.local_table_join_policy                   | auto
+ spq.log_remote_commands                       | off
+ spq.max_adaptive_executor_pool_size           | 4
+ spq.max_cached_connection_lifetime            | 600000
+ spq.max_cached_conns_per_worker               | 16
+ spq.max_client_connections                    | -1
+ spq.max_intermediate_result_size              | 1048576
+ spq.max_matview_size_to_auto_recreate         | 1048576
+ spq.max_shared_pool_size                      | 200
+ spq.multi_shard_modify_mode                   | parallel
+ spq.multi_task_query_log_level                | off
+ spq.node_connection_timeout                   | 5000
+ spq.node_conninfo                             | sslmode=disable
+ spq.propagate_set_commands                    | none
+ spq.recover_2pc_interval                      | 60000
+ spq.remote_io_multiplex_model                 | epoll
+ spq.shard_count                               | 4
+ spq.shard_replication_factor                  | 1
+ spq.show_shards_for_app_name_prefixes         | pg_regress
+ spq.stat_statements_track                     | none
+ spq.use_secondary_nodes                       | never
+ spq.version                                   | 2.0.0
+(36 rows)
+
+--add more variables testcases for spq's variables

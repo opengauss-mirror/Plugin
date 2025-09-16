@@ -1,0 +1,641 @@
+------------------------ This testcase must run before other testcases ----------------------------
+------------------------ validate all spq plugin's internal object --------------------------------
+---- TEST 1:  validate all relations -----------------------
+SELECT relname FROM pg_class WHERE relname LIKE 'pg_dist%' ORDER BY relname;
+                   relname
+---------------------------------------------------------------------
+ pg_dist_background_job
+ pg_dist_background_job_job_id_seq
+ pg_dist_background_job_pkey
+ pg_dist_background_task
+ pg_dist_background_task_depend
+ pg_dist_background_task_depend_depends_on
+ pg_dist_background_task_depend_pkey
+ pg_dist_background_task_depend_task_id
+ pg_dist_background_task_job_id_task_id
+ pg_dist_background_task_pkey
+ pg_dist_background_task_status_task_id_index
+ pg_dist_background_task_task_id_seq
+ pg_dist_cleanup
+ pg_dist_cleanup_pkey
+ pg_dist_cleanup_recordid_seq
+ pg_dist_colocation
+ pg_dist_colocation_configuration_index
+ pg_dist_colocation_pkey
+ pg_dist_colocationid_seq
+ pg_dist_groupid_seq
+ pg_dist_local_group
+ pg_dist_local_group_pkey
+ pg_dist_node
+ pg_dist_node_groupid_unique
+ pg_dist_node_metadata
+ pg_dist_node_nodeid_seq
+ pg_dist_node_nodename_nodeport_key
+ pg_dist_node_pkey
+ pg_dist_object
+ pg_dist_object_pkey
+ pg_dist_operationid_seq
+ pg_dist_partition
+ pg_dist_partition_colocationid_index
+ pg_dist_partition_logical_relid_index
+ pg_dist_placement
+ pg_dist_placement_groupid_index
+ pg_dist_placement_placementid_index
+ pg_dist_placement_placementid_seq
+ pg_dist_placement_shardid_index
+ pg_dist_rebalance_strategy
+ pg_dist_rebalance_strategy_name_key
+ pg_dist_shard
+ pg_dist_shard_logical_relid_index
+ pg_dist_shard_placement
+ pg_dist_shard_shardid_index
+ pg_dist_shardid_seq
+ pg_dist_transaction
+ pg_dist_transaction_group_index
+ pg_dist_transaction_unique_constraint
+(49 rows)
+
+\d pg_dist_cleanup;
+ Table "pg_catalog.pg_dist_cleanup"
+    Column     |  Type   | Modifiers
+---------------------------------------------------------------------
+ record_id     | bigint  | not null
+ operation_id  | bigint  | not null
+ object_type   | integer | not null
+ object_name   | text    | not null
+ node_group_id | integer | not null
+ policy_type   | integer | not null
+Indexes:
+    "pg_dist_cleanup_pkey" PRIMARY KEY, btree (record_id) TABLESPACE pg_default
+
+SELECT * FROM pg_dist_cleanup;
+ record_id | operation_id | object_type | object_name | node_group_id | policy_type
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_colocation;
+       Table "pg_catalog.pg_dist_colocation"
+           Column            |  Type   | Modifiers
+---------------------------------------------------------------------
+ colocationid                | integer | not null
+ shardcount                  | integer | not null
+ replicationfactor           | integer | not null
+ distributioncolumntype      | oid     | not null
+ distributioncolumncollation | oid     | not null
+Indexes:
+    "pg_dist_colocation_pkey" PRIMARY KEY, btree (colocationid) TABLESPACE pg_default
+    "pg_dist_colocation_configuration_index" btree (distributioncolumntype, shardcount, replicationfactor, distributioncolumncollation) TABLESPACE pg_default
+
+SELECT * FROM pg_dist_colocation;
+ colocationid | shardcount | replicationfactor | distributioncolumntype | distributioncolumncollation
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_local_group;
+Table "pg_catalog.pg_dist_local_group"
+ Column  |  Type   | Modifiers
+---------------------------------------------------------------------
+ groupid | integer | not null
+Indexes:
+    "pg_dist_local_group_pkey" PRIMARY KEY, btree (groupid) TABLESPACE pg_default
+Triggers:
+    dist_local_group_cache_invalidate AFTER UPDATE ON pg_dist_local_group FOR EACH ROW EXECUTE PROCEDURE spq_dist_local_group_cache_invalidate()
+
+SELECT * FROM pg_dist_local_group;
+ groupid
+---------------------------------------------------------------------
+       0
+(1 row)
+
+\d pg_dist_node;
+                               Table "pg_catalog.pg_dist_node"
+      Column      |   Type   |                           Modifiers
+---------------------------------------------------------------------
+ nodeid           | integer  | not null default nextval('pg_dist_node_nodeid_seq'::regclass)
+ groupid          | integer  | not null default nextval('pg_dist_groupid_seq'::regclass)
+ nodename         | text     | not null
+ nodeport         | integer  | not null default 5432
+ noderack         | text     | not null default 'default'::text
+ hasmetadata      | boolean  | not null default false
+ isactive         | boolean  | not null default true
+ noderole         | noderole | not null default 'primary'::noderole
+ nodecluster      | name     | not null default 'default'::name
+ metadatasynced   | boolean  | default false
+ shouldhaveshards | boolean  | not null default true
+Indexes:
+    "pg_dist_node_pkey" PRIMARY KEY, btree (nodeid) TABLESPACE pg_default
+    "pg_dist_node_groupid_unique" UNIQUE CONSTRAINT, btree (groupid) TABLESPACE pg_default
+    "pg_dist_node_nodename_nodeport_key" UNIQUE CONSTRAINT, btree (nodename, nodeport) TABLESPACE pg_default
+Check constraints:
+    "primaries_are_only_allowed_in_the_default_cluster" CHECK (NOT (nodecluster <> 'default'::name AND noderole = 'primary'::noderole))
+Triggers:
+    dist_node_cache_invalidate AFTER INSERT OR DELETE OR UPDATE ON pg_dist_node FOR EACH ROW EXECUTE PROCEDURE spq_dist_node_cache_invalidate()
+    pg_dist_node_trigger BEFORE INSERT OR UPDATE ON pg_dist_node FOR EACH ROW EXECUTE PROCEDURE "__$spq_internal$__".pg_dist_node_trigger_func()
+
+SELECT * FROM pg_dist_node;
+ nodeid | groupid | nodename | nodeport | noderack | hasmetadata | isactive | noderole | nodecluster | metadatasynced | shouldhaveshards
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_object;
+         Table "pg_catalog.pg_dist_object"
+           Column            |  Type   | Modifiers
+---------------------------------------------------------------------
+ classid                     | oid     | not null
+ objid                       | oid     | not null
+ objsubid                    | integer | not null
+ type                        | text    |
+ object_names                | text[]  |
+ object_args                 | text[]  |
+ distribution_argument_index | integer |
+ colocationid                | integer |
+ force_delegation            | boolean |
+Indexes:
+    "pg_dist_object_pkey" PRIMARY KEY, btree (classid, objid, objsubid) TABLESPACE pg_default
+Triggers:
+    dist_object_cache_invalidate AFTER INSERT OR DELETE OR UPDATE ON pg_dist_object FOR EACH ROW EXECUTE PROCEDURE spq_dist_object_cache_invalidate()
+
+SELECT * FROM pg_dist_object;
+ classid | objid | objsubid | type | object_names | object_args | distribution_argument_index | colocationid | force_delegation
+---------------------------------------------------------------------
+    1260 |    10 |        0 |      |              |             |                             |              |
+    1262 | 16384 |        0 |      |              |             |                             |              |
+(2 rows)
+
+\d pg_dist_partition;
+          Table "pg_catalog.pg_dist_partition"
+    Column     |   Type   |          Modifiers
+---------------------------------------------------------------------
+ logicalrelid  | regclass | not null
+ partmethod    | "char"   | not null
+ partkey       | text     |
+ colocationid  | integer  | not null default 0
+ repmodel      | "char"   | not null default 'c'::"char"
+ autoconverted | boolean  | default false
+Indexes:
+    "pg_dist_partition_logical_relid_index" UNIQUE, btree (logicalrelid) TABLESPACE pg_default REPLICA IDENTITY
+    "pg_dist_partition_colocationid_index" btree (colocationid) TABLESPACE pg_default
+Triggers:
+    dist_partition_cache_invalidate AFTER INSERT OR DELETE OR UPDATE ON pg_dist_partition FOR EACH ROW EXECUTE PROCEDURE spq_dist_partition_cache_invalidate()
+
+SELECT * FROM pg_dist_partition;
+ logicalrelid | partmethod | partkey | colocationid | repmodel | autoconverted
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_placement;
+                              Table "pg_catalog.pg_dist_placement"
+   Column    |  Type   |                                Modifiers
+---------------------------------------------------------------------
+ placementid | bigint  | not null default nextval('pg_dist_placement_placementid_seq'::regclass)
+ shardid     | bigint  | not null
+ shardstate  | integer | not null
+ shardlength | bigint  | not null
+ groupid     | integer | not null
+Indexes:
+    "pg_dist_placement_placementid_index" UNIQUE, btree (placementid) TABLESPACE pg_default REPLICA IDENTITY
+    "placement_shardid_groupid_unique_index" UNIQUE CONSTRAINT, btree (shardid, groupid) TABLESPACE pg_default
+    "pg_dist_placement_groupid_index" btree (groupid) TABLESPACE pg_default
+    "pg_dist_placement_shardid_index" btree (shardid) TABLESPACE pg_default
+Triggers:
+    dist_placement_cache_invalidate AFTER INSERT OR DELETE OR UPDATE ON pg_dist_placement FOR EACH ROW EXECUTE PROCEDURE spq_dist_placement_cache_invalidate()
+
+SELECT * FROM pg_dist_placement;
+ placementid | shardid | shardstate | shardlength | groupid
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_shard;
+   Table "pg_catalog.pg_dist_shard"
+    Column     |   Type   | Modifiers
+---------------------------------------------------------------------
+ logicalrelid  | regclass | not null
+ shardid       | bigint   | not null
+ shardstorage  | "char"   | not null
+ shardminvalue | text     |
+ shardmaxvalue | text     |
+Indexes:
+    "pg_dist_shard_shardid_index" UNIQUE, btree (shardid) TABLESPACE pg_default REPLICA IDENTITY
+    "pg_dist_shard_logical_relid_index" btree (logicalrelid) TABLESPACE pg_default
+Triggers:
+    dist_shard_cache_invalidate AFTER INSERT OR DELETE OR UPDATE ON pg_dist_shard FOR EACH ROW EXECUTE PROCEDURE spq_dist_shard_cache_invalidate()
+
+SELECT * FROM pg_dist_shard;
+ logicalrelid | shardid | shardstorage | shardminvalue | shardmaxvalue
+---------------------------------------------------------------------
+(0 rows)
+
+\d pg_dist_transaction;
+Table "pg_catalog.pg_dist_transaction"
+ Column  |  Type   | Modifiers
+---------------------------------------------------------------------
+ groupid | integer | not null
+ gid     | text    | not null
+Indexes:
+    "pg_dist_transaction_unique_constraint" UNIQUE CONSTRAINT, btree (groupid, gid) TABLESPACE pg_default REPLICA IDENTITY
+    "pg_dist_transaction_group_index" btree (groupid) TABLESPACE pg_default
+
+SELECT * FROM pg_dist_transaction;
+ groupid | gid
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT relname FROM pg_class WHERE relname LIKE 'spq%';
+           relname
+---------------------------------------------------------------------
+ spq_dist_stat_activity
+ spq_lock_waits
+ spq_locks
+ spq_shard_indexes_on_worker
+ spq_shards
+ spq_shards_on_worker
+ spq_stat_activity
+ spq_stat_statements
+ spq_tables
+(9 rows)
+
+\d spq_dist_stat_activity;
+        View "pg_catalog.spq_dist_stat_activity"
+      Column      |           Type           | Modifiers
+---------------------------------------------------------------------
+ global_pid       | bigint                   |
+ nodeid           | integer                  |
+ is_worker_query  | boolean                  |
+ datid            | oid                      |
+ datname          | name                     |
+ pid              | bigint                   |
+ sessionid        | bigint                   |
+ usesysid         | oid                      |
+ usename          | name                     |
+ application_name | text                     |
+ client_addr      | inet                     |
+ client_hostname  | text                     |
+ client_port      | integer                  |
+ backend_start    | timestamp with time zone |
+ xact_start       | timestamp with time zone |
+ query_start      | timestamp with time zone |
+ state_change     | timestamp with time zone |
+ waiting          | boolean                  |
+ enqueue          | text                     |
+ state            | text                     |
+ resource_pool    | name                     |
+ query_id         | bigint                   |
+ query            | text                     |
+ connection_info  | text                     |
+ unique_sql_id    | bigint                   |
+ trace_id         | text                     |
+
+\d spq_lock_waits;
+              View "pg_catalog.spq_lock_waits"
+                Column                 |  Type   | Modifiers
+---------------------------------------------------------------------
+ waiting_gpid                          | bigint  |
+ blocking_gpid                         | bigint  |
+ blocked_statement                     | text    |
+ current_statement_in_blocking_process | text    |
+ waiting_nodeid                        | integer |
+ blocking_nodeid                       | integer |
+
+\d spq_locks;
+        View "pg_catalog.spq_locks"
+       Column       |   Type   | Modifiers
+---------------------------------------------------------------------
+ global_pid         | bigint   |
+ nodeid             | integer  |
+ locktype           | text     |
+ database           | oid      |
+ relation           | oid      |
+ relation_name      | text     |
+ page               | integer  |
+ tuple              | smallint |
+ virtualxid         | text     |
+ transactionid      | xid      |
+ classid            | oid      |
+ objid              | oid      |
+ objsubid           | smallint |
+ virtualtransaction | text     |
+ pid                | bigint   |
+ sessionid          | bigint   |
+ mode               | text     |
+ granted            | boolean  |
+ fastpath           | boolean  |
+ locktag            | text     |
+ global_sessionid   | text     |
+
+\d spq_shard_indexes_on_worker;
+View "pg_catalog.spq_shard_indexes_on_worker"
+ Column | Type | Modifiers
+---------------------------------------------------------------------
+ Schema | name |
+ Name   | name |
+ Type   | text |
+ Owner  | name |
+ Table  | name |
+
+\d spq_shards;
+   View "pg_catalog.spq_shards"
+   Column   |   Type   | Modifiers
+---------------------------------------------------------------------
+ table_name | regclass |
+ shardid    | bigint   |
+ shard_name | text     |
+ table_type | text     |
+ nodename   | text     |
+ nodeport   | integer  |
+ shard_size | bigint   |
+
+\d spq_shards_on_worker;
+View "pg_catalog.spq_shards_on_worker"
+ Column | Type | Modifiers
+---------------------------------------------------------------------
+ Schema | name |
+ Name   | name |
+ Type   | text |
+ Owner  | name |
+
+\d spq_stat_activity;
+           View "pg_catalog.spq_stat_activity"
+      Column      |           Type           | Modifiers
+---------------------------------------------------------------------
+ global_pid       | bigint                   |
+ nodeid           | integer                  |
+ is_worker_query  | boolean                  |
+ datid            | oid                      |
+ datname          | name                     |
+ pid              | bigint                   |
+ sessionid        | bigint                   |
+ usesysid         | oid                      |
+ usename          | name                     |
+ application_name | text                     |
+ client_addr      | inet                     |
+ client_hostname  | text                     |
+ client_port      | integer                  |
+ backend_start    | timestamp with time zone |
+ xact_start       | timestamp with time zone |
+ query_start      | timestamp with time zone |
+ state_change     | timestamp with time zone |
+ waiting          | boolean                  |
+ enqueue          | text                     |
+ state            | text                     |
+ resource_pool    | name                     |
+ query_id         | bigint                   |
+ query            | text                     |
+ connection_info  | text                     |
+ unique_sql_id    | bigint                   |
+ trace_id         | text                     |
+
+\d spq_stat_statements;
+View "pg_catalog.spq_stat_statements"
+    Column     |  Type   | Modifiers
+---------------------------------------------------------------------
+ unique_sql_id | bigint  |
+ user_id       | oid     |
+ node_id       | integer |
+ query         | text    |
+ executor      | text    |
+ partition_key | text    |
+ calls         | bigint  |
+
+\d spq_tables;
+          View "public.spq_tables"
+       Column        |   Type   | Modifiers
+---------------------------------------------------------------------
+ table_name          | regclass |
+ table_type          | text     |
+ distribution_column | text     |
+ table_size          | text     |
+ shard_count         | bigint   |
+ table_owner         | name     |
+ access_method       | name     |
+
+SELECT application_name FROM spq_dist_stat_activity order by 1;
+    application_name
+---------------------------------------------------------------------
+ Spq Maintenance Daemon
+ gsql
+(2 rows)
+
+SELECT * FROM spq_lock_waits;
+ waiting_gpid | blocking_gpid | blocked_statement | current_statement_in_blocking_process | waiting_nodeid | blocking_nodeid
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT * FROM spq_shard_indexes_on_worker;
+ Schema | Name | Type | Owner | Table
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT * FROM spq_shards;
+ table_name | shardid | shard_name | table_type | nodename | nodeport | shard_size
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT * FROM spq_shards_on_worker;
+ Schema | Name | Type | Owner
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT * FROM spq_tables;
+ table_name | table_type | distribution_column | table_size | shard_count | table_owner | access_method
+---------------------------------------------------------------------
+(0 rows)
+
+----- TEST 2: validate all sequence ---------------------
+\d pg_dist_groupid_seq;
+   Sequence "pg_catalog.pg_dist_groupid_seq"
+    Column     |  Type   |        Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_groupid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 4294967296
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_cleanup_recordid_seq;
+   Sequence "pg_catalog.pg_dist_cleanup_recordid_seq"
+    Column     |  Type   |            Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_cleanup_recordid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 9223372036854775807
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_colocationid_seq;
+   Sequence "pg_catalog.pg_dist_colocationid_seq"
+    Column     |  Type   |          Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_colocationid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 4294967296
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_node_nodeid_seq;
+   Sequence "pg_catalog.pg_dist_node_nodeid_seq"
+    Column     |  Type   |          Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_node_nodeid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 4294967294
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_operationid_seq;
+   Sequence "pg_catalog.pg_dist_operationid_seq"
+    Column     |  Type   |          Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_operationid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 9223372036854775807
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_placement_placementid_seq;
+   Sequence "pg_catalog.pg_dist_placement_placementid_seq"
+    Column     |  Type   |               Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_placement_placementid_seq
+ last_value    | bigint  | 1
+ start_value   | bigint  | 1
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 9223372036854775807
+ min_value     | bigint  | 1
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+\d pg_dist_shardid_seq;
+   Sequence "pg_catalog.pg_dist_shardid_seq"
+    Column     |  Type   |        Value
+---------------------------------------------------------------------
+ sequence_name | name    | pg_dist_shardid_seq
+ last_value    | bigint  | 62025
+ start_value   | bigint  | 62025
+ increment_by  | bigint  | 1
+ max_value     | bigint  | 9223372036854775807
+ min_value     | bigint  | 62025
+ cache_value   | bigint  | 1
+ log_cnt       | bigint  | 0
+ is_cycled     | boolean | f
+ is_called     | boolean | f
+ uuid          | bigint  | 0
+
+----- TEST 2 : validate all functions --------------------
+SELECT proname FROM pg_proc WHERE proname LIKE 'spq%';
+                proname
+---------------------------------------------------------------------
+ spq_activate_node
+ spq_add_inactive_node
+ spq_add_node
+ spq_backend_gpid
+ spq_blocking_pids
+ spq_calculate_gpid
+ spq_check_cluster_nodes
+ spq_check_connection_to_node
+ spq_cleanup_orphaned_resources
+ spq_create_restore_point
+ spq_disable_node
+ spq_dist_local_group_cache_invalidate
+ spq_dist_node_cache_invalidate
+ spq_dist_object_cache_invalidate
+ spq_dist_partition_cache_invalidate
+ spq_dist_placement_cache_invalidate
+ spq_dist_shard_cache_invalidate
+ spq_drop_all_shards
+ spq_drop_trigger
+ spq_executor_name
+ spq_extradata_container
+ spq_get_active_worker_nodes
+ spq_internal_global_blocked_processes
+ spq_internal_local_blocked_processes
+ spq_is_coordinator
+ spq_json_concatenate
+ spq_json_concatenate_final
+ spq_local_disk_space_stats
+ spq_locks
+ spq_move_shard_placement
+ spq_move_shard_placement
+ spq_nodeid_for_gpid
+ spq_pid_for_gpid
+ spq_query_stats
+ spq_rebalance_start
+ spq_relation_size
+ spq_remote_connection_stats
+ spq_remove_node
+ spq_run_local_command
+ spq_server_id
+ spq_set_coordinator_host
+ spq_set_node_property
+ spq_shard_indexes_on_worker
+ spq_shard_sizes
+ spq_shards_on_worker
+ spq_stat_activity
+ spq_stat_statements
+ spq_stat_statements_reset
+ spq_table_size
+ spq_text_send_as_jsonb
+ spq_total_relation_size
+ spq_truncate_trigger
+ spq_unmark_object_distributed
+ spq_update_node
+ spq_version
+(55 rows)
+
+SELECT relname FROM pg_class WHERE relname LIKE 'spq%';
+           relname
+---------------------------------------------------------------------
+ spq_dist_stat_activity
+ spq_lock_waits
+ spq_locks
+ spq_shard_indexes_on_worker
+ spq_shards
+ spq_shards_on_worker
+ spq_stat_activity
+ spq_stat_statements
+ spq_tables
+(9 rows)
+
+SELECT tgname FROM pg_trigger WHERE tgname LIKE 'spq%';
+ tgname
+---------------------------------------------------------------------
+(0 rows)
+
+SELECT evtname FROM pg_event_trigger WHERE evtname LIKE 'spq%';
+         evtname
+---------------------------------------------------------------------
+ spq_cascade_to_partition
+(1 row)
+

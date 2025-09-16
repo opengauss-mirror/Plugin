@@ -1,0 +1,66 @@
+CREATE TABLE sales (
+    id SERIAL,
+    sale_date DATE NOT NULL,
+    product_id INTEGER,
+    amount DECIMAL(10,2))PARTITION BY RANGE (sale_date) (
+    PARTITION sales_2023_q1 VALUES LESS THAN ('2023-04-01'),
+    PARTITION sales_2023_q2 VALUES LESS THAN ('2023-07-01'),
+    PARTITION sales_2023_q3 VALUES LESS THAN ('2023-10-01'),
+    PARTITION sales_2023_q4 VALUES LESS THAN ('2024-01-01'),
+    PARTITION sales_max VALUES LESS THAN (MAXVALUE)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "sales_id_seq" for serial column "sales.id"
+\d sales
+                                       Table "public.sales"
+   Column   |              Type              |                     Modifiers
+---------------------------------------------------------------------
+ id         | integer                        | not null default nextval('sales_id_seq'::regclass)
+ sale_date  | timestamp(0) without time zone | not null
+ product_id | integer                        |
+ amount     | numeric(10,2)                  |
+Partition By RANGE(sale_date)
+Number of partitions: 5 (View pg_partition to check each partition range.)
+
+SELECT create_distributed_table('sales', 'id');
+ERROR:  Spq does not support distributed partition relation "sales"
+CONTEXT:  referenced column: create_distributed_table
+DROP TABLE sales;
+select count(1) from pg_class where relname = 'sales';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+CREATE TABLE sales_multi_level (
+    id SERIAL,
+    sale_date DATE NOT NULL,
+    region VARCHAR(20) NOT NULL,
+    product_id INTEGER,
+    amount DECIMAL(10,2))
+PARTITION BY RANGE (sale_date)
+SUBPARTITION BY LIST (region) (
+    PARTITION sales_2023 VALUES LESS THAN ('2024-01-01') (
+        SUBPARTITION sales_2023_east VALUES ('NY', 'NJ', 'PA', 'MA'),
+        SUBPARTITION sales_2023_west VALUES ('CA', 'OR', 'WA', 'NV'),
+        SUBPARTITION sales_2023_other VALUES (DEFAULT)
+    ),
+    PARTITION sales_2024 VALUES LESS THAN ('2025-01-01') (
+        SUBPARTITION sales_2024_east VALUES ('NY', 'NJ', 'PA', 'MA'),
+        SUBPARTITION sales_2024_west VALUES ('CA', 'OR', 'WA', 'NV'),
+        SUBPARTITION sales_2024_other VALUES (DEFAULT)
+    ),
+    PARTITION sales_future VALUES LESS THAN (MAXVALUE) (
+        SUBPARTITION sales_future_all VALUES (DEFAULT)
+    )
+);
+NOTICE:  CREATE TABLE will create implicit sequence "sales_multi_level_id_seq" for serial column "sales_multi_level.id"
+SELECT create_distributed_table('sales_multi_level', 'id');
+ERROR:  Spq does not support distributed partition relation "sales_multi_level"
+CONTEXT:  referenced column: create_distributed_table
+DROP TABLE sales_multi_level;
+select count(1) from pg_class where relname = 'sales_multi_level';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+

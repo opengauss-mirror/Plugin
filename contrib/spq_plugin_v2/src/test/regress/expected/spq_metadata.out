@@ -1,0 +1,145 @@
+create schema metadate_test;
+select reset_unique_sql('GLOBAL', 'ALL', 0); -- clean exist unique sql entry
+ reset_unique_sql
+---------------------------------------------------------------------
+ t
+(1 row)
+
+set current_schema to metadate_test;
+set spq.stat_statements_track to 'all';
+CREATE TABLE dist_test_table (dist_test_table_id BIGINT PRIMARY KEY, dist_test_table_embedding vector(4));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dist_test_table_pkey" for table "dist_test_table"
+SELECT create_distributed_table('dist_test_table', 'dist_test_table_id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+insert into dist_test_table VALUES(1,'[1,2,3,4]'),(2,'[1,2,3,4]'),(3,'[1,2,3,4]'),(4,'[1,2,3,4]'),(5,'[1,2,3,4]'),(6,'[1,2,3,4]'),(7,'[1,2,3,4]');
+select * from dist_test_table order by 1;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  1 | [1,2,3,4]
+                  2 | [1,2,3,4]
+                  3 | [1,2,3,4]
+                  4 | [1,2,3,4]
+                  5 | [1,2,3,4]
+                  6 | [1,2,3,4]
+                  7 | [1,2,3,4]
+(7 rows)
+
+select * from dist_test_table where dist_test_table_id = 1 order by dist_test_table_id;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  1 | [1,2,3,4]
+(1 row)
+
+select * from dist_test_table where dist_test_table_id = 1 order by dist_test_table_id;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  1 | [1,2,3,4]
+(1 row)
+
+select * from dist_test_table where dist_test_table_id = 2 order by dist_test_table_embedding;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  2 | [1,2,3,4]
+(1 row)
+
+select * from dist_test_table where dist_test_table_id = 2 order by dist_test_table_embedding;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  2 | [1,2,3,4]
+(1 row)
+
+select * from dist_test_table where dist_test_table_id = 2 order by dist_test_table_embedding;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  2 | [1,2,3,4]
+(1 row)
+
+SELECT pss.query, cqs.executor, cqs.partition_key, cqs.calls FROM dbe_perf.statement pss JOIN spq_query_stats() cqs USING (unique_sql_id, user_id, node_id) where query like 'insert into dist_test_table%';
+                                    query                                     | executor | partition_key | calls
+---------------------------------------------------------------------
+ insert into dist_test_table VALUES(?,?),(?,?),(?,?),(?,?),(?,?),(?,?),(?,?); |        1 |               |     1
+(1 row)
+
+SELECT pss.query, cqs.executor, cqs.partition_key, cqs.calls FROM dbe_perf.statement pss JOIN spq_query_stats() cqs USING (unique_sql_id, user_id, node_id) where query like '%dist_test_table order by 1%';
+                   query                   | executor | partition_key | calls
+---------------------------------------------------------------------
+ select * from dist_test_table order by 1; |        1 |               |     1
+(1 row)
+
+SELECT pss.query, cqs.executor, cqs.partition_key, cqs.calls FROM dbe_perf.statement pss JOIN spq_query_stats() cqs USING (unique_sql_id, user_id, node_id) where query like '%order by dist_test_table_id%';
+                                          query                                          | executor | partition_key | calls
+---------------------------------------------------------------------
+ select * from dist_test_table where dist_test_table_id = ? order by dist_test_table_id; |        1 | 1             |     2
+(1 row)
+
+SELECT pss.query, cqs.executor, cqs.partition_key, cqs.calls FROM dbe_perf.statement pss JOIN spq_query_stats() cqs USING (unique_sql_id, user_id, node_id) where query like '%order by dist_test_table_embedding%';
+                                             query                                              | executor | partition_key | calls
+---------------------------------------------------------------------
+ select * from dist_test_table where dist_test_table_id = ? order by dist_test_table_embedding; |        1 | 2             |     3
+(1 row)
+
+select node_id,query,executor,partition_key,calls from spq_stat_statements where query like 'insert into dist_test_table%';
+ node_id |                                    query                                     | executor | partition_key | calls
+---------------------------------------------------------------------
+       0 | insert into dist_test_table VALUES(?,?),(?,?),(?,?),(?,?),(?,?),(?,?),(?,?); | adaptive |               |     1
+(1 row)
+
+select node_id,query,executor,partition_key,calls from spq_stat_statements where query like '%dist_test_table order by 1%';
+ node_id |                   query                   | executor | partition_key | calls
+---------------------------------------------------------------------
+       0 | select * from dist_test_table order by 1; | adaptive |               |     1
+(1 row)
+
+select node_id,query,executor,partition_key,calls from spq_stat_statements where query like '%order by dist_test_table_id%';
+ node_id |                                          query                                          | executor | partition_key | calls
+---------------------------------------------------------------------
+       0 | select * from dist_test_table where dist_test_table_id = ? order by dist_test_table_id; | adaptive | 1             |     2
+(1 row)
+
+select node_id,query,executor,partition_key,calls from spq_stat_statements where query like '%order by dist_test_table_embedding%';
+ node_id |                                             query                                              | executor | partition_key | calls
+---------------------------------------------------------------------
+       0 | select * from dist_test_table where dist_test_table_id = ? order by dist_test_table_embedding; | adaptive | 2             |     3
+(1 row)
+
+select b.query,a.initiator_node_identifier,a.worker_query from get_all_active_transactions() a left join pg_stat_activity b on a.process_id=b.pid where b.query like '%get_all_active_transactions%';
+                                                                                                 query                                                                                                 | initiator_node_identifier | worker_query
+---------------------------------------------------------------------
+ select b.query,a.initiator_node_identifier,a.worker_query from get_all_active_transactions() a left join pg_stat_activity b on a.process_id=b.pid where b.query like '%get_all_active_transactions%'; |                         3 | f
+(1 row)
+
+select count(*) from get_global_active_transactions()  a left join pg_stat_activity b on a.process_id=b.pid where query like '%get_global_active_transactions%';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+select nodeid from spq_stat_activity where query like '%spq_stat_activity%' order by nodeid;
+ nodeid
+---------------------------------------------------------------------
+      3
+(1 row)
+
+begin;
+select * from dist_test_table where dist_test_table_id = 1;
+ dist_test_table_id | dist_test_table_embedding
+---------------------------------------------------------------------
+                  1 | [1,2,3,4]
+(1 row)
+
+select nodeid,locktype,mode from spq_locks where relation_name like 'metadate_test.dist_test_table%' order by nodeid;
+ nodeid | locktype |      mode
+---------------------------------------------------------------------
+      3 | relation | AccessShareLock
+      8 | relation | AccessShareLock
+      8 | relation | AccessShareLock
+(3 rows)
+
+commit;
+drop table dist_test_table;
+reset spq.stat_statements_track;
+drop schema metadate_test cascade;

@@ -1,0 +1,73 @@
+#!/bin/sh
+STAGED_FILES=
+FORMAT_FAILED=0
+
+OLD_FORMAT=
+EXPECT_FORMAT=
+UNEXPECTED_FILES=
+ROOT_DIR=$(git rev-parse --show-toplevel)
+export CLANG_FORMAT_FILE="$ROOT_DIR/.clang-format"
+
+function env_check() {
+  [ ! command -v clang-format >/dev/null 2>&1 ] && echo "please install clang-format!!!" && exit 1
+  clang-format --version | head -n1
+}
+
+function load_all_files() {
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM "*.c" "*.cpp" "*.h" "*.hpp" "*.cc" "*.cxx" "*.hh")
+  [ -z "$STAGED_FILES" ] && echo "No staged C/C++ files to format." && exit 0
+} 
+
+function create_tmp_files() {
+  OLD_FORMAT=$(mktemp ${ROOT_DIR}/.format_tmp1.XXXXXX)
+  EXPECT_FORMAT=$(mktemp ${ROOT_DIR}/.format_tmp2.XXXXXX)
+  trap 'rm -f "$OLD_FORMAT" "$EXPECT_FORMAT"' EXIT
+}
+
+function check_format() {
+  local FILE=$1
+
+  git show ":$FILE" > "$OLD_FORMAT"
+
+  clang-format -style=file "$OLD_FORMAT" > "$EXPECT_FORMAT"
+
+  diff -u "$OLD_FORMAT" "$EXPECT_FORMAT" >/dev/null
+
+  if [ $? -ne 0 ]; then
+    echo "  [ERROR] $FILE - Formatting issues detected"
+    FORMAT_FAILED=1
+    UNEXPECTED_FILES="${UNEXPECTED_FILES} $FILE"
+
+    echo "Diff for $FILE:"
+    diff -u "$OLD_FORMAT" "$EXPECT_FORMAT" | sed 's/^/    /'
+  fi
+}
+
+
+echo "Checking code formatting(by $CLANG_FORMAT_FILE) for staged C/C++ files..."
+
+env_check
+
+load_all_files
+
+create_tmp_files
+
+for FILE in $STAGED_FILES; do
+  if [ ! -f "$FILE" ]; then
+    continue
+  fi
+
+  check_format "$FILE"
+done
+
+if [ $FORMAT_FAILED -eq 1 ]; then
+    echo ""
+    echo "Code formatting issues found in staged C/C++ files."
+    echo "Please run the following command to fix them:"
+    echo "  clang-format -i -style=file $UNEXPECTED_FILES"
+    echo "Then 'git add' the formatted files and try committing again."
+    exit 1
+fi
+
+echo "All staged C/C++ files are properly formatted."
+exit 0

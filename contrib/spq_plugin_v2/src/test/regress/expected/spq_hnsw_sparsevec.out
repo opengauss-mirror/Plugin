@@ -1,0 +1,308 @@
+SET spq.propagate_set_commands = 'local';
+-- L2
+CREATE TABLE t2 (id int, val sparsevec(3));
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t2 (id, val) VALUES (1, '{}/3'), (2, '{1:1,2:2,3:3}/3'), (3, '{1:1,2:1,3:1}/3'), (4, NULL);
+CREATE INDEX ON t2 USING hnsw (val sparsevec_l2_ops);
+INSERT INTO t2 (id, val) VALUES (5, '{1:1,2:2,3:4}/3');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t2 ORDER BY val <-> '{1:3,2:3,3:3}/3';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t2  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t2 ORDER BY val <-> '{1:3,2:3,3:3}/3';
+ id |       val
+---------------------------------------------------------------------
+  2 | {1:1,2:2,3:3}/3
+  5 | {1:1,2:2,3:4}/3
+  3 | {1:1,2:1,3:1}/3
+  1 | {}/3
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <-> (SELECT NULL::sparsevec)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t2  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <-> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+EXPLAIN SELECT COUNT(*) FROM t2;
+                                                QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=1000000000101.00..1000000000101.01 rows=1 width=8)
+                     ->  Seq Scan on t_xxxx t2  (cost=10000000000.00..1000000000101.00 rows=1 width=0)
+(8 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <-> (SELECT NULL::sparsevec)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+SELECT COUNT(*) FROM t2;
+ count
+---------------------------------------------------------------------
+     5
+(1 row)
+
+COMMIT;
+TRUNCATE t2;
+BEGIN;
+SET local enable_seqscan = off;
+SELECT * FROM t2 ORDER BY val <-> '{1:3,2:3,3:3}/3';
+ id | val
+---------------------------------------------------------------------
+(0 rows)
+
+COMMIT;
+DROP TABLE t2;
+-- inner product
+CREATE TABLE t2 (id int, val sparsevec(3));
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t2 (id, val) VALUES (1, '{}/3'), (2, '{1:1,2:2,3:3}/3'), (3, '{1:1,2:1,3:1}/3'), (4, NULL);
+CREATE INDEX ON t2 USING hnsw (val sparsevec_ip_ops);
+INSERT INTO t2 (id, val) VALUES (5, '{1:1,2:2,3:4}/3');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t2 ORDER BY val <#> '{1:3,2:3,3:3}/3';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t2  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t2 ORDER BY val <#> '{1:3,2:3,3:3}/3';
+ id |       val
+---------------------------------------------------------------------
+  5 | {1:1,2:2,3:4}/3
+  2 | {1:1,2:2,3:3}/3
+  3 | {1:1,2:1,3:1}/3
+  1 | {}/3
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <#> (SELECT NULL::sparsevec)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t2  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <#> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <#> (SELECT NULL::sparsevec)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t2;
+-- cosine
+CREATE TABLE t2 (id int, val sparsevec(3));
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t2 (id, val) VALUES (1, '{}/3'), (2, '{1:1,2:2,3:3}/3'), (3, '{1:1,2:1,3:1}/3'), (4, NULL);
+CREATE INDEX ON t2 USING hnsw (val sparsevec_cosine_ops);
+INSERT INTO t2 (id, val) VALUES (5, '{1:1,2:2,3:4}/3');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t2 ORDER BY val <=> '{1:3,2:3,3:3}/3';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t2  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t2 ORDER BY val <=> '{1:3,2:3,3:3}/3';
+ id |       val
+---------------------------------------------------------------------
+  3 | {1:1,2:1,3:1}/3
+  2 | {1:1,2:2,3:3}/3
+  5 | {1:1,2:2,3:4}/3
+  1 | {}/3
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <=> '{}/3') tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.28..10000000008.29 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t2  (cost=4.26..10000000008.27 rows=1 width=36)
+                           Order By: (val <=> '{}/3'::sparsevec)
+(9 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <=> (SELECT NULL::sparsevec)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t2  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <=> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <=> '{}/3') tt;
+ count
+---------------------------------------------------------------------
+     3
+(1 row)
+
+SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <=> (SELECT NULL::sparsevec)) tt;
+ count
+---------------------------------------------------------------------
+     3
+(1 row)
+
+COMMIT;
+DROP TABLE t2;
+-- L1
+CREATE TABLE t2 (id int, val sparsevec(3));
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t2 (id, val) VALUES (1, '{}/3'), (2, '{1:1,2:2,3:3}/3'), (3, '{1:1,2:1,3:1}/3'), (4, NULL);
+CREATE INDEX ON t2 USING hnsw (val sparsevec_l1_ops);
+INSERT INTO t2 (id, val) VALUES (5, '{1:1,2:2,3:4}/3');
+BEGIN;
+SET local enable_seqscan = off;
+EXPLAIN SELECT * FROM t2 ORDER BY val <+> '{1:3,2:3,3:3}/3';
+                                             QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=44)
+   Sort Key: remote_scan.worker_column_3
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=44)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t2  (cost=10000000000.00..1000000000101.00 rows=1 width=36)
+(8 rows)
+
+SELECT * FROM t2 ORDER BY val <+> '{1:3,2:3,3:3}/3';
+ id |       val
+---------------------------------------------------------------------
+  2 | {1:1,2:2,3:3}/3
+  5 | {1:1,2:2,3:4}/3
+  3 | {1:1,2:1,3:1}/3
+  1 | {}/3
+  4 |
+(5 rows)
+
+EXPLAIN SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <+> (SELECT NULL::sparsevec)) tt;
+                                                         QUERY PLAN
+---------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.01 rows=1 width=40)
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=8)
+         Task Count: 4
+         Tasks Shown: One of 4
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Aggregate  (cost=10000000008.29..10000000008.30 rows=1 width=8)
+                     ->  Ann Index Scan using t_val_idx_xxxx on t_xxxx t2  (cost=4.27..10000000008.28 rows=1 width=36)
+                           Order By: (val <+> $0)
+                           InitPlan 1 (returns $0)
+                             ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(11 rows)
+
+SELECT COUNT(*) FROM (SELECT * FROM t2 ORDER BY val <+> (SELECT NULL::sparsevec)) tt;
+ count
+---------------------------------------------------------------------
+     4
+(1 row)
+
+COMMIT;
+DROP TABLE t2;
+-- non-zero elements
+CREATE TABLE t2 (id int, val sparsevec(1001));
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO t2 (id, val) VALUES (1, array_fill(1, ARRAY[1001])::vector::sparsevec);
+CREATE INDEX ON t2 USING hnsw (val sparsevec_l2_ops);
+ERROR:  sparsevec cannot have more than 1000 non-zero elements for hnsw index
+CONTEXT:  while executing command on localhost:xxxxx
+TRUNCATE t2;
+CREATE INDEX ON t2 USING hnsw (val sparsevec_l2_ops);
+INSERT INTO t2 (id, val) VALUES (2, array_fill(1, ARRAY[1001])::vector::sparsevec);
+ERROR:  sparsevec cannot have more than 1000 non-zero elements for hnsw index
+CONTEXT:  while executing command on localhost:xxxxx
+DROP TABLE t2;
+SET spq.propagate_set_commands = DEFAULT;

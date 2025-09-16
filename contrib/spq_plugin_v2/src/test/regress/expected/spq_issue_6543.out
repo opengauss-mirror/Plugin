@@ -1,0 +1,30 @@
+CREATE SCHEMA issue_6543;
+SET search_path TO issue_6543;
+SET spq.shard_count TO 4;
+SET spq.shard_replication_factor TO 1;
+SET spq.next_shard_id TO 67322500;
+CREATE TABLE event (
+  tenant_id varchar,
+  id bigint,
+  primary key (tenant_id, id)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "event_pkey" for table "event"
+CREATE TABLE page (
+  tenant_id varchar,
+  id int,
+  primary key (tenant_id, id)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "page_pkey" for table "page"
+SELECT create_distributed_table('event', 'tenant_id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('page', 'tenant_id', colocate_with => 'event');
+ERROR:  function create_distributed_table(unknown, unknown, colocate_with := unknown) does not exist
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: create_distributed_table
+alter table page add constraint fk21 foreign key (tenant_id, id) references event;
+SET client_min_messages TO WARNING;
+DROP SCHEMA issue_6543 CASCADE;

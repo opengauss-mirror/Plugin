@@ -1,0 +1,343 @@
+-- check the cluster's start state
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- I am coordinator
+SELECT spq_is_coordinator();
+ spq_is_coordinator
+---------------------------------------------------------------------
+ t
+(1 row)
+
+--------------------------- TEST 1 : test for remove/add node ----------------------------
+-- try to remove a node (with no placements)
+SELECT spq_remove_node('localhost', :worker_2_port);
+ spq_remove_node
+---------------------------------------------------------------------
+
+(1 row)
+
+-- verify that the node has been deleted
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- verify the data can be only placed in only one node
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t1'::regclass;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+DROP TABLE t1;
+-- add node
+SELECT 1 FROM spq_add_node('localhost', :worker_2_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+-- verify the data are placed in 2 nodes
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t1'::regclass;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- try to remove a node (with placements), there is a error emitting
+SELECT spq_remove_node('localhost', :worker_2_port);
+ERROR:  cannot remove or disable the node localhost:xxxxx because because it contains the only shard placement for shard xxxxx
+DETAIL:  One of the table(s) that prevents the operation complete successfully is public.t1
+HINT:  To proceed, either drop the tables or use undistribute_table() function to convert them to local tables
+CONTEXT:  referenced column: spq_remove_node
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+DROP TABLE t1;
+--------------------------- TEST 2 : test for activate node ----------------------------
+SELECT spq_remove_node('localhost', :worker_1_port);
+ spq_remove_node
+---------------------------------------------------------------------
+
+(1 row)
+
+-- verify that the node has been deleted
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- add an inactive node worker 1
+SELECT 1 FROM spq_add_inactive_node('localhost', :worker_1_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- verify table is not placed in the activate node
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t1'::regclass;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+SELECT 1 FROM spq_activate_node('localhost', :worker_1_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+-- verify table is placed in the activate node
+CREATE TABLE t2(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+INSERT INTO t2 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t2$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t2'::regclass;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- disable(inactivate) node work2;
+-- error will be emitted
+SELECT 1 FROM spq_disable_node('localhost', :worker_2_port);
+ERROR:  cannot remove or disable the node localhost:xxxxx because because it contains the only shard placement for shard xxxxx
+DETAIL:  One of the table(s) that prevents the operation complete successfully is public.t1
+HINT:  To proceed, either drop the tables or use undistribute_table() function to convert them to local tables
+DROP TABLE t2;
+DROP TABLE t1;
+-- succeed to disable node worker1
+SELECT 1 FROM spq_disable_node('localhost', :worker_2_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+SELECT 1 FROM spq_activate_node('localhost', :worker_2_port);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-------------------------- TEST 3:  check health -------------------------------------
+SELECT COUNT(*) FROM spq_check_cluster_nodes();
+ count
+---------------------------------------------------------------------
+     9
+(1 row)
+
+------------------------- TEST 4: set node property ---------------------------------
+CREATE TABLE t1(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t1', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t1'::regclass;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+SELECT 1 FROM spq_set_node_property('localhost', :worker_1_port, 'shouldhaveshards', false);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+CREATE TABLE t2(id BIGINT PRIMARY KEY, name CHAR(100));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+INSERT INTO t2 VALUES(1,'a'), (2,'a'), (3,'a'), (4,'a');
+SELECT create_distributed_table('t2', 'id', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t2$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(DISTINCT(pdsp.nodeport)) FROM pg_dist_shard pds JOIN pg_dist_shard_placement pdsp ON pds.shardid =
+    pdsp.shardid WHERE pds.logicalrelid='t2'::regclass;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+SELECT 1 FROM spq_set_node_property('localhost', :worker_1_port, 'shouldhaveshards', true);
+ ?column?
+---------------------------------------------------------------------
+        1
+(1 row)
+
+DROP TABLE t1;
+DROP TABLE t2;
+-- add more testcases for rebalance ....
+SELECT count(*) FROM spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+----------------------- TEST 5: update node ------------------------------------------
+SELECT spq_update_node(nodeid, 'localhost', :worker_2_port + 100) FROM pg_dist_node WHERE nodeport = :worker_2_port;
+ spq_update_node
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_node WHERE nodeport = :worker_2_port;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_node WHERE nodename = 'localhost';
+ count
+---------------------------------------------------------------------
+     3
+(1 row)
+
+SELECT spq_update_node(nodeid, 'localhost.unknown', :worker_1_port) FROM pg_dist_node WHERE nodeport = :worker_1_port;
+ spq_update_node
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_node WHERE nodename = 'localhost';
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+SELECT spq_update_node(nodeid, 'localhost', :worker_1_port) FROM pg_dist_node WHERE nodeport = :worker_1_port;
+ spq_update_node
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT spq_update_node(nodeid, 'localhost', :worker_2_port) FROM pg_dist_node WHERE nodeport = (:worker_2_port + 100);
+ spq_update_node
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_node WHERE nodeport = :worker_2_port AND nodename = 'localhost';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+SELECT COUNT(*) FROM pg_dist_node WHERE nodeport = :worker_1_port AND nodename = 'localhost';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- check the cluster's final state
+SELECT count(*) from spq_get_active_worker_nodes();
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+

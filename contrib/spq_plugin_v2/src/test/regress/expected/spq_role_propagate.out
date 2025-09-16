@@ -1,0 +1,573 @@
+----------------------- test 1: role propagate -----------------------------
+\c - - - :master_port
+create role dev_role with login password 'spq_test1';
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :worker_1_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+----------------------- test 1: alter role propagate -----------------------------
+\c - - - :master_port
+-- error same password
+alter role dev_role password 'spq_test1';
+ERROR:  New password should not equal to the old ones.
+-- expect success
+alter role dev_role password 'spq_test12';
+\c - - - :worker_1_port
+select rolname, rolcanlogin from pg_roles where rolname = 'dev_role';
+ rolname  | rolcanlogin
+---------------------------------------------------------------------
+ dev_role | t
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolcanlogin from pg_roles where rolname = 'dev_role';
+ rolname  | rolcanlogin
+---------------------------------------------------------------------
+ dev_role | t
+(1 row)
+
+\c - - - :master_port
+alter role dev_role nologin;
+\c - - - :worker_1_port
+select rolname, rolcanlogin from pg_roles where rolname = 'dev_role';
+ rolname  | rolcanlogin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolcanlogin from pg_roles where rolname = 'dev_role';
+ rolname  | rolcanlogin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+\c - - - :master_port
+drop role dev_role;
+\c - - - :worker_1_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+----------------------- test 2: alter role set propagate -----------------------------
+\c - - - :master_port
+create role dev_role with login password 'spq_test1';
+\c - - - :worker_1_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  | rolconfig
+---------------------------------------------------------------------
+ dev_role |
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  | rolconfig
+---------------------------------------------------------------------
+ dev_role |
+(1 row)
+
+\c - - - :master_port
+alter role dev_role set work_mem = '16MB';
+\c - - - :worker_1_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  |    rolconfig
+---------------------------------------------------------------------
+ dev_role | {work_mem=16MB}
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  |    rolconfig
+---------------------------------------------------------------------
+ dev_role | {work_mem=16MB}
+(1 row)
+
+\c - - - :master_port
+alter role dev_role set session_timeout = '10min';
+\c - - - :worker_1_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  |               rolconfig
+---------------------------------------------------------------------
+ dev_role | {work_mem=16MB,session_timeout=10min}
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolconfig from pg_roles where rolname = 'dev_role';
+ rolname  |               rolconfig
+---------------------------------------------------------------------
+ dev_role | {work_mem=16MB,session_timeout=10min}
+(1 row)
+
+-- rename role
+\c - - - :master_port
+alter role dev_role rename to vip_role;
+\c - - - :worker_1_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+select count(1) from pg_roles where rolname = 'vip_role';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_roles where rolname = 'dev_role';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+select count(1) from pg_roles where rolname = 'vip_role';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+----------------------- test 3: grant role propagate -----------------------------
+\c - - - :worker_1_port
+select rolname, rolcreatedb, rolcreaterole, rolreplication from pg_roles where rolname = 'vip_role';
+ rolname  | rolcreatedb | rolcreaterole | rolreplication
+---------------------------------------------------------------------
+ vip_role | f           | f             | f
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolcreatedb, rolcreaterole, rolreplication from pg_roles where rolname = 'vip_role';
+ rolname  | rolcreatedb | rolcreaterole | rolreplication
+---------------------------------------------------------------------
+ vip_role | f           | f             | f
+(1 row)
+
+\c - - - :master_port
+alter role vip_role CREATEDB;
+alter role vip_role CREATEROLE;
+alter role vip_role REPLICATION;
+\c - - - :worker_1_port
+select rolname, rolcreatedb, rolcreaterole, rolreplication from pg_roles where rolname = 'vip_role';
+ rolname  | rolcreatedb | rolcreaterole | rolreplication
+---------------------------------------------------------------------
+ vip_role | t           | t             | t
+(1 row)
+
+\c - - - :worker_2_port
+select rolname, rolcreatedb, rolcreaterole, rolreplication from pg_roles where rolname = 'vip_role';
+ rolname  | rolcreatedb | rolcreaterole | rolreplication
+---------------------------------------------------------------------
+ vip_role | t           | t             | t
+(1 row)
+
+\c - - - :master_port
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+grant select, insert on t1 to vip_role;
+\c - - - :worker_1_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role';
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | SELECT
+(4 rows)
+
+\c - - - :worker_2_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role';
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | SELECT
+(4 rows)
+
+\c - - - :master_port
+revoke insert on t1 from vip_role;
+\c - - - :worker_1_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role';
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | SELECT
+(2 rows)
+
+\c - - - :worker_2_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role';
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | SELECT
+(2 rows)
+
+\c - - - :master_port
+grant ALL on t1 to vip_role;
+\c - - - :worker_1_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role' order by privilege_type;
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | ALTER
+ vip_role | txx_xxxx   | ALTER
+ vip_role | txx_xxxx   | COMMENT
+ vip_role | txx_xxxx   | COMMENT
+ vip_role | txx_xxxx   | DELETE
+ vip_role | txx_xxxx   | DELETE
+ vip_role | txx_xxxx   | DROP
+ vip_role | txx_xxxx   | DROP
+ vip_role | txx_xxxx   | INDEX
+ vip_role | txx_xxxx   | INDEX
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | REFERENCES
+ vip_role | txx_xxxx   | REFERENCES
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | TRIGGER
+ vip_role | txx_xxxx   | TRIGGER
+ vip_role | txx_xxxx   | TRUNCATE
+ vip_role | txx_xxxx   | TRUNCATE
+ vip_role | txx_xxxx   | UPDATE
+ vip_role | txx_xxxx   | UPDATE
+ vip_role | txx_xxxx   | VACUUM
+ vip_role | txx_xxxx   | VACUUM
+(24 rows)
+
+\c - - - :worker_2_port
+select grantee, table_name, privilege_type from information_schema.table_privileges where table_name like 't1%' and grantee = 'vip_role' order by privilege_type;
+ grantee  | table_name | privilege_type
+---------------------------------------------------------------------
+ vip_role | txx_xxxx   | ALTER
+ vip_role | txx_xxxx   | ALTER
+ vip_role | txx_xxxx   | COMMENT
+ vip_role | txx_xxxx   | COMMENT
+ vip_role | txx_xxxx   | DELETE
+ vip_role | txx_xxxx   | DELETE
+ vip_role | txx_xxxx   | DROP
+ vip_role | txx_xxxx   | DROP
+ vip_role | txx_xxxx   | INDEX
+ vip_role | txx_xxxx   | INDEX
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | INSERT
+ vip_role | txx_xxxx   | REFERENCES
+ vip_role | txx_xxxx   | REFERENCES
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | SELECT
+ vip_role | txx_xxxx   | TRIGGER
+ vip_role | txx_xxxx   | TRIGGER
+ vip_role | txx_xxxx   | TRUNCATE
+ vip_role | txx_xxxx   | TRUNCATE
+ vip_role | txx_xxxx   | UPDATE
+ vip_role | txx_xxxx   | UPDATE
+ vip_role | txx_xxxx   | VACUUM
+ vip_role | txx_xxxx   | VACUUM
+(24 rows)
+
+\c - - - :master_port
+create schema s1;
+grant USAGE, CREATE ON schema s1 to vip_role;
+\c - - - :worker_1_port
+select nspname, rolname from pg_namespace join pg_roles on true where nspname = 's1' and rolname = 'vip_role';
+ nspname | rolname
+---------------------------------------------------------------------
+ s1      | vip_role
+(1 row)
+
+\c - - - :worker_2_port
+select nspname, rolname from pg_namespace join pg_roles on true where nspname = 's1' and rolname = 'vip_role';
+ nspname | rolname
+---------------------------------------------------------------------
+ s1      | vip_role
+(1 row)
+
+\c - - - :master_port
+drop schema s1 CASCADE;
+drop table t1 CASCADE;
+drop role vip_role;
+create role dev_role with login password 'spq_test1';
+\c - - - :worker_1_port
+-- expect f
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+\c - - - :worker_2_port
+-- expect f
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+\c - - - :master_port
+grant all privileges to dev_role;
+\c - - - :worker_1_port
+-- expect t
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | t
+(1 row)
+
+\c - - - :worker_2_port
+-- expect t
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | t
+(1 row)
+
+\c - - - :master_port
+revoke all privileges from dev_role;
+\c - - - :worker_1_port
+-- expect f
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+\c - - - :worker_2_port
+-- expect f
+select rolname, rolsystemadmin from pg_roles where rolname = 'dev_role';
+ rolname  | rolsystemadmin
+---------------------------------------------------------------------
+ dev_role | f
+(1 row)
+
+drop role dev_role;
+----------------------- test 3: user propagate -----------------------------
+\c - - - :master_port
+-- create user will create role and schema with the username
+create user dev_user with login password 'spq_test1';
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 1
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- expect 1
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 1
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- expect 1
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+\c - - - :master_port
+grant create on database regression to dev_user;
+-- expect 't'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 't'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 't'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :master_port
+revoke create on database regression from dev_user;
+-- expect 'f'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 'f'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 'f'
+select has_database_privilege('dev_user','regression', 'CREATE');
+ has_database_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :master_port
+create schema test_grant_on_shcema;
+grant create on schema test_grant_on_shcema to dev_user;
+-- expect 't'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 't'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 't'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ t
+(1 row)
+
+\c - - - :master_port
+revoke create on schema test_grant_on_shcema from dev_user;
+-- expect 'f'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 'f'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 'f'
+select has_schema_privilege('dev_user','test_grant_on_shcema', 'CREATE');
+ has_schema_privilege
+---------------------------------------------------------------------
+ f
+(1 row)
+
+\c - - - :master_port
+drop schema test_grant_on_shcema;
+-- drop user will drop role and schema with the username
+drop user dev_user;
+-- expect 0
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+-- expect 0
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_1_port
+-- expect 0
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+-- expect 0
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_2_port
+-- expect 0
+select count(1) from pg_roles where rolname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+-- expect 0
+select count(1) from pg_namespace where nspname = 'dev_user';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+

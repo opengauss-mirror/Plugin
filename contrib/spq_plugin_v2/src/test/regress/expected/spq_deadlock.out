@@ -1,0 +1,60 @@
+create schema deadlock_test_schema;
+set current_schema to deadlock_test_schema;
+select count(*) from (SELECT global_pid != spq_calculate_gpid(nodeid, b.lwpid) as result FROM spq_dist_stat_activity a join pg_os_threads b on a.pid=b.pid where b.thread_name not like '%Spq Maintenance Daemon%') a where a.result = 't';
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+CREATE TABLE deadlock_test (a int primary key, b int);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "deadlock_test_pkey" for table "deadlock_test"
+SELECT create_distributed_table('deadlock_test', 'a', shard_count:=2);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+insert into deadlock_test values(1,1);
+insert into deadlock_test values(2,2);
+\set VERBOSITY terse
+\parallel on 2
+begin
+update deadlock_test set b=11 where a=1;
+pg_sleep(1);
+update deadlock_test set b=222 where a=2;
+end;
+/
+declare
+res record;
+v int;
+begin
+update deadlock_test set b=22 where a=2;
+pg_sleep(2);
+select * into res from spq_lock_waits;
+raise notice 'blocked_statement: %, current_statement_in_blocking_process:%', res.blocked_statement, res.current_statement_in_blocking_process;
+update deadlock_test set b=111 where a=1;
+end;
+/
+\parallel off
+NOTICE:  blocked_statement: query string: begin
+update deadlock_test set b=11 where a=1;
+pg_sleep(1);
+update deadlock_test set b=222 where a=2;
+end;
+
+ current level: inline_code_block; execute stmt: update deadlock_test set b=222 where a=2, current_statement_in_blocking_process:query string: declare
+res record;
+v int;
+begin
+update deadlock_test set b=22 where a=2;
+pg_sleep(2);
+select * into res from spq_lock_waits;
+raise notice 'blocked_statement: %, current_statement_in_blocking_process:%', res.blocked_statement, res.current_statement_in_blocking_process;
+update deadlock_test set b=111 where a=1;
+end;
+
+ current level: run_command_on_all_nodes(text,boolean,boolean); execute stmt: FOR nodeid, success, result IN
+ERROR:  canceling statement due to user request
+drop table deadlock_test;
+drop schema deadlock_test_schema cascade;
+\unset VERBOSITY

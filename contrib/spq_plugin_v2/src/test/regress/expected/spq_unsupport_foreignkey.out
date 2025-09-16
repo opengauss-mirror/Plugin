@@ -1,0 +1,57 @@
+SET spq.next_shard_id TO 15000000;
+CREATE SCHEMA fkey;
+SET search_path to fkey;
+SET spq.shard_replication_factor TO 1;
+SET spq.shard_count to 8;
+-- check if master_move_shard_placement with logical replication creates the
+-- foreign constraints properly after moving the shard
+CREATE TABLE referenced_table(test_column int, test_column2 int UNIQUE, PRIMARY KEY(test_column), table_id int);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "referenced_table_pkey" for table "referenced_table"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "referenced_table_test_column2_key" for table "referenced_table"
+CREATE TABLE referencing_table(id int PRIMARY KEY, ref_id int, FOREIGN KEY (id) REFERENCES referenced_table(test_column) ON DELETE CASCADE);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "referencing_table_pkey" for table "referencing_table"
+CREATE TABLE referencing_table2(id int, ref_id int, FOREIGN KEY (ref_id) REFERENCES referenced_table(test_column2) ON DELETE CASCADE, FOREIGN KEY (id) REFERENCES referencing_table(id) ON DELETE CASCADE);
+SELECT create_distributed_table('referencing_table', 'id');
+ERROR:  Foreign keys are not supported when creating distributed tables
+CONTEXT:  referenced column: create_distributed_table
+SELECT create_distributed_table('referencing_table2', 'id');
+ERROR:  Foreign keys are not supported when creating distributed tables
+CONTEXT:  referenced column: create_distributed_table
+CREATE TABLE referenced_table2(test_column int, test_column2 int, PRIMARY KEY(test_column), table_id int);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "referenced_table2_pkey" for table "referenced_table2"
+SELECT create_distributed_table('referenced_table2', 'test_column');
+ create_distributed_table 
+--------------------------
+ 
+(1 row)
+
+CREATE TABLE table1(table_id BIGINT PRIMARY KEY, name TEXT);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "table1_pkey" for table "table1"
+CREATE TABLE table2(table2_id BIGINT PRIMARY KEY, name2 TEXT);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "table2_pkey" for table "table2"
+CREATE TABLE table3(table3_id BIGINT PRIMARY KEY, name3 TEXT);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "table3_pkey" for table "table3"
+--test for explicit invocation
+ALTER TABLE referenced_table2 ADD CONSTRAINT fk_table FOREIGN KEY (table_id)
+REFERENCES table1(table_id);
+ERROR:  Adding Foreign key constraint is not supported when altering a distributed table
+--test for implicit conversion
+ALTER TABLE referenced_table2 ADD COLUMN fk_table2 INT
+REFERENCES table1(table_id);
+ERROR:  Adding Foreign key constraint is not supported when altering a distributed table
+----test for local explicit invocation
+ALTER TABLE table2 ADD COLUMN table0_id INT; 
+ALTER TABLE table2 ADD CONSTRAINT fk_table FOREIGN KEY (table0_id)
+REFERENCES table1(table_id);
+--test for local implicit conversion
+ALTER TABLE table2 ADD COLUMN fk_table2 INT
+REFERENCES table3(table3_id);
+DROP SCHEMA fkey CASCADE;
+NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table referenced_table
+drop cascades to table referencing_table
+drop cascades to table referencing_table2
+drop cascades to table referenced_table2
+drop cascades to table table1
+drop cascades to table table2
+drop cascades to table table3

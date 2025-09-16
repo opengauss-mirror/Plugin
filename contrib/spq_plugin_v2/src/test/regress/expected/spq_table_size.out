@@ -1,0 +1,25 @@
+CREATE SCHEMA test_table_size;
+SET search_path TO test_table_size;
+SET spq.shard_count TO 2;
+CREATE TABLE test_dist_curd(
+	id INT PRIMARY KEY,
+	name TEXT NOT NULL,
+	age INT CHECK(age > 0)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_dist_curd_pkey" for table "test_dist_curd"
+SELECT create_distributed_table('test_dist_curd','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO test_dist_curd VALUES(1, 'Alice', 25), (2, 'Bob', 30), (3, 'Jerry', 26);
+SELECT * FROM spq_table_size('test_dist_curd');
+ spq_table_size
+---------------------------------------------------------------------
+          32768
+(1 row)
+
+DROP SCHEMA test_table_size CASCADE;
+NOTICE:  drop cascades to table test_dist_curd
+RESET SEARCH_PATH;

@@ -1,0 +1,899 @@
+----------------------- test 1: alter table propagate -----------------------------
+\c - - - :master_port
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SET spq.explain_all_tasks TO ON;
+EXPLAIN SELECT * FROM t1 ORDER BY a;
+                                   QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=4)
+   Sort Key: remote_scan.a
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=4)
+         Task Count: 4
+         Tasks Shown: All
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..34.02 rows=2402 width=4)
+(17 rows)
+
+select * from t1 order by a;
+ a
+---------------------------------------------------------------------
+ 1
+ 2
+ 3
+ 4
+(4 rows)
+
+delete from t1;
+-- add column
+ALTER TABLE t1 ADD COLUMN b INT;
+insert into t1 values (1, 1), (2, 2), (3, 3), (4, 4);
+select * from t1 order by a;
+ a | b
+---------------------------------------------------------------------
+ 1 | 1
+ 2 | 2
+ 3 | 3
+ 4 | 4
+(4 rows)
+
+-- alter table
+ALTER TABLE t1 ALTER COLUMN b TYPE BIGINT;
+select * from t1 order by a;
+ a | b
+---------------------------------------------------------------------
+ 1 | 1
+ 2 | 2
+ 3 | 3
+ 4 | 4
+(4 rows)
+
+ALTER TABLE t1 RENAME COLUMN b TO bb;
+select * from t1 order by a;
+ a | bb
+---------------------------------------------------------------------
+ 1 |  1
+ 2 |  2
+ 3 |  3
+ 4 |  4
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN bb;
+select * from t1 order by a;
+ a
+---------------------------------------------------------------------
+ 1
+ 2
+ 3
+ 4
+(4 rows)
+
+-- create index
+CREATE INDEX idx_t1_a ON t1 (a);
+EXPLAIN SELECT * FROM t1 ORDER BY a;
+                                   QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=8304.82..8554.82 rows=100000 width=4)
+   Sort Key: remote_scan.a
+   ->  Spq extensible Adaptive  (cost=0.00..0.00 rows=100000 width=4)
+         Task Count: 4
+         Tasks Shown: All
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..1.01 rows=1 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..1.02 rows=2 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..34.02 rows=2402 width=4)
+         ->  Task
+               Node: host=localhost port=xxxxx dbname=regression
+               ->  Seq Scan on t_xxxx t1  (cost=0.00..1.01 rows=1 width=4)
+(17 rows)
+
+-- alter index
+alter index idx_t1_a set (fillfactor = 80);
+\c - - - :worker_1_port
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema |      Name      |                                             Definition                                             | Size
+---------------------------------------------------------------------
+ public | idx_t1_a_xx | CREATE INDEX idx_t1_a_xx ON txx_xxxx USING btree (a) WITH (fillfactor=80) TABLESPACE pg_default |    2
+ public | idx_t1_a_xx | CREATE INDEX idx_t1_a_xx ON txx_xxxx USING btree (a) WITH (fillfactor=80) TABLESPACE pg_default |    1
+(2 rows)
+
+\c - - - :worker_2_port
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema |      Name      |                                             Definition                                             | Size
+---------------------------------------------------------------------
+ public | idx_t1_a_xx | CREATE INDEX idx_t1_a_xx ON txx_xxxx USING btree (a) WITH (fillfactor=80) TABLESPACE pg_default |    2
+ public | idx_t1_a_xx | CREATE INDEX idx_t1_a_xx ON txx_xxxx USING btree (a) WITH (fillfactor=80) TABLESPACE pg_default |    2
+(2 rows)
+
+\c - - - :master_port
+-- reindex table
+-- expect 0
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :master_port
+reindex table t1;
+-- expect 2
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- reindex index
+\c - - - :master_port
+drop index idx_t1_a;
+CREATE INDEX idx_t1_a ON t1 (a);
+-- expect 0
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+\c - - - :master_port
+reindex index idx_t1_a;
+-- expect 2
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- create and reindex index concurrently
+\c - - - :master_port
+drop index idx_t1_a;
+CREATE INDEX concurrently idx_t1_a ON t1 (a);
+-- expect 0
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+\c - - - :master_port
+reindex index concurrently idx_t1_a;
+-- expect 0 concurrently reindex make a new oid
+\c - - - :worker_1_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+\c - - - :worker_2_port
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     2
+(1 row)
+
+-- drop index
+\c - - - :master_port
+drop index idx_t1_a;
+\c - - - :worker_1_port
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema | Name | Definition | Size
+---------------------------------------------------------------------
+(0 rows)
+
+\c - - - :worker_2_port
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema | Name | Definition | Size
+---------------------------------------------------------------------
+(0 rows)
+
+-- rename table
+\c - - - :master_port
+ALTER TABLE t1 RENAME TO t2;
+select * from t2 order by a;
+ a
+---------------------------------------------------------------------
+ 1
+ 2
+ 3
+ 4
+(4 rows)
+
+-- drop table
+drop table t2;
+\c - - - :worker_1_port
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+\c - - - :worker_2_port
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+----------------------- test 2: vacuum propagate -----------------------------
+\c - - - :master_port
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+set spq.log_remote_commands = true;
+set spq.grep_remote_commands = '%VACUUM%';
+vacuum analyze t1;
+NOTICE:  issuing VACUUM (ANALYZE) public.txx_xxxx
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing VACUUM (ANALYZE) public.txx_xxxx
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing VACUUM (ANALYZE) public.txx_xxxx
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing VACUUM (ANALYZE) public.txx_xxxx
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+set spq.log_remote_commands = false;
+drop table t1;
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+NOTICE:  Copying data from local table...
+CONTEXT:  referenced column: create_distributed_table
+NOTICE:  copying the data has completed
+DETAIL:  The local data in the table is no longer visible, but is still on disk.
+HINT:  To remove the local data, run: SELECT truncate_local_data_after_distributing_table($$public.t1$$)
+CONTEXT:  referenced column: create_distributed_table
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+set spq.log_remote_commands = true;
+set spq.grep_remote_commands = '%VACUUM%';
+vacuum;
+NOTICE:  issuing SET spq.enable_ddl_propagation TO 'off'
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing SET spq.enable_ddl_propagation TO 'off'
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing VACUUM
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing VACUUM
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing SET spq.enable_ddl_propagation TO 'on'
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+NOTICE:  issuing SET spq.enable_ddl_propagation TO 'on'
+DETAIL:  on server xxxxx@localhost:xxxxx connectionId: xxxxxxx
+set spq.log_remote_commands = false;
+\c - - - :master_port
+drop table t1;
+----------------------- test 3: test different collumn type as partition collum -----------------------------
+\c - - - :master_port
+-- test varchar as partition column
+create table t1 (a varchar(10), b int, c varchar(20));
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+insert into t1 values ('aaa1', 1, 'ccc1');
+insert into t1 values ('aaa2', 2, 'ccc2');
+insert into t1 values ('aaa3', 3, 'ccc3');
+insert into t1 values ('aaa4', 4, 'ccc4');
+select * from t1 order by a;
+  a   | b |  c
+---------------------------------------------------------------------
+ aaa1 | 1 | ccc1
+ aaa2 | 2 | ccc2
+ aaa3 | 3 | ccc3
+ aaa4 | 4 | ccc4
+(4 rows)
+
+drop table t1;
+create table t1 (a int, b bigint, c tinyint, d char(10), e varchar(10), f text, g date, h vector, i bit,j sparsevec);
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'b', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'c', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'd', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'e', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'f', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+SELECT create_distributed_table('t1', 'g', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select undistribute_table('t1');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: undistribute_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: undistribute_table
+ undistribute_table
+---------------------------------------------------------------------
+
+(1 row)
+
+-- expect error
+SELECT create_distributed_table('t1', 'h', shard_count:=4);
+ERROR:  data type vector has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: create_distributed_table
+-- expect error
+SELECT create_distributed_table('t1', 'i', shard_count:=4);
+ERROR:  data type bit has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: create_distributed_table
+-- expect error
+SELECT create_distributed_table('t1', 'j', shard_count:=4);
+ERROR:  data type sparsevec has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: create_distributed_table
+SELECT create_distributed_table('t1', 'a', shard_count:=4);
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'b');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'c');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'd');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'e');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'f');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+select alter_distributed_table('t1', 'g');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  moving the data of public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  dropping the old public.t1
+CONTEXT:  referenced column: alter_distributed_table
+NOTICE:  renaming the new table to public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ alter_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+-- expect error
+select alter_distributed_table('t1', 'h');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ERROR:  data type vector has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: alter_distributed_table
+-- expect error
+select alter_distributed_table('t1', 'i');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ERROR:  data type bit has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: alter_distributed_table
+-- expect error
+select alter_distributed_table('t1', 'j');
+NOTICE:  creating a new table for public.t1
+CONTEXT:  referenced column: alter_distributed_table
+ERROR:  data type sparsevec has no default operator class for specified partition method
+DETAIL:  Partition column types must have a default operator class defined.
+CONTEXT:  referenced column: alter_distributed_table
+drop table t1;
+----------------------- test 4: test local table ddl -----------------------------
+\c - - - :master_port
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+EXPLAIN SELECT * FROM t1 ORDER BY a;
+                         QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=168.89..174.90 rows=2402 width=4)
+   Sort Key: a
+   ->  Seq Scan on t1  (cost=0.00..34.02 rows=2402 width=4)
+(3 rows)
+
+select * from t1 order by a;
+ a
+---------------------------------------------------------------------
+ 1
+ 2
+ 3
+ 4
+(4 rows)
+
+delete from t1;
+-- add column
+ALTER TABLE t1 ADD COLUMN b INT;
+insert into t1 values (1, 1), (2, 2), (3, 3), (4, 4);
+select * from t1 order by a;
+ a | b
+---------------------------------------------------------------------
+ 1 | 1
+ 2 | 2
+ 3 | 3
+ 4 | 4
+(4 rows)
+
+-- alter table
+ALTER TABLE t1 ALTER COLUMN b TYPE BIGINT;
+select * from t1 order by a;
+ a | b
+---------------------------------------------------------------------
+ 1 | 1
+ 2 | 2
+ 3 | 3
+ 4 | 4
+(4 rows)
+
+ALTER TABLE t1 RENAME COLUMN b TO bb;
+select * from t1 order by a;
+ a | bb
+---------------------------------------------------------------------
+ 1 |  1
+ 2 |  2
+ 3 |  3
+ 4 |  4
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN bb;
+select * from t1 order by a;
+ a
+---------------------------------------------------------------------
+ 1
+ 2
+ 3
+ 4
+(4 rows)
+
+-- create index
+CREATE INDEX idx_t1_a ON t1 (a);
+EXPLAIN SELECT * FROM t1 ORDER BY a;
+                       QUERY PLAN
+---------------------------------------------------------------------
+ Sort  (cost=1.08..1.09 rows=4 width=4)
+   Sort Key: a
+   ->  Seq Scan on t1  (cost=0.00..1.04 rows=4 width=4)
+(3 rows)
+
+-- alter index
+alter index idx_t1_a set (fillfactor = 80);
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema |   Name   |                                       Definition                                       | Size
+---------------------------------------------------------------------
+ public | idx_t1_a | CREATE INDEX idx_t1_a ON t1 USING btree (a) WITH (fillfactor=80) TABLESPACE pg_default |    2
+(1 row)
+
+-- reindex table
+-- expect 0
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+reindex table t1;
+-- expect 1
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- reindex index
+drop index idx_t1_a;
+CREATE INDEX idx_t1_a ON t1 (a);
+-- expect 0
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+reindex index idx_t1_a;
+-- expect 1
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid != relfilenode;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- create and reindex index concurrently
+drop index idx_t1_a;
+CREATE INDEX concurrently idx_t1_a ON t1 (a);
+-- expect 0
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+reindex index concurrently idx_t1_a;
+-- expect 0 concurrently reindex make a new oid
+select count(1) from pg_class where relname like 'idx_t1_a%' and oid = relfilenode;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+-- drop index
+drop index idx_t1_a;
+SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) as "Definition",
+  c.relpages as "Size"
+FROM pg_catalog.pg_index i
+JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'i'
+  AND n.nspname <> 'pg_catalog'
+  AND n.nspname <> 'information_schema'
+  AND n.nspname !~ '^pg_toast'
+  AND pg_catalog.pg_table_is_visible(i.indrelid)
+ORDER BY 1,2;
+ Schema | Name | Definition | Size
+---------------------------------------------------------------------
+(0 rows)
+
+-- rename table
+ALTER TABLE t1 RENAME TO t2;
+-- drop table
+drop table t2;
+SELECT table_schema AS "Schema", table_name AS "Name", table_type AS "Type"
+  FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_schema, table_name;
+ Schema |    Name    | Type
+---------------------------------------------------------------------
+ public | spq_tables | VIEW
+(1 row)
+
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+-- expect 0
+select count(1) from pg_stat_all_tables where relname = 't1' and last_vacuum is not null;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+vacuum analyze t1;
+-- expect 1
+select count(1) from pg_stat_all_tables where relname = 't1' and last_vacuum is not null;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+drop table t1;
+create table t1 (a int);
+insert into t1 values (1), (2), (3), (4);
+-- expect 0
+select count(1) from pg_stat_all_tables where relname = 't1' and last_vacuum is not null;
+ count
+---------------------------------------------------------------------
+     0
+(1 row)
+
+vacuum;
+-- expect 1
+select count(1) from pg_stat_all_tables where relname = 't1' and last_vacuum is not null;
+ count
+---------------------------------------------------------------------
+     1
+(1 row)
+
+drop table t1;

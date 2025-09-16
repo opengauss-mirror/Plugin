@@ -1,0 +1,125 @@
+CREATE SCHEMA tools;
+SET SEARCH_PATH TO 'tools';
+SET spq.next_shard_id TO 1240000;
+SELECT * FROM run_command_on_all_nodes(
+	'SELECT 1 + 1;'
+);
+ nodeid | success | result
+---------------------------------------------------------------------
+      3 | t       | 2
+      8 | t       | 2
+      4 | t       | 2
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	$$SELECT '包含中文、 单双引号'' ""、换行符\n';$$
+);
+ nodeid | success |              result
+---------------------------------------------------------------------
+      3 | t       | 包含中文、 单双引号' ""、换行符\n
+      8 | t       | 包含中文、 单双引号' ""、换行符\n
+      4 | t       | 包含中文、 单双引号' ""、换行符\n
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'CREATE TABLE IF NOT EXISTS worker_test(id INT, note TEXT);'
+);
+ nodeid | success |    result
+---------------------------------------------------------------------
+      3 | t       | CREATE TABLE
+      8 | t       | CREATE TABLE
+      4 | t       | CREATE TABLE
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'CREATE INDEX IF NOT EXISTS idx_note ON worker_test(note);'
+);
+ nodeid | success |    result
+---------------------------------------------------------------------
+      3 | t       | CREATE INDEX
+      8 | t       | CREATE INDEX
+      4 | t       | CREATE INDEX
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	$$INSERT INTO worker_test VALUES(1,'hello worker');$$
+);
+ nodeid | success |   result
+---------------------------------------------------------------------
+      3 | t       | INSERT 0 1
+      8 | t       | INSERT 0 1
+      4 | t       | INSERT 0 1
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'SELECT row_to_json(worker_test) FROM worker_test LIMIT 1;'
+);
+ nodeid | success |             result
+---------------------------------------------------------------------
+      3 | t       | {"id":1,"note":"hello worker"}
+      8 | t       | {"id":1,"note":"hello worker"}
+      4 | t       | {"id":1,"note":"hello worker"}
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'DROP TABLE IF EXISTS worker_test;'
+);
+ nodeid | success |   result
+---------------------------------------------------------------------
+      3 | t       | DROP TABLE
+      8 | t       | DROP TABLE
+      4 | t       | DROP TABLE
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	$q$
+	CREATE OR REPLACE FUNCTION greet(name TEXT) RETURNS TEXT AS $$
+	BEGIN RETURN 'HELLO, ' || name;END;
+	$$ LANGUAGE plpgsql;
+	$q$
+);
+ nodeid | success |     result
+---------------------------------------------------------------------
+      3 | t       | CREATE FUNCTION
+      8 | t       | CREATE FUNCTION
+      4 | t       | CREATE FUNCTION
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'SELECT greet(''spq'');'
+);
+ nodeid | success |   result
+---------------------------------------------------------------------
+      3 | t       | HELLO, spq
+      8 | t       | HELLO, spq
+      4 | t       | HELLO, spq
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	$q$
+	CREATE OR REPLACE PROCEDURE hello_world()
+	AS
+	BEGIN
+		RAISE NOTICE 'Hello, openGauss!';
+	END;
+	$q$
+);
+ nodeid | success |      result
+---------------------------------------------------------------------
+      3 | t       | CREATE PROCEDURE
+      8 | t       | CREATE PROCEDURE
+      4 | t       | CREATE PROCEDURE
+(3 rows)
+
+SELECT * FROM run_command_on_all_nodes(
+	'CALL hello_world();'
+);
+ nodeid | success | result
+---------------------------------------------------------------------
+      3 | t       |
+      8 | t       |
+      4 | t       |
+(3 rows)
+
+DROP SCHEMA tools CASCADE;
+RESET SEARCH_PATH;

@@ -1,0 +1,14 @@
+CREATE TABLE test (id int, val bit(3));
+SELECT create_distributed_table('test', 'id', 'append');
+ERROR:  invalid input value for enum "__$spq$__".distribution_type: "append"
+CONTEXT:  referenced column: create_distributed_table
+SELECT create_distributed_table('test', 'id', 'range');
+ERROR:  invalid input value for enum "__$spq$__".distribution_type: "range"
+CONTEXT:  referenced column: create_distributed_table
+SELECT create_distributed_table('test', 'id', 'hash');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+DROP TABLE test

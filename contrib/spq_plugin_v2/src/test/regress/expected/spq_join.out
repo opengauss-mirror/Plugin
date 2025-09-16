@@ -1,0 +1,115 @@
+CREATE SCHEMA test_join;
+SET search_path TO test_join;
+SET spq.next_shard_id TO 1240000;
+--test local table join distribute table
+CREATE TABLE local_users(
+	user_id INT PRIMARY KEY,
+	name TEXT NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "local_users_pkey" for table "local_users"
+CREATE TABLE dist_orders(
+	user_id INT PRIMARY KEY,
+	amount DECIMAL(10,2) NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dist_orders_pkey" for table "dist_orders"
+SELECT create_distributed_table('dist_orders', 'user_id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO local_users VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
+INSERT INTO dist_orders VALUES (1, 100.00), (2, 200.00), (3, 150.50);
+SELECT u.name, o.amount FROM local_users u JOIN dist_orders o ON u.user_id = o.user_id ORDER BY o.amount;
+  name   | amount
+---------------------------------------------------------------------
+ Alice   | 100.00
+ Charlie | 150.50
+ Bob     | 200.00
+(3 rows)
+
+--test distribute table join local table
+CREATE TABLE local_products(
+	product_id INT PRIMARY KEY,
+	name TEXT NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "local_products_pkey" for table "local_products"
+CREATE TABLE dist_sales(
+	product_id INT PRIMARY KEY,
+	quantity INT NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dist_sales_pkey" for table "dist_sales"
+SELECT create_distributed_table('dist_sales', 'product_id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO local_products VALUES (101, 'Laptop'), (102, 'Phone'), (103, 'Tablet');
+INSERT INTO dist_sales VALUES (101, 10), (102, 20), (103, 15);
+SELECT p.name, s.quantity
+FROM dist_sales s
+JOIN local_products p
+ON s.product_id = p.product_id ORDER BY s.quantity;
+  name  | quantity
+---------------------------------------------------------------------
+ Laptop |       10
+ Tablet |       15
+ Phone  |       20
+(3 rows)
+
+--test distribute table join distribute table
+CREATE TABLE dist_cus(
+	user_id INT PRIMARY KEY,
+	name TEXT NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dist_cus_pkey" for table "dist_cus"
+SELECT create_distributed_table('dist_cus', 'user_id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+CREATE TABLE dist_ord(
+	user_id INT PRIMARY KEY,
+	customer_id INT NOT NULL,
+	amount DECIMAL(10,2) NOT NULL
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dist_ord_pkey" for table "dist_ord"
+SELECT create_distributed_table('dist_ord', 'user_id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT INTO dist_cus VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
+INSERT INTO dist_ord VALUES (1, 1, 500.00), (2, 2, 350.00), (3, 3, 720.00);
+set spq.enable_repartition_joins = on;
+show spq.enable_repartition_joins;
+ spq.enable_repartition_joins
+---------------------------------------------------------------------
+ on
+(1 row)
+
+SELECT u.name, o.amount FROM dist_cus u JOIN dist_orders o ON u.user_id = o.user_id ORDER BY o.amount;
+ERROR:  invalid input syntax for type numeric: "XXXX"
+CONTEXT:  while executing command on localhost:xxxxx
+set spq.enable_repartition_joins = off;
+show spq.enable_repartition_joins;
+ spq.enable_repartition_joins
+---------------------------------------------------------------------
+ off
+(1 row)
+
+SELECT u.name, o.amount FROM dist_cus u JOIN dist_orders o ON u.user_id = o.user_id ORDER BY o.amount;
+ERROR:  the query contains a join that requires repartitioning
+HINT:  repartitioning is not supported in current version.
+DROP SCHEMA test_join CASCADE;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to table local_users
+drop cascades to table dist_orders
+drop cascades to table local_products
+drop cascades to table dist_sales
+drop cascades to table dist_cus
+drop cascades to table dist_ord
+RESET SEARCH_PATH;
