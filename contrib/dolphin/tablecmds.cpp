@@ -15500,7 +15500,11 @@ static ObjectAddress ATExecAddIndex(AlteredTableInfo* tab, Relation rel, IndexSt
             Oid partOid = InvalidOid;
             Oid partIndexOid = InvalidOid;
 
-            partOids = relationGetPartitionOidList(rel);
+            if (!RelationIsSubPartitioned(rel)) {
+                partOids = relationGetPartitionOidList(rel);
+            } else {
+                partOids = RelationGetSubPartitionOidList(rel);
+            }
             foreach (cell, partOids) {
                 partOid = lfirst_oid(cell);
                 partIndexOid = getPartitionIndexOid(RelationGetRelid(irel), partOid);
@@ -15509,7 +15513,7 @@ static ObjectAddress ATExecAddIndex(AlteredTableInfo* tab, Relation rel, IndexSt
                 RelationPreserveStorage(partition->pd_node, true);
                 partitionClose(irel, partition, NoLock);
             }
-            releasePartitionOidList(&partOids);
+            list_free_ext(partOids);
         }
 
         index_close(irel, NoLock);
@@ -19395,7 +19399,11 @@ void tryReusePartedIndex(Oid oldId, IndexStmt* stmt, Relation rel)
         stmt->oldPSortOid = irel->rd_rel->relcudescrelid;
         stmt->indexOid = oldId;
 
-        partOids = relationGetPartitionOidList(rel);
+        if (!RelationIsSubPartitioned(rel)) {
+            partOids = relationGetPartitionOidList(rel);
+        } else {
+            partOids = RelationGetSubPartitionOidList(rel);
+        }
         foreach (cell, partOids) {
             partOid = lfirst_oid(cell);
             partIndexOid = getPartitionIndexOid(oldId, partOid);
@@ -19406,7 +19414,7 @@ void tryReusePartedIndex(Oid oldId, IndexStmt* stmt, Relation rel)
             stmt->partIndexOldPSortOid = lappend_oid(stmt->partIndexOldPSortOid, partition->pd_part->relcudescrelid);
             partitionClose(irel, partition, NoLock);
         }
-        releasePartitionOidList(&partOids);
+        list_free_ext(partOids);
 
         index_close(irel, NoLock);
     }
