@@ -1,6 +1,8 @@
 
 /*
- * Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+ * Portions Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+ * Portions Copyright (c) 1996-2017, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, Regents of the University of California
  *
  * openGauss is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.

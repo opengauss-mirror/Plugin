@@ -1,3 +1,11 @@
+/*-------------------------------------------------------------------------
+ *
+ * Pseudo-Random Number Generator
+ *
+ * Copyright (c) 2021-2025, PostgreSQL Global Development Group
+ *
+ *-------------------------------------------------------------------------
+ */
 #include <unistd.h>
 #include <cmath>
 #include "postgres.h"
