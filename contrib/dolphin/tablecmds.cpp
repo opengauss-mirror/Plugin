@@ -3695,10 +3695,7 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
                 (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
                     errmsg("%s is redistributing, please retry later.", delrel->rd_rel->relname.data)));
         }
-
-        if (delrel != NULL) {
-            relation_close(delrel, NoLock);
-        }
+          
 #ifdef DOLPHIN
         /* 
         * check if the relation column type is enum
@@ -3731,6 +3728,9 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
             ReleaseSysCache(tuple);
         }
 #endif
+        if (delrel != NULL) {
+            relation_close(delrel, NoLock);
+        }        
         /* OK, we're ready to delete this one */
         obj.classId = RelationRelationId;
         obj.objectId = relOid;

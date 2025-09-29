@@ -6711,54 +6711,56 @@ static cJSON *json_merge_patch_unit(cJSON *j1, cJSON *j2)
         return result;
     }
 
-    switch (j1->type & 0xFF) {
-        case cJSON_Object: {
-            switch (j2->type & 0xFF) {
-                case cJSON_Object: {
-                    result = addTwoObjectsPatch(j1, j2);
-                    break;
+    if (j1 != NULL && j2 != NULL) {
+        switch (j1->type & 0xFF) {
+            case cJSON_Object: {
+                switch (j2->type & 0xFF) {
+                    case cJSON_Object: {
+                        result = addTwoObjectsPatch(j1, j2);
+                        break;
+                    }
+                    case cJSON_Array:
+                    case cJSON_True:
+                    case cJSON_False:
+                    case cJSON_NULL:
+                    case cJSON_Number:
+                    case cJSON_String: {
+                        result = j2;
+                        break;
+                    }
+                    default:
+                        elog(ERROR, "unexpected json type: %d", j2->type);
                 }
-                case cJSON_Array:
-                case cJSON_True:
-                case cJSON_False:
-                case cJSON_NULL:
-                case cJSON_Number:
-                case cJSON_String: {
-                    result = j2;
-                    break;
-                }
-                default:
-                    elog(ERROR, "unexpected json type: %d", j2->type);
+                break;
             }
-            break;
-        }
-        case cJSON_Array:
-        case cJSON_True:
-        case cJSON_False:
-        case cJSON_NULL:
-        case cJSON_Number:
-        case cJSON_String: {
-            switch (j2->type & 0xFF) {
-                case cJSON_Object: {
-                    result = addOneObjectsPatch(j2);
-                    break;
+            case cJSON_Array:
+            case cJSON_True:
+            case cJSON_False:
+            case cJSON_NULL:
+            case cJSON_Number:
+            case cJSON_String: {
+                switch (j2->type & 0xFF) {
+                    case cJSON_Object: {
+                        result = addOneObjectsPatch(j2);
+                        break;
+                    }
+                    case cJSON_Array:
+                    case cJSON_True:
+                    case cJSON_False:
+                    case cJSON_NULL:
+                    case cJSON_Number:
+                    case cJSON_String: {
+                        result = j2;
+                        break;
+                    }
+                    default:
+                        elog(ERROR, "unexpected json type: %d", j2->type & 0xFF);
                 }
-                case cJSON_Array:
-                case cJSON_True:
-                case cJSON_False:
-                case cJSON_NULL:
-                case cJSON_Number:
-                case cJSON_String: {
-                    result = j2;
-                    break;
-                }
-                default:
-                    elog(ERROR, "unexpected json type: %d", j2->type & 0xFF);
+                break;
             }
-            break;
+            default:
+                elog(ERROR, "unexpected json type: %d", j1->type & 0xFF);
         }
-        default:
-            elog(ERROR, "unexpected json type: %d", j1->type & 0xFF);
     }
 
     return result;

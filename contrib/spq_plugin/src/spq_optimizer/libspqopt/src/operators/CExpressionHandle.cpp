@@ -1374,7 +1374,7 @@ CExpressionHandle::PexprScalarRepChild(ULONG child_index) const
 		return pexprScalar;
 	}
 
-	if (NULL != m_pexpr && NULL != (*m_pexpr)[child_index]->Pgexpr())
+	if (NULL != m_pexpr && NULL != (*m_pexpr)[child_index] && NULL != (*m_pexpr)[child_index]->Pgexpr())
 	{
 		// if the expression does not come from a group, but its child does then
 		// get the scalar child from that group
@@ -1386,6 +1386,9 @@ CExpressionHandle::PexprScalarRepChild(ULONG child_index) const
 	}
 
 	// access scalar expression from the child expression node
+	SPQOS_ASSERT(m_pexpr);
+	SPQOS_ASSERT((*m_pexpr)[child_index]);
+	SPQOS_ASSERT((*m_pexpr)[child_index]->Pop());
 	SPQOS_ASSERT((*m_pexpr)[child_index]->Pop()->FScalar());
 
 	return (*m_pexpr)[child_index];
