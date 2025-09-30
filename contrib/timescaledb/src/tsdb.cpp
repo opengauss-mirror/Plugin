@@ -2393,11 +2393,11 @@ void set_extension_index(uint32 index)
 }
 
 tsdb_session_context* get_session_context(bool is_from_PG_init)  
-{   
-	if (NULL == u_sess || NULL == u_sess->attr.attr_common.extension_session_vars_array) 
-	{
-		tsdb_session_context* psc = (tsdb_session_context*)MemoryContextAllocZero(u_sess->self_mem_cxt, sizeof(tsdb_session_context));
-		psc->tsdb_pinned_caches = NIL;
+{
+    if (NULL != u_sess && NULL == u_sess->attr.attr_common.extension_session_vars_array) {
+        tsdb_session_context* psc =
+            (tsdb_session_context*)MemoryContextAllocZero(u_sess->self_mem_cxt, sizeof(tsdb_session_context));
+        psc->tsdb_pinned_caches = NIL;
 		psc->tsdb_pinned_caches_mctx = NULL;
 		psc->tsdb_hypertable_cache_current = NULL;     
 		psc->tsdb_planner_hcaches = NIL;
@@ -2422,12 +2422,11 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
 		psc->tsdb_lock_named_request_allowed = true;
         psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
 		return psc;
-	}
-	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) 
-	{
-		init_session_vars();
-	}
-	return  (tsdb_session_context*)u_sess->attr.attr_common.extension_session_vars_array[tsdb_index];  
+    }
+    if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) {
+        init_session_vars();
+    }
+    return (tsdb_session_context*)u_sess->attr.attr_common.extension_session_vars_array[tsdb_index];
 }
 
 void init_session_vars(void) 
