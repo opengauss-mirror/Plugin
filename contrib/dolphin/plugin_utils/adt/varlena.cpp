@@ -1990,7 +1990,7 @@ static text* text_insert_func(text* t1, text* t2, int sp, int sl)
 
 int int64_to_int(int64 l_num)
 {
-    int i_num;
+    int i_num = 0;
     if (l_num > PG_INT32_MAX) {
         if (!SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("integer out of range")));
@@ -10612,7 +10612,7 @@ Datum make_set(PG_FUNCTION_ARGS)
     int64 num = PG_GETARG_INT64(0);
     StringInfoData buf;
     text* result = NULL;
-    int64 temp_num;
+    int64 temp_num = 0;
 
     if (num == 0) {
         PG_RETURN_NULL();
@@ -11172,6 +11172,9 @@ Datum ord_numeric(PG_FUNCTION_ARGS)
     int sign = NUMERIC_SIGN(num);
 
     tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    if (unlikely(!tmp)) {
+        PG_RETURN_INT128(result);
+    }
     char* ptr = strchr(tmp, '.');
     if (ptr != NULL) {
         // position of '.'
@@ -11192,10 +11195,7 @@ Datum ord_numeric(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("numeric out of range")));
         }
     }
-    if (tmp != NULL)
-        result = ((int128)((*tmp) & 0xff));
-    else 
-        result = 0;
+    result = ((int128)((*tmp) & 0xff));
     pfree_ext(tmp);
     PG_RETURN_INT128(result);
 }

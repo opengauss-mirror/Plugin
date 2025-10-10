@@ -1610,6 +1610,7 @@ static void CheckDuplicateListSlices(List* pos, FormData_pg_attribute* attrs, Di
     if (pos == NULL || attrs == NULL) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
             errmsg("invalid list distribution table definition")));
+        return; /* suppress the static check warmings */
     }
 
     sliceList = distby->distState->sliceList;
@@ -1885,6 +1886,7 @@ static void CheckSliceReferenceValidity(Oid relid, DistributeBy *distributeby, T
         ereport(ERROR,
             (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                 errmsg("The referenced table is not distributed")));
+        return; /* suppress the static check warmings */
     }
 
     baseType = baseLocInfo->locatorType;
@@ -5526,8 +5528,10 @@ int2vector* buildPartitionKey(List* keys, TupleDesc tupledsc)
     bool isFunc = false;
     foreach (cell, keys) {
         col = (ColumnRef*)GetColumnRef((Node*)lfirst(cell), &isExpr, &isFunc);
-        if (!col)
+        if (!col) {
             ereport(ERROR,(errcode(ERRCODE_UNDEFINED_COLUMN),(errmsg("The partition key doesn't have any column."))));
+            return partkey; /* suppress the static check warmings */
+        }
         if (isExpr && keys->length > 1)
             ereport(ERROR,(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),(errmsg("The multi partition expr keys are not supported."))));
         columName = ((Value*)linitial(col->fields))->val.str;

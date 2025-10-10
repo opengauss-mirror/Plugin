@@ -378,7 +378,7 @@ vec_text_substr(Datum str, int32 start, int32 length, bool *is_null, mblen_conve
 	}
 
 	S1 = Max(S, 1);
-	
+	E = 0;
 	if (withlen == false)
 	{
 		slice_size = L1 = -1;

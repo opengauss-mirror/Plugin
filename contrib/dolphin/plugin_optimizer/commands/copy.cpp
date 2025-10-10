@@ -1049,12 +1049,16 @@ Oid DoCopy(CopyStmt* stmt, const char* queryString, uint64 *processed)
 
         /* Open and lock the relation, using the appropriate lock type. */
         rel = heap_openrv(stmt->relation, (is_from ? RowExclusiveLock : AccessShareLock));
+        if (rel == NULL) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TEMP_OBJECTS), errmsg("heap_openrv returns null.")));
+            return InvalidOid; /* suppress the static check warmings */
+        }
 
         TrForbidAccessRbObject(RelationRelationId, RelationGetRelid(rel), stmt->relation->relname);
 
         if (STMT_RETRY_ENABLED) {
         // do noting for now, if query retry is on, just to skip validateTempRelation here
-        } else if (rel != NULL && rel->rd_rel->relpersistence == RELPERSISTENCE_TEMP && !validateTempNamespace(rel->rd_rel->relnamespace)) {
+        } else if (rel->rd_rel->relpersistence == RELPERSISTENCE_TEMP && !validateTempNamespace(rel->rd_rel->relnamespace)) {
             heap_close(rel, (is_from ? RowExclusiveLock : AccessShareLock));
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEMP_OBJECTS),
@@ -1064,7 +1068,7 @@ Oid DoCopy(CopyStmt* stmt, const char* queryString, uint64 *processed)
         }
 
         /* Table of COPY FROM can not be blockchain related table */
-        if (is_from && rel != NULL) {
+        if (is_from) {
             Oid relid = RelationGetRelid(rel);
             Oid nspid = RelationGetNamespace(rel);
             if (nspid == PG_BLOCKCHAIN_NAMESPACE || relid == GsGlobalChainRelationId) {
@@ -1074,7 +1078,7 @@ Oid DoCopy(CopyStmt* stmt, const char* queryString, uint64 *processed)
         }
 
         /* @Online expansion: check if the table is in redistribution read only mode */
-        if (rel != NULL && is_from && RelationInClusterResizingWriteErrorMode(rel))
+        if (is_from && RelationInClusterResizingWriteErrorMode(rel))
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_OPERATION),
                     errmsg("%s is redistributing, please retry later.", rel->rd_rel->relname.data)));
@@ -5287,9 +5291,7 @@ uint64 CopyFrom(CopyState cstate)
     }
 #endif   /* ENABLE_MULTIPLE_NODES */
 
-    if (CopyMem != NULL) {
-        pfree_ext(CopyMem);
-    }
+    pfree_ext(CopyMem);
 
     CStoreInsert::DeInitInsertArg(args);
 
@@ -9014,6 +9016,8 @@ void SetFixedAlignment(TupleDesc tupDesc, Relation rel, FixFormatter* formatter,
                         errmsg("column \"%s\" of relation \"%s\" does not exist", name, RelationGetRelationName(rel))));
             else
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_COLUMN), errmsg("column \"%s\" does not exist", name)));
+            
+            return; /* suppress the static check warmings */
         }
 
         formatter->fieldDesc[i].attnum = attr->attnum;
@@ -9532,6 +9536,7 @@ bool getNextCopySegment(CopyState cstate)
     }
     if (!cstate->copy_file) {
         ereport(ERROR, (errcode_for_file_access(), errmsg("unable to open file \"%s\"", segment->filename)));
+        return false; /* suppress the static check warmings */
     }
 
     /* set the file read start postion */
@@ -9915,6 +9920,7 @@ int HandleGDSCmd(CopyState cstate, StringInfo buf)
             (errmodule(MOD_GDS),
                 errcode(ERRORCODE_ASSERT_FAILED),
                 errmsg("GDS stream is null pointer, the dynamic cast failed")));
+        return 0; /* suppress the static check warmings */
     }
 
     switch (cmd->m_type) {
@@ -10974,6 +10980,7 @@ static void CopyGetWhenExprAttFieldno(CopyState cstate, LoadWhenExpr *when, List
     }
     if (when->attname == NULL) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_COLUMN_REFERENCE), errmsg("WHEN no field name")));
+        return; /* suppress the static check warmings */
     }
 
     if (attnamelist == NULL) {
@@ -11092,6 +11099,7 @@ static int CopyGetColumnListIndex(CopyState cstate, List *attnamelist, const cha
     int index = 0;
     if (colname == NULL) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_COLUMN_REFERENCE), errmsg("Column name is NULL")));
+        return 0; /* suppress the static check warmings */
     }
 
     if (attnamelist == NULL) {
