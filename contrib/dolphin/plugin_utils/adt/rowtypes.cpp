@@ -529,9 +529,7 @@ Datum record_out(PG_FUNCTION_ARGS)
         }
         if (nq)
             appendStringInfoCharMacro(&buf, '"');
-        if (value != NULL) {
-            pfree_ext(value);
-        }
+        pfree_ext(value);
     }
 
     appendStringInfoChar(&buf, ')');

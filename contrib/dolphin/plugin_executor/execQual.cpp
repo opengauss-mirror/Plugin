@@ -567,11 +567,13 @@ static Datum ExecEvalAggref(AggrefExprState* aggref, ExprContext* econtext, bool
    if (isDone != NULL)
        *isDone = ExprSingleResult;
 
-   if (econtext->ecxt_aggvalues == NULL) /* safety check */
+   if (econtext->ecxt_aggvalues == NULL) { /* safety check */
        ereport(ERROR,
                (errcode(ERRCODE_INVALID_AGG),
                 errmodule(MOD_EXECUTOR),
                 errmsg("no aggregates in this expression context")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
 
    *isNull = econtext->ecxt_aggnulls[aggref->aggno];
    return econtext->ecxt_aggvalues[aggref->aggno];
@@ -589,11 +591,13 @@ static Datum ExecEvalWindowFunc(WindowFuncExprState* wfunc, ExprContext* econtex
    if (isDone != NULL)
        *isDone = ExprSingleResult;
 
-   if (econtext->ecxt_aggvalues == NULL) /* safety check */
+   if (econtext->ecxt_aggvalues == NULL) { /* safety check */
        ereport(ERROR,
                (errcode(ERRCODE_WINDOWING_ERROR),
                 errmodule(MOD_EXECUTOR),
                 errmsg("no window functions in this expression context")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
 
    *isNull = econtext->ecxt_aggnulls[wfunc->wfuncno];
    return econtext->ecxt_aggvalues[wfunc->wfuncno];
@@ -655,6 +659,7 @@ static Datum ExecEvalScalarVar(ExprState* exprstate, ExprContext* econtext, bool
     if (slot == nullptr) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ATTRIBUTE), errmodule(MOD_EXECUTOR),
                         errmsg("attribute number %d does not exists.", attnum)));
+        return (Datum)0; /* suppress the static check warmings */
     }
 
     /*
@@ -1571,10 +1576,12 @@ Datum GetAttributeByNum(HeapTupleHeader tuple, AttrNumber attrno, bool* isNull)
    if (!AttributeNumberIsValid(attrno))
        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("invalid attribute number %d", attrno)));
 
-   if (isNull == NULL)
+   if (isNull == NULL) {
        ereport(ERROR,
                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("a NULL isNull pointer was passed when get attribute by number.")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
 
    if (tuple == NULL) {
        /* Kinda bogus but compatible with old behavior... */
@@ -1624,10 +1631,12 @@ Datum GetAttributeByName(HeapTupleHeader tuple, const char* attname, bool* isNul
    if (attname == NULL)
        ereport(ERROR, (errcode(ERRCODE_INVALID_NAME), errmsg("invalid null attribute name")));
 
-   if (isNull == NULL)
+   if (isNull == NULL) {
        ereport(ERROR,
                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("a NULL isNull pointer was passed when get attribute by name.")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
 
    if (tuple == NULL) {
        /* Kinda bogus but compatible with old behavior... */
@@ -2334,6 +2343,7 @@ restart:
        if (unlikely(isDone == NULL)) {
            ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                            errmsg("set-valued function called in context that cannot accept a set")));
+            return (Datum)0; /* suppress the static check warmings */
        }
        econtext->hasSetResultStore = true;
         if (tuplestore_gettupleslot(fcache->funcResultStore, true, false, fcache->funcResultSlot)) {
@@ -2814,10 +2824,8 @@ static Datum ExecMakeFunctionResultNoSets(
        fcinfo->context = (Node *)node;
    }
 
-   if (econtext) {
-        fcinfo->can_ignore = econtext->can_ignore || (econtext->ecxt_estate && econtext->ecxt_estate->es_plannedstmt &&
-                 econtext->ecxt_estate->es_plannedstmt->hasIgnore);
-    }
+    fcinfo->can_ignore = econtext->can_ignore || (econtext->ecxt_estate && econtext->ecxt_estate->es_plannedstmt &&
+                econtext->ecxt_estate->es_plannedstmt->hasIgnore);
 
     /*
      * Incause of connet_by_root() and sys_connect_by_path() we need get the
@@ -3175,6 +3183,7 @@ Tuplestorestate* ExecMakeTableFunctionResult(
 
    if (unlikely(funcexpr == NULL)) {
        ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The input function expression is NULL.")));
+       return (Tuplestorestate*)NULL; /* suppress the static check warmings */
    }
    funcrettype = exprType((Node*)funcexpr->expr);
 
@@ -3535,12 +3544,9 @@ no_function_result:
    econtext->plpgsql_estate = NULL;
 
    if (has_refcursor) {
-       if (fcinfo.refcursor_data.argCursor != NULL)
-           pfree_ext(fcinfo.refcursor_data.argCursor);
-       if (fcinfo.refcursor_data.returnCursor != NULL)
-           pfree_ext(fcinfo.refcursor_data.returnCursor);
-       if (var_dno != NULL)
-           pfree_ext(var_dno);
+       pfree_ext(fcinfo.refcursor_data.argCursor);
+       pfree_ext(fcinfo.refcursor_data.returnCursor);
+       pfree_ext(var_dno);
    }
 
    /* reset the u_sess->SPI_cxt.is_stp, u_sess->SPI_cxt.is_proconfig_set
@@ -6766,11 +6772,13 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
 
        if (itemIsDone[resind] != ExprSingleResult) {
            /* We have a set-valued expression in the tlist */
-           if (isDone == NULL)
+           if (isDone == NULL) {
                ereport(ERROR,
                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("set-valued function called in context when calculate targetlist that cannot accept a "
                                "set")));
+                return false; /* suppress the static check warmings */
+            }
            if (itemIsDone[resind] == ExprMultipleResult) {
                /* we have undone sets in the tlist, set flag */
                *isDone = ExprMultipleResult;
@@ -7133,6 +7141,7 @@ static Datum ExecEvalPriorExpr(ExprState* exprstate, ExprContext* econtext, bool
     if (slot == nullptr) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ATTRIBUTE), errmodule(MOD_EXECUTOR),
                         errmsg("attribute number %d does not exists.", attnum)));
+        return (Datum)0; /* suppress the static check warmings */
     }
     if (attnum > 0) {
         TupleDesc slot_tupdesc = slot->tts_tupleDescriptor;

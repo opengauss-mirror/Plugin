@@ -452,6 +452,7 @@ static Node* sql_fn_resolve_param_name(SQLFunctionParseInfoPtr p_info, const cha
 
     if (param_name == NULL) {
         ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("paramname should not be NULL")));
+        return NULL; /* suppress the static check warmings */
     }
 
     for (i = 0; i < p_info->nargs; i++) {
@@ -1099,10 +1100,12 @@ Datum fmgr_sql(PG_FUNCTION_ARGS)
          * note we do not require caller to provide an expectedDesc.
          */
         if (rsi == NULL || !IsA(rsi, ReturnSetInfo) || (rsi->allowedModes & SFRM_ValuePerCall) == 0 ||
-            (rsi->allowedModes & SFRM_Materialize) == 0)
+            (rsi->allowedModes & SFRM_Materialize) == 0) {
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("set-valued function called in context that cannot accept a set")));
+            return (Datum)0; /* suppress the static check warmings */
+        }
         random_access = rsi->allowedModes & SFRM_Materialize_Random;
         lazy_eval_ok = !(rsi->allowedModes & SFRM_Materialize_Preferred);
     } else {
@@ -1297,6 +1300,7 @@ Datum fmgr_sql(PG_FUNCTION_ARGS)
                 ereport(ERROR,
                     (errcode(ERRCODE_FETCH_DATA_FAILED),
                         errmsg("function returns VOID, failed to get junk filter's slot")));
+                return (Datum)0; /* suppress the static check warmings */
             }
             slot = fcache->junkFilter->jf_resultSlot;
             if (!tuplestore_gettupleslot(fcache->tstore, true, false, slot))
@@ -2077,6 +2081,7 @@ void sql_fn_parser_replace_param_type(struct ParseState* pstate, int param_no, V
     RangeTblEntry* rte = GetRTEByRangeTablePosn(pstate, var->varno, var->varlevelsup);
     if (!rte) {
         ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("RTE not found (internal error)")));
+        return; /* suppress the static check warmings */
     }
     ListCell* c = list_nth_cell(rte->eref->colnames, var->varattno - 1);
     if (c == NULL) {

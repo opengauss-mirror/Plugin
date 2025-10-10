@@ -872,14 +872,14 @@ Datum input_timestamp_in(char* str, Oid typioparam, int32 typmod, bool can_ignor
             do_to_timestamp(date_txt, fmt_txt, tm, &fsec, &tz);
         } else {
             dterr = ParseIudDateTime(str, tm, &fsec);
-        }
-        if (dterr == 0) {
-            if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+            if (dterr == 0) {
+                if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+                }
+                AdjustTimestampForTypmod(&result, typmod);
+                PG_RETURN_TIMESTAMP(result);
             }
-            AdjustTimestampForTypmod(&result, typmod);
-            PG_RETURN_TIMESTAMP(result);
         }
         
     }

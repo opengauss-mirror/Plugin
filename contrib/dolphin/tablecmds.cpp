@@ -3061,8 +3061,8 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
 
             bucketinfo = GetRelationBucketInfo(stmt->distributeby, descriptor, &createbucket, true);
             isbucket = true;
-            Assert((createbucket == true && bucketinfo->bucketlist != NULL && bucketinfo->bucketcol != NULL) ||
-                   (createbucket == false && bucketinfo->bucketlist == NULL && bucketinfo->bucketcol != NULL));
+            Assert((createbucket && bucketinfo && bucketinfo->bucketlist != NULL && bucketinfo->bucketcol != NULL) ||
+                   (!createbucket && bucketinfo && bucketinfo->bucketlist == NULL && bucketinfo->bucketcol != NULL));
         }
     } else {
         /* here is normal mode */
@@ -5773,6 +5773,7 @@ static List* MergeAttributes(
                 if (unlikely(constr == NULL)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("constr is NULL.")));
+                    return NULL; /* suppress the static check warmings */
                 }
                 attrdef = constr->defval;
                 for (i = 0; i < constr->num_defval; i++) {
@@ -10242,7 +10243,7 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
     /*
      * Report the subcommand to interested event triggers.
      */
-    if (cmd && !commandCollected)
+    if (!commandCollected)
         EventTriggerCollectAlterTableSubcmd((Node *) cmd, address, tab->rewrite);
 
     /*
@@ -20722,10 +20723,12 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
          * AT_REWRITE_ALTER_COMPRESSION, which will case rewriting table during 
          * the phase 3 of altering reloptions.
          */ 
-        tab->rewrite = AT_REWRITE_ALTER_COMPRESSION;
-        tab->opt = rel->rd_node.opt;
-        tab->newOptions = newOptions;
-        tab->oldOptions = oldOptions;
+        if (tab) {
+            tab->rewrite = AT_REWRITE_ALTER_COMPRESSION;
+            tab->opt = rel->rd_node.opt;
+            tab->newOptions = newOptions;
+            tab->oldOptions = oldOptions;
+        }
     } else if (tab != NULL) {
         tab->rewrite = 0;
     }
