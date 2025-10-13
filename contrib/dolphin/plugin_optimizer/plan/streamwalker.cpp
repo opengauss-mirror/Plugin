@@ -915,6 +915,11 @@ static bool contain_unsupport_expression(Node* expr, void* context, bool need_re
             CHECK_FOR_INTERRUPTS();
         }
         cxt->check_count++;
+    } else {
+        ereport(ERROR,
+            (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+                errmsg("cxt is null on contain_unsupport_expression")));
+        return false; /* suppress the static check warmings */
     }
 
     switch (nodeTag(expr)) {

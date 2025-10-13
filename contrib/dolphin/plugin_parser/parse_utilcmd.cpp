@@ -4213,8 +4213,9 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                 /* create a primary key or unique constraint using such an index
                  * is not supported in distributed database.
                  */
-                 if (attform == 0) {
+                 if (attform == NULL) {
                      ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("get pg_attribute failed.")));
+                     return index; /* suppress the static check warmings */
                  }
 
                 defopclass = GetDefaultOpClass(attform->atttypid, index_rel->rd_rel->relam);
@@ -4233,8 +4234,9 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                  * and there's also the dump/reload problem mentioned above.
                  */
                 if (!DB_IS_CMPT(B_FORMAT)) {
-                    if (attform == 0) {
+                    if (attform == NULL) {
                         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("get pg_attribute failed.")));
+                        return index; /* suppress the static check warmings */
                     }
 
                     defopclass = GetDefaultOpClass(attform->atttypid, index_rel->rd_rel->relam);
@@ -5227,7 +5229,7 @@ static void TransfromAlterTableDropIndexStmt(CreateStmtContext* cxt, AlterTableC
     DropStmt* dropStmt = makeNode(DropStmt);
 
     dropStmt->removeType = OBJECT_INDEX;
-    if (cxt && RelationIsValid(cxt->rel)) {
+    if (RelationIsValid(cxt->rel)) {
         dropStmt->objects = list_make1(
             list_make2(makeString(get_namespace_name(RelationGetNamespace(cxt->rel))), makeString(cmd->name)));
     } else {
@@ -5917,6 +5919,7 @@ static void CheckColumnTableOfType(Type ctype)
         if (tupleDesc == NULL) {
             ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
                 errmsg("type %u cannot get tupledesc", HeapTupleGetOid(ctype))));
+            return; /* suppress the static check warmings */
         }
         for (int i = 0; i < tupleDesc->natts; i++) {
             if (tupleDesc->attrs[i].attisdropped || strcmp(NameStr(tupleDesc->attrs[i].attname), "pljson_list_data") == 0) {
@@ -7580,11 +7583,13 @@ static void precheck_start_end_defstate(List* pos, FormData_pg_attribute* attrs,
 {
     ListCell* cell = NULL;
 
-    if (pos == NULL || attrs == NULL || defState == NULL)
+    if (pos == NULL || attrs == NULL || defState == NULL) {
         ereport(ERROR,
             (errmodule(MOD_OPT),
                 errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("unexpected parameter for precheck start/end defstate.")));
+        return; /* suppress the static check warmings */
+    }
 
     Assert(pos->length == 1); /* already been checked in caller */
     foreach (cell, pos) {

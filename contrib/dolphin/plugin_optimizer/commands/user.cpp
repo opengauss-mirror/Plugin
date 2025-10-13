@@ -1086,7 +1086,7 @@ Oid CreateRole(CreateRoleStmt* stmt)
         }
     }
 
-    if (OidIsValid(nodegroup_id)) {
+    if (OidIsValid(nodegroup_id) && dnode_group) {
         char group_kind;
         group_kind = get_pgxc_groupkind(nodegroup_id);
         if (group_kind != 'v') {

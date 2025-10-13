@@ -3434,11 +3434,13 @@ Node* eval_const_expressions_mutator(Node* node, eval_const_expressions_context*
                 Node* e = NULL;
 
                 e = eval_const_expressions_mutator((Node*)lfirst(arg), context);
-                if (e == NULL)
+                if (e == NULL) {
                     ereport(ERROR,
                         (errmodule(MOD_OPT),
                             errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                             (errmsg("Fail to eval const expressoin."))));
+                    return NULL; /* suppress the static check warmings */
+                }
                 /*
                  * We can remove null constants from the list. For a
                  * non-null constant, if it has not been preceded by any
@@ -4597,7 +4599,7 @@ static Expr* evaluate_function(Oid funcid, Oid result_type, int32 result_typmod,
     newexpr->location = -1;
 
     bool can_ignore = false;
-    if (context != NULL && context->root != NULL && context->root->parse != NULL && context->root->parse->hasIgnore) {
+    if (context->root != NULL && context->root->parse != NULL && context->root->parse->hasIgnore) {
         can_ignore = true;
     }
     bool need_change_user = context->change_user && u_sess->misc_cxt.CurrentUserId != funcform->proowner &&

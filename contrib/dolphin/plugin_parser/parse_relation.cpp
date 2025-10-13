@@ -820,6 +820,7 @@ static void markRTEJoinForSelectPriv(ParseState* pstate, RangeTblEntry* rte, int
         if (j == NULL) {
             ereport(
                 ERROR, (errcode(ERRCODE_NO_DATA_FOUND), errmsg("could not find JoinExpr for whole-row reference")));
+            return; /* suppress the static check warmings */
         }
         AssertEreport(IsA(j, JoinExpr), MOD_OPT, "");
 
@@ -1808,6 +1809,8 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
                 }
             }
         }
+
+        return NULL; /* suppress the static check warmings */
     }
     cancel_parser_errposition_callback(&pcbstate);
 
@@ -1878,6 +1881,7 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
 
     if (pstate == NULL) {
         ereport(ERROR, (errmodule(MOD_OPT), errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pstate can not be NULL")));
+        return rte; /* suppress the static check warmings */
     }
 
     /*
@@ -2098,6 +2102,7 @@ RangeTblEntry* addRangeTableEntryForSubquery(
     if (subquery == NULL) {
         ereport(
             ERROR, (errmodule(MOD_OPT), errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("subquery can not be NULL")));
+        return rte; /* suppress the static check warmings */
     }
 
     if (sublinkPullUp && subquery->hintState && subquery->hintState->block_name_hint != NULL) {
@@ -2842,7 +2847,7 @@ void expandRTE(RangeTblEntry* rte, int rtindex, int sublevels_up, int location, 
                     aliasp_item = lnext(aliasp_item);
                 }
 
-                if (colvars != NULL) {
+                if (colvars != NULL && coltypmods) {
                     Var* varnode = NULL;
 
                     varnode =
@@ -3247,6 +3252,7 @@ void get_rte_attribute_type(RangeTblEntry* rte, AttrNumber attnum, Oid* vartype,
                 ereport(ERROR,
                     (errcode(ERRCODE_INVALID_ATTRIBUTE),
                         errmsg("subquery %s does not have attribute %d", rte->eref->aliasname, attnum)));
+                break; /* suppress the static check warmings */
             }
             *vartype = exprType((Node*)te->expr);
             *vartypmod = exprTypmod((Node*)te->expr);

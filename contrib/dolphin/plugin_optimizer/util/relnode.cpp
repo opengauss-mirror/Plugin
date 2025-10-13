@@ -860,12 +860,13 @@ static void build_joinrel_tlist(PlannerInfo* root, RelOptInfo* joinrel, const Re
             elog(ERROR, "unexpected node type in rel targetlist: %d",
                  (int) nodeTag(var));
 
-
         /* Get the Var's original base rel */
         baserel = find_base_rel(root, var->varno);
-        if (baserel == NULL)
+        if (baserel == NULL) {
             ereport(
                 ERROR, (errmodule(MOD_OPT), errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("Fail to find base rel.")));
+            return; /* suppress the static check warmings */
+        }
 
         /* Is it still needed above this joinrel? */
         ndx = var->varattno - baserel->min_attr;

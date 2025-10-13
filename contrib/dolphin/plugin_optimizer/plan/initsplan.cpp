@@ -746,7 +746,7 @@ static void find_non_keypreservered_rels(PlannerInfo* root, HTAB* htab, Relids* 
         if (leftpart && !is_key_preserved && leftpart->rtindex >= 0 && relidx == (Index)leftpart->rtindex) {
             left_is_key_preserved = false;
         }
-        if (rightpart && !is_key_preserved &&leftpart->rtindex >= 0 && relidx == (Index)rightpart->rtindex) {
+        if (rightpart && !is_key_preserved && rightpart->rtindex >= 0 && relidx == (Index)rightpart->rtindex) {
             right_is_key_preserved = false;
         }
         if ((!is_key_preserved && rel_is_member_of_non_keypreserved(root, relidx, *non_keypreserved)) ||
