@@ -14466,6 +14466,7 @@ static bool precheck_before_accelerate()
                     errdetail("N/A"),
                     errcause("System error."),
                     erraction("Contact Huawei Engineer.")));
+            return false; /* suppress the static check warmings */
         }
 
         ereport(DEBUG1,
@@ -14857,7 +14858,7 @@ static void walk_set_plan_for_coop_analyze(Plan* plan, PlannerInfo* root)
         ((ModifyTable*)plan)->plans = new_plans;
     }
 
-    if (IsA(plan, SubqueryScan) || IsA(plan, VecSubqueryScan)) {
+    if (rel && IsA(plan, SubqueryScan) || IsA(plan, VecSubqueryScan)) {
         ((SubqueryScan*)plan)->subplan = (Plan*)linitial(new_plans);
         rel->subplan = ((SubqueryScan*)plan)->subplan;
     }

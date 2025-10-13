@@ -389,7 +389,7 @@ Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid ta
         cons->constcollid = InvalidOid;
         cons->location = -1;
         result = (Node*)cons;
-    } else {
+    } else if (result != NULL) {
         result = coerce_type_typmod(result,
             targettype,
             targettypmod,

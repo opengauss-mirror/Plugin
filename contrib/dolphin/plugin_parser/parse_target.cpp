@@ -599,6 +599,7 @@ static void markTargetListOrigin(ParseState* pstate, TargetEntry* tle, Var* var,
                     ereport(ERROR,
                         (errcode(ERRCODE_OPTIMIZER_INCONSISTENT_STATE),
                             errmsg("subquery %s does not have attribute %d", rte->eref->aliasname, attnum)));
+                    break; /* suppress the static check warmings */
                 }
                 tle->resorigtbl = ste->resorigtbl;
                 tle->resorigcol = ste->resorigcol;
@@ -639,6 +640,7 @@ static void markTargetListOrigin(ParseState* pstate, TargetEntry* tle, Var* var,
                     ereport(ERROR,
                         (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
                             errmsg("subquery %s does not have attribute %d", rte->eref->aliasname, attnum)));
+                    break; /* suppress the static check warmings */
                 }
                 tle->resorigtbl = ste->resorigtbl;
                 tle->resorigcol = ste->resorigcol;
@@ -755,11 +757,11 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, ParseExprKind exprKi
     type_id = exprType((Node*)expr);
     type_mod = exprTypmod((Node*)expr);
 
-    if (IsA(expr, Param) || (IsA(expr, ArrayRef) && ((ArrayRef*)expr)->refexpr != NULL)) {
+    if (expr && IsA(expr, Param) || (expr && IsA(expr, ArrayRef) && ((ArrayRef*)expr)->refexpr != NULL)) {
         checkArrayTypeInsert(pstate, expr);
     }
 
-    if (IsA(expr, Param) && DISABLE_RECORD_TYPE_IN_DML && type_id == RECORDOID) {
+    if (expr && IsA(expr, Param) && DISABLE_RECORD_TYPE_IN_DML && type_id == RECORDOID) {
         ereport(ERROR, (errcode(ERRCODE_PLPGSQL_ERROR),
                            errmsg("The record type variable cannot be used as an insertion value.")));
     }
@@ -1212,6 +1214,7 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
                 (errmodule(MOD_OPT),
                     errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                     errmsg("targetrel is NULL unexpectedly")));
+            return NIL; /* suppress the static check warmings */
         }
 
         FormData_pg_attribute* attr = targetrel->rd_att->attrs;
@@ -1775,6 +1778,7 @@ TupleDesc expandRecordVariable(ParseState* pstate, Var* var, int levelsup)
                 ereport(ERROR,
                     (errcode(ERRCODE_OPTIMIZER_INCONSISTENT_STATE),
                         errmsg("subquery %s does not have attribute %d", rte->eref->aliasname, attnum)));
+                break; /* suppress the static check warmings */
             }    
             expr = (Node*)ste->expr;
             if (IsA(expr, Var)) {
@@ -1822,6 +1826,7 @@ TupleDesc expandRecordVariable(ParseState* pstate, Var* var, int levelsup)
                     ereport(ERROR,
                         (errcode(ERRCODE_OPTIMIZER_INCONSISTENT_STATE),
                             errmsg("subquery %s does not have attribute %d", rte->eref->aliasname, attnum)));
+                    break; /* suppress the static check warmings */
                 }    
                 expr = (Node*)ste->expr;
                 if (IsA(expr, Var)) {

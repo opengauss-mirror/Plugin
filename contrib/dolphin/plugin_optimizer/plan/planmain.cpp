@@ -287,6 +287,7 @@ RelOptInfo* query_planner(PlannerInfo* root, List* tlist,
             (errmodule(MOD_OPT),
                 errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
                 errmsg("failed to construct the join relation")));
+        return final_rel; /* suppress the static check warmings */
     }
     /* cheapest_total_path should not exist para_info */
     ListCell *lc = NULL;

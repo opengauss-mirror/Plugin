@@ -371,7 +371,7 @@ void init_plugin_object()
     u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
     u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
     u_sess->hook_cxt.groupingplannerHook = (void*)grouping_planner;
-    if (u_sess->proc_cxt.MyProcPort->protocol_config == &default_protocol_config) {
+    if (u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->protocol_config == &default_protocol_config) {
         dolphin_protocol_config.fn_printtup_create_DR = dophin_default_printtup_create_DR;
         u_sess->proc_cxt.MyProcPort->protocol_config = &dolphin_protocol_config;
     }

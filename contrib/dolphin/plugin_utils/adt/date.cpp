@@ -734,13 +734,13 @@ Datum input_date_in(char* str, bool can_ignore)
         return (Datum)0;
     }
     DateADT date;
-    int dterr;
+    int dterr = -1;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     int tz;
 
     if (u_sess->attr.attr_common.enable_iud_fusion) {
-        if (u_sess && u_sess->parser_cxt.fmt_str) { // with frmt, shared from to_timestamp
+        if (u_sess->parser_cxt.fmt_str) { // with frmt, shared from to_timestamp
             text* fmt_txt = cstring_to_text(u_sess->parser_cxt.fmt_str);
             text* date_txt = cstring_to_text(str);
             do_to_timestamp(date_txt, fmt_txt, tm, &fsec, &tz);

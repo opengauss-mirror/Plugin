@@ -1104,6 +1104,7 @@ static void CheckTsDelete(const ParseState* pstate, const Query* qry)
     ListCell* l;
     if (pstate == NULL || qry == NULL) {
         ereport(ERROR, (errmodule(MOD_TIMESERIES), errmsg("Parsing null pointer to CheckTsDelete!")));
+        return; /* suppress the static check warmings */
     }
     foreach (l, pstate->p_target_relation) {
         Relation targetrel = (Relation)lfirst(l);
@@ -4969,7 +4970,7 @@ static void CheckUpdateRelation(Relation targetrel)
     }
 #ifdef ENABLE_MULTIPLE_NODES
     // check if the target relation is being redistributed in read only mode
-    if (!u_sess->attr.attr_sql.enable_cluster_resize && targetrel != NULL &&
+    if (!u_sess->attr.attr_sql.enable_cluster_resize &&
         RelationInClusterResizingWriteErrorMode(targetrel)) {
         ereport(ERROR,
             (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),

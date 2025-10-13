@@ -1660,10 +1660,12 @@ Datum pg_prepared_statement(PG_FUNCTION_ARGS)
     MemoryContext oldcontext;
 
     /* check to see if caller supports us returning a tuplestore */
-    if (rsinfo == NULL || !IsA(rsinfo, ReturnSetInfo))
+    if (rsinfo == NULL || !IsA(rsinfo, ReturnSetInfo)) {
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("set-valued function called in context that cannot accept a set")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
     if (!(rsinfo->allowedModes & SFRM_Materialize))
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -1746,10 +1748,12 @@ Datum pg_prepared_statement_global(PG_FUNCTION_ARGS)
     MemoryContext oldcontext;
 
     /* check to see if caller supports us returning a tuplestore */
-    if (rsinfo == NULL || !IsA(rsinfo, ReturnSetInfo))
+    if (rsinfo == NULL || !IsA(rsinfo, ReturnSetInfo)) {
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("set-valued function called in context that cannot accept a set")));
+        return (Datum)0; /* suppress the static check warmings */
+    }
     if (!(rsinfo->allowedModes & SFRM_Materialize))
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),

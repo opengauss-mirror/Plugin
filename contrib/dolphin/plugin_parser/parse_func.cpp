@@ -649,11 +649,13 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
         /*
          * True window functions must be called with a window definition.
          */
-        if (over == NULL)
+        if (over == NULL) {
             ereport(ERROR,
                 (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                     errmsg("window function call requires an OVER clause"),
                     parser_errposition(pstate, location)));
+            return retval; /* suppress the static check warmings */
+        }
 
         Assert(!agg_within_group);
 
@@ -768,11 +770,10 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
         retval = (Node*)wfunc;
     }
 
-    if (retset && pstate && pstate->p_is_flt_frame) {
+    if (retset && pstate->p_is_flt_frame) {
         /* if it returns a set, remember it for error checks at higher levels */
         pstate->p_last_srf = retval;
     }
-
 
     return retval;
 }

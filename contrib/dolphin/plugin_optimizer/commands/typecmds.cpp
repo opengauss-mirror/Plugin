@@ -2769,11 +2769,12 @@ void DefineObjectTypeMethodSpec(CompositeTypeStmt* stmt, Oid typoid, char** mapO
         }
 
         if (submethod->typfunckind == OBJECTTYPE_ORDER_PROC) {
-            if (firstparam == NULL)
+            if (firstparam == NULL) {
                 ereport(ERROR,
                         (errcode(ERRCODE_MAP_METHOD_PARAMETER),
                         errmsg("ORDER methods must be declared without any parameters other than (optional) SELF")));
-                
+                return; /* suppress the static check warmings */
+            }
             if ((((NULL != firstparam->name) && (strcmp(firstparam->name, "self") == 0))
                     && (list_length(submethod->parameters) !=2)) ||
                 (((NULL == firstparam->name) || (strcmp(firstparam->name, "self") != 0))
@@ -3625,6 +3626,7 @@ static bool isSameTypeMethodArgList(List* argList1, List* argList2, List* funcna
         if (fp1->name == NULL || fp2->name == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("type is not exists.")));
+            return false; /* suppress the static check warmings */
         }
         if (strcmp(fp1->name, fp2->name) != 0) {
             isSameName = false;
@@ -4200,10 +4202,12 @@ ObjectAddress AlterDomainValidateConstraint(List* names, char* constrName)
         }
     }
 
-    if (!found || con == NULL)
+    if (!found || con == NULL) {
         ereport(ERROR,
             (errcode(ERRCODE_UNDEFINED_OBJECT),
                 errmsg("constraint \"%s\" of domain \"%s\" does not exist", constrName, TypeNameToString(typname))));
+        return address; /* suppress the static check warmings */
+    }
 
     if (con->contype != CONSTRAINT_CHECK)
         ereport(ERROR,

@@ -1880,6 +1880,7 @@ static int count_target_columns(Node* query)
                     (errcode(ERRCODE_UNDEFINED_COLUMN),
                         errmodule(MOD_PARSER),
                         errmsg("Subquery should at least have a target column.")));
+                return 0; /* suppress the static check warmings */
             }
             target_list = query->targetList;
 

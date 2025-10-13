@@ -7284,7 +7284,7 @@ ExecDropStmt(DropStmt *parse_tree, const char *query_string,
             }
 #endif
             if (IS_PGXC_COORDINATOR && !IsConnFromCoord() && u_sess->attr.attr_sql.enable_parallel_ddl) {
-                if (!is_first_node)
+                if (!is_first_node && new_objects)
                     RemoveRelationsonMainExecCN((DropStmt*)parse_tree, new_objects);
                 else
                     RemoveRelations((DropStmt*)parse_tree, tmp_query_string, &exec_type);
@@ -7383,7 +7383,7 @@ ExecDropStmt(DropStmt *parse_tree, const char *query_string,
                 }
             }
 
-            if (IS_PGXC_COORDINATOR && !IsConnFromCoord() && u_sess->attr.attr_sql.enable_parallel_ddl) {
+            if (IS_PGXC_COORDINATOR && !IsConnFromCoord() && u_sess->attr.attr_sql.enable_parallel_ddl && new_objects) {
                 RemoveObjectsonMainExecCN((DropStmt*)parse_tree, new_objects, is_first_node);
             } else {
                 if (IS_SINGLE_NODE) {
