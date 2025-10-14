@@ -24801,6 +24801,9 @@ static void CheckIntervalPartitionKeyType(FormData_pg_attribute* attrs, List* po
 static void CheckIntervalValue(
     const FormData_pg_attribute* attrs, const List* pos, const IntervalPartitionDefState* intervalPartDef)
 {
+    if (pos == NULL) {
+        elog(ERROR, "pos is NULL");
+    }
     /* must be one partitionkey for interval partition, have checked before */
     Assert(pos->length == 1);
 
