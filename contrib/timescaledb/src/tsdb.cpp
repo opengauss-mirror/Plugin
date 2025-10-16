@@ -70,9 +70,9 @@ void NewRelationCreateToastTable(Oid relOid, Datum reloptions)
 {
 	AlterTableCreateToastTable(relOid,reloptions,AccessExclusiveLock);
 }
+
 void RegisterCustomScanMethods(const ExtensiblePlanMethods *methods)
 {
-
 }
 
 
@@ -92,25 +92,19 @@ TableScanDescData *heap_beginscan_catalog(Relation relation, int nkeys,
 	return tableam_scan_begin(relation, snapshot, nkeys, key);;
 }
 
-
 List* set_deparse_context_planstate(List* dpcontext, Node* planstate, List* ancestors)
 {
-	List* l;
-	return l;
+	return nullptr;
 }
+
 void before_shmem_exit(pg_on_exit_callback function, Datum arg)
 {
-
 }
-
 
 void InitPostgres(const char *in_dbname, Oid dboid, const char *username,
  			 Oid useroid, char *out_dbname)
 {
-	
 }
-
-
 
 int
 namecpy(Name n1, Name n2)
@@ -120,7 +114,6 @@ namecpy(Name n1, Name n2)
 	StrNCpy(NameStr(*n1), NameStr(*n2), NAMEDATALEN);
 	return 0;
 }
-
 
 void
 ExecVacuum(VacuumStmt *vacstmt, bool isTopLevel)
@@ -166,11 +159,6 @@ ExecVacuum(VacuumStmt *vacstmt, bool isTopLevel)
 		   NULL,
 		   isTopLevel);
 }
-
-
-
-
-
 
 /*
  * Block/unblock signals in a background worker

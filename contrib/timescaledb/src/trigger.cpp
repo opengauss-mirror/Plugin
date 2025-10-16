@@ -106,8 +106,8 @@ create_trigger_handler(Trigger *trigger, void *arg)
 	Chunk *chunk =(Chunk *) arg;
 
 #if PG10_GE
-	if (TRIGGER_USES_TRANSITION_TABLE(trigger->tgnewtable) ||
-		TRIGGER_USES_TRANSITION_TABLE(trigger->tgoldtable))
+	if (trigger && (TRIGGER_USES_TRANSITION_TABLE(trigger->tgnewtable) ||
+		TRIGGER_USES_TRANSITION_TABLE(trigger->tgoldtable)))
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("hypertables do not support transition tables in triggers")));

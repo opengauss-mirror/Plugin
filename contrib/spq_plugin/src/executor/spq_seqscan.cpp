@@ -439,7 +439,7 @@ bool GetNextTupleFromPage(HeapScanDesc scan, Page pageptr, ScanDirection directi
     int lines = PageGetMaxOffsetNumber(dp);
     ItemId lpp = HeapPageGetItemId(dp, lineOff);
     HeapTuple tuple = &(scan->rs_ctup);
-    int linesLeft;
+    int linesLeft = 0;
     if (ScanDirectionIsForward(direction)) {
         /* page and line_off now reference the physically next tid */
         linesLeft = lines - lineOff + 1;

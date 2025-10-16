@@ -30,7 +30,7 @@ ssl_set_error(SSLConnection *conn, int err)
 static SSL_CTX *
 ssl_ctx_create(void)
 {
-	SSL_CTX *ctx;
+	SSL_CTX *ctx = nullptr;
 	int options;
 
 #if (OPENSSL_VERSION_NUMBER >= 0x1010000fL)
