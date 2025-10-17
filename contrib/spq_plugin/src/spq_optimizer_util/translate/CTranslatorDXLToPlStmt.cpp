@@ -2454,7 +2454,10 @@ CTranslatorDXLToPlStmt::TranslateDXLMotion(
 					->SegmentIdCol();
 			const TargetEntry *te_sort_col =
 				child_context.GetTargetEntry(segid_col);
-
+		    if (NULL == te_sort_col) {
+		        SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiDXL2PlStmtAttributeNotFound,
+		            segid_col);
+		    }
 			motion->motionType = MOTIONTYPE_EXPLICIT;
 			motion->segidColIdx = te_sort_col->resno;
 			//motion->isBroadcast = false;
