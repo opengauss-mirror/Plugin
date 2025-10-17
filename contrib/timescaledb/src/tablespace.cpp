@@ -1,7 +1,11 @@
 /*
+ * Copyright (c) 2016-2018  Timescale, Inc. All Rights Reserved.
+ *
  * This file and its contents are licensed under the Apache License 2.0.
  * Please see the included NOTICE for copyright information and
  * LICENSE-APACHE for a copy of the license.
+ *
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 #include <postgres.h>
 #include <fmgr.h>
@@ -651,7 +655,7 @@ ts_tablespace_show(PG_FUNCTION_ARGS)
 	Oid hypertable_oid = PG_ARGISNULL(0) ? InvalidOid : PG_GETARG_OID(0);
 	Cache *hcache;
 	Hypertable *ht;
-	Tablespaces *tspcs;
+	Tablespaces *tspcs = nullptr;
 
 	if (SRF_IS_FIRSTCALL())
 	{
@@ -669,8 +673,9 @@ ts_tablespace_show(PG_FUNCTION_ARGS)
 	funcctx = SRF_PERCALL_SETUP();
 	hcache =(Cache *) funcctx->user_fctx;
 	ht = ts_hypertable_cache_get_entry(hcache, hypertable_oid, CACHE_FLAG_NONE);
-
-	tspcs = ts_tablespace_scan(ht->fd.id);
+	if (ht) {
+		tspcs = ts_tablespace_scan(ht->fd.id);
+	}
 
 	if (NULL != tspcs && funcctx->call_cntr < (uint64) tspcs->num_tablespaces)
 	{

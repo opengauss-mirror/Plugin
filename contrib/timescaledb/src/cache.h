@@ -119,7 +119,7 @@ typedef struct tsdb_session_context {
 	bool tsdb_loaded;
 	bool tsdb_loader_present;
 
-	char tsdb_base64[64];
+	char tsdb_base64[65];
 
 	int64 tsdb_fixed_memory_cache_size;
 	FmgrInfo tsdb_ddl_commands_fmgrinfo;

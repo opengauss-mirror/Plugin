@@ -197,7 +197,7 @@ get_agg_clause_costs_walker(Node *node, get_agg_clause_costs_context *context)
 		Oid			aggserialfn;
 		Oid			aggdeserialfn;
 		Oid			aggtranstype;
-		int32		aggtransspace;
+		int32		aggtransspace = 0;
 		QualCost	argcosts;
 
 		Assert(aggref->agglevelsup == 0);
