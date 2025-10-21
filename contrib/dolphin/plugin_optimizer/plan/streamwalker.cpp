@@ -910,7 +910,7 @@ static bool contain_unsupport_expression(Node* expr, void* context, bool need_re
     errno_t sprintf_rc = 0;
     shipping_context* cxt = (shipping_context *)context;
 
-    if (cxt) {
+    if (likely(cxt)) {
         if (cxt->check_count % CHECK_INTER_PER_LOOP == 0) {
             CHECK_FOR_INTERRUPTS();
         }
@@ -918,8 +918,8 @@ static bool contain_unsupport_expression(Node* expr, void* context, bool need_re
     } else {
         ereport(ERROR,
             (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-                errmsg("cxt is null on contain_unsupport_expression")));
-        return false; /* suppress the static check warmings */
+                errmsg("cxt is null in contain_unsupport_expression")));
+        return false; /* suppresses static check warnings */
     }
 
     switch (nodeTag(expr)) {

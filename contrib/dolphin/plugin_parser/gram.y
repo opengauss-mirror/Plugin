@@ -15907,10 +15907,10 @@ DropTrigStmt:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("drop trigger name is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					if (!DB_IS_CMPT_BD) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("drop trigger without table name only support in B-format database")));
+								errmsg("drop trigger without table name only support in B-format or D-format database")));
 					}
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
@@ -15930,10 +15930,10 @@ DropTrigStmt:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("drop trigger if exists name is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					if (!DB_IS_CMPT_BD) {
 						ereport(errstate, 
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("drop trigger without table name only support in B-format database")));
+								errmsg("drop trigger without table name only support in B-format or D-format database")));
 					}
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
