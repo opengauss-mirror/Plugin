@@ -3439,7 +3439,7 @@ Node* eval_const_expressions_mutator(Node* node, eval_const_expressions_context*
                         (errmodule(MOD_OPT),
                             errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                             (errmsg("Fail to eval const expressoin."))));
-                    return NULL; /* suppress the static check warmings */
+                    return nullptr; /* suppress the static check warmings */
                 }
                 /*
                  * We can remove null constants from the list. For a
@@ -4574,14 +4574,15 @@ static Expr* evaluate_function(Oid funcid, Oid result_type, int32 result_typmod,
      * Actually, it is safe to simplify some stable or volatile functions,
      * is_safe_simplify_func() will determines it.
      */
-    if (funcform->provolatile == PROVOLATILE_IMMUTABLE)
+    if (funcform->provolatile == PROVOLATILE_IMMUTABLE) {
         /* okay */;
-    else if (context->estimate && funcform->provolatile == PROVOLATILE_STABLE)
+    } else if (context && context->estimate && funcform->provolatile == PROVOLATILE_STABLE) {
         /* okay */;
-    else if (is_safe_simplify_func(funcid, args))
+    } else if (is_safe_simplify_func(funcid, args)) {
         /* okay */;
-    else
+    } else {
         return NULL;
+    }
 
     /*
      * OK, looks like we can simplify this operator/function.
