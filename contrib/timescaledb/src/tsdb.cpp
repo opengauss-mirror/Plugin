@@ -2380,7 +2380,7 @@ void set_extension_index(uint32 index)
     tsdb_index = index;  
 }
 
-tsdb_session_context* get_session_context(bool is_from_PG_init)  
+tsdb_session_context* get_session_context()
 {
     if (NULL != u_sess && NULL == u_sess->attr.attr_common.extension_session_vars_array) {
         tsdb_session_context* psc =
@@ -2411,7 +2411,7 @@ tsdb_session_context* get_session_context(bool is_from_PG_init)
         psc->tsdb_global_extstate = EXTENSION_STATE_UNKNOWN;
 		return psc;
     }
-    if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) {
+    if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL) {
         init_session_vars();
     }
     return (tsdb_session_context*)u_sess->attr.attr_common.extension_session_vars_array[tsdb_index];

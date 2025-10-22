@@ -217,7 +217,6 @@ proc_get_oid(HeapTuple tuple)
 	return form->oid;
 #endif
 }
-static HTAB *func_hash_try;
 
 static void
 initialize_func_info()
@@ -244,8 +243,7 @@ initialize_func_info()
 	Relation rel;
 	int i;
 
-	func_hash_try = hash_create("func_cache", _MAX_CACHE_FUNCTIONS, &hashctl, HASH_ELEM | HASH_BLOBS);
-	func_hash = func_hash_try;
+	func_hash = hash_create("func_cache", _MAX_CACHE_FUNCTIONS, &hashctl, HASH_ELEM | HASH_BLOBS);
 	rel = table_open(ProcedureRelationId, AccessShareLock);
 
 	for (i = 0; i < _MAX_CACHE_FUNCTIONS; i++)
@@ -274,10 +272,6 @@ initialize_func_info()
 		{
 			fentry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_ENTER, &hash_found);
 		}
-		else
-		{
-			fentry =(FuncEntry*) hash_search(func_hash_try, &funcid, HASH_ENTER, &hash_found);
-		}
 	
 		Assert(!hash_found);
 		fentry->funcid = funcid;
@@ -293,13 +287,12 @@ ts_func_cache_get(Oid funcid)
 {
 	FuncEntry *entry;
 
-	if (NULL == func_hash && NULL== func_hash_try)
+	if (NULL == func_hash) {
 		initialize_func_info();
+	}
 	
 	if (NULL != func_hash)
 	entry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_FIND, NULL);
-
-	else entry =(FuncEntry*) hash_search(func_hash_try, &funcid, HASH_FIND, NULL);
 
 	return (NULL == entry) ? NULL : entry->funcinfo;
 }
