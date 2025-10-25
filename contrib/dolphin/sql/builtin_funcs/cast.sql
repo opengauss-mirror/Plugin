@@ -35,5 +35,14 @@ SELECT (0 + CAST('2.090'::float AS char))/2;
 SELECT (0 + CAST('4.100000'::double precision AS char))/2;
 select 0+CAST(-6.40100 as char) as res;
 
+CREATE TABLE data_bytea( c1 bytea);
+INSERT INTO data_bytea values('a'::varchar);
+INSERT INTO data_bytea values(null::varchar);
+set bytea_output=hex;
+select * from data_bytea;
+set bytea_output=escape;
+select * from data_bytea;
+drop table data_bytea;
+
 drop schema db_cast cascade;
 reset current_schema;
