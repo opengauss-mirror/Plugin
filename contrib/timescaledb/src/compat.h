@@ -68,7 +68,7 @@
 #define expect_chunk_modification (get_session_context()->tsdb_expect_chunk_modification)
 #define on_level (get_session_context()->tsdb_on_level)
 #define telemetry_level_options (get_session_context()->tsdb_telemetry_level_options)
-#define tsdb_first_start (get_session_context(true)->tsdb_first_start)
+#define tsdb_first_start (get_session_context()->tsdb_first_start)
 #define _base64 (get_session_context()->tsdb_base64)
 #define func_hash (get_session_context()->tsdb_func_hash)
 #define fixed_memory_cache_size (get_session_context()->tsdb_fixed_memory_cache_size)

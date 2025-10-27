@@ -317,7 +317,7 @@ static const char *cache_proxy_table_names[_MAX_CACHE_TYPES] = {
 
 /* Catalog information for the current database. */
 
-static Catalog s_catalog = {
+static thread_local Catalog s_catalog = {
 	.tables = {},
 	.cache_schema_id = 0,
 	.caches = {},
@@ -327,7 +327,7 @@ static Catalog s_catalog = {
 };
 
 
-static CatalogDatabaseInfo database_info = {
+static thread_local CatalogDatabaseInfo database_info = {
 	.database_name ={},
 	.database_id = InvalidOid,
 	.schema_id = InvalidOid,
