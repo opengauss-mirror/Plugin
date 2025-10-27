@@ -2,11 +2,11 @@
 BUILD_TUPLE=$1
 CMAKE_OPT="-DENABLE_MULTIPLE_NODES=OFF -DENABLE_PRIVATEGAUSS=OFF -DENABLE_THREAD_SAFETY=ON -DENABLE_LITE_MODE=$2 -DENABLE_MOT=$3 -DENABLE_HTAP=$4"
 cpus_num=$(grep -w processor /proc/cpuinfo|wc -l)
-rm -f dolphin--5.1.sql
-touch dolphin--5.1.sql
-for i in `ls sql_script`; do cat sql_script/$i >> dolphin--5.1.sql; done
-for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--5.1.sql; done
-cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--5.0.sql upgrade_script/dolphin--5.0--5.1.sql >> dolphin--5.1.sql
+rm -f dolphin--5.2.sql
+touch dolphin--5.2.sql
+for i in `ls sql_script`; do cat sql_script/$i >> dolphin--5.2.sql; done
+for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--5.2.sql; done
+cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql >> dolphin--5.2.sql
 rm -f dolphin--1.0--1.1.sql
 cp upgrade_script/dolphin--1.0--1.1.sql dolphin--1.0--1.1.sql
 rm -f dolphin--1.1--1.0.sql
@@ -35,6 +35,10 @@ rm -f dolphin--5.0--5.1.sql
 cp upgrade_script/dolphin--5.0--5.1.sql dolphin--5.0--5.1.sql
 rm -f dolphin--5.1--5.0.sql
 cp rollback_script/dolphin--5.1--5.0.sql dolphin--5.1--5.0.sql
+rm -f dolphin--5.1--5.2.sql
+cp upgrade_script/dolphin--5.1--5.2.sql dolphin--5.1--5.2.sql
+rm -f dolphin--5.2--5.1.sql
+cp rollback_script/dolphin--5.2--5.1.sql dolphin--5.2--5.1.sql
 rm -f dolphin--2.0--2.0.1.sql
 cp upgrade_script/dolphin--2.0--2.0.1.sql dolphin--2.0--2.0.1.sql
 rm -f dolphin--2.0.1--2.0.sql
