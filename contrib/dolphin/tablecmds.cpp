@@ -228,6 +228,8 @@
 #include "plugin_utils/partitionfuncs.h"
 #endif
 
+#define INFORMATION_SCHEMA "information_schema"
+
 extern void vacuum_set_xid_limits(Relation rel, int64 freeze_min_age, int64 freeze_table_age, TransactionId* oldestXmin,
     TransactionId* freezeLimit, TransactionId* freezeTableLimit, MultiXactId* multiXactFrzLimit);
 
@@ -2252,6 +2254,11 @@ void CheckSegmentIsInLimitTablespace(char* tableSpaceName, char* relName)
     }
 }
 
+static bool IsInformationSchema(Oid namespaceId)
+{
+    return strcmp(get_namespace_name(namespaceId), INFORMATION_SCHEMA) == 0;
+}
+
 /* ----------------------------------------------------------------
  *		DefineRelation
  *				Creates a new relation.
@@ -3089,7 +3096,8 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
 
     if (!IsInitdb && (relkind == RELKIND_RELATION) && !IsSystemNamespace(namespaceId) &&
         !IsCStoreNamespace(namespaceId) && (pg_strcasecmp(storeChar, ORIENTATION_ROW) == 0) &&
-        (stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT) && !u_sess->attr.attr_storage.enable_recyclebin) {
+        (stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT) && !u_sess->attr.attr_storage.enable_recyclebin &&
+        !(IsInformationSchema(namespaceId) && u_sess->attr.attr_common.IsInplaceUpgrade && ENABLE_DMS)) {
         bool isSegmentType = (storage_type == SEGMENT_PAGE);
         if (!isSegmentType && (u_sess->attr.attr_storage.enable_segment || bucketinfo != NULL)) {
             storage_type = SEGMENT_PAGE;
