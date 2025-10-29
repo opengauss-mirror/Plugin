@@ -8,6 +8,7 @@
  *-------------------------------------------------------------------------
  */
 
+#include <cstring>
 #include "postgres.h"
 
 #include "access/genam.h"
