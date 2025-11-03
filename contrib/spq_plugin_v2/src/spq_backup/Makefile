@@ -46,16 +46,10 @@ else
 		$(OG_CODE_BASE)/src/lib/hotpatch/client/libhotpatchclient.a
 endif
 
-ifeq ($(enable_mot), yes)
-OBJS=receivelog.o streamutil.o $(OG_CODE_BASE)/src/bin/pg_ctl/fetchmot.o \
-     xlogreader.o  $(WIN32RES) $(DEPEND_OBJS) \
-	 $(OG_CODE_BASE)/src/common/backend/lib/string.o
-else
 OBJS=receivelog.o streamutil.o $(WIN32RES) \
      xlogreader.o  $(WIN32RES) $(DEPEND_OBJS) \
-	 $(OG_CODE_BASE)/src/common/backend/lib/string.o
-endif
-OBJS += $(OG_CODE_BASE)/src/gausskernel/storage/gs_uwal/gs_uwal_adaptor.o
+	 $(OG_CODE_BASE)/src/common/backend/lib/string.o \
+	 $(OG_CODE_BASE)/src/gausskernel/storage/gs_uwal/gs_uwal_adaptor.o
 
 
 all: spq_backup
@@ -100,11 +94,6 @@ $(OG_CODE_BASE)/src/lib/build_query/libbuildquery.a:
 
 $(OG_CODE_BASE)/src/lib/pgcommon/libpgcommon.a:
 	$(MAKE) -C $(OG_CODE_BASE)/src/lib/pgcommon libpgcommon.a
-
-ifeq ($(enable_mot), yes)
-$(OG_CODE_BASE)/src/bin/pg_ctl/fetchmot.o:
-	$(MAKE) -C $(OG_CODE_BASE)/src/bin/pg_ctl fetchmot.o
-endif
 
 $(OG_CODE_BASE)/src/lib/hotpatch/client/libhotpatchclient.a:
 	$(MAKE) -C $(OG_CODE_BASE)/src/lib/hotpatch/client libhotpatchclient.a
