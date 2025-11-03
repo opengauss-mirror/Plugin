@@ -2593,3 +2593,90 @@ NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table func_test3
 drop cascades to table test1
 reset current_schema;
+set timezone = 'PRC';
+SELECT unix_timestamp('2000-12-30 23:59:59-08:00') ;
+ unix_timestamp 
+----------------
+      978249599
+(1 row)
+
+SELECT unix_timestamp('2000-12-30 23:59:59') ;
+ unix_timestamp 
+----------------
+      978191999
+(1 row)
+
+SELECT unix_timestamp('2000-12-30 23:59:59+08:00') ;
+ unix_timestamp 
+----------------
+      978191999
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59-08:00') ;
+ to_seconds  
+-------------
+ 63145497599
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59') ;
+ to_seconds  
+-------------
+ 63145439999
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59+08:00') ;
+ to_seconds  
+-------------
+ 63145439999
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59+00:00') ;
+ to_seconds  
+-------------
+ 63145468799
+(1 row)
+
+set timezone = 'UTC';
+SELECT unix_timestamp('2000-12-30 23:59:59-08:00') ;
+ unix_timestamp 
+----------------
+      978249599
+(1 row)
+
+SELECT unix_timestamp('2000-12-30 23:59:59') ;
+ unix_timestamp 
+----------------
+      978220799
+(1 row)
+
+SELECT unix_timestamp('2000-12-30 23:59:59+08:00') ;
+ unix_timestamp 
+----------------
+      978191999
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59-08:00') ;
+ to_seconds  
+-------------
+ 63145468799
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59') ;
+ to_seconds  
+-------------
+ 63145439999
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59+08:00') ;
+ to_seconds  
+-------------
+ 63145411199
+(1 row)
+
+SELECT to_seconds('2000-12-30 23:59:59+00:00') ;
+ to_seconds  
+-------------
+ 63145439999
+(1 row)
+
+reset timezone;
