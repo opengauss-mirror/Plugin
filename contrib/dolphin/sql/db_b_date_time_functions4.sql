@@ -249,6 +249,7 @@ insert into test values('from_unixtime(11111111111111111,''%Y %M %D'')', from_un
 insert into test values('from_unixtime(11111111111111111)', from_unixtime(11111111111111111));
 insert into test values('from_unixtime(2147483648)', from_unixtime(2147483648));
 
+select from_unixtime(1577836800, '') is NULL;
 -- test str_to_date
 -- 严格模式或者非严格模式都有值
 -- 功能-返回date
