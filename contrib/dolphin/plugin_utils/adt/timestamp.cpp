@@ -11479,9 +11479,10 @@ Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS)
     lldiv_t div;
     Timestamp datetime;
     char *tmp = NULL;
+    char* format = text_to_cstring(format_text);
 
     Numeric_to_lldiv(num, &div);
-    if (div.quot > MAX_UNIXTIMESTAMP_VALUE || div.quot < 0 || div.rem < 0)
+    if (div.quot > MAX_UNIXTIMESTAMP_VALUE || div.quot < 0 || div.rem < 0 || strlen(format) == 0)
         PG_RETURN_NULL();
     
     datetime = from_unixtime_internal(&div);
