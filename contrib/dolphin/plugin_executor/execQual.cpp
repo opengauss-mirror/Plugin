@@ -6126,6 +6126,11 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent){
     return state;
 }
 
+#ifdef DOLPHIN
+/*
+ * this func is very different with kernel one, since we only want to deal with some special nodes
+ * only. for other case, we will call kernel routine.
+ */
 ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
 {
     ExprState* state = NULL;

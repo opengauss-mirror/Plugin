@@ -620,14 +620,11 @@ static void execute_binary_protocol_req_process_e()
 {
     OgRecordAutoController _local_opt_e(SRT8_E);
     /* set use_parame to true, so in opfusion state it will send row desc, check OpFusion::setReceiver */
-    u_sess->param_cxt.use_parame = true;
     if (exec_pre_execute_message("", FETCH_ALL, false)) {
-        u_sess->param_cxt.use_parame = false;
         return;
     }
 
     exec_execute_message("", FETCH_ALL, false);
-    u_sess->param_cxt.use_parame = false;
 }
 
 void remove_cached_stmt_data(uint32 *statement_id)

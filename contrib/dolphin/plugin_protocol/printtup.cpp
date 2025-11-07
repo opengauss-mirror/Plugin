@@ -34,8 +34,6 @@
 #include "access/heapam.h"
 #include "catalog/pg_proc.h"
 #include "access/datavec/vector.h"
-#include "plugin_utils/float.h"
-#include "plugin_utils/timestamp.h"
 #include "plugin_utils/varlena.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
@@ -271,15 +269,13 @@ static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free
     *need_free = false;
     switch (state->typoutput) {
         case F_INT4OUT: {
-            outputstr = u_sess->utils_cxt.int4output_buffer;
-            int length = 0;
-            pg_ltoa(DatumGetInt32(attr), outputstr, &length);
+            int length32 = 0;
+            outputstr = pg_ltoa_printtup(DatumGetInt32(attr), &length32);
             break;
         }
         case F_INT8OUT: {
-            outputstr = u_sess->utils_cxt.int8output_buffer;
-            int length = 0;
-            pg_lltoa(DatumGetInt64(attr), outputstr, &length);
+            int length64 = 0;
+            outputstr = pg_lltoa_printtup(DatumGetInt64(attr), &length64);
             break;
         }
         case F_BPCHAROUT:
