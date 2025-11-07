@@ -402,3 +402,19 @@ drop procedure insert_data1;
 select count(*) from pg_type where typname like '%insert_data1%';
 
 drop table staff;
+
+/* test prepare */
+create table t_enumandset(a enum('a','b'), b set('a','b'));
+prepare st_enum as insert into t_enumandset(a) values(?);
+prepare st_set as insert into t_enumandset(b) values(?);
+
+execute st_enum('a');
+execute st_enum('b');
+execute st_enum('c'); --failed
+
+execute st_set('a'); 
+execute st_set('b'); 
+execute st_set('c'); --failed
+
+select * from t_enumandset;
+drop table t_enumandset;

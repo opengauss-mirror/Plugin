@@ -179,8 +179,6 @@ RegExternFunc b_plpgsql_function_table[3];
  */
 RegExternFunc a_plpgsql_function_table[3];
 
-static HTAB* CFuncHash = NULL;
-
 static void fmgr_info_cxt_security(Oid functionId, FmgrInfo* finfo, MemoryContext mcxt, bool ignore_security);
 static void fmgr_info_C_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedureTuple);
 static void fmgr_info_other_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedureTuple);
@@ -538,10 +536,6 @@ static void fmgr_info_C_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedur
         LockDatabaseObject(ProcedureRelationId, functionId, 0, AccessShareLock);
     }
 
-    AutoMutexLock libraryLock(&dlerror_lock);
-
-    libraryLock.lock();
-
     /*
      * We use function RunUdFFencedMode to replace if this UDF
      * is defined in fencedMode
@@ -553,7 +547,6 @@ static void fmgr_info_C_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedur
      * See if we have the function address cached already
      */
     hashentry = lookup_C_func(procedureTuple);
-
     if (hashentry != NULL) {
         user_fn = hashentry->user_fn;
         inforec = hashentry->inforec;
@@ -579,7 +572,7 @@ static void fmgr_info_C_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedur
             user_fn = load_plpgsql_function(prosrcstring);
         }
     }
-
+hashentry_not_null:
     switch (inforec->api_version) {
         case 0:
         case 1:
@@ -596,8 +589,6 @@ static void fmgr_info_C_lang(Oid functionId, FmgrInfo* finfo, HeapTuple procedur
 
     pfree_ext(probinstring);
     pfree_ext(prosrcstring);
-
-    libraryLock.unLock();
 }
 
 /*
@@ -742,11 +733,11 @@ static CFuncHashTabEntry* lookup_C_func(HeapTuple procedureTuple)
     Oid fn_oid = HeapTupleGetOid(procedureTuple);
     CFuncHashTabEntry* entry = NULL;
 
-    if (CFuncHash == NULL) {
+    if (u_sess->fmgr_cxt.cFuncHash == NULL) {
         return NULL; /* no table yet */
     }
 
-    entry = (CFuncHashTabEntry*)hash_search(CFuncHash, &fn_oid, HASH_FIND, NULL);
+    entry = (CFuncHashTabEntry*)hash_search(u_sess->fmgr_cxt.cFuncHash, &fn_oid, HASH_FIND, NULL);
     if (entry == NULL) {
         return NULL; /* no such entry */
     }
@@ -767,9 +758,10 @@ static void record_C_func(HeapTuple procedureTuple, PGFunction user_fn, const Pg
     Oid fn_oid = HeapTupleGetOid(procedureTuple);
     CFuncHashTabEntry* entry = NULL;
     bool found = false;
+    static const int cFuncHashInitSize = 100;
 
     /* Create the hash table if it doesn't exist yet */
-    if (CFuncHash == NULL) {
+    if (u_sess->fmgr_cxt.cFuncHash == NULL) {
         HASHCTL hash_ctl;
 
         errno_t rc = memset_s(&hash_ctl, sizeof(hash_ctl), 0, sizeof(hash_ctl));
@@ -782,11 +774,12 @@ static void record_C_func(HeapTuple procedureTuple, PGFunction user_fn, const Pg
          * This hash table should be process visible.
          * Use process MemoryContext.
          */
-        hash_ctl.hcxt = g_instance.instance_context;
-        CFuncHash = hash_create("CFuncHash", 100, &hash_ctl, HASH_ELEM | HASH_FUNCTION | HASH_SHRCTX);
+        hash_ctl.hcxt = u_sess->cache_mem_cxt;
+        u_sess->fmgr_cxt.cFuncHash = hash_create("CFuncHash", cFuncHashInitSize, &hash_ctl,
+            HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
     }
 
-    entry = (CFuncHashTabEntry*)hash_search(CFuncHash, &fn_oid, HASH_ENTER, &found);
+    entry = (CFuncHashTabEntry*)hash_search(u_sess->fmgr_cxt.cFuncHash, &fn_oid, HASH_ENTER, &found);
     /* OID is already filled in */
     entry->fn_xmin = HeapTupleGetRawXmin(procedureTuple);
     entry->fn_tid = procedureTuple->t_self;
@@ -802,11 +795,11 @@ static void record_C_func(HeapTuple procedureTuple, PGFunction user_fn, const Pg
  */
 void clear_external_function_hash(void* filehandle)
 {
-    if (CFuncHash != NULL) {
-        hash_destroy(CFuncHash);
+    if (u_sess->fmgr_cxt.cFuncHash != NULL) {
+        hash_destroy(u_sess->fmgr_cxt.cFuncHash);
     }
 
-    CFuncHash = NULL;
+    u_sess->fmgr_cxt.cFuncHash = NULL;
 }
 
 /*

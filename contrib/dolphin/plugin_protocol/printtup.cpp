@@ -33,6 +33,8 @@
 #include "miscadmin.h"
 #include "access/heapam.h"
 #include "catalog/pg_proc.h"
+#include "access/datavec/vector.h"
+#include "plugin_utils/varlena.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
@@ -48,7 +50,7 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
 static void printtup_shutdown(DestReceiver *self);
 static void printtup_destroy(DestReceiver *self);
 
-static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List* targetlist);
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats);
 static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int numAttrs);
 
 static void spi_sql_proc_dest_destroy(DestReceiver *self);
@@ -114,15 +116,15 @@ DestReceiver* dophin_printtup_create_DR(CommandDest dest)
     self->pub.rStartup = printtup_startup;
     self->pub.rShutdown = printtup_shutdown;
     self->pub.rDestroy = printtup_destroy;
+    self->pub.sendRowDesc = DolphinSendRowDescriptionMessage;
     self->pub.finalizeLocalStream = NULL;
     self->pub.mydest = dest;
     self->pub.tmpContext = NULL;
 
     /*
-     * Send T message automatically if DestRemote, but not if
-     * DestRemoteExecute
+     * Send T message automatically if DestRemote or DestRemoteExecute
      */
-    self->sendDescrip = (dest == DestRemote);
+    self->sendDescrip = (dest == DestRemote || dest == DestRemoteExecute);
 
     self->attrinfo = NULL;
     self->nattrs = 0;
@@ -156,11 +158,12 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
      * descriptor of the tuples.
      */
     if (myState->sendDescrip) {
-        SendRowDescriptionMessage(&myState->buf, typeinfo, myState->target_list);
+        List *target_list = myState->portal != NULL ? FetchPortalTargetList(myState->portal) : myState->target_list;
+        myState->pub.sendRowDesc(&myState->buf, typeinfo, target_list, NULL);
     }
 }
 
-static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist)
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats)
 {
     FormData_pg_attribute *attrs = typeinfo->attrs;
     int natts = typeinfo->natts;
@@ -199,10 +202,10 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
         }
         
         // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i], NULL, oriColName);
-        send_column_definition41_packet(buf, field);
+        dolphin_column_definition field;
+        make_dolphin_column_definition(&attrs[i], NULL, oriColName, &field);
+        send_column_definition41_packet(buf, &field);
         pfree_ext(oriColName);
-        pfree(field);
     }
     
     // EOF packet
@@ -246,6 +249,75 @@ static void convertBitsToBytes(char* bitStr, StringInfo buf)
     }
 }
 
+static inline bool is_binary_type(Oid type_oid)
+{
+    if (type_oid == BLOBOID || type_oid == RAWOID || type_oid == BYTEAOID) {
+        return true;
+    }
+
+    if (type_oid >= FirstNormalObjectId && (type_oid == BINARYOID || type_oid == VARBINARYOID ||
+        type_oid == TINYBLOBOID || type_oid == MEDIUMBLOBOID || type_oid == LONGBLOBOID)) {
+        return true;
+    }
+    return false;
+}
+
+static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free)
+{
+    char *outputstr = NULL;
+    Datum new_attr;
+    *need_free = false;
+    switch (state->typoutput) {
+        case F_INT4OUT: {
+            int length32 = 0;
+            outputstr = pg_ltoa_printtup(DatumGetInt32(attr), &length32);
+            break;
+        }
+        case F_INT8OUT: {
+            int length64 = 0;
+            outputstr = pg_lltoa_printtup(DatumGetInt64(attr), &length64);
+            break;
+        }
+        case F_BPCHAROUT:
+            outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+            if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                trim_trailing_space(outputstr);
+            }
+            *need_free = !check_need_free_varchar_output(outputstr);
+            break;
+        case F_VARCHAROUT:
+            outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+            *need_free = !check_need_free_varchar_output(outputstr);
+            break;
+        case F_NUMERIC_OUT:
+            new_attr = PointerGetDatum(DatumGetNumeric(attr));
+            outputstr = output_numeric_out((Numeric)new_attr);
+            *need_free = !check_need_free_numeric_output(outputstr);
+            if (DatumGetPointer(new_attr) != DatumGetPointer(attr)) {
+                pfree(DatumGetPointer(new_attr));
+            }
+            break;
+        case F_DATE_OUT:
+            outputstr = output_date_out(DatumGetDateADT(attr));
+            *need_free = !check_need_free_date_output(outputstr);
+            break;
+        case F_VECTOR_OUT:
+            outputstr = u_sess->utils_cxt.vectoroutput_buffer;
+            PrintOutVector(outputstr, attr);
+            break;
+        default: {
+            new_attr = state->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(attr)) : attr;
+            outputstr = OutputFunctionCall(&state->finfo, new_attr);
+            *need_free = true;
+            if (DatumGetPointer(new_attr) != DatumGetPointer(attr)) {
+                pfree(DatumGetPointer(new_attr));
+            }
+            break;
+        }
+    }
+    return outputstr;
+}
+
 static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
      /*
@@ -253,8 +325,7 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
      */
     for (int i = 0; i < natts; ++i) {
         PrinttupAttrInfo *thisState = myState->myinfo + i;
-        Datum origattr = slot->tts_values[i];
-        Datum attr = static_cast<uintptr_t>(0);
+        Datum attr = slot->tts_values[i];
         char *outputstr = NULL;
 
         if (slot->tts_isnull[i] || slot->tts_tupleDescriptor->attrs[i].attisdropped) {
@@ -262,33 +333,22 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
             continue;
         }
 
-        /*
-         * If we have a toasted datum, forcibly detoast it here to avoid
-         * memory leakage inside the type's output routine.
-         */
-        attr = thisState->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(origattr)) : origattr;
-
         Oid typeOid = slot->tts_tupleDescriptor->attrs[i].atttypid;
-        if (typeOid == BINARYOID || typeOid == VARBINARYOID ||
-            typeOid == TINYBLOBOID || typeOid == MEDIUMBLOBOID ||
-            typeOid == LONGBLOBOID || typeOid == BLOBOID ||
-            typeOid == RAWOID || typeOid == BYTEAOID) {
+        if (is_binary_type(typeOid)) {
             bytea* barg = DatumGetByteaPP(attr);
             dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
         } else {
-            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+            bool need_free = false;
+            outputstr = get_output_str(thisState, attr, &need_free);
             if (typeOid == BITOID) {
                 convertBitsToBytes(outputstr, buf);
             } else {
                 dq_append_string_lenenc(buf, outputstr);
             }
 
-            pfree(outputstr);
-        }
-
-        /* Clean up detoasted copy, if any */
-        if (DatumGetPointer(attr) != DatumGetPointer(origattr)) {
-            pfree(DatumGetPointer(attr));
+            if (need_free) {
+                pfree(outputstr);
+            }
         }
     }
 }
@@ -333,9 +393,9 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
     DR_printtup *myState = (DR_printtup *)self;
     StringInfo buf = &myState->buf;
     int natts = typeinfo->natts;
-
+    bool is_binary_proto = GetSessionContext()->is_binary_proto;
     /* Set or update my derived attribute info, if needed */
-    if (myState->attrinfo != typeinfo || myState->nattrs != natts) {
+    if (!is_binary_proto && (myState->attrinfo != typeinfo || myState->nattrs != natts)) {
         printtup_prepare_info(myState, typeinfo, natts);
     }
 
@@ -346,7 +406,7 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
 
     resetStringInfo(buf);
 
-    if (!GetSessionContext()->is_binary_proto) {
+    if (!is_binary_proto) {
         send_textproto(slot, myState, natts, buf);
     } else {
         send_binaryproto(slot, myState, natts, buf);
@@ -362,7 +422,6 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
  */
 static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int numAttrs)
 {
-
     int16 *formats = myState->portal != NULL ? myState->portal->formats : myState->formats;
     int i;
 
@@ -377,7 +436,6 @@ static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int 
     if (numAttrs <= 0) {
         return;
     }
-
 
     if (myState->portal != NULL && myState->portal->tupDesc != NULL) {
 #ifdef USE_ASSERT_CHECKING
@@ -784,9 +842,8 @@ bool is_req_from_jdbc()
 
 bool inline is_type_support_not_escape_zero(Oid type)
 {
-    return BINARYOID == type;
+    return type >= FirstNormalObjectId && BINARYOID == type;
 }
-
 
 void dolphin_pq_sendcountedtext_binary_printtup(StringInfo buf, const char* str, int slen, int src_encoding, void* convert_finfo)
 {
@@ -938,14 +995,14 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
-                    case F_BPCHAROUT: 
-                        /* support dolphin customizing bpcharout */
-                        if (u_sess->attr.attr_sql.dolphin) {
-                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
-                            need_free = true;
-                            break;
+                    case F_BPCHAROUT:
+                        outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+                        if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                            trim_trailing_space(outputstr);
                         }
-                    case F_VARCHAROUT: 
+                        need_free = !check_need_free_varchar_output(outputstr);
+                        break;
+                    case F_VARCHAROUT:
                         outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
                         need_free = !check_need_free_varchar_output(outputstr);
                         break;
@@ -954,14 +1011,8 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         need_free = !check_need_free_numeric_output(outputstr);
                         break;
                     case F_DATE_OUT:
-                        /* support dolphin customizing dateout */
-                        if (u_sess->attr.attr_sql.dolphin) {
-                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
-                            need_free = true;
-                        } else {
-                            outputstr = output_date_out(DatumGetDateADT(attr));
-                            need_free = !check_need_free_date_output(outputstr);
-                        }
+                        outputstr = output_date_out(DatumGetDateADT(attr));
+                        need_free = !check_need_free_date_output(outputstr);
                         break;
                     default:
                         outputstr = OutputFunctionCall(&thisState->finfo, attr);
@@ -1088,6 +1139,7 @@ DestReceiver* dophin_default_printtup_create_DR(CommandDest dest)
     self->pub.rStartup = dolphin_default_printtup_startup;
     self->pub.rShutdown = dolphin_default_printtup_shutdown;
     self->pub.rDestroy = dolphin_default_printtup_destroy;
+    self->pub.sendRowDesc = SendRowDescriptionMessage;
     self->pub.finalizeLocalStream = NULL;
     self->pub.mydest = dest;
     self->pub.tmpContext = NULL;

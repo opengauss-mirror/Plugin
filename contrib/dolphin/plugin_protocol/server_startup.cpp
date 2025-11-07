@@ -25,6 +25,7 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/dynahash.h"
+#include "utils/hashutils.h"
 #include "libpq/libpq.h"
 #include "executor/executor.h"
 #include "storage/ipc.h"
@@ -34,6 +35,8 @@
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/auth.h"
 #include "plugin_protocol/startup.h"
+#include "plugin_protocol/dqformat.h"
+
 #include "plugin_postgres.h"
 
 #define DOLPHINE_DEFAULT_SERVER_NAME "Dolphin-Server"
@@ -43,7 +46,31 @@
 /* Global variables */
 dolphin_proto_ctx g_proto_ctx;
 
-struct HTAB* b_typoid2DolphinMarcoHash;
+static inline uint32 b_typoidHashKey_hash(b_typoidHashKey v)
+{
+    return hash_combine(murmurhash32(v.db_oid), murmurhash32(v.type_oid));
+}
+
+static inline bool b_typoidHashKey_equal(b_typoidHashKey a, b_typoidHashKey b)
+{
+    return a.db_oid == b.db_oid && a.type_oid == b.type_oid;
+}
+
+#define DOUBLE_SIZE (2)
+#define SH_PREFIX typeoid2dolphin
+#define SH_ELEMENT_TYPE HashEntryTypoid2TypeItem
+#define SH_KEY_TYPE b_typoidHashKey
+#define SH_KEY key
+#define SH_HASH_KEY(tb, key) b_typoidHashKey_hash(key)
+#define SH_EQUAL(tb, a, b)b_typoidHashKey_equal(a, b)
+#define SH_SCOPE static inline
+#define SH_DEFINE
+#define SH_DECLARE
+#include "lib/simplehash.h"
+
+struct typeoid2dolphin_hash* b_typoid2DolphinMarcoHash_simple;
+MemoryContext b_typoid2DolphinMarcoHash_cxt;
+
 TypeItem b_type_items[] = {
     // int type
     {"oid", DOLPHIN_TYPE_LONG, 0, UNSIGNED_FLAG, 0x2d},                          // integer unsigned
@@ -101,9 +128,7 @@ pthread_mutex_t gUserCachedLinesHashLock;
 
 const int b_ntype_items = sizeof(b_type_items) / sizeof(TypeItem);
 static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const TypeItem* item);
-static void InitDolphinMicroHashTable(int size);
 static void InitSendBlobHashTable();
-static void InitStmtParamTypesTable();
 static void InitUserCachedLinesHashTable();
 
 static void AssignDatabaseName(const char* newval, void* extra);
@@ -370,11 +395,16 @@ void server_listen_init(void)
 
 void InitTypoid2DolphinMacroHtab()
 {
-    if (b_typoid2DolphinMarcoHash == NULL) {
-        InitDolphinMicroHashTable(b_ntype_items);
+    if (b_typoid2DolphinMarcoHash_simple == NULL) {
+        b_typoid2DolphinMarcoHash_cxt = AllocSetContextCreate(g_instance.instance_context,
+            "b_typoid2DolphinMarcoHash", ALLOCSET_DEFAULT_MINSIZE, ALLOCSET_DEFAULT_INITSIZE,
+            ALLOCSET_DEFAULT_MAXSIZE, SHARED_CONTEXT);
+        /* alloc 2 * size for extra room */
+        b_typoid2DolphinMarcoHash_simple = (struct typeoid2dolphin_hash*)typeoid2dolphin_create(
+            b_typoid2DolphinMarcoHash_cxt, b_ntype_items * DOUBLE_SIZE, NULL);
     }
     for (int i = 0; i < b_ntype_items; i++) {
-        TypeItem* typeItem = (TypeItem*)MemoryContextAlloc(b_typoid2DolphinMarcoHash->hcxt, sizeof(TypeItem));
+        TypeItem* typeItem = (TypeItem*)MemoryContextAlloc(b_typoid2DolphinMarcoHash_cxt, sizeof(TypeItem));
         typeItem->og_typname = b_type_items[i].og_typname;
         typeItem->dolphin_type_id = b_type_items[i].dolphin_type_id;
         typeItem->flags = b_type_items[i].flags;
@@ -391,7 +421,7 @@ void InitTypoid2DolphinMacroHtab()
 static inline bool JudgeCurDBNeedInit()
 {
     /* Use an unchanging OID (OIDOID) to determine whether the database needs to be initialized. */
-    return b_typoid2DolphinMarcoHash == NULL || TypoidHashTableAccess(HASH_FIND, OIDOID, NULL) == NULL;
+    return b_typoid2DolphinMarcoHash_simple == NULL || TypoidHashTableAccess(HASH_FIND, OIDOID, NULL) == NULL;
 }
 
 const TypeItem* GetItemByTypeOid(Oid oid)
@@ -456,28 +486,18 @@ static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const T
     key.db_oid = u_sess->proc_cxt.MyDatabaseId;
     key.type_oid = oid;
 
-    result = (HashEntryTypoid2TypeItem*)hash_search(b_typoid2DolphinMarcoHash, &key, action, &found);
     if (action == HASH_ENTER) {
+        result = typeoid2dolphin_insert(b_typoid2DolphinMarcoHash_simple, key, &found);
         Assert(!found);
         result->item = item;
         return item;
     } else if (action == HASH_FIND) {
-        if (found) {
+        result = typeoid2dolphin_lookup(b_typoid2DolphinMarcoHash_simple, key);
+        if (result != NULL) {
             return result->item;
         }
     }
     return NULL;
-}
-
-static void InitDolphinMicroHashTable(int size)
-{
-    HASHCTL info = {0};
-    info.keysize = sizeof(b_typoidHashKey);
-    info.entrysize = sizeof(HashEntryTypoid2TypeItem);
-    info.hash = tag_hash;
-    info.hcxt = g_instance.instance_context;
-    b_typoid2DolphinMarcoHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
-                                            HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
 UserCachedLinesHash* UserCachedLinesHashTableAccess(HASHACTION action, char* user_name, char* fastpassword)
@@ -523,39 +543,25 @@ static void InitUserCachedLinesHashTable()
                                         NAMEDATALEN, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-static void InitStmtParamTypesTable()
-{
-    HASHCTL info = {0};
-    info.keysize = sizeof(Oid);
-    info.entrysize = sizeof(HashEntryStmtParamType);
-    info.hash = oid_hash;
-    info.hcxt = u_sess->cache_mem_cxt;
-    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin stmt input type Table",
-                                                           PARAM_TYPE_PER_SESSION, &info,
-                                                           HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
-}
-
 const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
 {
-    if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable();
+    if (unlikely(GetSessionContext()->b_stmtInputTypeHash == NULL)) {
+        return NULL;
     }
 
-    bool found = false;
-    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_FIND, &found);
-    return found ? entry->value : NULL;
+    HashEntryStmtParamType *entry = b_stmt_input_lookup(GetSessionContext()->b_stmtInputTypeHash, stmt_id);
+    return entry != NULL ? entry->value : NULL;
 }
 
 void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
 {
     if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable();
+        GetSessionContext()->b_stmtInputTypeHash = (struct b_stmt_input_hash*)b_stmt_input_create(
+            u_sess->cache_mem_cxt, PARAM_TYPE_PER_SESSION, NULL);
     }
 
     bool found = false;
-    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                          &stmt_id, HASH_ENTER, &found);
+    HashEntryStmtParamType *entry = b_stmt_input_insert(GetSessionContext()->b_stmtInputTypeHash, stmt_id, &found);
     if (found) {
         pfree_ext(entry->value->itypes);
         pfree_ext(entry->value);

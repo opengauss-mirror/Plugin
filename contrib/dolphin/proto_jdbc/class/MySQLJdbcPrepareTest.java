@@ -72,9 +72,9 @@ public class MySQLJdbcPrepareTest {
         info.setProperty("password", password);
         
         if (jar_version.equals("new")) {
-            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC";
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useOldAliasMetadataBehavior=true&emulateUnsupportedPstmts=false";
         } else {
-            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false";
+            url_jdbc = "jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false&useOldAliasMetadataBehavior=true&emulateUnsupportedPstmts=false";
         }
     
         try (Connection connection = DriverManager.getConnection(url_jdbc, info);
@@ -112,13 +112,16 @@ public class MySQLJdbcPrepareTest {
                 "c29 text," +
                 "c30 decimal(5, 3)," +
                 "c31 json," +
-                "c32 enum('a', 'b')," +
-                "c33 set('a', 'b')," +
                 "c34 \"char\"," +
                 "c35 name" +
                 ")");
-            
-            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            statement.executeUpdate("drop table if exists enum_set_table");
+            statement.executeUpdate("create table enum_set_table (" +
+                "c1 enum('a', 'b')," +
+                "c2 set('a', 'b')" +
+                ")");
+
+            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             p1.setInt(1, 1);
             p1.setLong(2, 2000);
             p1.setInt(3, 1);
@@ -155,10 +158,8 @@ public class MySQLJdbcPrepareTest {
             p1.setString(27, "text");
             p1.setBigDecimal(28, new BigDecimal(20));
             p1.setString(29, "{\"k\": \"v\"}"); 
-            p1.setString(30, "a");
-            p1.setString(31, "a");
-            p1.setString(32, "c");
-            p1.setString(33, "openGauss name");
+            p1.setString(30, "c");
+            p1.setString(31, "openGauss name");
             
             p1.executeUpdate();
             
@@ -172,6 +173,40 @@ public class MySQLJdbcPrepareTest {
             p2.clearParameters();
             p2.close();
             resultSet.close();
+
+            p1 = connection.prepareStatement("insert into enum_set_table values(?,?)");
+            p1.setString(1, "a");
+            p1.setString(2, "b");
+            p1.executeUpdate();
+            p1.clearParameters();
+            p1.close();
+
+            try {
+                p1 = connection.prepareStatement("insert into t3(c27) values(?)");
+                p1.setInt(1, 1);
+                p1.executeUpdate();
+            } catch (SQLException e) {
+                // insert failed cause can't find int to point castfunc
+                System.out.println("insert point failed: " + e.getMessage());
+                p1.close();
+            }
+
+            p1 = connection.prepareStatement("select * from enum_set_table where c1=?");
+            p1.setString(1, "a");
+            resultSet = p1.executeQuery();
+            print_res(resultSet);
+            p1.clearParameters();
+            p1.close();
+            resultSet.close();
+
+            p1 = connection.prepareStatement("select * from enum_set_table where c2=?");
+            p1.setString(1, "b");
+            resultSet = p1.executeQuery();
+            print_res(resultSet);
+            p1.clearParameters();
+            p1.close();
+            resultSet.close();
+            statement.executeUpdate("drop table if exists enum_set_table");
 
             p2 = connection.prepareStatement("show tables like ?");
             p2.setString(1, "t%");

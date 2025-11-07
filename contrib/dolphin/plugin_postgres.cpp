@@ -291,7 +291,7 @@ void init_dolphin_proto(char* database_name)
         int ret = strcpy_s(g_proto_ctx.mysql_server_key, NAMEDATALEN, "server.key");
         securec_check(ret, "\0", "\0");
     }
-    
+
     if (protocol_inited) {
         define_dolphin_server_guc();
         return;
@@ -889,7 +889,7 @@ BSqlPluginContext* GetSessionContext()
     if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
         init_session_vars();
     }
-    return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
+    return (BSqlPluginContext *)u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
 }
 
 void set_extension_index(uint32 index)

@@ -31,6 +31,8 @@
 
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/varlena.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define PRINTABLE_CHARS_COUNT 62
 #define HANDSHAKE_RESPONSE_RESERVED_BYTES 23
@@ -52,8 +54,8 @@
 #define PACKETOFFSET_4 4
 #define PACKETOFFSET_8 8
 
-static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
-                                                   com_stmt_exec_request *req, StringInfo buf);
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
+    com_stmt_exec_request *req, StringInfo buf, const InputStmtParam *stmt_param);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
 
 static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
@@ -194,18 +196,6 @@ network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
     return auth;
 }
 
-network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg)
-{
-    network_mysqld_ok_packet_t* ok_packet = (network_mysqld_ok_packet_t*)palloc0(sizeof(network_mysqld_ok_packet_t));
-    ok_packet->affected_rows = affected_rows;
-    ok_packet->insert_id = insert_id;
-    ok_packet->warnings = 0;
-    ok_packet->msg = msg;
-    ok_packet->server_status = SERVER_STATUS_AUTOCOMMIT;
-    
-    return ok_packet;
-}
-
 void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packet)
 {
     dq_append_int1(buf, 0x00);
@@ -221,10 +211,10 @@ void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packe
 void send_general_ok_packet()
 {
     StringInfo buf = makeStringInfo();
-    network_mysqld_ok_packet_t* ok_packet = make_ok_packet(0);
-    send_network_ok_packet(buf, ok_packet); 
+    network_mysqld_ok_packet_t ok_packet;
+    make_ok_packet(0, 0, "", &ok_packet);
+    send_network_ok_packet(buf, &ok_packet);
 
-    pfree(ok_packet);
     DestroyStringInfo(buf);
 }
 
@@ -251,21 +241,22 @@ void send_network_eof_packet(StringInfo buf)
 
 void send_new_eof_packet(StringInfo buf)
 {
+    uint32 client_capabilities = GetSessionContext()->Conn_Mysql_Info->client_capabilities;
     resetStringInfo(buf);
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF) {
+    if (client_capabilities & CLIENT_DEPRECATE_EOF) {
         dq_append_int1(buf, 0xfe);
     } else {
         dq_append_int1(buf, 0x00);
     }
     dq_append_int_lenenc(buf, 0);   //affected rows
     dq_append_int_lenenc(buf, 0);   //last insert-id
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_PROTOCOL_41) {
+    if (client_capabilities & CLIENT_PROTOCOL_41) {
         sendServerStatus(buf);
         dq_append_int2(buf, 0x00);       /* warning count *int<2>	warnings	number of warnings*/
-    } else if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_TRANSACTIONS) {
+    } else if (client_capabilities & CLIENT_TRANSACTIONS) {
         sendServerStatus(buf);
     }
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_SESSION_TRACK) {
+    if (client_capabilities & CLIENT_SESSION_TRACK) {
         dq_append_string_lenenc(buf, "", -1);        // string<lenenc>	info	human readable status information
     }
     if (SERVER_SESSION_STATE_CHANGED) {
@@ -319,9 +310,10 @@ void send_field_count_packet(StringInfo buf, int count)
     dq_putmessage(buf->data, buf->len);
 }
 
-dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName)
+void make_dolphin_column_definition(const char *name, char *tableName, dolphin_column_definition* field)
 {
-    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+    int rc = memset_s(field, sizeof(dolphin_column_definition), 0, sizeof(dolphin_column_definition));
+    securec_check(rc, "", "");
     // table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = name; 
     field->type = DOLPHIN_TYPE_VAR_STRING; // map to atttypid
@@ -330,15 +322,14 @@ dolphin_column_definition* make_dolphin_column_definition(const char *name, char
     field->table = tableName;
     field->org_table = tableName;
     field->charsetnr = 0x2d;
+}
 
-    return field;
-} 
-
-dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr,
-                                                          char *tableName, char *oriColName)
+void make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName, char *oriColName,
+    dolphin_column_definition* field)
 {
     // FIELD packet
-    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+    int rc = memset_s(field, sizeof(dolphin_column_definition), 0, sizeof(dolphin_column_definition));
+    securec_check(rc, "", "");
 
     // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = attr->attname.data;
@@ -368,8 +359,6 @@ dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute 
     } else {
         field->length = DOLPHIN_BLOB_LENGTH;
     }
-
-    return field;
 }
 
 void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field)
@@ -413,13 +402,18 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
     dq_putmessage(buf->data, buf->len);
 }
 
-static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
-                                                   com_stmt_exec_request *req, StringInfo buf)
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
+    com_stmt_exec_request *req, StringInfo buf, const InputStmtParam *stmt_param)
 {
     com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
-    const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
+    if (stmt_param == NULL) {
+        stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
+    }
     for (int i = 0; i < param_count; i++) {
-        if (param_isnull(i, req->null_bitmap)) continue;
+        if (param_isnull(i, req->null_bitmap)) {
+            continue;
+        }
+        Assert(stmt_param->itypes != NULL);
         switch (stmt_param->itypes[i]) {
             case DOLPHIN_TYPE_LONG:
             case DOLPHIN_TYPE_INT24: {
@@ -470,7 +464,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
             case DOLPHIN_TYPE_BIT:
             case DOLPHIN_TYPE_DECIMAL:
             case DOLPHIN_TYPE_NEWDECIMAL: {
-                const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
+                const TypeItem* item = GetItemByTypeOid(psrc->param_types[i]);
                 switch (item->dolphin_type_id) {
                     case DOLPHIN_TYPE_BIT: {
                         parameters[i].type = TYPE_HEX;
@@ -557,48 +551,57 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
     return parameters;
 }
 
-com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
+com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf, PreparedStatement **pstmt,
+    CachedPlanSource **psrc)
 {
-    char stmt_name[NAMEDATALEN];
     com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
     dq_get_int4(buf, &req->statement_id);
     dq_get_int1(buf, &req->flags);
     dq_get_int4(buf, &req->iteration_count);
-    int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", req->statement_id);
-    securec_check_ss(rc, "\0", "\0");
-    PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
+    char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
+    char statement_id_str[MAX_INT32_LEN + 1];
+    uint32 client_query_attr = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES;
+
+    pg_lltoa((int64)req->statement_id, statement_id_str);
+    int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
+    securec_check(rc, "", "");
+
+    get_prepared_statement(stmt_name, pstmt, psrc);
     int param_count = 0;
-    if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
+    if (client_query_attr) {
         uint64 len;
         param_count = dq_get_int_lenenc(buf, (void *)&len);
     } else {
-        param_count = pstmt->plansource->num_params;
+        param_count = (*psrc)->num_params;
     }
-    if (param_count > 0) {
-        int len = (param_count + 7) / 8;
-        req->null_bitmap = dq_get_string_len(buf, len);
-        dq_get_int1(buf, &req->new_params_bind_flag);
-        if (req->new_params_bind_flag) {
-            /* malloc private data using u_sess->cache_mem_cxt */
-            MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-            InputStmtParam *parameter_types = (InputStmtParam *)palloc0(sizeof(InputStmtParam));
-            parameter_types->count = param_count;
-            parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
-            for (int i = 0; i < param_count; i++) {
-                dq_get_int2(buf, &parameter_types->itypes[i]);
-                if (GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_QUERY_ATTRIBUTES) {
-                    /*At present, there is no stored parameter name, only read and not used.
-                    It will be automatically released after completion*/
-                    char* parameter_name = dq_get_string_lenenc(buf);
-                }
+    if (param_count <= 0) {
+        return req;
+    }
+
+    InputStmtParam *parameter_types = NULL;
+    int len = (param_count + 7) / 8;
+    req->null_bitmap = dq_get_string_len(buf, len);
+    dq_get_int1(buf, &req->new_params_bind_flag);
+    if (req->new_params_bind_flag) {
+        /* malloc private data using u_sess->cache_mem_cxt */
+        MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+        parameter_types = (InputStmtParam *)palloc(sizeof(InputStmtParam));
+        parameter_types->count = param_count;
+        parameter_types->itypes = (uint32 *)palloc(sizeof(uint32) * param_count);
+        for (int i = 0; i < param_count; i++) {
+            dq_get_int2(buf, &parameter_types->itypes[i]);
+            if (client_query_attr) {
+                /*At present, there is no stored parameter name, only read and not used.
+                It will be automatically released after completion*/
+                dq_skip_string(buf);
             }
-            SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
-            (void)MemoryContextSwitchTo(oldcontext);
         }
-        com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, pstmt, req, buf);
-        req->parameter_values = parameters;
-        req->param_count = param_count;
-    }    
+        SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
+        (void)MemoryContextSwitchTo(oldcontext);
+    }
+    com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, *psrc, req, buf, parameter_types);
+    req->parameter_values = parameters;
+    req->param_count = param_count;
     return req;
 }
 
@@ -656,15 +659,24 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             break;
         }
         case DOLPHIN_TYPE_STRING: {
-            /* since all MySQL unknown type are map to DOLPHIN_TYPE_STRING, we use type out func here */
-            if (thisState == NULL) {
-                /* should not happen */
-                ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
-                    errmsg("There is no output function for type: %s(%u)", item->og_typname, item->og_type_oid)));
+            char *val = nullptr;
+            if (item->og_type_oid == BPCHAROID) {
+                val = output_text_to_cstring((text*)DatumGetPointer(binval));
+                if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+                    trim_trailing_space(val);
+                }
+                dq_append_string_lenenc(buf, val);
+                if (val != u_sess->utils_cxt.varcharoutput_buffer) {
+                    pfree(val);
+                }
+            } else {
+                Oid typoutput;
+                bool typIsVarlena = false;
+                getTypeOutputInfo(item->og_type_oid, &typoutput, &typIsVarlena);
+                val = OidOutputFunctionCall(typoutput, binval);
+                dq_append_string_lenenc(buf, val);
+                pfree_ext(val);
             }
-            char *val = OutputFunctionCall(&thisState->finfo, binval);
-            dq_append_string_lenenc(buf, val);
-            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_VARCHAR:
@@ -699,6 +711,8 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
                 val = DatumGetCString(DirectFunctionCall1(line_out, binval));
             } else if (item->og_type_oid == POLYGONOID) {
                 val = DatumGetCString(DirectFunctionCall1(poly_out, binval));
+            } else {
+                ereport(ERROR, (errmsg("unsupport geometry type: %u", item->og_type_oid)));
             }
             dq_append_string_lenenc(buf, val);
             pfree_ext(val);
@@ -706,9 +720,11 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         }
         case DOLPHIN_TYPE_DECIMAL:
         case DOLPHIN_TYPE_NEWDECIMAL: {
-            char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
+            char *val = output_numeric_out(DatumGetNumeric(binval));
             dq_append_string_lenenc(buf, val);
-            pfree_ext(val);
+            if (val != u_sess->utils_cxt.numericoutput_buffer) {
+                pfree_ext(val);
+            }
             break;
         }
         case DOLPHIN_TYPE_ENUM: {
@@ -849,9 +865,9 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)
     // send column_count * column_definition packet
     for (int i = 0; i < natts; ++i) {
         // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
-        send_column_definition41_packet(buf, field);
-        pfree(field);
+        dolphin_column_definition field;
+        make_dolphin_column_definition(&attrs[i], NULL, NULL, &field);
+        send_column_definition41_packet(buf, &field);
     }
 
     // EOF packet

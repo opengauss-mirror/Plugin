@@ -26,7 +26,9 @@
 #include "executor/spi_priv.h"
 #include "commands/prepare.h"
 #include "commands/sequence.h"
-
+#include "utils/builtins.h"
+#include "plugin_utils/varlena.h"
+#include "plugin_utils/int8.h"
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
@@ -37,8 +39,9 @@
 #define EXPLAIN_TAG_LEN 7
 
 static int execute_text_protocol_sql(const char* sql);
-static int execute_com_stmt_prepare(const char *client_sql);
-static int execute_binary_protocol_req(com_stmt_exec_request *request);
+static int execute_com_stmt_prepare(StringInfo buf);
+static void execute_binary_protocol_req_process_b(StringInfo buf);
+static void execute_binary_protocol_req_process_e();
 static void remove_cached_stmt_data(uint32 *statement_id);
 static void execute_com_stmt_close(StringInfo buf);
 static void execute_com_stmt_reset(StringInfo buf);
@@ -81,24 +84,23 @@ void dophin_send_ready_for_query(CommandDest dest)
 
 void dolphin_end_command(const char *completionTag)
 {
-    StringInfo buf = makeStringInfo();
+    StringInfoData buf;
+    initStringInfo(&buf);
     if (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 ) {
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-            send_network_eof_packet(buf);
+            send_network_eof_packet(&buf);
         } else {
-            send_new_eof_packet(buf);
+            send_new_eof_packet(&buf);
         }
     } else {
-        int64 affected_rows = u_sess->statement_cxt.current_row_count;
-        uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
-        network_mysqld_ok_packet_t *ok_packet = make_ok_packet(affected_rows, last_insert_id);
-        send_network_ok_packet(buf, ok_packet); 
-        pfree(ok_packet);
+        network_mysqld_ok_packet_t ok_packet;
+        make_ok_packet(u_sess->statement_cxt.current_row_count, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        send_network_ok_packet(&buf, &ok_packet);
     }
-    DestroyStringInfo(buf);
+    FreeStringInfo(&buf);
 }
 
 void dolphin_send_message(ErrorData *edata)
@@ -118,6 +120,7 @@ void dolphin_send_message(ErrorData *edata)
 
     pfree(err_packet);
     DestroyStringInfo(buf);
+    pq_flush();
 }
 
 int dophin_read_command(StringInfo buf)
@@ -172,15 +175,14 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         case COM_STMT_PREPARE: {
-            char *sql = dq_get_string_eof(buf);
-            execute_com_stmt_prepare(sql);
+            execute_com_stmt_prepare(buf);
             break;
         }
         case COM_STMT_EXECUTE: {
             GetSessionContext()->is_binary_proto = true;
-            com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
-            execute_binary_protocol_req(req);
-            free_com_stmt_exec_request(req);
+            execute_binary_protocol_req_process_b(buf);
+            execute_binary_protocol_req_process_e();
+            exec_sync_message();
             GetSessionContext()->is_binary_proto = false;
             break;
         }
@@ -366,10 +368,9 @@ int execute_text_protocol_sql(const char *sql)
             send_new_eof_packet(buf);
         }
     } else {
-        uint64 last_insert_id = u_sess->cmd_cxt.last_insert_id;
-        network_mysqld_ok_packet_t *ok_packet = make_ok_packet(SPI_processed, last_insert_id);
-        send_network_ok_packet(buf, ok_packet); 
-        pfree(ok_packet);
+        network_mysqld_ok_packet_t ok_packet;
+        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        send_network_ok_packet(buf, &ok_packet);
     }
 
     DestroyStringInfo(buf);
@@ -381,126 +382,249 @@ int execute_text_protocol_sql(const char *sql)
     return 0;
 }
 
-int execute_com_stmt_prepare(const char *client_sql)
+int execute_com_stmt_prepare(StringInfo buf)
 {
-    int rc;
+    OgRecordAutoController _local_opt(SRT6_P);
+    char *client_sql = dq_get_string_eof(buf);
+    CachedPlanSource *psrc = NULL;
+    PreparedStatement *pstmt = NULL;
+    bool client_dep_eof = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF;
+    int32 statement_id = gs_atomic_add_32(&g_proto_ctx.statement_id, 1);
     char stmt_name[NAMEDATALEN];
-    
-    start_xact_command();
+    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, statement_id);
+    securec_check_ss(rc, "", "");
 
-    if (!u_sess->attr.attr_storage.phony_autocommit) {
-        BeginTxnForAutoCommitOff();
-    }
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
+    exec_pre_parse_message();
+    exec_parse_message(client_sql, stmt_name, NULL, NULL, NULL, 0, false);
+    get_prepared_statement(stmt_name, &pstmt, &psrc);
+    int column_count = psrc->resultDesc == NULL ? 0 : psrc->resultDesc->natts;
+    int param_count = psrc->num_params;
 
     StringInfo sql = makeStringInfo();
-    int32 statement_id = gs_atomic_add_32(&g_proto_ctx.statement_id, 1);
-    rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", statement_id);
-    securec_check_ss(rc, "\0", "\0");
-
-    appendStringInfo(sql, "prepare %s from '%s'", stmt_name, client_sql);
-
-    rc = SPI_execute(sql->data, false, 0);
-
-    PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
-    int column_count = pstmt->plansource->resultDesc == NULL ? 0 : pstmt->plansource->resultDesc->natts;
-    int param_count = pstmt->plansource->num_params;
-
-    resetStringInfo(sql);
     send_com_stmt_prepare_ok_packet(sql, statement_id, column_count, param_count);
 
     for (int i = 0; i < param_count; i++) {
-        dolphin_column_definition* param_field = make_dolphin_column_definition("?");
-        const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
-        param_field->type = item->dolphin_type_id;
-        param_field->charsetnr = item->charset_flag;
-        send_column_definition41_packet(sql, param_field);
+        dolphin_column_definition param_field;
+        make_dolphin_column_definition("?", NULL, &param_field);
+        const TypeItem* item = GetItemByTypeOid(psrc->param_types[i]);
+        param_field.type = item->dolphin_type_id;
+        param_field.charsetnr = item->charset_flag;
+        send_column_definition41_packet(sql, &param_field);
     }
-    if (param_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (param_count != 0 && !client_dep_eof) {
         send_network_eof_packet(sql);
     }
     
     for (int i = 0; i < column_count; i++) {
-        dolphin_column_definition* column_field = make_dolphin_column_definition("");
-        send_column_definition41_packet(sql, column_field);
+        dolphin_column_definition column_field;
+        make_dolphin_column_definition("", NULL, &column_field);
+        send_column_definition41_packet(sql, &column_field);
     }
-    if (column_count != 0 && !(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
+    if (column_count != 0 && !client_dep_eof) {
         send_network_eof_packet(sql);
     }
     DestroyStringInfo(sql);
-
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
-    finish_xact_command();
-
+    pfree_ext(client_sql);
+    exec_after_parse_message(stmt_name);
     return 0;
 }
 
-int execute_binary_protocol_req(com_stmt_exec_request *request)
+static inline Datum stringtype_input(Oid type, char* str)
 {
-    StringInfo sql = makeStringInfo();
-    appendStringInfo(sql, "execute p%d using ", request->statement_id);
+    switch (type) {
+        case BPCHAROID:
+            PG_RETURN_BPCHAR_P(bpchar_input(str, strlen(str), -1));
+            break;
+        case VARCHAROID:
+            PG_RETURN_VARCHAR_P(varchar_input(str, strlen(str), -1));
+            break;
+        default: {
+            Oid typinput;
+            Oid typioparam;
+            getTypeInputInfo(type, &typinput, &typioparam);
+            return OidInputFunctionCall(typinput, (char*)str, typioparam, -1);
+        }
+    }
+}
 
-    for (uint i = 0; i < request->param_count; i++) {
-        switch (request->parameter_values[i].type) {
+void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* psrc, ParamListInfo* params,
+    MemoryContext paramCtx, MemoryContext valueCtx)
+{
+    int numParams = pqBindMessage->numParams;
+    /*
+     * Fetch parameters, if any, and store in the portal's memory context.
+     */
+    if (numParams <= 0) {
+        return;
+    }
+
+    MemoryContext oldCtx = MemoryContextSwitchTo(paramCtx);
+    if (*params == NULL) {
+        *params = (ParamListInfo)palloc(offsetof(ParamListInfoData, params) + numParams * sizeof(ParamExternData));
+        /* we have static list of params, so no hooks needed */
+        (*params)->paramFetch = NULL;
+        (*params)->paramFetchArg = NULL;
+        (*params)->parserSetup = NULL;
+        (*params)->parserSetupArg = NULL;
+        (*params)->params_need_process = false;
+        (*params)->numParams = numParams;
+        (*params)->uParamInfo = DEFUALT_INFO;
+        (*params)->params_lazy_bind = false;
+    }
+
+    MemoryContextSwitchTo(valueCtx);
+    com_stmt_param *param = (com_stmt_param *)pqBindMessage->pvalue;
+    for (int i = 0; i < numParams; i++) {
+        bool isNull = false;
+        Datum pval = 0;
+        Oid ptype = psrc->param_types[i];
+        Oid sendType = InvalidOid;
+        switch (param[i].type) {
             case TYPE_STRING: {
-                if (request->parameter_values[i].value.text) {
-                    appendStringInfo(sql, "'%s'", request->parameter_values[i].value.text);
+                if (param[i].value.text) {
+                    pval = stringtype_input(ptype, (char*)param[i].value.text);
                 } else {
-                    appendStringInfo(sql, "(null)");
+                    isNull = true;
                 }
-                
                 break;
             }
             case TYPE_INT1: {
-                appendStringInfo(sql, "%d", request->parameter_values[i].value.i1);
+                sendType = INT1OID;
+                pval = Int8GetDatum(param[i].value.i1);
                 break;
             }
             case TYPE_INT2:
             case TYPE_INT4: {
-                appendStringInfo(sql, "%d", request->parameter_values[i].value.i4);
+                sendType = INT4OID;
+                pval = Int32GetDatum(param[i].value.i4);
                 break;
             }
             case TYPE_INT8: {
-                appendStringInfo(sql, "%lld", (int64)(request->parameter_values[i].value.i8));
+                sendType = INT8OID;
+                pval = Int64GetDatum(param[i].value.i8);
                 break;
             }
             case TYPE_FLOAT: {
-                appendStringInfo(sql, "%f", request->parameter_values[i].value.f.f4);
+                sendType = FLOAT4OID;
+                pval = Float4GetDatum(param[i].value.f.f4);
                 break;
             }
             case TYPE_DOUBLE: {
-                appendStringInfo(sql, "%lf", request->parameter_values[i].value.d.f8);
+                sendType = FLOAT8OID;
+                pval = Float8GetDatum(param[i].value.d.f8);
                 break;
             }
             case TYPE_HEX: {
-                appendStringInfo(sql, "x'");
-                for (uint j = 0; j < strlen(request->parameter_values[i].value.text); j++) {
-                    appendStringInfo(sql, "%x", request->parameter_values[i].value.text[j]);
+                if (param[i].value.text == NULL) {
+                    isNull = true;
+                    break;
                 }
-                appendStringInfo(sql, "'");
+                sendType = BITOID;
+                Oid typinput;
+                Oid typioparam;
+                getTypeInputInfo(sendType, &typinput, &typioparam);
+                pval = OidInputFunctionCall(typinput, (char*)param[i].value.text, typioparam, -1);
                 break;
             }
             default:
+                isNull = true;
                 break;
         }
-        
-        if (i < request->param_count - 1) {
-            appendStringInfoString(sql, ",");
+
+        if (!isNull && sendType == INT8OID && ptype == INT4OID) {
+            pval = int84_internal(DatumGetInt64(pval), false);
+        } else if (!isNull && sendType != InvalidOid && sendType != ptype) {
+            /* maybe we have better way to deal with these data type transform? */
+            Oid castFunc;
+            CoercionPathType pathtype = find_coercion_pathway(ptype, sendType, COERCION_EXPLICIT, &castFunc);
+            switch (pathtype) {
+                case COERCION_PATH_NONE:
+                    ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("parameter $%d of type %s cannot be coerced to the expected type %s",
+                            i + 1,
+                            format_type_be(sendType),
+                            format_type_be(ptype)),
+                        errhint("You will need to rewrite or cast the expression.")));
+                    break;
+                case COERCION_PATH_FUNC:
+                    pval = OidFunctionCall1(castFunc, pval);
+                    break;
+                case COERCION_PATH_RELABELTYPE:
+                    /* binary equal, noting to do */
+                    break;
+                case COERCION_PATH_COERCEVIAIO:
+                case COERCION_PATH_ARRAYCOERCE: {
+                    Oid typinout;
+                    Oid typioparam;
+                    bool typIsVarlena = false;
+
+                    getTypeOutputInfo(sendType, &typinout, &typIsVarlena);
+                    char* result = OidOutputFunctionCall(typinout, pval);
+
+                    getTypeInputInfo(ptype, &typinout, &typioparam);
+                    pval = OidInputFunctionCall(typinout, result, typioparam, -1);
+                    pfree_ext(result);
+                    break;
+                }
+                default:
+                    /* should not happen */
+                    ereport(ERROR, (errmsg("Unknown coerce path type: %d.", pathtype)));
+                    break;
+            }
         }
+        (*params)->params[i].value = pval;
+        (*params)->params[i].isnull = isNull;
+
+        /*
+         * We mark the params as CONST.  This ensures that any custom plan
+         * makes full use of the parameter values.
+         */
+        (*params)->params[i].pflags = PARAM_FLAG_CONST;
+        (*params)->params[i].ptype = ptype;
+        (*params)->params[i].tabInfo = NULL;
+    }
+    MemoryContextSwitchTo(oldCtx);
+}
+
+static void execute_binary_protocol_req_process_b(StringInfo buf)
+{
+    OgRecordAutoController _local_opt_b(SRT7_B);
+    PreparedStatement *pstmt = NULL;
+    CachedPlanSource *psrc = NULL;
+
+    exec_pre_bind_message();
+
+    com_stmt_exec_request *req = read_com_stmt_exec_request(buf, &pstmt, &psrc);
+    char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
+    char statement_id_str[MAX_INT32_LEN + 1];
+
+    pg_lltoa((int64)req->statement_id, statement_id_str);
+    int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
+    securec_check(rc, "", "");
+    BindMessage pqBindMessage;
+    pqBindMessage.portalName = "";
+    pqBindMessage.stmtName = stmt_name;
+    pqBindMessage.numPFormats = 0;
+    pqBindMessage.pformats = NULL;
+    pqBindMessage.numParams = req->param_count;
+    pqBindMessage.plength = NULL;
+    pqBindMessage.pvalue = (const char**)req->parameter_values;
+    pqBindMessage.numRFormats = 0;
+    pqBindMessage.rformats = NULL;
+
+    exec_bind_message(&pqBindMessage, pstmt, psrc, false, dolphin_get_param_list_info);
+    free_com_stmt_exec_request(req);
+}
+
+static void execute_binary_protocol_req_process_e()
+{
+    OgRecordAutoController _local_opt_e(SRT8_E);
+    /* set use_parame to true, so in opfusion state it will send row desc, check OpFusion::setReceiver */
+    if (exec_pre_execute_message("", FETCH_ALL, false)) {
+        return;
     }
 
-    execute_simple_query(sql->data);
-
-    return 0;
+    exec_execute_message("", FETCH_ALL, false);
 }
 
 void remove_cached_stmt_data(uint32 *statement_id)
@@ -509,19 +633,21 @@ void remove_cached_stmt_data(uint32 *statement_id)
         HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id,
                                                             HASH_REMOVE, NULL);
         if (entry != NULL) {
-            for (int i = 0; i < entry->value->count; i++) {
+            for (uint32 i = 0; i < entry->value->count; i++) {
                 pfree_ext(entry->value->data[i]);
             }
             pfree_ext(entry->value->data);
             pfree_ext(entry->value);
         }
     }
+
     if (GetSessionContext()->b_stmtInputTypeHash) {
-        HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-            (void*)statement_id, HASH_REMOVE, NULL);
+        HashEntryStmtParamType *entry = b_stmt_input_lookup(GetSessionContext()->b_stmtInputTypeHash, *statement_id);
         if (entry != NULL) {
-            pfree_ext(entry->value->itypes);
-            pfree_ext(entry->value);
+            InputStmtParam *param = entry->value;
+            b_stmt_input_delete_item(GetSessionContext()->b_stmtInputTypeHash, entry);
+            pfree_ext(param->itypes);
+            pfree_ext(param);
         }
     }
 }
@@ -536,32 +662,14 @@ void execute_com_stmt_reset(StringInfo buf)
 
 void execute_com_stmt_close(StringInfo buf)
 {
+    OgRecordAutoController _local_opt(SRT11_C);
     uint32 statement_id;
     char stmt_name[NAMEDATALEN];
     dq_get_int4(buf, &statement_id);
-    int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", statement_id);
+    int rc = sprintf_s(stmt_name, NAMEDATALEN, "%s%d", DOLPHIN_PROTOCOL_STMT_NAME_PREFIX, statement_id);
     securec_check_ss(rc, "\0", "\0");
 
-    StringInfo sql = makeStringInfo();
-    appendStringInfo(sql, "DEALLOCATE %s", stmt_name);
-
-    start_xact_command();
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
-
-    rc = SPI_execute(sql->data, false, 0);
-
-    DestroyStringInfo(sql);
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
-    finish_xact_command();
+    DropPreparedStatement(stmt_name, false);
 
     remove_cached_stmt_data(&statement_id);
 }
@@ -593,11 +701,10 @@ void execute_com_field_list(char *tableName)
             HeapTuple spi_tuple = SPI_tuptable->vals[i];
             char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
             char *default_value = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Default"));
-            dolphin_column_definition *field = make_dolphin_column_definition(name, tableName);
-            field->default_value = default_value;
-            send_column_definition41_packet(buf, field);
-
-            pfree(field);
+            dolphin_column_definition field;
+            make_dolphin_column_definition(name, tableName, &field);
+            field.default_value = default_value;
+            send_column_definition41_packet(buf, &field);
         }
 
         /* EOF packet at end of all rows*/

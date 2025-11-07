@@ -37,11 +37,18 @@ int dq_putmessage(const char *packet, size_t len)
     t_thrd.libpq_cxt.PqCommBusy = true;
 
     // put header size
-    StringInfo header = makeStringInfo();
-    dq_append_payload_len(header, len);
-    dq_append_sequence_id(header, u_sess->proc_cxt.nextSeqid++);
+    char header[BYTE_4_LEN];
+    uint32 num = len;
+    int i = 0;
+    for (; i < BYTE_3_LEN; i++) {
+        uint8 ni = num & 0xff;
 
-    if (internal_putbytes(header->data, header->len)) {
+        header[i] = ni;
+        num >>= SHIFT_BYTE_STEP;
+    }
+    header[i] = u_sess->proc_cxt.nextSeqid++;
+
+    if (internal_putbytes(header, BYTE_4_LEN)) {
         goto fail;
     }
 
@@ -49,13 +56,10 @@ int dq_putmessage(const char *packet, size_t len)
         goto fail;
     }
     t_thrd.libpq_cxt.PqCommBusy = false;
-
-    DestroyStringInfo(header);
     return 0;
 
 fail:
     t_thrd.libpq_cxt.PqCommBusy = false;
-    pfree(header);
     return EOF;
 }
 
@@ -171,8 +175,12 @@ int dq_getmessage(StringInfo buf, uint32 maxlen)
     }
     u_sess->proc_cxt.nextSeqid = ++seq_id;
 
-    // Read rest of payload length bytes into buf
-    if (len > 0) {
+    if (unlikely(len == 0)) {
+        return 0;
+    }
+
+    /* no enough room */
+    if (len >= buf->maxlen) {
         PG_TRY();
         {
             enlargeStringInfo(buf, len);
@@ -185,17 +193,17 @@ int dq_getmessage(StringInfo buf, uint32 maxlen)
             PG_RE_THROW();
         }
         PG_END_TRY();
-
-        // read playload_lenght bytes into buf->data
-        if (pq_getbytes(buf->data, len) == EOF) {
-            ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
-            return EOF;
-        }
-
-        buf->len = len;
-        buf->cursor = 0;
-        buf->data[len] = '\0';
     }
+
+    // read playload_lenght bytes into buf->data
+    if (pq_getbytes(buf->data, len) == EOF) {
+        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+        return EOF;
+    }
+
+    buf->len = len;
+    buf->cursor = 0;
+    buf->data[len] = '\0';
 
     return 0;
 }
