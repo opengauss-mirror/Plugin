@@ -2726,7 +2726,6 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
             ereport(WARNING,
                 (errmsg("Store unlogged table in segment when enable system table segment")));
         }
-    
         /* store tables in segment storage as all possible while initdb */
         if (relpersistence == RELPERSISTENCE_PERMANENT && (relkind == RELKIND_RELATION ||
             relkind == RELKIND_INDEX || relkind == RELKIND_GLOBAL_INDEX)) {
@@ -7402,7 +7401,8 @@ static void addNewPartitionTuplesForPartition(Relation pg_partition_rel, Oid rel
 {
     int partKeyNum = list_length(partTableState->partitionKey);
     bool isTimestamptzForPartKey[partKeyNum];
-    memset_s(isTimestamptzForPartKey, sizeof(isTimestamptzForPartKey), 0, sizeof(isTimestamptzForPartKey));
+    errno_t rc = memset_s(isTimestamptzForPartKey, sizeof(isTimestamptzForPartKey), 0, sizeof(isTimestamptzForPartKey));
+    securec_check(rc, "\0", "\0");
     IsPartitionKeyContainTimestampwithzoneType(partTableState, tupledesc, isTimestamptzForPartKey, partKeyNum);
 
     bool *isTimestamptzForSubPartKey = NULL;

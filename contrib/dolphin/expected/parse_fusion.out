@@ -197,7 +197,7 @@ create table perf_pf_t(
 create unique index on perf_pf_t(c1);
 replace into perf_pf_t values (12, 1, 12)
     on duplicate key update c2=values(c2), c3=values(c3);
-ERROR:  syntax error at or near "on duplicate key"
+ERROR:  syntax error at or near "on"
 LINE 2:     on duplicate key update c2=values(c2), c3=values(c3);
             ^
 select * from perf_pf_t;

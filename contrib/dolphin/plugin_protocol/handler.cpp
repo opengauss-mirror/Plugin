@@ -37,6 +37,7 @@
 #define SELECT_TAG_LEN 6
 #define SHOW_TAG_LEN 4
 #define EXPLAIN_TAG_LEN 7
+#define EXPLAIN_SUCCESS_TAG_LEN 15
 
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(StringInfo buf);
@@ -88,7 +89,8 @@ void dolphin_end_command(const char *completionTag)
     initStringInfo(&buf);
     if (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
-        strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 ) {
+        (strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 &&
+        strncasecmp(completionTag, "EXPLAIN SUCCESS", EXPLAIN_SUCCESS_TAG_LEN) != 0)) {
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
             send_network_eof_packet(&buf);
@@ -97,7 +99,7 @@ void dolphin_end_command(const char *completionTag)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(u_sess->statement_cxt.current_row_count, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        make_ok_packet(u_sess->statement_cxt.current_row_count, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
         send_network_ok_packet(&buf, &ok_packet);
     }
     FreeStringInfo(&buf);
@@ -111,7 +113,7 @@ void dolphin_send_message(ErrorData *edata)
 
     network_mysqld_err_packet_t *err_packet =
         (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
-    err_packet->errcode = edata->sqlerrcode;
+    err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
     err_packet->errmsg = edata->message;
     err_packet->sqlstate = "HY000";   // convert errcode to mysql SQLSTATE later
 
@@ -369,7 +371,7 @@ int execute_text_protocol_sql(const char *sql)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_insert_id, "", &ok_packet);
+        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
         send_network_ok_packet(buf, &ok_packet);
     }
 

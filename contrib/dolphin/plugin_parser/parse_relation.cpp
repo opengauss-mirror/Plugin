@@ -1679,11 +1679,11 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     if (RelationGetRelkind(rel) == RELKIND_VIEW &&
         RelationGetRelid(rel) >= FirstNormalObjectId) {
         if (ValidateDependView(RelationGetRelid(rel), OBJECT_TYPE_VIEW) == ValidateDependInvalid) {
-        ereport(ERROR,
-            (errcode(ERRCODE_UNDEFINED_OBJECT),
-                errmsg("The view %s is invalid, please make it valid before operation.",
-                       RelationGetRelationName(rel)),
-                        errhint("Please recreate table or re-add missing table fields.")));
+            ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_OBJECT),
+                    errmsg("The view %s is invalid, please make it valid before operation.",
+                        RelationGetRelationName(rel)),
+                        errhint("Please re-add missing table fields.")));
         }
     }
     

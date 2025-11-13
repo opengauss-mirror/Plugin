@@ -147,6 +147,7 @@ extern int128 timestamp_int128(Timestamp timestamp);
 extern int128 timestamptz_int128(TimestampTz timestampTz);
 extern TimestampTz time2timestamptz(TimeADT timeVal);
 extern TimestampTz timetz2timestamptz(TimeTzADT* timetzVal);
+extern void timestamptz_out_internal(TimestampTz dt, char** result, bool print_tz);
 typedef enum {
     TIME_CORRECT = 0,
     TIME_IGNORED_INCORRECT,

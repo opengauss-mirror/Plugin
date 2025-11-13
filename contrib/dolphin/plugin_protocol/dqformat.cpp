@@ -351,10 +351,21 @@ void make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName
     field->charsetnr = item->charset_flag;
     if (attr->atttypid != BLOBOID) {
         field->length = attr->attalign;
-        if (attr->atttypid == BITOID || attr->atttypid == INT1OID) {
-            field->length = attr->atttypmod;
-        } else if (attr->atttypid == BOOLOID) {
-            field->length = attr->attlen;
+        switch (attr->atttypid) {
+            case BITOID:
+            case INT1OID:
+                field->length = attr->atttypmod;
+                break;
+            case BOOLOID:
+                field->length = attr->attlen;
+                break;
+            case TIMEOID:
+            case TIMESTAMPOID:
+            case TIMESTAMPTZOID:
+                field->decimals = attr->atttypmod == -1 ? MAX_TIME_PRECISION : attr->atttypmod;
+                break;
+            default:
+                break;
         }
     } else {
         field->length = DOLPHIN_BLOB_LENGTH;

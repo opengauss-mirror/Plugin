@@ -15,11 +15,7 @@
  * limitations under the License.
  */
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Properties;
 
 public class MySQLJdbcTest {
@@ -139,6 +135,35 @@ public class MySQLJdbcTest {
                     System.out.println(resultSet.getObject(i));
                 }
             }
+            statement.executeQuery("desc (plan) select * from t3 order by id");
+            resultSet = statement.executeQuery("select time(timestamp'2022-1-1 1:1:1.1111116')");
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString(1));
+            }
+            statement.executeUpdate("create table test_tm (a time(4), b datetime(4), c timestamp(4));");
+            statement.executeUpdate("insert into test_tm values ('1:1:1.1111116', '2024-1-1 1:1:1.1111116', '2024-1-1 1:1:1.1111116');");
+            resultSet = statement.executeQuery("select * from test_tm");
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString(1));
+                System.out.println(resultSet.getString(2));
+                System.out.println(resultSet.getString(3));
+            }
+            statement.executeUpdate("drop table if exists test_tm");
+
+            statement.executeUpdate("create table auto_inc_table (a int auto_increment primary key, b int);");
+
+            PreparedStatement preparedStatement = connection.prepareStatement("insert into auto_inc_table(a, b) values (3,3)", Statement.RETURN_GENERATED_KEYS);
+            int affectedRows = preparedStatement.executeUpdate();
+            System.out.println("affectedRows: " + affectedRows);
+
+            resultSet = preparedStatement.getGeneratedKeys();
+            if (resultSet.next()) {
+                Long generatedId = resultSet.getLong(1);
+                System.out.println("generated key: " + generatedId);
+            }
+
+            statement.executeUpdate("drop table if exists auto_inc_table");
+
             statement.executeQuery("START TRANSACTION;");
             statement.executeQuery("CURSOR cursor2 FOR VALUES(1,2),(0,3) ORDER BY 1;");
             statement.executeQuery("END;");

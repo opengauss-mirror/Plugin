@@ -103,6 +103,12 @@ mysql
 dolphin-server
 3
 postgres
+01:01:01
+01:01:01
+2024-01-01 01:01:01.1111
+2024-01-01 01:01:01.1111
+affectedRows: 1
+generated key: 3
 Exception in thread "main" java.sql.SQLException: non-procedure CURSOR is not supported by mysql protocol.
 --?.*
 --?.*
@@ -429,6 +435,7 @@ c34:CHAR:null
 c35:CHAR:null
 update failed:invalid input syntax for type double precision: "abc"
 delete failed:invalid input syntax for type double precision: "abc"
+Errcode for preparement not support:1295
 select * from t3;
  c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |    c24     |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c34 |      c35       
 ----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+------------+------------+------------+----------+--------------------+------+--------+------------+-----+----------------

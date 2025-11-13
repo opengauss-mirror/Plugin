@@ -639,7 +639,7 @@ prepare s1 as SELECT count(c_id) FROM customer WHERE c_w_id = ? AND c_d_id = ? A
 explain (costs off) execute s1 using 1, 2, 3;
                                    QUERY PLAN                                    
 ---------------------------------------------------------------------------------
- [No Bypass]reason: Bypass not executed because it's sum() allowed.
+ [Bypass]
  Aggregate
    ->  Index Scan using idx_customer on customer
          Index Cond: ((c_w_id = $1) AND (c_d_id = $2) AND ((c_last)::text = $3))
@@ -707,7 +707,7 @@ prepare s1 as SELECT count(c_id) FROM customer WHERE c_w_id = ? AND c_d_id = ? A
 explain (costs off) execute s1 using 1, 2, 3;
                                    QUERY PLAN                                    
 ---------------------------------------------------------------------------------
- [No Bypass]reason: Bypass not executed because it's sum() allowed.
+ [Bypass]
  Aggregate
    ->  Index Scan using idx_customer on customer
          Index Cond: ((c_w_id = $1) AND (c_d_id = $2) AND ((c_last)::text = $3))
@@ -848,9 +848,9 @@ explain (costs off) execute s1 using 1, 2, 3, 4;
 
 prepare s1 as SELECT count(*) FROM stock WHERE s_w_id = ? AND s_i_id = ? AND s_quantity < ?;
 explain (costs off) execute s1 using 1, 2, 3;
-                                QUERY PLAN                                
---------------------------------------------------------------------------
- [No Bypass]reason: Bypass not executed because it's just aggref allowed.
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ [No Bypass]reason: Bypass not executed because query used indexscan with qual.
  Aggregate
    ->  Index Scan using stock_pkey on stock
          Index Cond: ((s_w_id = $1) AND (s_i_id = $2))

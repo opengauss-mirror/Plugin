@@ -13036,11 +13036,11 @@ CreateMatViewStmt:
                                 errmsg("It's not supported to specify distribute key on incremental materialized views")));
                    }
 #endif
-                   if (ENABLE_DMS) {
+				if (ENABLE_DMS) {
                         ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                             errmsg("matview is not supported while DMS and DSS enabled.")));
-                   }
-                    
+                }
+
 				   $6->ivm = $3;
 				   $$ = (Node *) ctas;
 			   }
@@ -21143,14 +21143,21 @@ b_proc_body:{
 
 							if (tok == ';' )
 							{
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								}
 								else
 								{
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							break;
@@ -21618,11 +21625,18 @@ CreatePackageStmt:
                     appendBinaryStringInfo(&content_info, yyextra->core_yy_extra.scanbuf + proc_start_pos - 1, name_start_pos - proc_start_pos + 1);
                     char* pkg_spec_str = content_info.data;
 
-                    if (yyextra->lookahead_num != 0) {
+                    if (yyextra->lookahead_len != 0) {
                         parser_yyerror("package spec is not ended correctly");
                     } else {
-                        yyextra->lookahead_token[0] = tok;
-                        yyextra->lookahead_num = 1;
+                        const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+                        yyextra->lookaheads[0] = {
+                            .token = tok,
+                            .yylloc = yylloc,
+                            .yyleng = yyleng,
+                            .prev_hold_char_loc = yylloc + yyleng,
+                            .prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+                        };
+                        yyextra->lookahead_len = 1;
                     }
 
                     /* Reset the flag which mark whether we are in slash proc. */
@@ -21883,12 +21897,19 @@ pkg_body_subprogram: {
                     instantiation_str[INSTANTIATION_LEN + pkg_instantiation_len + END_LEN] = '\0';
                 }
 
-                if (yyextra->lookahead_num != 0)
+                if (yyextra->lookahead_len != 0)
                     parser_yyerror("package spec is not ended correctly");
                 else
                 {
-                    yyextra->lookahead_token[0] = tok;
-                    yyextra->lookahead_num = 1;
+                    const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+                    yyextra->lookaheads[0] = {
+                        .token = tok,
+                        .yylloc = yylloc,
+                        .yyleng = yyleng,
+                        .prev_hold_char_loc = yylloc + yyleng,
+                        .prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+                    };
+                    yyextra->lookahead_len = 1;
                 }
                 /* Reset the flag which mark whether we are in slash proc. */
                 yyextra->core_yy_extra.in_slash_proc_body = false;
@@ -22539,14 +22560,21 @@ subprogram_body: 	{
 
 							if (tok == ';' )
 							{
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								}
 								else
 								{
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							break;
@@ -22806,12 +22834,19 @@ flow_control_func_body:
 							proc_e = yylloc;
 
 							if (tok == ';' ) {
-								if (yyextra->lookahead_num != 0) {
+								if (yyextra->lookahead_len != 0) {
 									parser_yyerror("subprogram body is not ended correctly");
 									break;
 								} else {
-									yyextra->lookahead_token[0] = tok;
-									yyextra->lookahead_num = 1;
+									const YYLTYPE yyleng = pg_yyget_leng(yyscanner);
+									yyextra->lookaheads[0] = {
+										.token = tok,
+										.yylloc = yylloc,
+										.yyleng = yyleng,
+										.prev_hold_char_loc = yylloc + yyleng,
+										.prev_hold_char = yyextra->core_yy_extra.scanbuf[yylloc + yyleng],
+									};
+									yyextra->lookahead_len = 1;
 								}
 							}
 							break;
@@ -34274,7 +34309,6 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 							errmsg("@var_name := expr is not yet supported in distributed database.")));
 #endif
 					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
-						u_sess->parser_cxt.has_equal_uservar = true;
 						UserSetElem *n = makeNode(UserSetElem);
 						n->name = list_make1((Node *)$1);
 						n->val = (Expr *)$3;
