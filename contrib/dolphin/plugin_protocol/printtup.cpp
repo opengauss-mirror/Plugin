@@ -214,7 +214,7 @@ static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo,
     
     // EOF packet
     if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet();
     }
 }
 

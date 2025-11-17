@@ -160,13 +160,13 @@ char *read_switch_response(StringInfo buf);
 
 void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake);
 
-void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packet);
+void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet);
 
 void send_general_ok_packet();
 
-void send_network_eof_packet(StringInfo buf);
+void send_network_eof_packet();
 
-void send_new_eof_packet(StringInfo buf);
+void send_new_eof_packet();
 
 void send_network_fetch_packet(StringInfo buf);
 

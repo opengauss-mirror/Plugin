@@ -895,7 +895,7 @@ static bool check_wait_timeout(int* newval, void** extra, GucSource source)
     return true;
 }
 
-BSqlPluginContext* GetSessionContext()
+FORCE_INLINE BSqlPluginContext* GetSessionContext()
 {
     if (unlikely(u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL)) {
         init_session_vars();
@@ -1069,6 +1069,7 @@ void init_session_vars(void)
     cxt->isDoCopy = false;
     cxt->isInTransformSet = false;
     cxt->is_set_stmt = false;
+    cxt->typeOidHashInited = false;
     cxt->Conn_Mysql_Info = NULL;
 
     if (temp_Conn_Mysql_Info) {

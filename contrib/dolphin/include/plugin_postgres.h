@@ -204,6 +204,7 @@ typedef struct BSqlPluginContext {
     bool transform_unknown_param_type_as_column_type_first;
     bool is_set_stmt;
     bool is_cmp_op_stmt;
+    bool typeOidHashInited;
 #endif
 } bSqlPluginContext;
 

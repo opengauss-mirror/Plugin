@@ -87,24 +87,22 @@ void dophin_send_ready_for_query(CommandDest dest)
 
 void dolphin_end_command(const char *completionTag)
 {
-    StringInfoData buf;
-    initStringInfo(&buf);
-    if (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
+    if ((completionTag[0] == 'S' || completionTag[0] == 'E') &&
+        (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
         (strncasecmp(completionTag, "EXPLAIN", EXPLAIN_TAG_LEN) == 0 &&
-        strncasecmp(completionTag, "EXPLAIN SUCCESS", EXPLAIN_SUCCESS_TAG_LEN) != 0)) {
+        strncasecmp(completionTag, "EXPLAIN SUCCESS", EXPLAIN_SUCCESS_TAG_LEN) != 0))) {
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-            send_network_eof_packet(&buf);
+            send_network_eof_packet();
         } else {
-            send_new_eof_packet(&buf);
+            send_new_eof_packet();
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
         make_ok_packet(BEENTRY_STMEMENET_CXT.current_row_count, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
-        send_network_ok_packet(&buf, &ok_packet);
+        send_network_ok_packet(&ok_packet);
     }
-    FreeStringInfo(&buf);
 }
 
 void dolphin_send_message(ErrorData *edata)
@@ -161,15 +159,15 @@ void response_transaction_read_only_info()
     // EOF packet
     client_deprecate_eof = GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF;
     if (!client_deprecate_eof) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet();
     }
     resetStringInfo(buf);
     dq_append_string_lenenc(buf, "1");  // return session.transaction_read_only as true
 
     if (!client_deprecate_eof) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet();
     } else {
-        send_new_eof_packet(buf);
+        send_new_eof_packet();
     }
 
     DestroyStringInfo(buf);
@@ -414,28 +412,26 @@ int execute_text_protocol_sql(const char *sql)
 
     rc = SPI_execute(sql, false, 0);
 
-    StringInfo buf = makeStringInfo();
     if (SPI_tuptable) {
+        StringInfo buf = makeStringInfo();
         sendRowDescriptionPacket(buf, SPI_tuptable);
 
         // send None or many text Protocol Resultset Row packet
         if (SPI_processed > 0) {
             send_text_protocol_resultset_row(buf, SPI_tuptable);
         }
-
+        DestroyStringInfo(buf);
         // EOF packet
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-            send_network_eof_packet(buf);
+            send_network_eof_packet();
         } else {
-            send_new_eof_packet(buf);
+            send_new_eof_packet();
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
         make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
-        send_network_ok_packet(buf, &ok_packet);
+        send_network_ok_packet(&ok_packet);
     }
-
-    DestroyStringInfo(buf);
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
@@ -474,7 +470,7 @@ int execute_com_stmt_prepare(StringInfo buf)
         send_column_definition41_packet(sql, &param_field);
     }
     if (param_count != 0 && !client_dep_eof) {
-        send_network_eof_packet(sql);
+        send_network_eof_packet();
     }
     
     for (int i = 0; i < column_count; i++) {
@@ -483,7 +479,7 @@ int execute_com_stmt_prepare(StringInfo buf)
         send_column_definition41_packet(sql, &column_field);
     }
     if (column_count != 0 && !client_dep_eof) {
-        send_network_eof_packet(sql);
+        send_network_eof_packet();
     }
     DestroyStringInfo(sql);
     pfree_ext(client_sql);
@@ -660,7 +656,7 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
     char statement_id_str[MAX_INT32_LEN + 1];
 
-    pg_lltoa((int64)req->statement_id, statement_id_str);
+    pg_ultoa(req->statement_id, statement_id_str);
     int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
     securec_check(rc, "", "");
     BindMessage pqBindMessage;
@@ -775,9 +771,9 @@ void execute_com_field_list(char *tableName)
 
         /* EOF packet at end of all rows*/
         if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-            send_network_eof_packet(buf);
+            send_network_eof_packet();
         } else {
-            send_new_eof_packet(buf);
+            send_new_eof_packet();
         }
     }
     

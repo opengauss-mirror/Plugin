@@ -44,6 +44,8 @@
 #define MAX_ERRMSG_LEN 512
 #define DEFAULLT_DATA_FIELD_LEN 100
 #define DOLPHIN_BLOB_LENGTH 65535
+#define MAX_EOF_PACKET_LEN 16
+#define MAX_OK_PACKET_LEN 32 // 1 + BYTE_1_LEN + sizeof(uint64) + BYTE_1_LEN + sizeof(uint64) + BYTE_2_LEN + BYTE_2_LEN
 
 #define PROTO_DATE_LEN 4
 #define PROTO_DATETIME_LEN 7
@@ -196,75 +198,89 @@ network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
     return auth;
 }
 
-void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packet)
+void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet)
 {
-    dq_append_int1(buf, 0x00);
-    dq_append_int_lenenc(buf, ok_packet->affected_rows);
-    dq_append_int_lenenc(buf, ok_packet->insert_id);
-    dq_append_int2(buf, ok_packet->server_status);
-    dq_append_int2(buf, ok_packet->warnings);
-    dq_append_string_eof(buf, ok_packet->msg);
-
-    dq_putmessage(buf->data, buf->len);
+    char okPacket[MAX_OK_PACKET_LEN];
+    int offset = 0;
+    okPacket[offset++] = 0;
+    offset += dq_store_int_lenenc(&okPacket[offset], ok_packet->affected_rows);
+    offset += dq_store_int_lenenc(&okPacket[offset], ok_packet->insert_id);
+    dq_store_int2(&okPacket[offset], ok_packet->server_status);
+    offset += BYTE_2_LEN;
+    dq_store_int2(&okPacket[offset], ok_packet->warnings);
+    offset += BYTE_2_LEN;
+    /* message, currently we don't support it, always empty string */
+    /* dq_append_string_eof(buf, ok_packet->msg) */
+    if (unlikely(ok_packet->msg != NULL && ok_packet->msg[0] != '\0')) {
+        ereport(ERROR, (errmsg("currently don't support send extra message in ok packet.")));
+    }
+    Assert(offset <= MAX_OK_PACKET_LEN);
+    dq_putmessage(okPacket, offset);
 }
 
 void send_general_ok_packet()
 {
-    StringInfo buf = makeStringInfo();
     network_mysqld_ok_packet_t ok_packet;
     make_ok_packet(0, 0, "", &ok_packet);
-    send_network_ok_packet(buf, &ok_packet);
-
-    DestroyStringInfo(buf);
+    send_network_ok_packet(&ok_packet);
 }
 
 /* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
-static void sendServerStatus(StringInfo buf)
+static inline void sendServerStatus(char* buf)
 {
     if (u_sess->proc_cxt.nextQuery) {
-        dq_append_int2(buf, SERVER_STATUS_AUTOCOMMIT | SERVER_MORE_RESULTS_EXISTS);
+        dq_store_int2(buf, SERVER_STATUS_AUTOCOMMIT | SERVER_MORE_RESULTS_EXISTS);
     } else {
-        dq_append_int2(buf, SERVER_STATUS_AUTOCOMMIT);
+        dq_store_int2(buf, SERVER_STATUS_AUTOCOMMIT);
     }
 }
 
-void send_network_eof_packet(StringInfo buf)
+void send_network_eof_packet()
 {
-    resetStringInfo(buf);
-
-    dq_append_int1(buf, 0xfe); 
-    dq_append_int2(buf, 0x00);       /* warning count */
-    sendServerStatus(buf);
-    
-    dq_putmessage(buf->data, buf->len);
+    char eofBuf[MAX_EOF_PACKET_LEN];
+    int offset = 0;
+    eofBuf[offset] = 0xfe;
+    offset += BYTE_1_LEN;
+    dq_store_int2(&eofBuf[offset], 0x00);       /* warning count */
+    offset += BYTE_2_LEN;
+    sendServerStatus(&eofBuf[offset]);
+    offset += BYTE_2_LEN;
+    Assert(offset <= MAX_EOF_PACKET_LEN);
+    dq_putmessage(eofBuf, offset);
 }
 
-void send_new_eof_packet(StringInfo buf)
+void send_new_eof_packet()
 {
+    char eofBuf[MAX_EOF_PACKET_LEN];
+    int offset = 0;
     uint32 client_capabilities = GetSessionContext()->Conn_Mysql_Info->client_capabilities;
-    resetStringInfo(buf);
     if (client_capabilities & CLIENT_DEPRECATE_EOF) {
-        dq_append_int1(buf, 0xfe);
+        eofBuf[offset++] = 0xfe;
     } else {
-        dq_append_int1(buf, 0x00);
+        eofBuf[offset++] = 0x00;
     }
-    dq_append_int_lenenc(buf, 0);   //affected rows
-    dq_append_int_lenenc(buf, 0);   //last insert-id
+    eofBuf[offset++] = 0;   //affected rows
+    eofBuf[offset++] = 0;   //last insert-id
     if (client_capabilities & CLIENT_PROTOCOL_41) {
-        sendServerStatus(buf);
-        dq_append_int2(buf, 0x00);       /* warning count *int<2>	warnings	number of warnings*/
+        sendServerStatus(&eofBuf[offset]);
+        offset += BYTE_2_LEN;
+        dq_store_int2(&eofBuf[offset], 0x00);       /* warning count *int<2>	warnings	number of warnings*/
+        offset += BYTE_2_LEN;
     } else if (client_capabilities & CLIENT_TRANSACTIONS) {
-        sendServerStatus(buf);
+        sendServerStatus(&eofBuf[offset]);
+        offset += BYTE_2_LEN;
     }
     if (client_capabilities & CLIENT_SESSION_TRACK) {
-        dq_append_string_lenenc(buf, "", -1);        // string<lenenc>	info	human readable status information
+        eofBuf[offset++] = 0;           // string<lenenc>	info	human readable status information
     }
     if (SERVER_SESSION_STATE_CHANGED) {
-        dq_append_string_lenenc(buf, "", -1);  //string<lenenc>	session state info	Session State Information
+        eofBuf[offset++] = 0;  //string<lenenc>	session state info	Session State Information
     } else {
-        dq_append_string_eof(buf, "");        //string<EOF>	info	human readable status information
+        //string<EOF>	info	human readable status information, noting to do
     }
-    dq_putmessage(buf->data, buf->len);
+
+    Assert(offset <= MAX_EOF_PACKET_LEN);
+    dq_putmessage(eofBuf, offset);
 }
 
 void send_network_fetch_packet(StringInfo buf)
@@ -883,7 +899,7 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)
 
     // EOF packet
     if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
-        send_network_eof_packet(buf);
+        send_network_eof_packet();
     }
 }
 

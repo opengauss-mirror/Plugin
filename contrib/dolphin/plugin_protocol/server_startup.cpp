@@ -420,8 +420,13 @@ void InitTypoid2DolphinMacroHtab()
 
 static inline bool JudgeCurDBNeedInit()
 {
-    /* Use an unchanging OID (OIDOID) to determine whether the database needs to be initialized. */
-    return b_typoid2DolphinMarcoHash_simple == NULL || TypoidHashTableAccess(HASH_FIND, OIDOID, NULL) == NULL;
+    /*
+     * Use an unchanging OID (OIDOID) to determine whether the database needs to be initialized.
+     * since for one connection, the connected db will not change, so we can use an u_sess var
+     * to check whether the hash table has been inited, to avoid cost in hash table access.
+     */
+    return GetSessionContext()->typeOidHashInited == false &&
+        (b_typoid2DolphinMarcoHash_simple == NULL || TypoidHashTableAccess(HASH_FIND, OIDOID, NULL) == NULL);
 }
 
 const TypeItem* GetItemByTypeOid(Oid oid)
@@ -435,6 +440,9 @@ const TypeItem* GetItemByTypeOid(Oid oid)
         }
         marcoHashLock.unLock();
     }
+
+    /* anyway, when we reach here, the hashtable must be inited already */
+    GetSessionContext()->typeOidHashInited = true;
     if (!OidIsValid(oid)) {
         ereport(ERROR, (errmsg("the oid of data type is invalid")));
     }

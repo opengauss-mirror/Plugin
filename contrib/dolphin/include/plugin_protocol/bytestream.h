@@ -66,6 +66,16 @@ static inline void dq_append_int_len(StringInfo buf, uint64 num, int len)
     }
 }
 
+static inline void dq_store_int_len(char* buf, uint64 num, int len)
+{
+    for (int i = 0; i < len; i++) {
+        uint8 ni = num & 0xff;
+
+        buf[i] = ni;
+        num >>= BYTE_8_LEN;
+    }
+}
+
 /* append a binary [u]int8 to a StringInfo buffer */
 static inline void dq_append_int1(StringInfo buf, uint8 i)
 {
@@ -76,10 +86,22 @@ static inline void dq_append_int1(StringInfo buf, uint8 i)
     buf->len++;
 }
 
+/* append a binary [u]int16 to a char buffer */
+static inline void dq_store_int2(char* buf, uint16 i)
+{
+    dq_store_int_len(buf, i, sizeof(uint16));
+}
+
 /* append a binary [u]int16 to a StringInfo buffer */
 static inline void dq_append_int2(StringInfo buf, uint16 i)
 {
     dq_append_int_len(buf, i, sizeof(uint16));
+}
+
+/* append a binary [u]int32 to a char buffer */
+static inline void dq_store_int3(char* buf, uint32 i)
+{
+    dq_store_int_len(buf, i, BYTE_3_LEN);
 }
 
 /* append a binary [u]int24 to a StringInfo buffer */
@@ -92,6 +114,12 @@ static inline void dq_append_int3(StringInfo buf, uint32 i)
 static inline void dq_append_int4(StringInfo buf, uint32 i)
 {
     dq_append_int_len(buf, i, sizeof(uint32));
+}
+
+/* append a binary [u]int64 to a char buffer */
+static inline void dq_store_int8(char* buf, uint64 i)
+{
+    dq_store_int_len(buf, i, sizeof(uint64));
 }
 
 /* append a binary [u]int64 to a StringInfo buffer */
@@ -116,6 +144,29 @@ static inline int dq_append_int_lenenc(StringInfo buf, uint64 i)
     }
 
     return 0;
+}
+
+static inline int dq_store_int_lenenc(char* buf, uint64 i)
+{
+    int len = 0;
+    if (i < MAX_LEN_ENCODE_BYTE) {
+        *buf = (uint8)i;
+        len = BYTE_1_LEN;
+    } else if (i < MAX_LEN_ENCODE_2_BYTE) {
+        *buf = 0xfc;
+        dq_store_int2(buf + 1, i);
+        len = BYTE_1_LEN + sizeof(uint16);
+    } else if (i < MAX_LEN_ENCODE_3_BYTE) {
+        *buf = 0xfd;
+        dq_store_int3(buf + 1, i);
+        len = BYTE_1_LEN + BYTE_3_LEN;
+    } else {
+        *buf = 0xfe;
+        dq_store_int8(buf + 1, i);
+        len = BYTE_1_LEN + sizeof(uint64);
+    }
+
+    return len;
 }
 
 static inline void dq_append_string_null(StringInfo buf, const char *data)
