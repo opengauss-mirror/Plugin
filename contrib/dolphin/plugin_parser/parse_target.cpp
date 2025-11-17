@@ -194,17 +194,6 @@ static bool IsSatisfySimpleSelfUpdateModeType(ParseState* pstate, Node* node, co
     }
 }
 
-static inline bool IsUseFunctionDirectlyCase(Relation rel, Oid ltypeId, Oid rtypeId)
-{
-    /*
-     * Since there is a high probability that the partitioned table cannot use BYPASS,
-     * encapsulating the function call directly will be faster.
-     */
-    return RELATION_IS_PARTITIONED(rel) &&
-        ltypeId == INT4OID &&
-        rtypeId == INT4OID;
-}
-
 static Node* TransformArithmeticFuncArg(ParseState* pstate, Node* expr)
 {
     switch (nodeTag(expr)) {
@@ -281,20 +270,11 @@ static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, ResTarget*
      * there may be potential inconsistencies in values after truncation.
      * Therefore, it is not supported for the time being.
      */
-    Oid funcOid = InvalidOid;
     switch (opname[0]) {
-        case '+': {
-            funcOid = F_INT4PL;
+        case '+':
+        case '-':
+        case '*':
             break;
-        }
-        case '-': {
-            funcOid = F_INT4MI;
-            break;
-        }
-        case '*': {
-            funcOid = F_INT4MUL;
-            break;
-        }
         default:
             return nullptr;
     }
@@ -335,33 +315,6 @@ static TargetEntry* TransformSimpleArithmeticOper(ParseState* pstate, ResTarget*
         Node* lastSrf = parse_get_last_srf(pstate);
         Expr* opExpr = make_op(pstate, expr->name, expr->lexpr, expr->rexpr, lastSrf, expr->location);
         return makeTargetEntry(opExpr, (AttrNumber)pstate->p_next_resno++, (char*)colName, false);
-    } else if (IsUseFunctionDirectlyCase(rel, ltypeId, rtypeId)) {
-        /* now we are ready to transform operator to function expr directly */
-        HeapTuple ftup = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcOid));
-        if (unlikely(!HeapTupleIsValid(ftup))) {
-            /* Should not happen.
-             * But it may occur if the database is corrupted for certain reasons.
-             */
-            ereport(ERROR,
-                (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
-                    errmsg("cache lookup failed for function %u", funcOid)));
-        }
-
-        Form_pg_proc pform = (Form_pg_proc)GETSTRUCT(ftup);
-        FuncExpr* funcexpr = makeNode(FuncExpr);
-        funcexpr->funcid = funcOid;
-        funcexpr->funcresulttype = pform->prorettype;
-        funcexpr->funcresulttype_orig = -1;
-        funcexpr->funcretset = pform->proretset;
-        funcexpr->funcvariadic = false;
-        funcexpr->funcformat = COERCE_EXPLICIT_CALL;
-        funcexpr->location = expr->location;
-        funcexpr->refSynOid = InvalidOid;
-        funcexpr->args = list_make2(expr->lexpr, expr->rexpr);
-
-        ReleaseSysCache(ftup);
-
-        return makeTargetEntry((Expr*)funcexpr, (AttrNumber)pstate->p_next_resno++, (char*)colName, false);
     } else {
         OpExpr* opExpr = MakeArithmeticOpExpr(pstate, expr, expr->name, ltypeId, rtypeId);
         if (unlikely(!opExpr)) {
