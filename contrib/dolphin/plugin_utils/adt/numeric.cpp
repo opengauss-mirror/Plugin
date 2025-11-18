@@ -3678,7 +3678,12 @@ Datum float8_numeric(PG_FUNCTION_ARGS)
     if (isinf(val))
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert infinity to numeric")));
 
-    rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%.*g", DBL_DIG, val);
+    int ndig = DBL_DIG + u_sess->attr.attr_common.extra_float_digits;
+    if (ndig < 1) {
+        ndig = 1;
+    }
+
+    rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%.*g", ndig, val);
     securec_check_ss(rc, "\0", "\0");
 
     init_var(&result);
@@ -3759,7 +3764,12 @@ Datum float4_numeric(PG_FUNCTION_ARGS)
     if (isinf(val))
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert infinity to numeric")));
 
-    rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%.*g", FLT_DIG, val);
+    int ndig = FLT_DIG + u_sess->attr.attr_common.extra_float_digits;
+    if (ndig < 1) {
+        ndig = 1;
+    }
+
+    rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%.*g", ndig, val);
     securec_check_ss(rc, "\0", "\0");
 
     init_var(&result);
