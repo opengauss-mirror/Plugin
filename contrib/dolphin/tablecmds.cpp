@@ -38,6 +38,7 @@
 #include "access/ustore/knl_uscan.h"
 #include "access/ustore/knl_undorequest.h"
 #include "access/multixact.h"
+#include "access/ubtreepcr.h"
 #include "catalog/catalog.h"
 #include "catalog/dependency.h"
 #include "catalog/gs_matview.h"
@@ -774,8 +775,8 @@ static void freeConstraintList(List* list);
 static bool colHasPartialClusterKey(Relation rel, AttrNumber attNum);
 
 static void checkDistributeForExchange(Relation partTableRel, Relation ordTableRel);
-static void checkIndexForExchange(
-    Relation partTableRel, Oid partOid, Relation ordTableRel, List** partIndexList, List** ordIndexList);
+static void checkIndexForExchange(Relation partTableRel, Oid partOid, Relation ordTableRel, List** partIndexList,
+    List** ordIndexList, bool &hasPcrIndex);
 static void checkValidationForExchange(Relation partTableRel, Relation ordTableRel, Oid partOid, bool exchangeVerbose);
 
 static void finishIndexSwap(List* partIndexList, List* ordIndexList);
@@ -21057,12 +21058,25 @@ static void ATExecSetTableSpaceForPartitionP3(Oid tableOid, Oid partOid, Oid new
 
     heap_close(pg_partition, RowExclusiveLock);
 
+    bool isPcrIndex = false;
+    if (RelationIsUstoreIndex(rel)) {
+        isPcrIndex = UBTreeIndexIsPCRType(rel);
+    }
+ 
+    Oid index_rel_oid = rel->rd_id;
+    Oid part_rel_oid = partRel->rd_partHeapOid;
+
     partitionClose(rel, part, NoLock);
     releaseDummyRelation(&partRel);
     relation_close(rel, NoLock);
 
     /* Make sure the reltablespace change is visible */
     CommandCounterIncrement();
+
+    if (isPcrIndex) {
+        reindexPartIndex(index_rel_oid, part_rel_oid, false);
+        CommandCounterIncrement();
+    }
 
     /* Move associated toast relation and/or index, too */
     if (OidIsValid(reltoastrelid))
@@ -21278,10 +21292,22 @@ static void ATExecSetTableSpace(Oid tableOid, Oid newTableSpace, LOCKMODE lockmo
     heap_close(pg_class, RowExclusiveLock);
     UpdatePgObjectChangecsn(tableOid, rel->rd_rel->relkind);
 
+    bool isPcrIndex = false;
+    if (RelationIsUstoreIndex(rel)) {
+        isPcrIndex = UBTreeIndexIsPCRType(rel);
+    }
+ 
+    Oid rel_id = rel->rd_id;
     relation_close(rel, NoLock);
 
     /* Make sure the reltablespace change is visible */
     CommandCounterIncrement();
+
+    if (isPcrIndex) {
+        AdaptMem memInfo = {0, 0};
+        reindex_index(rel_id, InvalidOid, false, &memInfo, false);
+        CommandCounterIncrement();
+    }
 
     /* Move associated toast relation and/or index, too */
     if (OidIsValid(reltoastrelid))
@@ -29106,7 +29132,8 @@ static void ATExecExchangePartition(Relation partTableRel, AlterTableCmd* cmd)
 #endif
 
     // Check number, type of index
-    checkIndexForExchange(partTableRel, partOid, ordTableRel, &partIndexList, &ordIndexList);
+    bool hasPcrIndex = false;
+    checkIndexForExchange(partTableRel, partOid, ordTableRel, &partIndexList, &ordIndexList, hasPcrIndex);
 
     if (RelationIsUstoreFormat(partTableRel)) {
         ExecuteUndoActionsForExchangePartition(partTableRel, partOid, ordTableRel);
@@ -29132,7 +29159,13 @@ static void ATExecExchangePartition(Relation partTableRel, AlterTableCmd* cmd)
     // Swap relfilenode of index
     Assert(list_length(partIndexList) == list_length(ordIndexList));
     if (0 != list_length(partIndexList)) {
-        finishIndexSwap(partIndexList, ordIndexList);
+        if (hasPcrIndex) {
+            int reindexFlags = REINDEX_REL_SUPPRESS_INDEX_USE;
+            (void)reindexPartition(partTableRel->rd_id, partOid, reindexFlags, REINDEX_ALL_INDEX);
+            (void)ReindexRelation(ordTableRel->rd_id, reindexFlags, REINDEX_ALL_INDEX);
+        } else {
+            finishIndexSwap(partIndexList, ordIndexList);
+        }
         list_free_ext(partIndexList);
         list_free_ext(ordIndexList);
     }
@@ -29768,8 +29801,8 @@ static void checkDistributeForExchange(Relation partTableRel, Relation ordTableR
 }
 
 // Description : Check index of two tables
-static void checkIndexForExchange(
-    Relation partTableRel, Oid partOid, Relation ordTableRel, List** partIndexList, List** ordIndexList)
+static void checkIndexForExchange(Relation partTableRel, Oid partOid, Relation ordTableRel, List** partIndexList,
+    List** ordIndexList, bool &hasPcrIndex)
 {
     ListCell* oidCell = NULL;
     ListCell* tupleCell = NULL;
@@ -29880,6 +29913,32 @@ static void checkIndexForExchange(
                 ReleaseSysCache(partTableIndexClassTuple);
                 ReleaseSysCache(ordTableIndexClassTuple);
                 continue;
+            }
+
+            /* Check reloptions for currently matched indexes. */
+            if (isMatch) {
+                bool ordIsNull = false;
+                bool partIsNull = false;
+                Datum ordIndexOptionDatum = SysCacheGetAttr(RELOID, ordTableIndexClassTuple,
+                    Anum_pg_class_reloptions, &ordIsNull);
+                Datum partIndexOptionDatum = SysCacheGetAttr(RELOID, partTableIndexClassTuple,
+                    Anum_pg_class_reloptions, &partIsNull);
+                bool isOrdPcr = false;
+                bool isPartPcr = false;
+                if (!ordIsNull) {
+                    List *opts = untransformRelOptions(ordIndexOptionDatum);
+                    char* ordIndexType = getIndexType(opts);
+                    isOrdPcr = (ordIndexType != NULL && pg_strcasecmp(ordIndexType, "pcr") == 0);
+                    list_free_ext(opts);
+                }
+                if (!partIsNull) {
+                    List *opts = untransformRelOptions(partIndexOptionDatum);
+                    char* partIndexType = getIndexType(opts);
+                    isPartPcr = (partIndexType != NULL && pg_strcasecmp(partIndexType, "pcr") == 0);
+                    list_free_ext(opts);
+                }
+                isMatch = (isOrdPcr == isPartPcr);
+                hasPcrIndex = isOrdPcr || isPartPcr;
             }
 
             ReleaseSysCache(partTableIndexClassTuple);

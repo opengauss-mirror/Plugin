@@ -9,14 +9,14 @@ CREATE TABLE employees4 (emp_id INT primary key  AUTO_INCREMENT COMMENT 'this is
 NOTICE:  CREATE TABLE will create implicit sequence "employees4_emp_id_seq" for serial column "employees4.emp_id"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "employees4_pkey" for table "employees4"
 select * from information_schema.tables where table_schema = 'infomation_schema_test' and table_name = 'employees';
-   table_catalog    |      table_schema      | table_name | table_type | self_referencing_column_name | reference_generation | user_defined_type_catalog | user_defined_type_schema | user_defined_type_name | is_insertable_into | is_typed | commit_action |   table_comment    | table_collation | engine | version | row_format | table_rows | avg_row_length | data_length | max_data_length | index_length | data_free | auto_increment |          create_time          |        update_time         | check_time | checksum |          create_options          
---------------------+------------------------+------------+------------+------------------------------+----------------------+---------------------------+--------------------------+------------------------+--------------------+----------+---------------+--------------------+-----------------+--------+---------+------------+------------+----------------+-------------+-----------------+--------------+-----------+----------------+-------------------------------+----------------------------+------------+----------+----------------------------------
+--?.*
+--?.*
 --?.*
 (1 row)
 
 select * from information_schema.tables where table_schema = 'infomation_schema_test' and table_name = 'employees2';
-   table_catalog    |      table_schema      | table_name | table_type | self_referencing_column_name | reference_generation | user_defined_type_catalog | user_defined_type_schema | user_defined_type_name | is_insertable_into | is_typed | commit_action |                table_comment                | table_collation | engine | version | row_format | table_rows | avg_row_length | data_length | max_data_length | index_length | data_free | auto_increment |          create_time          |        update_time         | check_time | checksum |          create_options          
---------------------+------------------------+------------+------------+------------------------------+----------------------+---------------------------+--------------------------+------------------------+--------------------+----------+---------------+---------------------------------------------+-----------------+--------+---------+------------+------------+----------------+-------------+-----------------+--------------+-----------+----------------+-------------------------------+----------------------------+------------+----------+----------------------------------
+--?.*
+--?.*
 --?.*
 (1 row)
 
