@@ -551,6 +551,7 @@ typedef struct { /* Row variable */
     PLpgSQL_expr* default_val = NULL;
     Oid recordVarTypOid; /* package record var's composite type oid */
     bool hasExceptionInit;
+    bool* is_user_var;
 } PLpgSQL_row;
 
 typedef struct {

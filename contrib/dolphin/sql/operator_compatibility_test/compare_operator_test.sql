@@ -7624,6 +7624,32 @@ t34.a >= t33.a as 't34>=t33',
 t34.a >= t34.a as 't34>=t34'
 from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t33,t34;
 
+
+
+create table test(a bigint, b bigint, c numeric(30, 5));
+insert into test values(1920364749659983874, 1920364749659983874, 1920364749659983874);
+select * from test where a = '1920364749659983873';
+select * from test where a = '1920364749659983873.123';
+select * from test where a = '1920364749659983874';
+select * from test where b = '1920364749659983873';
+select * from test where b = '1920364749659983873.123';
+select * from test where b = '1920364749659983874';
+select * from test where c = '1920364749659983873';
+select * from test where c = '1920364749659983873.123';
+select * from test where c = '1920364749659983874';
+
+select * from test where '1920364749659983873' = a;
+select * from test where '1920364749659983873.123' = a;
+select * from test where '1920364749659983874' = a;
+select * from test where '1920364749659983873' = b;
+select * from test where '1920364749659983873.123' = b;
+select * from test where '1920364749659983874' = b;
+select * from test where '1920364749659983873' = c;
+select * from test where '1920364749659983873.123' = c;
+select * from test where '1920364749659983874' = c;
+
+drop table test;
+
 ---------- tail ----------
 drop schema compare_operator_test_schema cascade;
 reset current_schema;

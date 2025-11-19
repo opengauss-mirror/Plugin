@@ -4031,7 +4031,7 @@ void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype
     bool is_error)
 {
     int level = !is_error && (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
-    if (!can_ignore) {
+    if (!can_ignore && !is_error) {
         ZERO_DATE_MODE zero_date_mode = get_zero_date_mode();
         for (int i = 0; i < ZERO_DAY_PROCESS_MAP_SZIE; i++) {
             ZeroDayProcessMap zero_day_process_map = ZeroDayProcessMaps[i];
