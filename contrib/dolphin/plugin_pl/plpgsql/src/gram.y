@@ -11762,7 +11762,7 @@ read_into_target(PLpgSQL_rec **rec, PLpgSQL_row **row, bool *strict, int firstto
         *strict = true;
 #endif
     tok = yylex();
-    if (tok == '@' || tok == SET_USER_IDENT) {
+    if (tok == '@') {
         return true;
     }
     if (strict && tok == K_STRICT)
@@ -11854,12 +11854,40 @@ read_into_target(PLpgSQL_rec **rec, PLpgSQL_row **row, bool *strict, int firstto
         case  T_PLACEHOLDER:
                 *row = read_into_placeholder_scalar_list(yylval.word.ident, yylloc);
             break;
+        case SET_USER_IDENT:
+                {
+                    if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+                        current_token_is_not_variable(tok);
+                        break;
+                    }
+                    char* initial_name = yylval.word.ident;
+                    PLpgSQL_var* var = (PLpgSQL_var*)palloc0(sizeof(PLpgSQL_var));
+                    PLpgSQL_type* dtype = plpgsql_build_datatype(UNKNOWNOID, -1, InvalidOid);
+                    var->varname = pstrdup(initial_name);
+                    var->refname = pstrdup(initial_name);
+                    var->datatype = dtype;
+                    int initial_dno = plpgsql_adddatum((PLpgSQL_datum*)var);
+                    *row = read_into_array_table_scalar_list(initial_name,
+                                             NULL , initial_dno, -1, bulk_collect);
+                }
+            break;
         default:
             /* just to give a better message than "syntax error" */
             current_token_is_not_variable(tok);
             break;
     }
-    return false;
+    bool is_all_to_var = false;
+    PLpgSQL_row* temp_row = *row;
+    if (temp_row != NULL && temp_row->is_user_var != NULL && temp_row->nfields > 0) {
+        is_all_to_var = true;
+        for (int i = 0; i < temp_row->nfields; i++) {
+            if (temp_row->is_user_var[i] == false) {
+                is_all_to_var = false;
+                break;
+            }
+        }
+    }
+    return is_all_to_var;
 }
 
 /*
@@ -12077,6 +12105,7 @@ read_into_array_table_scalar_list(char *initial_name,
     int				 nfields = 0;
     char			*fieldnames[1024] = {NULL};
     int				 varnos[1024] = {0};
+    bool			is_user_var[1024] = {0};
     PLpgSQL_row		*row;
     int				 tok;
     int				 toktmp = 0;
@@ -12084,12 +12113,18 @@ read_into_array_table_scalar_list(char *initial_name,
     int              type_flag = -1;
     bool             isarrayelem = false;
     char* 			 nextname = NULL;
+    PLpgSQL_var*	var = NULL;
+    PLpgSQL_type*	dtype = NULL;
 
-    check_assignable(initial_datum, initial_location);
+    if (initial_datum != NULL) {
+        check_assignable(initial_datum, initial_location);
+    }
 
     tmpdno = initial_dno;
     tok = yylex();
-    get_datum_tok_type(initial_datum, &type_flag);
+    if (initial_datum != NULL) {
+        get_datum_tok_type(initial_datum, &type_flag);
+    }
 
     if (type_flag == PLPGSQL_TOK_TABLE_VAR) {
         isarrayelem = read_into_using_add_tableelem(fieldnames, varnos, &nfields, tmpdno, &tok);
@@ -12103,6 +12138,10 @@ read_into_array_table_scalar_list(char *initial_name,
         fieldnames[0] = initial_name;
         varnos[0]	  = initial_dno;
         nfields		  = 1;
+        /* first token is SET_USER_IDENT */
+        if (initial_datum == NULL) {
+            is_user_var[0] = true;
+        }
     }
     while (',' == tok)
     {
@@ -12143,6 +12182,25 @@ read_into_array_table_scalar_list(char *initial_name,
                 varnos[nfields++] = tmpdno;
                 tok = yylex();
                 break;
+
+            case SET_USER_IDENT:
+                if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+                    current_token_is_not_variable(tok);
+                    break;
+                }
+                nextname = yylval.word.ident;
+                var = (PLpgSQL_var*)palloc0(sizeof(PLpgSQL_var));
+                dtype = plpgsql_build_datatype(UNKNOWNOID, -1, InvalidOid);
+                var->varname = pstrdup(nextname);
+                var->refname = pstrdup(nextname);
+                var->datatype = dtype;
+                tmpdno = plpgsql_adddatum((PLpgSQL_datum*)var);
+                is_user_var[nfields] = true;
+                fieldnames[nfields] = nextname;
+                varnos[nfields++] = tmpdno;
+                tok = yylex();
+                break;
+
             case T_PACKAGE_VARIABLE:
                 check_assignable(yylval.wdatum.datum, yylloc);
                 
@@ -12288,11 +12346,13 @@ read_into_array_table_scalar_list(char *initial_name,
     row->nfields = nfields;
     row->fieldnames = (char**)palloc(sizeof(char *) * nfields);
     row->varnos = (int*)palloc(sizeof(int) * nfields);
+    row->is_user_var = (bool*)palloc(sizeof(bool) * nfields);
     row->isImplicit = true;
     while (--nfields >= 0)
     {
         row->fieldnames[nfields] = fieldnames[nfields];
         row->varnos[nfields] = varnos[nfields];
+        row->is_user_var[nfields] = is_user_var[nfields];
     }
 
     plpgsql_adddatum((PLpgSQL_datum *)row);

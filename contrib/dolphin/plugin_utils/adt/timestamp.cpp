@@ -737,7 +737,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr != 0) {
                 DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
-                    fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                    fcinfo->can_ignore, (time_cast_type == TIME_CAST || GetSessionContext()->is_cmp_op_stmt));
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
                 /*
@@ -757,7 +757,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             }
             if (dterr != 0) {
                 DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
-                    fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                    fcinfo->can_ignore, (time_cast_type == TIME_CAST || GetSessionContext()->is_cmp_op_stmt));
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
@@ -1933,7 +1933,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
              */
 #else
             DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
-                fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                fcinfo->can_ignore, (time_cast_type == TIME_CAST || GetSessionContext()->is_cmp_op_stmt));
              *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
              PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
@@ -1953,7 +1953,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
             DateTimeParseError(dterr, str, "timestamp", (time_cast_type == TIME_CAST_IMPLICIT) || fcinfo->can_ignore);
 #else
             DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
-                fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                fcinfo->can_ignore, (time_cast_type == TIME_CAST || GetSessionContext()->is_cmp_op_stmt));
             *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
