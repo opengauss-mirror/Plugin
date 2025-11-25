@@ -919,8 +919,7 @@ PlannedStmt* standard_planner(Query* parse, int cursorOptions, ParamListInfo bou
     }
 
     /* Juse copy these fields only when the memory context total size meets the dropping condition. */
-    uint64 optimize_memory_size = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
-    uint64 totalsize = u_sess->optimizer_query_memory + optimize_memory_size;
+    uint64 totalsize = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
     if (totalsize >= MEMORY_MAX_TOTAL_CONTEXT_THRESHOLD ||
         IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) {
         top_plan = (Plan*)copyObject(top_plan);
@@ -1320,6 +1319,33 @@ static inline bool contain_placeholdervar(Node *var_list)
     list_free_ext(vars);
     return result;
 }
+
+static bool join_equal_walker(Node* node, void* context)
+{
+    if (node == NULL) {
+        return false;
+    }
+   
+    if (IsA(node, JoinExpr)) {
+        JoinExpr* join = (JoinExpr*)node;
+        if (contain_placeholdervar(join->quals)) {
+            return true;
+        }
+        if (expression_tree_walker(join->larg, (bool (*)())join_equal_walker, context)) {
+            return true;
+        }
+
+        return expression_tree_walker(join->rarg, (bool (*)())join_equal_walker, context);
+    } else if (IsA(node, FromExpr)) {
+         FromExpr* from = (FromExpr*)node;
+         if (contain_placeholdervar(from->quals)) {
+            return true;
+         }
+         return expression_tree_walker((Node*)from->fromlist, (bool (*)())join_equal_walker, context);
+    }
+    return expression_tree_walker(node, (bool (*)())join_equal_walker, context);
+}
+
 
 static void preprocess_ru_is_under_start_with(PlannerInfo* root)
 {
@@ -1903,7 +1929,7 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
                     support_rewrite = false;
                     break;
                 }
-                if (root->parse->jointree != NULL && contain_placeholdervar(root->parse->jointree->quals)) {
+                if (join_equal_walker((Node*)root->parse->jointree, NULL)) {
                     support_rewrite = false;
                     break;
                 }
@@ -14137,21 +14163,13 @@ static void init_optimizer_context(PlannerGlobal* glob)
 
 static void deinit_optimizer_context(PlannerGlobal* glob)
 {
-    if (glob->plannerContext->plannerMemContext != NULL) {
-        uint64 optimize_memory_size = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
-        uint64 totalsize = u_sess->optimizer_query_memory + optimize_memory_size;
-        u_sess->optimizer_query_memory = totalsize;
-        if ((totalsize >= MEMORY_MAX_TOTAL_CONTEXT_THRESHOLD ||
-             IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) &&
-            !u_sess->pcache_cxt.is_plan_exploration) {
-            MemoryContextDelete(glob->plannerContext->plannerMemContext);
-            glob->plannerContext->plannerMemContext = NULL;
-            glob->plannerContext->dataSkewMemContext = NULL;
-            glob->plannerContext->tempMemCxt = NULL;
-            glob->plannerContext->refCounter = 0;
-        }
+    if (IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext) && !u_sess->pcache_cxt.is_plan_exploration) {
+        MemoryContextDelete(glob->plannerContext->plannerMemContext);
+        glob->plannerContext->plannerMemContext = NULL;
+        glob->plannerContext->dataSkewMemContext = NULL;
+        glob->plannerContext->tempMemCxt = NULL;
+        glob->plannerContext->refCounter = 0;
     }
-
 }
 
 #ifdef ENABLE_UT

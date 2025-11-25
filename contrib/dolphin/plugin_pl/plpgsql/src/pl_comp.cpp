@@ -4917,7 +4917,8 @@ PLpgSQL_row* build_row_from_rec_type(const char* rowname, int lineno, PLpgSQL_re
  * If collation is not InvalidOid then it overrides the type's default
  * collation.  But collation is ignored if the datatype is non-collatable.
  */
-PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation, TypeDependExtend* type_depend_extend)
+PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation,
+    TypeDependExtend* type_depend_extend, bool is_cursor_rowtype)
 {
     HeapTuple type_tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
     if (!HeapTupleIsValid(type_tup)) {
@@ -4940,7 +4941,7 @@ PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation, T
                     errcode(ERRCODE_CACHE_LOOKUP_FAILED),
                     errmsg("cache lookup failed for type %u, type Oid is invalid", base_oid)));
         }
-        typ = build_datatype(base_type_tup, typmod, collation);
+        typ = build_datatype(base_type_tup, typmod, collation, is_cursor_rowtype);
         typ->collectionType = PLPGSQL_COLLECTION_TABLE;
         if (type_struct->typcategory == TYPCATEGORY_TABLEOF_VARCHAR) {
             typ->tableOfIndexType = VARCHAROID;
@@ -4958,12 +4959,12 @@ PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation, T
                     errcode(ERRCODE_CACHE_LOOKUP_FAILED),
                     errmsg("cache lookup failed for type %u, type Oid is invalid", base_oid)));
         }
-        typ = build_datatype(base_type_tup, typmod, collation);
+        typ = build_datatype(base_type_tup, typmod, collation, is_cursor_rowtype);
         typ->collectionType = PLPGSQL_COLLECTION_TABLE;
         typ->tableOfIndexType = InvalidOid;
         ReleaseSysCache(base_type_tup);
     } else {
-        typ = build_datatype(type_tup, typmod, collation);
+        typ = build_datatype(type_tup, typmod, collation, is_cursor_rowtype);
         typ->collectionType = PLPGSQL_COLLECTION_NONE;
     }
     ReleaseSysCache(type_tup);
@@ -4993,10 +4994,9 @@ PLpgSQL_type* plpgsql_build_nested_datatype()
 /*
  * Utility subroutine to make a PLpgSQL_type struct given a pg_type entry
  */
-PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation)
+PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation, bool is_cursor_rowtype)
 {
     Form_pg_type type_struct = (Form_pg_type)GETSTRUCT(type_tup);
-
     if (!type_struct->typisdefined) {
         ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_UNDEFINED_OBJECT),
                 errmsg("type \"%s\" is only a shell when build data type in PLSQL.", NameStr(type_struct->typname))));
@@ -5011,7 +5011,7 @@ PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation)
     typ->typnamespace = get_namespace_name((type_struct->typnamespace));
     switch (type_struct->typtype) {
         case TYPTYPE_BASE:
-            if (typ->typoid == UNKNOWNOID)
+            if (typ->typoid == UNKNOWNOID && is_cursor_rowtype)
                 typ->ttype = PLPGSQL_TTYPE_CURSORROW;
             else
                 typ->ttype = PLPGSQL_TTYPE_SCALAR;

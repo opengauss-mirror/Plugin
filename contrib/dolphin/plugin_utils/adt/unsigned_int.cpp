@@ -1058,32 +1058,6 @@ Datum uint2smaller(PG_FUNCTION_ARGS)
     PG_RETURN_UINT16((arg1 < arg2) ? arg1 : arg2);
 }
 
-void pg_ulltoa(uint64 value, char *a)
-{
-    char *start = a;
-
-    /* Compute the result string backwards. */
-    do {
-        uint64 remainder;
-        uint64 oldval = value;
-
-        value /= 10;
-        remainder = oldval - value * 10;
-        *a++ = '0' + remainder;
-    } while (value != 0);
-
-    /* Add trailing NUL byte, and back up 'a' to the last character. */
-    *a-- = '\0';
-
-    /* Reverse string. */
-    while (start < a) {
-        char swap = *start;
-
-        *start++ = *a;
-        *a-- = swap;
-    }
-}
-
 Datum uint4in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
