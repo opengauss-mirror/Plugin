@@ -1174,6 +1174,7 @@ void parseTypeString(const char* str, Oid* typeid_p, int32* typmod_p, TypeDepend
     TypeCast* typecast = NULL;
     TypeName* typname = NULL;
     ErrorContextCallback ptserrcontext;
+    RawParserHook parser_hook = raw_parser;
 
     /* make sure we give useful error for empty input */
     if (strspn(str, " \t\n\r\f") == strlen(str)) {
@@ -1191,7 +1192,15 @@ void parseTypeString(const char* str, Oid* typeid_p, int32* typmod_p, TypeDepend
     ptserrcontext.previous = t_thrd.log_cxt.error_context_stack;
     t_thrd.log_cxt.error_context_stack = &ptserrcontext;
 
-    raw_parsetree_list = raw_parser(buf.data);
+#if (!defined(ENABLE_MULTIPLE_NODES)) && (!defined(ENABLE_PRIVATEGAUSS))
+    if (u_sess->attr.attr_sql.whale || u_sess->attr.attr_sql.dolphin || DB_IS_CMPT(D_FORMAT)) {
+        int id = GetCustomParserId();
+        if (id >= 0 && g_instance.raw_parser_hook[id] != NULL) {
+            parser_hook = (RawParserHook)g_instance.raw_parser_hook[id];
+        }
+    }
+#endif
+    raw_parsetree_list = parser_hook(buf.data, NULL);
 
     t_thrd.log_cxt.error_context_stack = ptserrcontext.previous;
 
@@ -1262,6 +1271,7 @@ TypeName * typeStringToTypeName(const char *str)
     TypeCast* typecast = NULL;
     TypeName* typname = NULL;
     ErrorContextCallback ptserrcontext;
+    RawParserHook parser_hook = raw_parser;
 
     /* make sure we give useful error for empty input */
     if (strspn(str, " \t\n\r\f") == strlen(str)) {
@@ -1279,7 +1289,15 @@ TypeName * typeStringToTypeName(const char *str)
     ptserrcontext.previous = t_thrd.log_cxt.error_context_stack;
     t_thrd.log_cxt.error_context_stack = &ptserrcontext;
 
-    raw_parsetree_list = raw_parser(buf.data);
+#if (!defined(ENABLE_MULTIPLE_NODES)) && (!defined(ENABLE_PRIVATEGAUSS))
+    if (u_sess->attr.attr_sql.whale || u_sess->attr.attr_sql.dolphin || DB_IS_CMPT(D_FORMAT)) {
+        int id = GetCustomParserId();
+        if (id >= 0 && g_instance.raw_parser_hook[id] != NULL) {
+            parser_hook = (RawParserHook)g_instance.raw_parser_hook[id];
+        }
+    }
+#endif
+    raw_parsetree_list = parser_hook(buf.data, NULL);
 
     t_thrd.log_cxt.error_context_stack = ptserrcontext.previous;
 

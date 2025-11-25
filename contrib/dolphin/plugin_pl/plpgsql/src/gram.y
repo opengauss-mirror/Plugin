@@ -10785,7 +10785,7 @@ read_datatype(int tok)
                     if(var && var->datatype 
                            && var->datatype->typoid == REFCURSOROID)
                     {
-                        PLpgSQL_type *newp = plpgsql_build_datatype(UNKNOWNOID, -1, InvalidOid);
+                        PLpgSQL_type *newp = plpgsql_build_datatype(UNKNOWNOID, -1, InvalidOid, NULL, true);
                         newp->cursorExpr = var->cursor_explicit_expr;
                         newp->cursorDno = var->dno;
                         return newp;
