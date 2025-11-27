@@ -6022,7 +6022,7 @@ static void CopyInitCstateVar(CopyState cstate)
  *
  * Returns a CopyState, to be passed to NextCopyFrom and related functions.
  */
-CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist, 
+CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
                         List* options, void* mem_info, const char* queryString,
                         CopyGetDataFunc func)
 {

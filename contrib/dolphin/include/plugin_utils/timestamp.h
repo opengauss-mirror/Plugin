@@ -124,6 +124,7 @@ extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
 #endif
 extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, bool is_add_func = false);
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func = false);
+extern Datum make_timestamp(PG_FUNCTION_ARGS);
 
 #ifdef DOLPHIN
 extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime, bool can_ignore = false);

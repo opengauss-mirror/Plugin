@@ -17,6 +17,7 @@
 #include "common/int.h"
 #include "utils/builtins.h"
 #include "utils/formatting.h"
+#include "utils/memutils.h"
 #include "plugin_mb/pg_wchar.h"
 #include "plugin_parser/parser.h"
 #include "plugin_postgres.h"
@@ -214,13 +215,13 @@ Datum lpad(PG_FUNCTION_ARGS)
     if (s2len <= 0)
         len = s1len; /* nothing to pad with, so don't pad */
 
-    bytelen = pg_database_encoding_max_length() * len;
+    if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
+        unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+        unlikely(!AllocSizeIsValid(bytelen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));    
+    }
 
-    /* check for integer overflow */
-    if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-
-    ret = (text*)palloc(VARHDRSZ + bytelen);
+    ret = (text*)palloc(bytelen);
 
     m = len - s1len;
 
@@ -385,17 +386,14 @@ Datum rpad(PG_FUNCTION_ARGS)
     if (s2len <= 0)
         len = s1len; /* nothing to pad with, so don't pad */
 
-    bytelen = pg_database_encoding_max_length() * len;
 
-    /* Check for integer overflow */
-    if (len != 0 && bytelen / pg_database_encoding_max_length() != len) {
-        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
-            (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                errmsg("requested length too large")));
-        PG_RETURN_NULL();
+    if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
+        unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+        unlikely(!AllocSizeIsValid(bytelen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));    
     }
 
-    ret = (text*)palloc(VARHDRSZ + bytelen);
+    ret = (text*)palloc(bytelen);
     m = len - s1len;
 
     ptr1 = VARDATA_ANY(string1);
@@ -906,7 +904,7 @@ Datum translate(PG_FUNCTION_ARGS)
     char *from_ptr = NULL, *to_ptr = NULL;
     char *source = NULL, *target = NULL;
     int m, fromlen, tolen, retlen, i;
-    int worst_len;
+    int bytelen;
     int len;
     int source_len;
     int from_index;
@@ -928,13 +926,13 @@ Datum translate(PG_FUNCTION_ARGS)
      * The worst-case expansion is to substitute a max-length character for a
      * single-byte character at each position of the string.
      */
-    worst_len = pg_database_encoding_max_length() * m;
+    if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), m, &bytelen)) ||
+        unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+        unlikely(!AllocSizeIsValid(bytelen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));    
+    }
 
-    /* check for integer overflow */
-    if (worst_len / pg_database_encoding_max_length() != m)
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-
-    result = (text*)palloc(worst_len + VARHDRSZ);
+    result = (text*)palloc(bytelen);
     target = VARDATA(result);
     retlen = 0;
     int tmp_len = 0;
@@ -961,7 +959,7 @@ Datum translate(PG_FUNCTION_ARGS)
             }
             if (p < (to_ptr + tolen)) {
                 len = pg_mblen(p);
-                ss_rc = memcpy_s(target, worst_len - tmp_len, p, len);
+                ss_rc = memcpy_s(target, bytelen - tmp_len, p, len);
                 securec_check(ss_rc, "\0", "\0");
                 target += len;
                 tmp_len += len;
@@ -970,7 +968,7 @@ Datum translate(PG_FUNCTION_ARGS)
 
         } else {
             /* no match, so copy */
-            ss_rc = memcpy_s(target, worst_len - tmp_len, source, source_len);
+            ss_rc = memcpy_s(target, bytelen - tmp_len, source, source_len);
             securec_check(ss_rc, "\0", "\0");
             target += source_len;
             tmp_len += source_len;
@@ -1222,8 +1220,11 @@ Datum repeat(PG_FUNCTION_ARGS)
 
     slen = VARSIZE_ANY_EXHDR(string);
 
-    if (unlikely(pg_mul_s32_overflow(count, slen, &tlen)) || unlikely(pg_add_s32_overflow(tlen, VARHDRSZ, &tlen)))
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+    if (unlikely(pg_mul_s32_overflow(count, slen, &tlen)) || unlikely(pg_add_s32_overflow(tlen, VARHDRSZ, &tlen)) ||
+        unlikely(!AllocSizeIsValid(tlen))) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+    }
+        
 
     result = (text*)palloc(tlen);
 

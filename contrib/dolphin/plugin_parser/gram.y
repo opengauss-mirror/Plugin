@@ -122,7 +122,8 @@ DB_CompatibilityAttr g_dbCompatArray[] = {
     {DB_CMPT_A, "A"},
     {DB_CMPT_B, "B"},
     {DB_CMPT_C, "C"},
-    {DB_CMPT_PG, "PG"}
+    {DB_CMPT_PG, "PG"},
+	{DB_CMPT_D, "D"}
 };
 
 IntervalStylePack g_interStyleVal = {"a"};
@@ -535,6 +536,7 @@ static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* 
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 static Node* MakeNoArgFunctionCall(List* funcName, int location);
 static char* IdentResolveToChar(DolphinIdent *ident, core_yyscan_t yyscanner);
+static List* TransformToConstStrNode(List *inExprList, char* raw_str);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
 static DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted);
@@ -560,6 +562,7 @@ static inline Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char*
 /* null is the minimum value in sortby */
 static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule);
 static bool GreaterThanHour (List* int_type);
+
 %}
 
 %define api.pure
@@ -985,6 +988,7 @@ static bool GreaterThanHour (List* int_type);
 %type <defelt>	copy_generic_opt_elem
 %type <list>	copy_generic_opt_list copy_generic_opt_arg_list
 %type <list>	copy_options
+%type <node>    rotate_table unrotate_table
 
 %type <typnam>	Typename SimpleTypename ConstTypename
 				GenericType Numeric NumericNoConflict opt_float opt_float_noempty dolphin_float
@@ -19986,9 +19990,9 @@ collate:
 					errmsg("Un-support feature"),
 					errdetail(specifying character sets and collations is not yet supported)));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("specifying character sets and collations is supported only in B-format database")));
+						errmsg("specifying character sets and collations is supported only in B-format or D-format database")));
 				}
 				$$ = $3;
 			}
@@ -29674,11 +29678,11 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list_for_no_table
 								     parser_errposition(@5)));
 					}
 #else
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					if (!DB_IS_CMPT_BD) {
 						if (list_length($5) > 1) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-									 errmsg("multi-relation update only support in B-format database")));
+									 errmsg("multi-relation update only support in B-format or D-format database")));
 						}
 						if (!IsA(linitial($5), RangeVar)) {
 							ereport(errstate,
@@ -31835,14 +31839,20 @@ opt_dolphin_alias_clause: dolphin_alias_clause		{ $$ = $1; }
 rotate_clause:
 			ROTATE '(' func_application_list rotate_for_clause rotate_in_clause ')' %prec ROTATE
 				{
-					if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+					if (!DB_IS_CMPT_AD)
 						ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("rotate clause is supported only in A_FORMAT database.")));
+								errmsg("rotate clause is supported only in A or D FORMAT database.")));
 					RotateClause *n = makeNode(RotateClause);
 					n->aggregateFuncCallList = $3;
 					n->forColName = $4;
-					n->inExprList = $5;
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					char* raw_parse_query_string = yyextra->core_yy_extra.scanbuf;
+					if (DB_IS_CMPT(D_FORMAT)) {
+						n->inExprList = TransformToConstStrNode($5, raw_parse_query_string);
+					} else {
+						n->inExprList = $5;
+					}
 					$$ = n;
 				}
 		;
@@ -31864,10 +31874,10 @@ func_application_list:
 unrotate_clause:
 			NOT ROTATE include_exclude_null_clause '(' unrotate_name_list rotate_for_clause unrotate_in_clause ')' %prec ROTATE
 				{
-					if( u_sess->attr.attr_sql.sql_compatibility != A_FORMAT )
+					if (!DB_IS_CMPT_AD)
 						ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("not rotate clause is supported only in A_FORMAT database.")));
+								errmsg("not rotate clause is supported only in A or D FORMAT database.")));
 					UnrotateClause *n = makeNode(UnrotateClause);
 					n->includeNull = $3;
 					n->colNameList = $5;
@@ -31875,7 +31885,6 @@ unrotate_clause:
 					n->inExprList = $7;
 					$$ = n;
 				}
-			| { $$ = NULL; }
 		;
 
 include_exclude_null_clause:
@@ -33194,7 +33203,7 @@ charset:
 				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					errmsg("specifying character sets and collations is not yet supported")));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 						errmsg("specifying character sets and collations is supported only in B-format database")));
 				}
@@ -33221,9 +33230,9 @@ convert_charset:
 				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					errmsg("specifying character sets and collations is not yet supported")));
 #endif
-				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+				if (!DB_IS_CMPT_BD) {
 					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("specifying character sets and collations is supported only in B-format database")));
+						errmsg("specifying character sets and collations is supported only in B-format or D-format database")));
 				}
 				$$ = PG_INVALID_ENCODING;
 			}
@@ -42411,6 +42420,9 @@ IsValidIdent(char *input)
 bool
 IsValidIdentUsername(char *input)
 {
+	if (u_sess->hook_cxt.checkVaildUserHook != NULL) {
+		return ((checkValidUsername)(u_sess->hook_cxt.checkVaildUserHook))(input);
+	}
 	char c = input[0];
 	/*The first character id numbers or dollar*/
 	if ((c >= '0' && c <= '9') || c == '$')
@@ -43075,10 +43087,10 @@ static void checkDeleteRelationError()
 			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				errmsg("multi-relation delete is not yet supported.")));
 #endif
-	if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)						
+	if (!DB_IS_CMPT_BD)						
 		ereport(errstate, 
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					errmsg("multi-relation delete only support in B-format database")));
+					errmsg("multi-relation delete only support in B-format or D-format database")));
 }
 
 #ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
@@ -44144,6 +44156,72 @@ static bool GreaterThanHour (List* argsList) {
 		return false;
 	}
 }
+
+static List* TransformToConstStrNode(List *inExprList, char* raw_str)
+{
+	ListCell* cell = NULL;
+	ListCell *exprCell = NULL;
+	ResTarget *resTarget = NULL;
+	errno_t rc;
+
+	foreach (cell, inExprList)
+	{
+		RotateInCell *rotateinCell = (RotateInCell *)lfirst(cell);
+		foreach (exprCell, rotateinCell->rotateInExpr) {
+			resTarget = (ResTarget *)lfirst(exprCell);
+			if (NULL == rotateinCell->aliasname && IsA(resTarget->val, ColumnRef)) {
+				ColumnRef* column_ref = (ColumnRef*)resTarget->val;
+				if (list_length(column_ref->fields) != 1) {
+					ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("ROTATE in clause error")));
+				}
+				// column_ref info has been convert to lower case, so we need to extact the not convert lower case info in raw str
+				char * lower_column_name = strVal(linitial(column_ref->fields));
+				int len = strlen(lower_column_name);
+				pfree(lower_column_name);
+				char *raw_col_name = (char *)palloc(len + 1);
+				raw_col_name[len] = '\0';
+				errno_t rc = EOK;
+				int column_offset = 0;
+				if (raw_str[column_ref->location] == '[' || raw_str[column_ref->location] == '"') {
+					column_offset++;
+				}
+				rc = strncpy_s(raw_col_name, len + 1, raw_str + column_ref->location + column_offset, len);
+				securec_check(rc, "\0", "\0");
+				Node* const_node = makeStringConst(raw_col_name, column_ref->location);
+				resTarget->val = const_node;
+			} if (NULL == rotateinCell->aliasname && IsA(resTarget->val, A_Const)) {
+				const Value *val = &((A_Const *)resTarget->val)->val;
+				char * column_to_const_str = NULL;
+				switch (val->type) {
+					case T_Integer: {
+						char* new_col_name = (char*)palloc(NAMEDATALEN);
+						rc = memset_s(new_col_name, NAMEDATALEN, 0, NAMEDATALEN);
+						securec_check_c(rc, "\0", "\0");
+						rc = snprintf_s(new_col_name, NAMEDATALEN, NAMEDATALEN - 1, "%ld", intVal(val));
+						securec_check_ss(rc, "\0", "\0");
+						column_to_const_str = new_col_name;
+						break;
+					}
+
+					case T_Float:
+					case T_String:
+					case T_BitString:
+						column_to_const_str = strVal(val);
+						break;
+					
+					default:
+						break;
+				}
+				if (column_to_const_str != NULL) {
+					Node* const_node = makeStringConst(column_to_const_str, ((A_Const *)resTarget)->location);
+					resTarget->val = const_node;
+				}
+			}
+		}
+	}
+	return inExprList;
+}
+
 /*
  * Must undefine this stuff before including scan.c, since it has different
  * definitions for these macros.

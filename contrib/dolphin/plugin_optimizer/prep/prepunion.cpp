@@ -247,9 +247,11 @@ static Plan* recurse_set_operations(Node* setOp, PlannerInfo* root, double tuple
          * forward to setrefs.c processing.
          */
         rel = build_simple_rel(root, rtr->rtindex, RELOPT_BASEREL);
-        if (rel == NULL)
+        if (rel == NULL) {
             ereport(ERROR,
                 (errmodule(MOD_OPT), errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), (errmsg("Valid rel not found. "))));
+            return plan; /* suppress the static check warmings */
+        }
 
         /* plan_params should not be in use in current query level */
         AssertEreport(root->plan_params == NIL,
@@ -2171,13 +2173,15 @@ static List* adjust_inherited_tlist(List* tlist, AppendRelInfo* context)
                         tle->resno,
                         get_rel_name(context->parent_reloid)))));
         childvar = (Var*)list_nth(context->translated_vars, tle->resno - 1);
-        if (childvar == NULL || !IsA(childvar, Var))
+        if (childvar == NULL || !IsA(childvar, Var)) {
             ereport(ERROR,
                 (errmodule(MOD_OPT),
                     errcode(ERRCODE_FDW_INVALID_COLUMN_NAME),
                     (errmsg("attribute %d of relation \"%s\" does not exist",
                         tle->resno,
                         get_rel_name(context->parent_reloid)))));
+            return new_tlist; /* suppress the static check warmings */
+        }
 
         if (tle->resno != childvar->varattno) {
             tle->resno = childvar->varattno;
@@ -2441,6 +2445,7 @@ UNIONALL_SHIPPING_TYPE precheck_shipping_union_all(Query *subquery, Node *setOp)
 {
     if (setOp == NULL) {
         elog(ERROR, "subquery's setOperations tree should not be NULL in pull_up_simple_union_all");
+        return SHIPPING_NONE; /* suppress the static check warmings */
     }
 
     if (IsA(setOp, RangeTblRef)) {

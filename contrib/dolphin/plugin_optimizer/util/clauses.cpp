@@ -3297,11 +3297,13 @@ Node* eval_const_expressions_mutator(Node* node, eval_const_expressions_context*
                 Node* e = NULL;
 
                 e = eval_const_expressions_mutator((Node*)lfirst(arg), context);
-                if (e == NULL)
+                if (e == NULL) {
                     ereport(ERROR,
                         (errmodule(MOD_OPT),
                             errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                             (errmsg("Fail to eval const expressoin."))));
+                    return nullptr; /* suppress the static check warmings */
+                }
                 /*
                  * We can remove null constants from the list. For a
                  * non-null constant, if it has not been preceded by any
@@ -4425,14 +4427,15 @@ static Expr* evaluate_function(Oid funcid, Oid result_type, int32 result_typmod,
      * Actually, it is safe to simplify some stable or volatile functions,
      * is_safe_simplify_func() will determines it.
      */
-    if (funcform->provolatile == PROVOLATILE_IMMUTABLE)
+    if (funcform->provolatile == PROVOLATILE_IMMUTABLE) {
         /* okay */;
-    else if (context->estimate && funcform->provolatile == PROVOLATILE_STABLE)
+    } else if (context && context->estimate && funcform->provolatile == PROVOLATILE_STABLE) {
         /* okay */;
-    else if (is_safe_simplify_func(funcid, args))
+    } else if (is_safe_simplify_func(funcid, args)) {
         /* okay */;
-    else
+    } else {
         return NULL;
+    }
 
     /*
      * OK, looks like we can simplify this operator/function.
@@ -4450,7 +4453,7 @@ static Expr* evaluate_function(Oid funcid, Oid result_type, int32 result_typmod,
     newexpr->location = -1;
 
     bool can_ignore = false;
-    if (context != NULL && context->root != NULL && context->root->parse != NULL && context->root->parse->hasIgnore) {
+    if (context->root != NULL && context->root->parse != NULL && context->root->parse->hasIgnore) {
         can_ignore = true;
     }
     bool need_change_user = context->change_user && u_sess->misc_cxt.CurrentUserId != funcform->proowner &&

@@ -304,6 +304,11 @@ typedef enum {
     GSDEPEND_OBJECT_TYPE_PKG_RECOMPILE
 } GsDependObjectType;
 
+typedef enum {
+    NOT_IN_TRY_CATCH_BLOCK,
+    IN_TRY_CATCH_BLOCK,
+    CATCH_ERROR_HANDLED
+} PLpgSqlTrycatchState;
 /*
 * GsDependency reference object position type
 */
@@ -746,6 +751,7 @@ typedef struct PLpgSQL_stmt_block { /* Block of statements			*/
     char* label;
     bool isAutonomous;
     bool isDeclareHandlerStmt;      /* mysql declare handler syntax */
+    bool isTryCatch;
     List* body; /* List of statements */
     int n_initvars;
     int* initvarnos;
@@ -1346,6 +1352,7 @@ typedef struct PLpgSQL_execstate { /* Runtime execution data	*/
     
     bool is_pipelined;
     bool pipelined_resistuple;
+    PLpgSqlTrycatchState trycatchState;
 
     MemoryContext proc_ctx;
     List* tuptable_cxt_list;
@@ -1806,8 +1813,9 @@ extern PLpgSQL_type* plpgsql_parse_wordtype(char* ident);
 extern PLpgSQL_type* plpgsql_parse_cwordtype(List* idents, TypeDependExtend* dependExtend = NULL);
 extern PLpgSQL_type* plpgsql_parse_wordrowtype(char* ident);
 extern PLpgSQL_type* plpgsql_parse_cwordrowtype(List* idents);
-extern PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation, TypeDependExtend* type_depend_extend = NULL);
-extern PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation);
+extern PLpgSQL_type* plpgsql_build_datatype(Oid typeOid, int32 typmod, Oid collation,
+    TypeDependExtend* type_depend_extend = NULL, bool is_cursor_rowtype = false);
+extern PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation, bool is_cursor_rowtype = false);
 extern PLpgSQL_type* plpgsql_build_nested_datatype();
 extern const char *plpgsql_code_int2cstring(int sqlcode);
 extern const int plpgsql_code_cstring2int(const char *codename);
@@ -2162,6 +2170,7 @@ extern void compute_return_type(
     TypeDependExtend* type_depend_extend, bool is_refresh_head, bool isPipelined);
 extern CodeLine* debug_show_code_worker(Oid funcid, uint32* num, int* headerlines);
 void plpgsql_free_override_stack(int depth);
+bool CheckPlpgsqlFunc(Oid funcoid, bool report_error = true);
 
 /* gsplsql lock/unlock api */
 typedef struct GSPLSQLLockedObjKey {
@@ -2185,4 +2194,8 @@ extern void init_lock_hash_table();
 extern void gsplsql_lock_func_pkg_dependency_all(Oid obj_oid, GSPLSQLObjectType type);
 extern void gsplsql_unlock_func_pkg_dependency_all();
 extern void gsplsql_lock_depend_pkg_on_session(PLpgSQL_function* func);
+typedef PLpgSQL_function* (*plsql_compile)(FunctionCallInfo fcinfo, bool forValidator, bool isRecompile);
+
+typedef bool (*checkValidUsername)(const char* name);
+
 #endif /* PLPGSQL_H */

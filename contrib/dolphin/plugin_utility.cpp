@@ -1282,7 +1282,7 @@ static void assemble_drop_sequence_msg(List* seqs, StringInfo str)
         schema_name = quote_identifier(nsp_name);
         seq_name = quote_identifier(rel_name);
 
-        Assert(seq_name != NULL && schema_name != NULL);
+        Assert(rel_name != NULL && nsp_name != NULL && seq_name != NULL && schema_name != NULL);
 
         rc = snprintf_s(
             query, sizeof(query), sizeof(query) - 1, "DROP SEQUENCE IF EXISTS %s.%s CASCADE;", schema_name, seq_name);
@@ -1613,13 +1613,18 @@ void ProcessUtility(processutility_context* processutility_cxt,
      * Record the number of rows affected into the session, but only support 
      * DML statement now, for DDL statement, always set to 0
      */
-    if(nodeTag(processutility_cxt->parse_tree) != T_ExecuteStmt) {
+    NodeTag nt = nodeTag(processutility_cxt->parse_tree);
+    if (nt != T_ExecuteStmt) {
         u_sess->statement_cxt.current_row_count = 0;
         u_sess->statement_cxt.last_row_count = u_sess->statement_cxt.current_row_count;
-        /* If it is an EXECUTE statement here, the PortalRun function will be
+        /* If it is an EXECUTE/FETCH statement here, the PortalRun function will be
            called twice nested, and the right data will be modified when it is 
            first executed (Generally in function ExecutorRun), so there do 
            nothing when it is called again to avoid overwriting */
+        if ((nt != T_FetchStmt || ((FetchStmt*)(processutility_cxt->parse_tree))->ismove) &&
+            u_sess->hook_cxt.rowcountHook) {
+            ((RowcountHook)(u_sess->hook_cxt.rowcountHook))(0);
+        }
     }
 }
 
