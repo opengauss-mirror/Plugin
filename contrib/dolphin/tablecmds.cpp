@@ -2138,7 +2138,7 @@ static void CheckPartitionKeyForCreateTable(PartitionState *partTableState, List
         CompareListValue(pos, descriptor->attrs, partTableState->partitionList, partkeyIsFunc);
 
     /* charset of partkey columns cannot be different from server_encoding */
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         foreach_cell (cell, pos) {
             int attidx = lfirst_int(cell);
             check_unsupported_charset_for_column(
@@ -2554,7 +2554,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     /* relation collation is stored using stmt->options. */
-    if (DB_IS_CMPT(B_FORMAT) && relkind == RELKIND_RELATION) {
+    if (DB_IS_CMPT_BD && relkind == RELKIND_RELATION) {
         (void)fill_relation_collation(stmt->collate, stmt->charset, &stmt->options, nspdefcoll);
     }
 
@@ -2864,7 +2864,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     /* check column charset */
-    if (DB_IS_CMPT(B_FORMAT) &&
+    if (DB_IS_CMPT_BD &&
         (0 == pg_strcasecmp(storeChar, ORIENTATION_COLUMN) || 0 == pg_strcasecmp(storeChar, ORIENTATION_TIMESERIES))) {
         for (int attidx = 0; attidx < descriptor->natts; attidx++) {
             check_unsupported_charset_for_column(
@@ -13717,7 +13717,7 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
     /* And the collation */
     Oid rel_coll_oid = rel->rd_options == NULL ? InvalidOid : ((StdRdOptions*)(rel)->rd_options)->collate;
     collOid = GetColumnDefCollation(NULL, colDef, typeOid, rel_coll_oid);
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         typeOid = binary_need_transform_typeid(typeOid, &collOid);
         if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
             check_unsupported_charset_for_column(collOid, colDef->colname);
@@ -13971,7 +13971,8 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
                 if (colDef->is_not_null) {
                     ATExecAppendDefValExpr(attribute.attnum, defval, tab, colDef, true, is_addloc);
                 }
-            } else if (contain_specified_function((Node*)defval, NEXTVALFUNCOID)) {
+            } else if (contain_specified_function((Node*)defval, NEXTVALFUNCOID)
+                    && u_sess->attr.attr_sql.sql_compatibility != D_FORMAT) {
                 /* We don't support alter table add column which default with nextval expression. */
                 ereport(ERROR,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -17541,7 +17542,7 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
     /* And the collation */
     Oid rel_coll_oid = rel->rd_options == NULL ? InvalidOid : ((StdRdOptions*)(rel)->rd_options)->collate;
     targetcollid = GetColumnDefCollation(NULL, def, targettype, rel_coll_oid);
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         targettype = binary_need_transform_typeid(targettype, &targetcollid);
         target_charset = get_charset_by_collation(targetcollid);
     }
@@ -18365,7 +18366,7 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     /* And the collation */
     Oid rel_coll_oid = rel->rd_options == NULL ? InvalidOid : ((StdRdOptions*)(rel)->rd_options)->collate;
     targetcollid = GetColumnDefCollation(NULL, def, targettype, rel_coll_oid);
-    if (DB_IS_CMPT(B_FORMAT)) {
+    if (DB_IS_CMPT_BD) {
         targettype = binary_need_transform_typeid(targettype, &targetcollid);
         if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
             check_unsupported_charset_for_column(targetcollid, colName);
@@ -25028,7 +25029,7 @@ Node* GetTargetValue(Form_pg_attribute attrs, Const* src, bool isinterval, bool 
     }
 
     /* convert source const's charset to target partkey's charset */
-    if (!partkeyIsFunc && DB_IS_CMPT(B_FORMAT) && OidIsValid(attrs->attcollation)) {
+    if (!partkeyIsFunc && DB_IS_CMPT_BD && OidIsValid(attrs->attcollation)) {
         assign_expr_collations(NULL, expr);
         if (attrs->attcollation != exprCollation(expr)) {
             int attcharset = get_valid_charset_by_collation(attrs->attcollation);

@@ -41,6 +41,7 @@ extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print
 
 extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec);
 extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
+extern int GetValiddateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm);
 
 #ifdef DOLPHIN
 extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);

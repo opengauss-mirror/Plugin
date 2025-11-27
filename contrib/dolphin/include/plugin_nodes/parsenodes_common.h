@@ -696,6 +696,7 @@ typedef struct UnrotateClause {
     List *colNameList;
     List *forColName;
     List *inExprList;
+    Alias *alias;       /* function aliases */
 } UnrotateClause;
 
 typedef struct UnrotateInCell {
@@ -1902,6 +1903,7 @@ typedef struct RotateClause {
     List *forColName;
     List *inExprList;
     List *aggregateFuncCallList;
+    Alias *alias;       /* function aliases */
 } RotateClause;
 
 typedef struct RotateInCell {
@@ -2258,7 +2260,10 @@ typedef enum TransactionStmtKind {
     TRANS_STMT_ROLLBACK_TO,
     TRANS_STMT_PREPARE,
     TRANS_STMT_COMMIT_PREPARED,
-    TRANS_STMT_ROLLBACK_PREPARED
+    TRANS_STMT_ROLLBACK_PREPARED,
+    TRANS_STMT_BEGIN_TRY,
+    TRANS_STMT_END_TRY_BEGIN_CATCH,
+    TRANS_STMT_END_CATCH
 } TransactionStmtKind;
 
 typedef struct TransactionStmt {

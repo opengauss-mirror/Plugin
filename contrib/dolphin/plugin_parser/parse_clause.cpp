@@ -211,7 +211,7 @@ int setTargetTable(ParseState* pstate, RangeVar* relRv, bool inh, bool alsoSourc
      * for DELETE and UPDATE, maybe target table has been added to rtable before.
      * if that, no need to do that again, just set resultRelation to the existed rtindex.
      */
-    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+    if (DB_IS_CMPT_BD) {
         if (multiModify && (requiredPerms & ACL_UPDATE)) {
             relation = parserOpenTable(pstate, relRv, RowExclusiveLock, true, false, true);
             /* When update multiple relations, rte has been just now added to p_rtable in transformFromClauseItem. */
@@ -701,8 +701,8 @@ static RangeTblEntry* transformRangeSubselect(ParseState* pstate, RangeSubselect
             ResTarget *resTarget = (ResTarget *)lfirst(targetCell);
             next = lnext(targetCell);
             if (IsA(resTarget->val, ColumnRef)) {
-                char *colName = strVal(lfirst(list_head(((ColumnRef *)resTarget->val)->fields)));
-                if (list_member(r->rotate->forColName, lfirst(list_head(((ColumnRef *)resTarget->val)->fields))) ||
+                char *colName = strVal(lfirst(list_tail(((ColumnRef *)resTarget->val)->fields)));
+                if (list_member(r->rotate->forColName, lfirst(list_tail(((ColumnRef *)resTarget->val)->fields))) ||
                     ColNameInFuncParasList(colName, columnsInAggFunc))
                     subQueryStmt->targetList = list_delete_cell(subQueryStmt->targetList, targetCell, prev);
                 else
@@ -764,8 +764,10 @@ static RangeTblEntry* transformRangeSubselect(ParseState* pstate, RangeSubselect
                         } else if (IsA(resTarget->val, A_Const)) {
                             Value *val = &((A_Const *)resTarget->val)->val;
                             if (val->type == T_String){
-                                rc = strncat_s(new_col_name, NAMEDATALEN, strVal(val), strlen(strVal(val)));
+                                char* val_dup_temp = pg_strtolower(pstrdup(strVal(val)));
+                                rc = strncat_s(new_col_name, NAMEDATALEN, val_dup_temp, strlen(strVal(val)));
                                 securec_check_c(rc, "\0", "\0");
+                                pfree(val_dup_temp);
                             } else if (val->type == T_Float) {
                                 rc = snprintf_s(new_col_name + strlen(new_col_name), NAMEDATALEN - strlen(new_col_name),
                                                NAMEDATALEN - strlen(new_col_name) - 1, "%f", floatVal(val));
@@ -827,10 +829,15 @@ static RangeTblEntry* transformRangeSubselect(ParseState* pstate, RangeSubselect
             (errcode(ERRCODE_UNEXPECTED_NODE_STATE), errmsg("unexpected non-SELECT command in subquery in FROM")));
     }
 
+    Alias* subquery_alias = r->alias;
+    if (DB_IS_CMPT(D_FORMAT) && r->rotate != NULL && r->rotate->alias != NULL) {
+        subquery_alias = r->rotate->alias;
+    }
+
     /*
      * OK, build an RTE for the subquery.
      */
-    rte = addRangeTableEntryForSubquery(pstate, query, r->alias, r->lateral, true);
+    rte = addRangeTableEntryForSubquery(pstate, query, subquery_alias, r->lateral, true);
 
     return rte;
 }
@@ -1094,6 +1101,9 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
     bool isCreateView, bool isMergeInto, bool addUpdateTable)
 
 {
+    /* Guard against stack overflow due to overly deep subtree */
+    check_stack_depth();
+
     if (IsA(n, RangeVar)) {
         /* Plain relation reference, or perhaps a CTE reference */
         RangeVar* rv = (RangeVar*)n;
