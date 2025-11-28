@@ -3097,7 +3097,6 @@ CTranslatorQueryToDXL::TranslateFromClauseToDXL(Node *node)
 			{RTE_VALUES, &CTranslatorQueryToDXL::TranslateValueScanRTEToDXL},
 			{RTE_CTE, &CTranslatorQueryToDXL::TranslateCTEToDXL},
 			{RTE_SUBQUERY, &CTranslatorQueryToDXL::TranslateDerivedTablesToDXL},
-			{RTE_FUNCTION, &CTranslatorQueryToDXL::TranslateTVFToDXL},
 		};
 
 		const ULONG num_of_translators =
@@ -3615,124 +3614,6 @@ CTranslatorQueryToDXL::TranslateColumnValuesToDXL(
 								project_list_dxlnode, const_tbl_get_dxlnode);
 
 	return project_dxlnode;
-}
-
-//---------------------------------------------------------------------------
-//	@function:
-//		CTranslatorQueryToDXL::TranslateTVFToDXL
-//
-//	@doc:
-//		Returns a CDXLNode representing a from relation range table entry
-//---------------------------------------------------------------------------
-CDXLNode *
-CTranslatorQueryToDXL::TranslateTVFToDXL(const RangeTblEntry *rte,
-										 ULONG rt_index,
-										 ULONG	//current_query_level
-)
-{
-	/*
-	 * SPQDB_94_MERGE_FIXME: RangeTblEntry for functions can now contain multiple function calls.
-	 * ORCA isn't prepared for that yet. See upstream commit 784e762e88.
-	 */
-	/*if (list_length(rte->functions) != 1)
-	{
-		SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,
-				   SPQOS_WSZ_LIT("Multi-argument UNNEST() or TABLE()"));
-	}*/
-	RangeTblFunction *rtfunc = nullptr; // (RangeTblFunction *) linitial(rte->functions);
-	BOOL is_composite_const =
-		CTranslatorUtils::IsCompositeConst(m_mp, m_md_accessor, rtfunc);
-
-	// if this is a folded function expression, generate a project over a CTG
-	if (!IsA(rtfunc->funcexpr, FuncExpr) && !is_composite_const)
-	{
-		CDXLNode *const_tbl_get_dxlnode = DXLDummyConstTableGet();
-
-		CDXLNode *project_list_dxlnode = SPQOS_NEW(m_mp)
-			CDXLNode(m_mp, SPQOS_NEW(m_mp) CDXLScalarProjList(m_mp));
-
-		CDXLNode *project_elem_dxlnode = TranslateExprToDXLProject(
-			(Expr *) rtfunc->funcexpr, rte->eref->aliasname,
-			true /* insist_new_colids */);
-		project_list_dxlnode->AddChild(project_elem_dxlnode);
-
-		CDXLNode *project_dxlnode = SPQOS_NEW(m_mp)
-			CDXLNode(m_mp, SPQOS_NEW(m_mp) CDXLLogicalProject(m_mp));
-		project_dxlnode->AddChild(project_list_dxlnode);
-		project_dxlnode->AddChild(const_tbl_get_dxlnode);
-
-		m_var_to_colid_map->LoadProjectElements(m_query_level, rt_index,
-												project_list_dxlnode);
-
-		return project_dxlnode;
-	}
-
-	CDXLLogicalTVF *tvf_dxlop = CTranslatorUtils::ConvertToCDXLLogicalTVF(
-		m_mp, m_md_accessor, m_context->m_colid_counter, rte);
-	CDXLNode *tvf_dxlnode = SPQOS_NEW(m_mp) CDXLNode(m_mp, tvf_dxlop);
-
-	// make note of new columns from function
-	m_var_to_colid_map->LoadColumns(m_query_level, rt_index,
-									tvf_dxlop->GetDXLColumnDescrArray());
-
-	BOOL is_subquery_in_args = false;
-
-	// funcexpr evaluates to const and returns composite type
-	if (IsA(rtfunc->funcexpr, Const))
-	{
-		// If the const is NULL, the const value cannot be populated
-		// Raise exception
-		// This happens to PostGIS functions, which aren't supported
-		const Const *constant = (Const *) rtfunc->funcexpr;
-		if (constant->constisnull)
-		{
-			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,
-					   SPQOS_WSZ_LIT("Row-type variable"));
-		}
-
-		CDXLNode *constValue = m_scalar_translator->TranslateScalarToDXL(
-			(Expr *) (rtfunc->funcexpr), m_var_to_colid_map);
-		tvf_dxlnode->AddChild(constValue);
-		return tvf_dxlnode;
-	}
-
-	SPQOS_ASSERT(IsA(rtfunc->funcexpr, FuncExpr));
-
-	FuncExpr *funcexpr = (FuncExpr *) rtfunc->funcexpr;
-
-	// check if arguments contain SIRV functions
-	if (NIL != funcexpr->args && HasSirvFunctions((Node *) funcexpr->args))
-	{
-		SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,
-				   SPQOS_WSZ_LIT("SIRV functions"));
-	}
-
-	ListCell *lc = NULL;
-	ForEach(lc, funcexpr->args)
-	{
-		Node *arg_node = (Node *) lfirst(lc);
-		is_subquery_in_args =
-			is_subquery_in_args || CTranslatorUtils::HasSubquery(arg_node);
-		CDXLNode *func_expr_arg_dxlnode =
-			m_scalar_translator->TranslateScalarToDXL((Expr *) arg_node,
-													  m_var_to_colid_map);
-		SPQOS_ASSERT(NULL != func_expr_arg_dxlnode);
-		tvf_dxlnode->AddChild(func_expr_arg_dxlnode);
-	}
-
-	CMDIdSPQDB *mdid_func =
-		SPQOS_NEW(m_mp) CMDIdSPQDB(IMDId::EmdidGeneral, funcexpr->funcid);
-	const IMDFunction *pmdfunc = m_md_accessor->RetrieveFunc(mdid_func);
-	if (is_subquery_in_args &&
-		IMDFunction::EfsVolatile == pmdfunc->GetFuncStability())
-	{
-		SPQOS_RAISE(
-			spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,
-			SPQOS_WSZ_LIT("Volatile functions with subqueries in arguments"));
-	}
-	mdid_func->Release();
-
-	return tvf_dxlnode;
 }
 
 //---------------------------------------------------------------------------

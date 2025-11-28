@@ -506,6 +506,10 @@ CExpression::PdpDerive(
 				break;
 		}
 
+        if (NULL == Pdp(ept)) {
+            SPQOS_RAISE(spqopt::ExmaSPQOPT, spqopt::ExmiUnsatisfiedRequiredProperties, SPQOS_WSZ_LIT(
+                "Failed to init derived property"));
+        }
 		Pdp(ept)->Derive(m_mp, exprhdl, pdpctxt);
 	}
 	// If we havn't derived all properties, do that now. If we've derived some
