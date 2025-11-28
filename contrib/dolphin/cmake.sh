@@ -40,7 +40,7 @@ cp rollback_script/dolphin--4.2--4.1.sql dolphin--4.2--4.1.sql
 rm -f dolphin--4.2--4.3.sql
 cp upgrade_script/dolphin--4.2--4.3.sql dolphin--4.2--4.3.sql
 rm -f dolphin--4.3--4.2.sql
-cp upgrade_script/dolphin--4.3--4.2.sql dolphin--4.3--4.2.sql
+cp rollback_script/dolphin--4.3--4.2.sql dolphin--4.3--4.2.sql
 rm -f dolphin--4.3--5.0.sql
 cp upgrade_script/dolphin--4.3--5.0.sql dolphin--4.3--5.0.sql
 rm -f dolphin--5.0--4.3.sql
