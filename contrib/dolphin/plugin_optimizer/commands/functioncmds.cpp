@@ -64,6 +64,7 @@
 #include "catalog/pg_type_fn.h"
 #include "catalog/gs_db_privilege.h"
 #include "catalog/namespace.h"
+#include "catalog/pg_authid.h"
 #include "commands/defrem.h"
 #include "commands/proclang.h"
 #include "commands/typecmds.h"
@@ -2277,6 +2278,12 @@ ObjectAddress AlterFunctionOwner(List* name, List* argtypes, Oid newOwnerId)
                 errmsg("function \"%s\" is a masking function,its owner can not be changed", NameListToString(name))));
     }
 
+    if (!initialuser() && BOOTSTRAP_SUPERUSERID == newOwnerId) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
+                errmsg("only super user can set function owner to super user")));
+    }
+
     TrForbidAccessRbObject(ProcedureRelationId, procOid);
 
     tup = SearchSysCache1(PROCOID, ObjectIdGetDatum(procOid));
@@ -2514,6 +2521,7 @@ static void AlterFunctionOwner_internal(Relation rel, HeapTuple tup, Oid newOwne
     Form_pg_proc procForm;
     AclResult aclresult;
     Oid procOid;
+    bool enablePrivilegesSeparate = g_instance.attr.attr_security.enablePrivilegesSeparate;
 
     Assert(RelationGetRelid(rel) == ProcedureRelationId);
     Assert(tup->t_tableOid == ProcedureRelationId);
@@ -2541,7 +2549,7 @@ static void AlterFunctionOwner_internal(Relation rel, HeapTuple tup, Oid newOwne
         HeapTuple newtuple;
 
         /* Superusers can always do it */
-        if (!superuser()) {
+        if ((!superuser_arg(GetUserId()) && enablePrivilegesSeparate) || (!superuser() && !enablePrivilegesSeparate)) {
             /* Otherwise, must be owner of the existing object */
             if (!pg_proc_ownercheck(procOid, GetUserId()))
                 aclcheck_error(ACLCHECK_NOT_OWNER, ACL_KIND_PROC, NameStr(procForm->proname));
@@ -2961,8 +2969,18 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
         procForm->provolatile = interpret_func_volatility(volatility_item);
     if (strict_item != NULL)
         procForm->proisstrict = intVal(strict_item->arg);
-    if (security_def_item != NULL)
+    /* we can only set security definer by initialuser or user */
+    if (security_def_item != NULL && intVal(security_def_item->arg)) {
+        if (initialuser() || procForm->proowner == GetUserId()) {
+            procForm->prosecdef = intVal(security_def_item->arg);
+        } else {
+            ereport(ERROR,
+                (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+                 errmsg("only initial user can set function to security definer")));
+        }
+    } else if (security_def_item != NULL) {
         procForm->prosecdef = intVal(security_def_item->arg);
+    }
     if (leakproof_item != NULL) {
         procForm->proleakproof = intVal(leakproof_item->arg);
         if (procForm->proleakproof && !superuser())
@@ -4004,8 +4022,10 @@ Oid GetFunctionNodeGroup(AlterFunctionStmt* stmt)
 
 static void checkAllowAlter(HeapTuple tup) {
     Datum packageOidDatum;
+    Datum prosecdef_datum;
     Oid packageOid = InvalidOid;
     bool isnull = false;
+    bool prosecdef = false;
     packageOidDatum = SysCacheGetAttr(PROCOID, tup, Anum_pg_proc_packageid, &isnull);
     if (!isnull) {
         packageOid = DatumGetObjectId(packageOidDatum);
@@ -4017,6 +4037,16 @@ static void checkAllowAlter(HeapTuple tup) {
                 errdetail("please rebuild package"),
                 errcause("package is one object,not allow alter function in package"),
                 erraction("rebuild package")));
+    }
+    prosecdef_datum = SysCacheGetAttr(PROCOID, tup, Anum_pg_proc_prosecdef, &isnull);
+    prosecdef = DatumGetBool(prosecdef_datum);
+    if (prosecdef) {
+        ereport(ERROR,
+            (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("security definer function not allow alter owner"),
+                errdetail("please delete function and rebuild function"),
+                errcause("for security, not allow alter security definer function owner"),
+                erraction("delete and rebuild function")));
     }
 }
 

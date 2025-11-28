@@ -861,7 +861,7 @@ Datum input_timestamp_in(char* str, Oid typioparam, int32 typmod, bool can_ignor
     struct pg_tm tt, *tm = &tt;
     int dterr;
 
-    if (u_sess->attr.attr_common.enable_iud_fusion) {
+    if (u_sess && u_sess->attr.attr_common.enable_iud_fusion) {
         dterr = ParseIudDateTime(str, tm, &fsec);
         if (dterr == 0) {
             if (tm2timestamp(tm, fsec, NULL, &result) != 0) {

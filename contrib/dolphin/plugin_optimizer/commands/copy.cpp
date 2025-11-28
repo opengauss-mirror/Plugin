@@ -2029,7 +2029,7 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
     if (!IS_CSV(cstate) && cstate->quote != NULL)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("COPY quote available only in CSV mode")));
 
-    if (IS_CSV(cstate) && strlen(cstate->quote) != 1)
+    if (IS_CSV(cstate) && cstate->quote && strlen(cstate->quote) != 1)
         ereport(
             ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("COPY quote must be a single one-byte character")));
 
@@ -2040,7 +2040,7 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
     if (!IS_CSV(cstate) && cstate->escape != NULL)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("COPY escape available only in CSV mode")));
 
-    if (IS_CSV(cstate) && strlen(cstate->escape) != 1)
+    if (IS_CSV(cstate) && cstate->escape && strlen(cstate->escape) != 1)
         ereport(
             ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("COPY escape must be a single one-byte character")));
 
@@ -2847,6 +2847,10 @@ static CopyState BeginCopy(bool is_from, Relation rel, Node* raw_query, const ch
  */
 static void EndCopy(CopyState cstate)
 {
+    if (cstate == NULL) {
+        return;
+    }
+
     if (cstate->filename != NULL && FreeFile(cstate->copy_file))
         ereport(ERROR, (errcode_for_file_access(), errmsg("could not close file \"%s\": %m", cstate->filename)));
 
@@ -7221,7 +7225,7 @@ retry:
         char* cvt = NULL;
 
         cvt = pg_any_to_server(cstate->line_buf.data, cstate->line_buf.len, cstate->file_encoding);
-        if (cvt != cstate->line_buf.data) {
+        if (cvt && cvt != cstate->line_buf.data) {
             /* transfer converted data back to line_buf */
             resetStringInfo(&cstate->line_buf);
             appendBinaryStringInfo(&cstate->line_buf, cvt, strlen(cvt));
@@ -8955,6 +8959,10 @@ List* CopyGetAttnums(TupleDesc tupDesc, Relation rel, List* attnamelist)
 
 void SetFixedAlignment(TupleDesc tupDesc, Relation rel, FixFormatter* formatter, const char* char_alignment)
 {
+    if (formatter == NULL) {
+        ereport(ERROR, (errmsg("Set fixed alignment failed: invalid formatter")));
+        return;
+    }
     for (int i = 0; i < formatter->nfield; i++) {
         Form_pg_attribute attr = NULL;
         char* name = formatter->fieldDesc[i].fieldname;
@@ -8983,7 +8991,6 @@ void SetFixedAlignment(TupleDesc tupDesc, Relation rel, FixFormatter* formatter,
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_COLUMN), errmsg("column \"%s\" does not exist", name)));
         }
 
-        Assert(formatter != NULL);
         formatter->fieldDesc[i].attnum = attr->attnum;
 
         switch (attr->atttypid) {

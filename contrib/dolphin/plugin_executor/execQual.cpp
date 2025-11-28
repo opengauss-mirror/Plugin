@@ -645,7 +645,7 @@ static Datum ExecEvalScalarVar(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-         (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+        (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }
@@ -7113,7 +7113,7 @@ static Datum ExecEvalPriorExpr(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }

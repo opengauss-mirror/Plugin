@@ -588,11 +588,11 @@ static void StrategyFuncMaxTimestamptz(ParallelFunctionState* state)
     TupleTableSlot* slot = NULL;
     TimestampTz* result = NULL;
 
+    Assert(state && state->tupstore);
     state->resultset = (TimestampTz*)palloc(sizeof(TimestampTz));
     result = (TimestampTz*)state->resultset;
     *result = 0;
 
-    Assert(state && state->tupstore);
     if (NULL == state->tupdesc) {
         /*
          * if there is only one coordinator, there is no remote coordinator, tupdesc
@@ -2130,6 +2130,10 @@ Datum pg_stat_get_activity(PG_FUNCTION_ARGS)
 
 Datum pg_stat_get_activity_helper(PG_FUNCTION_ARGS, bool has_conninfo)
 {
+    if (fcinfo->resultinfo == NULL) {
+        ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_activity_helper")));
+    }
+
     const int ATT_COUNT = has_conninfo ? 22 : 21;
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
@@ -2823,6 +2827,10 @@ void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc tupDes
 
 Datum pg_stat_get_activity_ng(PG_FUNCTION_ARGS)
 {
+    if (fcinfo->resultinfo == NULL) {
+        ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_activity_ng")));
+    }
+
     const int ATT_NUM = 4;
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
@@ -3527,6 +3535,10 @@ Datum working_version_num(PG_FUNCTION_ARGS)
  */
 Datum pg_stat_get_status(PG_FUNCTION_ARGS)
 {
+    if (fcinfo->resultinfo == NULL) {
+        ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_status")));
+    }
+
     const int ATT_NUM = 16;
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
@@ -5751,6 +5763,10 @@ void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tup
  */
 Datum pg_stat_get_session_respool(PG_FUNCTION_ARGS)
 {
+    if (fcinfo->resultinfo == NULL) {
+        ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_session_respool")));
+    }
+
     const int SESSION_WLMSTAT_RESPOOL_NUM = 7;
 
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
@@ -10201,9 +10217,11 @@ Datum gs_total_nodegroup_memory_detail(PG_FUNCTION_ARGS)
         SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
     }
 
-    pfree_ext(ngmemsize_ptr->ngmemsize);
-    pfree_ext(ngmemsize_ptr->ngname);
-    pfree_ext(ngmemsize_ptr);
+    if (ngmemsize_ptr != NULL) {
+        pfree_ext(ngmemsize_ptr->ngmemsize);
+        pfree_ext(ngmemsize_ptr->ngname);
+        pfree_ext(ngmemsize_ptr);
+    }
 
     /* do when there is no more left */
     SRF_RETURN_DONE(funcctx);

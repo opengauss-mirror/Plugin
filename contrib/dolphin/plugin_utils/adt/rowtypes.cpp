@@ -793,7 +793,7 @@ Datum record_send(PG_FUNCTION_ARGS)
         pq_sendint32(&buf, VARSIZE(outputbytes) - VARHDRSZ);
         pq_sendbytes(&buf, VARDATA(outputbytes), VARSIZE(outputbytes) - VARHDRSZ);
 
-        pfree_ext(outputbytes);
+        pfree(outputbytes);
     }
 
     pfree_ext(values);
