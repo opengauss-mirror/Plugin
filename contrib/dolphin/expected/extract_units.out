@@ -127,5 +127,41 @@ select extract(second_microsecond from timestamp'2019-07-02 12:12:12.12121');
  12121210
 (1 row)
 
+select extract(microsecond from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
+select extract(minute from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
+select extract(hour from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
+select extract(second_microsecond from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
+select extract(minute_microsecond from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
+select extract(minute_second from date '2022-11-04');
+ extract 
+---------
+       0
+(1 row)
+
 reset current_schema;
 drop schema extract_units;
