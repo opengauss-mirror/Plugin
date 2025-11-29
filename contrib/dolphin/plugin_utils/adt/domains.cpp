@@ -136,7 +136,7 @@ static void domain_check_input(Datum value, bool isnull, DomainIOData* my_extra)
                 bool fit_check = false;
                 if (con->check_expr && con->check_expr->is_flt_frame){
                     fit_check = ExecCheckByFlatten(con->check_expr, econtext);
-                } else{
+                } else if (con->check_expr) {
                     bool conIsNull = false;
                     Datum conResult = ExecEvalExprSwitchContext(con->check_expr, econtext, &conIsNull,NULL);
                     fit_check =(conIsNull || DatumGetBool(conResult));

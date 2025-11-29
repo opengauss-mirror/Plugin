@@ -812,7 +812,7 @@ bool es_is_distributekey_contained_in_multi_column(Oid relid, VacAttrStats* stat
 {
     int2vector* vac_attnum = get_baserel_distributekey_no(relid);
     Bitmapset* bms_attnum = es_get_attnums_to_analyze(&stats, 1);
-    int len = vac_attnum->dim1;
+    int len = (vac_attnum != NULL) ? vac_attnum->dim1 : 0;
 
     for (int i = 0; i < len; i++) {
         int2 attnum = vac_attnum->values[i];

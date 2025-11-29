@@ -3499,6 +3499,10 @@ static bool IsPartitionKeyAllInParmaryKeyAndUniqueKey(const List *partitionKey, 
     bool found = true;
 
     foreach (pkcell, partitionKey) {
+        if (!IsA(lfirst(pkcell), ColumnRef)) {
+            return false;
+        }
+
         ColumnRef *colref = (ColumnRef *)lfirst(pkcell);
         char *pkname = ((Value *)linitial(colref->fields))->val.str;
 

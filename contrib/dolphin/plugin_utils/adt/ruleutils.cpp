@@ -1200,6 +1200,11 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
             /* Build the partition list from the partVec stored in tuple. */
             for (int i = 0; i < partVec->dim1; i++) {
                 char* attname = get_attname(tableoid, partVec->values[i]);
+                if (attname == NULL) {
+                    heap_close(relation, AccessShareLock);
+                    ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                        errmsg("cache lookup failed for attribute %d of relation %u", partVec->values[i], tableoid)));
+                }
                 iPartboundary[i] = get_atttype(tableoid, partVec->values[i]);
                 if (!firstFlag) {
                     appendStringInfo(buf, ", ");
@@ -1329,6 +1334,11 @@ static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionI
         int2vector *partVec = (int2vector *)DatumGetPointer(datum);
         partkeynum = partVec->dim1;
         char *attname = get_attname(tableoid, partVec->values[0]);
+        if (attname == NULL) {
+            systable_endscan(scan);
+            heap_close(partrel, AccessShareLock);
+            elog(ERROR, "cache lookup failed for attribute %d of relation %u", partVec->values[0], tableoid);
+        }
         appendStringInfo(buf, "%s", quote_identifier(attname));
         pfree_ext(attname);
         subpartinfo->attnum = partVec->values[0];
@@ -1790,6 +1800,9 @@ static int get_table_attribute(
             if (OidIsValid(att_tup->attcollation) && att_tup->attcollation != get_typcollation(att_tup->atttypid)) {
                 /* always schema-qualify, don't try to be smart */
                 char* collname = get_collation_name(att_tup->attcollation);
+                if (collname == NULL)
+                    ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for collation %u",
+                        att_tup->attcollation)));
                 int charset = get_charset_by_collation(att_tup->attcollation);
                 if (DB_IS_CMPT_BD && charset != PG_INVALID_ENCODING) {
                     appendStringInfo(
@@ -1799,6 +1812,10 @@ static int get_table_attribute(
                 } else {
                     Oid namespace_oid = get_collation_namespace(att_tup->attcollation);
                     char* namespace_name = get_namespace_name(namespace_oid);
+                    if (namespace_name == NULL)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                                errmsg("cache lookup failed for namespace %u", namespace_oid)));
                     appendStringInfo(
                         buf, " COLLATE %s.%s", quote_identifier(namespace_name), quote_identifier(collname));
                     pfree_ext(namespace_name);
@@ -7295,6 +7312,9 @@ static Node* get_rule_sortgroupclause_spq(Index ref, bool force_colno, deparse_c
 
     tle = get_sortgroupref_tle_spq(ref, tlist);
     expr = (Node*)tle->expr;
+    if (expr == NULL) {
+        ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
+    }
 
     deparse_namespace* dpns = NULL;
     deparse_namespace save_dpns;
@@ -12143,7 +12163,13 @@ static void get_from_clause_partition(RangeTblEntry* rte, StringInfo buf, depars
         if (rte->pname->aliasname == NULL && rte->partitionNameList != NIL) {
             rte->pname->aliasname = strVal(list_nth(rte->partitionNameList, 0));
         }
-        appendStringInfo(buf, " PARTITION(%s)", quote_identifier(rte->pname->aliasname));
+        if (rte->pname->aliasname != NULL) {
+            appendStringInfo(buf, " PARTITION(%s)", quote_identifier(rte->pname->aliasname));
+        } else {
+            ereport(
+                ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                    errmsg("object with oid %u is not a partition object", partitionOid)));
+        }
     }
 }
 
@@ -12174,7 +12200,13 @@ static void get_from_clause_subpartition(RangeTblEntry* rte, StringInfo buf, dep
         if (rte->pname->aliasname == NULL && rte->subpartitionNameList != NIL) {
             rte->pname->aliasname = strVal(list_nth(rte->subpartitionNameList, 0));
         }
-        appendStringInfo(buf, " SUBPARTITION(%s)", quote_identifier(rte->pname->aliasname));
+        if (rte->pname->aliasname != NULL) {
+            appendStringInfo(buf, " SUBPARTITION(%s)", quote_identifier(rte->pname->aliasname));
+        } else {
+            ereport(
+                ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                    errmsg("object with oid %u is not a partition object", subpartitionOid)));
+        }
     }
 }
 
@@ -12315,7 +12347,7 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         if (rte->alias != NULL) {
             appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
             gavealias = true;
-        } else if (rte->rtekind == RTE_RELATION && strcmp(rte->eref->aliasname, relname) != 0) {
+        } else if (rte->rtekind == RTE_RELATION && rte->eref->aliasname && strcmp(rte->eref->aliasname, relname) != 0) {
             /*
              * Apparently the rel has been renamed since the rule was made.
              * Emit a fake alias clause so that variable references will still
@@ -12795,6 +12827,11 @@ static void printSubscripts(ArrayRef* aref, deparse_context* context)
  */
 const char* quote_identifier(const char* ident)
 {
+    if (ident == NULL) {
+        ereport(ERROR,
+            (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                errmsg("quote identifier failed: input [ident] is null.")));
+    }
     /*
      * Can avoid quoting if ident starts with a lowercase letter or underscore
      * and contains only lowercase letters, digits, and underscores, *and* is
@@ -13147,6 +13184,10 @@ static char* generate_operator_name(Oid operid, Oid arg1, Oid arg2)
         nspname = NULL;
     else {
         nspname = get_namespace_name(operform->oprnamespace);
+        if (nspname == NULL)
+            ereport(ERROR,
+                (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                    errmsg("cache lookup failed for namespace %u", operform->oprnamespace)));
         appendStringInfo(&buf, "OPERATOR(%s.", quote_identifier(nspname));
     }
 
@@ -13489,6 +13530,9 @@ static void replace_cl_types_in_argtypes(Oid func_id, int numargs, Oid* argtypes
                 if (!use_all_arg_types) {
                     proargcachedcol = (oidvector*)DatumGetPointer(
                         SysCacheGetAttr(GSCLPROCID, gs_oldtup, Anum_gs_encrypted_proc_proargcachedcol, &isnull));
+                    if (proargcachedcol == NULL) {
+                        elog(ERROR, "replace cl types failed: invalid proargcachedcol.");
+                    }
                     n_gs_args = proargcachedcol->dim1;
                 }
             }

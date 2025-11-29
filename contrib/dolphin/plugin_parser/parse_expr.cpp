@@ -1894,6 +1894,12 @@ static Node* transformAExprDistinct(ParseState* pstate, A_Expr* a)
 
 static Node* transformAExprNullIf(ParseState* pstate, A_Expr* a)
 {
+    if (pstate == NULL || a == NULL) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("transformAExprNullIf: invalid params.")));
+    }
+
     Node* last_srf = parse_get_last_srf(pstate);
     Node* lexpr = transformExprRecurse(pstate, a->lexpr);
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
@@ -5965,7 +5971,7 @@ static char *ColumnRefFindRelname(ParseState *pstate, const char *colname)
                         if (rte->rtekind == RTE_RELATION) {
                             if (rte->alias && rte->alias->aliasname) {
                                 relname = rte->alias->aliasname;
-                            } else if (rte->eref && rte->eref->aliasname) {
+                            } else if (rte->eref->aliasname) {
                                 /* should use eref->aliasname for SYNONYM*/
                                 relname = rte->eref->aliasname;
                             } else {

@@ -8614,8 +8614,10 @@ int text_instr_4args(text* textStr, text* textStrToSearch, int32 beginIndex, int
 
     len = VARSIZE_ANY_EXHDR(textStr);
     searchLen = VARSIZE_ANY_EXHDR(textStrToSearch);
-
     if ((searchLen > len) || (GET_POSITIVE(beginIndex) > len)) {
+        return 0;
+    }
+    if ((searchLen != 0) && (occurTimes > (len / searchLen))) {
         return 0;
     }
 

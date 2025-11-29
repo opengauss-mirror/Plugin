@@ -645,7 +645,7 @@ static Datum ExecEvalScalarVar(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-         (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+        (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }
@@ -6299,14 +6299,14 @@ List* ExecInitExprListByFlatten(List *nodes, PlanState *parent)
 * made the appropriate transformations on expressions, but for standalone
 * expressions this won't have happened.)
 */
-ExprState* ExecPrepareExpr(Expr* node, EState* estate)
+ExprState* ExecPrepareExpr(Expr* node, EState* estate, bool isExprIndex)
 {
    ExprState* result = NULL;
    MemoryContext oldcontext;
 
    oldcontext = MemoryContextSwitchTo(estate->es_query_cxt);
 
-   node = expression_planner(node);
+   node = expression_planner(node, isExprIndex);
 
    result = ExecInitExpr(node, NULL);
 
@@ -7113,7 +7113,7 @@ static Datum ExecEvalPriorExpr(ExprState* exprstate, ExprContext* econtext, bool
     int index = attnum - 1;
     if (refState && refState->values &&
         ((slot == nullptr && IS_ENABLE_INSERT_RIGHT_REF(refState)) ||
-            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt))) {
+            (IS_ENABLE_UPSERT_RIGHT_REF(refState) && index < refState->colCnt && refState->hasExecs[index]))) {
         *isNull = refState->isNulls[index];
         return refState->values[index];
     }
