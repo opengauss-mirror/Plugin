@@ -63,4 +63,8 @@ extern bool ValidateDependView(Oid view_oid, char obj_type);
 extern int specialAttNum(const char* attname);
 #endif
 
+#ifdef DOLPHIN
+int namestrncasecmp(Name name, const char* str);
+#endif
+
 #endif /* PARSE_RELATION_H */

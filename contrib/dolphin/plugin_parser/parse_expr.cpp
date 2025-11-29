@@ -77,7 +77,6 @@ typedef struct {
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
 extern Value* makeStringValue(char* str);
-static Node* transformParamRef(ParseState* pstate, ParamRef* pref);
 static Node* transformAExprOp(ParseState* pstate, A_Expr* a);
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a);
 static Node* transformAExprOr(ParseState* pstate, A_Expr* a);
@@ -1651,7 +1650,7 @@ static Node* tryTransformFunc(ParseState* pstate, List* fields, int location)
     return result;
 }
 
-static Node* transformParamRef(ParseState* pstate, ParamRef* pref)
+Node* transformParamRef(ParseState* pstate, ParamRef* pref)
 {
     Node* result = NULL;
 
