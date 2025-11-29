@@ -4998,7 +4998,11 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
      */
     transformFromClause(pstate, stmt->fromClause);
 
+#ifdef DOLPHIN
+    qry->targetList = transformTargetList(pstate, stmt->targetList, EXPR_KIND_UPDATE_TARGET, true);
+#else
     qry->targetList = transformTargetList(pstate, stmt->targetList, EXPR_KIND_UPDATE_TARGET);
+#endif
     qual = transformWhereClause(pstate, stmt->whereClause, EXPR_KIND_WHERE, "WHERE");
 
     /* remaining clauses can reference the result relation normally */
