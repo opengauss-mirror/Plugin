@@ -474,6 +474,31 @@ bool IsDolphinStringType(Oid typeoid)
     }
 }
 
+bool IsTimeStringType(Oid typeoid)
+{
+    if (typeoid == InvalidOid) {
+        return false;
+    }
+    switch (typeoid) {
+        case BLOBOID:
+        case VARCHAROID:
+        case BPCHAROID:
+        case NVARCHAR2OID:
+        case TEXTOID:
+            return true;
+        default:
+            if (typeoid == TINYBLOBOID ||
+                typeoid == MEDIUMBLOBOID ||
+                typeoid == LONGBLOBOID ||
+                typeoid == BINARYOID ||
+                typeoid == VARBINARYOID) {
+                return true;
+            }
+            return false;
+    }
+}
+
+
 bool IsNumericType(Oid typeoid)
 {
     return typeoid == NUMERICOID;
@@ -676,6 +701,14 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
                 if (!comparison_with_date_defined(rtypeId)) {
                     rtypeId = TIMESTAMPOID;
                 }
+            }
+            /*
+             * compare with string time transform to text
+             */
+            if (IsTimeStringType(ltypeId) && rtypeId == TIMEOID) {
+                rtypeId = TEXTOID;
+            } else if (ltypeId == TIMEOID && IsTimeStringType(rtypeId)){
+                ltypeId = TEXTOID;
             }
         }
     }
