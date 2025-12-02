@@ -3456,6 +3456,31 @@ select * from t_year_0001;
 (3 rows)
 
 drop table t_year_0001;
+create table t1(t time, c char(10));
+insert into t1 values('12:12:12', '12:12:12');
+select t = c, c = t from t1;
+ ?column? | ?column? 
+----------+----------
+ t        | t
+(1 row)
+
+create table t2(t time, c text);
+insert into t2 values('12:12:12', '12:12:12');
+select t = c, c = t from t2;
+ ?column? | ?column? 
+----------+----------
+ t        | t
+(1 row)
+
+create table t3(t time, c varchar(10));
+insert into t3 values('12:12:12', '12:12:12');
+select t = c, c = t from t3;
+ ?column? | ?column? 
+----------+----------
+ t        | t
+(1 row)
+
+drop table t1, t2, t3;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
