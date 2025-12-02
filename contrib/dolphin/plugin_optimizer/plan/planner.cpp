@@ -919,7 +919,8 @@ PlannedStmt* standard_planner(Query* parse, int cursorOptions, ParamListInfo bou
     }
 
     /* Juse copy these fields only when the memory context total size meets the dropping condition. */
-    uint64 totalsize = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
+    uint64 optimize_memory_size = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
+    uint64 totalsize = u_sess->optimizer_query_memory + optimize_memory_size;
     if (totalsize >= MEMORY_MAX_TOTAL_CONTEXT_THRESHOLD ||
         IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) {
         top_plan = (Plan*)copyObject(top_plan);
@@ -14163,13 +14164,21 @@ static void init_optimizer_context(PlannerGlobal* glob)
 
 static void deinit_optimizer_context(PlannerGlobal* glob)
 {
-    if (IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext) && !u_sess->pcache_cxt.is_plan_exploration) {
-        MemoryContextDelete(glob->plannerContext->plannerMemContext);
-        glob->plannerContext->plannerMemContext = NULL;
-        glob->plannerContext->dataSkewMemContext = NULL;
-        glob->plannerContext->tempMemCxt = NULL;
-        glob->plannerContext->refCounter = 0;
+    if (glob->plannerContext->plannerMemContext != NULL) {
+        uint64 optimize_memory_size = ((AllocSetContext*)(glob->plannerContext->plannerMemContext))->totalSpace;
+        uint64 totalsize = u_sess->optimizer_query_memory + optimize_memory_size;
+        u_sess->optimizer_query_memory = totalsize;
+        if ((totalsize >= MEMORY_MAX_TOTAL_CONTEXT_THRESHOLD ||
+             IS_NEED_FREE_MEMORY_CONTEXT(glob->plannerContext->plannerMemContext)) &&
+            !u_sess->pcache_cxt.is_plan_exploration) {
+            MemoryContextDelete(glob->plannerContext->plannerMemContext);
+            glob->plannerContext->plannerMemContext = NULL;
+            glob->plannerContext->dataSkewMemContext = NULL;
+            glob->plannerContext->tempMemCxt = NULL;
+            glob->plannerContext->refCounter = 0;
+        }
     }
+
 }
 
 #ifdef ENABLE_UT

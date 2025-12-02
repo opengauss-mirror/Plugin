@@ -35,6 +35,7 @@ static const hintKeyword parsers[] =
 	{HINT_TABLESCAN, TableScan_P},
 	{HINT_INDEXSCAN, IndexScan_P},
 	{HINT_INDEXONLYSCAN, IndexOnlyScan_P},
+	{HINT_IMCSSCAN, ImcsScan_P},
 	{HINT_SKEW, Skew_P},
 	{HINT_MULTI_NODE, HINT_MULTI_NODE_P},
 	{HINT_NULL, NULL_P},

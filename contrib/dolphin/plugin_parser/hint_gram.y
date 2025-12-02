@@ -60,7 +60,7 @@ static double convert_to_numeric(Node *value);
 %token <ival>	ICONST
 
 %token <keyword> NestLoop_P MergeJoin_P HashJoin_P No_P Leading_P Rows_P Broadcast_P Redistribute_P BlockName_P
-	TableScan_P IndexScan_P IndexOnlyScan_P Skew_P HINT_MULTI_NODE_P NULL_P TRUE_P FALSE_P Predpush_P
+	TableScan_P IndexScan_P IndexOnlyScan_P ImcsScan_P Skew_P HINT_MULTI_NODE_P NULL_P TRUE_P FALSE_P Predpush_P
 	PredpushSameLevel_P Rewrite_P Gather_P Set_P Set_Var_P USE_CPLAN_P USE_GPLAN_P ON_P OFF_P No_expand_P SQL_IGNORE_P NO_GPC_P
 	CHOOSE_ADAPTIVE_GPLAN_P
 
@@ -574,6 +574,16 @@ scan_hint:
 		ScanMethodHint	*scanHint = makeNode(ScanMethodHint);
 		scanHint->base.relnames = list_make1(linitial($3));
 		scanHint->base.hint_keyword = HINT_KEYWORD_INDEXONLYSCAN;
+		scanHint->base.state = HINT_STATE_NOTUSED;
+		scanHint->indexlist = list_delete_first($3);
+		$$ = (Node *) scanHint;
+	}
+	|
+	ImcsScan_P '(' ident_list ')'
+	{
+		ScanMethodHint	*scanHint = makeNode(ScanMethodHint);
+		scanHint->base.relnames = list_make1(linitial($3));
+		scanHint->base.hint_keyword = HINT_KEYWORD_IMCSSCAN;
 		scanHint->base.state = HINT_STATE_NOTUSED;
 		scanHint->indexlist = list_delete_first($3);
 		$$ = (Node *) scanHint;
