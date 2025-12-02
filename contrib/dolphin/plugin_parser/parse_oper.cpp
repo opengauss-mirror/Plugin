@@ -707,7 +707,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
              */
             if (IsTimeStringType(ltypeId) && rtypeId == TIMEOID) {
                 rtypeId = TEXTOID;
-            } else if (ltypeId == TIMEOID && IsTimeStringType(rtypeId)){
+            } else if (ltypeId == TIMEOID && IsTimeStringType(rtypeId)) {
                 ltypeId = TEXTOID;
             }
         }
