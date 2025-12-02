@@ -187,9 +187,9 @@ static void append_value(StringInfo buf, Value* value, Node* node)
 
 #define HINT_NUM 17
 #ifdef DOLPHIN
-#define HINT_KEYWORD_NUM 24
+#define HINT_KEYWORD_NUM 25
 #else
-#define HINT_KEYWORD_NUM 23
+#define HINT_KEYWORD_NUM 24
 #endif
 
 typedef struct {
@@ -209,6 +209,7 @@ const char* G_HINT_KEYWORD[HINT_KEYWORD_NUM] = {
     (char*) HINT_TABLESCAN,
     (char*) HINT_INDEXSCAN,
     (char*) HINT_INDEXONLYSCAN,
+    (char*) HINT_IMCSSCAN,
     (char*) HINT_SKEW,
     (char*) HINT_PRED_PUSH,
     (char*) HINT_PRED_PUSH_SAME_LEVEL,
@@ -3857,6 +3858,7 @@ const char* G_SET_HINT_WHITE_LIST[] = {
     (char*)"enable_index_nestloop",
     (char*)"enable_indexonlyscan",
     (char*)"enable_indexscan",
+    (char*)"enable_imcsscan",
     (char*)"enable_inner_unique_opt",
     (char*)"enable_material",
     (char*)"enable_mergejoin",

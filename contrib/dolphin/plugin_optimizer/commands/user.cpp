@@ -5584,43 +5584,6 @@ static void UpdateUnlockAccountTuples(HeapTuple tuple, Relation rel, TupleDesc t
     tableam_tops_free_tuple(new_tuple);
 }
 
-/*
- * Brief			: whether the account is already been locked
- * Description		:
- * Notes			:
- */
-bool IsAccountLocked(Oid roleID)
-{
-    int16 status = 0;
-    Datum userStatusDatum;
-    bool userStatusIsNull = false;
-    bool result = true;
-
-    if (!OidIsValid(roleID)) {
-        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("IsAccountLocked(): roleid is not valid.")));
-    }
-    HeapTuple tuple = SearchSysCache1(USERSTATUSROLEID, PointerGetDatum(roleID));
-    if (!HeapTupleIsValid(tuple)) {
-        result = false;
-    } else {
-        userStatusDatum = SysCacheGetAttr(USERSTATUSROLEID, tuple, Anum_pg_user_status_rolstatus, &userStatusIsNull);
-        if (!(userStatusIsNull || (void*)userStatusDatum == NULL)) {
-            status = DatumGetInt16(userStatusDatum);
-        } else {
-            status = UNLOCK_STATUS;
-        }
-
-        if (status == UNLOCK_STATUS) {
-            result = false;
-        } else {
-            result = true;
-        }
-        ReleaseSysCache(tuple);
-    }
-
-    return result;
-}
-
 /* Get the status of account. */
 USER_STATUS GetAccountLockedStatus(Oid roleID)
 {
@@ -5818,24 +5781,6 @@ bool IsRoleExist(const char* username)
     return result;
 }
 
-/*
- * Brief			: Get the roleid through username
- * Description		:
- * Notes			:
- */
-bool IsAlreadyLoginFailed(Oid roleID)
-{
-    bool result = false;
-    if (!OidIsValid(roleID)) {
-        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("IsAccountLocked(): roleid is not valid.")));
-    }
-    HeapTuple tuple = SearchSysCache1(USERSTATUSROLEID, PointerGetDatum(roleID));
-    if (HeapTupleIsValid(tuple)) {
-        ReleaseSysCache(tuple);
-        result = true;
-    }
-    return result;
-}
 /* Database Security: Support password complexity */
 /*
  * Brief             : reverse_string()
