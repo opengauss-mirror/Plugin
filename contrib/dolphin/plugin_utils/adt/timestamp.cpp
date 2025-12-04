@@ -7863,10 +7863,16 @@ bool datetime_in_no_ereport(const char *str, Timestamp *datetime, bool can_ignor
  */
 void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime) 
 {
+    TimestampTz timestamptz;
     switch (valuetypid) {
         case UNKNOWNOID:
         case CSTRINGOID: {
-            *datetime = DatumGetTimestamp(DirectFunctionCall3(timestamp_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            timestamptz = DatumGetTimestampTz(DirectFunctionCall3(timestamptz_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            if (timestamptz == TIMESTAMP_ZERO) {
+                *datetime = TIMESTAMP_ZERO;
+            } else {
+                *datetime = (Timestamp)DirectFunctionCall1(timestamptz_timestamp, TimestampTzGetDatum(timestamptz));
+            }
             break;
         }
         case CLOBOID:
@@ -7875,8 +7881,12 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
         case VARCHAROID:
         case TEXTOID: {
             char *str = TextDatumGetCString(value);
-            *datetime = DatumGetTimestamp(
-                DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            timestamptz = DatumGetTimestampTz(DirectFunctionCall3(timestamptz_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            if (timestamptz == TIMESTAMP_ZERO) {
+                *datetime = TIMESTAMP_ZERO;
+            } else {
+                *datetime = (Timestamp)DirectFunctionCall1(timestamptz_timestamp, TimestampTzGetDatum(timestamptz));
+            }
             break;
         }
         case TIMESTAMPOID: {
