@@ -26,5 +26,11 @@ insert into t2 (a) values (1014);
 show open tables where (f2(14) = 14); --expect error
 drop function f2;
 drop table t2;
+create function f2(x int) returns int set names abc AS $$
+begin
+return x;
+end;
+$$ language plpgsql;
+drop function f2;
 reset current_schema;
 drop schema create_function_core;
