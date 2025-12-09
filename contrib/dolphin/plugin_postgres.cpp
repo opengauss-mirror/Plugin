@@ -87,6 +87,8 @@
 #include "tcop/ddldeparse.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/dqformat.h"
+#include "plugin_parser/parse_expr.h"
+#include "plugin_parser/parse_coerce.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #include "plugin_executor/functions.h"
@@ -352,6 +354,7 @@ void init_plugin_object()
 
     u_sess->hook_cxt.deparseQueryHook = (void*)deparse_query;
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
+    u_sess->hook_cxt.transformExprHook = (void*)transformExpr;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
@@ -383,6 +386,9 @@ void init_plugin_object()
     u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
     u_sess->hook_cxt.isBinaryType = (void*)IsBinaryType;
     u_sess->hook_cxt.deparseCollectedCommandHook = (void*)DeparseCollectedCommand;
+    u_sess->hook_cxt.bpcharLaunchHook = (void*)bpchar_launch;
+    u_sess->hook_cxt.varcharLaunchHook = (void*)varchar_launch;
+    u_sess->hook_cxt.coerceTypeHook = (void*)coerce_to_target_type;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
