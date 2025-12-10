@@ -2563,6 +2563,16 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     reloptions = transformRelOptions((Datum)0, stmt->options, NULL, validnsps, true, false);
 
     StdRdOptions* std_opt = (StdRdOptions*)heap_reloptions(relkind, reloptions, true);
+
+    if(std_opt != NULL && std_opt->segment) {
+        if (BLCKSZ == 4096 || XLOG_BLCKSZ == 4096) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
+                errmsg("The table %s do not support segment-page storage", stmt->relation->relname),
+                errdetail("4k page size doesn't surpport segment-page storage"),
+                errhint("change 8k package before using segment-page storage.")));
+        }
+    }
+
     relhasuids = StdRdOptionsHasUids(std_opt, relkind);
     if (relhasuids && t_thrd.proc->workingVersionNum < HASUID_VERSION_NUM) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
