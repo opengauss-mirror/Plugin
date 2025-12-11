@@ -3755,7 +3755,7 @@ opt_encoding:
 			| BINARY								{ $$ = (char*)$1; }
 			| normal_ident							{ $$ = $1; }
 			| DEFAULT								{ $$ = NULL; }
-			| /*EMPTY*/								{ $$ = NULL; }
+			| /*EMPTY*/			%prec UNBOUNDED		{ $$ = NULL; }
 		;
 
 ColId_or_Sconst:
@@ -23423,7 +23423,7 @@ create_function_common_func_opt_item:
 				{
 					$$ = $1;
 				}
-			| FunctionSetResetClause %prec '(' ')'
+			| FunctionSetResetClause
 				{
 					/* we abuse the normal content of a DefElem here */
 					$$ = makeDefElem("set", (Node *)$1);
@@ -34906,7 +34906,7 @@ selected_timezone:
 
 opt_precision: 
 			'(' Iconst ')' { $$ = $2; }
-			| /* EMPTY */ { $$ = 0; }
+			| /* EMPTY */ %prec UMINUS { $$ = 0; }
 		;
 
 interval_type:	
@@ -35515,7 +35515,7 @@ interval_unit:
 		;
 
 interval_second:
-			SECOND_P
+			SECOND_P	%prec UMINUS
 				{
 					$$ = list_make2(makeIntConst(INTERVAL_MASK(SECOND), @1), makeIntConst(TIMESTAMP_MAX_PRECISION, -1));
 				}
