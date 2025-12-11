@@ -45,6 +45,7 @@
 #include "utils/pl_package.h"
 #include "catalog/pg_partition_fn.h"
 #include "catalog/pg_synonym.h"
+#include "catalog/pg_attrdef.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "plugin_parser/parse_expr.h"
 #include "commands/tablecmds.h"
@@ -2826,6 +2827,51 @@ static void expandRelation(Oid relid, Alias* eref, int rtindex, int sublevels_up
     relation_close(rel, AccessShareLock);
 }
 
+typedef struct ColVersionMap {
+    Oid attrelid;
+    int2 attnum;
+    uint32 version_num;
+} ColVersionMap;
+
+static ColVersionMap col_version_maps[] = {
+    /* pg_attribute */
+    {AttributeRelationId, Anum_pg_attribute_attdroppedname, FLUSH_LSN_FUN_VERSION_NUM},
+
+    /* pg_index */
+    {IndexRelationId, Anum_pg_index_indisvisible, SRF_FUSION_VERSION_NUM},
+
+    /* pg_namespace */
+    {NamespaceRelationId, Anum_pg_namespace_nspcollation, SRF_FUSION_VERSION_NUM},
+
+    /* pg_attrdef */
+    {AttrDefaultRelationId, Anum_pg_attrdef_adbin_on_update, SRF_FUSION_VERSION_NUM},
+    {AttrDefaultRelationId, Anum_pg_attrdef_adsrc_on_update, SRF_FUSION_VERSION_NUM},
+
+    /* pg_collation */
+    {CollationRelationId, Anum_pg_collation_collpadattr, SRF_FUSION_VERSION_NUM},
+    {CollationRelationId, Anum_pg_collation_collisdef, SRF_FUSION_VERSION_NUM}
+};
+
+static bool skipNewColumnDuringUpgrade(Form_pg_attribute attr)
+{
+    if (!u_sess->attr.attr_common.skip_new_column_for_ruledef) {
+        return false;
+    }
+
+    if (!IsSystemObjOid(attr->attrelid)) {
+        return false;
+    }
+
+    for (uint i = 0; i < sizeof(col_version_maps) / sizeof(ColVersionMap); i++) {
+        if (t_thrd.proc->workingVersionNum < col_version_maps[i].version_num &&
+            attr->attrelid == col_version_maps[i].attrelid &&
+            attr->attnum == col_version_maps[i].attnum) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
  * expandTupleDesc -- expandRTE subroutine
  */
@@ -2858,6 +2904,10 @@ static void expandTupleDesc(TupleDesc tupdesc, Alias* eref, int rtindex, int sub
         /* Skip the hidden column for timeseries related relations */
         if (TsRelWithImplDistColumn(tupdesc->attrs, varattno)) {
             continue;
+        }
+
+        if (u_sess->attr.attr_common.IsInplaceUpgrade && skipNewColumnDuringUpgrade(attr)) {
+            break;
         }
 
         if (colnames != NULL) {
