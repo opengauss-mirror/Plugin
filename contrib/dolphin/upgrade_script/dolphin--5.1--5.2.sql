@@ -38,6 +38,7 @@ ORDER BY
 GRANT SELECT ON performance_schema.threads TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select db_b_format($1::"any", $2::bigint)';
+
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, unknown) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_cstring';
 
 CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp without time zone, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_timestamp';
@@ -99,3 +100,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_ge(boolean, longblob) ret
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_ge(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 >= $2::float8)';
 CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_le(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 <= $2::float8)';
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_le(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 <= $2::float8)';
+
+DROP FUNCTION IF EXISTS pg_catalog.date_format (date, text);
+CREATE OR REPLACE FUNCTION pg_catalog.date_format (date, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as  $$ SELECT pg_catalog.date_format($1::text, $2); $$ ;
+DROP FUNCTION IF EXISTS pg_catalog.date_format (timestamp without time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.date_format (timestamp without time zone, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as  $$ SELECT pg_catalog.date_format($1::text, $2); $$ ;
+DROP FUNCTION IF EXISTS pg_catalog.date_format (timestamp with time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.date_format (timestamp with time zone, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as  $$ SELECT pg_catalog.date_format($1::text, $2); $$ ;
+

@@ -285,6 +285,22 @@ CONTEXT:  referenced column: result
 insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 ERROR:  Incorrect datetime value: "100000101"
 CONTEXT:  referenced column: result
+-- date_format(date, text)
+select date_format(date '0000-12-21', '%Y-%m-%d');
+ date_format 
+-------------
+ 0000-12-21
+(1 row)
+
+-- date_format(timestamp, text)
+select date_format(timestamp '0000-12-21 00:00:00', '%Y-%m-%d');
+WARNING:  Truncated incorrect date or datetime value: "0000-12-21 00:00:00+08:05:43"
+CONTEXT:  referenced column: date_format
+ date_format 
+-------------
+ 0000-12-21
+(1 row)
+
 -- test from_unixtime
 -- 严格模式或者非严格模式都有值
 -- 功能-单参数
