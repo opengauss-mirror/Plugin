@@ -1117,6 +1117,26 @@ CONTEXT:  PL/pgSQL function test1(tinyint) line 3 at assignment
 referenced column: a
 drop procedure test1//
 delimiter ;
+CREATE  OR REPLACE FUNCTION isnumeric(var varchar)
+ RETURNS integer
+ LANGUAGE plpgsql
+ AUTHID DEFINER NOT FENCED NOT SHIPPABLE
+AS $function$ 
+DECLARE x NUMERIC;
+BEGIN
+    x = $1::NUMERIC;
+    RETURN TRUE;
+EXCEPTION WHEN others THEN
+    RETURN FALSE;
+END;
+$function$;
+select isnumeric('4a'), isnumeric('4a');
+ isnumeric | isnumeric 
+-----------+-----------
+         0 |         0
+(1 row)
+
+drop function isnumeric;
 drop schema strict_mode_test cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t_int1
