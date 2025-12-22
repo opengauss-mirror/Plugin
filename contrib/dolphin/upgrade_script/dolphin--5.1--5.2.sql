@@ -36,9 +36,3 @@ ORDER BY
     pid;
 
 GRANT SELECT ON performance_schema.threads TO PUBLIC;
-
-do $$
-begin
-update pg_proc left join pg_depend on oid = objid set proconfig = '{dolphin.sql_mode=}' where refobjid = (select oid from pg_extension where extname = 'dolphin') and classid = 1255;
-end
-$$
