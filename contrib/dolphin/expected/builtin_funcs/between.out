@@ -799,7 +799,7 @@ explain (costs off) select * from test where timetz between '12:00:00' and '12:0
 -------------------------------------------------------------------------------------------------------------------
  [Bypass]
  Index Scan using test_timetz_idx on test
-   Index Cond: ((timetz >= '12:00:00-07'::time with time zone) AND (timetz <= '12:00:00-07'::time with time zone))
+   Index Cond: ((timetz >= '12:00:00-08'::time with time zone) AND (timetz <= '12:00:00-08'::time with time zone))
 (3 rows)
 
 explain (costs off) select * from test where date between '2024-12-12' and '2024-12-12';
@@ -982,19 +982,19 @@ WARNING:  invalid input syntax for type double precision: "2024-12-13"
 select * from test where time between '12:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 select * from test where time between '11:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 select * from test where timetz between '12:00:00' and '12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /* exptected 0 */
@@ -1005,19 +1005,19 @@ select * from test where date between '2024-12-12 12:00:00' and '2024-12-12'; /*
 select * from test where date between '2024-12-12' and '2024-12-12 12:00:00'; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 select * from test where date between datetime and timestamp; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 select * from test where datetime between date and timestamp; /* exptected 1 */
    time   |   timetz    |    date    |      datetime       |       timestamp        
 ----------+-------------+------------+---------------------+------------------------
- 12:00:00 | 12:00:00-07 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
+ 12:00:00 | 12:00:00-08 | 2024-12-12 | 2024-12-12 00:00:00 | 2024-12-12 00:00:00-08
 (1 row)
 
 drop schema db_between cascade;
