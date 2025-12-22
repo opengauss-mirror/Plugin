@@ -20983,7 +20983,7 @@ constraint_elem: ColId con_asc_desc
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("ASC/DESC is not yet supported in distributed database.")));
 #endif	
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+					if (DB_IS_CMPT_BD) {
 						$$ = makeNode(IndexElem);
 						$$->name = $1;
 						$$->expr = NULL;
@@ -20993,12 +20993,12 @@ constraint_elem: ColId con_asc_desc
 						$$->ordering = (SortByDir)$2;
 						$$->nulls_ordering = SORTBY_NULLS_DEFAULT;
 					} else {
-						const char* message = "ASC/DESC is supported only in B-format database.";
+						const char* message = "ASC/DESC is supported only in B-format and D-format database.";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
 								(errmodule(MOD_PARSER),
 									errcode(ERRCODE_SYNTAX_ERROR),
-									errmsg("ASC/DESC is supported only in B-format database."),
+									errmsg(message),
 									parser_errposition(@1)));
 						$$ = NULL;/* not reached */
 					}

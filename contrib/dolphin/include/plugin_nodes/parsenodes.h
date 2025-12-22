@@ -2523,7 +2523,7 @@ extern inline NodeTag transform_node_tag(Node* raw_parse_tree)
         if (stmt->intoClause == NULL || stmt->intoClause->userVarList != NIL || stmt->intoClause->filename != NULL) {
             return T_SelectStmt;
         }
-        return T_CreateStmt;
+        return T_DolphinStrictTag;
     } else if (nodeTag(raw_parse_tree) == T_ExplainStmt) {
         return transform_node_tag(((ExplainStmt*)raw_parse_tree)->query);
     }

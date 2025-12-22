@@ -1263,7 +1263,8 @@ static SpecialJoinInfo* make_outerjoininfo(
     foreach (l, root->parse->rowMarks) {
         RowMarkClause* rc = (RowMarkClause*)lfirst(l);
 
-        if (bms_is_member(rc->rti, right_rels) || (jointype == JOIN_FULL && bms_is_member(rc->rti, left_rels))) {
+        if ((bms_is_member(rc->rti, right_rels) || (jointype == JOIN_FULL && bms_is_member(rc->rti, left_rels))) &&
+            !(list_length(root->parse->resultRelations) > 1)) {
             ereport(ERROR,
                 (errmodule(MOD_OPT),
                     errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
