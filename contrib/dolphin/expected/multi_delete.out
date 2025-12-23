@@ -205,225 +205,258 @@ drop MATERIALIZED VIEW mate_multiview1;
 drop MATERIALIZED VIEW mate_multiview2;
 -- different explain plan
 explain(verbose) delete/*+nestloop(a b)*/ from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
- Delete on MULTI-RELATION  (cost=0.00..69341.37 rows=23091 width=12)
-   ->  Nested Loop  (cost=0.00..69341.37 rows=23091 width=12)
-         Output: a.ctid, a.ctid, b.ctid
-         Join Filter: (a.col2 = b.col2)
-         ->  Seq Scan on multidelete.t_t_mutil_t1 a  (cost=0.00..31.49 rows=2149 width=10)
-               Output: a.ctid, a.col2
-         ->  Materialize  (cost=0.00..42.23 rows=2149 width=10)
-               Output: b.ctid, b.col2
-               ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
-                     Output: b.ctid, b.col2
-(10 rows)
-
-explain(verbose) delete/*+hashjoin(a b)*/ from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
- Delete on MULTI-RELATION  (cost=58.35..355.67 rows=23091 width=12)
-   ->  Hash Join  (cost=58.35..355.67 rows=23091 distinct=[200, 200] width=12)
-         Output: a.ctid, a.ctid, b.ctid
-         Hash Cond: (a.col2 = b.col2)
-         ->  Seq Scan on multidelete.t_t_mutil_t1 a  (cost=0.00..31.49 rows=2149 width=10)
-               Output: a.ctid, a.col2
-         ->  Hash  (cost=31.49..31.49 rows=2149 width=10)
-               Output: b.ctid, b.col2
-               ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
-                     Output: b.ctid, b.col2
-(10 rows)
-
-explain(verbose) delete/*+mergejoin(a b)*/ from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
- Delete on MULTI-RELATION  (cost=300.86..657.97 rows=23091 width=12)
-   ->  Merge Join  (cost=300.86..657.97 rows=23091 width=12)
-         Output: a.ctid, a.ctid, b.ctid
-         Merge Cond: (a.col2 = b.col2)
-         ->  Sort  (cost=150.43..155.80 rows=2149 width=10)
-               Output: a.ctid, a.col2
-               Sort Key: a.col2
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
+ Delete on MULTI-RELATION  (cost=0.00..69572.28 rows=23091 width=12)
+   ->  LockRows  (cost=0.00..69572.28 rows=23091 width=12)
+         Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+         ->  Nested Loop  (cost=0.00..69341.37 rows=23091 width=12)
+               Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+               Join Filter: (a.col2 = b.col2)
                ->  Seq Scan on multidelete.t_t_mutil_t1 a  (cost=0.00..31.49 rows=2149 width=10)
                      Output: a.ctid, a.col2
-         ->  Sort  (cost=150.43..155.80 rows=2149 width=10)
-               Output: b.ctid, b.col2
-               Sort Key: b.col2
-               ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
+               ->  Materialize  (cost=0.00..42.23 rows=2149 width=10)
                      Output: b.ctid, b.col2
-(14 rows)
+                     ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
+                           Output: b.ctid, b.col2
+(12 rows)
+
+explain(verbose) delete/*+hashjoin(a b)*/ from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
+ Delete on MULTI-RELATION  (cost=58.35..586.58 rows=23091 width=12)
+   ->  LockRows  (cost=58.35..586.58 rows=23091 width=12)
+         Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+         ->  Hash Join  (cost=58.35..355.67 rows=23091 distinct=[200, 200] width=12)
+               Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+               Hash Cond: (a.col2 = b.col2)
+               ->  Seq Scan on multidelete.t_t_mutil_t1 a  (cost=0.00..31.49 rows=2149 width=10)
+                     Output: a.ctid, a.col2
+               ->  Hash  (cost=31.49..31.49 rows=2149 width=10)
+                     Output: b.ctid, b.col2
+                     ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
+                           Output: b.ctid, b.col2
+(12 rows)
+
+explain(verbose) delete/*+mergejoin(a b)*/ from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
+ Delete on MULTI-RELATION  (cost=300.86..888.88 rows=23091 width=12)
+   ->  LockRows  (cost=300.86..888.88 rows=23091 width=12)
+         Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+         ->  Merge Join  (cost=300.86..657.97 rows=23091 width=12)
+               Output: a.ctid, a.ctid, b.ctid, b.ctid, a.ctid, b.ctid
+               Merge Cond: (a.col2 = b.col2)
+               ->  Sort  (cost=150.43..155.80 rows=2149 width=10)
+                     Output: a.ctid, a.col2
+                     Sort Key: a.col2
+                     ->  Seq Scan on multidelete.t_t_mutil_t1 a  (cost=0.00..31.49 rows=2149 width=10)
+                           Output: a.ctid, a.col2
+               ->  Sort  (cost=150.43..155.80 rows=2149 width=10)
+                     Output: b.ctid, b.col2
+                     Sort Key: b.col2
+                     ->  Seq Scan on multidelete.t_t_mutil_t2 b  (cost=0.00..31.49 rows=2149 width=10)
+                           Output: b.ctid, b.col2
+(16 rows)
 
 explain(format xml) delete from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                             QUERY PLAN                             
---------------------------------------------------------------------
- <explain xmlns="http://www.postgresql.org/2009/explain">          +
-   <Query>                                                         +
-     <Plan>                                                        +
-       <Node-Type>ModifyTable</Node-Type>                          +
-       <Operation>Delete</Operation>                               +
-       <Relation-Name>MULTI-RELATION</Relation-Name>               +
-       <Startup-Cost>58.35</Startup-Cost>                          +
-       <Total-Cost>355.67</Total-Cost>                             +
-       <Plan-Rows>23091</Plan-Rows>                                +
-       <Plan-Width>12</Plan-Width>                                 +
-       <Plans>                                                     +
-         <Plan>                                                    +
-           <Node-Type>Hash Join</Node-Type>                        +
-           <Parent-Relationship>Member</Parent-Relationship>       +
-           <Join-Type>Inner</Join-Type>                            +
-           <Startup-Cost>58.35</Startup-Cost>                      +
-           <Total-Cost>355.67</Total-Cost>                         +
-           <Plan-Rows>23091</Plan-Rows>                            +
-           <Plan-Width>12</Plan-Width>                             +
-           <Inner-Unique>false</Inner-Unique>                      +
-           <Hash-Cond>(a.col2 = b.col2)</Hash-Cond>                +
-           <Plans>                                                 +
-             <Plan>                                                +
-               <Node-Type>Seq Scan</Node-Type>                     +
-               <Parent-Relationship>Outer</Parent-Relationship>    +
-               <Relation-Name>t_t_mutil_t1</Relation-Name>         +
-               <Alias>a</Alias>                                    +
-               <Startup-Cost>0.00</Startup-Cost>                   +
-               <Total-Cost>31.49</Total-Cost>                      +
-               <Plan-Rows>2149</Plan-Rows>                         +
-               <Plan-Width>10</Plan-Width>                         +
-             </Plan>                                               +
-             <Plan>                                                +
-               <Node-Type>Hash</Node-Type>                         +
-               <Parent-Relationship>Inner</Parent-Relationship>    +
-               <Startup-Cost>31.49</Startup-Cost>                  +
-               <Total-Cost>31.49</Total-Cost>                      +
-               <Plan-Rows>2149</Plan-Rows>                         +
-               <Plan-Width>10</Plan-Width>                         +
-               <Plans>                                             +
-                 <Plan>                                            +
-                   <Node-Type>Seq Scan</Node-Type>                 +
-                   <Parent-Relationship>Outer</Parent-Relationship>+
-                   <Relation-Name>t_t_mutil_t2</Relation-Name>     +
-                   <Alias>b</Alias>                                +
-                   <Startup-Cost>0.00</Startup-Cost>               +
-                   <Total-Cost>31.49</Total-Cost>                  +
-                   <Plan-Rows>2149</Plan-Rows>                     +
-                   <Plan-Width>10</Plan-Width>                     +
-                 </Plan>                                           +
-               </Plans>                                            +
-             </Plan>                                               +
-           </Plans>                                                +
-         </Plan>                                                   +
-       </Plans>                                                    +
-     </Plan>                                                       +
-   </Query>                                                        +
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ <explain xmlns="http://www.postgresql.org/2009/explain">              +
+   <Query>                                                             +
+     <Plan>                                                            +
+       <Node-Type>ModifyTable</Node-Type>                              +
+       <Operation>Delete</Operation>                                   +
+       <Relation-Name>MULTI-RELATION</Relation-Name>                   +
+       <Startup-Cost>58.35</Startup-Cost>                              +
+       <Total-Cost>586.58</Total-Cost>                                 +
+       <Plan-Rows>23091</Plan-Rows>                                    +
+       <Plan-Width>12</Plan-Width>                                     +
+       <Plans>                                                         +
+         <Plan>                                                        +
+           <Node-Type>LockRows</Node-Type>                             +
+           <Parent-Relationship>Member</Parent-Relationship>           +
+           <Startup-Cost>58.35</Startup-Cost>                          +
+           <Total-Cost>586.58</Total-Cost>                             +
+           <Plan-Rows>23091</Plan-Rows>                                +
+           <Plan-Width>12</Plan-Width>                                 +
+           <Plans>                                                     +
+             <Plan>                                                    +
+               <Node-Type>Hash Join</Node-Type>                        +
+               <Parent-Relationship>Outer</Parent-Relationship>        +
+               <Join-Type>Inner</Join-Type>                            +
+               <Startup-Cost>58.35</Startup-Cost>                      +
+               <Total-Cost>355.67</Total-Cost>                         +
+               <Plan-Rows>23091</Plan-Rows>                            +
+               <Plan-Width>12</Plan-Width>                             +
+               <Inner-Unique>false</Inner-Unique>                      +
+               <Hash-Cond>(a.col2 = b.col2)</Hash-Cond>                +
+               <Plans>                                                 +
+                 <Plan>                                                +
+                   <Node-Type>Seq Scan</Node-Type>                     +
+                   <Parent-Relationship>Outer</Parent-Relationship>    +
+                   <Relation-Name>t_t_mutil_t1</Relation-Name>         +
+                   <Alias>a</Alias>                                    +
+                   <Startup-Cost>0.00</Startup-Cost>                   +
+                   <Total-Cost>31.49</Total-Cost>                      +
+                   <Plan-Rows>2149</Plan-Rows>                         +
+                   <Plan-Width>10</Plan-Width>                         +
+                 </Plan>                                               +
+                 <Plan>                                                +
+                   <Node-Type>Hash</Node-Type>                         +
+                   <Parent-Relationship>Inner</Parent-Relationship>    +
+                   <Startup-Cost>31.49</Startup-Cost>                  +
+                   <Total-Cost>31.49</Total-Cost>                      +
+                   <Plan-Rows>2149</Plan-Rows>                         +
+                   <Plan-Width>10</Plan-Width>                         +
+                   <Plans>                                             +
+                     <Plan>                                            +
+                       <Node-Type>Seq Scan</Node-Type>                 +
+                       <Parent-Relationship>Outer</Parent-Relationship>+
+                       <Relation-Name>t_t_mutil_t2</Relation-Name>     +
+                       <Alias>b</Alias>                                +
+                       <Startup-Cost>0.00</Startup-Cost>               +
+                       <Total-Cost>31.49</Total-Cost>                  +
+                       <Plan-Rows>2149</Plan-Rows>                     +
+                       <Plan-Width>10</Plan-Width>                     +
+                     </Plan>                                           +
+                   </Plans>                                            +
+                 </Plan>                                               +
+               </Plans>                                                +
+             </Plan>                                                   +
+           </Plans>                                                    +
+         </Plan>                                                       +
+       </Plans>                                                        +
+     </Plan>                                                           +
+   </Query>                                                            +
  </explain>
 (1 row)
 
 explain(format json) delete from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                     QUERY PLAN                     
-----------------------------------------------------
- [                                                 +
-   {                                               +
-     "Plan": {                                     +
-       "Node Type": "ModifyTable",                 +
-       "Operation": "Delete",                      +
-       "Relation Name": "MULTI-RELATION",          +
-       "Startup Cost": 58.35,                      +
-       "Total Cost": 355.67,                       +
-       "Plan Rows": 23091,                         +
-       "Plan Width": 12,                           +
-       "Plans": [                                  +
-         {                                         +
-           "Node Type": "Hash Join",               +
-           "Parent Relationship": "Member",        +
-           "Join Type": "Inner",                   +
-           "Startup Cost": 58.35,                  +
-           "Total Cost": 355.67,                   +
-           "Plan Rows": 23091,                     +
-           "Plan Width": 12,                       +
-           "Inner Unique": false,                  +
-           "Hash Cond": "(a.col2 = b.col2)",       +
-           "Plans": [                              +
-             {                                     +
-               "Node Type": "Seq Scan",            +
-               "Parent Relationship": "Outer",     +
-               "Relation Name": "t_t_mutil_t1",    +
-               "Alias": "a",                       +
-               "Startup Cost": 0.00,               +
-               "Total Cost": 31.49,                +
-               "Plan Rows": 2149,                  +
-               "Plan Width": 10                    +
-             },                                    +
-             {                                     +
-               "Node Type": "Hash",                +
-               "Parent Relationship": "Inner",     +
-               "Startup Cost": 31.49,              +
-               "Total Cost": 31.49,                +
-               "Plan Rows": 2149,                  +
-               "Plan Width": 10,                   +
-               "Plans": [                          +
-                 {                                 +
-                   "Node Type": "Seq Scan",        +
-                   "Parent Relationship": "Outer", +
-                   "Relation Name": "t_t_mutil_t2",+
-                   "Alias": "b",                   +
-                   "Startup Cost": 0.00,           +
-                   "Total Cost": 31.49,            +
-                   "Plan Rows": 2149,              +
-                   "Plan Width": 10                +
-                 }                                 +
-               ]                                   +
-             }                                     +
-           ]                                       +
-         }                                         +
-       ]                                           +
-     }                                             +
-   }                                               +
+                       QUERY PLAN                       
+--------------------------------------------------------
+ [                                                     +
+   {                                                   +
+     "Plan": {                                         +
+       "Node Type": "ModifyTable",                     +
+       "Operation": "Delete",                          +
+       "Relation Name": "MULTI-RELATION",              +
+       "Startup Cost": 58.35,                          +
+       "Total Cost": 586.58,                           +
+       "Plan Rows": 23091,                             +
+       "Plan Width": 12,                               +
+       "Plans": [                                      +
+         {                                             +
+           "Node Type": "LockRows",                    +
+           "Parent Relationship": "Member",            +
+           "Startup Cost": 58.35,                      +
+           "Total Cost": 586.58,                       +
+           "Plan Rows": 23091,                         +
+           "Plan Width": 12,                           +
+           "Plans": [                                  +
+             {                                         +
+               "Node Type": "Hash Join",               +
+               "Parent Relationship": "Outer",         +
+               "Join Type": "Inner",                   +
+               "Startup Cost": 58.35,                  +
+               "Total Cost": 355.67,                   +
+               "Plan Rows": 23091,                     +
+               "Plan Width": 12,                       +
+               "Inner Unique": false,                  +
+               "Hash Cond": "(a.col2 = b.col2)",       +
+               "Plans": [                              +
+                 {                                     +
+                   "Node Type": "Seq Scan",            +
+                   "Parent Relationship": "Outer",     +
+                   "Relation Name": "t_t_mutil_t1",    +
+                   "Alias": "a",                       +
+                   "Startup Cost": 0.00,               +
+                   "Total Cost": 31.49,                +
+                   "Plan Rows": 2149,                  +
+                   "Plan Width": 10                    +
+                 },                                    +
+                 {                                     +
+                   "Node Type": "Hash",                +
+                   "Parent Relationship": "Inner",     +
+                   "Startup Cost": 31.49,              +
+                   "Total Cost": 31.49,                +
+                   "Plan Rows": 2149,                  +
+                   "Plan Width": 10,                   +
+                   "Plans": [                          +
+                     {                                 +
+                       "Node Type": "Seq Scan",        +
+                       "Parent Relationship": "Outer", +
+                       "Relation Name": "t_t_mutil_t2",+
+                       "Alias": "b",                   +
+                       "Startup Cost": 0.00,           +
+                       "Total Cost": 31.49,            +
+                       "Plan Rows": 2149,              +
+                       "Plan Width": 10                +
+                     }                                 +
+                   ]                                   +
+                 }                                     +
+               ]                                       +
+             }                                         +
+           ]                                           +
+         }                                             +
+       ]                                               +
+     }                                                 +
+   }                                                   +
  ]
 (1 row)
 
 explain(format yaml) delete from t_t_mutil_t1 a,t_t_mutil_t2 b where a.col2=b.col2;
-                  QUERY PLAN                   
------------------------------------------------
- - Plan:                                      +
-     Node Type: "ModifyTable"                 +
-     Operation: "Delete"                      +
-     Relation Name: "MULTI-RELATION"          +
-     Startup Cost: 58.35                      +
-     Total Cost: 355.67                       +
-     Plan Rows: 23091                         +
-     Plan Width: 12                           +
-     Plans:                                   +
-       - Node Type: "Hash Join"               +
-         Parent Relationship: "Member"        +
-         Join Type: "Inner"                   +
-         Startup Cost: 58.35                  +
-         Total Cost: 355.67                   +
-         Plan Rows: 23091                     +
-         Plan Width: 12                       +
-         Inner Unique: false                  +
-         Hash Cond: "(a.col2 = b.col2)"       +
-         Plans:                               +
-           - Node Type: "Seq Scan"            +
-             Parent Relationship: "Outer"     +
-             Relation Name: "t_t_mutil_t1"    +
-             Alias: "a"                       +
-             Startup Cost: 0.00               +
-             Total Cost: 31.49                +
-             Plan Rows: 2149                  +
-             Plan Width: 10                   +
-           - Node Type: "Hash"                +
-             Parent Relationship: "Inner"     +
-             Startup Cost: 31.49              +
-             Total Cost: 31.49                +
-             Plan Rows: 2149                  +
-             Plan Width: 10                   +
-             Plans:                           +
-               - Node Type: "Seq Scan"        +
-                 Parent Relationship: "Outer" +
-                 Relation Name: "t_t_mutil_t2"+
-                 Alias: "b"                   +
-                 Startup Cost: 0.00           +
-                 Total Cost: 31.49            +
-                 Plan Rows: 2149              +
-                 Plan Width: 10
+                    QUERY PLAN                     
+---------------------------------------------------
+ - Plan:                                          +
+     Node Type: "ModifyTable"                     +
+     Operation: "Delete"                          +
+     Relation Name: "MULTI-RELATION"              +
+     Startup Cost: 58.35                          +
+     Total Cost: 586.58                           +
+     Plan Rows: 23091                             +
+     Plan Width: 12                               +
+     Plans:                                       +
+       - Node Type: "LockRows"                    +
+         Parent Relationship: "Member"            +
+         Startup Cost: 58.35                      +
+         Total Cost: 586.58                       +
+         Plan Rows: 23091                         +
+         Plan Width: 12                           +
+         Plans:                                   +
+           - Node Type: "Hash Join"               +
+             Parent Relationship: "Outer"         +
+             Join Type: "Inner"                   +
+             Startup Cost: 58.35                  +
+             Total Cost: 355.67                   +
+             Plan Rows: 23091                     +
+             Plan Width: 12                       +
+             Inner Unique: false                  +
+             Hash Cond: "(a.col2 = b.col2)"       +
+             Plans:                               +
+               - Node Type: "Seq Scan"            +
+                 Parent Relationship: "Outer"     +
+                 Relation Name: "t_t_mutil_t1"    +
+                 Alias: "a"                       +
+                 Startup Cost: 0.00               +
+                 Total Cost: 31.49                +
+                 Plan Rows: 2149                  +
+                 Plan Width: 10                   +
+               - Node Type: "Hash"                +
+                 Parent Relationship: "Inner"     +
+                 Startup Cost: 31.49              +
+                 Total Cost: 31.49                +
+                 Plan Rows: 2149                  +
+                 Plan Width: 10                   +
+                 Plans:                           +
+                   - Node Type: "Seq Scan"        +
+                     Parent Relationship: "Outer" +
+                     Relation Name: "t_t_mutil_t2"+
+                     Alias: "b"                   +
+                     Startup Cost: 0.00           +
+                     Total Cost: 31.49            +
+                     Plan Rows: 2149              +
+                     Plan Width: 10
 (1 row)
 
 -- temp table

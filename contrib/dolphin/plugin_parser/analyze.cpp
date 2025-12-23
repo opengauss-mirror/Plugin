@@ -1357,6 +1357,20 @@ static void CheckDeleteRelation(Relation targetrel)
                 errmsg("%s is redistributing, please retry later.", targetrel->rd_rel->relname.data)));
     }
 }
+
+static void setRowMarksForMultiModify(Query *qry)
+{
+    if (list_length(qry->resultRelations) == 1) {
+        return;
+    }
+    ListCell* lc = NULL;
+    foreach (lc, qry->resultRelations) {
+        int rtindex = lfirst_int(lc);
+        applyLockingClause(qry, rtindex, LCS_FORUPDATE, LockWaitBlock, false, 0);
+    }
+    return;
+}
+
 /*
  * transformDeleteStmt -
  *	  transforms a Delete Statement
@@ -1398,6 +1412,7 @@ static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt)
     /* set up range table with just the result rel */
     qry->resultRelations =
         setTargetTables(pstate, stmt->relations, true, true, ACL_DELETE);
+    setRowMarksForMultiModify(qry);
 
     CheckUDRelations(pstate, stmt->sortClause, stmt->limitClause, stmt->returningList, true);
     /* there's no DISTINCT in DELETE */
@@ -5080,6 +5095,7 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
     transformLimitSortClause(pstate, stmt, qry, false);
 
     qry->resultRelations = remove_update_redundant_relation(qry->resultRelations, pstate->p_target_rangetblentry);
+    setRowMarksForMultiModify(qry);
 
     qry->returningList = transformReturningList(pstate, stmt->returningList);
     if (qry->returningList != NIL && RelationIsColStore(((Relation)linitial(pstate->p_target_relation)))) {

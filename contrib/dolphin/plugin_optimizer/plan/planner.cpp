@@ -5681,14 +5681,22 @@ static void preprocess_rowmarks(PlannerInfo* root)
         RowMarkClause* rc = (RowMarkClause*)lfirst(l);
         RangeTblEntry* rte = rt_fetch(rc->rti, parse->rtable);
         PlanRowMark* newrc = NULL;
+        bool rti_equal = parse->resultRelations == NIL ? true : false;
+        ListCell* lc = NULL;
 
         /*
          * Currently, it is syntactically impossible to have FOR UPDATE
          * applied to an update/delete target rel.	If that ever becomes
          * possible, we should drop the target from the PlanRowMark list.
          */
-        AssertEreport(rc->rti != (uint)linitial2_int(parse->resultRelations),
-            MOD_OPT,
+        foreach (lc, parse->resultRelations) {
+            Index rtindex = (Index)lfirst_int(lc);
+            if (rtindex == rc->rti) {
+                rti_equal = true;
+                break;
+            }
+        }
+        AssertEreport(rti_equal, MOD_OPT,
             "invalid range table index when converting RowMarkClauses to PlanRowMark representation.");
 
         /*
