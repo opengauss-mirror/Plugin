@@ -1,5 +1,56 @@
 create schema none_strict_warning_test;
 set current_schema to 'none_strict_warning_test';
+CREATE TABLE test(wtg_id BIGINT, datatime_utc date, powercurve_valid_cond INTEGER, PRIMARY KEY (wtg_id,datatime_utc));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
+insert into test(wtg_id, datatime_utc) select 430000007, '2025-01-01 00:00:00';
+-- warning
+insert ignore into test(wtg_id, datatime_utc) select 430000007, '2025-01-01 00:00:00';
+WARNING:  duplicate key value violates unique constraint in table "test"
+select * from test;
+  wtg_id   | datatime_utc | powercurve_valid_cond 
+-----------+--------------+-----------------------
+ 430000007 | 2025-01-01   |                      
+(1 row)
+
+CREATE TABLE test1(wtg_id BIGINT, datatime_utc date, powercurve_valid_cond INTEGER);
+insert into test1 values (430000007,  '2025-01-01 00:00:00', 1);
+insert into test1 values (430000008,  '2025-01-01 00:00:00', 1);
+-- 1 warning 1 insert
+insert ignore into test(wtg_id, datatime_utc) select wtg_id,datatime_utc from test1;
+WARNING:  duplicate key value violates unique constraint in table "test"
+select * from test;
+  wtg_id   | datatime_utc | powercurve_valid_cond 
+-----------+--------------+-----------------------
+ 430000007 | 2025-01-01   |                      
+ 430000008 | 2025-01-01   |                      
+(2 rows)
+
+insert into test1 values (430000009,  '2025-01-01 00:00:00', 1);
+-- 2 warning 1 insert
+insert ignore into test(wtg_id, datatime_utc) select wtg_id,datatime_utc from test1;
+WARNING:  duplicate key value violates unique constraint in table "test"
+WARNING:  duplicate key value violates unique constraint in table "test"
+select * from test;
+  wtg_id   | datatime_utc | powercurve_valid_cond 
+-----------+--------------+-----------------------
+ 430000007 | 2025-01-01   |                      
+ 430000008 | 2025-01-01   |                      
+ 430000009 | 2025-01-01   |                      
+(3 rows)
+
+delete from test1;
+delete from test;
+insert into test1 values (430000007,  '2025-01-01 00:00:00', 1),(430000007,  '2025-01-01 00:00:00', 1);
+insert ignore into test select * from test1;
+WARNING:  duplicate key value violates unique constraint in table "test"
+select * from test;
+  wtg_id   | datatime_utc | powercurve_valid_cond 
+-----------+--------------+-----------------------
+ 430000007 | 2025-01-01   |                     1
+(1 row)
+
+drop table test;
+drop table test1;
 reset dolphin.sql_mode;
 create table test_int1(c1 int1);
 create table test_int8(c1 int8);

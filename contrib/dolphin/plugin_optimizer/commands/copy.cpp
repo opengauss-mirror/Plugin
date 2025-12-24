@@ -5615,6 +5615,99 @@ static void CopyFromUpdateIndexAndRunAfterRowTrigger(EState* estate, ResultRelIn
     }
 }
 
+void RollbackData(Relation rel, EState* estate, int nBufferedTuples, HeapTuple* bufferedTuples, int hiOptions)
+{
+    MemoryContext oldcontext;
+    int i = 0;
+    oldcontext = MemoryContextSwitchTo(GetPerTupleMemoryContext(estate));
+    for (i = 0; i < nBufferedTuples ; i++) {
+        simple_heap_delete(rel, &(((HeapTuple)bufferedTuples[i])->t_self), hiOptions, true);
+    }
+    MemoryContextSwitchTo(oldcontext);
+
+#ifdef ENABLE_HTAP
+    if (HAVE_HTAP_TABLES) {
+        for (i = 0; i < nBufferedTuples; i++) {
+            IMCStoreDeleteHook(RelationGetRelid(rel), tableam_tops_get_t_self(rel, bufferedTuples[i]));
+        }
+    }
+#endif
+}
+
+void InsertABufferedTuple(Relation rel, EState* estate, CommandId mycid, int hiOptions,
+    ResultRelInfo* resultRelInfo, TupleTableSlot* myslot, BulkInsertState bistate,
+    HeapTuple bufferedTuple, Partition partition, int2 bucketId)
+{
+    MemoryContext oldcontext;
+    Relation actualHeap = resultRelInfo->ri_RelationDesc;
+    bool ispartitionedtable = false;
+    Oid partitionOid = InvalidOid;
+    bool isgpi = false;
+    ConflictInfoData conflictInfo;
+    Oid conflictPartOid = InvalidOid;
+    int2 conflictBucketid = InvalidBktId;
+    int i = 0;
+
+    ExecStoreTuple(bufferedTuple, myslot, InvalidBuffer, false);
+    if (!ExecCheckIndexConstraints(myslot, estate, 
+        actualHeap,
+        partition,
+        &isgpi, bucketId, &conflictInfo, &conflictPartOid, &conflictBucketid)) {
+        ereport(WARNING,
+               (errmsg("duplicate key value violates unique constraint in table \"%s\"",
+                RelationGetRelationName(actualHeap))));
+        return;
+    }
+
+    (void)tableam_tuple_insert(rel, bufferedTuple, mycid, hiOptions, bistate);
+        
+    oldcontext = MemoryContextSwitchTo(GetPerTupleMemoryContext(estate));
+
+#ifdef ENABLE_HTAP
+        if (HAVE_HTAP_TABLES) {
+            IMCStoreInsertHook(RelationGetRelid(rel), tableam_tops_get_t_self(rel, bufferedTuple));
+        }
+#endif
+    /*
+     * If there are any indexes, update them for all the inserted tuples, and
+     * run AFTER ROW INSERT triggers.
+     */
+    if (resultRelInfo->ri_NumIndices > 0) {
+        List* recheckIndexes = NIL;
+        (void)ExecStoreTuple(bufferedTuple, myslot, InvalidBuffer, false);
+        recheckIndexes = ExecInsertIndexTuples(myslot,
+            &(bufferedTuple->t_self),
+            estate,
+            ispartitionedtable ? actualHeap : NULL,
+            ispartitionedtable ? partition : NULL,
+            bucketId, NULL, NULL);
+        ExecARInsertTriggers(estate, resultRelInfo, partitionOid, bucketId, (HeapTuple)bufferedTuple,
+            recheckIndexes);
+            list_free(recheckIndexes);
+    } else if (resultRelInfo->ri_TrigDesc != NULL && resultRelInfo->ri_TrigDesc->trig_insert_after_row) {
+        /*
+         * There's no indexes, but see if we need to run AFTER ROW INSERT triggers
+         * anyway.
+         */
+        ExecARInsertTriggers(estate, resultRelInfo, partitionOid, bucketId, (HeapTuple)bufferedTuple, NIL);
+    }
+
+    estate->es_processed++;
+}
+
+void InsertInSingleMode(Relation rel, EState* estate, CommandId mycid, int hiOptions,
+    ResultRelInfo* resultRelInfo, TupleTableSlot* myslot, BulkInsertState bistate, int nBufferedTuples,
+    HeapTuple* bufferedTuples, Partition partition, int2 bucketId)
+{
+    int i = 0;
+    estate->es_processed = 0;
+    RollbackData(rel, estate, nBufferedTuples, bufferedTuples, hiOptions);
+    for (i = 0; i < nBufferedTuples; i++) {
+        InsertABufferedTuple(rel, estate, mycid, hiOptions, resultRelInfo, myslot, bistate,
+            bufferedTuples[i], partition, bucketId);
+    }
+}
+
 /*
  * A subroutine of CopyFrom, to write the current batch of buffered heap
  * tuples to the heap. Also updates indexes and runs AFTER ROW INSERT
@@ -5629,6 +5722,9 @@ void CopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int hi_o
     Relation actualHeap = resultRelInfo->ri_RelationDesc;
     bool ispartitionedtable = false;
     Oid partitionOid = InvalidOid;
+    bool ignore = DB_IS_CMPT(B_FORMAT) && estate->es_plannedstmt != NULL && estate->es_plannedstmt->hasIgnore;
+    bool tryInSingleMode = false;
+ 
 
     if (bufferedTuples == NULL)
         return;
@@ -5672,12 +5768,32 @@ void CopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int hi_o
             List* recheckIndexes = NIL;
 
             (void)ExecStoreTuple(bufferedTuples[i], myslot, InvalidBuffer, false);
-            recheckIndexes = ExecInsertIndexTuples(myslot,
-                &(((HeapTuple)bufferedTuples[i])->t_self),
-                estate,
-                ispartitionedtable ? actualHeap : NULL,
-                ispartitionedtable ? partition : NULL,
-                bucketId, NULL, NULL);
+            PG_TRY();
+            {
+                recheckIndexes = ExecInsertIndexTuples(myslot,
+                    &(((HeapTuple)bufferedTuples[i])->t_self),
+                    estate,
+                    ispartitionedtable ? actualHeap : NULL,
+                    ispartitionedtable ? partition : NULL,
+                    bucketId, NULL, NULL);
+            }
+            PG_CATCH();
+            {
+                ErrorData* edata = NULL;
+                edata = CopyErrorData();
+                if (!ignore) {
+                    ReThrowError(edata);
+                }
+                FlushErrorState();
+                /* the old edata is no longer used */
+                FreeErrorData(edata);
+                tryInSingleMode = true;
+            }
+            PG_END_TRY();
+            if (tryInSingleMode) {
+                return InsertInSingleMode(rel, estate, mycid, hi_options, resultRelInfo, myslot, bistate, nBufferedTuples,
+                                          bufferedTuples, partition, bucketId);
+            }
             ExecARInsertTriggers(estate, resultRelInfo, partitionOid, bucketId, (HeapTuple)bufferedTuples[i],
                 recheckIndexes);
             list_free(recheckIndexes);
