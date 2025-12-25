@@ -869,6 +869,7 @@ typedef struct AlterTableStmt {
     bool fromCreate;       /* from create stmt */
     bool fromReplace;      /* from create or replace stmt */
     bool need_rewrite_sql; /* after rewrite rule, need to rewrite query string */
+    bool concurrent;       /* alter table concurrently */
 } AlterTableStmt;
 
 typedef enum AlterTableType {
