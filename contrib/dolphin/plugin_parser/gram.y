@@ -3571,7 +3571,7 @@ opt_encoding:
 			| BINARY								{ $$ = (char*)$1; }
 			| normal_ident							{ $$ = $1; }
 			| DEFAULT								{ $$ = NULL; }
-			| /*EMPTY*/								{ $$ = NULL; }
+			| /*EMPTY*/			%prec UNBOUNDED		{ $$ = NULL; }
 		;
 
 ColId_or_Sconst:
@@ -21637,7 +21637,7 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("rows", (Node *)$2);
 				}
-			| FunctionSetResetClause %prec '(' ')'
+			| FunctionSetResetClause
 				{
 					/* we abuse the normal content of a DefElem here */
 					$$ = makeDefElem("set", (Node *)$1);
@@ -32271,15 +32271,15 @@ opt_multipart_interval:
 		;
 
 opt_interval:
-			YEAR_P
+			YEAR_P %prec UMINUS
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
-			| MONTH_P
+			| MONTH_P %prec UMINUS
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
-			| DAY_P
+			| DAY_P %prec UMINUS
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
-			| HOUR_P
+			| HOUR_P %prec UMINUS
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
-			| MINUTE_P
+			| MINUTE_P %prec UMINUS
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
 			| interval_second
 				{ $$ = $1; }
@@ -32437,7 +32437,7 @@ opt_interval:
 		;
 
 interval_second:
-			SECOND_P
+			SECOND_P	%prec UMINUS
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND), @1));
 				}
