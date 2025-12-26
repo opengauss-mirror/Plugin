@@ -358,6 +358,12 @@ select right('dont!', 9223372036854775808);
  
 (1 row)
 
+select right(aes_encrypt('a', repeat('c', 16), repeat('a', 16)), 0);
+ right 
+-------
+ 
+(1 row)
+
 \x
 CREATE TABLE test_type_table
 (
