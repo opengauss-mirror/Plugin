@@ -7668,7 +7668,7 @@ Datum text_left_right_helper(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
         }
     }
 #ifdef DOLPHIN
-    off = pg_mbcliplen(p, len, part_off);
+    off = Min(pg_mbcliplen(p, len, part_off), len);
 #else
     off = pg_mbcharcliplen(p, len, part_off);
 #endif

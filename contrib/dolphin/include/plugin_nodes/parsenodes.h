@@ -1771,6 +1771,7 @@ typedef struct VacuumStmt {
     Relation parentpartrel; /* for tracing the opened parent relation of a subpartition */
     Partition parentpart;   /* for tracing the opened parent partition of a subpartition */
     bool issubpartition;
+    bool concurrent; /* vacuum full concurrently */
     List* partList;
 #ifdef PGXC
     void* HDFSDnWorkFlow; /* @hdfs HDFSDnWorkFlow stores analyze operation related information */
