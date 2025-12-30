@@ -42,6 +42,7 @@
 #include "utils/lsyscache.h"
 #include "utils/rel.h"
 #include "utils/relcache.h"
+#include "commands/online_ddl_deltalog.h"
 
 static void transformMergeJoinClause(ParseState* pstate, Node* merge);
 static List* expandSourceTL(ParseState* pstate, RangeTblEntry* rte, int rtindex);
@@ -1320,6 +1321,10 @@ Query* transformMergeStmt(ParseState* pstate, MergeStmt* stmt)
 
     /* insert action targetlist can only refer to source table */
     check_insert_action_targetlist(mergeActionList, qry->mergeSourceTargetList);
+
+    if (unlikely(targetrel != NULL && targetrel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED)) {
+        ErrorIfOnlineDDLDeltaLog(targetrel, false);
+    }
 
     qry->mergeActionList = mergeActionList;
     qry->returningList = NULL;

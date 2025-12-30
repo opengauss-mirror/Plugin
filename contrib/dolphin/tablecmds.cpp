@@ -950,6 +950,7 @@ inline static bool CStoreSupportConstraint(Constraint* cons)
         case CONSTR_NULL:
         case CONSTR_NOTNULL:
         case CONSTR_DEFAULT:
+        case CONSTR_IDENTITY:
         case CONSTR_CLUSTER:
             ret = true;
             break;
@@ -4027,6 +4028,10 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
                 ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("Use 'Drop index' to drop index %s of mlog table is not allowed.",
                         delrel->rd_rel->relname.data)));
+        }
+        if (relkind == RELKIND_RELATION && delrel != NULL &&
+            delrel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED) {
+            ErrorIfOnlineDDLDeltaLog(delrel, true);
         }
 
         /*
@@ -8704,6 +8709,9 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 {
     List* wqueue = NIL;
     ListCell* lcmd = NULL;
+    bool concurrently = parsetree != NULL ? parsetree->concurrent : false;
+    bool enableOnlineDDL = false;
+    OnlineDDLType onlineDDLType = ONLINE_DDL_INVALID;
 #ifdef PGXC
     RedistribState* redistribState = NULL;
     bool doRedistribute = false;
@@ -8786,11 +8794,30 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
     }
 #endif
 
-    /* Close the relation, but keep lock until commit */
-    relation_close(rel, NoLock);
+    /* online-ddl pharse 1: online_ddl prepare pharse. */
+    if (concurrently) {
+        onlineDDLType = OnlineDDLCheckFeasible(&wqueue, rel, cmds, lockmode);
+        enableOnlineDDL = onlineDDLType > ONLINE_DDL_INVALID;
+        if (enableOnlineDDL) {
+            OnlineDDLInstanceInit(wqueue, &rel, cmds, lockmode, onlineDDLType);
+        }
+    }
+
+    /* Close the relation, but keep lock until commit, if unable online-ddl */
+    if (!enableOnlineDDL) {
+        relation_close(rel, NoLock);
+    }
 
     /* Phase 2: update system catalogs */
     ATRewriteCatalogs(&wqueue, lockmode, fromReplace);
+
+    /* Release AccessExclusiveLock which is locked when rewriting catalogs. */
+    if (enableOnlineDDL) {
+        LockRelation(rel, ShareUpdateExclusiveLock);
+        UnlockRelation(rel, AccessExclusiveLock);
+        ereport(NOTICE,
+                (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
+    }
 
 #ifdef PGXC
     /* Invalidate cache for redistributed relation */
@@ -8809,8 +8836,18 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
         FreeRedistribState(redistribState);
 #endif
 
+    /* online-ddl: phase 2 3, baseline copy and incremental data catchup */
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    if (operators != NULL && enableOnlineDDL) {
+        operators->setStatus(ONLINE_DDL_STATUS_BASELINE_COPY);
+    }
     /* Phase 3: scan/rewrite tables as needed */
     ATRewriteTables(parsetree, &wqueue, lockmode);
+
+    /* online-ddl: phase 4, online ddl finish */
+    if (enableOnlineDDL) {
+        OnlineDDLInstanceFinish(rel);
+    }
 }
 
 /*
@@ -10772,6 +10809,13 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
     bool repl_modify = false;
     bool need_dml_change_col = false;
 
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+    if (operators != NULL) {
+        Assert(operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+    }
+
     /*
      * Prepare a BulkInsertState and options for heap_insert. Because we're
      * building a new heap, we can skip WAL-logging and fsync it to disk at
@@ -10953,7 +10997,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
          * Scan through the rows, generating a new row if needed and then
          * checking all the constraints.
          */
-        scan = tableam_scan_begin(oldrel, SnapshotNow, 0, NULL);
+        if (enableOnlineDDL) {
+            Snapshot snapshot = operators->getBaselineSnapshot();
+            scan = tableam_scan_begin(oldrel, snapshot, 0, NULL);
+        } else {
+            scan = tableam_scan_begin(oldrel, SnapshotNow, 0, NULL);
+        }
 
         /*
          * Switch to per-tuple memory context and reset it for each tuple
@@ -11305,8 +11354,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                         }
                     } else {
                         (void) tableam_tuple_insert(newrel, tuple, mycid, hi_options, bistate);
+                        ItemPointer newCtid = &((HeapTuple)tuple)->t_self;
                         if (autoinc > 0) {
                             SetRelAutoIncrement(oldrel, newTupDesc, autoinc);
+                        }
+                        if (enableOnlineDDL && operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
+                            operators->insertCtidMap(oldCtid, newCtid);
                         }
                     }
                 }
@@ -11377,6 +11430,19 @@ static void ATRewriteTable(AlteredTableInfo* tab, Relation oldrel, Relation newr
     } else {
         ATRewriteTableInternal(tab, oldrel, newrel);
     }
+
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+    if (operators != NULL) {
+        /* Reindex tmp relation. */
+        if (operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
+            ReindexRelation(newrel->rd_id, REINDEX_REL_SUPPRESS_INDEX_USE |REINDEX_REL_CHECK_CONSTRAINTS,
+                            REINDEX_ALL_INDEX, NULL, NULL);
+        }
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+        operators->OnlineDDLAppendIncrementalData(oldrel, newrel, tab);
+    }
+
 }
 
 #ifndef ENABLE_MULTIPLE_NODES
@@ -33485,7 +33551,12 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
 {
     ForbidToRewriteOrTestCstoreIndex(tab);
     Oid OIDNewHeap = make_new_heap(tab->relid, NewTableSpace);
-
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+    /* Old rel is locked when make_new_heap. */
+    if (enableOnlineDDL) {
+        UnlockRelationOid(tab->relid, AccessExclusiveLock);
+    }
     /*
      * Copy the heap data into the new table with the desired
      * modifications, and test the current data within the table
@@ -33494,6 +33565,14 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
     Relation oldRel = heap_open(tab->relid, NoLock);
     Relation newRel = heap_open(OIDNewHeap, lockmode);
 
+    List* srcIndexOidList = NIL;
+    List* destIndexOidList = NIL;
+
+    ereport(ONLINE_DDL_LOG_LEVEL, (errmsg("ExecRewriteRowTable: oldRelation = %u, toastoid = %u, newRelation = %u, toastoid = %u.",
+                              oldRel->rd_id, oldRel->rd_rel->reltoastrelid, newRel->rd_id, newRel->rd_rel->reltoastrelid)));
+    if (enableOnlineDDL) {
+        OnlineDDLCopyRelationIndexs(oldRel, newRel, &srcIndexOidList, &destIndexOidList);
+    }
     /*
      * Temporarily set the relOptions of the old rel to th ones before
      * modification to execute rewrite table.
@@ -33505,6 +33584,15 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
     heap_close(oldRel, NoLock);
     heap_close(newRel, NoLock);
 
+    /* Swap indexes Relfilenode */
+    if (enableOnlineDDL) {
+        if (srcIndexOidList != NIL && destIndexOidList != NIL) {
+            OnlineDDLSwapRelationIndexes(srcIndexOidList, destIndexOidList, tab);
+        }
+        list_free_ext(srcIndexOidList);
+        list_free_ext(destIndexOidList);
+    }
+
     /*
      * Swap the physical files of the old and new heaps, then rebuild
      * indexes and discard the old heap.  We can use RecentXmin for
@@ -33514,7 +33602,7 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
      * interest in letting this code work on system catalogs.
      */
     finish_heap_swap(tab->relid, OIDNewHeap, false, false, true, u_sess->utils_cxt.RecentXmin,
-                     GetOldestMultiXactId(), NULL, tab);
+                     GetOldestMultiXactId(), NULL, tab, enableOnlineDDL);
 
     /* clear all attrinitdefval */
     clearAttrInitDefVal(tab->relid);
@@ -35865,6 +35953,178 @@ bool IsComputedColumn(Oid adrelid, int2 asnum)
     systable_endscan(scan);
     relation_close(attrdef, AccessShareLock);
     return res;
+}
+
+bool OnlineDDLCheckSetCompressOptFeasible(Relation rel, List* defList, AlterTableType operation, LOCKMODE lockmode, AlteredTableInfo* tab)
+{
+    /* If delist doesn't contains compressed options, return false. */
+    if (rel->rd_rel->relkind != RELKIND_RELATION) {
+        return false;
+    }
+    if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
+        return false;
+    }
+    Oid relid;
+    HeapTuple tuple;
+    static const char* const validnsps[] = HEAP_RELOPT_NAMESPACES;
+    bool newRelHasUids = false;
+    bool isnull = false;
+    bytea* relOpt = NULL;
+    Datum datum;
+    Datum newOptions;
+    bool needRewrite = false;
+
+    /* Fetch heap tuple */
+    relid = RelationGetRelid(rel);
+    tuple = SearchSysCache1(RELOID, ObjectIdGetDatum(relid));
+    if (!HeapTupleIsValid(tuple)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", relid)));
+    }
+
+    if (operation == AT_ReplaceRelOptions) {
+        /*
+         * If we're supposed to replace the reloptions list, we just pretend
+         * there were none before.
+         */
+        datum = (Datum)0;
+        isnull = true;
+    } else {
+        /* Get the old reloptions */
+        datum = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+   }
+
+
+    /* Generate new proposed reloptions (text array) */
+    newOptions = transformRelOptions(
+        isnull ? (Datum)0 : datum, defList, NULL, validnsps, false, operation == AT_ResetRelOptions);
+
+    /* this options only can be used when define a new relation.
+     * forbid to change or reset these options.
+     */
+    ForbidUserToSetDefinedOptions(defList);
+
+    bytea* heapRelOpt = heap_reloptions(rel->rd_rel->relkind, newOptions, true);
+    relOpt = heapRelOpt;
+    const char* algo = RelationGetAlgo(rel);
+    newRelHasUids = StdRdOptionsHasUids(heapRelOpt, RELKIND_RELATION);
+    if (rel->rd_rel->relhasoids && newRelHasUids) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+            errmsg("table with oids cannot add or modify hasuids by ALTER TABLE command.")));
+    }
+    if (ENABLE_DMS && newRelHasUids) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+            errmsg("table under Shared Storage cannot add or modify hasuids by ALTER TABLE command.")));
+    }
+    Assert(!RelationIsColStore(rel) && !RelationIsTsStore(rel));
+
+    /* un-supported options. dont care its values */
+    ForbidToSetOptionsForRowTbl(defList);
+    if (algo == NULL || *algo == '\0') {
+        ForbidToSetTdeOptionsForNonTdeTbl(defList);
+    }
+    if (RelationIsUstoreFormat(rel)) {
+        ForbidToSetOptionsForUstoreTbl(defList);
+    }
+
+    needRewrite = transformCompressedOptions(rel, relOpt, defList, tab);
+    ReleaseSysCache(tuple);
+    return needRewrite;
+}
+
+bool OnlineDDLCheckSetNotNullFeasible(Relation rel, const char* colName, LOCKMODE lockmode)
+{
+    HeapTuple tuple;
+    AttrNumber attnum;
+    Relation attrRel;
+    ObjectAddress address;
+    bool result = false;
+    /*
+     * lookup the attribute
+     */
+    attrRel = heap_open(AttributeRelationId, RowExclusiveLock);
+    tuple = SearchSysCacheCopyAttName(RelationGetRelid(rel), colName);
+
+    if (!HeapTupleIsValid(tuple))
+        ereport(ERROR,
+            (errcode(ERRCODE_UNDEFINED_COLUMN),
+                errmsg("column \"%s\" of relation \"%s\" does not exist", colName, RelationGetRelationName(rel))));
+
+    attnum = ((Form_pg_attribute)GETSTRUCT(tuple))->attnum;
+
+    /* Prevent them from altering a system attribute */
+    if (attnum <= 0)
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot alter system column \"%s\"", colName)));
+
+    /*
+     * Okay, actually perform the catalog change ... if needed
+     */
+    result = !(((Form_pg_attribute)GETSTRUCT(tuple))->attnotnull);
+    heap_close(attrRel, RowExclusiveLock);
+    return result;
+}
+
+bool OnlineDDLCheckAlterModifyColumnFeasible(AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd)
+{
+    ColumnDef* def = (ColumnDef*)cmd->def;
+    AttrNumber attnum;
+    HeapTuple attrTuple;
+    HeapTuple typeTuple;
+    Form_pg_attribute pgAttr;
+    Relation attRel;
+    Oid typid;
+    int32 typmod = -1;
+    Oid collid = InvalidOid;
+    AclResult aclResult;
+    char* colName = def->colname;
+    bool typeChanged = false;
+    bool result = false;
+
+    attRel = heap_open(AttributeRelationId, RowExclusiveLock);
+    attnum = get_attnum(RelationGetRelid(rel), colName);
+    if (attnum == InvalidAttrNumber) {
+        ereport(ERROR,
+            (errcode(ERRCODE_UNDEFINED_COLUMN),
+                errmsg("column \"%s\" of relation \"%s\" does not exist", colName, RelationGetRelationName(rel))));
+    }
+
+    /* Check and get new type and collation */
+    typeTuple = typenameType(NULL, def->typname, &typmod);
+    typid = HeapTupleGetOid(typeTuple);
+    aclResult = pg_type_aclcheck(typid, GetUserId(), ACL_USAGE);
+    if (aclResult != ACLCHECK_OK) {
+        aclcheck_error_type(aclResult, typid);
+    }
+    collid = GetColumnDefCollation(NULL, def, typid);
+    CheckAttributeType(colName, typid, collid, list_make1_oid(rel->rd_rel->reltype), false);
+
+    /* Look up the target column */
+    attrTuple = SearchSysCacheCopyAttName(RelationGetRelid(rel), colName);
+    if (!HeapTupleIsValid(attrTuple)) {
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_COLUMN),
+                errmsg("column \"%s\" of relation \"%s\" does not exist", colName, RelationGetRelationName(rel))));
+    }
+    pgAttr = (Form_pg_attribute)GETSTRUCT(attrTuple);
+    typeChanged = (pgAttr->atttypid != typid || pgAttr->atttypmod != typmod || pgAttr->attcollation != collid);
+    /* Check column partkey */
+    if (is_partition_column(rel, attnum)) {
+        if (typeChanged) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("Invalid modify column operation"),
+                errdetail("modify or change partition key column is not supported")));
+        } else if (def->generatedCol) {
+            ereport(ERROR,
+                (errmodule(MOD_GEN_COL), errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("Invalid modify column operation"),
+                errdetail("cannot modify or change a partition key column as a generated column")));
+        }
+    }
+
+    /* Primary key column must be not null. */
+    def->is_not_null = def->is_not_null ? def->is_not_null : ModifiedColumnIsPrimaryKey(tab, attnum);
+    if (!pgAttr->attnotnull && def->is_not_null) {
+        result = true;
+    }
+    return result;
 }
 
 template HeapTupleData* EvaluateGenExpr<HeapTuple, TAM_HEAP>(
