@@ -28,6 +28,7 @@
 #include "vecexecutor/vectorbatch.h"
 #include "utils/pg_locale.h"
 #include "catalog/gs_collation.h"
+#include "commands/prepare.h"
 
 #include "miscadmin.h"
 
@@ -448,6 +449,9 @@ Datum opfusion_bpchar(Datum arg1, Datum arg2, Datum arg3)
     BpChar* source = (BpChar*)arg1;
     int32 maxlen = arg2;
     bool isExplicit = arg3;
+    if (u_sess->hook_cxt.bpcharLaunchHook != NULL) {
+        return ((bpcharLaunchFunc)(u_sess->hook_cxt.bpcharLaunchHook))(false, source, maxlen, isExplicit);
+    }
     return bpchar_launch(false, source, maxlen, isExplicit);
 }
 
@@ -775,6 +779,9 @@ Datum opfusion_varchar(Datum arg1, Datum arg2, Datum arg3)
     VarChar* source = (VarChar*)arg1;
     int32 typmod = arg2;
     bool isExplicit = arg3;
+    if (u_sess->hook_cxt.varcharLaunchHook != NULL) {
+        return ((varcharLaunchFunc)(u_sess->hook_cxt.varcharLaunchHook))(false, source, typmod, isExplicit);
+    }
     return varchar_launch(false, source, typmod, isExplicit);
 }
 

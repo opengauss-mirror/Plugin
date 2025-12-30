@@ -90,6 +90,7 @@
 #include "commands/explain.h"
 #include "commands/sec_rls_cmds.h"
 #include "commands/sequence.h"
+#include "commands/online_ddl_deltalog.h"
 #include "commands/typecmds.h"
 #include "streaming/streaming_catalog.h"
 #include "instruments/instr_unique_sql.h"
@@ -1436,22 +1437,33 @@ static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt)
         nsitem->p_lateral_ok = true;
     }
 
-
-
     qual = transformWhereClause(pstate, stmt->whereClause, EXPR_KIND_WHERE, "WHERE");
 
     Relation targetrel = (Relation)linitial(pstate->p_target_relation);
     qry->returningList = transformReturningList(pstate, stmt->returningList);
-    if (pstate->p_target_relation && qry->returningList != NIL && RelationIsColStore(targetrel)) {
+    if (RelationIsValid(targetrel)) {
+        if (pstate->p_target_relation && qry->returningList != NIL && RelationIsColStore(targetrel)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("Un-support feature"),
+                    errdetail("column stored relation doesn't support DELETE returning")));
+        } else if (pstate->p_target_relation && qry->returningList != NIL && RelationIsTsStore(targetrel)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("Un-support feature"),
+                    errdetail("Timeseries stored relation doesn't support DELETE returning")));
+        }
+    }
+
+    if (!checkAllowedTableCombination(pstate)) {
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("Un-support feature"),
-                errdetail("column stored relation doesn't support DELETE returning")));
-    } else if (pstate->p_target_relation && qry->returningList != NIL && RelationIsTsStore(targetrel)) {
-        ereport(ERROR,
-            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("Un-support feature"),
-                errdetail("Timeseries stored relation doesn't support DELETE returning")));
+                errmsg("Un-supported feature"),
+                errdetail("UStore relations cannot be used with other storage types in DELETE statement")));
+    }
+
+    if (unlikely(targetrel != NULL &&targetrel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED)) {
+        ErrorIfOnlineDDLDeltaLog(targetrel, false);
     }
 
     /* done building the range table and jointree */
@@ -5055,6 +5067,10 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
         }
     }
 
+    if (unlikely(rel != NULL && rel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED)) {
+        ErrorIfOnlineDDLDeltaLog(rel, false);
+    }
+
     /* subqueries in FROM cannot access the result relation */
     int nsitem_count = list_length(pstate->p_varnamespace);
     foreach(l, pstate->p_varnamespace) {
@@ -7281,6 +7297,10 @@ static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Rela
         RelationInClusterResizingWriteErrorMode(targetrel))) {
         ereport(ERROR, (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
                 errmsg("%s is redistributing, please retry later.", targetrel->rd_rel->relname.data)));
+    }
+
+    if (unlikely(targetrel != NULL && targetrel->rd_rel->relpersistence == RELPERSISTENCE_UNLOGGED)) {
+        ErrorIfOnlineDDLDeltaLog(targetrel, false);
     }
 }
 

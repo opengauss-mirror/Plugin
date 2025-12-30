@@ -1,3 +1,5 @@
+test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4 b_plugin_signal_resignal b_database_greatest
+
 # show storage engines
 # enable_mot_server must be before at test_show_storage_engines_1 and test_show_storage_engines_2
 test: enable_mot_server
@@ -55,8 +57,6 @@ test: json_array json_object json_quote json_contains json_contains_path json_ex
 test: show b_comments ansi_quotes_start b_system_view b_rowtype test_proxy test_to_days b_format_drop_database subquery
 
 test: pl_debugger_server pl_debugger_client load load2 flush ansi_quotes_test partition_engine
-
-test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4 b_plugin_signal_resignal b_database_greatest
 
 test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_remove json_replace json_set json_depth
 

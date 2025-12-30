@@ -86,6 +86,9 @@ extern char *getEnumLableByOrder(Oid enumOid, int order);
 extern Node *transferConstToAconst(Node *node);
 
 extern Const* setValueToConstExpr(SetVariableExpr* set);
+typedef Node* (*coerceTypeFunc)(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
+                                CoercionContext ccontext, CoercionForm cformat, char* fmtstr, char* nlsfmtstr,
+                                int location);
 #ifdef USE_SPQ
 extern bool get_cast_func(Oid oidSrc, Oid oidDest, bool *is_binary_coercible, Oid *oidCastFunc, CoercionPathType *pathtype);
 #endif

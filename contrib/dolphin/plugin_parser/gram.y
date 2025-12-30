@@ -4697,6 +4697,17 @@ AlterTableStmt:
 					n->need_rewrite_sql = false;
 					$$ = (Node *)n;
 				}
+		|	ALTER TABLE CONCURRENTLY relation_expr MODIFY_P '(' modify_column_cmds ')'
+				{
+					AlterTableStmt *n = makeNode(AlterTableStmt);
+					n->concurrent = true;
+					n->relation = $4;
+					n->cmds = $7;
+					n->relkind = OBJECT_TABLE;
+					n->missing_ok = false;
+					n->need_rewrite_sql = false;
+					$$ = (Node *)n;
+				}
 		/* REDISANYVALUE key value only used in tsdb redis command, it is used in OM code */
 		|	ALTER TABLE relation_expr REDISANYVALUE
 				{
@@ -4716,6 +4727,20 @@ AlterTableStmt:
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 					n->relation = $5;
 					n->cmds = $8;
+					n->relkind = OBJECT_TABLE;
+					n->missing_ok = true;
+					n->need_rewrite_sql = false;
+					$$ = (Node *)n;
+				}
+		/*
+		 * ALTER TABLE CONCURRENTLY IF_P EXISTS MODIFY_P '(' modify_column_cmds ')'
+		 */
+		|	ALTER TABLE CONCURRENTLY IF_P EXISTS relation_expr MODIFY_P '(' modify_column_cmds ')'
+				{
+					AlterTableStmt *n = makeNode(AlterTableStmt);
+					n->concurrent = true;
+					n->relation = $6;
+					n->cmds = $9;
 					n->relkind = OBJECT_TABLE;
 					n->missing_ok = true;
 					n->need_rewrite_sql = false;
@@ -4742,6 +4767,29 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
+		|	ALTER TABLE CONCURRENTLY relation_expr alter_table_or_partition
+				{
+					if ($5->length == 1 && ((AlterTableCmd*)lfirst($5->head))->subtype == AT_RebuildAllIndexOnPartition)
+					{
+						ReindexStmt *n = makeNode(ReindexStmt);
+						n->kind = OBJECT_TABLE_PARTITION;
+						n->concurrent = true;
+						n->relation = $4;
+						n->name = ((AlterTableCmd*)lfirst($5->head))->name;
+						$$ = (Node *)n;
+					}
+					else
+					{
+						AlterTableStmt *n = makeNode(AlterTableStmt);
+						n->concurrent = true;
+						n->relation = $4;
+						n->cmds = $5;
+						n->relkind = OBJECT_TABLE;
+						n->missing_ok = false;
+						n->need_rewrite_sql = false;
+						$$ = (Node *)n;
+					}
+				}
 		|	ALTER TABLE IF_P EXISTS relation_expr alter_table_or_partition
 				{
 					if ($6->length == 1 && ((AlterTableCmd*)lfirst($6->head))->subtype == AT_RebuildAllIndexOnPartition)
@@ -4757,6 +4805,29 @@ AlterTableStmt:
 						AlterTableStmt *n = makeNode(AlterTableStmt);
 						n->relation = $5;
 						n->cmds = $6;
+						n->relkind = OBJECT_TABLE;
+						n->missing_ok = true;
+						n->need_rewrite_sql = false;
+						$$ = (Node *)n;
+					}
+				}
+		|	ALTER TABLE CONCURRENTLY IF_P EXISTS relation_expr alter_table_or_partition
+				{
+					if ($7->length == 1 && ((AlterTableCmd*)lfirst($7->head))->subtype == AT_RebuildAllIndexOnPartition)
+					{
+						ReindexStmt *n = makeNode(ReindexStmt);
+						n->kind = OBJECT_TABLE_PARTITION;
+						n->concurrent = true;
+						n->relation = $6;
+						n->name = ((AlterTableCmd*)lfirst($7->head))->name;
+						$$ = (Node *)n;
+					}
+					else
+					{
+						AlterTableStmt *n = makeNode(AlterTableStmt);
+						n->concurrent = true;
+						n->relation = $6;
+						n->cmds = $7;
 						n->relkind = OBJECT_TABLE;
 						n->missing_ok = true;
 						n->need_rewrite_sql = false;
@@ -27991,7 +28062,7 @@ VacuumStmt:
 					n->relation = $3;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact opt_concurrently
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -28001,6 +28072,7 @@ VacuumStmt:
 						n->options |= VACOPT_VERBOSE;
 					if ($5)
 						n->options |= VACOPT_COMPACT;
+					n->concurrent = $6;
 					int options = 0;
 					options |= VACOPT_VACUUM | VACOPT_FULL | VACOPT_COMPACT;
 					if (n->options & VACOPT_COMPACT)
@@ -28026,7 +28098,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact opt_concurrently dolphin_qualified_name
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -28036,6 +28108,7 @@ VacuumStmt:
 						n->options |= VACOPT_VERBOSE;
 					if ($5)
 						n->options |= VACOPT_COMPACT;
+					n->concurrent = $6;
 					int options = 0;
 					options |= VACOPT_VACUUM | VACOPT_FULL | VACOPT_COMPACT;
 					if (n->options & VACOPT_COMPACT)
@@ -28057,11 +28130,11 @@ VacuumStmt:
 					}
 					n->freeze_min_age = $3 ? 0 : -1;
 					n->freeze_table_age = $3 ? 0 : -1;
-					n->relation = $6;
+					n->relation = $7;
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name PARTITION '('name')'
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact opt_concurrently dolphin_qualified_name PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -28076,14 +28149,15 @@ VacuumStmt:
 						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
 							errmsg("COMPACT can not be used with PARTITION")));
 					}
+					n->concurrent = $6;
 					n->freeze_min_age = $3 ? 0 : -1;
 					n->freeze_table_age = $3 ? 0 : -1;
-					n->relation = $6;
+					n->relation = $7;
 					n->va_cols = NIL;
-					$6->partitionname = $9;
+					$7->partitionname = $10;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name SUBPARTITION '('name')'
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact opt_concurrently dolphin_qualified_name SUBPARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -28098,16 +28172,17 @@ VacuumStmt:
 						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
 							errmsg("COMPACT can not be used with SUBPARTITION")));
 					}
+					n->concurrent = $6;
 					n->freeze_min_age = $3 ? 0 : -1;
 					n->freeze_table_age = $3 ? 0 : -1;
-					n->relation = $6;
+					n->relation = $7;
 					n->va_cols = NIL;
-					$6->subpartitionname = $9;
+					$7->subpartitionname = $10;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact AnalyzeStmt
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact opt_concurrently AnalyzeStmt
 				{
-					VacuumStmt *n = (VacuumStmt *) $6;
+					VacuumStmt *n = (VacuumStmt *) $7;
 					n->options |= VACOPT_VACUUM;
 					if ($2)
 						n->options |= VACOPT_FULL;
@@ -28120,6 +28195,7 @@ VacuumStmt:
 						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
 							errmsg("COMPACT can not be used with ANALYZE")));
 					}
+					n->concurrent = $6;
 					n->freeze_min_age = $3 ? 0 : -1;
 					n->freeze_table_age = $3 ? 0 : -1;
 					$$ = (Node *)n;
