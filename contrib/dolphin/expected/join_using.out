@@ -2683,13 +2683,11 @@ select * from t_v15 natural join t_v21;
 (0 rows)
 
 select * from t_v15 natural join t_v22;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v15 natural join t_v23;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2725,8 +2723,6 @@ select * from t_v15 natural join t_v29;
 (0 rows)
 
 select * from t_v15 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
  col1 
 ------
 (0 rows)
@@ -2849,13 +2845,11 @@ select * from t_v16 natural join t_v21;
 (0 rows)
 
 select * from t_v16 natural join t_v22;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v16 natural join t_v23;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2891,8 +2885,6 @@ select * from t_v16 natural join t_v29;
 (0 rows)
 
 select * from t_v16 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
  col1 
 ------
 (0 rows)
@@ -3974,13 +3966,11 @@ WARNING:  invalid input syntax for type timestamp: "1.23a                       
 (0 rows)
 
 select * from t_v22 natural join t_v15;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v16;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
@@ -4159,13 +4149,11 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 (0 rows)
 
 select * from t_v23 natural join t_v15;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v23 natural join t_v16;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -5409,13 +5397,11 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 (0 rows)
 
 select * from t_v30 natural join t_v15;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v30 natural join t_v16;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
