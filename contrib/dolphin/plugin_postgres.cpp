@@ -355,7 +355,7 @@ void init_plugin_object()
     u_sess->hook_cxt.deparseQueryHook = (void*)deparse_query;
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.transformExprHook = (void*)transformExpr;
-    u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
+    u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExprByRecursion;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;

@@ -5131,6 +5131,7 @@ bool UnlockAccountToHashTable(Oid roleid, bool superlock, bool isreset)
     bool found = false;
     AccountLockHashEntry *account_entry = NULL;
     int2 status;
+    char* rolename = NULL;
 
     /* user account has not been locked if account_table is null */
     if (g_instance.policy_cxt.account_table == NULL) {
@@ -5171,6 +5172,10 @@ bool UnlockAccountToHashTable(Oid roleid, bool superlock, bool isreset)
                 account_entry->rolstatus = UNLOCK_STATUS;
                 SpinLockRelease(&account_entry->mutex);
                 ReportResumeAlarmLockAccount(false);
+
+                rolename = GetUserNameFromId(roleid);
+                pgaudit_lock_or_unlock_user(false, rolename);
+                pfree_ext(rolename);
                 return true;
             }
             SpinLockRelease(&account_entry->mutex);
