@@ -128,6 +128,7 @@ select format(123123.456,1000000000000,'de_DE');
 select format(123123.456,10000000000000,'de_DE');
 select format(123123.456,545634633746483465436546345635436587463,'de_DE');
 select format(123123.456,'513513413546587468514351345435413','de_DE');
+select format(12.2,session_user());
 
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;
