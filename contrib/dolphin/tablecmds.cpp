@@ -277,6 +277,10 @@ struct dropmsgstrings {
     const char* drophint_msg;
 };
 
+typedef struct {
+    char* sql_statement;
+} sql_statement_context;
+
 static const struct dropmsgstrings dropmsgstringarray[] = {{RELKIND_RELATION,
                                                                ERRCODE_UNDEFINED_TABLE,
                                                                gettext_noop("table \"%s\" does not exist"),
@@ -8711,6 +8715,7 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
     ListCell* lcmd = NULL;
     bool concurrently = parsetree != NULL ? parsetree->concurrent : false;
     bool enableOnlineDDL = false;
+    bool relationIsPartitioned = RELATION_IS_PARTITIONED(rel);
     OnlineDDLType onlineDDLType = ONLINE_DDL_INVALID;
 #ifdef PGXC
     RedistribState* redistribState = NULL;
@@ -8813,12 +8818,13 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 
     /* Release AccessExclusiveLock which is locked when rewriting catalogs. */
     if (enableOnlineDDL) {
-        LockRelation(rel, ShareUpdateExclusiveLock);
-        UnlockRelation(rel, AccessExclusiveLock);
-        ereport(NOTICE,
-                (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
+        if (!relationIsPartitioned) {
+            LockRelation(rel, ShareUpdateExclusiveLock);
+            UnlockRelation(rel, AccessExclusiveLock);
+        }
+        ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
     }
-
+    
 #ifdef PGXC
     /* Invalidate cache for redistributed relation */
     if (doRedistribute) {
@@ -8836,9 +8842,13 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
         FreeRedistribState(redistribState);
 #endif
 
-    /* online-ddl: phase 2 3, baseline copy and incremental data catchup */
-    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
-    if (operators != NULL && enableOnlineDDL) {
+    /* online-ddl: phase 2, 3: baseline copy and incremental data catchup */
+    if (enableOnlineDDL) {
+        OnlineDDLRelOperators* operators = RelationGetOnlineDDLOperators(rel);
+        if (operators == NULL) {
+            ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
+                errmsg("[Online-DDL] Online DDL operators is null for relation %s", RelationGetRelationName(rel))));
+        }
         operators->setStatus(ONLINE_DDL_STATUS_BASELINE_COPY);
     }
     /* Phase 3: scan/rewrite tables as needed */
@@ -10721,9 +10731,7 @@ static void repl_update_addcolumn_default(AlteredTableInfo* tab, Relation oldrel
         foreach (l, notnull_attrs) {
             int attn = lfirst_int(l);
 
-            /* replace heap_attisnull with relationAttIsNull
-            * due to altering table instantly
-            */
+            /* replace heap_attisnull with relationAttIsNull due to altering table instantly */
             if (relationAttIsNull(htup, attn + 1, newTupDesc))
                 ereport(ERROR, (errcode(ERRCODE_NOT_NULL_VIOLATION),
                     errmsg("column \"%s\" contains null values", NameStr(newTupDesc->attrs[attn].attname))));
@@ -10810,11 +10818,7 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
     bool need_dml_change_col = false;
 
     OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
-    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
-    if (operators != NULL) {
-        Assert(operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
-        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
-    }
+    bool enableOnlineDDL = operators != NULL;
 
     /*
      * Prepare a BulkInsertState and options for heap_insert. Because we're
@@ -11102,9 +11106,7 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                 {
                     int attn = lfirst_int(l);
 
-                    /* replace heap_attisnull with relationAttIsNull
-                     * due to altering table instantly
-                     */
+                    /* replace heap_attisnull with relationAttIsNull due to altering table instantly */
                     if (tableam_tops_tuple_attisnull(utuple, attn + 1, newTupDesc))
                             ereport(ERROR,
                                     (errcode(ERRCODE_NOT_NULL_VIOLATION),
@@ -11244,7 +11246,6 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                             values[ex->attnum - 1] = ExecEvalExpr(ex->exprstate, econtext, &isnull[ex->attnum - 1]);
                         }
 
-
                         if (ex->is_autoinc) {
                             need_autoinc = (autoinc_attnum > 0);
                         }
@@ -11294,9 +11295,7 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                     foreach (l, notnull_attrs) {
                         int attn = lfirst_int(l);
 
-                        /* replace heap_attisnull with relationAttIsNull
-                        * due to altering table instantly
-                        */
+                        /* replace heap_attisnull with relationAttIsNull due to altering table instantly */
                         if (relationAttIsNull(tuple, attn + 1, newTupDesc))
                             ereport(ERROR, (errcode(ERRCODE_NOT_NULL_VIOLATION),
                                 errmsg("column \"%s\" contains null values", NameStr(newTupDesc->attrs[attn].attname))));
@@ -11309,7 +11308,7 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                         switch (con->contype) {
                             case CONSTR_CHECK:
                             {
-                                if (estate->es_is_flt_frame){
+                                if (estate->es_is_flt_frame) {
                                     foreach (lc, con->qualstate) {
                                         ExprState* exprState = (ExprState*)lfirst(lc);
 
@@ -11320,15 +11319,15 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                                                             con->name)));
                                     }
                                 } else {
-                                    if (!ExecQualByRecursion(con->qualstate, econtext, true)){
+                                    if (!ExecQualByRecursion(con->qualstate, econtext, true)) {
                                         ereport(ERROR,
                                                 (errcode(ERRCODE_CHECK_VIOLATION),
                                                     errmsg("check constraint \"%s\" is violated by some row",
                                                             con->name)));
                                     }
                                 }
-                                }
-                                    break;
+                            }
+                                break;
                             case CONSTR_FOREIGN:
                                 /* Nothing to do here */
                                 break;
@@ -11354,12 +11353,11 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                         }
                     } else {
                         (void) tableam_tuple_insert(newrel, tuple, mycid, hi_options, bistate);
-                        ItemPointer newCtid = &((HeapTuple)tuple)->t_self;
                         if (autoinc > 0) {
                             SetRelAutoIncrement(oldrel, newTupDesc, autoinc);
                         }
                         if (enableOnlineDDL && operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
-                            operators->insertCtidMap(oldCtid, newCtid);
+                            operators->insertCtidMap(oldCtid, RelationGetRelid(oldrel), &((HeapTuple)tuple)->t_self);
                         }
                     }
                 }
@@ -11430,19 +11428,6 @@ static void ATRewriteTable(AlteredTableInfo* tab, Relation oldrel, Relation newr
     } else {
         ATRewriteTableInternal(tab, oldrel, newrel);
     }
-
-    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
-    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
-    if (operators != NULL) {
-        /* Reindex tmp relation. */
-        if (operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
-            ReindexRelation(newrel->rd_id, REINDEX_REL_SUPPRESS_INDEX_USE |REINDEX_REL_CHECK_CONSTRAINTS,
-                            REINDEX_ALL_INDEX, NULL, NULL);
-        }
-        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
-        operators->OnlineDDLAppendIncrementalData(oldrel, newrel, tab);
-    }
-
 }
 
 #ifndef ENABLE_MULTIPLE_NODES
@@ -13412,7 +13397,33 @@ List* GetOriginalViewQuery(Oid rw_oid)
     return evAction;
 }
 
-List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid)
+static bool sql_statement_walker(Node* node, void* context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    sql_statement_context* ctx = (sql_statement_context*)context;
+    if (IsA(node, Query)) {
+        Query* qry = (Query*)node;
+        if (qry->hasRecursive && qry->sql_statement != NULL) {
+            ctx->sql_statement = qry->sql_statement;
+            return true;
+        }
+        return query_tree_walker((Query*)node, (bool (*)())sql_statement_walker, context, 0);
+    }
+    return expression_tree_walker(node, (bool (*)())sql_statement_walker, context);
+}
+
+static char* GetSqlStatementForSWCB(Query* query)
+{
+    sql_statement_context ctx;
+    ctx.sql_statement = NULL;
+    (void)sql_statement_walker((Node*)query, (void*)&ctx);
+    return ctx.sql_statement;
+}
+
+List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid, char* origin_def)
 {
     List* evAction = NIL;
     Query* query = NULL;
@@ -13421,7 +13432,7 @@ List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid)
         elog(ERROR, "Cannot find the view with oid %u.", view_oid);
     }
     Form_pg_class reltup = (Form_pg_class)GETSTRUCT(tup);
-    char* view_def = GetCreateViewCommand(NameStr(reltup->relname), tup, reltup, rw_oid, view_oid, false);
+    char* view_def = GetCreateViewCommand(NameStr(reltup->relname), tup, reltup, rw_oid, view_oid, false, origin_def);
     ReleaseSysCache(tup);
 
     List* raw_parsetree_list = raw_parser(view_def);
@@ -13448,7 +13459,7 @@ List* GetRefreshedViewQuery(Oid view_oid, Oid rw_oid)
     return evAction;
 }
 
-void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
+void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str, char* origin_def)
 {
     List *new_query_str = NIL;
     ScanKeyData entry;
@@ -13478,28 +13489,34 @@ void UpdatePgrewriteForView(Oid rw_oid, List* evAction, List **query_str)
         heap_close(rewrite_rel, RowExclusiveLock);
         return;
     }
-    Query* query = (Query*)linitial(evAction);
-    StringInfoData buf;
-    initStringInfo(&buf);
-    Relation ev_relation = heap_open(rewrite_form->ev_class, AccessShareLock);
-    get_query_def(query,
-        &buf,
-        NIL,
-        RelationGetDescr(ev_relation),
-        0,
-        -1,
-        0,
-        false,
-        false,
-        NULL,
-        false,
-        false);
-    appendStringInfo(&buf, ";");
+
     ViewInfoForAdd * info = static_cast<ViewInfoForAdd *>(palloc(sizeof(ViewInfoForAdd)));
     info->ev_class = rewrite_form->ev_class;
-    info->query_string = pstrdup(buf.data);
-    heap_close(ev_relation, AccessShareLock);
-    FreeStringInfo(&buf);
+    if (origin_def != NULL) {
+        info->query_string = pstrdup(origin_def);
+    } else {
+        Query* query = (Query*)linitial(evAction);
+        StringInfoData buf;
+        initStringInfo(&buf);
+        Relation ev_relation = heap_open(rewrite_form->ev_class, AccessShareLock);
+        get_query_def(query,
+            &buf,
+            NIL,
+            RelationGetDescr(ev_relation),
+            0,
+            -1,
+            0,
+            false,
+            false,
+            NULL,
+            false,
+            false);
+        appendStringInfo(&buf, ";");
+
+        info->query_string = pstrdup(buf.data);
+        heap_close(ev_relation, AccessShareLock);
+        FreeStringInfo(&buf);
+    }
     new_query_str = lappend(new_query_str, info);
     *query_str = new_query_str;
     systable_endscan(rewrite_scan);
@@ -13517,10 +13534,16 @@ void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction,
      */
     UpdatePgrewriteForView(rw_objid, evAction, NULL);
 
+    /*
+     * For the SWCB scenario, it is currently impossible to deparse
+     * the sql statement from the query tree. We store the sql statement
+     * in sql_statement field of the Query.
+     */
+    char* origin_def = GetSqlStatementForSWCB(query);
     List* newEvAction = NIL;
     PG_TRY();
     {
-        newEvAction = GetRefreshedViewQuery(viewid, rw_objid);
+        newEvAction = GetRefreshedViewQuery(viewid, rw_objid, origin_def);
     }
     PG_CATCH();
     {
@@ -13550,7 +13573,7 @@ void UpdateAttrAndRewriteForView(Oid viewid, Oid rw_objid, List* originEvAction,
     freshed_query = UpdateRangeTableOfViewParse(viewid, freshed_query);
 
     /* update pg_rewrite with final ev_action */
-    UpdatePgrewriteForView(rw_objid, list_make1(freshed_query), query_str);
+    UpdatePgrewriteForView(rw_objid, list_make1(freshed_query), query_str, origin_def);
 
     list_free_deep(newEvAction);
 }
@@ -33567,10 +33590,10 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
 
     List* srcIndexOidList = NIL;
     List* destIndexOidList = NIL;
-
-    ereport(ONLINE_DDL_LOG_LEVEL, (errmsg("ExecRewriteRowTable: oldRelation = %u, toastoid = %u, newRelation = %u, toastoid = %u.",
-                              oldRel->rd_id, oldRel->rd_rel->reltoastrelid, newRel->rd_id, newRel->rd_rel->reltoastrelid)));
     if (enableOnlineDDL) {
+        ereport(ONLINE_DDL_LOG_LEVEL,
+            (errmsg("ExecRewriteRowTable: oldRelation = %u, toastoid = %u, newRelation = %u, toastoid = %u.",
+                    oldRel->rd_id, oldRel->rd_rel->reltoastrelid, newRel->rd_id, newRel->rd_rel->reltoastrelid)));
         OnlineDDLCopyRelationIndexs(oldRel, newRel, &srcIndexOidList, &destIndexOidList);
     }
     /*
@@ -33581,6 +33604,17 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
         oldRel->rd_node.opt = tab->opt;
     }
     ATRewriteTable(tab, oldRel, newRel);
+
+    if (enableOnlineDDL) {
+        /* Reindex tmp relation. */
+        if (operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
+            ReindexRelation(newRel->rd_id, REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+                            REINDEX_ALL_INDEX, NULL, NULL);
+        }
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+        operators->OnlineDDLAppendIncrementalData(oldRel, newRel, tab);
+    }
+
     heap_close(oldRel, NoLock);
     heap_close(newRel, NoLock);
 
@@ -33639,8 +33673,11 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
     Relation partitionedTableRel = NULL;
     TupleDesc partTabHeapDesc = NULL;
     HeapTuple tuple = NULL;
+    List* oldPartRelList = NIL;
     List* tempTableOidList = NIL;
     List* partitions = NULL;
+    List* srcIndexOidList = NIL;
+    List* destIndexOidList = NIL;
     ListCell* cell = NULL;
     Oid tempTableOid = InvalidOid;
     Datum partTabRelOptions = 0;
@@ -33650,13 +33687,22 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
     ForbidToChangeTableSpaceOfPartitionedTable(tab);
     ForbidToRewriteOrTestCstoreIndex(tab);
 
+    Oid OIDNewHeap = InvalidOid;
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+
     partitionedTableRel = heap_open(tab->relid, AccessExclusiveLock);
+
+    if (enableOnlineDDL) {
+        UnlockRelationOid(tab->relid, AccessExclusiveLock);
+    }
+
     partTabHeapDesc = RelationGetDescr(partitionedTableRel);
 
     tuple = SearchSysCache1(RELOID, ObjectIdGetDatum(tab->relid));
     if (!HeapTupleIsValid(tuple)) {
-        ereport(
-            ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", tab->relid)));
+        ereport(ERROR,
+                (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %u", tab->relid)));
     }
     partTabRelOptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isNull);
     if (isNull) {
@@ -33716,9 +33762,12 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
         partitions = relationGetPartitionList(partitionedTableRel, AccessExclusiveLock);
         foreach (cell, partitions) {
             Partition partition = (Partition)lfirst(cell);
+            if (enableOnlineDDL) {
+                UnlockPartition(partitionedTableRel->rd_id, partition->pd_id, AccessExclusiveLock, PARTITION_LOCK);
+            }
             Relation oldRel = partitionGetRelation(partitionedTableRel, partition);
+            oldPartRelList = lappend(oldPartRelList, oldRel);
             Datum relOptions = 0;
-
             /*
              * Make new partition heap with the new reloptions when modifying
              * compressed options.
@@ -33737,26 +33786,59 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
                 oldRel->rd_rel->reltablespace);
 
             Relation newRel = heap_open(OIDNewHeap, lockmode);
+            if (enableOnlineDDL) {
+                OnlineDDLCopyRelationIndexs(partitionedTableRel, newRel, &srcIndexOidList, &destIndexOidList);
+            }
             /* rewrite the temp table by partition */
             ATRewriteTable(tab, oldRel, newRel);
             heap_close(newRel, NoLock);
 
             /* swap the temp table and partition */
-            finishPartitionHeapSwap(oldRel->rd_id, OIDNewHeap, false, u_sess->utils_cxt.RecentXmin,
-                GetOldestMultiXactId(), false, tab);
+            if (!enableOnlineDDL) {
+                finishPartitionHeapSwap(oldRel->rd_id, OIDNewHeap, false, u_sess->utils_cxt.RecentXmin,
+                                        GetOldestMultiXactId(), false, tab);
+            }
 
             /* record the temp table oid for dropping */
             tempTableOidList = lappend_oid(tempTableOidList, OIDNewHeap);
+            if (!enableOnlineDDL) {
+                releaseDummyRelation(&oldRel);
+            }
+        }
+    }
 
-            releaseDummyRelation(&oldRel);
+    if (enableOnlineDDL) {
+        foreach (cell, tempTableOidList) {
+            Oid new_rel_id = lfirst_oid(cell);
+            ReindexRelation(new_rel_id, REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+                            REINDEX_ALL_INDEX, NULL, NULL);
+        }
+
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+        operators->OnlineDDLAppendIncrementalData(oldPartRelList, tempTableOidList, tab);
+
+        /* swap the temp table and partition */
+        ListCell* oldCell = NULL;
+        ListCell* newCell = NULL;
+        forboth(oldCell, oldPartRelList, newCell, tempTableOidList)
+        {
+            Relation oldRelation = (Relation)lfirst(oldCell);
+            Oid oldRelId = oldRelation->rd_id;
+            Oid newRelId = lfirst_oid(newCell);
+
+            finishPartitionHeapSwap(oldRelId, newRelId, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId(),
+                                    false, tab);
+            releaseDummyRelation(&oldRelation);
         }
     }
 
     ReleaseSysCache(tuple);
 
     /* rebuild index of partitioned table */
-    reindexFlags = REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS;
-    (void)ReindexRelation(tab->relid, reindexFlags, REINDEX_ALL_INDEX, NULL);
+    if (!enableOnlineDDL) {
+        reindexFlags = REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS;
+        (void)ReindexRelation(tab->relid, reindexFlags, REINDEX_ALL_INDEX, NULL);
+    }
 
     /* drop the temp tables for swapping */
     foreach (cell, tempTableOidList) {
@@ -33772,7 +33854,12 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
     }
     list_free_ext(tempTableOidList);
 
-    releasePartitionList(partitionedTableRel, &partitions, AccessExclusiveLock);
+    if (enableOnlineDDL) {
+        releasePartitionList(partitionedTableRel, &partitions, NoLock);
+    } else {
+        releasePartitionList(partitionedTableRel, &partitions, AccessExclusiveLock);
+    }
+
     heap_close(partitionedTableRel, NoLock);
 
     /* clear all attrinitdefval */
@@ -35155,7 +35242,7 @@ static void ATPrepAlterModifyColumn(List** wqueue, AlteredTableInfo* tab, Relati
 }
 
 char* GetCreateViewCommand(const char *rel_name, HeapTuple tup, Form_pg_class reltup, Oid pg_rewrite_oid, Oid view_oid,
-    bool keep_star)
+    bool keep_star, char* origin_def)
 {
     StringInfoData buf;
     ViewInfoForAdd* view_info = NULL;
@@ -35196,6 +35283,10 @@ char* GetCreateViewCommand(const char *rel_name, HeapTuple tup, Form_pg_class re
     }
     pfree_ext(view_options);
     /* concat CREATE VIEW command with query */
+    if (origin_def != NULL) {
+        appendStringInfo(&buf, "AS %s", origin_def);
+        return buf.data;
+    }
     view_info = GetViewInfoFirstAfter(rel_name, pg_rewrite_oid, keep_star);
     if (view_info == NULL) {
         pfree_ext(buf.data);

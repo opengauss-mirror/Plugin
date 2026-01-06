@@ -334,6 +334,7 @@ static void setPathObject(JsonbIterator **it, Datum *path_elems, bool *path_null
                             int level, Jsonb *newval, uint32 npairs, int op_type);
 static void setPathArray(JsonbIterator **it, Datum *path_elems, bool *path_nulls, int path_len, JsonbParseState **st,
                             int level, Jsonb *newval, int nelems, int op_type);
+static JsonbValue *IteratorConcat(JsonbIterator **it1, JsonbIterator **it2, JsonbParseState **state);
 
 /* semantic action functions for get json object values */
 static void OvalsArrayStart(void* stateIn);
@@ -4490,6 +4491,136 @@ Datum json_textcontains_text(PG_FUNCTION_ARGS)
     }
     pfree(target);
     PG_RETURN_BOOL(context.result);
+}
+
+/*
+ * SQL function jsonb_concat (jsonb, jsonb)
+ *
+ * function for || operator
+ */
+Datum jsonb_concat(PG_FUNCTION_ARGS)
+{
+    Jsonb       *jb1 = PG_GETARG_JSONB(0);
+    Jsonb       *jb2 = PG_GETARG_JSONB(1);
+    JsonbParseState *state = NULL;
+    JsonbValue *res;
+    JsonbIterator *it1;
+    JsonbIterator *it2;
+
+    /*
+     * If one of the jsonb is empty, just return the other if it's not scalar
+     * and both are of the same kind.  If it's a scalar or they are of
+     * different kinds we need to perform the concatenation even if one is
+     * empty.
+     */
+    if (JB_ROOT_IS_OBJECT(jb1) == JB_ROOT_IS_OBJECT(jb2)) {
+        if (JB_ROOT_COUNT(jb1) == 0 && !JB_ROOT_IS_SCALAR(jb2))
+            PG_RETURN_JSONB(jb2);
+        else if (JB_ROOT_COUNT(jb2) == 0 && !JB_ROOT_IS_SCALAR(jb1))
+            PG_RETURN_JSONB(jb1);
+    }
+
+    it1 = JsonbIteratorInit(VARDATA_ANY(jb1));
+    it2 = JsonbIteratorInit(VARDATA_ANY(jb2));
+
+    res = IteratorConcat(&it1, &it2, &state);
+
+    Assert(res != NULL);
+
+    PG_RETURN_JSONB(JsonbValueToJsonb(res));
+}
+
+/*
+ * Iterate over all jsonb objects and merge them into one.
+ * The logic of this function copied from the same hstore function,
+ * except the case, when it1 & it2 represents jbvObject.
+ * In that case we just append the content of it2 to it1 without any
+ * verifications.
+ */
+static JsonbValue *IteratorConcat(JsonbIterator **it1, JsonbIterator **it2,
+    JsonbParseState **state)
+{
+    JsonbValue v1;
+    JsonbValue v2;
+    JsonbValue *res = NULL;
+    int r1;
+    int r2;
+
+    int rk1 = JsonbIteratorNext(it1, &v1, false);
+    int rk2 = JsonbIteratorNext(it2, &v2, false);
+    /*
+     * JsonbIteratorNext reports raw scalars as if they were single-element
+     * arrays; hence we only need consider "object" and "array" cases here.
+     */
+    if (rk1 == WJB_BEGIN_OBJECT && rk2 == WJB_BEGIN_OBJECT) {
+        /*
+         * Both inputs are objects.
+         *
+         * Append all the tokens from v1 to res, except last WJB_END_OBJECT
+         * (because res will not be finished yet).
+         */
+        pushJsonbValue(state, rk1, NULL);
+        while ((r1 = JsonbIteratorNext(it1, &v1, true)) != WJB_END_OBJECT)
+            pushJsonbValue(state, r1, &v1);
+
+        /*
+         * Append all the tokens from v2 to res, including last WJB_END_OBJECT
+         * (the concatenation will be completed).  Any duplicate keys will
+         * automatically override the value from the first object.
+         */
+        while ((r2 = JsonbIteratorNext(it2, &v2, true)) != WJB_DONE)
+            res = pushJsonbValue(state, r2, r2 != WJB_END_OBJECT ? &v2 : NULL);
+    } else if (rk1 == WJB_BEGIN_ARRAY && rk2 == WJB_BEGIN_ARRAY) {
+        /*
+         * Both inputs are arrays.
+         */
+        pushJsonbValue(state, rk1, NULL);
+
+        while ((r1 = JsonbIteratorNext(it1, &v1, true)) != WJB_END_ARRAY) {
+            Assert(r1 == WJB_ELEM);
+            pushJsonbValue(state, r1, &v1);
+        }
+
+        while ((r2 = JsonbIteratorNext(it2, &v2, true)) != WJB_END_ARRAY) {
+            Assert(r2 == WJB_ELEM);
+            pushJsonbValue(state, WJB_ELEM, &v2);
+        }
+
+        /* NULL is a signal to sort */
+        res = pushJsonbValue(state, WJB_END_ARRAY, NULL);
+    } else if (rk1 == WJB_BEGIN_OBJECT) {
+        /*
+         * We have object || array.
+         */
+        Assert(rk2 == WJB_BEGIN_ARRAY);
+
+        pushJsonbValue(state, WJB_BEGIN_ARRAY, NULL);
+
+        pushJsonbValue(state, WJB_BEGIN_OBJECT, NULL);
+        while ((r1 = JsonbIteratorNext(it1, &v1, true)) != WJB_DONE)
+            pushJsonbValue(state, r1, r1 != WJB_END_OBJECT ? &v1 : NULL);
+
+        while ((r2 = JsonbIteratorNext(it2, &v2, true)) != WJB_DONE)
+            res = pushJsonbValue(state, r2, r2 != WJB_END_ARRAY ? &v2 : NULL);
+    } else {
+        /*
+         * We have array || object.
+         */
+        Assert(rk1 == WJB_BEGIN_ARRAY && rk2 == WJB_BEGIN_OBJECT);
+
+        pushJsonbValue(state, WJB_BEGIN_ARRAY, NULL);
+
+        while ((r1 = JsonbIteratorNext(it1, &v1, true)) != WJB_END_ARRAY)
+            pushJsonbValue(state, r1, &v1);
+
+        pushJsonbValue(state, WJB_BEGIN_OBJECT, NULL);
+        while ((r2 = JsonbIteratorNext(it2, &v2, true)) != WJB_DONE)
+            pushJsonbValue(state, r2, r2 != WJB_END_OBJECT ? &v2 : NULL);
+
+        res = pushJsonbValue(state, WJB_END_ARRAY, NULL);
+    }
+
+    return res;
 }
 
 #ifdef DOLPHIN

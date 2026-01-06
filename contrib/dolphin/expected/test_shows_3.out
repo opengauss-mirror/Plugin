@@ -14,6 +14,7 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
+ ogai
  performance_schema
  pg_catalog
  pg_toast
@@ -23,7 +24,7 @@ show databases;
  snapshot
  sqladvisor
  xmltype
-(20 rows)
+(21 rows)
 
 create schema aa1;
 create schema aa2;
@@ -70,13 +71,14 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
+ ogai
  performance_schema
  pg_catalog
  public
  sqladvisor
  u1
  xmltype
-(11 rows)
+(12 rows)
 
 set role u2 password 'abc@1234';
 show databases;
@@ -87,13 +89,14 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
+ ogai
  performance_schema
  pg_catalog
  public
  sqladvisor
  u2
  xmltype
-(11 rows)
+(12 rows)
 
 \c contrib_regression
 drop user u1;
