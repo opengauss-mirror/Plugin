@@ -82,5 +82,12 @@ show index from show_index_tbl;
 
 drop table show_index_tbl;
 
+create schema test_show_index;
+set current_schema = test_show_index;
+create table test_sch (a int);
+show index from test_sch;
+drop table test_sch;
+drop schema test_show_index;
+
 \c postgres
 drop database if exists db_show_2;
