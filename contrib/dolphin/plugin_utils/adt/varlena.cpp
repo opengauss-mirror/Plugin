@@ -72,6 +72,21 @@
 #include "catalog/pg_cast.h"
 #include "plugin_protocol/auth.h"
 
+#ifdef DOLPHIN
+#ifdef HAVE_LIBXML2
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+#include <libxml/xmlwriter.h>
+#include <libxml/xmlerror.h>
+#include <libxml/xmlversion.h>
+#include <libxml/uri.h>
+#include <libxml/parserInternals.h>
+#include <libxml/chvalid.h>
+#endif
+#endif
+
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
 #define SUBSTR_A_CMPT_OFFSET 4
@@ -146,6 +161,68 @@ typedef struct {
     pg_locale_t locale;
 #endif
 } VarStringSortSupport;
+
+#ifdef DOLPHIN
+#ifdef HAVE_LIBXML2
+/* State definitions */
+typedef enum {
+    STATE_NORMAL,           /* Normal state */
+    STATE_IN_SINGLE_QUOTE,  /* Inside single-quoted string */
+    STATE_IN_DOUBLE_QUOTE,  /* Inside double-quoted string */
+    STATE_IN_IDENTIFIER     /* Inside identifier */
+} ParserState;
+
+/* XPath function list (must be lowercase) */
+static const char *xpath_functions[] = {
+    "contains", "count", "sum", "concat", "substring",
+    "string-length", "normalize-space", "translate",
+    "boolean", "not", "true", "false", "number", "floor",
+    "ceiling", "round", "position", "last", "local-name",
+    "namespace-uri", "name", "id", "lang", "starts-with",
+    "ends-with", "substring-before", "substring-after",
+    NULL
+};
+
+/* XPath operator list (must be lowercase) */
+static const char *xpath_operators[] = {
+    "or", "and", "div", "mod",
+    NULL
+};
+
+/* XPath axis name list (must be lowercase) */
+static const char *xpath_axes[] = {
+    "ancestor", "ancestor-or-self", "attribute", "child",
+    "descendant", "descendant-or-self", "following",
+    "following-sibling", "namespace", "parent", "preceding",
+    "preceding-sibling", "self",
+    NULL
+};
+
+/* XPath node type list (must be lowercase) */
+static const char *xpath_node_types[] = {
+    "comment", "text", "processing-instruction", "node",
+    NULL
+};
+
+#define MAX_IDENTIFIER_LEN 8192
+
+typedef struct {
+    ParserState state;
+    const char *p;
+    char *q;
+    const char *output_start;
+    char identifier[MAX_IDENTIFIER_LEN];
+    int identifier_len;
+    bool after_slash;
+    bool after_at;
+    bool after_axis;
+    bool in_brackets;
+    bool after_dot;
+    bool in_axis_test;
+    int axis_test_depth;
+} ParserContext;
+#endif
+#endif
 
 /*
  * This should be large enough that most strings will fit, but small enough
@@ -12072,3 +12149,1037 @@ Datum text_to_bit(PG_FUNCTION_ARGS)
     PG_RETURN_VARBIT_P(result);
 }
 #endif
+
+#ifdef DOLPHIN
+#ifdef HAVE_LIBXML2
+static char* update_xml(const char* xml_target, const char* xpath_expr, char* new_xml);
+static char* extract_value(const char* xml_fragment, char* xpath_expression);
+static bool is_identifier_char(char c);
+static bool is_letter_or_underscore(char c);
+static void reset_context_flags(ParserContext *ctx);
+static void handle_string_start(ParserContext *ctx);
+static void handle_relative_path(ParserContext *ctx);
+static void handle_slash(ParserContext *ctx);
+static void handle_at_symbol(ParserContext *ctx);
+static void handle_brackets(ParserContext *ctx, char bracket);
+static void handle_colon(ParserContext *ctx);
+static void handle_parentheses(ParserContext *ctx, char paren);
+static void handle_identifier_start(ParserContext *ctx);
+static void handle_other_characters(ParserContext *ctx);
+static void handle_identifier_state(ParserContext *ctx);
+static void handle_single_quote_state(ParserContext *ctx);
+static void handle_double_quote_state(ParserContext *ctx);
+static void handle_incomplete_identifier(ParserContext *ctx);
+static bool should_convert_identifier(ParserContext *ctx, const char *identifier, const char *lowercase_keyword);
+static const char *handle_operator_in_brackets(ParserContext *ctx, const char *identifier, const char *lowercase_keyword, char next_char);
+static bool check_boundary_before(ParserContext *ctx);
+static bool check_boundary_after(char next_char);
+static void output_identifier(ParserContext *ctx, const char *lowercase_keyword, bool should_convert);
+static const char *find_xpath_keyword(const char *ident, char next_char);
+void preprocess_xpath_for_mysql_compat(const char *input, char *output);
+
+/**
+ * @brief Check if a character is part of an identifier
+ * @param c Character to check
+ * @return true If it's an identifier character
+ * @return false If it's not an identifier character
+ */
+static bool is_identifier_char(char c) {
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') ||
+            c == '_' || c == '-';
+}
+
+/**
+ * @brief Check if a character is a letter or underscore
+ */
+static bool is_letter_or_underscore(char c) {
+    return (c >= 'a' && c <= 'z') || 
+           (c >= 'A' && c <= 'Z') || 
+            c == '_';
+}
+
+/**
+ * @brief Reset context flags to default values
+ */
+static void reset_context_flags(ParserContext *ctx) {
+    ctx->after_slash = false;
+    ctx->after_at = false;
+    ctx->after_axis = false;
+    ctx->after_dot = false;
+    ctx->in_axis_test = false;
+}
+
+/**
+ * @brief Handle string start (single or double quote)
+ */
+static void handle_string_start(ParserContext *ctx) {
+    char quote_char = *ctx->p;
+
+    if (quote_char == '\'' && (ctx->p == ctx->output_start || *(ctx->p - 1) != '\\')) {
+        ctx->state = STATE_IN_SINGLE_QUOTE;
+    } else if (quote_char == '"' && (ctx->p == ctx->output_start || *(ctx->p - 1) != '\\')) {
+        ctx->state = STATE_IN_DOUBLE_QUOTE;
+    }
+
+    *ctx->q++ = *ctx->p++;
+    reset_context_flags(ctx);
+}
+
+/**
+ * @brief Handle relative path '.' or '..'
+ */
+static void handle_relative_path(ParserContext *ctx) {
+    ctx->after_dot = true;
+    ctx->after_slash = false;
+    ctx->after_at = false;
+    ctx->after_axis = false;
+    ctx->in_axis_test = false;
+
+    *ctx->q++ = *ctx->p++;  /* Copy first dot */
+ 
+    /* Handle '..' */
+    if (*ctx->p == '.') {
+        *ctx->q++ = *ctx->p++;  /* Copy second dot */
+    }
+}
+
+/**
+ * @brief Handle slash '/' or '//'
+ */
+static void handle_slash(ParserContext *ctx) {
+    ctx->after_slash = true;
+    ctx->after_at = false;
+    ctx->after_axis = false;
+    ctx->after_dot = false;
+    ctx->in_axis_test = false;
+
+    *ctx->q++ = *ctx->p++;  /* Copy slash */
+
+    /* Handle '//' */
+    if (*ctx->p == '/') {
+        *ctx->q++ = *ctx->p++;  /* Copy second slash */
+    }
+}
+
+/**
+ * @brief Handle '@' symbol
+ */
+static void handle_at_symbol(ParserContext *ctx) {
+    ctx->after_at = true;
+    ctx->after_slash = false;
+    ctx->after_axis = false;
+    ctx->after_dot = false;
+    ctx->in_axis_test = false;
+
+    *ctx->q++ = *ctx->p++;  /* Copy @ */
+}
+
+/**
+ * @brief Handle square brackets '[' or ']'
+ */
+static void handle_brackets(ParserContext *ctx, char bracket) {
+    if (bracket == '[') {
+        ctx->in_brackets = true;
+    } else {
+        ctx->in_brackets = false;
+    }
+
+    reset_context_flags(ctx);
+    ctx->in_axis_test = false;
+
+    *ctx->q++ = *ctx->p++;  /* Copy bracket */
+}
+
+/**
+ * @brief Handle colon ':' or '::'
+ */
+static void handle_colon(ParserContext *ctx) {
+    ctx->after_slash = false;
+    ctx->after_at = false;
+    ctx->after_dot = false;
+
+    *ctx->q++ = *ctx->p++;  /* Copy first colon */
+
+    /* Check if it is axis separator "::" */
+    if (*ctx->p == ':') {
+        ctx->after_axis = true;
+        ctx->in_axis_test = true;   /* Enter axis test mode */
+        ctx->axis_test_depth = 0;   /* Reset nesting depth */
+        *ctx->q++ = *ctx->p++;      /* Copy second colon */
+    } else {
+        ctx->after_axis = false;
+        ctx->in_axis_test = false;
+    }
+}
+
+/**
+ * @brief Handle parentheses '(' or ')'
+ */
+static void handle_parentheses(ParserContext *ctx, char paren) {
+    if (paren == '(') {
+        if (ctx->in_axis_test) {
+           ctx->axis_test_depth++;  /* Increase nesting depth */
+        }
+    } else {
+        if (ctx->in_axis_test) {
+            if (ctx->axis_test_depth > 0) {
+                ctx->axis_test_depth--;  /* Decrease nesting depth */
+            } else {
+                ctx->in_axis_test = false;  /* End axis test */
+            }
+        }
+    }
+
+    reset_context_flags(ctx);
+    *ctx->q++ = *ctx->p++;
+}
+
+/**
+ * @brief Handle identifier start
+ */
+static void handle_identifier_start(ParserContext *ctx) {
+    ctx->state = STATE_IN_IDENTIFIER;
+    ctx->identifier[0] = *ctx->p;  /* Store first character */
+    ctx->identifier_len = 1;       /* Initialize length */
+    ctx->p++;                      /* Move input pointer (character already stored) */
+}
+
+/**
+ * @brief Handle other characters (spaces, digits, operators, etc.)
+ */
+static void handle_other_characters(ParserContext *ctx) {
+    reset_context_flags(ctx);
+
+    /* If it is a space, comma, etc., do not clear in_axis_test */
+    if (*ctx->p != ' ' && *ctx->p != '\t' && *ctx->p != '\n' && *ctx->p != ',') {
+        ctx->in_axis_test = false;
+    }
+
+    *ctx->q++ = *ctx->p++;  /* Copy character directly to output */
+}
+
+/**
+ * @brief Check if the identifier is a known XPath keyword
+ * @param ident Identifier
+ * @param next_char The character after the identifier
+ * @return const char* Corresponding lowercase keyword, NULL if not a keyword
+ */
+static const char *find_xpath_keyword(const char *ident, char next_char) {
+    size_t ident_len = strlen(ident);
+
+    /* Check if it's a function (followed by '(') */
+    if (next_char == '(') {
+        for (int i = 0; xpath_functions[i] != NULL; i++) {
+            if (strcasecmp(ident, xpath_functions[i]) == 0) {
+                return xpath_functions[i];
+            }
+        }
+
+        /* Check if it's a node type */
+        for (int i = 0; xpath_node_types[i] != NULL; i++) {
+            if (strcasecmp(ident, xpath_node_types[i]) == 0) {
+                return xpath_node_types[i];
+            }
+        }
+
+        /* *** Extension: Support more MySQL function name variants *** */
+        if (strcasecmp(ident, "startsWith") == 0 || strcasecmp(ident, "startswith") == 0) {
+            return "starts-with";
+        }
+        if (strcasecmp(ident, "endsWith") == 0 || strcasecmp(ident, "endswith") == 0) {
+            return "ends-with";
+        }
+        if (strcasecmp(ident, "stringlength") == 0) {
+            return "string-length";
+        }
+        if (strcasecmp(ident, "normalizespace") == 0) {
+            return "normalize-space";
+        }
+        if (strcasecmp(ident, "substringbefore") == 0) {
+            return "substring-before";
+        }
+        if (strcasecmp(ident, "substringafter") == 0) {
+            return "substring-after";
+        }
+        if (strcasecmp(ident, "processinginstruction") == 0) {
+            return "processing-instruction";
+        }
+    }
+
+    /* Check if it's an axis name (followed by "::") */
+    if (next_char == ':' && ident_len > 0) {
+        for (int i = 0; xpath_axes[i] != NULL; i++) {
+            if (strcasecmp(ident, xpath_axes[i]) == 0) {
+                return xpath_axes[i];
+            }
+        }
+
+        /* *** New: Support axis name variants without hyphens *** */
+        if (strcasecmp(ident, "ancestororself") == 0) {
+            return "ancestor-or-self";
+        }
+        if (strcasecmp(ident, "descendantorself") == 0) {
+            return "descendant-or-self";
+        }
+        if (strcasecmp(ident, "followingsibling") == 0) {
+            return "following-sibling";
+        }
+        if (strcasecmp(ident, "precedingsibling") == 0) {
+            return "preceding-sibling";
+        }
+    }
+
+    /* Check if it's an operator */
+    for (int i = 0; xpath_operators[i] != NULL; i++) {
+        if (strcasecmp(ident, xpath_operators[i]) == 0) {
+            return xpath_operators[i];
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * @brief Handle identifier state
+ */
+static void handle_identifier_state(ParserContext *ctx) {
+    /* Continue collecting identifier characters */
+    if (is_identifier_char(*ctx->p)) {
+        /* Check if there is space left in the identifier buffer */
+        if (ctx->identifier_len < MAX_IDENTIFIER_LEN - 1) {
+            ctx->identifier[ctx->identifier_len++] = *ctx->p;  /* Store character and increase length */
+        } else {
+            /* Buffer is full, output lowercase character directly */
+            *ctx->q++ = tolower(*ctx->p);
+        }
+        ctx->p++;  /* Move input pointer */
+    } else {
+        /* Identifier ends */
+        ctx->identifier[ctx->identifier_len] = '\0';  /* Add string terminator */
+
+        /* Check the following character to determine identifier type */
+        char next_char = *ctx->p;  /* First character after identifier */
+
+        /* Find the corresponding XPath keyword */
+        const char *lowercase_keyword = find_xpath_keyword(ctx->identifier, next_char);
+
+        /* Special handling for operators inside square brackets */
+        if (ctx->in_brackets && lowercase_keyword != NULL) {
+            lowercase_keyword = handle_operator_in_brackets(ctx, ctx->identifier, lowercase_keyword, next_char);
+        }
+
+        /* Determine whether conversion is needed */
+        bool should_convert = should_convert_identifier(ctx, ctx->identifier, lowercase_keyword);
+
+        /* Execute conversion or keep as-is */
+        output_identifier(ctx, lowercase_keyword, should_convert);
+
+        /* If identifier is followed by '(' and it is a function name, clear axis test mode */
+        if (next_char == '(' && lowercase_keyword != NULL) {
+            ctx->in_axis_test = false;
+        }
+
+        /* Reset state and flags, prepare to process next character */
+        ctx->state = STATE_NORMAL;
+        reset_context_flags(ctx);
+        ctx->after_dot = false;
+        ctx->identifier_len = 0;
+    }
+}
+
+/**
+ * @brief Handle single quote state
+ */
+static void handle_single_quote_state(ParserContext *ctx) {
+    /* String ends */
+    if (*ctx->p == '\'' && (ctx->p == ctx->output_start || *(ctx->p - 1) != '\\')) {
+        ctx->state = STATE_NORMAL;  /* Encounter non-escaped ', end string */
+        *ctx->q++ = *ctx->p++;      /* Copy ending single quote */
+    } else {
+        /* String content: convert to lowercase */
+        *ctx->q++ = tolower(*ctx->p++);
+    }
+}
+
+/**
+ * @brief Handle double quote state
+ */
+static void handle_double_quote_state(ParserContext *ctx) {
+    /* String ends */
+    if (*ctx->p == '"' && (ctx->p == ctx->output_start || *(ctx->p - 1) != '\\')) {
+        ctx->state = STATE_NORMAL;  /* Encounter non-escaped ", end string */
+        *ctx->q++ = *ctx->p++;      /* Copy ending double quote */
+    } else {
+        /* String content: convert to lowercase */
+        *ctx->q++ = tolower(*ctx->p++);
+    }
+}
+
+/**
+ * @brief Handle incomplete identifier at the end of input
+ */
+static void handle_incomplete_identifier(ParserContext *ctx) {
+    if (ctx->state == STATE_IN_IDENTIFIER) {
+        ctx->identifier[ctx->identifier_len] = '\0';  /* Terminate string */
+        /* Output incomplete identifier as-is (conservative handling, no conversion) */
+        for (int i = 0; i < ctx->identifier_len; i++) {
+            *ctx->q++ = ctx->identifier[i];
+        }
+    }
+}
+
+/**
+ * @brief Determine whether to convert identifier to lowercase
+ */
+static bool should_convert_identifier(ParserContext *ctx, const char *identifier, 
+                                      const char *lowercase_keyword) {
+    bool should_convert = true;  /* Default: need to convert to lowercase */
+
+    /* Special case: If it is a node test in axis test mode, keep as-is */
+    if (ctx->in_axis_test && ctx->axis_test_depth == 0) {
+        /* In axis::node(), node is a node test, need to convert to lowercase
+           In axis::elementName, elementName is an element name, keep as-is
+           We check if it's a node type */
+        bool is_node_type = false;
+        for (int i = 0; xpath_node_types[i] != NULL; i++) {
+            if (strcasecmp(identifier, xpath_node_types[i]) == 0) {
+                is_node_type = true;
+                break;
+            }
+        }
+        if (!is_node_type) {
+            should_convert = false;  /* Not a node type, it's an element name */
+        }
+    }
+
+    /* If it's an element name (after '/', but not attribute name), keep as-is */
+    if (ctx->after_slash && !ctx->after_at && !ctx->after_dot) {
+        should_convert = false;  /* Do not convert, case-sensitive */
+    }
+
+    /* If it's an attribute name (after '@'), keep as-is */
+    if (ctx->after_at) {
+        should_convert = false;  /* Do not convert, case-sensitive */
+    }
+
+    /* If it is an element name after relative path '.' or '..', keep as-is */
+    if (ctx->after_dot && !ctx->after_slash) {
+        should_convert = false;  /* Case-sensitive */
+    }
+
+    /* If it's a keyword, force conversion to lowercase */
+    if (lowercase_keyword != NULL) {
+        should_convert = true;
+    }
+
+    return should_convert;
+}
+
+/**
+ * @brief Special handling for operators inside square brackets
+ */
+static const char *handle_operator_in_brackets(ParserContext *ctx, const char *identifier, 
+                                               const char *lowercase_keyword, char next_char) {
+    /* Check if it's an operator */
+    for (int i = 0; xpath_operators[i] != NULL; i++) {
+        if (strcasecmp(identifier, xpath_operators[i]) == 0) {
+            /* Check if the operator is independent (has boundaries before and after) */
+            bool boundary_before = check_boundary_before(ctx);
+            bool boundary_after = check_boundary_after(next_char);
+            
+            /* If operator is independent, convert; otherwise do not convert */
+            if (boundary_before && boundary_after) {
+                return xpath_operators[i];
+            } else {
+                return NULL;  /* Do not convert */
+            }
+        }
+    }
+
+    return lowercase_keyword;
+}
+
+/**
+ * @brief Check boundary before operator
+ */
+static bool check_boundary_before(ParserContext *ctx) {
+    if (ctx->q == ctx->output_start) {
+        return true;  /* Beginning of output buffer */
+    } else {
+        char prev_char = *(ctx->q - 1);  /* Get previous character */
+        return (prev_char == ' ' || prev_char == '\t' ||
+                prev_char == '(' || prev_char == '[' ||
+                prev_char == '=' || prev_char == '<' ||
+                prev_char == '>' || prev_char == '!' ||
+                prev_char == '@' || prev_char == ',');
+    }
+}
+
+/**
+ * @brief Check boundary after operator
+ */
+static bool check_boundary_after(char next_char) {
+    if (next_char == '\0') {
+        return true;  /* End of string */
+    } else {
+        return (next_char == ' ' || next_char == '\t' ||
+                next_char == ')' || next_char == ']' ||
+                next_char == '=' || next_char == '<' ||
+                next_char == '>' || next_char == '!' ||
+                next_char == ',');
+    }
+}
+
+/**
+ * @brief Output identifier (convert or keep as-is)
+ */
+static void output_identifier(ParserContext *ctx, const char *lowercase_keyword, 
+                              bool should_convert) {
+    if (should_convert && lowercase_keyword != NULL) {
+        /* Write lowercase keyword */
+        strcpy(ctx->q, lowercase_keyword);  /* Copy keyword to output */
+        ctx->q += strlen(lowercase_keyword);  /* Move output pointer */
+    } else if (should_convert) {
+        /* Convert to lowercase */
+        for (int i = 0; i < ctx->identifier_len; i++) {
+            *ctx->q++ = tolower(ctx->identifier[i]);  /* Convert each character to lowercase */
+        }
+    } else {
+        /* Keep as-is */
+        for (int i = 0; i < ctx->identifier_len; i++) {
+            *ctx->q++ = ctx->identifier[i];  /* Copy as-is */
+        }
+    }
+}
+
+/**
+ * @brief Preprocess XPath expression to make it compatible with MySQL 8 behavior
+ * 
+ * This function will:
+ * 1. Convert function names to lowercase (case-insensitive)
+ * 2. Convert string arguments to lowercase (case-insensitive comparison)
+ * 3. Convert operators to lowercase (case-insensitive)
+ * 4. Convert axis names to lowercase (case-insensitive)
+ * 5. Convert node types to lowercase (case-insensitive)
+ * 6. Keep element names as-is (case-sensitive)
+ * 7. Keep attribute names as-is (case-sensitive)
+ * 
+ * @param input Input XPath expression
+ * @param output Output buffer (must be large enough)
+ * @return void
+ */
+void preprocess_xpath_for_mysql_compat(const char *input, char *output) 
+{
+    /* Initialize parser context */
+    ParserContext ctx;
+    ctx.state = STATE_NORMAL;
+    ctx.p = input;
+    ctx.q = output;
+    ctx.output_start = output;
+    ctx.identifier_len = 0;
+    ctx.after_slash = false;
+    ctx.after_at = false;
+    ctx.after_axis = false;
+    ctx.in_brackets = false;
+    ctx.after_dot = false;
+    ctx.in_axis_test = false;
+    ctx.axis_test_depth = 0;
+
+    /* Main loop: traverse the input string until the end */
+    while (*ctx.p != '\0') {
+        /* Process differently based on current state */
+        switch (ctx.state) {
+            case STATE_NORMAL:
+                /* Handle string start */
+                if (*ctx.p == '\'' || *ctx.p == '"') {
+                    handle_string_start(&ctx);
+                }
+                /* Handle '.' (relative path) */
+                else if (*ctx.p == '.') {
+                    handle_relative_path(&ctx);
+                }
+                /* Handle '/' */
+                else if (*ctx.p == '/') {
+                    handle_slash(&ctx);
+                }
+                /* Handle '@' */
+                else if (*ctx.p == '@') {
+                    handle_at_symbol(&ctx);
+                }
+                /* Handle square brackets */
+                else if (*ctx.p == '[' || *ctx.p == ']') {
+                    handle_brackets(&ctx, *ctx.p);
+                }
+                /* Handle ':', could be part of axis name */
+                else if (*ctx.p == ':') {
+                    handle_colon(&ctx);
+                }
+                /* Handle '(' and ')' */
+                else if (*ctx.p == '(' || *ctx.p == ')') {
+                    handle_parentheses(&ctx, *ctx.p);
+                }
+                /* Handle identifier start */
+                else if (is_letter_or_underscore(*ctx.p)) {
+                    handle_identifier_start(&ctx);
+                }
+                /* Other characters are copied directly */
+                else {
+                    handle_other_characters(&ctx);
+                }
+                break;  /* End STATE_NORMAL processing */           
+            case STATE_IN_IDENTIFIER:
+                handle_identifier_state(&ctx);
+                break;  /* End STATE_IN_IDENTIFIER processing */
+            case STATE_IN_SINGLE_QUOTE:
+                handle_single_quote_state(&ctx);
+                break;  /* End STATE_IN_SINGLE_QUOTE processing */
+            case STATE_IN_DOUBLE_QUOTE:
+                handle_double_quote_state(&ctx);
+                break;  /* End STATE_IN_DOUBLE_QUOTE processing */
+        }
+    }
+
+    /* Handle possibly incomplete identifier at the end */
+    handle_incomplete_identifier(&ctx);
+
+    /* Add terminating null character to output string */
+    *ctx.q = '\0';
+}
+
+static char* update_xml(const char* xml_target, const char* xpath_expr, char* new_xml) 
+{
+    xmlDocPtr doc = NULL;
+    xmlXPathContextPtr xpath_ctx = NULL;
+    xmlXPathObjectPtr xpath_result = NULL;
+    xmlBufferPtr buf = NULL;
+    char* result = NULL;
+    errno_t rc = EOK;
+
+    PG_TRY();
+    {
+        // Parse original XML
+        doc = xmlParseMemory(xml_target, strlen(xml_target));
+        if (!doc) {
+            ereport(ERROR, 
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Failed to parse XML")));
+        }
+        
+        // Create XPath context
+        xpath_ctx = xmlXPathNewContext(doc);
+        if (!xpath_ctx) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Failed to create XPath context")));
+        }
+        
+        // Execute XPath query
+        xpath_result = xmlXPathEvalExpression((const xmlChar*)xpath_expr, xpath_ctx);
+        if (!xpath_result) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Failed to evaluate XPath expression")));
+        }
+        
+        // Check if matching nodes are found
+        if (!xpath_result->nodesetval || xpath_result->nodesetval->nodeNr == 0) {
+            // Modified: Use palloc instead of strdup
+            result = (char*)palloc(strlen(xml_target) + 1);
+            rc = strcpy_s(result, strlen(xml_target) + 1, xml_target);
+            securec_check(rc, "", "");
+        }else{
+            // Get first matching node
+            xmlNodeSetPtr nodeset = xpath_result->nodesetval;
+            xmlNodePtr node = nodeset->nodeTab[0];
+
+            // Get full content of the node
+            buf = xmlBufferCreate();
+            if (!buf) {
+            	ereport(ERROR,
+            		(errcode(ERRCODE_OUT_OF_MEMORY),
+            		errmsg("Failed to create XML buffer")));
+            }
+            
+            if (node->type == XML_DOCUMENT_NODE) {
+            	// Root node, return a copy of updated new_xml
+            	// Return a palloc-allocated copy instead of directly returning new_xml
+            	result = (char*)palloc(strlen(new_xml) + 1);
+            	rc = strcpy_s(result, strlen(new_xml) + 1, new_xml);
+            	securec_check(rc, "", "");
+            }
+            else if (node->type == XML_ELEMENT_NODE) {
+            	// If it's an element node, get the complete content of the entire element
+            	xmlNodeDump(buf, doc, node, 0, 0);
+            }
+            else if (node->type == XML_ATTRIBUTE_NODE) {
+                // If it's an attribute node, get the complete content of the entire attribute
+                xmlAttrPtr attr = (xmlAttrPtr)node;
+                xmlBufferWriteChar(buf, (const char*)attr->name);
+                xmlBufferWriteChar(buf, "=\"");
+                xmlBufferWriteChar(buf, (const char*)attr->children->content);
+                xmlBufferWriteChar(buf, "\"");
+            }
+            else {
+                ereport(ERROR,
+                	(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                	errmsg("node type do not support")));
+            }
+
+            if (node->type != XML_DOCUMENT_NODE && !result) {
+                // Get the full content of the node
+                const char* node_content = (const char*)buf->content;
+                size_t node_content_len = strlen(node_content);
+
+                // Find the position of the target node in the original string
+                const char* node_start = strstr(xml_target, node_content);
+                if (!node_start) {
+                    // Modified: Use palloc instead of strdup
+                    result = (char*)palloc(strlen(xml_target) + 1);
+                    rc = strcpy_s(result, strlen(xml_target) + 1, xml_target);
+                    securec_check(rc, "", "");
+                }
+
+                // Calculate start and end positions of the target node
+                size_t node_start_pos = node_start - xml_target;
+                size_t node_end_pos = node_start_pos + node_content_len;
+
+                // Create new string, replacing the content of the target node
+                size_t new_xml_len = strlen(new_xml);
+                size_t result_len = strlen(xml_target) - node_content_len + new_xml_len;
+                result = (char*)palloc(result_len + 1);
+                if (!result) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_OUT_OF_MEMORY),
+                         errmsg("Failed to allocate memory for result")));
+                }
+                // Copy part before replacement
+                rc = strncpy_s(result, result_len + 1, xml_target, node_start_pos);
+                securec_check(rc, "", "");
+                // Copy new_xml
+                rc = strcat_s(result, result_len + 1, new_xml);
+                securec_check(rc, "", "");
+                // Copy part after replacement
+                rc = strcat_s(result, result_len + 1, xml_target + node_end_pos);
+                securec_check(rc, "", "");
+            }
+        }
+    }
+    PG_CATCH();
+    {
+        // Release resources in case of exception
+        if (buf) {
+            xmlBufferFree(buf);
+        }
+        if (xpath_result) {
+            xmlXPathFreeObject(xpath_result);
+        }
+        if (xpath_ctx) {
+            xmlXPathFreeContext(xpath_ctx);
+        }
+        if (doc) { 
+            xmlFreeDoc(doc);
+        }
+        // Re-throw exception
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+	// Release resources
+	if (buf) {
+        xmlBufferFree(buf);
+    }
+    if (xpath_result) {
+        xmlXPathFreeObject(xpath_result);
+    }
+    if (xpath_ctx) {
+        xmlXPathFreeContext(xpath_ctx);
+    }
+    if (doc) { 
+        xmlFreeDoc(doc);
+    }
+
+    return result;
+}
+
+// Recursively extract text content of nodes
+void extract_node_text(xmlNodePtr node, xmlBufferPtr buffer, int recursive) 
+{
+    for (xmlNodePtr cur = node; cur; cur = cur->next) {
+        if (cur->type == XML_TEXT_NODE && cur->line == 0) {
+            // Extract text content and add to buffer
+            if (buffer->use > 0) {
+                // Add space separator
+                xmlBufferAdd(buffer, (xmlChar*)" ", 1); 
+            }
+            xmlBufferAdd(buffer, cur->content, strlen((char*)cur->content));
+            // Already added flag
+            cur->line = 1; 
+        }
+        // If recursive flag is true, continue to extract text content of child nodes
+        if (recursive && cur->children) {
+            extract_node_text(cur->children, buffer, recursive);
+        }
+    }
+}
+
+// Mark current node and its children as processed
+void mark_node_and_children(xmlNodePtr node,char* parent) 
+{
+    for (xmlNodePtr cur = node; cur; cur = cur->next) {
+        if (cur->type == XML_TEXT_NODE) {
+            if(strcmp((char *)cur->parent->name,parent) != 0){
+                // Mark as processed
+                cur->line = 1; 
+            }else{
+                break;
+            }
+        }
+        if (cur->children) {
+            mark_node_and_children(cur->children,parent);
+        }
+    }
+}
+
+static char* extract_value(const char* xml_fragment, char* s_xpath_expression) 
+{
+    xmlDocPtr doc;
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+    char* result = NULL;
+    xmlBufferPtr buffer = xmlBufferCreate(); // Used to store results
+    errno_t rc = EOK;
+    errno_t errorno = EOK;
+
+    size_t input_len = strlen(s_xpath_expression);
+    char *xpath_expression = (char*)palloc(input_len * 2 + 1);  // 2 times, safe enough
+    if ( !xpath_expression ){
+        return NULL;
+    }
+
+    preprocess_xpath_for_mysql_compat(s_xpath_expression, xpath_expression);
+
+    // New count function identifier
+    int is_count_function = 0;
+    char* count_path = NULL;
+    size_t expr_len = strlen(xpath_expression);
+
+    // Check if it is a count function expression
+    if ( strncasecmp( xpath_expression , "count(" , 6 ) == 0 &&  xpath_expression[ expr_len - 1 ] == ')' ) 
+    {
+        is_count_function = 1;
+        // Extract XPath expression inside parentheses
+        count_path = strndup( xpath_expression + 6, expr_len - 7 );
+        xpath_expression = count_path;
+    }
+
+    // Parse XML fragment
+    doc = xmlParseMemory(xml_fragment, strlen(xml_fragment));
+    if (doc == NULL) {
+       xmlBufferFree(buffer);
+        if ( count_path ){
+            free(count_path);
+        }
+        ereport( ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),errmsg("Failed to parse XML ")) );
+        return NULL;
+    }
+
+    // Create XPath context
+    xpathCtx = xmlXPathNewContext(doc);
+    if (xpathCtx == NULL) {
+        xmlFreeDoc(doc);
+        xmlBufferFree(buffer);
+        if ( count_path ){
+            free(count_path);
+        }
+        ereport( ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),errmsg("Failed to create XPath context") ) );
+        return NULL;
+    }
+
+    // Execute XPath query
+    xpathObj = xmlXPathEvalExpression((xmlChar*)xpath_expression, xpathCtx);
+    if (xpathObj == NULL) {
+        xmlXPathFreeContext(xpathCtx);
+        xmlFreeDoc(doc);
+        xmlBufferFree(buffer);
+        if ( count_path ){
+            free(count_path);
+        }
+        ereport( ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),errmsg("Failed to evaluate XPath expression") ) );
+        return NULL;
+    }
+
+    /* New count function processing logic */
+    if (is_count_function) {
+        int node_count = 0;
+        if (xpathObj->type == XPATH_NODESET && xpathObj->nodesetval) {
+            node_count = xpathObj->nodesetval->nodeNr;
+        }
+        // Convert count result to string
+        char count_str[32];
+        snprintf(count_str, sizeof(count_str), "%d", node_count);
+        result = (char*)palloc(strlen(count_str) + 1);
+        rc = strcpy_s(result, strlen(count_str) + 1, count_str);
+        securec_check(rc, "", "");
+    } else {
+        // Check query results
+        if (xpathObj->type == XPATH_NODESET && xpathObj->nodesetval && xpathObj->nodesetval->nodeNr > 0) {
+            xmlNodeSetPtr nodes = xpathObj->nodesetval;			
+            // Determine whether to recursively extract child nodes based on XPath
+            int recursive = (
+                strstr(xpath_expression, "//*")                != NULL || 
+                strstr(xpath_expression, "descendant::*")      != NULL || 
+                strstr(xpath_expression, "descendant-or-self") != NULL || 
+                strstr(xpath_expression, "ancestor::*")        != NULL || 
+                strstr(xpath_expression, "ancestor-or-self")   != NULL
+            );
+            // Determine whether to include the current node
+            int include_self = (strstr(xpath_expression, "ancestor::*") != NULL);
+            //Does not include the current node and its child nodes, marked as processed
+            if (include_self) {
+                char * newpath = strrchr(xpath_expression, '/');
+                if( newpath != NULL && ( strcmp( newpath , "/ancestor::*" ) == 0 ) ) {
+                    *newpath = '\0';
+                }
+                xmlXPathObjectPtr new_xpathObj = xmlXPathEvalExpression((xmlChar*)xpath_expression, xpathCtx);
+                if (new_xpathObj == NULL) {
+                    fprintf(stderr, "Failed to evaluate XPath expression\n");
+                    xmlXPathFreeContext(xpathCtx);
+                    xmlFreeDoc(doc);
+                    xmlBufferFree(buffer);
+                    return NULL;
+                }
+                if (new_xpathObj->type == XPATH_NODESET && new_xpathObj->nodesetval && new_xpathObj->nodesetval->nodeNr > 0) {
+                    // Does not include the current node and its child nodes, marked as processed
+                    mark_node_and_children(new_xpathObj->nodesetval->nodeTab[0],(char *)new_xpathObj->nodesetval->nodeTab[0]->parent->name);
+                }
+                xmlXPathFreeObject(new_xpathObj);
+            }
+            for (int i = 0; i < nodes->nodeNr; i++) {
+                xmlNodePtr node = nodes->nodeTab[i];
+                // Extract text content
+                extract_node_text(node->children, buffer, recursive);
+            }
+        }
+        // Copy buffer content to result string
+        if (buffer->use > 0) {
+             // buffer->content is xmlChar*, need to convert to char*
+            const char* content = (const char*)buffer->content;
+            result = (char*)palloc(buffer->use + 1);
+            // Use memcpy instead of strcpy_s because buffer->use is the actual length
+            errorno = memcpy_s(result, buffer->use, content, buffer->use);
+            securec_check(errorno, "\0", "\0");
+            result[buffer->use] = '\0';
+        }
+    }
+    // Free resources
+    xmlBufferFree(buffer);
+    xmlXPathFreeObject(xpathObj);
+    xmlXPathFreeContext(xpathCtx);
+    xmlFreeDoc(doc);
+    if ( count_path ) {
+        free(count_path);
+    }
+
+    return (char*)result;
+}
+
+#endif // HAVE_LIBXML2
+#endif // DOLPHIN
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(extractvalue);
+extern "C" DLL_PUBLIC Datum extractvalue(PG_FUNCTION_ARGS);
+Datum extractvalue(PG_FUNCTION_ARGS) 
+{
+#ifndef HAVE_LIBXML2
+    ereport(ERROR,
+           (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("XML functions require libxml2 support")));
+    PG_RETURN_NULL();
+#else
+    text* xml = PG_GETARG_TEXT_P(0);
+    text* xpath = PG_GETARG_TEXT_P(1);
+
+    char *xml_str = text_to_cstring(xml);
+    char *xpath_str = text_to_cstring(xpath);
+    char* result = extract_value(xml_str, xpath_str);
+    
+    if (result) {
+        text *result_text = cstring_to_text(result);
+        if (result) {
+            pfree(result);
+        }
+        PG_RETURN_TEXT_P(result_text);
+    } else {
+        PG_RETURN_NULL();
+    }
+#endif
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(updatexml);
+extern "C" DLL_PUBLIC Datum updatexml(PG_FUNCTION_ARGS);
+Datum updatexml(PG_FUNCTION_ARGS) 
+{
+#ifndef HAVE_LIBXML2
+    ereport(ERROR,
+           (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("XML functions require libxml2 support")));
+    PG_RETURN_NULL();
+#else
+    text* xml = NULL;
+    text* xpath = NULL;
+    text* new_value = NULL;
+    char *xml_str = "";
+    char *xpath_str = "";
+    char *new_value_str = "";
+    char *result = NULL;
+    text *result_text = NULL;
+
+    if (PG_ARGISNULL(0) == 0) {
+        xml = PG_GETARG_TEXT_P(0);
+        xml_str = text_to_cstring(xml);
+    }
+
+    if (PG_ARGISNULL(1) == 0) {
+        xpath = PG_GETARG_TEXT_P(1);
+        xpath_str = text_to_cstring(xpath);
+        if (strcmp(xpath_str, "") == 0) {
+            ereport(ERROR, 
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("XPATH syntax error: ''")));
+        }
+    }
+
+    if (PG_ARGISNULL(2) == 0) {
+        new_value = PG_GETARG_TEXT_P(2);
+        new_value_str = text_to_cstring(new_value);
+    }
+
+    // Modified: Use PG_TRY/PG_CATCH to ensure resource cleanup even in case of exception
+    PG_TRY();
+    {
+        result = update_xml(xml_str, xpath_str, new_value_str);
+        if (result) {
+            result_text = cstring_to_text(result);
+            pfree(result);//result is palloc-allocated and needs to be freed
+        }
+    }
+    PG_CATCH();
+    {
+        // Clean up result in case of exception (if any)
+        if (result) {
+            pfree(result);
+        }
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    if (result_text) {
+        PG_RETURN_TEXT_P(result_text);
+    } else {
+        PG_RETURN_NULL();
+    }
+#endif
+}
+#endif // DOLPHIN

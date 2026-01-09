@@ -1,0 +1,1757 @@
+drop database if exists xml_test;
+NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.
+NOTICE:  schema "xml_test" does not exist, skipping
+create database xml_test dbcompatibility 'b';
+\c xml_test
+SET enable_set_variable_b_format = 1;
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/c');
+ extractvalue 
+--------------
+ c1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/@aa1');
+ extractvalue 
+--------------
+ aa1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/@aa2');
+ extractvalue 
+--------------
+ aa2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/@*');
+ extractvalue 
+--------------
+ aa1 aa2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','//@ba1');
+ extractvalue 
+--------------
+ ba1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','//a');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','//b');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','//c');
+ extractvalue 
+--------------
+ c1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a//b');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a//c');
+ extractvalue 
+--------------
+ c1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','//*');
+  extractvalue  
+----------------
+ a1 b1 c1 b2 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a//*');
+ extractvalue 
+--------------
+ b1 c1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/./a');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/.');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/..');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/../@aa1');
+ extractvalue 
+--------------
+ aa1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/*');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/*/*');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/*/*/*');
+ extractvalue 
+--------------
+ c1
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/child::*');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/self::*');
+ extractvalue 
+--------------
+ a1 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/descendant::*');
+ extractvalue 
+--------------
+ b1 c1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/descendant-or-self::*');
+  extractvalue  
+----------------
+ a1 b1 c1 b2 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/attribute::*');
+ extractvalue 
+--------------
+ aa1 aa2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/c/parent::*');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/c/ancestor::*');
+ extractvalue 
+--------------
+ a1 b1 b2 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/a/b/c/ancestor-or-self::*');
+  extractvalue  
+----------------
+ a1 b1 c1 b2 a2
+(1 row)
+
+select extractValue('<a aa1="aa1" aa2="aa2">a1<b ba1="ba1">b1<c>c1</c>b2</b>a2</a>','/descendant-or-self::*');
+  extractvalue  
+----------------
+ a1 b1 c1 b2 a2
+(1 row)
+
+select extractValue('<a>a11<b ba="ba11" ba="ba12">b11</b><b ba="ba21" ba="ba22">b21<c>c1</c>b22</b>a12</a>','/a/b/c/ancestor-or-self::*');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a11<b ba="ba11" ba="ba12">b11</b><b ba="ba21" ba="ba22">b21<c>c1</c>b22</b>a12</a>','//@ba');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b</b><c>c</c></a>','/a/b');
+ extractvalue 
+--------------
+ b
+(1 row)
+
+select extractValue('<a><b>b</b><c>c</c></a>','/a/c');
+ extractvalue 
+--------------
+ c
+(1 row)
+
+select extractValue('<a><b>b</b><c>c</c></a>','/a/child::b');
+ extractvalue 
+--------------
+ b
+(1 row)
+
+select extractValue('<a><b>b</b><c>c</c></a>','/a/child::c');
+ extractvalue 
+--------------
+ c
+(1 row)
+
+select extractValue('<a><b>b1</b><c>c1</c><b>b2</b><c>c2</c></a>','/a/b[1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><c>c1</c><b>b2</b><c>c2</c></a>','/a/b[2]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><c>c1</c><b>b2</b><c>c2</c></a>','/a/c[1]');
+ extractvalue 
+--------------
+ c1
+(1 row)
+
+select extractValue('<a><b>b1</b><c>c1</c><b>b2</b><c>c2</c></a>','/a/c[2]');
+ extractvalue 
+--------------
+ c2
+(1 row)
+
+select extractValue('<a><b x="xb1" x="xb2"/><c x="xc1" x="xc2"/></a>','/a//@x');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b x="xb1" x="xb2"/><c x="xc1" x="xc2"/></a>','/a//@x[1]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b x="xb1" x="xb2"/><c x="xc1" x="xc2"/></a>','/a//@x[2]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b1</b><b>b2</b><c><b>c1b1</b><b>c1b2</b></c><c><b>c2b1</c></b></a>','//b[1]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b1</b><b>b2</b><c><b>c1b1</b><b>c1b2</b></c><c><b>c2b1</c></b></a>','/descendant::b[1]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1+0]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1*1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[--1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[2*1-1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1+1]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1*2]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[--2]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1*(3-1)]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1=1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1!=1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1>1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[2>1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1>2]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1>=1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[2>=1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1>=2]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1<1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[2<1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1<2]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1<=1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[2<=1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','//*[1<=2]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b11<c>c11</c></b><b>b21<c>c21</c></b></a>','/a/b[c="c11"]');
+ extractvalue 
+--------------
+ b11
+(1 row)
+
+select extractValue('<a><b>b11<c>c11</c></b><b>b21<c>c21</c></b></a>','/a/b[c="c21"]');
+ extractvalue 
+--------------
+ b21
+(1 row)
+
+select extractValue('<a><b c="c11">b11</b><b c="c21">b21</b></a>','/a/b[@c="c11"]');
+ extractvalue 
+--------------
+ b11
+(1 row)
+
+select extractValue('<a><b c="c11">b11</b><b c="c21">b21</b></a>','/a/b[@c="c21"]');
+ extractvalue 
+--------------
+ b21
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a/b[@c="c11"]/d');
+ extractvalue 
+--------------
+ d11
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a/b[@c="c21"]/d');
+ extractvalue 
+--------------
+ d21
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a/b[d="d11"]/@c');
+ extractvalue 
+--------------
+ c11
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a/b[d="d21"]/@c');
+ extractvalue 
+--------------
+ c21
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[b="b11"]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[b/@c="c11"]');
+ extractvalue 
+--------------
+ a1
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[b/d="d11"]');
+ extractvalue 
+--------------
+ a1
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[/a/b="b11"]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[/a/b/@c="c11"]');
+ extractvalue 
+--------------
+ a1
+(1 row)
+
+select extractValue('<a>a1<b c="c11">b11<d>d11</d></b><b c="c21">b21<d>d21</d></b></a>', '/a[/a/b/d="d11"]');
+ extractvalue 
+--------------
+ a1
+(1 row)
+
+select extractValue('<a>a</a>', '/a[false()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[true()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[not(false())]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[not(true())]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[true() and true()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[true() and false()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[false()and false()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[false()and true()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[true() or true()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[true() or false()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[false()or false()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[false()or true()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c="c"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c="d"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c="e"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[not(@c="e")]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c!="e"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c="c" or @c="d"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>ab<b c="c" c="e">b1</b><b c="d">b2</b><b c="f" c="e">b3</b></a>','/a/b[@c="c" and @c="e"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[@c]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[@d]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[@e]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[not(@c)]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[not(@d)]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>','/a/b[not(@e)]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@c) or boolean(@d)]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@c) or boolean(@e)]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@d) or boolean(@e)]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@c) and boolean(@d)]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@c) and boolean(@e)]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[boolean(@d) and boolean(@e)]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@c or @d]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@c or @e]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@d or @e]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@c and @d]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@c and @e]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b c="c" d="d">b1</b><b d="d" e="e">b2</b></a>', '/a/b[@d and @e]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b c="c">b1</b><b>b2</b></a>','/a/b[@*]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b c="c">b1</b><b>b2</b></a>','/a/b[not(@*)]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a>a</a>', '/a[ceiling(3.1)=4]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[floor(3.1)=3]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[round(3.1)=3]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[round(3.8)=4]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a><b>b</b><c>c</c></a>', '/a/b | /a/c');
+ extractvalue 
+--------------
+ b c
+(1 row)
+
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[position()=1]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[position()=2]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[position()=3]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[1=position()]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[2=position()]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[3=position()]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[2>=position()]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[2<=position()]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b1" b="b2" b="b3"/>','/a/@b[position()=3 or position()=2]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a<b>a1<c>c1</c></b><b>a2</b></a>','/a/b[count(c)=0]');
+ extractvalue 
+--------------
+ a2
+(1 row)
+
+select extractValue('<a>a<b>a1<c>c1</c></b><b>a2</b></a>','/a/b[count(c)=1]');
+ extractvalue 
+--------------
+ a1
+(1 row)
+
+select extractValue('<a>a1<b ba="1" ba="2">b1</b><b>b2</b>4</a>','/a/b[sum(@ba)=3]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[boolean(1)]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[true()]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>','/a/b[number(true())]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a>ab</a>','/a[contains("abc","b")]');
+ extractvalue 
+--------------
+ ab
+(1 row)
+
+select extractValue('<a>ab</a>','/a[contains(.,"a")]');
+ extractvalue 
+--------------
+ ab
+(1 row)
+
+select extractValue('<a>ab</a>','/a[contains(.,"b")]');
+ extractvalue 
+--------------
+ ab
+(1 row)
+
+select extractValue('<a>ab</a>','/a[contains(.,"c")]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a b="1">ab</a>','/a[concat(@b,"2")="12"]');
+ extractvalue 
+--------------
+ ab
+(1 row)
+
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,2)="1"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,2)="2"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,1,1)="1"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,1,1)="2"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,2,1)="1"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="11" b="12" b="21" b="22">ab</a>', '/a/@b[substring(.,2,1)="2"]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length("x")=1]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length("xx")=2]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length("xxx")=2]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length("x")]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length("xx")]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', '/a/b[string-length()]');
+ extractvalue 
+--------------
+ b2
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', 'string-length()');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>b1</b><b>b2</b></a>', 'string-length("x")');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a b="b11" b="b12" b="b21" b="22"/>','/a/@b');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b11" b="b12" b="b21" b="22"/>','/a/@b[contains(.,"1")]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b11" b="b12" b="b21" b="22"/>','/a/@b[contains(.,"1")][contains(.,"2")]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b="b11" b="b12" b="b21" b="22"/>','/a/@b[contains(.,"1")][contains(.,"2")][2]');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select UpdateXML('<a>a1<b>b1<c>c1</c>b2</b>a2</a>','/a/b/c','+++++++++');
+            updatexml            
+---------------------------------
+ <a>a1<b>b1+++++++++b2</b>a2</a>
+(1 row)
+
+select UpdateXML('<a>a1<b>b1<c>c1</c>b2</b>a2</a>','/a/b/c','<c1>+++++++++</c1>');
+                updatexml                 
+------------------------------------------
+ <a>a1<b>b1<c1>+++++++++</c1>b2</b>a2</a>
+(1 row)
+
+select UpdateXML('<a>a1<b>b1<c>c1</c>b2</b>a2</a>','/a/b/c','<c1/>');
+          updatexml          
+-----------------------------
+ <a>a1<b>b1<c1/>b2</b>a2</a>
+(1 row)
+
+select UpdateXML('<a><b>bb</b></a>', '/a/b', '<b>ccc</b>');
+     updatexml     
+-------------------
+ <a><b>ccc</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/b', '<b>ccc</b>');
+               updatexml               
+---------------------------------------
+ <a aa1="aa1" aa2="aa2"><b>ccc</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/@aa1', '');
+                    updatexml                    
+-------------------------------------------------
+ <a  aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/@aa1', 'aa3="aa3"');
+                        updatexml                         
+----------------------------------------------------------
+ <a aa3="aa3" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/@aa2', '');
+                    updatexml                    
+-------------------------------------------------
+ <a aa1="aa1" ><b bb1="bb1" bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/@aa2', 'aa3="aa3"');
+                        updatexml                         
+----------------------------------------------------------
+ <a aa1="aa1" aa3="aa3"><b bb1="bb1" bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/b/@bb1', '');
+                    updatexml                    
+-------------------------------------------------
+ <a aa1="aa1" aa2="aa2"><b  bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/b/@bb1', 'bb3="bb3"');
+                        updatexml                         
+----------------------------------------------------------
+ <a aa1="aa1" aa2="aa2"><b bb3="bb3" bb2="bb2">bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/b/@bb2', '');
+                    updatexml                    
+-------------------------------------------------
+ <a aa1="aa1" aa2="aa2"><b bb1="bb1" >bb</b></a>
+(1 row)
+
+select UpdateXML('<a aa1="aa1" aa2="aa2"><b bb1="bb1" bb2="bb2">bb</b></a>', '/a/b/@bb2', 'bb3="bb3"');
+                        updatexml                         
+----------------------------------------------------------
+ <a aa1="aa1" aa2="aa2"><b bb1="bb1" bb3="bb3">bb</b></a>
+(1 row)
+
+select updatexml('<div><div><span>1</span><span>2</span></div></div>','/','<tr><td>1</td><td>2</td></tr>') as upd1;
+             upd1              
+-------------------------------
+ <tr><td>1</td><td>2</td></tr>
+(1 row)
+
+select updatexml('', '/', '') as upd2;
+ERROR:  Failed to parse XML
+CONTEXT:  referenced column: upd2
+select extractvalue('<order><clerk>lesser wombat</clerk></order>','order/clerk');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<order><clerk>lesser wombat</clerk></order>','/order/clerk');
+ extractvalue  
+---------------
+ lesser wombat
+(1 row)
+
+select extractvalue('<a><b>B</b></a>','/a|/b');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a><b>B</b></a>','/a|b');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>a<b>B</b></a>','/a|/b');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractvalue('<a>a<b>B</b></a>','/a|b');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractvalue('<a>a<b>B</b></a>','a|/b');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>A</a>','/<a>');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a><b>b</b><b!>b!</b!></a>','//b!');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a>A<b>B<c>C</c></b></a>','/a/descendant::*');
+ extractvalue 
+--------------
+ B C
+(1 row)
+
+select extractvalue('<a>A<b>B<c>C</c></b></a>','/a/self::*');
+ extractvalue 
+--------------
+ A
+(1 row)
+
+select extractvalue('<a>A<b>B<c>C</c></b></a>','/a/descendant-or-self::*');
+ extractvalue 
+--------------
+ A B C
+(1 row)
+
+select extractvalue('<A_B>A</A_B>','/A_B');
+ extractvalue 
+--------------
+ A
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[position()]');
+ extractvalue 
+--------------
+ B1 B2
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)=last()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[last()]');
+ extractvalue 
+--------------
+ B2
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[last()-1]');
+ extractvalue 
+--------------
+ B1
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[last()=1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[last()=2]');
+ extractvalue 
+--------------
+ B1 B2
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[last()=position()]');
+ extractvalue 
+--------------
+ B2
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)]');
+ extractvalue 
+--------------
+ B1
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)-1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)=1]');
+ extractvalue 
+--------------
+ B1 B2
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)=2]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[count(.)=position()]');
+ extractvalue 
+--------------
+ B1
+(1 row)
+
+select extractvalue('<a>jack</a>','/a[contains(../a,"J")]');
+ extractvalue 
+--------------
+ jack
+(1 row)
+
+select extractvalue('<a>jack</a>','/a[contains(../a,"j")]');
+ extractvalue 
+--------------
+ jack
+(1 row)
+
+select ExtractValue('<tag1><![CDATA[test]]></tag1>','/tag1');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a<','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a</','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a</a','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a>a</a></b>','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<a b=>a</a>','/a');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<e>1</e>','position()');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<e>1</e>','last()');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<e><a>1</a></e>','/e/');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+set names utf8;
+select extractValue('<Ñ><r>r</r></Ñ>','/Ñ/r');
+ extractvalue 
+--------------
+ r
+(1 row)
+
+select extractValue('<r><Ñ>Ñ</Ñ></r>','/r/Ñ');
+ extractvalue 
+--------------
+ Ñ
+(1 row)
+
+select extractValue('<Ñ r="r"/>','/Ñ/@r');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<r Ñ="Ñ"/>','/r/@Ñ');
+ extractvalue 
+--------------
+ Ñ
+(1 row)
+
+select extractValue('<ns:element xmlns:ns="myns"/>','count(ns:element)');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<ns:element xmlns:ns="myns">a</ns:element>','/ns:element');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<ns:element xmlns:ns="myns">a</ns:element>','/ns:element/@xmlns:ns');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractValue('<foo><foo.bar>Data</foo.bar><something>Otherdata</something></foo>','/foo/foo.bar');
+ extractvalue 
+--------------
+ Data
+(1 row)
+
+select extractValue('<foo><foo.bar>Data</foo.bar><something>Otherdata</something></foo>','/foo/something');
+ extractvalue 
+--------------
+ Otherdata
+(1 row)
+
+select extractValue('<zot><tim0><01>10:39:15</01><02>140</02></tim0></zot>','/zot/tim0/02');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<zot><tim0><01>10:39:15</01><02>140</02></tim0></zot>','//*');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<.>test</.>','//*');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<->test</->','//*');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select extractValue('<:>test</:>','//*');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select extractValue('<_>test</_>','//*');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select extractValue('<x.-_:>test</x.-_:>','//*');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><b><Text>test</Text></b></a>','/a/b/Text');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><b><comment>test</comment></b></a>','/a/b/comment');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><b><node>test</node></b></a>','/a/b/node');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><b><processing-instruction>test</processing-instruction></b></a>','/a/b/processing-instruction');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><and>test</and></a>', '/a/and');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><or>test</or></a>', '/a/or');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><mod>test</mod></a>', '/a/mod');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><div>test</div></a>', '/a/div');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><and:and>test</and:and></a>', '/a/and:and');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select ExtractValue('<a><or:or>test</or:or></a>', '/a/or:or');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select ExtractValue('<a><mod:mod>test</mod:mod></a>', '/a/mod:mod');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select ExtractValue('<a><div:div>test</div:div></a>', '/a/div:div');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select ExtractValue('<a><ancestor>test</ancestor></a>', '/a/ancestor');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><ancestor-or-self>test</ancestor-or-self></a>', '/a/ancestor-or-self');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><attribute>test</attribute></a>', '/a/attribute');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><child>test</child></a>', '/a/child');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><descendant>test</descendant></a>', '/a/descendant');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><descendant-or-self>test</descendant-or-self></a>', '/a/descendant-or-self');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><following>test</following></a>', '/a/following');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><following-sibling>test</following-sibling></a>', '/a/following-sibling');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><namespace>test</namespace></a>', '/a/namespace');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><parent>test</parent></a>', '/a/parent');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><preceding>test</preceding></a>', '/a/preceding');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><preceding-sibling>test</preceding-sibling></a>', '/a/preceding-sibling');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><self>test</self></a>', '/a/self');
+ extractvalue 
+--------------
+ test
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/c');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b[-1]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b[10]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b["1"]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b["1 and string"]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b["string and 1"]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select ExtractValue('<a><b>b1</b><b>b2</b></a>','/a/b["string"]');
+ extractvalue 
+--------------
+ b1 b2
+(1 row)
+
+select UpdateXML('<a>a</a>',repeat('a b ',1000),'');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: updatexml
+select ExtractValue('<a>a</a>', '/a[@x=@y0123456789_0123456789_0123456789_0123456789]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<a>a</a>', '/a[@x=$y0123456789_0123456789_0123456789_0123456789]');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select updatexml(NULL, 1, 1), updatexml(1, NULL, 1), updatexml(1, 1, NULL);
+ updatexml | updatexml | updatexml 
+-----------+-----------+-----------
+           |           | 
+(1 row)
+
+select updatexml(NULL, NULL, 1), updatexml(1, NULL, NULL), updatexml(NULL, 1, NULL);
+ updatexml | updatexml | updatexml 
+-----------+-----------+-----------
+           |           | 
+(1 row)
+
+select updatexml(NULL, NULL, NULL);
+ updatexml 
+-----------
+ 
+(1 row)
+
+select ExtractValue('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html> 
+ <head>
+  <title> Title - document with document declaration</title>
+ </head> 
+  <body> Hi, Im a webpage with document a declaration </body> 
+</html>', 'html/head/title');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html> 
+ <head>
+  <title> Title - document with document declaration</title>
+ </head> 
+  <body> Hi, Im a webpage with document a declaration </body> 
+</html>', 'html/body');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select ExtractValue('<xml "xxx" "yyy">CharData</xml>', '/xml');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select ExtractValue('<xml  xxx  "yyy">CharData</xml>', '/xml');
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+set @x=10;
+select extractvalue('<a></a>','$@x/a');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a></a>','round(123.4)/a');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a></a>','1/a');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a></a>','"b"/a');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+select extractvalue('<a></a>','(1)/a');
+ERROR:  Failed to evaluate XPath expression
+CONTEXT:  referenced column: extractvalue
+CREATE TABLE IF NOT EXISTS t1 (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  xml text,
+  PRIMARY KEY (id)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "t1_id_seq" for serial column "t1.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+INSERT INTO t1 (id, xml) VALUES
+(15, '<bla name="blubb"></bla>'),
+(14, '<bla name="blubd"></bla>');
+select
+extractvalue( xml, '/bla/@name' ),
+extractvalue( xml, '/bla/@name' )
+FROM t1 ORDER BY t1.id;
+ extractvalue | extractvalue 
+--------------+--------------
+ blubd        | blubd
+ blubb        | blubb
+(2 rows)
+
+select
+UpdateXML(xml, '/bla/@name', 'test'),
+UpdateXML(xml, '/bla/@name', 'test')
+FROM t1 ORDER BY t1.id;
+    updatexml     |    updatexml     
+------------------+------------------
+ <bla test></bla> | <bla test></bla>
+ <bla test></bla> | <bla test></bla>
+(2 rows)
+
+DROP TABLE t1;
+select UPDATEXML(NULL, (LPAD(0.1111E-15, '2011', 1)), 1);
+ updatexml 
+-----------
+ 
+(1 row)
+
+select EXTRACTVALUE('', LPAD(0.1111E-15, '2011', 1));
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select UPDATEXML(CONVERT(_latin1'<' USING utf8),'1','1');
+ERROR:  syntax error at or near "'<'"
+LINE 1: select UPDATEXML(CONVERT(_latin1'<' USING utf8),'1','1');
+                                        ^
+select UPDATEXML(CONVERT(_latin1'<!--' USING utf8),'1','1');
+ERROR:  syntax error at or near "'<!--'"
+LINE 1: select UPDATEXML(CONVERT(_latin1'<!--' USING utf8),'1','1');
+                                        ^
+select ExtractValue(CONVERT('<\"', BINARY(10)), 1);
+ERROR:  Failed to parse XML 
+CONTEXT:  referenced column: extractvalue
+select UPDATEXML('','(a)/a','');
+ERROR:  Failed to parse XML
+CONTEXT:  referenced column: updatexml
+select UPDATEXML('<a><a>x</a></a>','(a)/a','<b />');
+    updatexml    
+-----------------
+ <a><a>x</a></a>
+(1 row)
+
+select UPDATEXML('<a><c><a>x</a></c></a>','(a)/a','<b />');
+       updatexml        
+------------------------
+ <a><c><a>x</a></c></a>
+(1 row)
+
+select UPDATEXML('<a><c><a>x</a></c></a>','(a)//a','<b />');
+       updatexml        
+------------------------
+ <a><c><a>x</a></c></a>
+(1 row)
+
+select ExtractValue('<a><a>aa</a><b>bb</b></a>','(a)/a|(a)/b');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a1<b ba1="1" ba2="2">b1</b>4</a>','/a/b[sum(@ba1)=1]');
+ extractvalue 
+--------------
+ b1
+(1 row)
+
+select extractValue('<a>text1<b>text2</b></a>', '/a[contains(.,"text")]');
+ extractvalue 
+--------------
+ text1
+(1 row)
+
+select extractValue('<a>text1<b>text2</b></a>', '/a[CONTAINS(.,"text")]'); 
+ extractvalue 
+--------------
+ text1
+(1 row)
+
+select extractValue('<a>text1<b>text2</b></a>', '/a[CoNtAiNs(.,"text")]');
+ extractvalue 
+--------------
+ text1
+(1 row)
+
+select extractValue('<a>abc</a>', '/a[contains(.,"ABC")]');
+ extractvalue 
+--------------
+ abc
+(1 row)
+
+select extractValue('<a>abc</a>', '/a[contains(.,"AbC")]');
+ extractvalue 
+--------------
+ abc
+(1 row)
+
+select extractValue('<a><b>1</b><b>2</b></a>', 'count(/a/b)');
+ extractvalue 
+--------------
+ 2
+(1 row)
+
+select extractValue('<a><b>1</b><b>2</b></a>', 'COUNT(/a/b)');
+ extractvalue 
+--------------
+ 2
+(1 row)
+
+select extractValue('<a>text1<b>x</b><b>y</b></a>', '/a/b[position()=1]');
+ extractvalue 
+--------------
+ x
+(1 row)
+
+select extractValue('<a>text1<b>x</b><b>y</b></a>', '/a/b[position()=1 OR position()=2]');
+ extractvalue 
+--------------
+ x y
+(1 row)
+
+select extractValue('<a>text1<b>x</b><b>y</b></a>', '/a/b[position()=1 or position()=2]');
+ extractvalue 
+--------------
+ x y
+(1 row)
+
+select extractValue('<a><b><c>text</c></b></a>', '/a/descendant::c');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<a><b><c>text</c></b></a>', '/a/DESCENDANT::c');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<a><b><c>text</c></b></a>', '/a/descendant-or-self::c');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<a><b><c>text</c></b></a>', '/a/DESCENDANT-OR-SELF::c');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<A>text</A>', '/A');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<A>text</A>', '/a');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a><b>text</b></a>', '/a/b');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<a><b>text</b></a>', '/a/B');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a id="value">text</a>', '/a[@id]');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractValue('<a id="value">text</a>', '/a[@ID]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a ID="value">text</a>', '/a[@id]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a ID="value">text</a>', '/a[@ID]');
+ extractvalue 
+--------------
+ text
+(1 row)
+
+select extractvalue('<a>A<b>B1</b><b>B2</b></a>','/a/b[Last()]');
+ extractvalue 
+--------------
+ B2
+(1 row)
+
+select extractValue('<a>a</a>', '/a[cEiling(3.1)=4]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[fLoor(3.1)=3]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[rounD(3.1)=3]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[roUnd(3.8)=4]');
+ extractvalue 
+--------------
+ a
+(1 row)
+
+select extractValue('<a>a</a>', '/a[faLse()]');
+ extractvalue 
+--------------
+ 
+(1 row)
+
+select extractValue('<a>a</a>', '/a[tRue()]');
+ extractvalue 
+--------------
+ a
+(1 row)
+

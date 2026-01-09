@@ -17,6 +17,12 @@ endif
 endif
 SUBDIRS = show
 
+ifdef HAVE_LIBXML2
+CFLAGS += -I/usr/include/libxml2
+LDFLAGS += -lxml2
+SHLIB_LINK += -lxml2
+endif
+
 ifneq "$(MAKECMDGOALS)" "clean"
   ifneq "$(MAKECMDGOALS)" "distclean"
     ifneq "$(shell which g++ |grep hutaf_llt |wc -l)" "1"
