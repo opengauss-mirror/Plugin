@@ -222,11 +222,11 @@ bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
         ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                           errmsg("value \"%s\" is out of range for type %s. truncated automatically", str, "bigint")));
     } else if (res == RES_NOT_A_NUMBER) {
-        if (DB_IS_CMPT(A_FORMAT | PG_FORMAT)) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                            errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-        } else if (DB_IS_CMPT(B_FORMAT)) {
+        if (DB_IS_CMPT(B_FORMAT)) {
             return true;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
         }
     } else if (res == RES_UNEXPECTED_TRAILING_CHARS) {
         if (!can_ignore) {

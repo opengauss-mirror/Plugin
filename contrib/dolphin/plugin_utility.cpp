@@ -5337,6 +5337,9 @@ ProcessUtilitySlow(Node *parse_tree,
                 char* first_exec_node = NULL;
                 bool is_first_node = false;
 
+                if (atstmt->concurrent) {
+                    PreventTransactionChain(is_top_level, "ALTER TABLE CONCURRENTLY");
+                }
                 if (IS_PGXC_COORDINATOR && !IsConnFromCoord()) {
                     first_exec_node = find_first_exec_cn();
                     is_first_node = (strcmp(first_exec_node, g_instance.attr.attr_common.PGXCNodeName) == 0);

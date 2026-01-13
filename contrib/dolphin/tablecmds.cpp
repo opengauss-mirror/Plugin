@@ -830,6 +830,7 @@ static Node* RecookAutoincAttrDefault(Relation rel, int attrno, Oid targettype, 
 static void check_unsupported_charset_for_column(Oid collation, const char* col_name);
 static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel, Oid oldNspOid,
                                                 Oid nspOid, ObjectAddresses* objsMoved, char* newrelname);
+static void OnlineDDLAlterTypeCleanupLock(AlteredTableInfo* tab);
 #ifdef DOLPHIN
 static bool SpecialAlterTableCmd(AlterTableStmt* stmt);
 #endif
@@ -8815,15 +8816,6 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 
     /* Phase 2: update system catalogs */
     ATRewriteCatalogs(&wqueue, lockmode, fromReplace);
-
-    /* Release AccessExclusiveLock which is locked when rewriting catalogs. */
-    if (enableOnlineDDL) {
-        if (!relationIsPartitioned) {
-            LockRelation(rel, ShareUpdateExclusiveLock);
-            UnlockRelation(rel, AccessExclusiveLock);
-        }
-        ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
-    }
     
 #ifdef PGXC
     /* Invalidate cache for redistributed relation */
@@ -8844,13 +8836,18 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 
     /* online-ddl: phase 2, 3: baseline copy and incremental data catchup */
     if (enableOnlineDDL) {
+        ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
         OnlineDDLRelOperators* operators = RelationGetOnlineDDLOperators(rel);
+#ifdef USE_ASSERT_CHECKING
+        OnlineDDLLockCheck(rel->rd_id);
+#endif
         if (operators == NULL) {
             ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
                 errmsg("[Online-DDL] Online DDL operators is null for relation %s", RelationGetRelationName(rel))));
         }
         operators->setStatus(ONLINE_DDL_STATUS_BASELINE_COPY);
     }
+
     /* Phase 3: scan/rewrite tables as needed */
     ATRewriteTables(parsetree, &wqueue, lockmode);
 
@@ -9524,6 +9521,8 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
 {
     int pass;
     ListCell* ltab = NULL;
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_REWRITE_CATALOG);
 
     /*
      * We process all the tables "in parallel", one pass at a time.  This is
@@ -9558,7 +9557,7 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
              */
             if (pass == AT_PASS_ALTER_TYPE && !tab->isDeltaTable)
                 ATPostAlterTypeCleanup(wqueue, tab, lockmode);
-
+            OnlineDDLAlterTypeCleanupLock(tab);
             relation_close(rel, NoLock);
         }
     }
@@ -9587,7 +9586,7 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
                 optsList = lappend(optsList, def);
                 toast_reloptions = transformRelOptions((Datum)0, optsList, NULL, NULL, false, false);
             }
-            AlterTableCreateToastTable(tab->relid, toast_reloptions);
+            AlterTableCreateToastTable(tab->relid, toast_reloptions, AccessExclusiveLock, enableOnlineDDL);
             relation_close(rel, NoLock);
         }
 #ifndef DOLPHIN
@@ -18525,6 +18524,8 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     bool flagDropOnUpdateTimestamp = false;
     bool existOnUpdateTimestamp = false;
     ObjectAddress address;
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_REWRITE_CATALOG);
 
     attrelation = heap_open(AttributeRelationId, RowExclusiveLock);
 
@@ -18716,7 +18717,8 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
                          * Testcase: alter table row_table alter column col_varchar set data type text,alter column
                          * col_smallint set data type bigint + alter index idx set tablespace.
                          */
-                        LockRelationOid(foundObject.objectId, AccessExclusiveLock);
+                        LockRelationOid(foundObject.objectId,
+                                        !enableOnlineDDL ? AccessExclusiveLock : ShareUpdateExclusiveLock);
                         tab->changedIndexOids = lappend_oid(tab->changedIndexOids, foundObject.objectId);
                         tab->changedIndexDefs =
                             lappend(tab->changedIndexDefs, pg_get_indexdef_string(foundObject.objectId));
@@ -19151,6 +19153,112 @@ static void ATCutOffPSortDependency(List* oldIndexPassList, LOCKMODE lockmode)
     }
 }
 
+#define ONLINE_DDL_LOCKMODE_NUM 3
+const LOCKMODE onlineDDLLockmodeList[ONLINE_DDL_LOCKMODE_NUM] = {ShareLock, ExclusiveLock, AccessExclusiveLock};
+static bool OnlineDDLClearupLock(ObjectAddress obj, LOCKMODE lockmode)
+{
+    bool needRelease = false;
+    switch (obj.classId)
+    {
+    case ConstraintRelationId:
+    case TriggerRelationId: {
+        while (CheckLockDatabaseObject(obj.classId, obj.objectId, 0, lockmode)) {
+            needRelease = true;
+            if (!CheckLockDatabaseObject(obj.classId, obj.objectId, 0, ShareUpdateExclusiveLock)) {
+                LockDatabaseObject(obj.classId, obj.objectId, 0, ShareUpdateExclusiveLock);
+            }
+            UnlockDatabaseObject(obj.classId, obj.objectId, 0, lockmode);
+            ereport(ONLINE_DDL_LOG_LEVEL,
+                    (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                     errmsg("OnlineDDLClearupLock lock release classId: %d, objectId:%d, lockmode:%d", obj.classId,
+                            obj.objectId, lockmode)));
+        }
+        break;
+    }
+    case RelationRelationId: {
+        while (CheckLockRelationOid(obj.objectId, lockmode)) {
+            needRelease = true;
+            if (!CheckLockRelationOid(obj.objectId, ShareUpdateExclusiveLock)) {
+                LockRelationOid(obj.objectId, ShareUpdateExclusiveLock);
+            }
+            UnlockRelationOid(obj.objectId, lockmode);
+            ereport(ONLINE_DDL_LOG_LEVEL,
+                    (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                     errmsg("OnlineDDLClearupLock lock release classId: %d, objectId:%d, lockmode:%d", obj.classId,
+                            obj.objectId, lockmode)));
+        }
+        while (CheckLockDatabaseObject(obj.classId, (Oid)'r', 0, lockmode)) {
+            needRelease = true;
+            if (!CheckLockDatabaseObject(obj.classId, (Oid)'r', 0, ShareUpdateExclusiveLock)) {
+                LockDatabaseObject(obj.classId, (Oid)'r', 0, ShareUpdateExclusiveLock);
+            }
+            UnlockDatabaseObject(obj.classId, (Oid)'r', 0, lockmode);
+            ereport(ONLINE_DDL_LOG_LEVEL,
+                    (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                     errmsg("OnlineDDLClearupLock lock release classId: %d, objectId:%d, lockmode:%d", obj.classId,
+                            (Oid)'r', lockmode)));
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return needRelease;
+}
+
+static inline void OnlineDDLClearupLockList(Oid classId, Oid objectId, Oid objectSubId)
+{
+    ObjectAddress obj = {classId, objectId, objectSubId};
+    for (int i = 0; i < ONLINE_DDL_LOCKMODE_NUM; i++) {
+        OnlineDDLClearupLock(obj, onlineDDLLockmodeList[i]);
+    }
+}
+
+static void OnlineDDLAlterTypeCleanupLock(AlteredTableInfo* tab)
+{
+    ObjectAddress obj;
+    ListCell* def_item = NULL;
+    ListCell* oid_item = NULL;
+
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_REWRITE_CATALOG);
+    if (!enableOnlineDDL) {
+        return;
+    }
+    bool needRelease = false;
+    foreach (oid_item, tab->changedConstraintOids) {
+        needRelease = true;
+        Oid objectOid = lfirst_oid(oid_item);
+        OnlineDDLClearupLockList(ConstraintRelationId, objectOid, 0);
+    }
+
+    foreach (oid_item, tab->changedIndexOids) {
+        needRelease = true;
+        Oid objectOid = lfirst_oid(oid_item);
+        OnlineDDLClearupLockList(RelationRelationId, objectOid, 0);
+    }
+
+    foreach (oid_item, tab->changedTriggerOids) {
+        needRelease = true;
+        Oid objectOid = lfirst_oid(oid_item);
+        OnlineDDLClearupLockList(TriggerRelationId, objectOid, 0);
+    }
+
+    if (needRelease) {
+        OnlineDDLClearupLockList(RelationRelationId, operators->getRelId(), 0);
+        while (CheckLockDatabaseObject(operators->getRelId(), 114, 0, ExclusiveLock)) {
+            if (!CheckLockDatabaseObject(obj.classId, (Oid)'r', 0, ShareUpdateExclusiveLock)) {
+                LockDatabaseObject(obj.classId, (Oid)'r', 0, ShareUpdateExclusiveLock);
+            }
+            UnlockDatabaseObject(operators->getRelId(), (Oid)'r', 0, ExclusiveLock);
+            ereport(ONLINE_DDL_LOG_LEVEL,
+                    (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                     errmsg("OnlineDDLClearupLock lock release classId: %d, objectId:%d, lockmode:%d", obj.classId,
+                            (Oid)'r', ExclusiveLock)));
+        }
+    }
+}
+
 /*
  * Cleanup after we've finished all the ALTER TYPE operations for a
  * particular relation.  We have to drop and recreate all the indexes
@@ -19161,6 +19269,8 @@ static void ATPostAlterTypeCleanup(List** wqueue, AlteredTableInfo* tab, LOCKMOD
     ObjectAddress obj;
     ListCell* def_item = NULL;
     ListCell* oid_item = NULL;
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_REWRITE_CATALOG);
 
     /*
      * Re-parse the index and constraint definitions, and attach them to the
@@ -19206,7 +19316,9 @@ static void ATPostAlterTypeCleanup(List** wqueue, AlteredTableInfo* tab, LOCKMOD
         obj.classId = ConstraintRelationId;
         obj.objectId = lfirst_oid(oid_item);
         obj.objectSubId = 0;
-        performDeletion(&obj, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+        performDeletion(&obj, DROP_RESTRICT,
+                        enableOnlineDDL ? PERFORM_DELETION_ONLINE_DDL : PERFORM_DELETION_INTERNAL);
+
     }
 
     if (tab->rewrite <= 0  && tab->subcmds[AT_PASS_OLD_INDEX]) {
@@ -19223,14 +19335,16 @@ static void ATPostAlterTypeCleanup(List** wqueue, AlteredTableInfo* tab, LOCKMOD
         obj.classId = RelationRelationId;
         obj.objectId = lfirst_oid(oid_item);
         obj.objectSubId = 0;
-        performDeletion(&obj, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+        performDeletion(&obj, DROP_RESTRICT,
+                        enableOnlineDDL ? PERFORM_DELETION_ONLINE_DDL : PERFORM_DELETION_INTERNAL);
     }
 
     foreach (oid_item, tab->changedTriggerOids) {
         obj.classId = TriggerRelationId;
         obj.objectId = lfirst_oid(oid_item);
         obj.objectSubId = 0;
-        performDeletion(&obj, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+        performDeletion(&obj, DROP_RESTRICT,
+                        enableOnlineDDL ? PERFORM_DELETION_ONLINE_DDL : PERFORM_DELETION_INTERNAL);
     }
 
     /*
@@ -33573,13 +33687,11 @@ static void ForbidToChangeTableSpaceOfPartitionedTable(AlteredTableInfo* tab)
 static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMODE lockmode)
 {
     ForbidToRewriteOrTestCstoreIndex(tab);
-    Oid OIDNewHeap = make_new_heap(tab->relid, NewTableSpace);
     OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
     bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
-    /* Old rel is locked when make_new_heap. */
-    if (enableOnlineDDL) {
-        UnlockRelationOid(tab->relid, AccessExclusiveLock);
-    }
+    LOCKMODE oldRelLockMode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
+    Oid OIDNewHeap = make_new_heap(tab->relid, NewTableSpace, oldRelLockMode);
+
     /*
      * Copy the heap data into the new table with the desired
      * modifications, and test the current data within the table
@@ -33612,6 +33724,9 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
                             REINDEX_ALL_INDEX, NULL, NULL);
         }
         operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+#ifdef USE_ASSERT_CHECKING
+        OnlineDDLLockCheck(oldRel->rd_id);
+#endif
         operators->OnlineDDLAppendIncrementalData(oldRel, newRel, tab);
     }
 
