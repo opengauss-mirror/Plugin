@@ -5,6 +5,7 @@
 \c table_name_test_db;
 set dolphin.lower_case_table_names TO 0;
 
+set dolphin.use_const_value_as_colname = false;
 CREATE VIEW view_const AS SELECT 'abc';
 SELECT * FROM view_const;
 DROP VIEW view_const;

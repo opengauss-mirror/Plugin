@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names = 1;
 CREATE TABLE departments (
   dept_id INT PRIMARY KEY, 
   dept_name VARCHAR(50) NOT NULL UNIQUE 
@@ -857,11 +858,11 @@ select auto_increment from  INFORMATION_SCHEMA.tables where table_name = 'test_a
 
 create table test_collation_1(c1 text) collate utf8_bin;
 create table test_collation_2(c1 text);
-select table_collation from INFORMATION_SCHEMA.TABLES where table_name in ('test_collation_1', 'test_collation_2');
- table_collation 
------------------
- utf8_bin
- 
+select table_name, table_collation from information_schema.tables where table_name in ('test_collation_1', 'test_collation_2') order by table_name;
+    table_name    | table_collation 
+------------------+-----------------
+ test_collation_1 | utf8_bin
+ test_collation_2 | 
 (2 rows)
 
 drop table test_compression_1;

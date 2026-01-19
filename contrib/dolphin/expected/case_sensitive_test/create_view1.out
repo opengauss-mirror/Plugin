@@ -60,6 +60,7 @@ CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
 ERROR:  cannot drop columns from view
 -- should fail
+set dolphin.use_const_value_as_colname = false;
 CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
 ERROR:  cannot change name of view column "a" to "?column?"

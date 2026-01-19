@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names=1;
 create schema show_create;
 set current_schema to 'show_create';
 CREATE USER test_showcreate WITH PASSWORD 'openGauss@123';

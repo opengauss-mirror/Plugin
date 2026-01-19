@@ -57,6 +57,7 @@ CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
 
 -- should fail
+set dolphin.use_const_value_as_colname = false;
 CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
 

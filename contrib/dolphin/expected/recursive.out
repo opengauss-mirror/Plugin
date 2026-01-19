@@ -47,9 +47,9 @@ desc view3;
 
 create view view4 as select 1 union select 1;
 desc view4;
-  Field   |  Type  | Null | Key | Default | Extra 
-----------+--------+------+-----+---------+-------
- ?column? | bigint | YES  |     | NULL    | 
+ Field |  Type  | Null | Key | Default | Extra 
+-------+--------+------+-----+---------+-------
+ 1     | bigint | YES  |     | NULL    | 
 (1 row)
 
 reset current_schema;

@@ -1,3 +1,4 @@
+set dolphin.use_const_value_as_colname=false;
 create schema union_all;
 set current_schema to 'union_all';
 

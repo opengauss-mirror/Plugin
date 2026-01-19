@@ -2,6 +2,7 @@ create schema bxconst_test;
 set current_schema to 'bxconst_test';
 
 set dolphin.b_compatibility_mode to on;
+set dolphin.use_const_value_as_colname = false;
 
 -- 将bxconst当作bit处理
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero;

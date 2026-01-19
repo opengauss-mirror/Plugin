@@ -1,6 +1,7 @@
 set current_schema to 'test_ansi_quotes';
 SET dolphin.sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 set behavior_compat_options = 'display_leading_zero';
+set dolphin.transform_unknown_param_type_as_column_type_first = false;
 -- wait for server establishment
 select pg_sleep(3);
  pg_sleep 

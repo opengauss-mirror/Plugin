@@ -1,5 +1,6 @@
 create schema test_op_and;
 set current_schema to 'test_op_and';
+set dolphin.use_const_value_as_colname = false;
 set dolphin.b_compatibility_mode = 1;
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
 

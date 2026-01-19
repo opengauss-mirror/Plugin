@@ -1,3 +1,4 @@
+set dolphin.use_const_value_as_colname = false;
 select 'a';
 select 'a' 'b';
 select 'ca' between 'b' and 'c' 'd'; -- same as select 'ca' between 'b' and 'cd';

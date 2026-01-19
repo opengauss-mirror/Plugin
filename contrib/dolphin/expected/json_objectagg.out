@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names=1;
 create schema json_objectagg_test;
 set current_schema to 'json_objectagg_test';
 set dolphin.b_compatibility_mode = 1;

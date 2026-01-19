@@ -1,5 +1,6 @@
 create schema db_b_parser3;
 set current_schema to 'db_b_parser3';
+set dolphin.use_const_value_as_colname = false;
 
 --测试点一：验证lcase函数
 select lcase('ABc'), lcase('哈哈'), lcase('123456'),lcase('哈市&%%￥#'),lcase(null);

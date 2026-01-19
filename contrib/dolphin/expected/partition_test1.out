@@ -1543,7 +1543,7 @@ select * from tb_subpart subpartitio(p0);
 (4 rows)
 
 drop table if exists RangePartionLevel1_IntegerTypes;
-NOTICE:  table "rangepartionlevel1_integertypes" does not exist, skipping
+NOTICE:  table "RangePartionLevel1_IntegerTypes" does not exist, skipping
 create table RangePartionLevel1_IntegerTypes(
     id TINYINT not null,
     store_id SMALLINT unsigned

@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names=1;
 create schema column_name_case_test;
 set current_schema to 'column_name_case_test';
 -- create  table  test. senstive column name;

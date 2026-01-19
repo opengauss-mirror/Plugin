@@ -94,7 +94,7 @@ Options: orientation=row, compression=no
 drop view if exists view_created_with_definer_test;
 NOTICE:  view "view_created_with_definer_test" does not exist, skipping
 drop user if exists Test_User;
-NOTICE:  role "test_user" does not exist, skipping
+NOTICE:  role "Test_User" does not exist, skipping
 CREATE USER "Test_User" with password 'openGauss@123';
 GRANT ALL PRIVILEGES TO "Test_User";
 CREATE DEFINER="Test_User" VIEW view_created_with_definer_test AS SELECT log(10, 100);

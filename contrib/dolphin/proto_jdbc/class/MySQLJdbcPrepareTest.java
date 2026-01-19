@@ -81,6 +81,7 @@ public class MySQLJdbcPrepareTest {
              Statement statement = connection.createStatement()) {
             ResultSet resultSet;
             ResultSetMetaData resultSetMetaData;
+            statement.executeUpdate("set dolphin.transform_unknown_param_type_as_column_type_first = false;");
             statement.executeUpdate("drop table if exists t3");
             statement.executeUpdate("create table t3 (" +
                 "c1 integer," +

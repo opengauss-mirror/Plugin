@@ -1,3 +1,4 @@
+set dolphin.lower_case_table_names=1;
 create schema json_arrayagg_test;
 set current_schema to 'json_arrayagg_test';
 -- create table for test

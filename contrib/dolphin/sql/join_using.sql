@@ -1,6 +1,7 @@
 create schema join_using;
 set current_schema to join_using;
 set dolphin.b_compatibility_mode to on;
+set dolphin.transform_unknown_param_type_as_column_type_first = false;
 
 create table t_v0(col1 smallint unsigned);
 create table t_v1(col1 tinyint);
