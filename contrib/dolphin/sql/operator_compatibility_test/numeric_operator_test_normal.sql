@@ -1,4 +1,3 @@
-set dolphin.transform_unknown_param_type_as_column_type_first=false;
 drop schema if exists numeric_operator_test_schema_normal cascade;
 create schema numeric_operator_test_schema_normal;
 set current_schema to 'numeric_operator_test_schema_normal';

@@ -1050,6 +1050,21 @@ static bool IsBasicInt4PlusOrMinusOper(ParseState* pstate, List* opNameList,
     return false;
 }
 
+static bool IsCompareOper(const char * operator_name)
+{
+    if (operator_name == NULL) {
+        return false;
+    }
+
+    if (strcmp(operator_name, "=") == 0 || strcmp(operator_name, "!=") == 0 ||
+        strcmp(operator_name, ">") == 0 || strcmp(operator_name, "<") == 0 ||
+        strcmp(operator_name, ">=") == 0 || strcmp(operator_name, "<=") == 0 ||
+        strcmp(operator_name, "<>") == 0) {
+        return true;
+    }
+    return false;
+}
+
 bool can_be_cast_as_implict(Oid sourceTypeId, Oid targetTypeId)
 {
     HeapTuple tup = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(sourceTypeId), ObjectIdGetDatum(targetTypeId));
@@ -1062,15 +1077,77 @@ bool can_be_cast_as_implict(Oid sourceTypeId, Oid targetTypeId)
     return result;
 }
 
+bool is_safe_cast(Oid sourceTypeId, Oid targetTypeId)
+{
+    if (!can_be_cast_as_implict(sourceTypeId, targetTypeId)) {
+        return false;
+    }
+    if (IsNumber(targetTypeId) && (sourceTypeId == FLOAT8OID || sourceTypeId == FLOAT4OID)) {
+        return true;
+    }
+    return false;
+}
+
 /*
  * coerce_param_to_column_type
  *
  * for case where column = ?, parse ? as column type.
  *
  */
-bool coerce_param_to_column_type(ParseState* pstate, Node* ltree, Node* rtree, Oid* ltypeId, Oid* rtypeId)
+
+bool need_coerce_param_to_column_type(const char * operator_name, Node* ltree, Node* rtree, Oid ltypeId, Oid rtypeId)
 {
     if (!GetSessionContext()->transform_unknown_param_type_as_column_type_first) {
+        return false;
+    }
+
+    if (ltree == NULL || rtree == NULL) {
+        return false;
+    }
+
+    if (!IsCompareOper(operator_name)) {
+        return false;
+    }
+
+    /* do nothing */
+    if (ltypeId == rtypeId) {
+        return false;
+    }
+    
+    if (IsA(ltree, Var) && IsA(rtree, Param) && ((Param*)rtree)->paramtype == UNKNOWNOID) {
+        return true;
+    }
+    
+    if (IsA(rtree, Var) && IsA(ltree, Param) && ((Param*)ltree)->paramtype == UNKNOWNOID) {
+        return true;
+    }
+
+    if (IsA(ltree, Var) && IsA(rtree, OpExpr) && is_safe_cast(rtypeId, ltypeId)) {
+        return true;
+    }
+
+    if (IsA(rtree, Var) && IsA(ltree, OpExpr) && is_safe_cast(ltypeId, rtypeId)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool coerce_param_to_column_type(List* opNameList, Node* ltree, Node* rtree, Oid* ltypeId, Oid* rtypeId)
+{
+    if (!GetSessionContext()->transform_unknown_param_type_as_column_type_first) {
+        return false;
+    }
+
+    if (ltree == NULL || rtree == NULL) {
+        return false;
+    }
+
+    if (list_length(opNameList) != 1) {
+        return false;
+    }
+    char* name = strVal(linitial(opNameList));
+    if (!IsCompareOper(name)) {
         return false;
     }
 
@@ -1092,13 +1169,13 @@ bool coerce_param_to_column_type(ParseState* pstate, Node* ltree, Node* rtree, O
     }
 
     /* left is column and right is expr */
-    if (IsA(ltree, Var) && IsA(rtree, OpExpr) && can_be_cast_as_implict(*rtypeId, *ltypeId)) {
+    if (IsA(ltree, Var) && IsA(rtree, OpExpr) && is_safe_cast(*rtypeId, *ltypeId)) {
         *rtypeId = *ltypeId;
         return true;
     }
 
     /* left is expr and right is column */
-    if (IsA(rtree, Var) && IsA(ltree, OpExpr) && can_be_cast_as_implict(*ltypeId, *rtypeId)) {
+    if (IsA(rtree, Var) && IsA(ltree, OpExpr) && is_safe_cast(*ltypeId, *rtypeId)) {
         *ltypeId = *rtypeId;
         return true;
     }
@@ -1218,7 +1295,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
             }
         }
         
-        if (coerce_param_to_column_type(pstate, ltree, rtree, &ltypeId, &rtypeId)) {
+        if (coerce_param_to_column_type(opname, ltree, rtree, &ltypeId, &rtypeId)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
             newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);
             newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);

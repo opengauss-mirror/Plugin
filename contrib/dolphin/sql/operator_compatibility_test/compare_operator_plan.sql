@@ -2,7 +2,6 @@ drop schema if exists compare_operator_plan_schema cascade;
 create schema compare_operator_plan_schema;
 set current_schema to 'compare_operator_plan_schema';
 set dolphin.b_compatibility_mode to on;
-set dolphin.transform_unknown_param_type_as_column_type_first = false;
 
 drop table if exists t13,t14,t15,t16,t17,t18,t19,t20,t21,t22;
 

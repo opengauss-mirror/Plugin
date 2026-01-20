@@ -190,12 +190,13 @@ inline bool NeedToTransformBoolToIntType(Oid leftType)
         leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID);
 }
 
-inline bool NeedToTransformBoolToIntOp(const char * operator_name, Oid leftType, Oid rightType)
+inline bool NeedToTransformBoolToIntOp(const char * operator_name, Oid leftType, Oid rightType,
+                                       Node* lexpr, Node* rexpr)
 {
     /* pre short cut */
     if (leftType != BOOLOID && rightType != BOOLOID)
         return false;
-    if (GetSessionContext()->transform_unknown_param_type_as_column_type_first)
+    if (need_coerce_param_to_column_type(operator_name, lexpr, rexpr, leftType, rightType))
         return false;
     if (operator_name == NULL || strcmp(operator_name, "=") == 0)
         return true;
@@ -205,13 +206,14 @@ inline bool NeedToTransformBoolToIntOp(const char * operator_name, Oid leftType,
                 strcmp(operator_name, "!~~") == 0);
     return false;
 }
+
 void DealWithBoolType(ParseState** pstate, const char * operator_name, Node** lexpr, Node** rexpr)
 {
     Oid leftType = exprType(*lexpr);
     int32 leftTypmod = exprTypmod(*lexpr);
     Oid rightType = exprType(*rexpr);
     int32 rightTypmod = exprTypmod(*rexpr);
-    if (NeedToTransformBoolToIntOp(operator_name, leftType, rightType)) {
+    if (NeedToTransformBoolToIntOp(operator_name, leftType, rightType, *lexpr, *rexpr)) {
         if (NeedToTransformBoolToIntType(leftType) && rightType == BOOLOID) {
             *rexpr = coerce_to_target_type(
                 *pstate, *rexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, NULL, NULL, -1);
