@@ -831,9 +831,75 @@ static void check_unsupported_charset_for_column(Oid collation, const char* col_
 static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel, Oid oldNspOid,
                                                 Oid nspOid, ObjectAddresses* objsMoved, char* newrelname);
 static void OnlineDDLAlterTypeCleanupLock(AlteredTableInfo* tab);
+static Oid get_typeoid_by_reloid(Oid rel_oid);
+static void send_invalidation_type_message(Oid typ_oid);
+static void send_invalidation_class_message(Oid rel_oid);
 #ifdef DOLPHIN
 static bool SpecialAlterTableCmd(AlterTableStmt* stmt);
 #endif
+
+static void send_invalidation_class_message(Oid rel_oid)
+{
+    HeapTuple tuple = SearchSysCache1(RELOID, ObjectIdGetDatum(rel_oid));
+    if (!HeapTupleIsValid(tuple)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("Cache lookup failed for relation %u.", rel_oid),
+            errcause("Cache lookup failed."),
+            erraction("Enter a correct object.")));
+    }
+    Relation class_rel = heap_open(RelationRelationId, AccessShareLock);
+    /*
+     * The purpose is to send a pg_class invalidation message, but the data does not change.
+     * Therefore, the old and new tuples are the same.
+     */
+    CacheInvalidateHeapTuple(class_rel, tuple, tuple);
+    ReleaseSysCache(tuple);
+    heap_close(class_rel, AccessShareLock);
+}
+
+static void send_invalidation_type_message(Oid typ_oid)
+{
+    HeapTuple tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typ_oid));
+    if (!HeapTupleIsValid(tuple)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("Failed to query the %u type in the cache.", typ_oid),
+            errcause("Internal error. The %u type does not exist.", typ_oid),
+            erraction("Enter a correct data type.")));
+    }
+    Relation type_relation = heap_open(TypeRelationId, AccessShareLock);
+    /*
+     * The purpose is to send a pg_type change message, but the data does not change.
+     * Therefore, the old and new tuples are the same.
+     */
+    CacheInvalidateHeapTuple(type_relation, tuple, tuple);
+    ReleaseSysCache(tuple);
+    heap_close(type_relation, AccessShareLock);
+}
+
+static Oid get_typeoid_by_reloid(Oid rel_oid)
+{
+    Datum datum = ObjectIdGetDatum(InvalidOid);
+    bool is_null = true;
+    Relation class_relation = heap_open(RelationRelationId, AccessShareLock);
+    ScanKeyData skey[1];
+    ScanKeyInit(skey, ObjectIdAttributeNumber, BTEqualStrategyNumber, F_OIDEQ,
+                  ObjectIdGetDatum(rel_oid));
+    SysScanDesc scan = systable_beginscan(class_relation, ClassOidIndexId, true, NULL, 1, skey);
+    Tuple rel_tup;
+    /*
+     * Generally, reltype and oid are unique and not null. Therefore, one row can be queried.
+     * If there are multiple rows, the system table is polluted. Therefore, only the first row is obtained.
+     */
+    while (HeapTupleIsValid(rel_tup = systable_getnext(scan))) {
+        datum = tableam_tops_tuple_getattr(rel_tup, Anum_pg_class_reltype, GetDefaultPgClassDesc(), &is_null);
+        if (!is_null) {
+            break;
+        }
+    }
+    systable_endscan(scan);
+    heap_close(class_relation, AccessShareLock);
+    return is_null ? InvalidOid : DatumGetObjectId(datum);
+}
 
 static inline void validate_relation_kind(Relation r)
 {
@@ -18889,6 +18955,15 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
 #endif
 
     ReleaseSysCache(typeTuple);
+
+    /*
+     * Before ALERT the content of this type, we need to send the invalidation message of this type.
+     * RelationGetRelid(rel) indicates the OID of the table corresponding to the type to be modified,
+     * that is, the OID in pg_class. Find the corresponding reltype based on the oid of pg_class,
+     * and then find the tuple of pg_type from syscache based on reltype.
+     */
+    send_invalidation_type_message(get_typeoid_by_reloid(RelationGetRelid(rel)));
+    send_invalidation_class_message(RelationGetRelid(rel));
 
     simple_heap_update(attrelation, &heapTup->t_self, heapTup);
 
