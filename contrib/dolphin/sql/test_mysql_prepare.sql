@@ -270,5 +270,6 @@ drop table t_prepare_010;
 reset dolphin.enable_procedure_executestmt;
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
+reset dolphin.transform_unknown_param_type_as_column_type_first;
 drop schema test_mysql_prepare cascade;
 reset current_schema;

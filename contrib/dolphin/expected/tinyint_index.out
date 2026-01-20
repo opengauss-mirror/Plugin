@@ -1,6 +1,5 @@
 create schema tinyint_index;
 set current_schema to 'tinyint_index';
-set dolphin.transform_unknown_param_type_as_column_type_first = false;
 create table t1(a int1);
 insert into t1 select generate_series(-128, 127);
 insert into t1 select generate_series(-128, 127);

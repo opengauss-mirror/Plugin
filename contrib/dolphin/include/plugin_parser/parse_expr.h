@@ -20,6 +20,8 @@
 #define SYSTEM_SCHEMA_NAME(schemaname) ((schemaname) == NULL || strcmp((schemaname), "pg_catalog") == 0)
 extern bool IsCmpOp(char* opername);
 extern bool IsNumber(Oid typeoid);
+extern bool need_coerce_param_to_column_type(const char* operator_name, Node* ltree, Node* rtree,
+                                             Oid ltypeId, Oid rtypeId);
 #endif
 
 extern Node* transformExpr(ParseState* pstate, Node* expr, ParseExprKind exprKind);

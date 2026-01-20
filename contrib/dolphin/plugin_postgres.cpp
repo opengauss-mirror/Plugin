@@ -1501,6 +1501,7 @@ void init_session_vars(void)
                              NULL, NULL, NULL);
 #endif
 }
+
 static void load_dblink_extension()
 {
     char* dest_str = "create extension if not exists dblink;\n";

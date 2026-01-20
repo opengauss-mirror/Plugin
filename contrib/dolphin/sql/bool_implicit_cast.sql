@@ -135,7 +135,6 @@ insert into t_enum select `longblob` from test_type_table;
 -- error expect
 insert into t_enum select `text` from test_type_table;
 
-set dolphin.transform_unknown_param_type_as_column_type_first = false;
 select ' 2' = true , ' q' = true;
 select ' 2' != true , ' q' @= true;
 select ' 1.0' = true , ' 1.000' = true, '1.001' = true;
