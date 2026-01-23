@@ -1051,6 +1051,8 @@ void init_session_vars(void)
 
     BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
     u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
+    errno_t rc = memset_s(cxt, sizeof(bSqlPluginContext), 0, sizeof(bSqlPluginContext));
+    securec_check(rc, "\0", "\0");
     cxt->enableBCmptMode = false;
     cxt->lockNameList = NIL;
     cxt->scan_from_pl = false;
