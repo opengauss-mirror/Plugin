@@ -561,6 +561,14 @@ referenced column: format
  12
 (1 row)
 
+select format('Hello %s, %1$s','World');
+WARNING:  invalid input syntax for type integer: "World"
+CONTEXT:  referenced column: format
+ format 
+--------
+ 0
+(1 row)
+
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;
 select format(1234.456, 2);

@@ -38,3 +38,4 @@ ORDER BY
 GRANT SELECT ON performance_schema.threads TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select db_b_format($1::"any", $2::bigint)';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, unknown) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_cstring';

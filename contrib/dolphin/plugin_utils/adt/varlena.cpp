@@ -358,6 +358,9 @@ extern "C" DLL_PUBLIC Datum bit_to_hex(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format);
 extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_cstring);
+extern "C" DLL_PUBLIC Datum db_b_format_cstring(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
 extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
 
@@ -8369,6 +8372,18 @@ Datum db_b_format(PG_FUNCTION_ARGS)
     int precision = (int)PG_GETARG_INT64(1);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
+
+Datum db_b_format_cstring(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
+    Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
+    int precision = DatumGetInt32(DirectFunctionCall1(int4in, PG_GETARG_DATUM(1)));
+    PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
+}
+
 #endif
 
 /*
