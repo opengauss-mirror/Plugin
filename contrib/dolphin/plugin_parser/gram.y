@@ -1308,7 +1308,7 @@ static List* PreHandleTymod(List* origin);
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LATERAL_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
+	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LONG LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT METHOD MICROSECOND_P MID MIN_ROWS MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
 	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
 	MOD MODIFIES MAX_ROWS
@@ -1420,6 +1420,7 @@ static List* PreHandleTymod(List* origin);
 %nonassoc   CLUSTER
 %nonassoc	SET				/* see relation_expr_opt_alias */
 %nonassoc	AUTO_INCREMENT
+%nonassoc   LONG
 %right      PRIOR SEPARATOR_P
 %nonassoc   LEVEL
 %right      FEATURES TARGET // DB4AI
@@ -1488,7 +1489,7 @@ static List* PreHandleTymod(List* origin);
 %left		AT				/* sets precedence for AT TIME ZONE */
 %left		COLLATE
 %left		INTERVAL
-%right		UMINUS BY NAME_P PASSING ROW TYPE_P VALUE_P
+%right		UMINUS BY NAME_P PASSING ROW RAW TYPE_P VALUE_P
 %left		'[' ']'
 %left		'(' ')'
 %nonassoc   TEXT_P
@@ -34091,9 +34092,12 @@ GenericType:
 							ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 								errmsg("Invalid parameter for blob(n)")));
 						}
+					} else if (unlikely(strcmp($1, "long") == 0)) {
+							$$ = SystemTypeName("clob");
+							$$->typmods = $2;
 					} else {
-						$$ = makeTypeName($1);
-						$$->typmods = $2;
+							$$ = makeTypeName($1);
+							$$->typmods = $2;
 					}
 				}
 			| type_function_name attrs opt_type_modifiers
@@ -34122,6 +34126,11 @@ GenericType:
 						errmsg("syntax error"),
 						parser_errposition(@2)));
 				}
+			}
+			| LONG RAW
+			{
+				$$ = SystemTypeName("blob");
+				$$->location = @1;
 			}
 		;
 
@@ -41926,6 +41935,7 @@ alias_name_unreserved_keyword_without_key:
 			| LOGIN_SUCCESS
 			| LOGOUT
 			| LOGS
+			| LONG
 			| MAP
 			| MAPPING
 			| MASKING
