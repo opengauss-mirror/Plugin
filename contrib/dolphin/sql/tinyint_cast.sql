@@ -98,5 +98,11 @@ select (-1)::text::int1;
 select '127'::text::int1;
 select '-128'::text::int1;
 
+create table t_tinyint0027(c1 tinyint);
+prepare pre_tinyint0027_1 (tinyint) as 'insert into t_tinyint0027 values(?)';
+execute pre_tinyint0027_1(-128);
+select * from t_tinyint0027;
+drop table t_tinyint0027;
+
 drop schema tinyint_cast cascade;
 reset current_schema;
