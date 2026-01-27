@@ -424,14 +424,14 @@ SHOW FULL TABLES FROM information_schema WHERE Tables_in_information_schema LIKE
 ------------------------------+------------
 (0 rows)
 
-SELECT table_name, table_type, table_comment FROM information_schema.tables WHERE table_schema = DATABASE();
+SELECT table_name, table_type, table_comment FROM information_schema.tables WHERE table_schema = DATABASE() order by 1,2;
           table_name           | table_type | table_comment 
 -------------------------------+------------+---------------
- index_statistic               | VIEW       | 
- pg_type_nonstrict_basic_value | VIEW       | 
  departments                   | BASE TABLE | 
  employees                     | BASE TABLE | 
+ index_statistic               | VIEW       | 
  partition_table_test          | BASE TABLE | 
+ pg_type_nonstrict_basic_value | VIEW       | 
 (5 rows)
 
 SELECT c.constraint_name AS column_name FROM information_schema.check_constraints AS c WHERE c.table_name = 'abc' AND LOWER(c.check_clause) = 'json_valid(`' + LOWER(c.constraint_name) + '`)' AND c.constraint_schema = DATABASE();

@@ -1,0 +1,229 @@
+\d+ pg_partition
+                              Table "pg_catalog.pg_partition"
+       Column       |       Type       | Modifiers | Storage  | Stats target | Description 
+--------------------+------------------+-----------+----------+--------------+-------------
+ relname            | name             | not null  | plain    |              | 
+ parttype           | "char"           | not null  | plain    |              | 
+ parentid           | oid              | not null  | plain    |              | 
+ rangenum           | integer          | not null  | plain    |              | 
+ intervalnum        | integer          | not null  | plain    |              | 
+ partstrategy       | "char"           | not null  | plain    |              | 
+ relfilenode        | oid              | not null  | plain    |              | 
+ reltablespace      | oid              | not null  | plain    |              | 
+ relpages           | double precision | not null  | plain    |              | 
+ reltuples          | double precision | not null  | plain    |              | 
+ relallvisible      | integer          | not null  | plain    |              | 
+ reltoastrelid      | oid              | not null  | plain    |              | 
+ reltoastidxid      | oid              | not null  | plain    |              | 
+ indextblid         | oid              | not null  | plain    |              | 
+ indisusable        | boolean          | not null  | plain    |              | 
+ reldeltarelid      | oid              | not null  | plain    |              | 
+ reldeltaidx        | oid              | not null  | plain    |              | 
+ relcudescrelid     | oid              | not null  | plain    |              | 
+ relcudescidx       | oid              | not null  | plain    |              | 
+ relfrozenxid       | xid32            | not null  | plain    |              | 
+ intspnum           | integer          | not null  | plain    |              | 
+ partkey            | int2vector       | not null  | plain    |              | 
+ intervaltablespace | oidvector        | not null  | plain    |              | 
+ interval           | text[]           |           | extended |              | 
+ boundaries         | text[]           |           | extended |              | 
+ transit            | text[]           |           | extended |              | 
+ reloptions         | text[]           |           | extended |              | 
+ relfrozenxid64     | xid              |           | plain    |              | 
+ relminmxid         | xid              |           | plain    |              | 
+ partkeyexpr        | text             |           | extended |              | 
+ partitionno        | integer          |           | plain    |              | 
+ subpartitionno     | integer          |           | plain    |              | 
+Indexes:
+    "pg_partition_indextblid_parentoid_reloid_index" UNIQUE, btree (indextblid NULLS LAST, parentid NULLS LAST, oid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_partoid_index" UNIQUE, btree (relname NULLS LAST, parttype NULLS LAST, parentid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_reloid_index" UNIQUE, btree (oid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_indextblid_index" btree (indextblid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_parentoid_index" btree (parttype NULLS LAST, parentid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_tblspc_relfilenode_index" btree (reltablespace NULLS LAST, relfilenode NULLS LAST) TABLESPACE pg_default
+Replica Identity: NOTHING
+Has OIDs: yes
+
+show dolphin.sql_mode;
+                                           dolphin.sql_mode                                           
+------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+\d+ information_schema.tables
+                                   View "information_schema.tables"
+            Column            |               Type                | Modifiers | Storage  | Description 
+------------------------------+-----------------------------------+-----------+----------+-------------
+ table_catalog                | information_schema.sql_identifier |           | extended | 
+ table_schema                 | information_schema.sql_identifier |           | extended | 
+ table_name                   | information_schema.sql_identifier |           | extended | 
+ table_type                   | information_schema.character_data |           | extended | 
+ self_referencing_column_name | information_schema.sql_identifier |           | extended | 
+ reference_generation         | information_schema.character_data |           | extended | 
+ user_defined_type_catalog    | information_schema.sql_identifier |           | extended | 
+ user_defined_type_schema     | information_schema.sql_identifier |           | extended | 
+ user_defined_type_name       | information_schema.sql_identifier |           | extended | 
+ is_insertable_into           | information_schema.yes_or_no      |           | extended | 
+ is_typed                     | information_schema.yes_or_no      |           | extended | 
+ commit_action                | information_schema.character_data |           | extended | 
+ table_comment                | information_schema.character_data |           | extended | 
+ table_collation              | character varying(64)             |           | extended | 
+ engine                       | character varying(64)             |           | extended | 
+ version                      | integer                           |           | plain    | 
+ row_format                   | character varying(64)             |           | extended | 
+ table_rows                   | bigint                            |           | plain    | 
+ avg_row_length               | bigint                            |           | plain    | 
+ data_length                  | bigint                            |           | plain    | 
+ max_data_length              | bigint                            |           | plain    | 
+ index_length                 | bigint                            |           | plain    | 
+ data_free                    | bigint                            |           | plain    | 
+ auto_increment               | int16                             |           | plain    | 
+ create_time                  | timestamp with time zone          |           | plain    | 
+ update_time                  | timestamp without time zone       |           | plain    | 
+ check_time                   | timestamp without time zone       |           | plain    | 
+ checksum                     | bigint                            |           | plain    | 
+ create_options               | character varying(256)            |           | extended | 
+View definition:
+ SELECT current_database()::information_schema.sql_identifier AS table_catalog, 
+    nc.nspname::information_schema.sql_identifier AS table_schema, 
+    c.relname::information_schema.sql_identifier AS table_name, 
+        CASE
+            WHEN nc.oid = pg_my_temp_schema() THEN 'LOCAL TEMPORARY'::text
+            WHEN c.relkind = 'r'::"char" THEN 'BASE TABLE'::text
+            WHEN c.relkind = 'm'::"char" THEN 'MATERIALIZED VIEW'::text
+            WHEN c.relkind = 'v'::"char" THEN 'VIEW'::text
+            WHEN c.relkind = 'f'::"char" THEN 'FOREIGN TABLE'::text
+            ELSE NULL::text
+        END::information_schema.character_data AS table_type, 
+    NULL::character varying::information_schema.sql_identifier AS self_referencing_column_name, 
+    NULL::character varying::information_schema.character_data AS reference_generation, 
+        CASE
+            WHEN t.typname IS NOT NULL THEN current_database()
+            ELSE NULL::name
+        END::information_schema.sql_identifier AS user_defined_type_catalog, 
+    nt.nspname::information_schema.sql_identifier AS user_defined_type_schema, 
+    t.typname::information_schema.sql_identifier AS user_defined_type_name, 
+        CASE
+            WHEN c.relkind = 'r'::"char" OR (c.relkind = ANY (ARRAY['v'::"char", 'f'::"char"])) AND (pg_relation_is_updatable(c.oid, false) & 8) = 8 THEN 'YES'::text
+            ELSE 'NO'::text
+        END::information_schema.yes_or_no AS is_insertable_into, 
+        CASE
+            WHEN t.typname IS NOT NULL THEN 'YES'::text
+            ELSE 'NO'::text
+        END::information_schema.yes_or_no AS is_typed, 
+    NULL::character varying::information_schema.character_data AS commit_action, 
+    d.description::information_schema.character_data AS table_comment, 
+    pg_extract_collate_name(get_table_option(c.reloptions, 'collate'::text)::oid)::character varying(64) AS table_collation, 
+    NULL::character varying(64) AS engine, 10 AS version, 
+        CASE
+            WHEN c.relkind = 'r'::"char" THEN 
+            CASE
+                WHEN get_table_option(c.reloptions, 'compression'::text) IS NOT NULL AND get_table_option(c.reloptions, 'compression'::text) <> 'no'::text THEN 'Compressed'::text
+                ELSE 'Dynamic'::text
+            END
+            ELSE NULL::text
+        END::character varying(64) AS row_format, 
+        CASE
+            WHEN c.relkind = 'r'::"char" THEN c.reltuples::bigint
+            ELSE NULL::bigint
+        END AS table_rows, 
+        CASE
+            WHEN c.relkind = 'r'::"char" THEN pg_avg_row_length(c.oid, 0::oid)
+            ELSE NULL::integer
+        END::bigint AS avg_row_length, 
+        CASE
+            WHEN c.relkind = 'r'::"char" THEN pg_relation_size(c.oid::regclass)
+            ELSE NULL::bigint
+        END AS data_length, 
+    NULL::bigint AS max_data_length, 
+        CASE
+            WHEN c.relkind = 'r'::"char" THEN pg_indexes_size(c.oid::regclass)
+            ELSE NULL::bigint
+        END AS index_length, 
+    NULL::bigint AS data_free, 
+    get_auto_increment_nextval(c.oid, true) AS auto_increment, 
+    po.ctime AS create_time, 
+    po.mtime::timestamp without time zone AS update_time, 
+    NULL::timestamp without time zone AS check_time, NULL::bigint AS checksum, 
+    c.reloptions::character varying(256) AS create_options
+   FROM pg_namespace nc
+   JOIN pg_class c ON nc.oid = c.relnamespace
+   LEFT JOIN (pg_type t
+   JOIN pg_namespace nt ON t.typnamespace = nt.oid) ON c.reloftype = t.oid
+   LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
+   LEFT JOIN pg_object po ON c.oid = po.object_oid AND c.relkind = po.object_type
+   LEFT JOIN pg_tablespace ts ON c.reltablespace = ts.oid
+  WHERE (c.relkind = ANY (ARRAY['r'::"char", 'm'::"char", 'v'::"char", 'f'::"char"])) AND c.relname !~~ 'mlog\_%'::text AND c.relname !~~ 'matviewmap\_%'::text AND NOT pg_is_other_temp_schema(nc.oid) AND (pg_has_role(c.relowner, 'USAGE'::text) OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'::text) OR has_any_column_privilege(c.oid, 'SELECT, INSERT, UPDATE, REFERENCES'::text));
+
+\df abs
+                                            List of functions
+   Schema   | Name | Result data type | Argument data types |  Type  | fencedmode | propackage | prokind 
+------------+------+------------------+---------------------+--------+------------+------------+---------
+ pg_catalog | abs  | bigint           | bigint              | normal | f          | f          | f
+ pg_catalog | abs  | double precision | double precision    | normal | f          | f          | f
+ pg_catalog | abs  | integer          | integer             | normal | f          | f          | f
+ pg_catalog | abs  | number           | number              | normal | f          | f          | f
+ pg_catalog | abs  | real             | real                | normal | f          | f          | f
+ pg_catalog | abs  | smallint         | smallint            | normal | f          | f          | f
+(6 rows)
+
+show dolphin.sql_mode;
+                                           dolphin.sql_mode                                           
+------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+set dolphin.sql_mode = '';
+\d+ pg_partition
+                              Table "pg_catalog.pg_partition"
+       Column       |       Type       | Modifiers | Storage  | Stats target | Description 
+--------------------+------------------+-----------+----------+--------------+-------------
+ relname            | name             | not null  | plain    |              | 
+ parttype           | `char`           | not null  | plain    |              | 
+ parentid           | oid              | not null  | plain    |              | 
+ rangenum           | integer          | not null  | plain    |              | 
+ intervalnum        | integer          | not null  | plain    |              | 
+ partstrategy       | `char`           | not null  | plain    |              | 
+ relfilenode        | oid              | not null  | plain    |              | 
+ reltablespace      | oid              | not null  | plain    |              | 
+ relpages           | double precision | not null  | plain    |              | 
+ reltuples          | double precision | not null  | plain    |              | 
+ relallvisible      | integer          | not null  | plain    |              | 
+ reltoastrelid      | oid              | not null  | plain    |              | 
+ reltoastidxid      | oid              | not null  | plain    |              | 
+ indextblid         | oid              | not null  | plain    |              | 
+ indisusable        | boolean          | not null  | plain    |              | 
+ reldeltarelid      | oid              | not null  | plain    |              | 
+ reldeltaidx        | oid              | not null  | plain    |              | 
+ relcudescrelid     | oid              | not null  | plain    |              | 
+ relcudescidx       | oid              | not null  | plain    |              | 
+ relfrozenxid       | xid32            | not null  | plain    |              | 
+ intspnum           | integer          | not null  | plain    |              | 
+ partkey            | int2vector       | not null  | plain    |              | 
+ intervaltablespace | oidvector        | not null  | plain    |              | 
+ interval           | text[]           |           | extended |              | 
+ boundaries         | text[]           |           | extended |              | 
+ transit            | text[]           |           | extended |              | 
+ reloptions         | text[]           |           | extended |              | 
+ relfrozenxid64     | xid              |           | plain    |              | 
+ relminmxid         | xid              |           | plain    |              | 
+ partkeyexpr        | text             |           | extended |              | 
+ partitionno        | integer          |           | plain    |              | 
+ subpartitionno     | integer          |           | plain    |              | 
+Indexes:
+    "pg_partition_indextblid_parentoid_reloid_index" UNIQUE, btree (indextblid NULLS LAST, parentid NULLS LAST, oid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_partoid_index" UNIQUE, btree (relname NULLS LAST, parttype NULLS LAST, parentid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_reloid_index" UNIQUE, btree (oid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_indextblid_index" btree (indextblid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_parentoid_index" btree (parttype NULLS LAST, parentid NULLS LAST) TABLESPACE pg_default
+    "pg_partition_tblspc_relfilenode_index" btree (reltablespace NULLS LAST, relfilenode NULLS LAST) TABLESPACE pg_default
+Replica Identity: NOTHING
+Has OIDs: yes
+
+show dolphin.sql_mode;
+ dolphin.sql_mode 
+------------------
+ 
+(1 row)
+
+reset dolphin.sql_mode;

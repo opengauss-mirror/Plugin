@@ -15,6 +15,7 @@ test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlm
 
 # must be single test group, cause other connection will affect the result
 test: test_shows
+test: gsql_command
 
 test: test_shows_2 time_function_test infomation_schema_test
 

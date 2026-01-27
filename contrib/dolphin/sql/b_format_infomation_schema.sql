@@ -215,7 +215,7 @@ select state, round(sum(duration),5) as `duration (summed) in sec` from informat
 
 SHOW FULL TABLES FROM information_schema WHERE Tables_in_information_schema LIKE 'KEY_COLUMN_USAGE';
 
-SELECT table_name, table_type, table_comment FROM information_schema.tables WHERE table_schema = DATABASE();
+SELECT table_name, table_type, table_comment FROM information_schema.tables WHERE table_schema = DATABASE() order by 1,2;
 
 SELECT c.constraint_name AS column_name FROM information_schema.check_constraints AS c WHERE c.table_name = 'abc' AND LOWER(c.check_clause) = 'json_valid(`' + LOWER(c.constraint_name) + '`)' AND c.constraint_schema = DATABASE();
 
