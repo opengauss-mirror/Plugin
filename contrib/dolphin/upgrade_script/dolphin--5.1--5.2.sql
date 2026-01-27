@@ -39,3 +39,8 @@ GRANT SELECT ON performance_schema.threads TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select db_b_format($1::"any", $2::bigint)';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, unknown) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_cstring';
+
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp without time zone, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_timestamp';
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp with time zone, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp without time zone) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp with time zone) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;
