@@ -28,6 +28,7 @@
 #include "commands/tablecmds.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
+#include "executor/node/nodeCtescan.h"
 #include "optimizer/clauses.h"
 #include "optimizer/tlist.h"
 #include "plugin_optimizer/planner.h"
@@ -124,7 +125,7 @@ static StartWithCTEPseudoReturnAtts g_StartWithCTEPseudoReturnAtts[] =
 };
 
 /* function parsing startWithExpr and connectByExpr */
-static void transformStartWithClause(StartWithTransformContext *context, SelectStmt *stmt);
+static void transformStartWithClause(StartWithTransformContext *context, SelectStmt *stmt, ParseState *pstate);
 
 static List *expandAllTargetList(List *targetRelInfoList);
 
@@ -167,6 +168,7 @@ static Node *makeBoolAConst(bool state, int location);
 static StartWithRewrite ChooseSWCBStrategy(StartWithTransformContext context);
 static Node *tryReplaceFakeValue(Node *node);
 static RangeSubselect *makeSWCBPseudoTable();
+static void check_siblings_clause(List* siblings_clause, ParseState* pstate);
 
 static Node *makeBoolAConst(bool state, int location)
 {
@@ -263,7 +265,7 @@ void transformStartWith(ParseState *pstate, ParseState *origin_pstate, SelectStm
     context.relInfoList = NULL;
     context.connectby_prior_name = NULL;
 
-    transformStartWithClause(&context, stmt);
+    transformStartWithClause(&context, stmt, pstate);
     pstate->p_hasStartWith = true;
 
     int lens = list_length(pstate->p_start_info);
@@ -1347,6 +1349,70 @@ static void checkConnectByExprValidity(Node* expr, bool isStartWith)
     }
 }
 
+static void check_siblings_clause(List* siblings_clause, ParseState* pstate)
+{
+    ListCell* lc = NULL;
+    char* clauseName = "ORDER SIBLINGS BY";
+    foreach (lc, siblings_clause) {
+        SortBy* sortby = (SortBy*)lfirst(lc);
+        Node* node = (Node*)sortby->node;
+        if (!(IsA(node, ColumnRef) || IsA(node, A_Const) || IsA(node, FuncCall))) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
+                    errmsg("Invalid order siblings by clause"),
+                    errdetail("Siblings sort entry not found"),
+                    errcause("Incorrect query input"),
+                    erraction("Please check and revise your query"))));
+        } else if (IsA(node, FuncCall)) {
+            Node* func_node = (Node*)copyObject(node);
+            pstate->p_hasStartWith = true;
+            Node* ret_node = (Node*)transformExpr(pstate, func_node, EXPR_KIND_OTHER);
+            pstate->p_hasStartWith = false;
+
+            if (IsA(ret_node, FuncExpr) && IsHierarchicalQueryFuncOid(((FuncExpr*)ret_node)->funcid)) {
+                ereport(ERROR, (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("%s should not be called in %s clause.",
+                                       get_func_name(((FuncExpr*)ret_node)->funcid), clauseName),
+                                errcause("Unsupported expression in %s clause.", clauseName),
+                                erraction("Check and revise your query or contact Huawei engineers.")));
+            } else if (IsA(ret_node, Aggref)) {
+                ereport(ERROR, (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("Aggregate function should not be called in %s clause.", clauseName),
+                                errcause("Unsupported expression in %s clause.", clauseName),
+                                erraction("Check and revise your query or contact Huawei engineers.")));
+            } else if (IsA(ret_node, WindowFunc)) {
+                ereport(ERROR, (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("Window function should not be called in %s clause.", clauseName),
+                                errcause("Unsupported expression in %s clause.", clauseName),
+                                erraction("Check and revise your query or contact Huawei engineers.")));
+            }
+        } else if (IsA(node, ColumnRef)) {
+            ColumnRef* cref = (ColumnRef*)node;
+            int fields_len = list_length(cref->fields);
+            if (fields_len == 1) {
+                Node* field1 = (Node*)linitial(cref->fields);
+                AssertEreport(IsA(field1, String), MOD_OPT, "");
+                char* colname = strVal(field1);
+
+                if (pg_strcasecmp(colname, "connect_by_root") == 0) {
+                    ereport(ERROR, (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                    errmsg("%s should not be called in %s clause.", colname, clauseName),
+                                    errcause("Unsupported expression in %s clause.", clauseName),
+                                    erraction("Check and revise your query or contact Huawei engineers.")));
+                }
+
+                if (IsPseudoReturnColumn(colname)) {
+                    ereport(ERROR, (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                    errmsg("column %s should not be used in %s clause.", colname, clauseName),
+                                    errcause("Unsupported expression in %s clause.", clauseName),
+                                    erraction("Check and revise your query or contact Huawei engineers.")));
+                }
+            }
+        }
+    }
+}
+
 /*
  * --------------------------------------------------------------------------------------
  * @Brief: transfrom startwith/connectby clasue
@@ -1361,7 +1427,7 @@ static void checkConnectByExprValidity(Node* expr, bool isStartWith)
  * @Return: to be input
  * --------------------------------------------------------------------------------------
  */
-static void transformStartWithClause(StartWithTransformContext *context, SelectStmt *stmt)
+static void transformStartWithClause(StartWithTransformContext *context, SelectStmt *stmt, ParseState *pstate)
 {
     if (stmt == NULL) {
         return;
@@ -1382,6 +1448,10 @@ static void transformStartWithClause(StartWithTransformContext *context, SelectS
     context->connect_by_type = CONNECT_BY_PRIOR;
     context->nocycle = clause->nocycle;
     context->siblingsOrderBy = (List *)clause->siblingsOrderBy;
+
+    /* check siblings order by clause, only support A_Const and ColumnRef for now */
+    check_siblings_clause(context->siblingsOrderBy, pstate);
+
     /* when ROWNUM or LEVEL appear in Expressions other than A_Expr, do an extra replacement */
     raw_expression_tree_walker((Node*)context->connectByExpr,
         (bool (*)())pseudo_level_rownum_walker, (Node*)context->connectByExpr);

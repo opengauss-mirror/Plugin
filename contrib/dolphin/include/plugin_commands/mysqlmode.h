@@ -34,7 +34,8 @@
 #define SQL_MODE_NOT_STRICT_ON_SELECT() \
     (!(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
-#define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
+#define SQL_MODE_PIPES_AS_CONCAT() \
+    ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT) || u_sess->attr.attr_common.IsInplaceUpgrade)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 #define SQL_MODE_NO_ZERO_DATE() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NO_ZERO_DATE)
 #define SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH)
