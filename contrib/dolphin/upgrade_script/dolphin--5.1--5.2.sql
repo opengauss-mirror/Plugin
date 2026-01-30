@@ -44,3 +44,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp without time zone, int8
 CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp with time zone, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_timestamptz';
 CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp without time zone) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.yearweek(timestamp with time zone) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;
+
+create or replace function pg_catalog.extractvalue(text,text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'extractvalue';
+create or replace function pg_catalog.updatexml(text,text,text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'updatexml';
+
+
