@@ -76,6 +76,7 @@ endif()
 message(WARNING "dolphin cmake begin")
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../../cmake/src)
+set(LIBXML2_INCLUDE "/usr/include/libxml2")
 
 include(build_function)
 include(set_thirdparty_path)
@@ -85,7 +86,7 @@ include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR})
 include_directories(${KERBEROS_INCLUDE_PATH} ${LIBOBS_INCLUDE_PATH} ${LIBCURL_INCLUDE_PATH} ${LIBOPENSSL_INCLUDE_PATH})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CJSON_INCLUDE_PATH} ${BOOST_INCLUDE_PATH})
-
+INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE})
 
 #add_compile_options(-fPIC)
 set(LIB_DOLPHIN_OPTIONS -fvisibility=hidden -fPIC -DDOLPHIN)
