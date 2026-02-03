@@ -1234,6 +1234,11 @@ ObjectAddress CreateFunction(CreateFunctionStmt* stmt, const char* queryString, 
     if (PLSQL_SECURITY_DEFINER && u_sess->attr.attr_common.upgrade_mode == 0 && OidIsValid(pkg_oid)) {
         bool isnull = false;
         HeapTuple pkgTuple = SearchSysCache1(PACKAGEOID, ObjectIdGetDatum(pkg_oid));
+        if (!HeapTupleIsValid(pkgTuple)) {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_PACKAGE),
+            errmsg("package with oid %u does not exist", pkg_oid), errdetail("N/A"),
+            errcause("System error."), erraction("Contact engineer to support.")));
+        }
         Datum pkgSecDefDatum = SysCacheGetAttr(PACKAGEOID, pkgTuple, Anum_gs_package_pkgsecdef, &isnull);
         if (isnull) {
             security = false;
@@ -2926,6 +2931,10 @@ ObjectAddress AlterFunction(AlterFunctionStmt* stmt)
     DeconstructQualifiedName(stmt->func->funcname, &schemaName, &procedureName, &pkgname);
     if (schemaName == NULL) {
         tup = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcOid));
+        if (!HeapTupleIsValid(tup)) {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION),
+            errmsg("cache lookup failed for function %u", funcOid)));
+        }
         procForm = (Form_pg_proc)GETSTRUCT(tup);
         schemaName = get_namespace_name(procForm->pronamespace);
         ReleaseSysCache(tup);

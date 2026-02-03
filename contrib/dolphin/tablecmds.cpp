@@ -558,8 +558,8 @@ static List* find_typed_table_dependencies(Oid typeOid, const char* typname, Dro
 static void ATPrepAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, bool recurse,
     bool recursing, AlterTableCmd* cmd, LOCKMODE lockmode);
 static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, ColumnDef* colDef, bool isOid,
-    bool recurse, bool recursing, bool is_first, char *after_name, LOCKMODE lockmode);
-static void check_for_column_name_collision(Relation rel, const char* colname,
+    bool recurse, bool recursing, bool is_first, char *after_name, bool ifNotExists, LOCKMODE lockmode);
+static bool check_for_column_name_collision(Relation rel, const char* colname, bool ifNotExists,
 #ifdef DOLPHIN
     int2 old_att_num = InvalidAttrNumber
 #endif
@@ -6432,7 +6432,7 @@ static AttrNumber  renameatt_internal(Oid myrelid, const char* oldattname, const
     }
 
     /* new name should not already exist */
-    check_for_column_name_collision(targetrelation, newattname,
+    check_for_column_name_collision(targetrelation, newattname, false,
 #ifdef DOLPHIN
         attnum
 #endif
@@ -9866,11 +9866,11 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_AddColumnToView: /* add column via CREATE OR REPLACE
                                   * VIEW */
             address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, false, false, false,
-                cmd->is_first, cmd->after_name, lockmode);
+                cmd->is_first, cmd->after_name, cmd->missing_ok, lockmode);
             break;
         case AT_AddColumnRecurse:
             address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, false, true, false,
-            cmd->is_first, cmd->after_name, lockmode);
+            cmd->is_first, cmd->after_name, cmd->missing_ok, lockmode);
             break;
         case AT_AddPartition: /* add partition */
             ATExecAddPartition(rel, (AddPartitionState*)cmd->def);
@@ -10060,12 +10060,12 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_AddOids: /* SET WITH OIDS */
             /* Use the ADD COLUMN code, unless prep decided to do nothing */
             if (cmd->def != NULL)
-                address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, true, false, false, false, NULL, lockmode);
+                address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, true, false, false, false, NULL, false, lockmode);
             break;
         case AT_AddOidsRecurse: /* SET WITH OIDS */
             /* Use the ADD COLUMN code, unless prep decided to do nothing */
             if (cmd->def != NULL)
-                address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, true, true, false, false, NULL, lockmode);
+                address = ATExecAddColumn(wqueue, tab, rel, (ColumnDef*)cmd->def, true, true, false, false, NULL, false, lockmode);
             break;
         case AT_DropOids: /* SET WITHOUT OIDS */
 
@@ -13822,7 +13822,7 @@ static void ATExecMOTAlterTable(AlterForeingTableCmd* cmd)
 #endif
 
 static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, ColumnDef* colDef, bool isOid,
-    bool recurse, bool recursing, bool is_first, char *after_name, LOCKMODE lockmode)
+    bool recurse, bool recursing, bool is_first, char *after_name, bool ifNotExists, LOCKMODE lockmode)
 {
     Oid myrelid = RelationGetRelid(rel);
     Relation pgclass = NULL;
@@ -13954,8 +13954,16 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
     }
     relkind = ((Form_pg_class)GETSTRUCT(reltup))->relkind;
 
-    /* new name should not already exist */
-    check_for_column_name_collision(rel, colDef->colname);
+    /* new name should not already exist, but skip if the name already exists and ifNotExists is true */
+    if (!check_for_column_name_collision(rel, colDef->colname, ifNotExists)) {
+        heap_close(attrdesc, RowExclusiveLock);
+        heap_close(pgclass, RowExclusiveLock);
+        if (cedesc != NULL) {
+            heap_close(cedesc, RowExclusiveLock);
+        }
+        tableam_tops_free_tuple(reltup);
+        return InvalidObjectAddress;
+    }
 
     /* Determine the new attribute's number */
     if (isOid) {
@@ -14460,7 +14468,7 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
         childtab = ATGetQueueEntry(wqueue, childrel);
 
         /* Recurse to child */
-        ATExecAddColumn(wqueue, childtab, childrel, colDef, isOid, recurse, true, is_first, after_name, lockmode);
+        ATExecAddColumn(wqueue, childtab, childrel, colDef, isOid, recurse, true, is_first, after_name, ifNotExists, lockmode);
 
         heap_close(childrel, NoLock);
     }
@@ -14472,7 +14480,7 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
  * If a new or renamed column will collide with the name of an existing
  * column, error out.
  */
-static void check_for_column_name_collision(Relation rel, const char* colname,
+static bool check_for_column_name_collision(Relation rel, const char* colname, bool ifNotExists,
 #ifdef DOLPHIN
     int2 old_att_num
 #endif
@@ -14492,14 +14500,14 @@ static void check_for_column_name_collision(Relation rel, const char* colname,
     attTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(RelationGetRelid(rel)), PointerGetDatum(colname));
 #endif
     if (!HeapTupleIsValid(attTuple))
-        return;
+        return true;
 
     attnum = ((Form_pg_attribute)GETSTRUCT(attTuple))->attnum;
     ReleaseSysCache(attTuple);
 #ifdef DOLPHIN
     /* allow rename current column name with a same name */
     if (old_att_num != InvalidAttrNumber && old_att_num == attnum) {
-        return;
+        return true;
     }
 #endif
 
@@ -14508,14 +14516,24 @@ static void check_for_column_name_collision(Relation rel, const char* colname,
      * names, since they are normally not shown and the user might otherwise
      * be confused about the reason for the conflict.
      */
-    if (attnum <= 0)
+    if (attnum <= 0) {
         ereport(ERROR,
             (errcode(ERRCODE_DUPLICATE_COLUMN),
                 errmsg("column name \"%s\" conflicts with a system column name", colname)));
-    else
-        ereport(ERROR,
-            (errcode(ERRCODE_DUPLICATE_COLUMN),
-                errmsg("column \"%s\" of relation \"%s\" already exists", colname, RelationGetRelationName(rel))));
+        return false;
+    } else {
+        if (ifNotExists) {
+            ereport(NOTICE,
+                (errcode(ERRCODE_DUPLICATE_COLUMN),
+                    errmsg("column \"%s\" of relation \"%s\" already exists, skipping", colname, RelationGetRelationName(rel))));
+            return false;
+        } else {
+            ereport(ERROR,
+                (errcode(ERRCODE_DUPLICATE_COLUMN),
+                    errmsg("column \"%s\" of relation \"%s\" already exists", colname, RelationGetRelationName(rel))));
+            return false;
+        }
+    }
 }
 
 /*

@@ -750,7 +750,7 @@ static List* PreHandleTymod(List* origin);
 
 %type <node>	alter_table_cmd alter_table_option alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
 				modify_column_cmd reset_partition_cmd modify_partition_cmd
-				replica_identity add_column_first_after event_from_clause 
+				replica_identity add_column_first_after event_from_clause add_column_cmd
 %type <list>	alter_table_cmds alter_table_option_list alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
 %type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
@@ -5096,19 +5096,30 @@ opt_enable:	ENABLE_P		{}
 			| /* empty */	{}
 			;
 add_column_cmds:
+			add_column_cmd
+				{
+					$$ = list_make1($1);
+				}
+			| add_column_cmds ',' add_column_cmd
+				{
+					$$ = lappend($1, $3);
+				}
+			;
+add_column_cmd:
 			columnDef
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AddColumn;
 					n->def = $1;
-					$$ = list_make1(n);
+					$$ = (Node *)n;
 				}
-			| add_column_cmds ',' columnDef
+			| IF_P NOT EXISTS columnDef
 				{
-				 	AlterTableCmd *n = makeNode(AlterTableCmd);
+					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AddColumn;
-					n->def = $3;
-					$$ = lappend($1, n);
+					n->missing_ok = true;
+					n->def = $4;
+					$$ = (Node *)n;
 				}
 			;
 
@@ -5739,12 +5750,30 @@ alter_table_cmd:
 					n->def = $2;
 					$$ = (Node *)n;
 				}
+			/* ALTER TABLE <name> ADD IF NOT EXISTS <coldef> */
+			| ADD_P IF_P NOT EXISTS columnDef add_column_first_after
+				{
+					AlterTableCmd *n = (AlterTableCmd *)$6;
+					n->subtype = AT_AddColumn;
+					n->missing_ok = true;
+					n->def = $5;
+					$$ = (Node *)n;
+				}
 			/* ALTER TABLE <name> ADD COLUMN <coldef> */
 			| ADD_P COLUMN columnDef add_column_first_after
 				{
 					AlterTableCmd *n = (AlterTableCmd *)$4;
 					n->subtype = AT_AddColumn;
 					n->def = $3;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ADD COLUMN IF NOT EXISTS <coldef> */
+			| ADD_P COLUMN IF_P NOT EXISTS columnDef add_column_first_after
+				{
+					AlterTableCmd *n = (AlterTableCmd *)$7;
+					n->subtype = AT_AddColumn;
+					n->missing_ok = true;
+					n->def = $6;
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ADD <coldef, ...>, add column with bracket does not support first/after */
@@ -8054,11 +8083,19 @@ OptCopyRejectLimit:
 copy_generic_opt_list:
 			copy_generic_opt_elem
 				{
-					$$ = list_make1($1);
+					if ($1 == NULL) {
+						$$ = NULL;
+					} else {
+						$$ = list_make1($1);
+					}
 				}
 			| copy_generic_opt_list ',' copy_generic_opt_elem
 				{
-					$$ = lappend($1, $3);
+					if ($3 == NULL) {
+						$$ = $1;
+					} else {
+						$$ = lappend($1, $3);
+					}
 				}
 		;
 
@@ -8066,9 +8103,17 @@ copy_generic_opt_elem:
 			ColLabel copy_generic_opt_arg
 				{
 					/* Character "when_expr" may be injected as "COPY ... WHEN ... "*/
-					if (pg_strcasecmp($1, "when_expr") == 0)
+					if (pg_strcasecmp($1, "when_expr") == 0) {
 						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("option \"%s\" not recognized", $1)));
-					$$ = makeDefElem($1, $2);
+					} else if (pg_strcasecmp($1, "formatter") == 0 ||
+					           pg_strcasecmp($1, "transform") == 0 ||
+							   pg_strcasecmp($1, "sequence") == 0 ||
+							   pg_strcasecmp($1, "filler") == 0 ||
+							   pg_strcasecmp($1, "constant") == 0) {
+						$$ = NULL;
+					} else {
+						$$ = makeDefElem($1, $2);
+					}
 				}
 		;
 

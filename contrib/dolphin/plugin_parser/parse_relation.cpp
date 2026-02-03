@@ -63,6 +63,7 @@
 #include "catalog/pg_object.h"
 #include "catalog/pg_depend.h"
 #include "catalog/pg_rewrite.h"
+#include "catalog/pg_constraint.h"
 #ifdef ENABLE_MOT
 #include "storage/mot/jit_def.h"
 #endif
@@ -3001,7 +3002,10 @@ static ColVersionMap col_version_maps[] = {
 
     /* pg_collation */
     {CollationRelationId, Anum_pg_collation_collpadattr, SRF_FUSION_VERSION_NUM},
-    {CollationRelationId, Anum_pg_collation_collisdef, SRF_FUSION_VERSION_NUM}
+    {CollationRelationId, Anum_pg_collation_collisdef, SRF_FUSION_VERSION_NUM},
+
+    /* pg_constraint */
+    {ConstraintRelationId, Anum_pg_constraint_condisable, FLUSH_LSN_FUN_VERSION_NUM}
 };
 
 static bool skipNewColumnDuringUpgrade(Form_pg_attribute attr)
