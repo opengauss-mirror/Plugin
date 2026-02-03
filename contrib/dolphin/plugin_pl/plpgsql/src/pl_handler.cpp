@@ -312,11 +312,11 @@ void InsertGsSource(Oid objId, Oid nspid, const char* name, const char* type, bo
 static void PkgInsertGsSource(Oid pkgOid, bool isSpec, bool status)
 {
     HeapTuple pkgTup = SearchSysCache1(PACKAGEOID, ObjectIdGetDatum(pkgOid));
-    Form_gs_package pkgStruct = (Form_gs_package)GETSTRUCT(pkgTup);
     if (!HeapTupleIsValid(pkgTup)) {
         ereport(ERROR,  (errmodule(MOD_PLSQL),  errcode(ERRCODE_CACHE_LOOKUP_FAILED),
                 errmsg("cache lookup failed for package %u, while collecting gs_source log", pkgOid)));
     }
+    Form_gs_package pkgStruct = (Form_gs_package)GETSTRUCT(pkgTup);
     char* name = NameStr(pkgStruct->pkgname);
     Oid nspid = pkgStruct->pkgnamespace;
     const char* type = (isSpec) ? ("package") : ("package body");

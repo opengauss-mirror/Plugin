@@ -2984,6 +2984,8 @@ void CheckOutParamIsConst(PLpgSQL_expr* expr)
 
     function->cur_estate = estate;
     function->cur_estate->func = function;
+    function->ndatums = estate->ndatums;
+    function->datums = estate->datums;
 
     (void)getMultiFuncInfo(expr->query, expr, true);
 
