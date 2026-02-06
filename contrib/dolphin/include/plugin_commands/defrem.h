@@ -73,9 +73,6 @@ extern void DropCastById(Oid castOid);
 extern ObjectAddress AlterFunctionNamespace(List* name, List* argtypes, bool isagg, const char* newschema);
 extern Oid AlterFunctionNamespace_oid(Oid procOid, Oid nspOid);
 extern void ExecuteDoStmt(DoStmt* stmt, bool atomic);
-#ifdef DOLPHIN
-extern void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic);
-#endif
 extern Oid get_cast_oid(Oid sourcetypeid, Oid targettypeid, bool missing_ok);
 extern void IsThereFunctionInNamespace(const char *proname, int pronargs, oidvector *proargtypes, Oid nspOid);
 
@@ -230,6 +227,8 @@ extern ObjectAddress AlterEventCommand(AlterEventStmt* stmt);
 extern void DropEventCommand(DropEventStmt* stmt);
 extern char* parseIntervalExprString(Node *intervalNode);
 extern char* parseTimeExprString(Node* timeExpr);
+
+extern void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, DestReceiver *dest = NULL);
 
 #endif /* !FRONTEND_PARSER */
 extern DefElem* defWithOids(bool value);

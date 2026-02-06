@@ -99,6 +99,9 @@
 #include "commands/comment.h"
 #include "catalog/gs_dependencies_fn.h"
 #include "utils/sec_rls_utils.h"
+
+#include "utils/typcache.h"
+#include "nodes/makefuncs.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 #endif
@@ -2573,6 +2576,36 @@ void AlterFunctionOwnerByPkg(Oid packageOid, Oid newOwnerId)
     heap_close(pg_proc_rel, NoLock);
 }
 
+static void CheckAlterFunctionPrivileges(Oid newOwnerId, Oid procOid, bool isSecdef)
+{
+    bool enablePrivilegesSeparate = g_instance.attr.attr_security.enablePrivilegesSeparate;
+
+    if (IsSystemObjOid(procOid) && u_sess->attr.attr_common.IsInplaceUpgrade == false) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
+                errmsg("ownerId change failed for function %u, because it is a builtin function.", procOid)));
+    }
+
+    if (!(superuser_arg(GetUserId())) && isSecdef && !enablePrivilegesSeparate ||
+        (enablePrivilegesSeparate && isSecdef)) {
+        ereport(ERROR,
+            (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("security definer function not allow alter owner"),
+                errdetail("please delete function and rebuild function"),
+                errcause("for security, not allow alter security definer function owner"),
+                erraction("delete and rebuild function")));
+    }
+
+    if (superuser_arg(GetUserId()) && isOperatoradmin(newOwnerId) && isSecdef) {
+        ereport(ERROR,
+            (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("sysadmin can not alter security definer function owner to opradmin"),
+                errdetail("please delete function and rebuild function"),
+                errcause("for security, not allow alter security definer function owner to opradmin"),
+                erraction("delete and rebuild function")));
+    }
+}
+
 /*
  * @Description: Alter function owner.
  * @in rel: pg_proc relation.
@@ -2591,12 +2624,7 @@ static void AlterFunctionOwner_internal(Relation rel, HeapTuple tup, Oid newOwne
 
     procForm = (Form_pg_proc)GETSTRUCT(tup);
     procOid = HeapTupleGetOid(tup);
-
-    if (IsSystemObjOid(procOid) && u_sess->attr.attr_common.IsInplaceUpgrade == false) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
-                errmsg("ownerId change failed for function %u, because it is a builtin function.", procOid)));
-    }
+    CheckAlterFunctionPrivileges(newOwnerId, procOid, procForm->prosecdef);
 
     /*
      * If the new owner is the same as the existing owner, consider the
@@ -4113,16 +4141,6 @@ static void checkAllowAlter(HeapTuple tup) {
                 errcause("package is one object,not allow alter function in package"),
                 erraction("rebuild package")));
     }
-    prosecdef_datum = SysCacheGetAttr(PROCOID, tup, Anum_pg_proc_prosecdef, &isnull);
-    prosecdef = DatumGetBool(prosecdef_datum);
-    if (prosecdef) {
-        ereport(ERROR,
-            (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
-                errmsg("security definer function not allow alter owner"),
-                errdetail("please delete function and rebuild function"),
-                errcause("for security, not allow alter security definer function owner"),
-                erraction("delete and rebuild function")));
-    }
 }
 
 /*
@@ -4174,48 +4192,77 @@ Const* processOutResToConst(char* value, Oid atttypid)
     }
     return con;
 }
+#endif
 
 /*
- * Execute call procedure statememt here
+ * Execute CALL statement
+ *
+ * Inside a top-level CALL statement, transaction-terminating commands such as
+ * COMMIT or a PL-specific equivalent are allowed.  The terminology in the SQL
+ * standard is that CALL establishes a non-atomic execution context.  Most
+ * other commands establish an atomic execution context, in which transaction
+ * control actions are not allowed.  If there are nested executions of CALL,
+ * we want to track the execution context recursively, so that the nested
+ * CALLs can also do transaction control.  Note, however, that for example in
+ * CALL -> SELECT -> CALL, the second call cannot do transaction control,
+ * because the SELECT in between establishes an atomic execution context.
+ *
+ * So when ExecuteCallStmt() is called from the top level, we pass in atomic =
+ * false (recall that that means transactions = yes).  We then create a
+ * CallContext node with content atomic = false, which is passed in the
+ * fcinfo->context field to the procedure invocation.  The language
+ * implementation should then take appropriate measures to allow or prevent
+ * transaction commands based on that information, e.g., call
+ * SPI_connect_ext(SPI_OPT_NONATOMIC).  The language should also pass on the
+ * atomic flag to any nested invocations to CALL.
+ *
+ * The expression data structures and execution context that we create
+ * within this function are children of the portalContext of the Portal
+ * that the CALL utility statement runs in.  Therefore, any pass-by-ref
+ * values that we're passing to the procedure will survive transaction
+ * commits that might occur inside the procedure.
  */
-void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
+void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, DestReceiver *dest)
 {
     ListCell   *lc;
     FuncExpr   *fexpr;
-    int         nargs;
-    int         i;
     AclResult   aclresult;
     FmgrInfo    flinfo;
     CallContext *callcontext;
-    EState     *estate;
+    EState      *estate;
     ExprContext *econtext;
     HeapTuple   tp;
+    FunctionCallInfoData fcinfo;
     PgStat_FunctionCallUsage fcusage;
     Datum       retval;
-    FunctionCallInfoData fcinfo;
+    int         nargs = 0;
+    int         i = 0;
     fexpr = stmt->funcexpr;
     Assert(fexpr);
     Assert(IsA(fexpr, FuncExpr));
     
     Oid definer = GetUserId();
-    Form_pg_proc procStruct;
-    volatile bool topCall = false; /* use volatile to let PG_CATCH get the right value */
-    /* Get function's pg_proc entry */
     tp = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
     if (!HeapTupleIsValid(tp)) {
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
             errmsg("cache lookup failed for function %u", fexpr->funcid)));
     }
+#ifdef DOLPHIN
+    Form_pg_proc procStruct;
+    volatile bool topCall = false; /* use volatile to let PG_CATCH get the right value */
+    /* Get function's pg_proc entry */
     procStruct = (Form_pg_proc)GETSTRUCT(tp);
     /* in b format database , we shoule check definer operation */
     if (procStruct->prosecdef) {
         definer = procStruct->proowner;
     }
+#endif
 
     aclresult = pg_proc_aclcheck(fexpr->funcid, definer, ACL_EXECUTE);
     if (aclresult != ACLCHECK_OK)
         aclcheck_error(aclresult, ACL_KIND_PROC, get_func_name(fexpr->funcid));
 
+#ifdef DOLPHIN
     /* ensure it is a procedure and language is plogsql */
     char prokind = get_func_prokind(fexpr->funcid);
     if (!PROC_IS_PRO(prokind)) {
@@ -4233,11 +4280,27 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
         /* let memcontext to free old args */
         fexpr->args = dolphin_add_function_defaults(fexpr->args, tp);
     }
+#endif
     /* Prep the context object we'll pass to the procedure */
     callcontext = makeNode(CallContext);
     callcontext->atomic = atomic;
 
+    /*
+     * If proconfig is set we can't allow transaction commands because of the
+     * way the GUC stacking works: The transaction boundary would have to pop
+     * the proconfig setting off the stack.  That restriction could be lifted
+     * by redesigning the GUC nesting mechanism a bit.
+     */
     if (!heap_attisnull(tp, Anum_pg_proc_proconfig, NULL))
+        callcontext->atomic = true;
+
+    /*
+     * In security definer procedures, we can't allow transaction commands.
+     * StartTransaction() insists that the security context stack is empty,
+     * and AbortTransaction() resets the security context.  This could be
+     * reorganized, but right now it doesn't work.
+     */
+    if (((Form_pg_proc) GETSTRUCT(tp))->prosecdef)
         callcontext->atomic = true;
 
     ReleaseSysCache(tp);
@@ -4245,56 +4308,61 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
     /* safety check; see ExecInitFunc() */
     nargs = list_length(fexpr->args);
     if (nargs > FUNC_MAX_ARGS)
-        ereport(ERROR, (errcode(ERRCODE_TOO_MANY_ARGUMENTS),
-            errmsg_plural("cannot pass more than %d argument to a procedure",
-            "cannot pass more than %d arguments to a procedure",
-            FUNC_MAX_ARGS,
-            FUNC_MAX_ARGS)));
+        ereport(ERROR,
+                (errcode(ERRCODE_TOO_MANY_ARGUMENTS),
+                 errmsg_plural("cannot pass more than %d argument to a procedure",
+                               "cannot pass more than %d arguments to a procedure",
+                               FUNC_MAX_ARGS,
+                               FUNC_MAX_ARGS)));
 
     /* Initialize function call structure */
+    InvokeFunctionExecuteHook(fexpr->funcid);
     fmgr_info(fexpr->funcid, &flinfo);
     fmgr_info_set_expr((Node *) fexpr, &flinfo);
     InitFunctionCallInfoData(fcinfo, &flinfo, nargs, fexpr->inputcollid,
-        (Node *) callcontext, NULL);
+                             (Node *) callcontext, NULL);
 
     /*
-    * Evaluate procedure arguments inside a suitable execution context.  Note
-    * we can't free this context till the procedure returns.
-    */
+     * Evaluate procedure arguments inside a suitable execution context.  Note
+     * we can't free this context till the procedure returns.
+     */
     estate = CreateExecutorState();
     estate->es_param_list_info = params;
     econtext = CreateExprContext(estate);
 
     /*
-    * If we're called in non-atomic context, we also have to ensure that the
-    * argument expressions run with an up-to-date snapshot.  Our caller will
-    * have provided a current snapshot in atomic contexts, but not in
-    * non-atomic contexts, because the possibility of a COMMIT/ROLLBACK
-    * destroying the snapshot makes higher-level management too complicated.
-    */
-    if (!atomic)
+     * If we're called in non-atomic context, we also have to ensure that the
+     * argument expressions run with an up-to-date snapshot.  Our caller will
+     * have provided a current snapshot in atomic contexts, but not in
+     * non-atomic contexts, because the possibility of a COMMIT/ROLLBACK
+     * destroying the snapshot makes higher-level management too complicated.
+     */
+    if (!atomic) {
         PushActiveSnapshot(GetTransactionSnapshot());
+    }
 
-    i = 0;
-    foreach(lc, fexpr->args)
-    {
+    foreach(lc, fexpr->args) {
         ExprState  *exprstate;
         Datum       val;
         bool        isnull;
-        exprstate = ExecPrepareExpr((Expr*)lfirst(lc), estate);
-        val = ExecEvalExprSwitchContext(exprstate, econtext, &isnull, NULL);
+
+        exprstate = ExecPrepareExpr((Expr *)lfirst(lc), estate);
+        val = ExecEvalExprSwitchContext(exprstate, econtext, &isnull);
 
         fcinfo.arg[i] = val;
         fcinfo.argnull[i] = isnull;
+
         i++;
     }
 
     /* Get rid of temporary snapshot for arguments, if we made one */
-    if (!atomic)
+    if (!atomic) {
         PopActiveSnapshot();
+    }
 
     /* Here we actually call the procedure */
     pgstat_init_function_usage(&fcinfo, &fcusage);
+#ifdef DOLPHIN
     PG_TRY();
     {
         if (!GetSessionContext()->is_dolphin_call_stmt)
@@ -4311,61 +4379,74 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
     PG_END_TRY();
     if (topCall)
         GetSessionContext()->is_dolphin_call_stmt = false;
+#else
+    retval = FunctionCallInvoke(&fcinfo);
+#endif
+
     pgstat_end_function_usage(&fcusage, true);
 
     /* Handle the procedure's outputs */
     if (fexpr->funcresulttype == RECORDOID) {
-        /* send tuple to UserVar */
+        /* send tuple to UserVar or client */
+        Oid             tupType;
+        int32           tupTypmod;
+        TupleDesc       retdesc;
+        HeapTupleData   rettupdata;
+        TupOutputState  *tstate;
+        TupleTableSlot  *slot;
         HeapTupleHeader td;
-        Oid			tupType;
-        int32		tupTypmod;
-        TupleDesc	retdesc;
-        HeapTupleData rettupdata;
-        TupleTableSlot *slot;
 
-        if (fcinfo.isnull)
-            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("procedure out parameters shoule be saved")));
-
-        /* make a tupletableslot and save uservar here */
+        if (fcinfo.isnull) {
+            elog(ERROR, "procedure returned null record");
+        }
         td = DatumGetHeapTupleHeader(retval);
         tupType = HeapTupleHeaderGetTypeId(td);
         tupTypmod = HeapTupleHeaderGetTypMod(td);
         retdesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
-        slot = MakeSingleTupleTableSlot(retdesc);
 
         rettupdata.t_len = HeapTupleHeaderGetDatumLength(td);
         ItemPointerSetInvalid(&(rettupdata.t_self));
         rettupdata.t_tableOid = InvalidOid;
         rettupdata.t_data = td;
 
-        slot = ExecStoreTuple(&rettupdata, slot, InvalidBuffer, false);
-        tableam_tslot_getallattrs(slot);
-        uint i = 0;
-        ListCell* lc;
-        /* set uservar value */
-        foreach (lc, stmt->outargs) {
-            Oid out_func_oid = InvalidOid;
-            bool isvarlena = false;
-            FmgrInfo* finfo = (FmgrInfo*)palloc(1 * sizeof(FmgrInfo));
-            Oid atttypid = ((UserVar*)lfirst(lc))->value ? ((Const*)((UserVar*)lfirst(lc))->value)->consttype :
-                slot->tts_tupleDescriptor->attrs[i].atttypid;
-            getTypeOutputInfo(atttypid, &out_func_oid, &isvarlena);
-            fmgr_info(out_func_oid, finfo);
-            if (slot->tts_values[i] != 0) {
-                char* ovalue = OutputFunctionCall(finfo, slot->tts_values[i]);
-                Const *con = processOutResToConst(ovalue, atttypid);
-                Node* rnode  = atttypid == BOOLOID ? (Node*)con : type_transfer((Node*)con, atttypid, true);
-                Expr *var_expr = (Expr *)const_expression_to_const(rnode);
-                check_variable_value_info(((UserVar *)lfirst(lc))->name, var_expr);
-                pfree(ovalue);
+        if (stmt->outargs == NIL) {
+            tstate = begin_tup_output_tupdesc(dest, retdesc);
+
+            slot = ExecStoreTuple(&rettupdata, tstate->slot, InvalidBuffer, false);
+            tstate->dest->receiveSlot(slot, tstate->dest);
+
+            end_tup_output(tstate);
+        } else {
+            slot = MakeSingleTupleTableSlot(retdesc);
+
+            slot = ExecStoreTuple(&rettupdata, slot, InvalidBuffer, false);
+            tableam_tslot_getallattrs(slot);
+            uint i = 0;
+            ListCell* lc;
+            /* set uservar value */
+            foreach (lc, stmt->outargs) {
+                Oid out_func_oid = InvalidOid;
+                bool isvarlena = false;
+                FmgrInfo* finfo = (FmgrInfo*)palloc(1 * sizeof(FmgrInfo));
+                Oid atttypid = ((UserVar*)lfirst(lc))->value ? ((Const*)((UserVar*)lfirst(lc))->value)->consttype :
+                    slot->tts_tupleDescriptor->attrs[i].atttypid;
+                getTypeOutputInfo(atttypid, &out_func_oid, &isvarlena);
+                fmgr_info(out_func_oid, finfo);
+                if (slot->tts_values[i] != 0) {
+                    char* ovalue = OutputFunctionCall(finfo, slot->tts_values[i]);
+                    Const *con = processOutResToConst(ovalue, atttypid);
+                    Node* rnode  = atttypid == BOOLOID ? (Node*)con : type_transfer((Node*)con, atttypid, true);
+                    Expr *var_expr = (Expr *)const_expression_to_const(rnode);
+                    check_variable_value_info(((UserVar *)lfirst(lc))->name, var_expr);
+                    pfree(ovalue);
+                }
+                pfree(finfo);
+                ++i;
             }
-            pfree(finfo);
-            ++i;
+            ExecDropSingleTupleTableSlot(slot);
         }
-        ExecDropSingleTupleTableSlot(slot);
         ReleaseTupleDesc(retdesc);
-    } else if (fexpr->funcresulttype != VOIDOID) {
+    } else if (stmt->outargs != NIL && fexpr->funcresulttype != VOIDOID) {
         Assert(list_length(stmt->outargs) == 1);
         Oid out_func_oid = InvalidOid;
         bool isvarlena = false;
@@ -4386,4 +4467,3 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
     }
     FreeExecutorState(estate);
 }
-#endif

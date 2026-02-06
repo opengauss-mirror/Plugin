@@ -202,7 +202,8 @@ enum PLpgSQL_stmt_types {
     PLPGSQL_STMT_SAVEPOINT,
     PLPGSQL_STMT_SIGNAL,
     PLPGSQL_STMT_RESIGNAL,
-    PLPGSQL_STMT_PIPE_ROW
+    PLPGSQL_STMT_PIPE_ROW,
+    PLPGSQL_STMT_EXEC
 };
 
 /* ----------
@@ -1080,6 +1081,26 @@ typedef struct {
     char* sqlString; 
 } PLpgSQL_stmt_pipe_row;
 
+typedef struct {
+    int cmd_type;
+    int lineno;
+    PLpgSQL_expr *expr;
+    bool is_call;
+    PLpgSQL_variable *target;
+    int returnCodeDno;
+    int paramno;
+    List *params;
+    bool isScalarFunc;
+} PLpgSQL_stmt_exec;
+
+typedef struct
+{
+    const char *name;
+    PLpgSQL_expr *expr;
+    char mode;
+    int varno;      /* dno of the output variable */
+} PLpgSQL_exec_param;
+
 typedef struct { /* RAISE statement			*/
     int cmd_type;
     int lineno;
@@ -1328,6 +1349,7 @@ typedef struct PLpgSQL_function { /* Complete compiled function	  */
     Oid namespaceOid;
     bool is_pipelined;
     bool pipelined_resistuple;
+    bool is_itvf;
 } PLpgSQL_function;
 
 class AutonomousSession;

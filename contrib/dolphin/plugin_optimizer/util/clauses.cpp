@@ -4160,6 +4160,11 @@ List* extract_function_outarguments(Oid funcid, List* parameters, List* funcname
     return in_parameters;
 }
 
+List* expand_function_arguments_interface(List* args, Oid result_type, HeapTuple func_tuple)
+{
+    return expand_function_arguments(args, result_type, func_tuple);
+}
+
 /*
  * expand_function_arguments: convert named-notation args to positional args
  * and/or insert default args, as needed

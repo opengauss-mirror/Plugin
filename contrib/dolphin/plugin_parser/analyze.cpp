@@ -56,6 +56,7 @@
 #include "plugin_parser/parse_cte.h"
 #include "plugin_parser/parse_hint.h"
 #include "plugin_parser/parse_merge.h"
+#include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_oper.h"
 #include "parser/parse_param.h"
 #include "plugin_parser/parse_relation.h"
@@ -142,6 +143,8 @@ static List* transformReturningList(ParseState* pstate, List* returningList);
 static Query* transformDeclareCursorStmt(ParseState* pstate, DeclareCursorStmt* stmt);
 static Query* transformExplainStmt(ParseState* pstate, ExplainStmt* stmt);
 static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* stmt);
+static Query* transformCallStmt(ParseState* pstate, DolphinCallStmt* stmt);
+static void CheckExecuteStmt(FuncExpr *fexpr, DolphinCallStmt *stmt, Datum proargmodes);
 static void CheckDeleteRelation(Relation targetrel);
 static void CheckUpdateRelation(Relation targetrel);
 static void transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt);
@@ -192,7 +195,6 @@ static Node* makeConstByType(Form_pg_attribute att_tup);
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static List* makeValueLists(ParseState* pstate);
-static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt);
 static void replaceSubqueryCheck(Expr* expr, InsertStmt* stmt, ParseState* pstate);
 #endif
 
@@ -748,11 +750,10 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result->commandType = CMD_UTILITY;
             result->utilityStmt = (Node*)parseTree;
             break;
-
-        case T_DolphinCallStmt:
-            result = transformCallStmt(pstate, (DolphinCallStmt *) parseTree);
-            break;
 #endif
+        case T_DolphinCallStmt:
+            result = transformCallStmt(pstate, (DolphinCallStmt*) parseTree);
+            break;
         default:
 
             /*
@@ -5656,53 +5657,6 @@ static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* 
 
 #ifdef DOLPHIN
 /*
- * transformCallStmt -
- * transform a call xxx() Statement in B format;
- *.
- */
-
-static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt)
-{
-    List	   *targs;
-    ListCell   *lc;
-    Node	   *node;
-    FuncExpr   *fexpr;
-    HeapTuple	proctup;
-    Query	   *result;
-
-    targs = NIL;
-    /* transform all args to expr */
-    foreach(lc, stmt->funccall->args)
-    {
-        targs = lappend(targs, transformExprRecurse(pstate, (Node *) lfirst(lc)));
-    }
-
-    /* parse the function/procedure use function name */
-    node = ParseFuncOrColumn(pstate, stmt->funccall->funcname, targs, pstate->p_last_srf,
-        stmt->funccall, stmt->funccall->location, true);
-
-    assign_expr_collations(pstate, node);
-
-    fexpr = castNode(FuncExpr, node);
-    
-    /* find procedure object in systemtable */
-    proctup = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
-    if (!HeapTupleIsValid(proctup))
-        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("could not find procedure %u", fexpr->funcid)));
-
-    stmt->funcexpr = fexpr;
-
-    ReleaseSysCache(proctup);
-
-    /* set as as a utility Query */
-    result = makeNode(Query);
-    result->commandType = CMD_UTILITY;
-    result->utilityStmt = (Node *) stmt;
-
-    return result;
-}
-
-/*
  * Replace into gram check
  * Replace into with inserted table in subselect should report error
  */
@@ -7430,4 +7384,119 @@ static Query* TryTransformInsertDirectly(ParseState* pstate, InsertStmt* stmt)
     query->hasTargetSRFs = false;
 
     return query;
+}
+
+
+/*
+ * transform a CallStmt
+ */
+static Query *transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt)
+{
+    ListCell    *lc;
+    Node        *node;
+    FuncExpr    *fexpr;
+    HeapTuple   proctup;
+    Datum       proargmodes;
+    bool        isNull;
+    List        *targs = NIL;
+    Query       *result;
+
+    /*
+     * First, do standard parse analysis on the procedure call and its
+     * arguments, allowing us to identify the called procedure.
+     */
+    foreach(lc, stmt->funccall->args) {
+        targs = lappend(targs, transformExprRecurse(pstate, (Node *) lfirst(lc)));
+    }
+
+    node = ParseFuncOrColumn(pstate,
+                             stmt->funccall->funcname,
+                             targs,
+                             pstate->p_last_srf,
+                             stmt->funccall,
+                             stmt->funccall->location,
+                             true);
+
+    assign_expr_collations(pstate, node);
+
+    fexpr = castNode(FuncExpr, node);
+
+    proctup = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
+    if (!HeapTupleIsValid(proctup))
+        elog(ERROR, "cache lookup failed for function %u", fexpr->funcid);
+
+    if (stmt->outargs == NULL) {
+        /*
+         * Expand the argument list to deal with named-argument notation and
+         * default arguments.  For ordinary FuncExprs this'd be done during
+         * planning, but a CallStmt doesn't go through planning, and there seems
+         * no good reason not to do it here.
+         */
+        fexpr->args = expand_function_arguments_interface(fexpr->args,
+                                                        fexpr->funcresulttype,
+                                                        proctup);
+
+        /* Fetch proargmodes; if it's null, there are no output args */
+        proargmodes = SysCacheGetAttr(PROCOID, proctup,
+                                    Anum_pg_proc_proargmodes,
+                                    &isNull);
+        if (!isNull) {
+            CheckExecuteStmt(fexpr, stmt, proargmodes);
+        }
+    }
+    stmt->funcexpr = fexpr;
+
+    ReleaseSysCache(proctup);
+
+    /* represent the command as a utility Query */
+    result = makeNode(Query);
+    result->commandType = CMD_UTILITY;
+    result->utilityStmt = (Node *) stmt;
+
+    return result;
+}
+
+static void CheckExecuteStmt(FuncExpr *fexpr, DolphinCallStmt *stmt, Datum proargmodes)
+{
+    ListCell *lc;
+    ArrayType *arr;
+    List *outargs = NIL;
+    List *inargs = NIL;
+    char *argmodes;
+    int numargs;
+    int i = 0;
+
+    arr = DatumGetArrayTypeP(proargmodes);    /* ensure not toasted */
+    numargs = list_length(fexpr->args);
+    if (ARR_NDIM(arr) != 1 ||
+        ARR_HASNULL(arr) ||
+        ARR_ELEMTYPE(arr) != CHAROID)
+        elog(ERROR, "proargmodes is not a 1-D char array of length %d or it contains nulls", numargs);
+    argmodes = (char *) ARR_DATA_PTR(arr);
+
+    if (numargs == ARR_DIMS(arr)[0]) {
+        foreach(lc, fexpr->args) {
+            Node *n = (Node *)lfirst(lc);
+            switch (argmodes[i]) {
+                case PROARGMODE_IN:
+                case PROARGMODE_VARIADIC:
+                    inargs = lappend(inargs, n);
+                    break;
+                case PROARGMODE_OUT:
+                    outargs = lappend(outargs, n);
+                    break;
+                case PROARGMODE_INOUT:
+                    inargs = lappend(inargs, n);
+                    outargs = lappend(outargs, copyObject(n));
+                    break;
+                default:
+                    /* note we don't support PROARGMODE_TABLE */
+                    elog(ERROR, "invalid argmode %c for procedure", argmodes[i]);
+                    break;
+            }
+            i++;
+        }
+        fexpr->args = inargs;
+    }
+    stmt->outargs = outargs;
 }
