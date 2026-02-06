@@ -566,3 +566,6 @@ drop table table_json_a;
 drop table table_json_b;
 
 drop table t1;
+
+set dolphin.lower_case_table_names = 0;
+select S.type from gs_get_hba_conf() S limit 1;
