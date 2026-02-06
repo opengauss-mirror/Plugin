@@ -32,6 +32,8 @@
 #include "parser/parse_collate.h"
 #include "parser/parse_expr.h"
 #include "parser/parse_type.h"
+#include "parser/parse_func.h"
+#include "funcapi.h"
 #include "pgstat.h"
 #include "rewrite/rewriteHandler.h"
 #include "tcop/pquery.h"
@@ -61,6 +63,16 @@
 void InitQueryHashTable(void);
 static ParamListInfo EvaluateParams(CachedPlanSource* psrc, List* params, const char* queryString, EState* estate);
 static Datum build_regtype_array(const Oid* param_types, int num_params);
+
+SPIPlanPtr	prepare_stmt_exec(PLpgSQL_execstate *estate, PLpgSQL_function *func,
+                              PLpgSQL_stmt_exec *stmt, bool keepplan = false);
+static void prepare_select_plan_for_scalar_func(PLpgSQL_execstate *estate, PLpgSQL_expr *expr,
+                                                int firstArgLocation, const char *newParams);
+static bool IsExecStmtOnScalarFunc(const char *stmt, int *firstArgLocation, const char **newParams);
+static char *rewrite_exec_scalar_func_params(const char *stmt, List *raw_parsetree_list, int firstArgLocation);
+static List *get_func_info_from_raw_parsetree(List *raw_parsetree_list, int *nargs,
+                                              bool *funcVariadic, int *firstArgLocation);
+
 
 extern void destroy_handles();
 
@@ -2533,4 +2545,240 @@ bool quickPlanner(List* querytree_list, Node* parsetree, const char*queryString,
     if (estate != NULL)
         FreeExecutorState(estate);
     return true;
+}
+
+SPIPlanPtr prepare_stmt_exec(PLpgSQL_execstate *estate, PLpgSQL_function *func, PLpgSQL_stmt_exec *stmt, bool keepplan)
+{
+    int firstArgLocation;
+    const char *newParams = NULL;
+    PLpgSQL_expr *expr = stmt->expr;
+    bool isStmtScalarFunc;
+
+    /* Do the query in local context to free memory at earliest */
+    MemoryContext oldcontext = MemoryContextSwitchTo(estate->eval_econtext->ecxt_per_tuple_memory);
+
+    isStmtScalarFunc = IsExecStmtOnScalarFunc(expr->query, &firstArgLocation, &newParams);
+    MemoryContextSwitchTo(oldcontext);
+
+    if (isStmtScalarFunc) {
+        prepare_select_plan_for_scalar_func(estate, expr, firstArgLocation, newParams);
+    } else {
+        /*
+         * Don't save the plan if not in atomic context.  Otherwise,
+         * transaction ends would cause errors about plancache leaks.
+         *
+         * XXX This would be fixable with some plancache/resowner surgery
+         * elsewhere, but for now we'll just work around this here.
+         */
+        exec_prepare_plan_interface(estate, expr, 0);
+    }
+
+    /*
+     * Force target to be recalculated whenever the plan changes, in case the
+     * procedure's argument list has changed.
+     */
+    stmt->target = NULL;
+
+    return expr->plan;
+}
+
+static bool IsExecStmtOnScalarFunc(const char *stmt, int *firstArgLocation, const char **newParams)
+{
+    List *raw_parsetree_list;
+    List *funcname;
+    int nargs;
+    bool funcVariadic;
+    Oid arg_types[FUNC_MAX_ARGS];
+    FuncDetailCode fdresult;
+    Oid funcid;
+    Oid rettype;
+    bool retset;
+    int nvargs;
+    Oid vatype;
+    Oid *typeids;
+    int i;
+
+    /*
+     * Stmt should be syntactically vaild since it was verified during
+     * compiliation
+     */
+    raw_parsetree_list = pg_parse_query(stmt, NULL, GetRawParser());
+    funcname = get_func_info_from_raw_parsetree(raw_parsetree_list,
+                                                &nargs, &funcVariadic,
+                                                firstArgLocation);
+    if (!funcname) {
+        return false;
+    }
+    /* safety check */
+    if (nargs > FUNC_MAX_ARGS)
+        ereport(ERROR, (errcode(ERRCODE_TOO_MANY_ARGUMENTS),
+                        errmsg("cannot pass more than %d arguments to a procedure",
+                               FUNC_MAX_ARGS)));
+
+    for (i = 0; i < nargs; ++i) {
+        /* We really don't care of the exact argument datatypes */
+        arg_types[i] = UNKNOWNOID;
+    }
+
+    fdresult = func_get_detail(funcname,
+                               NIL, NIL,
+                               nargs, arg_types,
+                               funcVariadic, true,
+                               &funcid, &rettype, &retset,
+                               &nvargs, &vatype,
+                               &typeids, NULL);
+    if (fdresult != FUNCDETAIL_NORMAL) {
+        return false;
+    }
+    if (get_func_result_type(funcid, NULL, NULL) != TYPEFUNC_SCALAR) {
+        return false;
+    }
+
+    if (nargs > 0) {
+        *newParams = rewrite_exec_scalar_func_params(stmt, raw_parsetree_list, *firstArgLocation);
+    }
+
+    return true;
+}
+
+static List *get_func_info_from_raw_parsetree(List *raw_parsetree_list,
+                                              int *nargs, bool *funcVariadic,
+                                              int *firstArgLocation)
+{
+    DolphinCallStmt *cstmt;
+    FuncCall *funccall;
+
+    if (!raw_parsetree_list) {
+        return NIL;
+    }
+    if (list_length(raw_parsetree_list) != 1) {
+        return NIL;
+    }
+
+    cstmt = (DolphinCallStmt *) linitial(raw_parsetree_list);
+    if (!cstmt || !cstmt->funccall) {
+        return NIL;
+    }
+
+    funccall = cstmt->funccall;
+
+    if (nargs) {
+        *nargs = list_length(funccall->args);
+    }
+    if (funcVariadic) {
+        *funcVariadic = funccall->func_variadic;
+    }
+
+    Assert(firstArgLocation != NULL);
+    if (*nargs > 0) {
+        *firstArgLocation = exprLocation((Node *) linitial(funccall->args));
+    } else {
+        *firstArgLocation = -1;
+    }
+
+    return funccall->funcname;
+}
+
+/*
+ * When dealing with EXEC on scalar function, we will later rewrite it to a
+ * SELECT on the scalar function before passing to the main parser. There are
+ * differences in syntax when passing arguments between EXEC and SELECT. For
+ * example, EXEC allows "<param1> = <value1>, <param2> = <value2>", whereas
+ * SELECT only allows ":=" or "=>" for such.
+ *
+ * This function returns the rewritten parameters portion of the stmt, or
+ * NULL if no rewriting is necessary.
+ */
+static char *rewrite_exec_scalar_func_params(const char *stmt, List *raw_parsetree_list, int firstArgLocation)
+{
+    ListCell *lc;
+    DolphinCallStmt *cstmt;
+    FuncCall *funccall;
+    StringInfoData dest;
+    int prev = firstArgLocation;
+
+    if (firstArgLocation == -1)
+        return NULL;
+
+    cstmt = (DolphinCallStmt *) linitial(raw_parsetree_list);
+    if (!cstmt || !cstmt->funccall)
+        return NULL;
+
+    initStringInfo(&dest);
+    funccall = cstmt->funccall;
+    foreach(lc, funccall->args) {
+        Node *expr = (Node *)lfirst(lc);
+
+        switch (nodeTag(expr)) {
+            case T_NamedArgExpr:
+                {
+                    /*
+                     * For NamedArgExpr we want to rewrite it from "<name> =
+                     * <arg>" to "<name> => <arg>"
+                     */
+                    const NamedArgExpr *na = (const NamedArgExpr *) expr;
+
+                    /*
+                     * Append the part of stmt appearing before the
+                     * NamedArgExpr that we haven't inserted already.
+                     */
+                    appendBinaryStringInfo(&dest, &(stmt[prev]),
+                                           na->location - prev);
+                    appendStringInfo(&dest, "\"%s\" => ", na->name);
+                    prev = exprLocation((Node *) na->arg);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (prev == firstArgLocation) /* no NamedArgExpr found */
+        return NULL;
+
+    appendStringInfoString(&dest, &(stmt[prev]));
+    return dest.data;
+}
+
+static void prepare_select_plan_for_scalar_func(PLpgSQL_execstate *estate,
+                                                PLpgSQL_expr *expr,
+                                                int firstArgLocation,
+                                                const char *newParams)
+{
+    StringInfoData new_query;
+    char *savedExprQuery;
+    const char *startCommand = "EXEC";
+
+    /* expr->query should start with EXEC */
+    Assert(strlen(startCommand) < strlen(expr->query));
+    Assert(strstr(expr->query, startCommand) == expr->query);
+
+    initStringInfo(&new_query);
+    if (firstArgLocation >= 0) {
+        if (newParams) {
+            appendStringInfo(&new_query, "SELECT %.*s (%s )",
+                             firstArgLocation - (int) strlen(startCommand),
+                             expr->query + strlen(startCommand), newParams);
+        } else {
+            appendStringInfo(&new_query, "SELECT %.*s (%s )",
+                             firstArgLocation - (int) strlen(startCommand),
+                             expr->query + strlen(startCommand), expr->query + firstArgLocation);
+        }
+    } else {
+        appendStringInfo(&new_query, "SELECT %s ()", expr->query + strlen(startCommand));
+    }
+
+    /*
+     * Now we got SELECT statement. Replace query string temporarily and
+     * prepare a SELECT plan
+     */
+    savedExprQuery = expr->query;
+    expr->query = new_query.data;
+
+    /* 'SELECT udf' will use simple_expr path. pass keepplan with true */
+    exec_prepare_plan_interface(estate, expr, 0);
+
+    expr->query = savedExprQuery;
+
+    pfree(new_query.data);
 }

@@ -5171,11 +5171,9 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
             GetDiagStmt *n = (GetDiagStmt *)parse_tree;
             getDiagnosticsInfo(n->condInfo, n->hasCondNum, n->condNum);
         } break;
-#ifdef DOLPHIN
         case T_DolphinCallStmt: {
-                ExecuteCallStmt(castNode(DolphinCallStmt, parse_tree), params, false);
+            ExecuteCallStmt((DolphinCallStmt *)parse_tree, params, false, dest);
         } break;
-#endif
         default: {
             ProcessUtilitySlow(parse_tree, query_string, params, dest, 
 #ifdef PGXC
