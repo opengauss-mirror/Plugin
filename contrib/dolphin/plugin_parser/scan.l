@@ -1080,17 +1080,27 @@ other			.
 								return SET_USER_IDENT;
 							}
 						}
-						
-						/* check whether the string end with '@' or '@@', if so, remove last one or two '@', treat them as user var */
-						if (nchars >= 2 && yytext[nchars - 1] == '@')
-						{
-							/* remove two '@' at most */
-							nchars--;
-							if (yytext[nchars - 1] == '@')
+#ifdef DOLPHIN
+						/* if next char is blank, the next token cannot be user_var, so treat current as operator directly  */
+						if (yyg->yy_hold_char != ' ' && yyg->yy_hold_char != '\n' &&
+							yyg->yy_hold_char != '\t' && yyg->yy_hold_char != '\r') {
+							/* check whether the string end with '@' or '@@', if so, remove last one or two '@', treat them as user var */
+							if (nchars > 2 && yytext[nchars - 1] == '@')
+							{
+								/* remove two '@' at most */
+								nchars--;
+								if (yytext[nchars - 1] == '@')
+								{
+									nchars--;
+								}
+							}
+							/* if the string is exactly "@@", we treat them as an operator. */
+							else if (nchars == 2 && yytext[1] == '@' && yytext[0] != '@')
 							{
 								nchars--;
 							}
 						}
+#endif
 					}
 
 					if (slashstar && dashdash)
