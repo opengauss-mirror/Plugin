@@ -219,10 +219,9 @@ SELECT SCHEMA_NAME AS TABLE_CAT FROM INFORMATION_SCHEMA.SCHEMATA;
  dbe_pldeveloper
  dbe_sql_util
  information_schema
- ogai
  dolphin_catalog
  performance_schema
-(19 rows)
+(18 rows)
 
 SELECT TABLE_SCHEMA AS TABLE_CAT, NULL AS TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, NULL AS GRANTOR, GRANTEE, PRIVILEGE_TYPE AS PRIVILEGE, 
  IS_GRANTABLE FROM INFORMATION_SCHEMA.COLUMN_PRIVILEGES WHERE TABLE_SCHEMA LIKE 'abc' AND TABLE_NAME ='abc' AND COLUMN_NAME LIKE 'abc' ORDER BY COLUMN_NAME, PRIVILEGE_TYPE;
@@ -369,32 +368,23 @@ SELECT PROCESSLIST_ID, PROCESSLIST_USER, PROCESSLIST_HOST FROM performance_schem
 select sequence_name,sequence_schema,sequence_catalog,start_value,minimum_value,maximum_value,increment from information_schema.sequences;
          sequence_name         | sequence_schema |  sequence_catalog  | start_value | minimum_value |    maximum_value    | increment 
 -------------------------------+-----------------+--------------------+-------------+---------------+---------------------+-----------
- snapshot_sequence             | db4ai           | contrib_regression | 1           | 1             | 9223372036854775807 | 1
  proc_coverage_coverage_id_seq | coverage        | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- model_sources_id_seq          | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- vectorize_tasks_task_id_seq   | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- vectorize_queue_msg_id_seq    | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
-(5 rows)
+ snapshot_sequence             | db4ai           | contrib_regression | 1           | 1             | 9223372036854775807 | 1
+(2 rows)
 
 select * from information_schema.sequences;
   sequence_catalog  | sequence_schema |         sequence_name         | data_type | numeric_precision | numeric_precision_radix | numeric_scale | start_value | minimum_value |    maximum_value    | increment | cycle_option 
 --------------------+-----------------+-------------------------------+-----------+-------------------+-------------------------+---------------+-------------+---------------+---------------------+-----------+--------------
- contrib_regression | db4ai           | snapshot_sequence             | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
  contrib_regression | coverage        | proc_coverage_coverage_id_seq | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
- contrib_regression | ogai            | model_sources_id_seq          | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
- contrib_regression | ogai            | vectorize_tasks_task_id_seq   | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
- contrib_regression | ogai            | vectorize_queue_msg_id_seq    | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
-(5 rows)
+ contrib_regression | db4ai           | snapshot_sequence             | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
+(2 rows)
 
 select sequence_name,sequence_schema,sequence_catalog,start_value,minimum_value,maximum_value,increment from information_schema.sequences;
          sequence_name         | sequence_schema |  sequence_catalog  | start_value | minimum_value |    maximum_value    | increment 
 -------------------------------+-----------------+--------------------+-------------+---------------+---------------------+-----------
- snapshot_sequence             | db4ai           | contrib_regression | 1           | 1             | 9223372036854775807 | 1
  proc_coverage_coverage_id_seq | coverage        | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- model_sources_id_seq          | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- vectorize_tasks_task_id_seq   | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
- vectorize_queue_msg_id_seq    | ogai            | contrib_regression | 1           | 1             | 9223372036854775807 | 1
-(5 rows)
+ snapshot_sequence             | db4ai           | contrib_regression | 1           | 1             | 9223372036854775807 | 1
+(2 rows)
 
 select group_concat(COLUMN_NAME separator ',') as inner_col_exist from information_schema.columns where TABLE_NAME = 'abc';
  inner_col_exist 

@@ -45,6 +45,7 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+#include "utils/pg_lsn.h"
 
 #ifdef DOLPHIN
 #include "nodes/makefuncs.h"
@@ -448,6 +449,7 @@ static void accum_sum_add(NumericSumAccum *accum, NumericVar *var1);
 static void accum_sum_rescale(NumericSumAccum *accum, NumericVar *val);
 static void accum_sum_carry(NumericSumAccum *accum);
 static void accum_sum_final(NumericSumAccum *accum, NumericVar *result);
+static bool numericvar_to_uint64(const NumericVar* var, uint64* result);
 
 /*
  * @Description: call corresponding big integer operator functions.
@@ -3497,6 +3499,39 @@ Datum numeric_int8(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(result);
 }
 
+Datum numeric_pg_lsn(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    XLogRecPtr result;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* Handle NaN */
+        else if (NUMERIC_IS_NAN(num))
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("cannot convert NaN to %s", "pg_lsn")));
+        else
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("cannot convert infinity to %s", "pg_lsn")));
+    }
+
+    /* Convert to variable format and thence to pg_lsn */
+    init_var_from_num(num, &x);
+
+    if (!numericvar_to_uint64(&x, (uint64 *) &result))
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("pg_lsn out of range")));
+
+    PG_RETURN_LSN(result);
+}
+
 Datum int2_numeric(PG_FUNCTION_ARGS)
 {
     int16 val = PG_GETARG_INT16(0);
@@ -5929,6 +5964,76 @@ bool numericvar_to_int64(const NumericVar* var, int64* result, bool can_ignore)
             return false;
         val = -val;
     }
+    *result = val;
+
+    return true;
+}
+
+/*
+ * Convert numeric to uint64, rounding if needed.
+ *
+ * If overflow, return false (no error is raised).  Return true if okay.
+ */
+bool numericvar_to_uint64(const NumericVar* var, uint64* result)
+{
+    NumericDigit* digits = NULL;
+    int ndigits;
+    int weight;
+    int i;
+    uint64 val;
+    NumericVar rounded;
+
+    /* Round to nearest integer */
+    init_var(&rounded);
+    set_var_from_var(var, &rounded);
+    round_var(&rounded, 0);
+
+    /* Check for zero input */
+    strip_var(&rounded);
+    ndigits = rounded.ndigits;
+    if (ndigits == 0) {
+        *result = 0;
+        free_var(&rounded);
+        return true;
+    }
+
+    /* Check for negative input */
+    if (rounded.sign == NUMERIC_NEG) {
+        free_var(&rounded);
+        return false;
+    }
+
+    /*
+     * For input like 10000000000, we must treat stripped digits as real. So
+     * the loop assumes there are weight+1 digits before the decimal point.
+     */
+    weight = rounded.weight;
+    Assert(weight >= 0 && ndigits <= weight + 1);
+
+    /* Construct the result */
+    digits = rounded.digits;
+    val = digits[0];
+    for (i = 1; i <= weight; i++) {
+        uint64 newval;
+        /* Check for multiplication overflow */
+        if (val > UINT64_MAX / NBASE) {
+            free_var(&rounded);
+            return false;
+        }
+        newval = val * NBASE;
+        /* Check for addition overflow */
+        if (i < ndigits) {
+            if (newval > UINT64_MAX - digits[i]) {
+                free_var(&rounded);
+                return false;
+            }
+            newval += digits[i];
+        }
+        val = newval;
+    }
+
+    free_var(&rounded);
+
     *result = val;
 
     return true;
