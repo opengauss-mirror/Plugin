@@ -35,7 +35,6 @@ WARNING:  TEST is not a valid encoding name. default value set
 --? dbe_sql_util         | .*
 --? dolphin_catalog      | .*
 --? mergeinto            | .*
---? ogai                 | .*
 --? performance_schema   | .*
 --? pkg_service          | .*
 --? public               | .*
@@ -46,7 +45,7 @@ WARNING:  TEST is not a valid encoding name. default value set
 --? test_3               | .*
 --? test_temp            | .*
 --? xmltype              | .*
-(27 rows)
+(26 rows)
 
 ALTER SCHEMA test_1 WITHOUT BLOCKCHAIN;
 ALTER SCHEMA Test_1 WITHOUT BLOCKCHAIN;
@@ -82,7 +81,6 @@ ALTER SCHEMA Test_1_BAK OWNER TO Test_Schema_User;
 --? dbe_sql_util         | .*
 --? dolphin_catalog      | .*
 --? mergeinto            | .*
---? ogai                 | .*
 --? performance_schema   | .*
 --? pkg_service          | .*
 --? public               | .*
@@ -93,7 +91,7 @@ ALTER SCHEMA Test_1_BAK OWNER TO Test_Schema_User;
 --? test_3               | .*
 --? test_temp            | .*
 --? xmltype              | .*
-(27 rows)
+(26 rows)
 
 SET SEARCH_PATH TO test_1, Test1;
 SHOW SEARCH_PATH;
@@ -137,7 +135,6 @@ DROP SCHEMA test_1_bak, Test_1_BAK;
 --? dbe_sql_util         | .*
 --? dolphin_catalog      | .*
 --? mergeinto            | .*
---? ogai                 | .*
 --? performance_schema   | .*
 --? pkg_service          | .*
 --? public               | .*
@@ -147,7 +144,7 @@ DROP SCHEMA test_1_bak, Test_1_BAK;
 --? test_3               | .*
 --? test_temp            | .*
 --? xmltype              | .*
-(25 rows)
+(24 rows)
 
 -- dolphin_any_name
 DROP SCHEMA IF EXISTS Test_Schema_User CASCADE;
@@ -171,7 +168,6 @@ CREATE SCHEMA AUTHORIZATION Test_Schema_User;
 --? dbe_sql_util         | .*
 --? dolphin_catalog      | .*
 --? mergeinto            | .*
---? ogai                 | .*
 --? performance_schema   | .*
 --? pkg_service          | .*
 --? public               | .*
@@ -181,7 +177,7 @@ CREATE SCHEMA AUTHORIZATION Test_Schema_User;
 --? test_3               | .*
 --? test_temp            | .*
 --? xmltype              | .*
-(25 rows)
+(24 rows)
 
 -- dolphin_qualified_name
 CREATE TABLE test_1_table (a int);

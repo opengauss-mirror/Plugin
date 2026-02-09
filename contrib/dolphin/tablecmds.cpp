@@ -720,7 +720,7 @@ static void checkColStoreForExchange(Relation partTableRel, Relation ordTableRel
 static void ATExecExchangePartition(Relation partTableRel, AlterTableCmd* cmd);
 static void UpdatePrevIntervalPartToRange(
     Relation srcRel, Relation pgPartition, int srcPartIndex, const char* briefCmd);
-static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd);
+static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd, AlteredTableInfo* tab);
 static void ATExecAddTblIntoCBI(Relation idxRel, const AddTableIntoCBIState* state);
 static void checkCompressForExchange(Relation partTableRel, Relation ordTableRel);
 static void checkColumnForExchange(Relation partTableRel, Relation ordTableRel);
@@ -754,7 +754,7 @@ static Oid getPartitionOid(Relation partTableRel, const char* partName, Node* ra
 static void AddNewPartitionForTable(Relation rel, List* destPartDefList);
 static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd);
 #endif
-static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd);
+static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd, AlteredTableInfo* tab);
 static void ATExecSplitSubPartition(Relation partTableRel, AlterTableCmd* cmd);
 static void checkSplitPointForSplit(SplitPartitionState* splitPart, Relation partTableRel, int srcPartIndex);
 static void checkDestPartitionNameForSplit(Oid partTableOid, List* partDefList);
@@ -770,7 +770,7 @@ static Oid AddTemporaryPartitionForAlterPartitions(const AlterTableCmd* cmd, Rel
     Oid srcPartOid, bool* renameTargetPart);
 static void ExchangePartitionWithGPI(const AlterTableCmd* cmd, Relation partTableRel, Oid srcPartOid,
     TransactionId frozenXid, MultiXactId multiXid);
-static void fastAddPartition(Relation partTableRel, List* destPartDefList, List** newPartOidList);
+static void fastAddPartition(Relation partTableRel, List* destPartDefList, List** newPartOidList, bool enableOnlineDDL);
 static void FastAddListSubPartition(Relation rel, List* destPartDefList, Oid partOid, List** newPartOidList);
 static void FastAddRangeSubPartition(Relation rel, List* destPartDefList, Oid partOid, List** newPartOidList);
 static void readTuplesAndInsert(Relation tempTableRel, Relation partTableRel);
@@ -7289,8 +7289,9 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname, char* newschema
               errcause("The function is not implemented."), erraction("Create a new table to replace it."))));
     }
 
-    if (OBJECT_IS_SEQUENCE(targetrelation->rd_rel->reltype)|| RELKIND_IS_SEQUENCE(targetrelation->rd_rel->relkind)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("RENAME SEQUENCE is not yet supported.")));
+    if (DB_IS_CMPT(D_FORMAT) &&
+        RELKIND_IS_SEQUENCE(RelationGetRelkind(targetrelation))) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("ALTER SEQUENCE ... RENAME not supported in D-format.")));
     }
 
     /* We allow to alter global temp table only this session use it */
@@ -8882,6 +8883,15 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 
     /* Phase 2: update system catalogs */
     ATRewriteCatalogs(&wqueue, lockmode, fromReplace);
+
+    /* Release AccessExclusiveLock which is locked when rewriting catalogs. */
+    if (enableOnlineDDL) {
+        if (!relationIsPartitioned) {
+            LockRelation(rel, ShareUpdateExclusiveLock);
+            UnlockRelation(rel, AccessExclusiveLock);
+        }
+        ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
+    }
     
 #ifdef PGXC
     /* Invalidate cache for redistributed relation */
@@ -10202,10 +10212,10 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
             ATExecExchangePartition(rel, cmd);
             break;
         case AT_MergePartition:
-            ATExecMergePartition(rel, cmd);
+            ATExecMergePartition(rel, cmd, tab);
             break;
         case AT_SplitPartition:
-            ATExecSplitPartition(rel, cmd);
+            ATExecSplitPartition(rel, cmd, tab);
             break;
         #ifdef DOLPHIN
         case AT_ReorganizePartition:
@@ -21795,6 +21805,15 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
     HeapTupleData tuple;
     TdeInfo tde_info = {0};
     errno_t rc = EOK;
+    ItemPointerData endCtid;
+    BlockNumber end_blkno;
+
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+    if (enableOnlineDDL) {
+        endCtid = operators->getEndCtidForPartition(src->rd_id);
+        end_blkno = ItemPointerGetBlockNumberNoCheck(&endCtid);
+    }
 
     if (srcBlocks == 0) {
         return;
@@ -22007,9 +22026,35 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
                 /* heap block mix in the block number to checksum. need recalculate */
                 PageSetChecksumInplace((Page)bufToWrite, dest_blkno);
 
-                smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, false);
+                if (enableOnlineDDL) {
+                    if (src_blkno <= end_blkno) {
+                        smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, false);
+                    } else{
+                        ereport(NOTICE,
+                            (errcode(ERRCODE_DATA_EXCEPTION),
+                                errmsg("Online DDL merge heap block error, src block number %u exceed end ctid block number %u",
+                                    src_blkno, end_blkno)));
+                    }
+                } else {
+                    smgrextend(dest->rd_smgr, forkNum, dest_blkno, bufToWrite, false);
+                }
+                
             }
         }
+
+        if (enableOnlineDDL && src_blkno <= end_blkno) {
+            ItemPointerData src_ctid;
+            ItemPointerData dest_ctid;
+            for (tupleNo = FirstOffsetNumber; tupleNo <= tupleNum; tupleNo++) {
+                ItemPointerSet(&src_ctid, src_blkno, tupleNo);
+                ItemPointerSet(&dest_ctid, dest_blkno, tupleNo);
+                operators->insertCtidMap(&src_ctid, src->rd_id, &dest_ctid);
+            }
+        }
+    }
+
+    if (enableOnlineDDL && dest->rd_smgr == NULL) {
+        RelationOpenSmgr(dest);
     }
 
     ADIO_RUN()
@@ -28696,7 +28741,7 @@ static void FlushMergedPartitionBuffers(Relation partTableRel, const List* srcPa
  * infact, pn is the same partition with px
  *  if px is deferent with pn, change pn's name to px
  */
-static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
+static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd, AlteredTableInfo* tab)
 {
     List* srcPartitions = NIL;
     List* srcPartOids = NIL;
@@ -28728,6 +28773,14 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
     TransactionId FreezeXid;
     MultiXactId FreezeMultiXid;
     LOCKMODE lockMode = NoLock;
+
+    OnlineDDLRelOperators* operators = RelationGetOnlineDDLOperators(partTableRel);
+    if (operators != NULL) {
+        operators->setStatus(ONLINE_DDL_STATUS_BASELINE_COPY);
+    }
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+
+    lockMode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
 
     srcPartitions = (List*)cmd->def;
     destPartName = cmd->name;
@@ -28772,7 +28825,7 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
         srcPartOid = PartitionNameGetPartitionOid(partTableRel->rd_id,
             partName,
             PART_OBJ_TYPE_TABLE_PARTITION,
-            AccessExclusiveLock,  // get AccessExclusiveLock lock on src partitions
+            lockMode,
             false,          // no missing
             false,          // wait
             NULL,
@@ -28852,7 +28905,6 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
         destPartOid = AddTemporaryRangePartitionForAlterPartitions(cmd, partTableRel, curPartIndex, &renameTargetPart);
         int partitionno = GetPartitionnoFromSequence(partTableRel->partMap, curPartIndex);
         UpdateCurrentPartitionNo(destPartOid, partitionno, false);
-        lockMode = AccessExclusiveLock;
     }
 
     /*
@@ -28897,12 +28949,14 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
     object.objectId = tempTableOid;
     object.objectSubId = 0;
 
-    ReleaseSysCache(tuple);
-    partitionClose(partTableRel, destPart, NoLock);
-    releaseDummyRelation(&destPartRel);
+    if (!enableOnlineDDL) {
+        ReleaseSysCache(tuple);
+        partitionClose(partTableRel, destPart, NoLock);
+        releaseDummyRelation(&destPartRel);
+    }
 
     /* open temp relation */
-    tempTableRel = relation_open(tempTableOid, AccessExclusiveLock);
+    tempTableRel = relation_open(tempTableOid, lockMode);
     RelationOpenSmgr(tempTableRel);
 
     /* lock the index relation on partitioned table and check the usability */
@@ -28999,9 +29053,39 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
             &FreezeMultiXid);
     }
 
-    /* close temp relation */
-    RelationCloseSmgr(tempTableRel);
-    heap_close(tempTableRel, NoLock);
+    if (enableOnlineDDL) {
+        List* oldPartitions = NIL;
+        List* oldRelations = NIL;
+        cell = NULL;
+        foreach (cell, srcPartOids) {
+            Oid srcPartOid = lfirst_oid(cell);
+            Partition srcPartition = partitionOpen(partTableRel, srcPartOid, NoLock);
+            Relation srcPartRel = partitionGetRelation(partTableRel, srcPartition);
+            oldPartitions = lappend(oldPartitions, srcPartition);
+            oldRelations = lappend(oldRelations, srcPartRel);
+        }
+
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+        operators->OnlineDDLAppendIncrementalData(oldRelations, tempTableRel, tab, ONLINE_DDL_MERGE_PARTITION);
+
+        cell = NULL;
+        foreach (cell, oldPartitions) {
+            Partition srcPartition = (Partition)lfirst(cell);
+            partitionClose(partTableRel, srcPartition, NoLock);
+        }
+
+        cell = NULL;
+        foreach (cell, oldRelations) {
+            Relation srcPartRel = (Relation)lfirst(cell);
+            releaseDummyRelation(&srcPartRel);
+        }
+    }
+
+    if (!enableOnlineDDL) {
+        /* close temp relation */
+        RelationCloseSmgr(tempTableRel);
+        heap_close(tempTableRel, NoLock);
+    }
 
     /* swap the index relfilenode*/
     mergePartitionIndexSwap(indexRel_list, indexDestPartOid_list, clonedIndexRelId_list, FreezeXid, FreezeMultiXid);
@@ -29060,6 +29144,12 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd)
         ATUnusableGlobalIndex(partTableRel);
     } else {
         AddGPIForPartition(RelationGetRelid(partTableRel), destPartOid);
+    }
+
+    if (enableOnlineDDL) {
+        ReleaseSysCache(tuple);
+        partitionClose(partTableRel, destPart, NoLock);
+        releaseDummyRelation(&destPartRel);
     }
 }
 
@@ -31217,7 +31307,7 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
 }
 #endif
 
-static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
+static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd, AlteredTableInfo* tab)
 {
     SplitPartitionState* splitPart = NULL;
     List* destPartDefList = NIL;
@@ -31244,12 +31334,20 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
     partKeyNum = partMap->base.partitionKey->dim1;
     partTableOid = RelationGetRelid(partTableRel);
 
+    OnlineDDLRelOperators* operators = RelationGetOnlineDDLOperators(partTableRel);
+    if (operators != NULL) {
+        operators->setStatus(ONLINE_DDL_STATUS_BASELINE_COPY);
+    }
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+
+    LOCKMODE lockmode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
+
     // get src partition oid
     if (PointerIsValid(splitPart->src_partition_name)) {
         srcPartOid = PartitionNameGetPartitionOid(RelationGetRelid(partTableRel),
             splitPart->src_partition_name,
             PART_OBJ_TYPE_TABLE_PARTITION,
-            AccessExclusiveLock,
+            lockmode,
             true,
             false,
             NULL,
@@ -31410,7 +31508,8 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
         PartitionDefState* partDef = (PartitionDefState*)lfirst(cell);
         partDef->partitionno = partitionno;
     }
-    fastAddPartition(partTableRel, destPartDefList, &newPartOidList);
+    fastAddPartition(partTableRel, destPartDefList, &newPartOidList, enableOnlineDDL);
+
     /* inplace update on partitioned table, because we can't cover the wait_clean_gpi info, which is inplace updated */
     UpdateCurrentPartitionNo(RelOidGetPartitionTupleid(partTableRel->rd_id), -partitionno, true);
 
@@ -31424,7 +31523,7 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
 #ifdef PGXC
     if (IS_PGXC_DATANODE) {
 #endif
-        part = partitionOpen(partTableRel, srcPartOid, AccessExclusiveLock);
+        part = partitionOpen(partTableRel, srcPartOid, lockmode);
 
         // creat temp table and swap relfilenode with src partition
         tempTableOid = createTempTableForPartition(partTableRel, part);
@@ -31438,8 +31537,12 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
 #endif
 
     AlterPartitionedSetWaitCleanGPI(cmd->alterGPI, partTableRel, srcPartOid);
+
     // drop src partition
     fastDropPartition(partTableRel, srcPartOid, "SPLIT PARTITION");
+    if (enableOnlineDDL) {
+        UnlockPartition(partTableRel->rd_id, srcPartOid, AccessExclusiveLock, PARTITION_LOCK);
+    }
     currentPartNum = getNumberOfPartitions(partTableRel);
     if (currentPartNum != targetPartNum) {
         ereport(ERROR,
@@ -31447,14 +31550,33 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
                         "The number of target partitions is %d, but the number of current partitions is %d.",
                         targetPartNum, currentPartNum)));
     }
-
 #ifdef PGXC
     if (IS_PGXC_DATANODE) {
 #endif
-        tempTableRel = relation_open(tempTableOid, AccessExclusiveLock);
 
+        tempTableRel = relation_open(tempTableOid, AccessExclusiveLock);
+        if (enableOnlineDDL) {
+            /*
+             * Enable append mode for temp table separately because:
+             * 1. The temp table (created by createTempTableForPartition) is a newly created table
+             *    that doesn't inherit the online DDL state from the original partitioned table
+             * 2. InstanceInit only enables append mode for the main partitioned table relation,
+             *    but not for temporary tables created during partition operations
+             * 3. This temp table needs append mode enabled so that during the catchup phase,
+             *    incremental data can be appended correctly to the final partitioned table
+             */
+            OnlineDDLEnableRelationAppendMode(tempTableRel);
+        }
         // read temp table tuples and insert into partitioned table
         readTuplesAndInsert(tempTableRel, partTableRel);
+
+        if (enableOnlineDDL) {
+            operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+            void* savedOperatos = partTableRel->rd_online_ddl_operators;
+            partTableRel->rd_online_ddl_operators = NULL;
+            operators->OnlineDDLAppendIncrementalData(tempTableRel, partTableRel, tab, ONLINE_DDL_SPLIT_PARTITION);
+            partTableRel->rd_online_ddl_operators = savedOperatos;
+        }
 
         relation_close(tempTableRel, NoLock);
 
@@ -32289,7 +32411,7 @@ static void AlterPartitionedSetWaitCleanGPI(bool alterGPI, Relation partTableRel
  * 	@in partTableRel: partition table relation.
  * 	@in subpartOid: subpartition oid.
  */
-static void AlterSubPartitionedSetWaitCleanGPI(bool alterGPI, Relation partTableRel, Oid partOid, Oid subPartOid)
+void AlterSubPartitionedSetWaitCleanGPI(bool alterGPI, Relation partTableRel, Oid partOid, Oid subPartOid)
 {
     if (!alterGPI) {
         return;
@@ -32562,12 +32684,13 @@ static void ExchangePartitionWithGPI(const AlterTableCmd* cmd, Relation partTabl
     AddGPIForPartition(RelationGetRelid(partTableRel), destPartOid);
 }
 
-static void fastAddPartition(Relation partTableRel, List* destPartDefList, List** newPartOidList)
+static void fastAddPartition(Relation partTableRel, List* destPartDefList, List** newPartOidList, bool enableOnlineDDL)
 {
     Relation pgPartRel = NULL;
     Oid newPartOid = InvalidOid;
     ListCell* cell = NULL;
     Oid bucketOid;
+    LOCKMODE lockmode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
 
     bool* isTimestamptz = CheckPartkeyHasTimestampwithzone(partTableRel);
 
@@ -32601,7 +32724,7 @@ static void fastAddPartition(Relation partTableRel, List* destPartDefList, List*
 #endif
             isTimestamptz,
             RelationGetStorageType(partTableRel),
-            AccessExclusiveLock);
+            lockmode);
 
         *newPartOidList = lappend_oid(*newPartOidList, newPartOid);
 
@@ -32771,9 +32894,14 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
     HTAB *partRelHTAB = NULL;
     bool relisustore = RelationIsUstoreFormat(tempTableRel);
 
-    scan = tableam_scan_begin(tempTableRel, SnapshotNow, 0, NULL);
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+
+    Snapshot snapshot = enableOnlineDDL ? operators->getBaselineSnapshot() : SnapshotNow;
+    scan = tableam_scan_begin(tempTableRel, snapshot, 0, NULL);
 
     while ((tuple = tableam_scan_getnexttuple(scan, ForwardScanDirection)) != NULL) {
+        ItemPointer oldCtid = &((HeapTuple)tuple)->t_self;
         Oid targetPartOid = InvalidOid;
         int partitionno = INVALID_PARTITION_NO;
         Oid targetSubPartOid = InvalidOid;
@@ -32837,6 +32965,9 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
             }
         }
         tableam_tuple_insert(partRel, copyTuple, GetCurrentCommandId(true), HEAP_INSERT_SPLIT_PARTITION, NULL);
+        if (enableOnlineDDL && operators->getOnlineDDLType() > ONLINE_DDL_CHECK) {
+            operators->insertCtidMap(oldCtid, targetPartOid, &((HeapTuple)copyTuple)->t_self);
+        }
         HeapTuple tup = (HeapTuple)copyTuple;
         tableam_tops_free_tuple(tup);
     }
@@ -33822,7 +33953,7 @@ static void ExecRewriteRowTable(AlteredTableInfo* tab, Oid NewTableSpace, LOCKMO
 #ifdef USE_ASSERT_CHECKING
         OnlineDDLLockCheck(oldRel->rd_id);
 #endif
-        operators->OnlineDDLAppendIncrementalData(oldRel, newRel, tab);
+        operators->OnlineDDLAppendIncrementalData(oldRel, newRel, tab, ONLINE_DDL_REWRITE_ROW_TABLE);
     }
 
     heap_close(oldRel, NoLock);
@@ -33929,7 +34060,11 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
             ListCell* subcell = NULL;
             foreach (subcell, subpartitions) {
                 Partition subpartition = (Partition)lfirst(subcell);
+                if (enableOnlineDDL) {
+                    UnlockPartition(partitionedTableRel->rd_id, subpartition->pd_id, AccessExclusiveLock, PARTITION_LOCK);
+                }
                 Relation oldRel = partitionGetRelation(partrel, subpartition);
+                oldPartRelList = lappend(oldPartRelList, oldRel);
                 Datum relOptions = 0;
 
                 /*
@@ -33942,28 +34077,27 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
                     relOptions = partTabRelOptions;
                 }
                 /* make a temp table for swapping partition */
-                Oid OIDNewHeap = makePartitionNewHeap(partrel,
-                    RelationGetDescr(partrel),
-                    relOptions,
-                    oldRel->rd_id,
-                    oldRel->rd_rel->reltoastrelid,
-                    oldRel->rd_rel->reltablespace,
-                    false,
-                    partitionedTableRel->rd_rel->relfilenode);
+                Oid OIDNewHeap = makePartitionNewHeap(partrel, RelationGetDescr(partrel), relOptions, oldRel->rd_id,
+                                                      oldRel->rd_rel->reltoastrelid, oldRel->rd_rel->reltablespace,
+                                                      false, partitionedTableRel->rd_rel->relfilenode);
 
                 Relation newRel = heap_open(OIDNewHeap, lockmode);
+                if (enableOnlineDDL) {
+                    OnlineDDLCopyRelationIndexs(partitionedTableRel, newRel, &srcIndexOidList, &destIndexOidList);
+                }
                 /* rewrite the temp table by partition */
                 ATRewriteTable(tab, oldRel, newRel);
                 heap_close(newRel, NoLock);
-
-                /* swap the temp table and partition */
-                finishPartitionHeapSwap(oldRel->rd_id, OIDNewHeap, false, u_sess->utils_cxt.RecentXmin,
-                                        GetOldestMultiXactId(), false, tab);
-
+                if (!enableOnlineDDL) {
+                    /* swap the temp table and partition */
+                    finishPartitionHeapSwap(oldRel->rd_id, OIDNewHeap, false, u_sess->utils_cxt.RecentXmin,
+                                            GetOldestMultiXactId(), false, tab);
+                }
                 /* record the temp table oid for dropping */
                 tempTableOidList = lappend_oid(tempTableOidList, OIDNewHeap);
-
-                releaseDummyRelation(&oldRel);
+                if (!enableOnlineDDL) {
+                    releaseDummyRelation(&oldRel);
+                }
             }
             releasePartitionList(partrel, &subpartitions, AccessExclusiveLock);
             releaseDummyRelation(&partrel);
@@ -34025,7 +34159,7 @@ static void ExecRewriteRowPartitionedTable(AlteredTableInfo* tab, Oid NewTableSp
         }
 
         operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
-        operators->OnlineDDLAppendIncrementalData(oldPartRelList, tempTableOidList, tab);
+        operators->OnlineDDLAppendIncrementalData(oldPartRelList, tempTableOidList, tab, ONLINE_DDL_REWRITE_ROW_PARTITIONED_TABLE);
 
         /* swap the temp table and partition */
         ListCell* oldCell = NULL;

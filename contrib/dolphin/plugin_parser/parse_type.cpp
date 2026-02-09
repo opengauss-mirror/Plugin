@@ -55,6 +55,7 @@
 #include "catalog/pg_object.h"
 #include "catalog/gs_dependencies_fn.h"
 #include "catalog/pg_type_fn.h"
+#include "commands/extension.h"
 #ifdef DOLPHIN
 #include "miscadmin.h"
 #include "commands/typecmds.h"
@@ -898,7 +899,10 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
         } else if (is_bin_type) {
             result = BINARY_COLLATION_OID;
         } else {
-            result = get_default_collation_by_charset(GetDatabaseEncoding());
+            result = get_default_collation_by_charset(GetDatabaseEncoding(), !creating_extension);
+            if (!OidIsValid(result)) {
+                result = typcollation;
+            }
         }
     }
 #ifdef DOLPHIN

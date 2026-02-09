@@ -34,13 +34,12 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
- ogai
  performance_schema
  pg_catalog
  public
  sqladvisor
  xmltype
-(13 rows)
+(12 rows)
 
 drop database db1;
 NOTICE:  DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.
@@ -67,7 +66,6 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
- ogai
  performance_schema
  pg_catalog
  pg_toast
@@ -76,5 +74,5 @@ show databases;
  snapshot
  sqladvisor
  xmltype
-(19 rows)
+(18 rows)
 

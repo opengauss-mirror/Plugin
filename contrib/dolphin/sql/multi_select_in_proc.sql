@@ -305,5 +305,12 @@ CALL p_define_config_check(@alias);
 drop table string_tables;
 DROP PROCEDURE IF EXISTS  p_define_config_check;
 
+CREATE TABLE point_tbl(f1 point);
+SELECT count(*) FROM point_tbl WHERE f1 <@ box '(0,0,100,100)';
+drop table point_tbl;
+
+SELECT @-@ path '((0,0),(1,0))' AS RESULT;
+SELECT point '(1,1)' <@ circle '((0,0),2)' AS RESULT;
+
 drop schema multi_select_proc cascade;
 reset current_schema;
