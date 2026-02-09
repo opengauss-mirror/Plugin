@@ -209,5 +209,8 @@ create index index6 on test_type_table(`longblob`);
 create index index7 on test_type_table(`bytea`);
 drop table test_type_table;
 
+create view return_type as select char('2022-2-22 11:11:11'::timestamp);
+drop view return_type;
+
 drop schema test_b1 cascade;
 reset current_schema;
