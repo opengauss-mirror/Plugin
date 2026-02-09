@@ -9,8 +9,7 @@ show processlist;
 --?.*
 --?.*
 --?.*
---?.*
-(7 rows)
+(6 rows)
 
 show full processlist;
 --?    Id        |       Pid       |      QueryId      | UniqueSqlId |   User    | Host |    db    | .* |         BackendStart          |           XactStart           | .* | State  | .*
@@ -21,8 +20,7 @@ show full processlist;
 --?.*
 --?.*
 --?.*
---?.*
-(7 rows)
+(6 rows)
 
 drop schema db_show cascade;
 reset current_schema;
