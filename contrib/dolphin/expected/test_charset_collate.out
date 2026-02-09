@@ -533,5 +533,26 @@ show create table test2;
 
 drop table test1;
 drop table test2;
+set b_format_behavior_compat_options = 'default_collation';
+create table test_type_table
+(
+   `binary` binary(100),
+   `varbinary` varbinary(100),
+   `tinyblob` tinyblob,
+   `blob` blob,
+   `mediumblob` mediumblob,
+   `longblob` longblob, 
+   `bytea` bytea
+);
+create index index1 on test_type_table(`binary`);
+create index index2 on test_type_table(`varbinary`);
+create index index3 on test_type_table(`tinyblob`);
+create index index4 on test_type_table(`blob`);
+create index index5 on test_type_table(`mediumblob`);
+create index index6 on test_type_table(`longblob`);
+create index index7 on test_type_table(`bytea`);
+drop table test_type_table;
+create view return_type as select char('2022-2-22 11:11:11'::timestamp);
+drop view return_type;
 drop schema test_b1 cascade;
 reset current_schema;
