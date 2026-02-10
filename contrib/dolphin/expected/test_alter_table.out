@@ -575,6 +575,22 @@ drop index if exists id_grammar0029;
 NOTICE:  index "id_grammar0029" does not exist, skipping
 create index id_grammar0029 on t_grammar0029 using psort(id) tablespace pg_default;
 alter table t_grammar0029 drop key id_grammar0029;
+-- test alter order with after/first
+create table alter_order_test(a int, b int);
+alter table alter_order_test
+    add column c int after a,
+    add column d int after c,
+    change column b b int after d;
+\d alter_order_test
+Table "db_alter_table.alter_order_test"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ c      | integer | 
+ d      | integer | 
+ b      | integer | 
+
+drop table alter_order_test;
 drop schema db_alter_table cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to type lockmodes

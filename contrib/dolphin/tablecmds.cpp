@@ -8960,6 +8960,12 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
     cmd = (AlterTableCmd*)copyObject(cmd);
 
     cmd->recursing = recursing;
+    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+        tab->b_compat_subcmds = lappend(tab->b_compat_subcmds, cmd);
+        if (cmd->subtype == AT_AlterColumnType || cmd->subtype == AT_ModifyColumn) {
+            tab->b_compat_has_alter_type = true;
+        }
+    }
     /*
      * Do permissions checking, recursion to child tables if needed, and any
      * additional phase-1 processing needed.
@@ -9599,6 +9605,43 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
     ListCell* ltab = NULL;
     OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
     bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_REWRITE_CATALOG);
+
+    bool b_compat_order = (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT);
+
+    if (b_compat_order) {
+        /* Clear phase-1 pass lists to avoid double execution in B format. */
+        foreach (ltab, *wqueue) {
+            AlteredTableInfo* tab = (AlteredTableInfo*)lfirst(ltab);
+            if (tab->b_compat_subcmds == NIL) {
+                continue;
+            }
+            for (pass = 0; pass < AT_NUM_PASSES; pass++) {
+                tab->subcmds[pass] = NIL;
+            }
+        }
+
+        /* Execute original subcommands in written order for B format. */
+        foreach (ltab, *wqueue) {
+            AlteredTableInfo* tab = (AlteredTableInfo*)lfirst(ltab);
+            ListCell* lcmd = NULL;
+            Relation rel;
+
+            if (tab->b_compat_subcmds == NIL) {
+                continue;
+            }
+
+            rel = relation_open(tab->relid, NoLock);
+            foreach (lcmd, tab->b_compat_subcmds) {
+                ATExecCmd(wqueue, tab, rel, (AlterTableCmd*)lfirst(lcmd), lockmode, fromReplace);
+            }
+
+            if (tab->b_compat_has_alter_type && !tab->isDeltaTable) {
+                ATPostAlterTypeCleanup(wqueue, tab, lockmode);
+            }
+
+            relation_close(rel, NoLock);
+        }
+    }
 
     /*
      * We process all the tables "in parallel", one pass at a time.  This is
