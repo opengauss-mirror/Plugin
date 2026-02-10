@@ -28027,21 +28027,23 @@ CreateConversionStmt:
  *****************************************************************************/
 
 ClusterStmt:
-			CLUSTER opt_verbose_with_brance dolphin_qualified_name cluster_index_specification
+			CLUSTER opt_verbose_with_brance opt_concurrently dolphin_qualified_name cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
-					$3->partitionname = NULL;
-					n->relation = $3;
-					n->indexname = $4;
+					n->concurrent = $3;
+					$4->partitionname = NULL;
+					n->relation = $4;
+					n->indexname = $5;
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
-			| CLUSTER opt_verbose_with_brance dolphin_qualified_name PARTITION '(' name ')' cluster_index_specification
+			| CLUSTER opt_verbose_with_brance opt_concurrently dolphin_qualified_name PARTITION '(' name ')' cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
-					$3->partitionname = $6;
-					n->relation = $3;
-					n->indexname = $8;
+					n->concurrent = $3;
+					$4->partitionname = $7;
+					n->relation = $4;
+					n->indexname = $9;
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
@@ -28054,11 +28056,18 @@ ClusterStmt:
 					$$ = (Node*)n;
 				}
 			/* kept for pre-8.3 compatibility, dolphin_index_name used to deal with the conflict*/
-			| CLUSTER opt_verbose_with_brance dolphin_index_name ON dolphin_qualified_name
+			| CLUSTER opt_verbose_with_brance opt_concurrently dolphin_index_name ON dolphin_qualified_name
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
-					n->relation = $5;
-					n->indexname = $3;
+					if ($3)
+					{
+						const char* message = "Online Cluster can't used for index.";
+    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("Online DDL can't used for 'Cluster index' gram.")));
+					}
+					n->relation = $6;
+					n->indexname = $4;
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}

@@ -37,6 +37,8 @@
 #include "commands/user.h"
 #include "commands/vacuum.h"
 #include "commands/verify.h"
+#include "commands/online_ddl_globalhash.h"
+#include "commands/online_ddl_util.h"
 #include "funcapi.h"
 #include "gaussdb_version.h"
 #include "libpq/ip.h"
@@ -15265,6 +15267,133 @@ Datum get_realtime_build_log_ctrl_status(PG_FUNCTION_ARGS)
     rsinfo->setResult = tupstore;
     rsinfo->setDesc = tupdesc;
     
+    return (Datum)0;
+}
+
+
+static char* ParseOnlineDDLType(OnlineDDLType type)
+{
+    switch (type) {
+        case ONLINE_DDL_CHECK:
+            return "CHECK";
+        case ONLINE_DDL_REWRITE:
+            return "REWRITE";
+        case ONLINE_DDL_VACUUM:
+            return "VACUUM";
+        case ONLINE_DDL_CLUSTER:
+            return "CLUSTER";
+        default:
+            return "INVALID";
+    }
+}
+
+static char* ParseOnlineDDLStatus(OnlineDDLStatus status)
+{
+    switch (status) {
+        case ONLINE_DDL_STATUS_NONE:
+            return "NONE";
+        case ONLINE_DDL_START:
+            return "START";
+        case ONLINE_DDL_STATUS_PREPARE:
+            return "PREPARE";
+        case ONLINE_DDL_STATUS_REWRITE_CATALOG:
+            return "REWRITE_CATALOG";
+        case ONLINE_DDL_STATUS_BASELINE_COPY:
+            return "BASELINE_COPY";
+        case ONLINE_DDL_STATUS_CATCHUP:
+            return "CATCHUP";
+        case ONLINE_DDL_COMMITTING:
+            return "COMMITTING";
+        case ONLINE_DDL_END:
+            return "END";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+Datum get_online_ddl_status(PG_FUNCTION_ARGS)
+{
+    if (ENABLE_DMS) {
+        ereport(ERROR, (errmsg("This function doesn't supports shared storage.")));
+    }
+    const int onlineDDLStatusColumnNum = 8;
+    const int attrRelIdIndex = 0;
+    const int attrHashEntryKeyIndex = 1;
+    const int attrTransactionIdIndex = 2;
+    const int attrStartTimeIndex = 3;
+    const int attrOnlineDDLTypeIdIndex = 4;
+    const int attrTempSchemaNameIndex = 5;
+    const int attrStatusIndex = 6;
+    const int attrExtraInfoIndex = 7;
+    TupleDesc tupdesc;
+    ReturnSetInfo* rsinfo = (ReturnSetInfo*)fcinfo->resultinfo;
+    MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
+    errno_t errorno = EOK;
+    int i = 0;
+    tupdesc = CreateTemplateTupleDesc(onlineDDLStatusColumnNum, false);
+    const char* attrNames[onlineDDLStatusColumnNum] = {"relid",      "hash_entry_key",  "transaction_id",
+                                                       "start_time", "online_ddl_type", "temp_schema_name",
+                                                       "status",     "extra_info"};
+    Oid attr_types[onlineDDLStatusColumnNum] = {OIDOID,  TEXTOID, INT8OID, TIMESTAMPTZOID,
+                                                TEXTOID, TEXTOID, TEXTOID, TEXTOID};
+
+    for (i = 0; i < onlineDDLStatusColumnNum; i++) {
+        TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), attrNames[i], attr_types[i], -1, 0);
+    }
+    tupdesc = BlessTupleDesc(tupdesc);
+
+    Tuplestorestate* tupstore =
+        tuplestore_begin_heap(rsinfo->allowedModes & SFRM_Materialize_Random, false, u_sess->attr.attr_memory.work_mem);
+    MemoryContextSwitchTo(oldcontext);
+    if (g_instance.online_ddl_cxt.globalInfoHash != NULL) {
+        HASH_SEQ_STATUS status;
+        DDLGlobalHashEntry* entry = NULL;
+        LWLockAcquire(OnlineDDLHashLock, LW_SHARED);
+        hash_seq_init(&status, g_instance.online_ddl_cxt.globalInfoHash);
+        while ((entry = (DDLGlobalHashEntry*)hash_seq_search(&status)) != NULL) {
+            DDLGlobalHashKey hashKey = entry->hashKey;
+            OnlineDDLRelOperators* operators = entry->operators;
+            if (hashKey.dbNode != u_sess->proc_cxt.MyDatabaseId) {
+                continue;
+            }
+            Datum values[onlineDDLStatusColumnNum];
+            bool nulls[onlineDDLStatusColumnNum] = {true};
+            values[attrRelIdIndex] = ObjectIdGetDatum(hashKey.relId);
+            nulls[attrRelIdIndex] = false;
+
+            char hashKeyStr[MAXFNAMELEN];
+            errorno = snprintf_s(hashKeyStr, MAXFNAMELEN, MAXFNAMELEN - 1, "%u/%u/%u", hashKey.spcNode, hashKey.dbNode,
+                                 hashKey.relId);
+            securec_check_ss(errorno, "", "");
+            values[attrHashEntryKeyIndex] = CStringGetTextDatum(hashKeyStr);
+            nulls[attrHashEntryKeyIndex] = false;
+            if (operators != NULL) {
+                values[attrTransactionIdIndex] = Int64GetDatum(operators->getStartXid());
+                nulls[attrTransactionIdIndex] = false;
+                values[attrStartTimeIndex] = TimestampTzGetDatum(operators->getStartTime());
+                nulls[attrStartTimeIndex] = false;
+                values[attrOnlineDDLTypeIdIndex] = CStringGetTextDatum(ParseOnlineDDLType(operators->getOnlineDDLType()));
+                nulls[attrOnlineDDLTypeIdIndex] = false;
+                values[attrTempSchemaNameIndex] =
+                    CStringGetTextDatum(operators->getStringInfoTempSchemaName()->data);
+                nulls[attrTempSchemaNameIndex] = false;
+                values[attrStatusIndex] = CStringGetTextDatum(ParseOnlineDDLStatus(operators->getStatus()));
+                nulls[attrStatusIndex] = false;
+                /* extraInfo, used for future update */
+                char extraInfo[MAXFNAMELEN] = {0};
+                values[attrExtraInfoIndex] = CStringGetTextDatum(extraInfo);
+                nulls[attrExtraInfoIndex] = false;
+            }
+            tuplestore_putvalues(tupstore, tupdesc, values, nulls);
+        }
+        LWLockRelease(OnlineDDLHashLock);
+    }
+
+    tuplestore_donestoring(tupstore);
+    rsinfo->returnMode = SFRM_Materialize;
+    rsinfo->setResult = tupstore;
+    rsinfo->setDesc = tupdesc;
+
     return (Datum)0;
 }
 

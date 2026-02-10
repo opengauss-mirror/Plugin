@@ -78,6 +78,7 @@
 #include "commands/tablecmds.h"
 #include "commands/tablespace.h"
 #include "commands/typecmds.h"
+#include "commands/online_ddl_globalhash.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
@@ -6196,7 +6197,11 @@ void heapDropPartitionIndex(Relation parentIndex, Oid partIndexId)
     Relation partRel = NULL;
     ObjectAddress obj;
 
-    partIndex = partitionOpen(parentIndex, partIndexId, AccessExclusiveLock);
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = operators != NULL && operators->getStatus() >= ONLINE_DDL_STATUS_BASELINE_COPY;
+    LOCKMODE lockmode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
+
+    partIndex = partitionOpen(parentIndex, partIndexId, lockmode);
     partRel = partitionGetRelation(parentIndex, partIndex);
 
     // delete CStore index
