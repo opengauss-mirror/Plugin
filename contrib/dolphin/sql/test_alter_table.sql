@@ -231,5 +231,14 @@ drop index if exists id_grammar0029;
 create index id_grammar0029 on t_grammar0029 using psort(id) tablespace pg_default;
 alter table t_grammar0029 drop key id_grammar0029;
 
+-- test alter order with after/first
+create table alter_order_test(a int, b int);
+alter table alter_order_test
+    add column c int after a,
+    add column d int after c,
+    change column b b int after d;
+\d alter_order_test
+drop table alter_order_test;
+
 drop schema db_alter_table cascade;
 reset current_schema;
