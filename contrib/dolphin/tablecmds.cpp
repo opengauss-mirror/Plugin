@@ -2645,7 +2645,12 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
         hashbucket = std_opt->hashbucket;
         bucketcnt =  std_opt->bucketcnt;
         storage_type = (std_opt->segment == true) ? SEGMENT_PAGE : HEAP_DISK;
-
+#ifdef ENABLE_NEON
+        if (storage_type == SEGMENT_PAGE) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("segment-page storage is not supported in Neon branching")));
+        }
+#endif
         if (pg_strcasecmp(ORIENTATION_COLUMN, StdRdOptionsGetStringData(std_opt, orientation, ORIENTATION_ROW)) == 0) {
             orientedFrom = (Node*)makeString(ORIENTATION_COLUMN);
             storeChar = ORIENTATION_COLUMN;
@@ -21390,7 +21395,11 @@ static void atexecset_table_space_internal(Relation rel, RelFileNode& newrnode, 
     SMgrRelation dstrel;
 
     /* Open old and new relation */
+#ifdef ENABLE_NEON
+    dstrel = smgropen(newrnode, rel->rd_backend, 0, rel->rd_rel->relpersistence);
+#else
     dstrel = smgropen(newrnode, rel->rd_backend);
+#endif /* ENABLE_NEON */
 
     /* open rel storage avoid relcache invalided*/
     RelationOpenSmgr(rel);
@@ -21718,7 +21727,12 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
     // dangerous if we still use dst and rel->smgr.
     //
     RelationOpenSmgr(rel);
+#ifdef ENABLE_NEON
+    *dstptr = dst = smgropen(newFileNode, backendId, 0, rel->rd_rel->relpersistence);
+#else
     *dstptr = dst = smgropen(newFileNode, backendId);
+#endif /* ENABLE_NEON */
+
     src = rel->rd_smgr;
 
     /* maybe can add prefetch here */
@@ -21792,7 +21806,12 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
         } else {
             if (RelationIsUstoreFormat(rel)) {
                 if (ExecuteUndoActionsForPartition(rel, dst, forkNum, blkno, blkno, ROLLBACK_OP_FOR_MOVE_TBLSPC)) {
+#ifdef ENABLE_NEON
+                    *dstptr = dst = smgropen(newFileNode, backendId, 0, rel->rd_rel->relpersistence);
+#else
                     *dstptr = dst = smgropen(newFileNode, backendId);
+#endif /* ENABLE_NEON */
+
                     src = rel->rd_smgr;
                 }
             } else {
@@ -31610,6 +31629,7 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd, Alte
             OnlineDDLEnableRelationAppendMode(tempTableRel);
         }
         // read temp table tuples and insert into partitioned table
+        partTableRel->rd_online_ddl_operators = NULL;
         readTuplesAndInsert(tempTableRel, partTableRel);
 
         if (enableOnlineDDL) {
