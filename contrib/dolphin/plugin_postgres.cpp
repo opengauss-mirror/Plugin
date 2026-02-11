@@ -239,6 +239,7 @@ static bool ReplaceNullOrNot();
 static bool NoAutoValueOnZero();
 static bool NullsMinimalPolicy();
 static bool enableProcedureExecutement();
+extern Oid binary_need_transform_typeid(Oid typeoid, Oid* collation);
 
 static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub,
     ddl_deparse_context *context);
@@ -389,6 +390,7 @@ void init_plugin_object()
     u_sess->hook_cxt.bpcharLaunchHook = (void*)bpchar_launch;
     u_sess->hook_cxt.varcharLaunchHook = (void*)varchar_launch;
     u_sess->hook_cxt.coerceTypeHook = (void*)coerce_to_target_type;
+    u_sess->hook_cxt.binaryTransformTypeidHook = (void*)binary_need_transform_typeid;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
