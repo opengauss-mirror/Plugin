@@ -285,6 +285,20 @@ should_load_on_create_extension(Node *utility_stmt)
 		return true;
 
 	/*
+	 * If the extension was previously loaded but has since been dropped,
+	 * reset the loaded state so it can be properly re-created in the same
+	 * session. The versioned library's hooks (planner, process_utility, etc.)
+	 * are still active in the session and remain valid since the .so is still
+	 * in memory, so do_load() will re-initialize correctly.
+	 */
+	if (!extension_exists()) {
+		loaded = false;
+		extension_post_parse_analyze_hook = NULL;
+		soversion[0] = '\0';
+		return true;
+	}
+
+	/*
 	 * If the extension exists and the create statement has an IF NOT EXISTS
 	 * option, we continue without loading and let CREATE EXTENSION bail out
 	 * with a standard NOTICE. We can only do this if the extension actually
@@ -295,8 +309,9 @@ should_load_on_create_extension(Node *utility_stmt)
 	 * version of the library, in addition to the currently loaded version, we
 	 * might taint the backend.
 	 */
-	if (extension_exists() && stmt->if_not_exists)
+	if (stmt->if_not_exists) {
 		return false;
+	}
 
 	/* disallow loading two .so from different versions */
 	ereport(ERROR,
