@@ -46,6 +46,9 @@ SELECT
     `tinyblob` <=> `enum_t` AS `tinyblob_<=>_enum_t`,
     `tinyblob` <=> `set_t` AS `tinyblob_<=>_set_t`,
     `tinyblob` <=> `json` AS `tinyblob_<=>_json` FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_<=>_boolean
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
 referenced column: tinyblob_<=>_date
@@ -132,6 +135,9 @@ SELECT
     `blob` <=> `enum_t` AS `blob_<=>_enum_t`,
     `blob` <=> `set_t` AS `blob_<=>_set_t`,
     `blob` <=> `json` AS `blob_<=>_json` FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_<=>_boolean
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  SQL function "blob_timestamp_eq" statement 1
 referenced column: blob_<=>_date
@@ -218,6 +224,9 @@ SELECT
     `mediumblob` <=> `enum_t` AS `mediumblob_<=>_enum_t`,
     `mediumblob` <=> `set_t` AS `mediumblob_<=>_set_t`,
     `mediumblob` <=> `json` AS `mediumblob_<=>_json` FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_<=>_boolean
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
 referenced column: mediumblob_<=>_date
@@ -304,6 +313,9 @@ SELECT
     `longblob` <=> `enum_t` AS `longblob_<=>_enum_t`,
     `longblob` <=> `set_t` AS `longblob_<=>_set_t`,
     `longblob` <=> `json` AS `longblob_<=>_json` FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_<=>_boolean
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
 referenced column: longblob_<=>_date
