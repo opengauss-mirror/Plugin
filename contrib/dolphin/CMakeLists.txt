@@ -161,7 +161,7 @@ set_target_properties(dolphin PROPERTIES PREFIX "")
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin.control
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.3.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--1.0--1.1.sql
@@ -218,10 +218,16 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.2--4.3.sql
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.3--4.2.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.3--5.0.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.3--4.4.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--4.3.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4--4.3.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4--5.0.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--4.4.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/openGauss_expr_dolphin.ir
