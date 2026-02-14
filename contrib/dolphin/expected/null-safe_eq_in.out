@@ -101,6 +101,18 @@ CONTEXT:  referenced column: binary_in_binary
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_in_varbinary
 WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_in_tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_in_blob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_in_mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_in_longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_in_text
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
@@ -122,6 +134,18 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: binary_not_in_binary
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_not_in_varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_not_in_tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_not_in_blob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_not_in_mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_not_in_longblob
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_not_in_text
 \x
@@ -652,9 +676,21 @@ UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_in_
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_in_varbinary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`tinyblob_in_tinyblob` = test_multi_type_table.`tinyblob` <=> `tinyblob` in (select `tinyblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_in_tinyblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`blob_in_blob` = test_multi_type_table.`blob` <=> `blob` in (select `blob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_in_blob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`mediumblob_in_mediumblob` = test_multi_type_table.`mediumblob` <=> `mediumblob` in (select `mediumblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_in_mediumblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`longblob_in_longblob` = test_multi_type_table.`longblob` <=> `longblob` in (select `longblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_in_longblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_in_text` = test_multi_type_table.`text` <=> `text` in (select `text` from test_multi_type_table);
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_in_text
@@ -708,9 +744,21 @@ UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_not
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_not_in_varbinary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`tinyblob_not_in_tinyblob` = test_multi_type_table.`tinyblob` <=> `tinyblob` not in (select `tinyblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_not_in_tinyblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`blob_not_in_blob` = test_multi_type_table.`blob` <=> `blob` not in (select `blob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_not_in_blob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`mediumblob_not_in_mediumblob` = test_multi_type_table.`mediumblob` <=> `mediumblob` not in (select `mediumblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_not_in_mediumblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`longblob_not_in_longblob` = test_multi_type_table.`longblob` <=> `longblob` not in (select `longblob` from test_multi_type_table);
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_not_in_longblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_not_in_text` = test_multi_type_table.`text` <=> `text` not in (select `text` from test_multi_type_table);
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_not_in_text
