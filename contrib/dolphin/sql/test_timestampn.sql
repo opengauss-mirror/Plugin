@@ -52,3 +52,30 @@ drop table t_timestamp5;
 drop table t_timestamp6;
 reset current_schema;
 drop schema test_timestampn cascade;
+
+-- test yearweek with timestamps
+drop table if exists person_track_info;
+CREATE TABLE person_track_info (
+    "ID" "uint8"(20) NOT NULL,
+    "SOURCE_ID" "uint8"(20),
+    "OCCURRENCE_TIME" timestamp(6) without time zone NOT NULL,
+    "OCCURRENCE_TIMEtz" timestamp(6) with time zone NOT NULL
+)
+PARTITION BY RANGE ("yearweek"(("OCCURRENCE_TIME")))
+(
+    PARTITION "part202549" VALUES LESS THAN ('202550'),
+    PARTITION "part202550" VALUES LESS THAN ('202551'),
+    PARTITION "part202551" VALUES LESS THAN ('202552'),
+    PARTITION "part202552" VALUES LESS THAN ('202601'),
+    PARTITION "part202601" VALUES LESS THAN ('202602'),
+    PARTITION "part202602" VALUES LESS THAN ('202603'),
+    PARTITION "part202650" VALUES LESS THAN ('202650')
+)
+ENABLE ROW MOVEMENT;
+
+select pg_get_tabledef('person_track_info');
+
+insert into person_track_info values (1, 1, '2026-06-01', '2026-06-01');
+select yearweek(OCCURRENCE_TIME), yearweek(OCCURRENCE_TIMEtz) from person_track_info;
+
+drop table if exists person_track_info;
