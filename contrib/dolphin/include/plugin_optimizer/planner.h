@@ -36,6 +36,8 @@
 #define EXPRKIND_PHV               8
 #define EXPRKIND_TABLESAMPLE       9
 #define EXPRKIND_TIMECAPSULE       10
+#define EXPRKIND_TABLEFUNC            12
+#define EXPRKIND_TABLEFUNC_LATERAL    13
 
 /*
  * @hdfs

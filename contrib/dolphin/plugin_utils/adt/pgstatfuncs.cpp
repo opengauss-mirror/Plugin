@@ -3730,6 +3730,9 @@ static int find_next_user_idx(unsigned int ordinary_userid, int call_cntr, int m
     listNodeid = current_index / WAIT_COUNT_ARRAY_SIZE;
     if (dataid == (WAIT_COUNT_ARRAY_SIZE - 1)) {
         listNodeid++;
+        if (listNodeid >= g_instance.stat_cxt.WaitCountStatusList->length) {
+            return 0;
+        }
         initcell = list_nth_cell(g_instance.stat_cxt.WaitCountStatusList, listNodeid);
         dataid = 0;
     } else {

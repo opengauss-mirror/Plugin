@@ -571,6 +571,7 @@ static void markTargetListOrigin(ParseState* pstate, TargetEntry* tle, Var* var,
             break;
         case RTE_FUNCTION:
         case RTE_VALUES:
+        case RTE_TABLEFUNC:
         case RTE_RESULT:
             /* not a simple relation, leave it unmarked */
             break;
@@ -1619,7 +1620,7 @@ static List* ExpandRowReference(ParseState* pstate, Node* expr, bool targetlist)
         } else {
             tupleDesc = lookup_rowtype_tupdesc_copy(exprType(expr), exprTypmod(expr));
         }
-	}
+    }
 
     if (unlikely(tupleDesc == NULL)) {
         ereport(ERROR,
@@ -1766,6 +1767,12 @@ TupleDesc expandRecordVariable(ParseState* pstate, Var* var, int levelsup)
             /*
              * We couldn't get here unless a function is declared with one of
              * its result columns as RECORD, which is not allowed.
+             */
+            break;
+        case RTE_TABLEFUNC:
+
+            /*
+             * Table function cannot have columns with RECORD type.
              */
             break;
         case RTE_CTE:

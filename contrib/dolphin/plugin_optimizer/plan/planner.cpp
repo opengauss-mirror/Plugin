@@ -1819,6 +1819,10 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
             /* Preprocess the function expression fully */
             kind = rte->lateral ? EXPRKIND_RTFUNC_LATERAL : EXPRKIND_RTFUNC;
             rte->funcexpr = preprocess_expression(root, rte->funcexpr, kind);
+        } else if (rte->rtekind == RTE_TABLEFUNC) {
+            /* Preprocess the function expression(s) fully */
+            kind = rte->lateral ? EXPRKIND_TABLEFUNC_LATERAL : EXPRKIND_TABLEFUNC;
+            rte->tablefunc = (TableFunc*)preprocess_expression(root, (Node*) rte->tablefunc, kind);
         } else if (rte->rtekind == RTE_VALUES) {
             /* Preprocess the values lists fully */
             kind = rte->lateral ? EXPRKIND_VALUES_LATERAL : EXPRKIND_VALUES;
@@ -2169,7 +2173,7 @@ Node* preprocess_expression(PlannerInfo* root, Node* expr, int kind)
      * can skip it in VALUES lists, however, since they can't contain any Vars
      * at all.
      */
-    if (root->hasJoinRTEs && !(kind == EXPRKIND_RTFUNC || kind == EXPRKIND_VALUES))
+    if (root->hasJoinRTEs && !(kind == EXPRKIND_RTFUNC || kind == EXPRKIND_VALUES || kind == EXPRKIND_TABLEFUNC))
         expr = flatten_join_alias_vars(root, expr);
 
     /*

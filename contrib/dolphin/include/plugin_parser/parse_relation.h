@@ -39,6 +39,8 @@ extern RangeTblEntry* addRangeTableEntryForFunction(
     ParseState* pstate, char* funcname, Node* funcexpr, RangeFunction* rangefunc, bool lateral, bool inFromCl);
 extern RangeTblEntry* addRangeTableEntryForValues(
     ParseState* pstate, List* exprs, List* collations, Alias* alias, bool inFromCl);
+extern RangeTblEntry *addRangeTableEntryForTableFunc(ParseState *pstate, TableFunc *tf,
+    Alias *alias, bool lateral, bool inFromCl);
 extern RangeTblEntry* addRangeTableEntryForJoin(
     ParseState* pstate, List* colnames, JoinType jointype, List* aliasvars, Alias* alias, bool inFromCl);
 extern RangeTblEntry* addRangeTableEntryForCTE(

@@ -4966,7 +4966,10 @@ static List* remove_update_redundant_relation(List* resultRelations, List* targe
 
 static void CheckUpdateRelation(Relation targetrel)
 {
-	// check column store relation distributed by replication
+    // check column store relation distributed by replication
+    if (!RelationIsValid(targetrel)) {
+        return;
+    }
     if (RelationIsColStore(targetrel) &&
         targetrel->rd_locator_info &&
         IsLocatorReplicated(targetrel->rd_locator_info->locatorType)) {
@@ -4998,7 +5001,7 @@ static void CheckUpdateRelation(Relation targetrel)
     }
 #ifdef ENABLE_MULTIPLE_NODES
     // check if the target relation is being redistributed in read only mode
-    if (!u_sess->attr.attr_sql.enable_cluster_resize &&
+    if (!u_sess->attr.attr_sql.enable_cluster_resize && targetrel != NULL &&
         RelationInClusterResizingWriteErrorMode(targetrel)) {
         ereport(ERROR,
             (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
@@ -6499,6 +6502,15 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
                                     errmsg("SELECT FOR UPDATE/SHARE%s cannot be applied to a function",
                                            NOKEYUPDATE_KEYSHARE_ERRMSG),
                                     parser_errposition(pstate, thisrel->location)));
+                            break;
+                        case RTE_TABLEFUNC:
+                            ereport(ERROR,
+                                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            /*------
+                              translator: %s is a SQL row locking clause such as FOR UPDATE */
+                                        errmsg("SELECT FOR UPDATE/SHARE%s cannot be applied to a function)",
+                                                NOKEYUPDATE_KEYSHARE_ERRMSG),
+                                        parser_errposition(pstate, thisrel->location)));
                             break;
                         case RTE_VALUES:
                             ereport(ERROR,

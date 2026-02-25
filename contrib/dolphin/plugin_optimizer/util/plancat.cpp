@@ -1635,6 +1635,7 @@ List* build_physical_tlist(PlannerInfo* root, RelOptInfo* rel)
             break;
 
         case RTE_FUNCTION:
+        case RTE_TABLEFUNC:
         case RTE_VALUES:
         case RTE_CTE:
         case RTE_RESULT:

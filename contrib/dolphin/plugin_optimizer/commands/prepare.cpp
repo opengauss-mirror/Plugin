@@ -1370,7 +1370,11 @@ void DropAllPreparedStatements(void)
          * make sure ResourceOwner is not null, since it may acess catalog
          * when the pooler tries to create new connections
          */
-        t_thrd.utils_cxt.CurrentResourceOwner = ResourceOwnerCreate(NULL, "DropAllPreparedStatements",
+        ResourceOwner parent = t_thrd.utils_cxt.TopTransactionResourceOwner;
+        if (unlikely(parent == NULL)) {
+            parent = t_thrd.utils_cxt.TopResourceOwner;
+        }
+        t_thrd.utils_cxt.CurrentResourceOwner = ResourceOwnerCreate(parent, "DropAllPreparedStatements",
             THREAD_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_OPTIMIZER));
     }
 

@@ -487,13 +487,16 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
         case WITH:
             /*
-             * WITH TIME must be reduced to one token
+             * WITH TIME and WITH ORDINALITY must each be reduced to one token
              */
             GET_NEXT_TOKEN();
 
             switch (next_token) {
                 case TIME:
                     cur_token = WITH_TIME;
+                    break;
+                case ORDINALITY:
+                    cur_token = WITH_ORDINALITY;
                     break;
 #ifdef DOLPHIN
                 case ROLLUP:

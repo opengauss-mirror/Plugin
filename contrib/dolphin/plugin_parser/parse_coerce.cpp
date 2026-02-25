@@ -1915,7 +1915,7 @@ Node* coerce_to_boolean(ParseState* pstate, Node* node, const char* constructNam
 }
 
 /*
- * coerce_to_specific_type()
+ * coerce_to_specific_type_typmod()
  *		Coerce an argument of a construct that requires a specific data type.
  *		Also check that input is not a set.
  *
@@ -1924,15 +1924,16 @@ Node* coerce_to_boolean(ParseState* pstate, Node* node, const char* constructNam
  * As with coerce_type, pstate may be NULL if no special unknown-Param
  * processing is wanted.
  */
-Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* constructName)
+Node *coerce_to_specific_type_typmod(ParseState *pstate, Node *node, Oid targetTypeId,
+    int32 targetTypmod, const char *constructName)
 {
     Oid inputTypeId = exprType(node);
-
     if (inputTypeId != targetTypeId) {
         Node* newnode = NULL;
 
         newnode = coerce_to_target_type(
-            pstate, node, inputTypeId, targetTypeId, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, NULL, NULL, -1);
+            pstate, node, inputTypeId, targetTypeId, targetTypmod,
+            COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, NULL, NULL, -1);
         if (newnode == NULL) {
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -1954,6 +1955,25 @@ Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, 
                 parser_errposition(pstate, exprLocation(node))));
     }
     return node;
+}
+
+/*
+ * coerce_to_specific_type()
+ *        Coerce an argument of a construct that requires a specific data type.
+ *        Also check that input is not a set.
+ *
+ * Returns the possibly-transformed node tree.
+ *
+ * As with coerce_type, pstate may be NULL if no special unknown-Param
+ * processing is wanted.
+ */
+Node *coerce_to_specific_type(ParseState *pstate, Node *node,
+                        Oid targetTypeId,
+                        const char *constructName)
+{
+    return coerce_to_specific_type_typmod(pstate, node,
+                                          targetTypeId, -1,
+                                          constructName);
 }
 
 Node* coerce_to_settype(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,

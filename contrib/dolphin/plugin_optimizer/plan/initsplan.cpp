@@ -239,6 +239,8 @@ extract_lateral_references(PlannerInfo *root, RelOptInfo *brel, Index rtindex)
         vars = pull_vars_of_level((Node *)rte->subquery, 1);
     } else if (rte->rtekind == RTE_FUNCTION) {
         vars = pull_vars_of_level(rte->funcexpr, 0);
+    } else if (rte->rtekind == RTE_TABLEFUNC) {
+        vars = pull_vars_of_level((Node *) rte->tablefunc, 0);
     } else if (rte->rtekind == RTE_VALUES) {
         vars = pull_vars_of_level((Node *)rte->values_lists, 0);
     } else {

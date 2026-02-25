@@ -1916,6 +1916,7 @@ typedef struct RangeTableSample {
 typedef struct RangeFunction {
     NodeTag type;
     bool lateral;       /* does it have LATERAL prefix? */
+    bool ordinality;     /* does it have WITH ORDINALITY suffix? */
     Node *funccallnode; /* untransformed function call tree */
     Alias *alias;       /* table alias & optional column aliases */
     List *coldeflist;   /* list of ColumnDef nodes to describe result

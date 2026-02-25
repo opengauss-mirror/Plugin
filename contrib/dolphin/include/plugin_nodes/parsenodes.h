@@ -113,6 +113,39 @@ typedef uint32 AclMode; /* a bitmask of privilege bits */
  ****************************************************************************/
 
 /*
+ * RangeTableFunc - raw form of "table functions" such as XMLTABLE
+ */
+typedef struct RangeTableFunc
+{
+    NodeTag        type;
+    bool        lateral;        /* does it have LATERAL prefix? */
+    Node       *docexpr;        /* document expression */
+    Node       *rowexpr;        /* row generator expression */
+    List       *namespaces;        /* list of namespaces as ResTarget */
+    List       *columns;        /* list of RangeTableFuncCol */
+    Alias       *alias;            /* table alias & optional column aliases */
+    int            location;        /* token location, or -1 if unknown */
+} RangeTableFunc;
+
+/*
+ * RangeTableFuncCol - one column in a RangeTableFunc->columns
+ *
+ * If for_ordinality is true (FOR ORDINALITY), then the column is an int4
+ * column and the rest of the fields are ignored.
+ */
+typedef struct RangeTableFuncCol
+{
+    NodeTag        type;
+    char       *colname;        /* name of generated column */
+    TypeName   *typeName;        /* type of generated column */
+    bool        for_ordinality; /* does it have FOR ORDINALITY? */
+    bool        is_not_null;    /* does it have NOT NULL? */
+    Node       *colexpr;        /* column filter expression */
+    Node       *coldefexpr;        /* column default value expression */
+    int            location;        /* token location, or -1 if unknown */
+} RangeTableFuncCol;
+
+/*
  * TableSampleClause - TABLESAMPLE appearing in a transformed FROM clause
  *
  * Unlike RangeTableSample, this is a subnode of the relevant RangeTblEntry.
@@ -159,7 +192,11 @@ typedef struct TableSampleClause {
  *	  colnames for columns dropped since the rule was created (and for that
  *	  matter the colnames might be out of date due to column renamings).
  *	  The same comments apply to FUNCTION RTEs when the function's return type
- *	  is a named composite type.
+ *    is a named composite type. In addition, for all return types, FUNCTION
+ *    RTEs with ORDINALITY must always have the last colname entry being the
+ *    one for the ordinal column; this is enforced when constructing the RTE.
+ *    Thus when ORDINALITY is used, there will be exactly one more colname
+ *    than would have been present otherwise.
  *
  *	  In JOIN RTEs, the colnames in both alias and eref are one-to-one with
  *	  joinaliasvars entries.  A JOIN RTE will omit columns of its inputs when
@@ -216,8 +253,9 @@ typedef enum RTEKind {
                       * present during parsing or rewriting */
 #ifdef USE_SPQ
     RTE_VOID, /* CDB: deleted RTE */
-    RTE_TABLEFUNCTION /* CDB: Functions over multiset input */
+    RTE_TABLEFUNCTION, /* CDB: Functions over multiset input */
 #endif
+    RTE_TABLEFUNC /* TableFunc(.., column list) */
 } RTEKind;
 
 typedef struct RangeTblEntry {
@@ -293,16 +331,21 @@ typedef struct RangeTblEntry {
     /*
      * Fields valid for a function RTE (else NULL):
      *
-     * If the function returns RECORD, funccoltypes lists the column types
-     * declared in the RTE's column type specification, funccoltypmods lists
-     * their declared typmods, funccolcollations their collations.	Otherwise,
-     * those fields are NIL.
+     * If the function returns an otherwise-unspecified RECORD, funccoltypes
+     * lists the column types declared in the RTE's column type specification,
+     * funccoltypmods lists their declared typmods, funccolcollations their
+     * collations.  Note that in this case, ORDINALITY is not permitted, so
+     * there is no extra ordinal column to be allowed for.
+     *
+     * Otherwise, those fields are NIL, and the result column types must be
+     * derived from the funcexpr while treating the ordinal column, if
+     * present, as a special case.  (see get_rte_attribute_*)
      */
     Node* funcexpr;          /* expression tree for func call */
     List* funccoltypes;      /* OID list of column type OIDs */
     List* funccoltypmods;    /* integer list of column typmods */
     List* funccolcollations; /* OID list of column collation OIDs */
-
+    bool funcordinality; /* is this called WITH ORDINALITY? */
     /*
      * Fields valid for a values RTE (else NIL):
      */
@@ -392,6 +435,10 @@ typedef struct RangeTblEntry {
                                  * Get names when partition tables deleted.
                                  */
     int cursorDop;              /* for functionscan with cursor param */
+
+    TableFunc  *tablefunc;          /*
+                                     * Fields valid for a TableFunc RTE (else NULL):
+                                     */
 } RangeTblEntry;
 
 /*
@@ -546,7 +593,7 @@ typedef struct StartWithTargetRelInfo {
     List *columns;
     Node *tblstmt;
 
-	/* fields to record origin RTE related info */
+    /* fields to record origin RTE related info */
     RTEKind rtekind;
     RangeTblEntry *rte;
     RangeTblRef* rtr;
@@ -1443,8 +1490,8 @@ typedef struct InlineCodeBlock {
 
 typedef struct CallContext
 {
-	NodeTag     type;
-	bool        atomic; /* Atomic execution context, does not allow transactions */
+    NodeTag     type;
+    bool        atomic; /* Atomic execution context, does not allow transactions */
 } CallContext;
 
 /* ----------------------

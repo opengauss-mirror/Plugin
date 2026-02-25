@@ -333,6 +333,7 @@ RelOptInfo* build_simple_rel(PlannerInfo* root, int relid, RelOptKind reloptkind
             break;
         case RTE_SUBQUERY:
         case RTE_FUNCTION:
+        case RTE_TABLEFUNC:
         case RTE_VALUES:
         case RTE_CTE:
 
