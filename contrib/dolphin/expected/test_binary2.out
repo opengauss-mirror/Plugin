@@ -61,28 +61,24 @@ create table t1(d blob, b blob);
 insert into t1(d, b) values ('aaaa',''),('bnbb','');
 select 1 from t1 where (select b from t1) in (select (d>=1) from t1);
 WARNING:  invalid input syntax for type double precision: "aaaa"
-WARNING:  invalid input syntax for type double precision: "bnbb"
 ERROR:  more than one row returned by a subquery used as an expression
 drop table if exists t1;
 create table t1(d tinyblob, b tinyblob);
 insert into t1(d, b) values ('aaaa',''),('bnbb','');
 select 1 from t1 where (select b from t1) in (select (d>=1) from t1);
 WARNING:  invalid input syntax for type double precision: "aaaa"
-WARNING:  invalid input syntax for type double precision: "bnbb"
 ERROR:  more than one row returned by a subquery used as an expression
 drop table if exists t1;
 create table t1(d mediumblob, b mediumblob);
 insert into t1(d, b) values ('aaaa',''),('bnbb','');
 select 1 from t1 where (select b from t1) in (select (d>=1) from t1);
 WARNING:  invalid input syntax for type double precision: "aaaa"
-WARNING:  invalid input syntax for type double precision: "bnbb"
 ERROR:  more than one row returned by a subquery used as an expression
 drop table if exists t1;
 create table t1(d longblob, b longblob);
 insert into t1(d, b) values ('aaaa',''),('bnbb','');
 select 1 from t1 where (select b from t1) in (select (d>=1) from t1);
 WARNING:  invalid input syntax for type double precision: "aaaa"
-WARNING:  invalid input syntax for type double precision: "bnbb"
 ERROR:  more than one row returned by a subquery used as an expression
 -- test for core issue 2
 drop table if exists t2;

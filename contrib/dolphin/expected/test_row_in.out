@@ -2492,24 +2492,32 @@ CONTEXT:  SQL function "boolean_binary_eq" statement 1
 (1 row)
 
 select row(1, row((select `boolean` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `boolean` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  SQL function "boolean_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `boolean` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `boolean` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  SQL function "boolean_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `boolean` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `boolean` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  SQL function "boolean_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `boolean` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `boolean` from all_types_table limit 1))));
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  SQL function "boolean_longblob_eq" statement 1
  ?column? 
 ----------
  f

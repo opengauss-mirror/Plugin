@@ -103,6 +103,18 @@ CONTEXT:  referenced column: binary_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_like_enum
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
@@ -124,6 +136,18 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: binary_not_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_not_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_not_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_not_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_not_like_enum
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_not_like_enum
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_not_like_enum
 \x
@@ -654,9 +678,21 @@ UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_ty
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`tinyblob_like_enum` = test_multi_type_table.`tinyblob` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`blob_like_enum` = test_multi_type_table.`blob` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`mediumblob_like_enum` = test_multi_type_table.`mediumblob` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`longblob_like_enum` = test_multi_type_table.`longblob` <=> test_enum_table.day_of_week like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`text_like_enum` = test_multi_type_table.`text` <=> test_enum_table.day_of_week like 'foo';
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_like_enum
@@ -710,9 +746,21 @@ UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_ty
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary_not_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`tinyblob_not_like_enum` = test_multi_type_table.`tinyblob` <=> test_enum_table.day_of_week not like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
+referenced column: tinyblob_not_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`blob_not_like_enum` = test_multi_type_table.`blob` <=> test_enum_table.day_of_week not like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
+referenced column: blob_not_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`mediumblob_not_like_enum` = test_multi_type_table.`mediumblob` <=> test_enum_table.day_of_week not like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
+referenced column: mediumblob_not_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`longblob_not_like_enum` = test_multi_type_table.`longblob` <=> test_enum_table.day_of_week not like 'foo';
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
+referenced column: longblob_not_like_enum
 UPDATE test_multi_type, test_multi_type_table, test_enum_table SET test_multi_type.`text_not_like_enum` = test_multi_type_table.`text` <=> test_enum_table.day_of_week not like 'foo';
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text_not_like_enum

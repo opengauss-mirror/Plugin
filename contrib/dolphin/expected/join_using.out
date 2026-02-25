@@ -2357,21 +2357,29 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v13 natural join t_v26;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "boolean_tinyblob_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v27;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "boolean_blob_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v28;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "boolean_mediumblob_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v29;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "boolean_longblob_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4681,6 +4689,8 @@ select * from t_v26 natural join t_v12;
 (0 rows)
 
 select * from t_v26 natural join t_v13;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "tinyblob_boolean_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4854,6 +4864,8 @@ select * from t_v27 natural join t_v12;
 (0 rows)
 
 select * from t_v27 natural join t_v13;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "blob_boolean_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5027,6 +5039,8 @@ select * from t_v28 natural join t_v12;
 (0 rows)
 
 select * from t_v28 natural join t_v13;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "mediumblob_boolean_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5200,6 +5214,8 @@ select * from t_v29 natural join t_v12;
 (0 rows)
 
 select * from t_v29 natural join t_v13;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "longblob_boolean_eq" statement 1
  col1 
 ------
 (0 rows)
