@@ -74,12 +74,8 @@ Datum record_in(PG_FUNCTION_ARGS)
 {
     char* string = PG_GETARG_CSTRING(0);
     Oid tupType = PG_GETARG_OID(1);
-
-#ifdef NOT_USED
-    int32 typmod = PG_GETARG_INT32(2);
-#endif
+    int32 tupTypmod = PG_GETARG_INT32(2);
     HeapTupleHeader result;
-    int32 tupTypmod;
     TupleDesc tupdesc;
     HeapTuple tuple;
     RecordIOData* my_extra = NULL;
@@ -98,10 +94,9 @@ Datum record_in(PG_FUNCTION_ARGS)
      * anonymous type is wanted.  Note that for RECORD, what we'll probably
      * actually get is RECORD's typelem, ie, zero.
      */
-    if (tupType == InvalidOid || tupType == RECORDOID)
+    if (tupType == RECORDOID && tupTypmod < 0)
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("input of anonymous composite types is not implemented")));
-    tupTypmod = -1; /* for all non-anonymous types */
 
     /*
      * This comes from the composite type's pg_type.oid and stores system oids
@@ -551,12 +546,8 @@ Datum record_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
     Oid tupType = PG_GETARG_OID(1);
-
-#ifdef NOT_USED
-    int32 typmod = PG_GETARG_INT32(2);
-#endif
+    int32 tupTypmod = PG_GETARG_INT32(2);
     HeapTupleHeader result;
-    int32 tupTypmod;
     TupleDesc tupdesc;
     HeapTuple tuple;
     RecordIOData* my_extra = NULL;
@@ -574,10 +565,10 @@ Datum record_recv(PG_FUNCTION_ARGS)
      * anonymous type is wanted.  Note that for RECORD, what we'll probably
      * actually get is RECORD's typelem, ie, zero.
      */
-    if (tupType == InvalidOid || tupType == RECORDOID)
+    if (tupType == RECORDOID &&  tupTypmod < 0)
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("input of anonymous composite types is not implemented")));
-    tupTypmod = -1; /* for all non-anonymous types */
+
     tupdesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
     ncolumns = tupdesc->natts;
 

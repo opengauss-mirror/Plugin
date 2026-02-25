@@ -325,7 +325,8 @@ const char* const LockTagTypeNames[] = {"relation",
     "advisory",
     "filenode",
     "subtransactionid",
-    "tuple_uid"};
+    "tuple_uid",
+    "plpytyhon_gil"};
 
 /* This must match enum PredicateLockTargetType (predicate_internals.h) */
 static const char* const PredicateLockTagTypeNames[] = {"relation", "page", "tuple"};

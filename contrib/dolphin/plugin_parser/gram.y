@@ -982,8 +982,9 @@ static List* PreHandleTymod(List* origin);
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr a_expr_without_interval a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el case_sensitive_indirection_el siblings_clause
-                                columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
+                                columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr xmltable set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params func_table_with_table default_on_err_expr
+%type <boolean> opt_ordinality
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
 %type <node>	func_arg_expr on_error_clause opt_on_error_clause
@@ -1077,6 +1078,11 @@ static List* PreHandleTymod(List* origin);
 %type <node>	xmlexists_argument
 %type <ival>	document_or_content
 %type <boolean> xml_whitespace_option
+%type <list>	xmltable_column_list xmltable_column_option_list
+%type <node>	xmltable_column_el
+%type <defelt>	xmltable_column_option_el
+%type <list>	xml_namespace_list
+%type <target>	xml_namespace_el
 
 %type <node>	func_application func_with_separator func_expr_common_subexpr index_functional_expr_key func_application_special functime_app
 %type <node>	func_expr func_expr_windowless analytic_func_expr
@@ -1318,7 +1324,7 @@ static List* PreHandleTymod(List* origin);
 	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
-	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
+	ORDER ORDINALITY OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
 	PACKAGE PACKAGES PARALLEL_ENABLE PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 	PIPELINED
@@ -1356,8 +1362,8 @@ static List* PreHandleTymod(List* origin);
 
 	WAIT WARNINGS WEAK WEEK_P WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
-	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
-	XMLPI XMLROOT XMLSERIALIZE
+	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLNAMESPACES XMLPARSE XOR
+	XMLPI XMLROOT XMLSERIALIZE XMLTABLE
 
 	YEAR_P YEAR_MONTH_P YES_P
 
@@ -1373,7 +1379,7 @@ static List* PreHandleTymod(List* origin);
  * list and so can never be entered directly.  The filter in parser.c
  * creates these tokens when required.
  */
-%token		NULLS_FIRST NULLS_LAST WITH_TIME INCLUDING_ALL
+%token		NULLS_FIRST NULLS_LAST WITH_ORDINALITY WITH_TIME INCLUDING_ALL
 			RENAME_PARTITION
 			PARTITION_FOR
 			SUBPARTITION_FOR
@@ -1488,6 +1494,7 @@ static List* PreHandleTymod(List* origin);
 /* Unary Operators */
 %left		AT				/* sets precedence for AT TIME ZONE */
 %left		COLLATE
+%right		COLUMNS
 %left		INTERVAL
 %right		UMINUS BY NAME_P PASSING ROW RAW TYPE_P VALUE_P
 %left		'[' ']'
@@ -32690,6 +32697,7 @@ table_ref:
 		{
 			RangeFunction *n = makeNode(RangeFunction);
 			n->funccallnode = $1;
+			n->ordinality = false;
 			n->coldeflist = NIL;
 			$$ = (Node *) n;
 		}
@@ -32697,6 +32705,7 @@ table_ref:
 		{
 			RangeFunction *n = makeNode(RangeFunction);
 			n->funccallnode = $1;
+			n->ordinality = false;
 			n->alias = $2;
 			n->coldeflist = NIL;
 			$$ = (Node *) n;
@@ -32705,6 +32714,7 @@ table_ref:
 		{
 			RangeFunction *n = makeNode(RangeFunction);
 			n->funccallnode = $1;
+			n->ordinality = false;
 			n->coldeflist = $4;
 			$$ = (Node *) n;
 		}
@@ -32713,6 +32723,7 @@ table_ref:
 			RangeFunction *n = makeNode(RangeFunction);
 			Alias *a = makeNode(Alias);
 			n->funccallnode = $1;
+			n->ordinality = false;
 			a->aliasname = $3;
 			n->alias = a;
 			n->coldeflist = $5;
@@ -32723,6 +32734,7 @@ table_ref:
 			RangeFunction *n = makeNode(RangeFunction);
 			Alias *a = makeNode(Alias);
 			n->funccallnode = $1;
+			n->ordinality = false;
 			a->aliasname = $2;
 			n->alias = a;
 			n->coldeflist = $4;
@@ -32945,11 +32957,12 @@ table_ref_for_no_table_function:		single_table
 				{
 					$$ = $1;
 				}
-			| LATERAL_EXPR func_table dolphin_alias_clause
+			| LATERAL_EXPR func_table opt_ordinality dolphin_alias_clause
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					n->funccallnode = $2;
-					n->alias = $3;
+					n->ordinality = $3;
+					n->alias = $4;
 					n->coldeflist = NIL;
 					n->lateral = true;
 					$$ = (Node *) n;
@@ -32958,6 +32971,15 @@ table_ref_for_no_table_function:		single_table
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					n->funccallnode = $1;
+					n->ordinality = false;
+					n->coldeflist = NIL;
+					$$ = (Node *) n;
+				}
+			| func_table WITH_ORDINALITY		%prec UMINUS
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					n->funccallnode = $1;
+					n->ordinality = true;
 					n->coldeflist = NIL;
 					$$ = (Node *) n;
 				}
@@ -32965,7 +32987,17 @@ table_ref_for_no_table_function:		single_table
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					n->funccallnode = $1;
+					n->ordinality = false;
 					n->alias = $2;
+					n->coldeflist = NIL;
+					$$ = (Node *) n;
+				}
+			| func_table WITH_ORDINALITY dolphin_alias_clause
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					n->funccallnode = $1;
+					n->ordinality = true;
+					n->alias = $3;
 					n->coldeflist = NIL;
 					$$ = (Node *) n;
 				}
@@ -32973,7 +33005,16 @@ table_ref_for_no_table_function:		single_table
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					n->funccallnode = $1;
+					n->ordinality = false;
 					n->coldeflist = $4;
+					$$ = (Node *) n;
+				}
+			| func_table WITH_ORDINALITY AS '(' TableFuncElementList ')'
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					n->funccallnode = $1;
+					n->ordinality = true;
+					n->coldeflist = $5;
 					$$ = (Node *) n;
 				}
 			| func_table AS DolphinColId '(' TableFuncElementList ')'
@@ -32981,9 +33022,21 @@ table_ref_for_no_table_function:		single_table
 					RangeFunction *n = makeNode(RangeFunction);
 					Alias *a = makeNode(Alias);
 					n->funccallnode = $1;
+					n->ordinality = false;
 					a->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
 					n->alias = a;
 					n->coldeflist = $5;
+					$$ = (Node *) n;
+				}
+			| func_table WITH_ORDINALITY AS DolphinColId '(' TableFuncElementList ')'
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					Alias *a = makeNode(Alias);
+					n->funccallnode = $1;
+					n->ordinality = true;
+					a->aliasname = GetDolphinObjName($4->str, $4->is_quoted);
+					n->alias = a;
+					n->coldeflist = $6;
 					$$ = (Node *) n;
 				}
 			| func_table DolphinColId '(' TableFuncElementList ')'
@@ -32991,9 +33044,21 @@ table_ref_for_no_table_function:		single_table
 					RangeFunction *n = makeNode(RangeFunction);
 					Alias *a = makeNode(Alias);
 					n->funccallnode = $1;
+					n->ordinality = false;
 					a->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
 					n->alias = a;
 					n->coldeflist = $4;
+					$$ = (Node *) n;
+				}
+			| func_table WITH_ORDINALITY DolphinColId '(' TableFuncElementList ')'
+				{
+					RangeFunction *n = makeNode(RangeFunction);
+					Alias *a = makeNode(Alias);
+					n->funccallnode = $1;
+					n->ordinality = true;
+					a->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
+					n->alias = a;
+					n->coldeflist = $5;
 					$$ = (Node *) n;
 				}
 			| select_with_parens		%prec UMINUS
@@ -33044,7 +33109,12 @@ table_ref_for_no_table_function:		single_table
 					n->alias = $2;
 					$$ = (Node *) n;
 				}
-
+			| xmltable opt_alias_clause
+				{
+					RangeTableFunc *n = (RangeTableFunc *) $1;
+					n->alias = $2;
+					$$ = (Node *) n;
+				}
 			| LATERAL_P select_with_parens opt_alias_clause  %prec LATERAL_P
 				{
 					RangeSubselect *n = makeNode(RangeSubselect);
@@ -33902,6 +33972,9 @@ func_table: func_expr_windowless					{ $$ = $1; }
 		}
 		;
 
+opt_ordinality: WITH_ORDINALITY					{ $$ = true; }
+			| /*EMPTY*/								{ $$ = false; }
+		;
 
 where_clause:
 			WHERE a_expr							{ $$ = $2; }
@@ -33958,6 +34031,167 @@ TableFuncElement:	ColId func_type opt_collate_clause
 					$$ = (Node *)n;
 				}
 		;
+
+/*
+ * XMLTABLE
+ */
+xmltable:
+			XMLTABLE '(' c_expr xmlexists_argument COLUMNS xmltable_column_list ')'		%prec COLUMNS
+				{
+					RangeTableFunc *n = makeNode(RangeTableFunc);
+					n->rowexpr = $3;
+					n->docexpr = $4;
+					n->columns = $6;
+					n->namespaces = NIL;
+					n->location = @1;
+					$$ = (Node *)n;
+				}
+			| XMLTABLE '(' XMLNAMESPACES '(' xml_namespace_list ')' ','
+				c_expr xmlexists_argument COLUMNS xmltable_column_list ')'		%prec COLUMNS
+				{
+					RangeTableFunc *n = makeNode(RangeTableFunc);
+					n->rowexpr = $8;
+					n->docexpr = $9;
+					n->columns = $11;
+					n->namespaces = $5;
+					n->location = @1;
+					$$ = (Node *)n;
+				}
+		;
+
+xmltable_column_list: xmltable_column_el					{ $$ = list_make1($1); }
+			| xmltable_column_list ',' xmltable_column_el	{ $$ = lappend($1, $3); }
+		;
+
+xmltable_column_el:
+			ColId Typename
+				{
+					RangeTableFuncCol	   *fc = makeNode(RangeTableFuncCol);
+
+					fc->colname = $1;
+					fc->for_ordinality = false;
+					fc->typeName = $2;
+					fc->is_not_null = false;
+					fc->colexpr = NULL;
+					fc->coldefexpr = NULL;
+					fc->location = @1;
+
+					$$ = (Node *) fc;
+				}
+			| ColId Typename xmltable_column_option_list
+				{
+					RangeTableFuncCol	   *fc = makeNode(RangeTableFuncCol);
+					ListCell		   *option;
+					bool				nullability_seen = false;
+
+					fc->colname = $1;
+					fc->typeName = $2;
+					fc->for_ordinality = false;
+					fc->is_not_null = false;
+					fc->colexpr = NULL;
+					fc->coldefexpr = NULL;
+					fc->location = @1;
+
+					foreach(option, $3)
+					{
+						DefElem   *defel = (DefElem *) lfirst(option);
+
+						if (strcmp(defel->defname, "default") == 0)
+						{
+							if (fc->coldefexpr != NULL)
+								ereport(ERROR,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("only one DEFAULT value is allowed"),
+										 parser_errposition(defel->location)));
+							fc->coldefexpr = defel->arg;
+						}
+						else if (strcmp(defel->defname, "path") == 0)
+						{
+							if (fc->colexpr != NULL)
+								ereport(ERROR,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("only one PATH value per column is allowed"),
+										 parser_errposition(defel->location)));
+							fc->colexpr = defel->arg;
+						}
+						else if (strcmp(defel->defname, "is_not_null") == 0)
+						{
+							if (nullability_seen)
+								ereport(ERROR,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("conflicting or redundant NULL / NOT NULL declarations for column \"%s\"", fc->colname),
+										 parser_errposition(defel->location)));
+							fc->is_not_null = intVal(defel->arg);
+							nullability_seen = true;
+						}
+						else
+						{
+							ereport(ERROR,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("unrecognized column option \"%s\"",
+											defel->defname),
+									 parser_errposition(defel->location)));
+						}
+					}
+					$$ = (Node *) fc;
+				}
+			| ColId FOR ORDINALITY
+				{
+					RangeTableFuncCol	   *fc = makeNode(RangeTableFuncCol);
+
+					fc->colname = $1;
+					fc->for_ordinality = true;
+					/* other fields are ignored, initialized by makeNode */
+					fc->location = @1;
+
+					$$ = (Node *) fc;
+				}
+		;
+
+xmltable_column_option_list:
+			xmltable_column_option_el
+				{ $$ = list_make1($1); }
+			| xmltable_column_option_list xmltable_column_option_el
+				{ $$ = lappend($1, $2); }
+		;
+
+xmltable_column_option_el:
+			IDENT b_expr
+				{ $$ = makeDefElem(downcase_str($1->str, $1->is_quoted), $2); }
+			| DEFAULT b_expr
+				{ $$ = makeDefElem("default", $2); }
+			| NOT NULL_P
+				{ $$ = makeDefElem("is_not_null", (Node *) makeInteger(true)); }
+			| NULL_P
+				{ $$ = makeDefElem("is_not_null", (Node *) makeInteger(false)); }
+		;
+
+xml_namespace_list:
+			xml_namespace_el
+				{ $$ = list_make1($1); }
+			| xml_namespace_list ',' xml_namespace_el
+				{ $$ = lappend($1, $3); }
+		;
+
+xml_namespace_el:
+			b_expr AS ColLabel
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = $3;
+					$$->indirection = NIL;
+					$$->val = $1;
+					$$->location = @1;
+				}
+			| DEFAULT b_expr
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = NULL;
+					$$->indirection = NIL;
+					$$->val = $2;
+					$$->location = @1;
+				}
+		;
+
 
 /*****************************************************************************
  *
@@ -42043,6 +42277,7 @@ alias_name_unreserved_keyword_without_key:
 			| OPERATOR
 			| OPTIMIZATION
 			| OPTIONS
+			| ORDINALITY
 			| OWNED
 			| OWNER
 			| PACK_KEYS
@@ -42373,10 +42608,12 @@ alias_name_col_name_keyword:
 	| XMLELEMENT
 	| XMLEXISTS
 	| XMLFOREST
+	| XMLNAMESPACES
 	| XMLPARSE
 	| XMLPI
 	| XMLROOT
 	| XMLSERIALIZE
+	| XMLTABLE
 	| TREAT
 	| TRIM
 	| TEXT_P

@@ -58,6 +58,8 @@ extern Node* coerce_to_domain(Node* arg, Oid baseTypeId, int32 baseTypeMod, Oid 
 
 extern Node* coerce_to_boolean(ParseState* pstate, Node* node, const char* constructName);
 extern Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* constructName);
+extern Node *coerce_to_specific_type_typmod(ParseState *pstate, Node *node,
+    Oid targetTypeId, int32 targetTypmod, const char *constructName);
 
 extern int parser_coercion_errposition(ParseState* pstate, int coerce_location, Node* input_expr);
 

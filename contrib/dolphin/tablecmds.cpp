@@ -8891,8 +8891,10 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
 
     /* Release AccessExclusiveLock which is locked when rewriting catalogs. */
     if (enableOnlineDDL) {
-        if (!relationIsPartitioned) {
+        if (!relationIsPartitioned && !CheckLockRelation(rel, ShareUpdateExclusiveLock)) {
             LockRelation(rel, ShareUpdateExclusiveLock);
+        }
+        if (!relationIsPartitioned && CheckLockRelation(rel, AccessExclusiveLock)) {
             UnlockRelation(rel, AccessExclusiveLock);
         }
         ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
@@ -34316,8 +34318,19 @@ static void ExecOnlyTestRowTable(AlteredTableInfo* tab)
 {
     ForbidToRewriteOrTestCstoreIndex(tab);
 
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+
     Relation oldRel = heap_open(tab->relid, NoLock);
     ATRewriteTable(tab, oldRel, NULL);
+    if (enableOnlineDDL) {
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+#ifdef USE_ASSERT_CHECKING
+        OnlineDDLLockCheck(oldRel->rd_id);
+#endif
+        operators->OnlineDDLAppendIncrementalData(oldRel, NULL, tab, ONLINE_DDL_REWRITE_ROW_TABLE);
+
+    }
     heap_close(oldRel, NoLock);
 }
 
@@ -34376,6 +34389,10 @@ static void ExecOnlyTestRowPartitionedTable(AlteredTableInfo* tab)
     Relation subPartRel = NULL;
     Partition subPartition = NULL;
     List* subPartitions = NULL;
+    List* oldPartRelList = NIL;
+
+    OnlineDDLRelOperators* operators = ((OnlineDDLRelOperators*)u_sess->online_ddl_operators);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
 
     ForbidToRewriteOrTestCstoreIndex(tab);
 
@@ -34391,17 +34408,33 @@ static void ExecOnlyTestRowPartitionedTable(AlteredTableInfo* tab)
             foreach (lc2, subPartitions) {
                 subPartition = (Partition)lfirst(lc2);
                 subPartRel = partitionGetRelation(partRel, subPartition);
+                oldPartRelList = lappend(oldPartRelList, subPartRel);
                 /* check each partition */
                 ATRewriteTable(tab, subPartRel, NULL);
-                releaseDummyRelation(&subPartRel);
+                if (!enableOnlineDDL) {
+                    releaseDummyRelation(&subPartRel);
+                }
             }
             releasePartitionList(partRel, &subPartitions, NoLock);
             releaseDummyRelation(&partRel);
         } else {
+            oldPartRelList = lappend(oldPartRelList, partRel);
             /* check each partition */
             ATRewriteTable(tab, partRel, NULL);
+            if (!enableOnlineDDL) {
+                releaseDummyRelation(&partRel);
+            }
+        }
+    }
+    if (enableOnlineDDL) {
+        operators->setStatus(ONLINE_DDL_STATUS_CATCHUP);
+        operators->OnlineDDLAppendIncrementalData(oldPartRelList, NIL, tab,
+                                                  ONLINE_DDL_REWRITE_ROW_PARTITIONED_TABLE);
+        foreach (lc1, oldPartRelList) {
+            partRel = (Relation)lfirst(lc1);
             releaseDummyRelation(&partRel);
         }
+        list_free_ext(oldPartRelList);
     }
 
     releasePartitionList(partitionedTableRel, &partitions, NoLock);

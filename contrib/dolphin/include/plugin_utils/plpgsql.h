@@ -1350,6 +1350,7 @@ typedef struct PLpgSQL_function { /* Complete compiled function	  */
     bool is_pipelined;
     bool pipelined_resistuple;
     bool is_itvf;
+    bool xact_abort;
 } PLpgSQL_function;
 
 class AutonomousSession;

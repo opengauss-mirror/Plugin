@@ -1166,6 +1166,11 @@ Datum bytea_string_agg_finalfn(PG_FUNCTION_ARGS)
 
 Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
 {
+#ifndef DOLPHIN
+    if (u_sess->hook_cxt.binaryTransformTypeidHook) {
+        return ((Oid (*)(Oid, Oid *))u_sess->hook_cxt.binaryTransformTypeidHook)(typeoid, collation);
+    }
+#endif
     Oid new_typid = typeoid;
     if (*collation == BINARY_COLLATION_OID) {
         if (GetDatabaseEncoding() == PG_SQL_ASCII && DB_IS_CMPT(B_FORMAT) &&

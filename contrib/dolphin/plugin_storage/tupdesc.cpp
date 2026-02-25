@@ -224,6 +224,42 @@ TupleConstr *TupleConstrCopy(const TupleDesc tupdesc)
 }
 
 /*
+ * CreateTupleDescCopyExtend
+ *     This function creates a new TupleDesc by copying from an existing
+ *     TupleDesc, but adding space for more columns. The new tupdesc is
+ *      not regarded as the same record type as the old one (and therefore
+ *      does not inherit its typeid/typmod, which instead are left as an
+ *      anonymous record type).
+ *
+ *      The additional column slots are not initialized in any way;
+ *      callers must do their own TupleDescInitEntry on each.
+ *
+ * !!! Constraints and defaults are not copied !!!
+ */
+TupleDesc CreateTupleDescCopyExtend(TupleDesc tupdesc, int moreatts)
+{
+    errno_t rc = EOK;
+    TupleDesc   desc;
+    int         i;
+    int         srcNatts = tupdesc->natts;
+
+    Assert(moreatts >= 0);
+
+    desc = CreateTemplateTupleDesc(srcNatts + moreatts, tupdesc->tdhasoid);
+
+    for (i = 0; i < srcNatts; i++) {
+        Form_pg_attribute att = TupleDescAttr(desc, i);
+
+        rc = memcpy_s(att, ATTRIBUTE_FIXED_PART_SIZE, &tupdesc->attrs[i], ATTRIBUTE_FIXED_PART_SIZE);
+        securec_check(rc, "\0", "\0");
+        att->attnotnull = false;
+        att->atthasdef = false;
+    }
+
+    return desc;
+}
+
+/*
  * CreateTupleDescCopyConstr
  *		This function creates a new TupleDesc by copying from an existing
  *		TupleDesc (including its constraints and defaults).
