@@ -312,5 +312,48 @@ drop table point_tbl;
 SELECT @-@ path '((0,0),(1,0))' AS RESULT;
 SELECT point '(1,1)' <@ circle '((0,0),2)' AS RESULT;
 
+set dolphin.sql_mode='sql_mode_strict,sql_mode_full_group,no_zero_date,block_return_multi_results,error_for_division_by_zero,escape_quotes,disable_escape_bytea';
+
+drop table if exists t_autocommit_0038;
+create table t_autocommit_0038(a int, b int);
+insert into t_autocommit_0038 values(1, 2);
+
+create or replace procedure p_autocommit_0038_1(a int,b int) 
+  as
+  declare
+    num3 int := a;
+    num4 int := b;
+    pragma autonomous_transaction;
+    begin
+       insert into t_autocommit_0038 values(num3, num4);
+    end;
+/
+
+set autocommit = 0;
+drop procedure if exists p_autocommit_0038_2;
+create or replace procedure p_autocommit_0038_2(a int, b int) as
+declare
+begin
+    insert into t_autocommit_0038 values(666, 666);
+    p_autocommit_0038_1(a, b);
+    rollback;
+END;
+commit;
+/
+
+set autocommit = 0;
+select p_autocommit_0038_2(11, 22);
+select * from t_autocommit_0038 order by a;
+rollback;
+select * from t_autocommit_0038 order by a;
+call p_autocommit_0038_2(11, 22);
+commit;
+
+drop table if exists t_autocommit_0038;
+drop procedure p_autocommit_0038_1(a int,b int);
+drop procedure p_autocommit_0038_2(a int, b int);
+
+reset dolphin.sql_mode;
+
 drop schema multi_select_proc cascade;
 reset current_schema;
