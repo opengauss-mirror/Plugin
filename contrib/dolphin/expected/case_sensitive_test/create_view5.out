@@ -141,7 +141,7 @@ CREATE VIEW tt1 AS
  d      | character varying(4) |           | extended | 
 View definition:
  SELECT  *
-   FROM ( VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) vv(a, b, c, d);
+   FROM ( VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) AS vv(a, b, c, d);
 
 SELECT * FROM tt1;
      a      |     b      |   c   |  d   
@@ -187,13 +187,13 @@ select * from
   cast(1+2 as int4) as i4,
   cast(1+2 as int8) as i8;
 select pg_get_viewdef('tt20v', true);
-                                  pg_get_viewdef                                  
-----------------------------------------------------------------------------------
-  SELECT  *                                                                      +
-    FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col),              +
-     text_date('now'::text) d(d),                                                +
-     CAST((1::bigint OPERATOR(dolphin_catalog.+) 2)::integer AS integer) i4(i4), +
-     CAST(1::bigint OPERATOR(dolphin_catalog.+) 2 AS bigint) i8(i8);
+                                   pg_get_viewdef                                    
+-------------------------------------------------------------------------------------
+  SELECT  *                                                                         +
+    FROM COALESCE(1, 2) AS c(c), pg_collation_for('x'::text) AS col(col),           +
+     text_date('now'::text) AS d(d),                                                +
+     CAST((1::bigint OPERATOR(dolphin_catalog.+) 2)::integer AS integer) AS i4(i4), +
+     CAST(1::bigint OPERATOR(dolphin_catalog.+) 2 AS bigint) AS i8(i8);
 (1 row)
 
 drop view tt20v;
