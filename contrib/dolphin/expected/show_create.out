@@ -524,17 +524,17 @@ CREATE VIEW tt1 AS
        ('0123456789', 'abc'::varchar(3), 42.12, 'abc'::varchar(4))
   ) as vv(a,b,c,d);
 show create view tt1;
- View |                                                                                                              Create View                                                                                                               | character_set_client | collation_connection 
-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt1  | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt1 AS                                                                                                                                                                  +| UTF8                 | en_US.UTF-8
-      | SELECT  * FROM (VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) vv(a, b, c, d); |                      | 
+ View |                                                                                                                Create View                                                                                                                | character_set_client | collation_connection 
+------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt1  | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt1 AS                                                                                                                                                                     +| UTF8                 | en_US.UTF-8
+      | SELECT  * FROM (VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) AS vv(a, b, c, d); |                      | 
 (1 row)
 
 show create table tt1;
- View |                                                                                                              Create View                                                                                                               | character_set_client | collation_connection 
-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt1  | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt1 AS                                                                                                                                                                  +| UTF8                 | en_US.UTF-8
-      | SELECT  * FROM (VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) vv(a, b, c, d); |                      | 
+ View |                                                                                                                Create View                                                                                                                | character_set_client | collation_connection 
+------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt1  | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt1 AS                                                                                                                                                                     +| UTF8                 | en_US.UTF-8
+      | SELECT  * FROM (VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) AS vv(a, b, c, d); |                      | 
 (1 row)
 
 drop view tt1;
@@ -547,17 +547,17 @@ select * from
   cast(1+2 as int4) as i4,
   cast(1+2 as int8) as i8;
 show create view tt20v;
- View  |                                                                                                                        Create View                                                                                                                         | character_set_client | collation_connection 
--------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                                    +| UTF8                 | en_US.UTF-8
-       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST((((1)::bigint OPERATOR(dolphin_catalog.+) 2))::integer AS integer) i4(i4), CAST(((1)::bigint OPERATOR(dolphin_catalog.+) 2) AS bigint) i8(i8); |                      | 
+ View  |                                                                                                                                Create View                                                                                                                                | character_set_client | collation_connection 
+-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                                                   +| UTF8                 | en_US.UTF-8
+       | SELECT  * FROM COALESCE(1, 2) AS c(c), pg_collation_for('x'::text) AS col(col), text_date('now'::text) AS d(d), CAST((((1)::bigint OPERATOR(dolphin_catalog.+) 2))::integer AS integer) AS i4(i4), CAST(((1)::bigint OPERATOR(dolphin_catalog.+) 2) AS bigint) AS i8(i8); |                      | 
 (1 row)
 
 show create table tt20v;
- View  |                                                                                                                        Create View                                                                                                                         | character_set_client | collation_connection 
--------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                                    +| UTF8                 | en_US.UTF-8
-       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST((((1)::bigint OPERATOR(dolphin_catalog.+) 2))::integer AS integer) i4(i4), CAST(((1)::bigint OPERATOR(dolphin_catalog.+) 2) AS bigint) i8(i8); |                      | 
+ View  |                                                                                                                                Create View                                                                                                                                | character_set_client | collation_connection 
+-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                                                   +| UTF8                 | en_US.UTF-8
+       | SELECT  * FROM COALESCE(1, 2) AS c(c), pg_collation_for('x'::text) AS col(col), text_date('now'::text) AS d(d), CAST((((1)::bigint OPERATOR(dolphin_catalog.+) 2))::integer AS integer) AS i4(i4), CAST(((1)::bigint OPERATOR(dolphin_catalog.+) 2) AS bigint) AS i8(i8); |                      | 
 (1 row)
 
 drop view tt20v;
@@ -590,17 +590,17 @@ CREATE VIEW vsubdepartment AS
 	)
 	SELECT * FROM subdepartment;
 show create view vsubdepartment;
-      View      |                                                                                                        Create View                                                                                                         | character_set_client | collation_connection 
-----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- vsubdepartment | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.vsubdepartment AS                                                                                                                                           +| UTF8                 | en_US.UTF-8
-                | WITH RECURSIVE subdepartment AS (SELECT  * FROM department WHERE (department.name = 'A'::text) UNION ALL SELECT d.* FROM department d, subdepartment sd WHERE (d.parent_department = sd.id)) SELECT  * FROM subdepartment; |                      | 
+      View      |                                                                                                           Create View                                                                                                            | character_set_client | collation_connection 
+----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ vsubdepartment | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.vsubdepartment AS                                                                                                                                                 +| UTF8                 | en_US.UTF-8
+                | WITH RECURSIVE subdepartment AS (SELECT  * FROM department WHERE (department.name = 'A'::text) UNION ALL SELECT d.* FROM department AS d, subdepartment AS sd WHERE (d.parent_department = sd.id)) SELECT  * FROM subdepartment; |                      | 
 (1 row)
 
 show create table vsubdepartment;
-      View      |                                                                                                        Create View                                                                                                         | character_set_client | collation_connection 
-----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- vsubdepartment | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.vsubdepartment AS                                                                                                                                           +| UTF8                 | en_US.UTF-8
-                | WITH RECURSIVE subdepartment AS (SELECT  * FROM department WHERE (department.name = 'A'::text) UNION ALL SELECT d.* FROM department d, subdepartment sd WHERE (d.parent_department = sd.id)) SELECT  * FROM subdepartment; |                      | 
+      View      |                                                                                                           Create View                                                                                                            | character_set_client | collation_connection 
+----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ vsubdepartment | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.vsubdepartment AS                                                                                                                                                 +| UTF8                 | en_US.UTF-8
+                | WITH RECURSIVE subdepartment AS (SELECT  * FROM department WHERE (department.name = 'A'::text) UNION ALL SELECT d.* FROM department AS d, subdepartment AS sd WHERE (d.parent_department = sd.id)) SELECT  * FROM subdepartment; |                      | 
 (1 row)
 
 drop view vsubdepartment;

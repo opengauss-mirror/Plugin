@@ -12586,7 +12586,12 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         relname = relname == NULL ? rte->relname : relname;
 
         if (rte->alias != NULL) {
-            appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->alias->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
             gavealias = true;
         } else if (rte->rtekind == RTE_RELATION && rte->eref->aliasname && strcmp(rte->eref->aliasname, relname) != 0) {
             /*
@@ -12595,7 +12600,12 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
              * work.  This is not a 100% solution but should work in most
              * reasonable situations.
              */
-            appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->eref->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
             gavealias = true;
         }
 #ifdef PGXC
@@ -12608,7 +12618,12 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
              * columns can be referred to as view_name.col1, so it should
              * be possible to refer to this subquery object.
              */
-            appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->eref->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
             gavealias = true;
         }
 #endif
@@ -12618,14 +12633,29 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
              * renaming of the function and/or instability of the
              * FigureColname rules for things that aren't simple functions.
              */
-            appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->eref->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
             gavealias = true;
         } else if (rte->rtekind == RTE_TABLEFUNC) {
-            appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->eref->aliasname));
             gavealias = false;
         } else if (rte->rtekind == RTE_VALUES) {
             /* Alias is syntactically required for VALUES */
-            appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
+#ifdef DOLPHIN
+            if (ENABLE_B_CMPT_MODE)
+                appendStringInfo(buf, " AS %s", quote_identifier(rte->eref->aliasname));
+            else
+#endif
+                appendStringInfo(buf, " %s", quote_identifier(rte->eref->aliasname));
             gavealias = true;
         }
 

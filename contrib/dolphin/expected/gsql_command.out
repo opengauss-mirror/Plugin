@@ -146,13 +146,13 @@ View definition:
     po.mtime::timestamp without time zone AS update_time, 
     NULL::timestamp without time zone AS check_time, NULL::bigint AS checksum, 
     c.reloptions::character varying(256) AS create_options
-   FROM pg_namespace nc
-   JOIN pg_class c ON nc.oid = c.relnamespace
-   LEFT JOIN (pg_type t
-   JOIN pg_namespace nt ON t.typnamespace = nt.oid) ON c.reloftype = t.oid
-   LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
-   LEFT JOIN pg_object po ON c.oid = po.object_oid AND c.relkind = po.object_type
-   LEFT JOIN pg_tablespace ts ON c.reltablespace = ts.oid
+   FROM pg_namespace AS nc
+   JOIN pg_class AS c ON nc.oid = c.relnamespace
+   LEFT JOIN (pg_type AS t
+   JOIN pg_namespace AS nt ON t.typnamespace = nt.oid) ON c.reloftype = t.oid
+   LEFT JOIN pg_description AS d ON d.objoid = c.oid AND d.objsubid = 0
+   LEFT JOIN pg_object AS po ON c.oid = po.object_oid AND c.relkind = po.object_type
+   LEFT JOIN pg_tablespace AS ts ON c.reltablespace = ts.oid
   WHERE (c.relkind = ANY (ARRAY['r'::"char", 'm'::"char", 'v'::"char", 'f'::"char"])) AND c.relname !~~ 'mlog\_%'::text AND c.relname !~~ 'matviewmap\_%'::text AND NOT pg_is_other_temp_schema(nc.oid) AND (pg_has_role(c.relowner, 'USAGE'::text) OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'::text) OR has_any_column_privilege(c.oid, 'SELECT, INSERT, UPDATE, REFERENCES'::text));
 
 \df abs

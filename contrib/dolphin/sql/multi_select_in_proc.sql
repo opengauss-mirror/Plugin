@@ -355,5 +355,27 @@ drop procedure p_autocommit_0038_2(a int, b int);
 
 reset dolphin.sql_mode;
 
+set dolphin.sql_mode='sql_mode_strict,sql_mode_full_group,no_zero_date,error_for_division_by_zero,escape_quotes,disable_escape_bytea';
+
+set b_format_behavior_compat_options = 'enable_set_variables';
+set enable_set_variable_b_format = on;
+
+delimiter //
+create or replace procedure test_set(out res int)
+begin
+declare a int;
+declare b int;
+declare c int;
+set a=1, b=2, c=3;
+set res=a+b+c;
+end;
+//
+delimiter ;
+call test_set(@res);
+select @res;
+drop procedure test_set(out res int);
+
+reset dolphin.sql_mode;
+
 drop schema multi_select_proc cascade;
 reset current_schema;
