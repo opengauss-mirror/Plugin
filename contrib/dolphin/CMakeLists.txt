@@ -82,11 +82,15 @@ include(build_function)
 include(set_thirdparty_path)
 include(build_options)
 
+set(CJSON_INC_PATH ${3RD_PATH}/kernel/dependency/cjson/comm/include)
+set(PYHTON_INC_PATH ${3RD_PATH}/kernel/platform/python3.7/include/python3.7m)
+
 include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR})
 include_directories(${KERBEROS_INCLUDE_PATH} ${LIBOBS_INCLUDE_PATH} ${LIBCURL_INCLUDE_PATH} ${LIBOPENSSL_INCLUDE_PATH})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CJSON_INCLUDE_PATH} ${BOOST_INCLUDE_PATH})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE})
+include_directories(${PYHTON_INC_PATH} ${CJSON_INC_PATH})
 
 #add_compile_options(-fPIC)
 set(LIB_DOLPHIN_OPTIONS -fvisibility=hidden -fPIC -DDOLPHIN)
