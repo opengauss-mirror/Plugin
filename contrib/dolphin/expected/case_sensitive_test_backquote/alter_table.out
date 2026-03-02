@@ -491,3 +491,24 @@ select * from test_modify_after_add;
 (1 row)
 
 DROP TABLE test_modify_after_add;
+set dolphin.sql_mode = 'ansi_quotes';
+CREATE TABLE `bussiness_log`
+(
+    `ID`            bigint(20) unsigned   NOT NULL,
+    `LEVEL`         tinyint(2) unsigned   NULL,
+    `TIME`          bigint(20)   NOT NULL
+)
+PARTITION BY RANGE(TIME) ( partition p_20231017 values less than(1697558399000000) ,
+partition p_20251231 values less than(1767196799999999) ,
+partition p_20260101 values less than(1767283199999999) ,
+partition p_20260102 values less than(1767369599999999) ,
+partition p_20260103 values less than(1767455999999999) ,
+partition p_20260104 values less than(1767542399999999) ,
+partition p_20260105 values less than(1767628799999999) ,
+partition p_20260106 values less than(1767715199999999) ,
+partition p_20260107 values less than(1767801599999999) ) COLLATE = utf8mb4_bin;
+ALTER TABLE `bussiness_log` ADD CONSTRAINT `pk_bussiness_log_1768397176854082_3193839_0` PRIMARY KEY (`ID`, `TIME`);
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "pk_bussiness_log_1768397176854082_3193839_0" for table "bussiness_log"
+alter table `bussiness_log` modify `ID` bigint(20) unsigned auto_increment;
+NOTICE:  ALTER TABLE will create implicit sequence "bussiness_log_ID_seq" for serial column "bussiness_log.ID"
+drop table `bussiness_log`;
