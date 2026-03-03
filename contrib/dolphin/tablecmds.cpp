@@ -3171,6 +3171,13 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     }
 
     if (storage_type == SEGMENT_PAGE) {
+        if (BLCKSZ == 4096 || XLOG_BLCKSZ == 4096) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
+                errmsg("The table %s do not support segment-page storage", stmt->relation->relname),
+                errdetail("4k page size doesn't surpport segment-page storage"),
+                errhint("change 8k package before using segment-page storage.")));
+        }
+
         Oid tbspcId = (tablespaceId == InvalidOid) ? u_sess->proc_cxt.MyDatabaseTableSpace : tablespaceId;
         uint64 tablespaceMaxSize = 0;
         bool isLimit = TableSpaceUsageManager::IsLimited(tbspcId, &tablespaceMaxSize);
