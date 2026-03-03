@@ -179,7 +179,7 @@ typedef HashScanOpaqueData* HashScanOpaque;
  * needing to fit into the metapage.  (With 8K block size, 1024 bitmaps
  * limit us to 256 GB of overflow space...)
  */
-#define HASH_MAX_BITMAPS 1024
+#define HASH_MAX_BITMAPS (BLCKSZ / 8)
 
 #define HASH_SPLITPOINT_PHASE_BITS 2
 #define HASH_SPLITPOINT_PHASES_PER_GRP (1 << HASH_SPLITPOINT_PHASE_BITS)
