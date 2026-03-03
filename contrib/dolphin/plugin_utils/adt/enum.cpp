@@ -67,8 +67,8 @@ Datum enum_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
     Oid collid = PG_GET_COLLATION();
     if (is_b_format_collation(collid)) {
+        /* Caller owns 'name'; enum_in must not free PG_GETARG_CSTRING(0). */
         enumoid = get_enumid_with_collation(enumtypoid, collid, name, fcinfo->can_ignore);
-        pfree_ext(name);
         if (enumoid == InvalidOid)
             return (Datum)0; /* ordinal 0 or invalid (WARNING) means NULL */
         PG_RETURN_OID(enumoid);
