@@ -1520,7 +1520,6 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
             u_sess->parser_cxt.isPerform = false;
             func->xact_abort = u_sess->attr.attr_common.enable_xact_abort;
             parse_rc = plpgsql_yyparse();
-            func->xact_abort = u_sess->attr.attr_common.enable_xact_abort;
             u_sess->parser_cxt.isPerform = save_isPerform;
             SPI_savepoint_release("createFunction");
             stp_cleanup_subxact_resource(stackId);
@@ -1554,7 +1553,6 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
         u_sess->parser_cxt.isPerform = false;
         func->xact_abort = u_sess->attr.attr_common.enable_xact_abort;
         parse_rc = plpgsql_yyparse();
-        func->xact_abort = u_sess->attr.attr_common.enable_xact_abort;
         u_sess->parser_cxt.isPerform = save_isPerform;
     }
     if (enable_plpgsql_gsdependency_guc() && has_error) {
