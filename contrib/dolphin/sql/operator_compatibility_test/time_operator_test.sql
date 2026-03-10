@@ -547,6 +547,7 @@ UPDATE test_time_type, test_time_table SET test_time_type.`year/year` = test_tim
 select * from test_time_type;
 
 select pg_typeof(current_date());
+select pg_typeof(current_date - 30);
 select date '2022-02-01' + 1 AS result;
 select date '2022-02-01' - 2 AS result;
 select date '2022-02-01' * 2 AS result;
