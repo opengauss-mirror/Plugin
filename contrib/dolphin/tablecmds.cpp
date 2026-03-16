@@ -8914,7 +8914,6 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
         if (!relationIsPartitioned && CheckLockRelation(rel, AccessExclusiveLock)) {
             UnlockRelation(rel, AccessExclusiveLock);
         }
-        ereport(NOTICE, (errmsg("Online DDL rewrite catalogs finish, start to copy baseline data.")));
     }
     
 #ifdef PGXC
@@ -28546,6 +28545,11 @@ static void mergePartitionHeapData(Relation partTableRel, Relation tempTableRel,
     bool* srcPartsHasVM = NULL;
     bool hasVM = false;
     bool hasFSM = false;
+    LOCKMODE lockMode = NoLock;
+
+    OnlineDDLRelOperators* operators = RelationGetOnlineDDLOperators(partTableRel);
+    bool enableOnlineDDL = (operators != NULL && operators->getStatus() == ONLINE_DDL_STATUS_BASELINE_COPY);
+    lockMode = enableOnlineDDL ? ShareUpdateExclusiveLock : AccessExclusiveLock;
 
     partNum = srcPartOids->length;
 
@@ -28660,7 +28664,7 @@ static void mergePartitionHeapData(Relation partTableRel, Relation tempTableRel,
         TransactionId relfrozenxid = InvalidTransactionId;
         MultiXactId relminmxid = InvalidMultiXactId;
 
-        srcPartition = partitionOpen(partTableRel, srcPartOid, ExclusiveLock, bucketId);  // already ExclusiveLock
+        srcPartition = partitionOpen(partTableRel, srcPartOid, lockMode, bucketId);  // already ExclusiveLock
                                                                                           // locked
         srcPartRel = partitionGetRelation(partTableRel, srcPartition);
         PartitionOpenSmgr(srcPartition);
