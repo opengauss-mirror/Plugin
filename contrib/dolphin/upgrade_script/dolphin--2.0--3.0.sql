@@ -1884,12 +1884,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.md5(year) RETURNS varchar LANGUAGE SQL IMM
 CREATE OR REPLACE FUNCTION pg_catalog.md5(blob) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.md5(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.md5(json) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
-DROP OPERATOR CLASS IF EXISTS uint2_ops USING hash;
-DROP OPERATOR CLASS IF EXISTS uint4_ops USING hash;
-DROP OPERATOR CLASS IF EXISTS uint2_ops USING btree;
-DROP OPERATOR CLASS IF EXISTS uint4_ops USING btree;
-
-
 DO $for_upgrade_only$
 DECLARE
   ans boolean;
@@ -1897,20 +1891,17 @@ DECLARE
 BEGIN
     select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
     show isinplaceupgrade into v_isinplaceupgrade;
-    -- we can do drop operator only during upgrade
+    -- Preserve operator-class OIDs so existing indexes remain valid.
+    -- In in-place upgrade mode, patch the operator metadata in place instead
+    -- of dropping and recreating operators referenced by live opclasses.
     if ans = true and v_isinplaceupgrade = true then
-        drop operator IF EXISTS pg_catalog.=(uint2, int8);
-        CREATE OPERATOR pg_catalog.=(
-        leftarg = uint2, rightarg = int8, procedure = uint2_int8_eq,
-        restrict = eqsel, join = eqjoinsel, commutator = operator(pg_catalog.=),
-        HASHES, MERGES
-        );
-        drop operator IF EXISTS pg_catalog.=(uint4, int8);
-        CREATE OPERATOR pg_catalog.=(
-        leftarg = uint4, rightarg = int8, procedure = uint4_int8_eq,
-        restrict = eqsel, join = eqjoinsel, commutator=operator(pg_catalog.=),
-        HASHES, MERGES
-        );
+        UPDATE pg_catalog.pg_operator
+           SET oprcanhash = true, oprcanmerge = true
+         WHERE oid = 'pg_catalog.=(uint2,int8)'::pg_catalog.regoperator;
+
+        UPDATE pg_catalog.pg_operator
+           SET oprcanhash = true, oprcanmerge = true
+         WHERE oid = 'pg_catalog.=(uint4,int8)'::pg_catalog.regoperator;
     end if;
 END
 $for_upgrade_only$;
@@ -1933,95 +1924,60 @@ leftarg = int8, rightarg = uint2, procedure = int8_uint2_eq, commutator = operat
 restrict = eqsel, join = eqjoinsel, HASHES, MERGES
 );
 
-CREATE OPERATOR CLASS uint2_ops
-    DEFAULT FOR TYPE uint2 USING btree family integer_ops AS
-        OPERATOR        1       < ,
-        OPERATOR        1       <(uint2, uint4),
-        OPERATOR        1       <(uint2, uint8),
-        OPERATOR        1       <(uint2, int2),
-        OPERATOR        1       <(uint2, int4),
-        OPERATOR        1       <(uint2, int8),
-        OPERATOR        2       <= ,
-        OPERATOR        2       <=(uint2, uint4),
-        OPERATOR        2       <=(uint2, uint8),
-        OPERATOR        2       <=(uint2, int2),
-        OPERATOR        2       <=(uint2, int4),
-        OPERATOR        2       <=(uint2, int8),
-        OPERATOR        3       = ,
-        OPERATOR        3       =(uint2, uint4),
-        OPERATOR        3       =(uint2, uint8),
-        OPERATOR        3       =(uint2, int2),
-        OPERATOR        3       =(uint2, int4),
-        OPERATOR        3       =(uint2, int8),
-        OPERATOR        4       >= ,
-        OPERATOR        4       >=(uint2, uint4),
-        OPERATOR        4       >=(uint2, uint8),
-        OPERATOR        4       >=(uint2, int2),
-        OPERATOR        4       >=(uint2, int4),
-        OPERATOR        4       >=(uint2, int8),
-        OPERATOR        5       > ,
-        OPERATOR        5       >(uint2, uint4),
-        OPERATOR        5       >(uint2, uint8),
-        OPERATOR        5       >(uint2, int2),
-        OPERATOR        5       >(uint2, int4),
-        OPERATOR        5       >(uint2, int8),
-        FUNCTION        1       uint2cmp(uint2, uint2),
-        FUNCTION        1       uint24cmp(uint2, uint4),
-        FUNCTION        1       uint28cmp(uint2, uint8),
-        FUNCTION        1       uint2_int2cmp(uint2, int2),
-        FUNCTION        1       uint2_int4cmp(uint2, int4),
-        FUNCTION        1       uint2_int8cmp(uint2, int8),
-        FUNCTION        2       uint2_sortsupport(internal);
+DO $for_upgrade_only$
+DECLARE
+  ans boolean;
+  v_isinplaceupgrade boolean;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+          FROM pg_catalog.pg_amop amop
+          JOIN pg_catalog.pg_opfamily opf ON opf.oid = amop.amopfamily
+          JOIN pg_catalog.pg_am am ON am.oid = opf.opfmethod
+         WHERE opf.opfname = 'integer_ops'
+           AND am.amname = 'hash'
+           AND amop.amopstrategy = 1
+           AND amop.amoplefttype = 'int8'::pg_catalog.regtype
+           AND amop.amoprighttype = 'uint2'::pg_catalog.regtype
+    ) THEN
+        EXECUTE 'ALTER OPERATOR FAMILY integer_ops USING hash ADD OPERATOR 1 =(int8, uint2)';
+    END IF;
 
-CREATE OPERATOR CLASS uint4_ops
-    DEFAULT FOR TYPE uint4 USING btree family integer_ops AS
-        OPERATOR        1       < ,
-        OPERATOR        1       <(uint4, uint8),
-        OPERATOR        1       <(uint4, int4),
-        OPERATOR        1       <(uint4, int8),
-        OPERATOR        2       <= ,
-        OPERATOR        2       <=(uint4, uint8),
-        OPERATOR        2       <=(uint4, int4),
-        OPERATOR        2       <=(uint4, int8),
-        OPERATOR        3       = ,
-        OPERATOR        3       =(uint4, uint8),
-        OPERATOR        3       =(uint4, int4),
-        OPERATOR        3       =(uint4, int8),
-        OPERATOR        4       >= ,
-        OPERATOR        4       >=(uint4, uint8),
-        OPERATOR        4       >=(uint4, int4),
-        OPERATOR        4       >=(uint4, int8),
-        OPERATOR        5       > ,
-        OPERATOR        5       >(uint4, uint8),
-        OPERATOR        5       >(uint4, int4),
-        OPERATOR        5       >(uint4, int8),
-        FUNCTION        1       uint4cmp(uint4, uint4),
-        FUNCTION        1       uint48cmp(uint4, uint8),
-        FUNCTION        1       uint4_int4cmp(uint4, int4),
-        FUNCTION        1       uint4_int8cmp(uint4, int8),
-        FUNCTION        2       uint4_sortsupport(internal);
+    IF NOT EXISTS (
+        SELECT 1
+          FROM pg_catalog.pg_amop amop
+          JOIN pg_catalog.pg_opfamily opf ON opf.oid = amop.amopfamily
+          JOIN pg_catalog.pg_am am ON am.oid = opf.opfmethod
+         WHERE opf.opfname = 'integer_ops'
+           AND am.amname = 'hash'
+           AND amop.amopstrategy = 1
+           AND amop.amoplefttype = 'int8'::pg_catalog.regtype
+           AND amop.amoprighttype = 'uint4'::pg_catalog.regtype
+    ) THEN
+        EXECUTE 'ALTER OPERATOR FAMILY integer_ops USING hash ADD OPERATOR 1 =(int8, uint4)';
+    END IF;
 
-CREATE OPERATOR CLASS uint2_ops
-    DEFAULT FOR TYPE uint2 USING hash family integer_ops AS
-        OPERATOR        1       = ,
-        OPERATOR        1       =(uint2, uint4),
-        OPERATOR        1       =(uint2, uint8),
-        OPERATOR        1       =(uint2, int2),
-        OPERATOR        1       =(uint2, int4),
-        OPERATOR        1       =(uint2, int8),
-        OPERATOR        1       =(int8, uint2),
-        OPERATOR        1       =(int2, uint2),
-        FUNCTION        1       hashuint2(uint2);
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    show isinplaceupgrade into v_isinplaceupgrade;
+    if ans = true and v_isinplaceupgrade = true then
+        UPDATE pg_catalog.pg_operator
+           SET oprcom = 'pg_catalog.=(int8,uint2)'::pg_catalog.regoperator
+         WHERE oid = 'pg_catalog.=(uint2,int8)'::pg_catalog.regoperator;
 
-CREATE OPERATOR CLASS uint4_ops
-    DEFAULT FOR TYPE uint4 USING hash family integer_ops AS
-        OPERATOR        1       = ,
-        OPERATOR        1       =(uint4, uint8),
-        OPERATOR        1       =(uint4, int4),
-        OPERATOR        1       =(uint4, int8),
-        OPERATOR        1       =(int8, uint4),
-        OPERATOR        1       =(int4, uint4),
-        FUNCTION        1       hashuint4(uint4);
+        UPDATE pg_catalog.pg_operator
+           SET oprcom = 'pg_catalog.=(uint2,int8)'::pg_catalog.regoperator
+         WHERE oid = 'pg_catalog.=(int8,uint2)'::pg_catalog.regoperator;
+
+        UPDATE pg_catalog.pg_operator
+           SET oprcom = 'pg_catalog.=(int8,uint4)'::pg_catalog.regoperator
+         WHERE oid = 'pg_catalog.=(uint4,int8)'::pg_catalog.regoperator;
+
+        UPDATE pg_catalog.pg_operator
+           SET oprcom = 'pg_catalog.=(uint4,int8)'::pg_catalog.regoperator
+         WHERE oid = 'pg_catalog.=(int8,uint4)'::pg_catalog.regoperator;
+    end if;
+END
+$for_upgrade_only$;
 
 CREATE OPERATOR CLASS pg_catalog.enumtext_ops
      FOR TYPE anyenum USING hash AS
