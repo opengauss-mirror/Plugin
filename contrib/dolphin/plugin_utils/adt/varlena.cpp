@@ -222,6 +222,9 @@ typedef struct {
     bool in_axis_test;
     int axis_test_depth;
 } ParserContext;
+
+#define MAX_XMLARG_LEN (100*1024*1024)
+
 #endif
 #endif
 
@@ -13110,6 +13113,9 @@ Datum extractvalue(PG_FUNCTION_ARGS)
 
     char *xml_str = text_to_cstring(xml);
     char *xpath_str = text_to_cstring(xpath);
+    if ( ( strlen ( xml_str ) > MAX_XMLARG_LEN ) || ( strlen ( xpath_str ) > MAX_XMLARG_LEN ) ) {
+        ereport( ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),errmsg("Args is too long. The max length is 100M!") ) );
+    }    
     char* result = extract_value(xml_str, xpath_str);
     
     if (result) {
@@ -13162,7 +13168,9 @@ Datum updatexml(PG_FUNCTION_ARGS)
         new_value = PG_GETARG_TEXT_P(2);
         new_value_str = text_to_cstring(new_value);
     }
-
+    if ( ( strlen ( xml_str ) > MAX_XMLARG_LEN ) || ( strlen ( xpath_str ) > MAX_XMLARG_LEN ) || ( strlen ( new_value_str ) > MAX_XMLARG_LEN ) ) {
+        ereport( ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),errmsg("Args is too long. The max length is 100M!") ) );
+    }
     // Modified: Use PG_TRY/PG_CATCH to ensure resource cleanup even in case of exception
     PG_TRY();
     {
