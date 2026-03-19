@@ -1449,6 +1449,8 @@ create aggregate pg_catalog.min(varbit) (SFUNC=pg_catalog.varbit_smaller, STYPE=
 -- date +/- interval expr unit
 DROP FUNCTION IF EXISTS pg_catalog.date_add (time, interval);
 DROP FUNCTION IF EXISTS pg_catalog.date_sub (time, interval);
+DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamp without time zone, interval);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub(timestamp without time zone, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_add_time_interval';
 CREATE OR REPLACE FUNCTION pg_catalog.op_time_add_intr (time, interval) RETURNS text AS $$ SELECT pg_catalog.date_add($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.op_intr_add_time (interval, time) RETURNS text AS $$ SELECT pg_catalog.date_add($2, $1)  $$ LANGUAGE SQL;
