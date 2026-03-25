@@ -461,6 +461,56 @@ create table test_collation_1(c1 text) collate utf8_bin;
 create table test_collation_2(c1 text);
 select table_name, table_collation from information_schema.tables where table_name in ('test_collation_1', 'test_collation_2') order by table_name;
 
+drop table if exists having_alias_info_schema_test;
+create table having_alias_info_schema_test(id int);
+
+select
+    table_schema as table_cat,
+    null as table_schem,
+    table_name,
+    case
+        when table_type = 'BASE TABLE' then 'TABLE'
+        else table_type
+    end as table_type
+from information_schema.tables
+where table_schema = 'public'
+    and table_name = 'having_alias_info_schema_test'
+group by table_schema, table_name, information_schema.tables.table_type
+having table_type in ('TABLE', null)
+order by table_type, table_schema, table_name;
+
+drop table if exists having_alias_grouping_test;
+create table having_alias_grouping_test(a int, b int);
+insert into having_alias_grouping_test values (1, 10), (2, 20);
+select a + 1 as a, sum(b)
+from having_alias_grouping_test
+group by rollup(a)
+having grouping(a) = 0
+order by 1;
+drop table having_alias_grouping_test;
+
+drop table if exists having_alias_outer_test;
+drop table if exists having_alias_inner_test;
+create table having_alias_outer_test(id int);
+create table having_alias_inner_test(id int);
+insert into having_alias_outer_test values (1);
+insert into having_alias_inner_test values (1), (2);
+select count(*)
+from (
+    select id as id
+    from having_alias_outer_test o
+    where exists (
+        select 1
+        from having_alias_inner_test i
+        group by i.id
+        having id > 1
+    )
+) s;
+drop table having_alias_outer_test;
+drop table having_alias_inner_test;
+
+drop table having_alias_info_schema_test;
+
 drop table test_compression_1;
 drop table test_compression_2;
 drop table test_compression_3;
