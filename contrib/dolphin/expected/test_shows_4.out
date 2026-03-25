@@ -1,8 +1,8 @@
 create schema db_show_4;
 set current_schema to 'db_show_4';
 show master status;
---?\s*Xlog_File_Name\s*\|\s*Xlog_File_Offset\s*\|.*
---?.*
+--?Xlog_File_Name      | Xlog_File_Offset |.* 
+--?.* 
 --?.*
 (1 row)
 
