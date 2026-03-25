@@ -1055,7 +1055,7 @@ static Node* replaceExprAliasIfNecessary(ParseState* pstate, char* colname, Colu
                         (errcode(ERRCODE_UNDEFINED_COLUMN),
                          errmsg("Alias \"%s\" reference with ROWNUM included is invalid.", colname),
                          parser_errposition(pstate, cref->location)));
-#endif					 
+#endif
                 } else if (contain_volatile_functions((Node*)tle->expr)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_UNDEFINED_COLUMN),
@@ -1098,6 +1098,45 @@ static Node* replaceExprAliasIfNecessary(ParseState* pstate, char* colname, Colu
     return (Node*)copyObject(matchExpr);
 #endif
 }
+
+#ifdef DOLPHIN
+static Node* replaceExprAliasCurrentLevelIfNecessary(ParseState* pstate, char* colname, ColumnRef* cref)
+{
+    ParseState currentLevelPstate = *pstate;
+    currentLevelPstate.parentParseState = NULL;
+    return replaceExprAliasIfNecessary(&currentLevelPstate, colname, cref);
+}
+#endif
+
+static Node* tryReplaceExprAlias(ParseState* pstate, char* colname, ColumnRef* cref)
+{
+    Node* node = replaceExprAliasIfNecessary(pstate, colname, cref);
+
+    if (!pstate->isAliasReplace && contain_subplans(node)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Alias \"%s\" contains subplan, which is not supported to use in grouping() function",
+                    colname)));
+    }
+
+    return node;
+}
+
+#ifdef DOLPHIN
+static Node* tryReplaceExprAliasCurrentLevel(ParseState* pstate, char* colname, ColumnRef* cref)
+{
+    Node* node = replaceExprAliasCurrentLevelIfNecessary(pstate, colname, cref);
+
+    if (!pstate->isAliasReplace && contain_subplans(node)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Alias \"%s\" contains subplan, which is not supported to use in grouping() function",
+                    colname)));
+    }
+
+    return node;
+}
+#endif
 
 static Node* ParseColumnRef(ParseState* pstate, RangeTblEntry* rte, char* colname, ColumnRef* cref)
 {
@@ -1238,6 +1277,23 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
             }
 
             /*
+             * In B/D compatibility, HAVING follows MySQL-style alias lookup,
+             * so a SELECT-list alias should win over a same-named source
+             * column.
+             */
+            if (DB_IS_CMPT_BD && pstate->isAliasReplace && pstate->p_expr_kind == EXPR_KIND_HAVING &&
+                pstate->p_having_func_arg_level == 0) {
+#ifdef DOLPHIN
+                node = tryReplaceExprAliasCurrentLevel(pstate, colname, cref);
+#else
+                node = tryReplaceExprAlias(pstate, colname, cref);
+#endif
+                if (node != NULL) {
+                    break;
+                }
+            }
+
+            /*
              * Try to identify as an unqualified column
              *
              * if hasplus, only consider current pstate level
@@ -1304,15 +1360,7 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
                 }
 
                 /*expr of target_list replace of node*/
-                node = replaceExprAliasIfNecessary(pstate, colname, cref);
-
-                if (!pstate->isAliasReplace && contain_subplans(node)) {
-                    ereport(ERROR,
-                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                            errmsg(
-                                "Alias \"%s\" contains subplan, which is not supported to use in grouping() function",
-                                colname)));
-                }
+                node = tryReplaceExprAlias(pstate, colname, cref);
                 /* 
                  * Now give the p_bind_variable_columnref_hook, check column index. only DBE_SQL can get here.
                  */
@@ -2707,7 +2755,9 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     foreach (args, fn->args) {
         Node* arg = (Node*)lfirst(args);
         if (!IsA(arg, CursorExpression)) {
+            pstate->p_having_func_arg_level++;
             targs = lappend(targs, transformExprRecurse(pstate, arg));
+            pstate->p_having_func_arg_level--;
         } else {
             targs = lappend(targs, arg);
         }
@@ -2718,7 +2768,9 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
         foreach (args, fn->agg_order) {
             SortBy* arg = (SortBy*)lfirst(args);
 
+            pstate->p_having_func_arg_level++;
             targs = lappend(targs, transformExprRecurse(pstate, arg->node));
+            pstate->p_having_func_arg_level--;
         }
     }
 #ifdef DOLPHIN
