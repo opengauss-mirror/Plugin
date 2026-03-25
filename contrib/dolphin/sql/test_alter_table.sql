@@ -240,5 +240,28 @@ alter table alter_order_test
 \d alter_order_test
 drop table alter_order_test;
 
+-- test alter-type cleanup does not recreate a later dropped index
+create table alter_cleanup_idx_test(a int, b int);
+create index alter_cleanup_idx_test_b_idx on alter_cleanup_idx_test(b);
+alter table alter_cleanup_idx_test
+    modify b bigint,
+    drop key alter_cleanup_idx_test_b_idx;
+\d alter_cleanup_idx_test
+drop table alter_cleanup_idx_test;
+
+-- test modify alias keeps dependent objects in B-format execution order
+create table alter_type_parent(a int primary key, b int);
+create index alter_type_parent_b_idx on alter_type_parent(b);
+create table alter_type_child(a int references alter_type_parent(a));
+insert into alter_type_parent values (1, 10);
+insert into alter_type_child values (1);
+alter table alter_type_parent modify a bigint;
+\d alter_type_parent
+\d alter_type_child
+insert into alter_type_parent values (2, 20);
+insert into alter_type_child values (2);
+insert into alter_type_child values (3);
+drop table alter_type_child, alter_type_parent;
+
 drop schema db_alter_table cascade;
 reset current_schema;

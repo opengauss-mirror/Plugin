@@ -70,3 +70,16 @@ alter index idx_013_001 modify partition p1_b_idx unusable;
 alter table unsupport_index_unusable_p modify partition p1 unusable local indexes ;
 alter table unsupport_index_unusable_p modify partition p2 unusable local indexes ;
 DROP TABLE unsupport_index_unusable_p;
+
+--7 modify column alias path on cstore
+--
+set b_format_behavior_compat_options = '';
+create table unsupport_modify_alias (
+    a int,
+    b national varchar(10)
+) with (orientation=column);
+insert into unsupport_modify_alias values (1, 'a');
+alter table unsupport_modify_alias modify a national varchar(10);
+insert into unsupport_modify_alias values ('bb', 'b');
+select * from unsupport_modify_alias order by a;
+drop table unsupport_modify_alias;
