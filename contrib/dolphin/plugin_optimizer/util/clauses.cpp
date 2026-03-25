@@ -5041,7 +5041,16 @@ static void sql_inline_error_callback(void* arg)
     errcontext("SQL function \"%s\" during inlining", callback_arg->proname);
 }
 
-ExprContext* MakePerTupleExprContextForOpFusion(EState* estate)
+/*
+ * evaluate_expr: pre-evaluate a constant expression
+ *
+ * We use the executor's routine ExecEvalExpr() to avoid duplication of
+ * code and ensure we get the same result as the executor would get.
+ *
+ * Note: parameter can_ignore indicates whether ERROR is ignorable when casting type. TRUE if SQL has keyword IGNORE.
+ */
+#ifdef DOLPHIN
+static ExprContext* MakePerTupleExprContextForOpFusion(EState* estate)
 {
     ExprContext* econtext = NULL;
     MemoryContext oldcontext;
@@ -5059,7 +5068,8 @@ ExprContext* MakePerTupleExprContextForOpFusion(EState* estate)
     econtext->ecxt_per_query_memory = estate->es_query_cxt;
 
     /*
-     * Create working memory for expression evaluation in this context.
+     * Reuse the session-level scratch context for expression evaluation.
+     * The owning server plan-build path resets it after the whole build.
      */
     econtext->ecxt_per_tuple_memory = u_sess->iud_expr_reuse_ctx;
     econtext->ecxt_param_exec_vals = estate->es_param_exec_vals;
@@ -5091,99 +5101,137 @@ ExprContext* MakePerTupleExprContextForOpFusion(EState* estate)
 
     return econtext;
 }
+#endif
 
-/*
- * evaluate_expr: pre-evaluate a constant expression
- *
- * We use the executor's routine ExecEvalExpr() to avoid duplication of
- * code and ensure we get the same result as the executor would get.
- *
- * Note: parameter can_ignore indicates whether ERROR is ignorable when casting type. TRUE if SQL has keyword IGNORE.
- */
 Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result_collation, bool can_ignore)
 {
     EState* estate = NULL;
     ExprState* exprstate = NULL;
+    ExprContext* econtext = NULL;
     MemoryContext oldcontext;
+    MemoryContext reuse_context = NULL;
+#ifndef DOLPHIN
+    MemoryContext eval_context = NULL;
+#endif
     Datum const_val;
     bool const_is_null = false;
     int16 resultTypLen;
     bool resultTypByVal = false;
+#ifdef DOLPHIN
     bool isFusion = false;
+#endif
     if (u_sess->iud_expr_reuse_ctx == NULL) {
-         u_sess->iud_expr_reuse_ctx = AllocSetContextCreate(u_sess->top_transaction_mem_cxt, "IudExprReuseContext", ALLOCSET_DEFAULT_MINSIZE,
-            ALLOCSET_DEFAULT_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
+        u_sess->iud_expr_reuse_ctx =
+            AllocSetContextCreate(u_sess->top_transaction_mem_cxt, "IudExprReuseContext", ALLOCSET_DEFAULT_MINSIZE,
+                                  ALLOCSET_DEFAULT_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
     }
+    reuse_context = u_sess->iud_expr_reuse_ctx;
+
     /*
      * To use the executor, we need an EState.
      */
-     if (u_sess->iud_expr_reuse_ctx != NULL) {
-        estate = CreateExecutorState();
-        isFusion = true;
-    } else {
-        estate = CreateExecutorState();
-    }
+    estate = CreateExecutorState();
+#ifdef DOLPHIN
+    isFusion = (reuse_context != NULL);
+#endif
 
     /* We can use the estate's working context to avoid memory leaks. */
     oldcontext = MemoryContextSwitchTo(estate->es_query_cxt);
+#ifndef DOLPHIN
+    econtext = GetPerTupleExprContext(estate);
+    eval_context = econtext->ecxt_per_tuple_memory;
+#endif
 
-    /* Make sure any opfuncids are filled in. */
-    fix_opfuncids((Node*)expr);
+    PG_TRY();
+    {
+        /* Make sure any opfuncids are filled in. */
+        fix_opfuncids((Node*)expr);
 
-    /*
-     * Prepare expr for execution.	(Note: we can't use ExecPrepareExpr
-     * because it'd result in recursively invoking eval_const_expressions.)
-     */
-    exprstate = ExecInitExpr(expr, NULL);
+        /*
+         * Prepare expr for execution.	(Note: we can't use ExecPrepareExpr
+         * because it'd result in recursively invoking eval_const_expressions.)
+         */
+        exprstate = ExecInitExpr(expr, NULL);
 
-    /*
-     * And evaluate it.
-     *
-     * It is OK to use a default econtext because none of the ExecEvalExpr()
-     * code used in this situation will use econtext.  That might seem
-     * fortuitous, but it's not so unreasonable --- a constant expression does
-     * not depend on context, by definition, n'est ce pas?
-     */
-    if (isFusion && estate->es_per_tuple_exprcontext == NULL) {
-        MakePerTupleExprContextForOpFusion(estate);
-    }
-    ExprContext* econtext = GetPerTupleExprContext(estate);
-    if (econtext != NULL) {
+        /* DOLPHIN keeps the shared ExprContext model to preserve plugin semantics. */
+#ifdef DOLPHIN
+        if (isFusion && estate->es_per_tuple_exprcontext == NULL) {
+            MakePerTupleExprContextForOpFusion(estate);
+        }
+        econtext = GetPerTupleExprContext(estate);
+#else
+        /*
+         * Borrow the shared reuse context only for the actual eval scratch
+         * memory; keep ExprContext itself privately owned by this EState so
+         * FreeExecutorState() can reclaim all per-call executor objects.
+         */
+        if (reuse_context != NULL) {
+            econtext->ecxt_per_tuple_memory = reuse_context;
+        }
+#endif
         econtext->can_ignore = can_ignore;
-    }
-    const_val = ExecEvalExprSwitchContext(exprstate, econtext, &const_is_null);
 
-    if (IsA(exprstate, FuncExprState)) {
-        FunctionCallInfo fcinfo = &((FuncExprState*)exprstate)->fcinfo_data;
-        if (fcinfo->context && IsA(fcinfo->context, FunctionScanState)) {
-            pfree_ext(fcinfo->context);
+        /*
+         * It is OK to use a default econtext because none of the
+         * ExecEvalExpr() code used in this situation will use tuple slots.
+         */
+        const_val = ExecEvalExprSwitchContext(exprstate, econtext, &const_is_null);
+#ifndef DOLPHIN
+        econtext->ecxt_per_tuple_memory = eval_context;
+#endif
+
+        /* Get info needed about result datatype */
+        get_typlenbyval(result_type, &resultTypLen, &resultTypByVal);
+
+        /* Get back to outer memory context */
+        (void)MemoryContextSwitchTo(oldcontext);
+
+        /*
+         * Must copy result out of sub-context used by expression eval.
+         *
+         * Also, if it's varlena, forcibly detoast it.  This protects us
+         * against storing TOAST pointers into plans that might outlive the
+         * referenced data.
+         */
+        if (!const_is_null) {
+            if (resultTypLen == -1)
+                const_val = PointerGetDatum(PG_DETOAST_DATUM_COPY(const_val));
+            else
+                const_val = datumCopy(const_val, resultTypByVal, resultTypLen);
         }
     }
-
-    /* Get info needed about result datatype */
-    get_typlenbyval(result_type, &resultTypLen, &resultTypByVal);
-
-    /* Get back to outer memory context */
-    (void)MemoryContextSwitchTo(oldcontext);
-
-    /*
-     * Must copy result out of sub-context used by expression eval.
-     *
-     * Also, if it's varlena, forcibly detoast it.  This protects us against
-     * storing TOAST pointers into plans that might outlive the referenced
-     * data.
-     */
-    if (!const_is_null) {
-        if (resultTypLen == -1)
-            const_val = PointerGetDatum(PG_DETOAST_DATUM_COPY(const_val));
-        else
-            const_val = datumCopy(const_val, resultTypByVal, resultTypLen);
+    PG_CATCH();
+    {
+#ifndef DOLPHIN
+        if (econtext != NULL) {
+            econtext->ecxt_per_tuple_memory = eval_context;
+        }
+        (void)MemoryContextSwitchTo(oldcontext);
+        FreeExecutorState(estate);
+        if (reuse_context != NULL) {
+            MemoryContextReset(reuse_context);
+        }
+#else
+        (void)MemoryContextSwitchTo(oldcontext);
+        if (!isFusion) {
+            FreeExecutorState(estate);
+        }
+#endif
+        PG_RE_THROW();
     }
+    PG_END_TRY();
 
-    /* Release all the junk we just created */
+    /* Release all the junk we just created. */
+#ifdef DOLPHIN
     if (!isFusion) {
         FreeExecutorState(estate);
     }
+#else
+    FreeExecutorState(estate);
+    if (reuse_context != NULL) {
+        MemoryContextReset(reuse_context);
+    }
+#endif
 
     /*
      * Make the constant result node.
