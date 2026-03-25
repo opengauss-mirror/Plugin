@@ -599,10 +599,10 @@ alter table alter_cleanup_idx_test
     drop key alter_cleanup_idx_test_b_idx;
 \d alter_cleanup_idx_test
 Table "db_alter_table.alter_cleanup_idx_test"
- Column |  Type   | Modifiers
+ Column |  Type   | Modifiers 
 --------+---------+-----------
- a      | integer |
- b      | bigint  |
+ a      | integer | 
+ b      | bigint  | 
 
 drop table alter_cleanup_idx_test;
 -- test modify alias keeps dependent objects in B-format execution order
@@ -627,9 +627,9 @@ Referenced by:
 
 \d alter_type_child
 Table "db_alter_table.alter_type_child"
- Column |  Type   | Modifiers
+ Column |  Type   | Modifiers 
 --------+---------+-----------
- a      | integer |
+ a      | integer | 
 Foreign-key constraints:
     "alter_type_child_a_fkey" FOREIGN KEY (a) REFERENCES alter_type_parent(a)
 
