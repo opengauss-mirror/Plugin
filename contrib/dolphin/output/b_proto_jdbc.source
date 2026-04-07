@@ -19,6 +19,7 @@ GRANT ALL PRIVILEGES TO proto_user;
 GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
+use db_jdbc;
 \! javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
 -- wrong password before setting set_native_password
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user wrong_pass@123
@@ -164,7 +165,7 @@ c1:CHAR:a
 c2:CHAR:b
 c1:CHAR:a
 c2:CHAR:b
-Tables_in_proto_user:CHAR:t3
+Tables_in_db_jdbc:CHAR:t3
 Name:CHAR:t3
 Engine:VARCHAR:ASTORE
 Version:VARCHAR:null
@@ -183,7 +184,7 @@ Collation:VARCHAR:C
 Checksum:VARCHAR:null
 Create_options:VARCHAR:{orientation=row,compression=no}
 Comment:VARCHAR:null
-Database:VARCHAR:proto_user
+Database:VARCHAR:db_jdbc
 Table:VARCHAR:t3
 In_use:INT:0
 Name_locked:INT:0
@@ -560,6 +561,7 @@ VAL
 ID2
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAllowZeroDayQueryTest localhost $dp db_jdbc proto_user Gauss@123
 0001-01-01 00:00:00.0
+RESET current_schema;
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 \! rm @abs_builddir@/proto_jdbc/class/*.class

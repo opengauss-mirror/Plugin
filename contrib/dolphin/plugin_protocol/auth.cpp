@@ -177,7 +177,7 @@ int dolphin_conn_handshake(Port* port)
 
     if (authreq->schema) {
         StringInfo search_path = makeStringInfo();
-        appendStringInfo(search_path, "\"$user\",%s", authreq->schema);
+        appendStringInfo(search_path, "%s,\"$user\"", authreq->schema);
         SetConfigOption("search_path", search_path->data, PGC_SUSET, PGC_S_OVERRIDE);
         DestroyStringInfo(search_path);
     }
