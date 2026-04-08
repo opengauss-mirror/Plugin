@@ -104,6 +104,15 @@ DROP TABLE IF EXISTS table_name_test_db.Test_3.Test_1_table;
 SELECT * from PG_CATALOG.LENGTH('aaa');
 SELECT * from pg_catalog.LENGTH('aaa');
 
+CREATE SCHEMA sch_Opengauss_DATABASE_Case0003_1;
+SELECT nspname FROM pg_namespace WHERE nspname = 'sch_Opengauss_DATABASE_Case0003_1';
+USE sch_Opengauss_DATABASE_Case0003_1;
+USE `sch_Opengauss_DATABASE_Case0003_1`;
+SET dolphin.sql_mode = 'ansi_quotes';
+USE "sch_Opengauss_DATABASE_Case0003_1";
+RESET dolphin.sql_mode;
+RESET current_schema;
+
 -- clean
 DROP USER Test_Schema_User CASCADE;
 DROP USER Test_Schema_User_bak CASCADE;
