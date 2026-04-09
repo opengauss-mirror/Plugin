@@ -232,6 +232,7 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 static bool ReplaceNullOrNot();
 static bool NullsMinimalPolicy();
 static bool enableProcedureExecutement();
+extern Oid binary_need_transform_typeid(Oid typeoid, Oid* collation);
 
 static void* DeparseCollectedCommand(int type, CollectedCommand *cmd, CollectedATSubcmd *sub,
     ddl_deparse_context *context);
@@ -375,6 +376,7 @@ void init_plugin_object()
     u_sess->hook_cxt.modifyTypeForPartitionKeyHook = (void*)modify_type_for_partition_key;
     u_sess->hook_cxt.isBinaryType = (void*)IsBinaryType;
     u_sess->hook_cxt.deparseCollectedCommandHook = (void*)DeparseCollectedCommand;
+    u_sess->hook_cxt.binaryTransformTypeidHook = (void*)binary_need_transform_typeid;
     set_default_guc();
 
    

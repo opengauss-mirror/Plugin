@@ -85,6 +85,7 @@ select left('dont!', '9223372036854775807');
 select right('dont!', '9223372036854775807');
 select right('dont!', 9223372036854775807);
 select right('dont!', 9223372036854775808);
+select right(aes_encrypt('a', repeat('c', 16), repeat('a', 16)), 0);
 
 \x
 CREATE TABLE test_type_table
