@@ -1887,6 +1887,12 @@ Datum pg_free_remain_segment(PG_FUNCTION_ARGS)
                         errmsg("Input segment [%d, %d, %d] is not valid segment!", spaceId, dbId, segmentId)));
     }
 
+    AclResult aclresult = pg_tablespace_aclcheck(spaceId, GetUserId(), ACL_VACUUM);
+    if (aclresult != ACLCHECK_OK) {
+        ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+            errmsg("permission denied for tablespace %d, required VACUUM permissions to shrink", spaceId)));
+    }
+
     RemainSegsCtx* remainSegsCtx = (RemainSegsCtx *)palloc(sizeof(RemainSegsCtx));
     remainSegsCtx->remainSegsBuf = NULL;
     remainSegsCtx->remainSegsNum = 0;

@@ -212,7 +212,14 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
 static void TransformColumnDefinitionOptions(CreateStmtContext* cxt, ColumnDef* column);
 static void TransformColumnDefinitionConstraints(
     CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool is_modify);
+static void checkTempAndColumnStore(CreateStmt *stmt);
 #define REDIS_SCHEMA "data_redis"
+
+static bool constexpr RANGEVAR_IS_TEMP(RangeVar *rel)
+{
+    return rel->relpersistence == RELPERSISTENCE_TEMP ||
+           rel->relpersistence == RELPERSISTENCE_GLOBAL_TEMP;
+}
 
 /*
  * transformCreateStmt -
@@ -456,6 +463,22 @@ static bool is_create_as_col_store(CreateStmt* stmt)
         pg_strcasecmp(storeTypeStr, ORIENTATION_ORC) == 0);
 }
 
+static void checkTempAndColumnStore(CreateStmt *stmt)
+{
+    if (!DB_IS_CMPT(D_FORMAT) || !RANGEVAR_IS_TEMP(stmt->relation)) {
+        return;
+    }
+
+    char *storage = CreatestmtGetOrientation(stmt);
+    if (pg_strcasecmp(storage, ORIENTATION_ROW) != 0) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-supported feature"),
+                    errdetail("Orientation type %s is not supported for D-format temp table", storage)));
+    }
+    return;
+}
+
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
 {
@@ -476,6 +499,7 @@ Oid *namespaceid, bool isFirstNode)
     if (stmt->relation->relpersistence == RELPERSISTENCE_TEMP && stmt->relation->schemaname)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("temporary tables cannot specify a schema name")));
+    checkTempAndColumnStore(stmt);
 
     /*
      * Look up the creation namespace.	This also checks permissions on the
@@ -4568,6 +4592,17 @@ static void transformFKConstraints(CreateStmtContext* cxt, bool skipValidation, 
 
     if (cxt->fkconstraints == NIL)
         return;
+
+    if (DB_IS_CMPT(D_FORMAT) && RANGEVAR_IS_TEMP(cxt->relation)) {
+        cxt->fkconstraints = NIL;
+        ereport(WARNING,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-supported feature"),
+                    errdetail("Skipping FORERIGN KEY constraint '%s' definition for temporary table."
+                              " FOREIGN KEY constraints are not enforced on local or global temporary tables.",
+                              cxt->relation->relname)));
+        return;
+    }
 
     /*
      * If CREATE TABLE or adding a column with NULL default, we can safely
