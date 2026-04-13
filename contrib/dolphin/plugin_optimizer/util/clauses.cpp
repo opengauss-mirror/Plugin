@@ -4975,12 +4975,10 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     /*
      * To use the executor, we need an EState.
      */
-    if (u_sess->iud_expr_reuse_ctx != NULL) {
-        estate = CreateExecutorState();
-        isFusion = true;
-    } else {
-        estate = CreateExecutorState();
-    }
+    estate = CreateExecutorState();
+#ifdef DOLPHIN
+    isFusion = (reuse_context != NULL);
+#endif
 
     /* We can use the estate's working context to avoid memory leaks. */
     oldcontext = MemoryContextSwitchTo(estate->es_query_cxt);
