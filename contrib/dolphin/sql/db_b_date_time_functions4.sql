@@ -218,6 +218,10 @@ insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')',
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 
+-- date_format(date, text)
+select date_format(date '0000-12-21', '%Y-%m-%d');
+-- date_format(timestamp, text)
+select date_format(timestamp '0000-12-21 00:00:00', '%Y-%m-%d');
 -- test from_unixtime
 -- 严格模式或者非严格模式都有值
 -- 功能-单参数

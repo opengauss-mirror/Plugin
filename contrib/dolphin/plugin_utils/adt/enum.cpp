@@ -42,7 +42,7 @@
 static Oid enum_endpoint(Oid enumtypoid, ScanDirection direction);
 static ArrayType* enum_range_internal(Oid enumtypoid, Oid lower, Oid upper);
 #ifdef DOLPHIN
-static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name);
+static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name, bool can_ignore);
 static int compare_values_of_enum_with_collation(Oid arg1, Oid arg2, Oid collation);
 #define DEC_BASE 10
 static uint64 pg_strntoul(const char *nptr, size_t l, char **endptr, int *err);
@@ -67,8 +67,10 @@ Datum enum_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
     Oid collid = PG_GET_COLLATION();
     if (is_b_format_collation(collid)) {
-        enumoid = get_enumid_with_collation(enumtypoid, collid, name);
-        pfree_ext(name);
+        /* Caller owns 'name'; enum_in must not free PG_GETARG_CSTRING(0). */
+        enumoid = get_enumid_with_collation(enumtypoid, collid, name, fcinfo->can_ignore);
+        if (enumoid == InvalidOid)
+            return (Datum)0; /* ordinal 0 or invalid (WARNING) means NULL */
         PG_RETURN_OID(enumoid);
     }
 #endif
@@ -117,20 +119,76 @@ Datum enum_in(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
-static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name)
+/* Ordinal fallback when label match fails; always releases list. Returns InvalidOid for order 0 or on invalid. */
+static Oid try_enum_ordinal_fallback(Oid enumtypoid, char* enum_name, CatCList* list, bool can_ignore)
 {
-    Oid enumoid;
+    char* end = NULL;
+    int err = 0;
+    size_t length = strlen(enum_name);
+    uint64 order = pg_strntoul(enum_name, length, &end, &err);
+    bool parse_success = (!err && end == enum_name + length);
+    order = parse_success ? order : 0;
+    int elevel = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+
+    if (parse_success && order == 0) {
+        ReleaseSysCacheList(list);
+        return InvalidOid;
+    }
+    if (!(parse_success || !SQL_MODE_STRICT())) {
+        ReleaseSysCacheList(list);
+        ereport(elevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return InvalidOid;
+    }
+    int nelems = list->n_members;
+    if (order < 1 || order > (uint64)nelems) {
+        ReleaseSysCacheList(list);
+        ereport(elevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return InvalidOid;
+    }
+    char* new_name = getEnumLableByOrder(enumtypoid, (int)order);
+    if (new_name == NULL) {
+        ReleaseSysCacheList(list);
+        ereport(elevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return InvalidOid;
+    }
+    char* label_copy = pstrdup(new_name);
+    ReleaseSysCacheList(list);
+    HeapTuple tup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid), CStringGetDatum(label_copy));
+    if (!HeapTupleIsValid(tup)) {
+        pfree(label_copy);
+        ereport(elevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return InvalidOid;
+    }
+    Oid enumoid = HeapTupleGetOid(tup);
+    ReleaseSysCache(tup);
+    pfree(label_copy);
+    return enumoid;
+}
+
+static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name, bool can_ignore)
+{
+    Oid enumoid = InvalidOid;
     CatCList* list = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid));
     int nelems = list->n_members;
     HeapTuple enumTup = NULL;
     Form_pg_enum en = NULL;
-    char *targetEnumLable = NULL;
+    char* targetEnumLable = NULL;
 
     if (nelems == 0) {
         ReleaseSysCacheList(list);
-        ereport(ERROR,
+        int elevel = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(elevel,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return InvalidOid;
     }
 
     int res = 0;
@@ -141,19 +199,17 @@ static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_n
         targetEnumLable = NameStr(en->enumlabel);
 
         res = varstr_cmp_by_builtin_collations(targetEnumLable, strlen(targetEnumLable),
-                                                    enum_name, strlen(enum_name), collation);
+            enum_name, strlen(enum_name), collation);
         if (res == 0) {
             enumoid = HeapTupleGetOid(enumTup);
             find = true;
             break;
         }
     }
-    ReleaseSysCacheList(list);
     if (!find) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+        return try_enum_ordinal_fallback(enumtypoid, enum_name, list, can_ignore);
     }
+    ReleaseSysCacheList(list);
     return enumoid;
 }
 
@@ -501,8 +557,10 @@ Datum enum_recv(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
     int collid = PG_GET_COLLATION();
     if (is_b_format_collation(collid)) {
-        enumoid = get_enumid_with_collation(enumtypoid, collid, name);
+        enumoid = get_enumid_with_collation(enumtypoid, collid, name, fcinfo->can_ignore);
         pfree_ext(name);
+        if (enumoid == InvalidOid)
+            return (Datum)0;
         PG_RETURN_OID(enumoid);
     }
 #endif

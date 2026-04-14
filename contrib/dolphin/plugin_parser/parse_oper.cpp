@@ -98,6 +98,9 @@ static Operator GetNumericDolphinOperatorTup(
     ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric);
 static void TransformDolphinType(Oid& type, int32& typmod);
 static bool IsNumericCatalogByOid(Oid oid);
+static bool IsCurrentDateMinusNumeric(const GetDolphinOperatorTupInfo* info, const char* opername);
+static const char* const CURRENT_DATE_NOW_LITERAL = "now";
+static const int CURRENT_DATE_NOW_LITERAL_LEN = 3;
 static int32 GetTypmod(Oid typeoid, Node* node);
 static Oid TransformDolphinOperator(TransformOperatorInformation* info);
 static Node* CreateCastForType(
@@ -168,6 +171,80 @@ static inline bool comparison_with_date_defined(Oid type_id)
 {
     return type_id == BINARYOID || type_id == VARBINARYOID || type_id == TINYBLOBOID || type_id == BLOBOID ||
            type_id == MEDIUMBLOBOID || type_id == LONGBLOBOID || type_id == ANYENUMOID || type_id == JSONOID;
+}
+
+static Node* StripCastForCurrentDate(Node* node)
+{
+    while (node != NULL) {
+        if (IsA(node, RelabelType)) {
+            node = (Node*)((RelabelType*)node)->arg;
+        } else if (IsA(node, FuncExpr)) {
+            FuncExpr* castExpr = (FuncExpr*)node;
+            if ((castExpr->funcformat == COERCE_IMPLICIT_CAST || castExpr->funcformat == COERCE_EXPLICIT_CAST) &&
+                list_length(castExpr->args) == 1) {
+                node = (Node*)linitial(castExpr->args);
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    return node;
+}
+
+static bool IsNowConstForCurrentDate(Node* node)
+{
+    if (node == NULL || !IsA(node, Const)) {
+        return false;
+    }
+
+    Const* nowConst = (Const*)node;
+    if (nowConst->constisnull) {
+        return false;
+    }
+
+    if (nowConst->consttype == TEXTOID) {
+        text* nowText = DatumGetTextPP(nowConst->constvalue);
+        int nowLen = VARSIZE_ANY_EXHDR(nowText);
+        return nowLen == CURRENT_DATE_NOW_LITERAL_LEN &&
+               pg_strncasecmp(VARDATA_ANY(nowText), CURRENT_DATE_NOW_LITERAL, CURRENT_DATE_NOW_LITERAL_LEN) == 0;
+    }
+
+    if (nowConst->consttype == CSTRINGOID || nowConst->consttype == UNKNOWNOID) {
+        char* nowText = DatumGetCString(nowConst->constvalue);
+        return nowText != NULL && pg_strcasecmp(nowText, CURRENT_DATE_NOW_LITERAL) == 0;
+    }
+
+    return false;
+}
+
+static bool IsCurrentDateExpr(Node* node)
+{
+    if (node == NULL || !IsA(node, FuncExpr)) {
+        return false;
+    }
+
+    FuncExpr* funcExpr = (FuncExpr*)node;
+    if (funcExpr->funcresulttype != DATEOID || list_length(funcExpr->args) != 1) {
+        return false;
+    }
+
+    char* funcName = get_func_name(funcExpr->funcid);
+    if (funcName == NULL || pg_strcasecmp(funcName, "text_date") != 0) {
+        return false;
+    }
+
+    return IsNowConstForCurrentDate(StripCastForCurrentDate((Node*)linitial(funcExpr->args)));
+}
+
+static bool IsCurrentDateMinusNumeric(const GetDolphinOperatorTupInfo* info, const char* opername)
+{
+    if (strcmp(opername, "-") != 0) {
+        return false;
+    }
+
+    return info->ltypeId == DATEOID && IsCurrentDateExpr(info->ltree) && IsNumericCatalogByOid(info->rtypeId);
 }
 #endif
 
@@ -1664,6 +1741,16 @@ static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
     char* opername = NULL;
     Operator tup = NULL;
     DeconstructQualifiedName(opname, &schemaname, &opername);
+
+    /*
+     * Keep CURRENT_DATE - numeric as date arithmetic in B mode.
+     * CURRENT_DATE is represented as text_date('now'::text), and forcing
+     * date to int here produces invalid values such as 20260279.
+     */
+    if (IsCurrentDateMinusNumeric(info, opername)) {
+        return NULL;
+    }
+
     List *newOpList = list_make2(makeString(DOLPHIN_CATALOG_STR), makeString(opername));
     if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType) && schemaname == NULL) {
         tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);

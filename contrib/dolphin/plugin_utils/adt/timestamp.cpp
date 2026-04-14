@@ -9418,6 +9418,62 @@ Datum yearweek_numeric(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(year * 100 + week);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(yearweek_timestamp);
+extern "C" DLL_PUBLIC Datum yearweek_timestamp(PG_FUNCTION_ARGS);
+Datum yearweek_timestamp(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+
+    int64 mode = 0;
+    if (PG_ARGISNULL(1)) {
+        mode = 0;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+    int32 week = 0;
+    uint year = 0;
+    struct pg_tm tm;
+    fsec_t fsec;
+    Timestamp stamp = PG_GETARG_TIMESTAMP(0);
+    if (timestamp2tm(stamp, NULL, &tm, &fsec, NULL, NULL) == 0) {
+        week_internal(&tm, &week, mode, &year);
+        PG_RETURN_INT64(year * 100 + week);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        PG_RETURN_NULL(); /* suppress the static check */
+    }
+}
+    
+PG_FUNCTION_INFO_V1_PUBLIC(yearweek_timestamptz);
+extern "C" DLL_PUBLIC Datum yearweek_timestamptz(PG_FUNCTION_ARGS);
+Datum yearweek_timestamptz(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    int64 mode = 0;
+    if (PG_ARGISNULL(1)) {
+        mode = 0;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+    uint year = 0;
+    int32 week = 0;
+    const char* tzn = NULL;
+    struct pg_tm tm;
+    fsec_t fsec;
+    TimestampTz stamp = PG_GETARG_TIMESTAMPTZ(0);
+    if (timestamp2tm(stamp, NULL, &tm, &fsec, &tzn, NULL) == 0) {
+        week_internal(&tm, &week, mode, &year);
+        PG_RETURN_INT64(year * 100 + week);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamptz out of range")));
+        PG_RETURN_NULL(); /* suppress the static check */
+    }
+}
+
 /*
  * using timestamp_diff_internal to calculate
  * true if success
