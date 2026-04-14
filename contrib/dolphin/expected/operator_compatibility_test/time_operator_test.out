@@ -841,6 +841,12 @@ select pg_typeof(current_date());
  date
 (1 row)
 
+select pg_typeof(current_date - 30);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
 select date '2022-02-01' + 1 AS result;
   result  
 ----------
