@@ -6023,8 +6023,25 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             char* enumTypeName = makeEnumTypeName(cxt->relation->relname, column->colname, schemaname);
             column->typname->names = lcons(makeString(schemaname), column->typname->names);
             strVal(llast(column->typname->names)) = enumTypeName;
-
-            DefineAnonymousEnum(column->typname, column->collOid);
+            Oid collOid = column->collOid;
+            if (USE_DEFAULT_COLLATION && column->collClause == NULL && !OidIsValid(collOid)) {
+                /* Resolve collation for enum duplicate check: table -> schema -> database */
+                Oid rel_coll_oid = cxt->rel_coll_id;
+                if (OidIsValid(rel_coll_oid) && rel_coll_oid != DEFAULT_COLLATION_OID) {
+                    /* Table has explicitly specified collation */
+                    collOid = rel_coll_oid;
+                } else {
+                    Oid nsp_coll_oid = get_nsp_default_collation(enumNamespace);
+                    if (OidIsValid(nsp_coll_oid)) {
+                        /* Schema has explicitly specified collation */
+                        collOid = nsp_coll_oid;
+                    } else {
+                        /* Fall back to database default */
+                        collOid = get_default_collation_by_charset(GetDatabaseEncoding());
+                    }
+                }
+            }
+            DefineAnonymousEnum(column->typname, collOid);
         }
     }
 #endif
