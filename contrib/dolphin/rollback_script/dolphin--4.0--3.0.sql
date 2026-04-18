@@ -1003,6 +1003,18 @@ DROP FUNCTION IF EXISTS pg_catalog.date_add_interval(date, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
 
+DO $body$
+BEGIN
+    -- only v5.0.5(92866) need to create the following two function, based on dolphin--1.3--1.4.sql.
+    if working_version_num() = 92866 then
+        DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamp without time zone, interval);
+        CREATE OR REPLACE FUNCTION pg_catalog.date_add(timestamp without time zone, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, $2)  $$ LANGUAGE SQL;
+        DROP FUNCTION IF EXISTS pg_catalog.date_sub(timestamp without time zone, interval);
+        CREATE OR REPLACE FUNCTION pg_catalog.date_sub(timestamp without time zone, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, -$2)  $$ LANGUAGE SQL;
+    end if;
+END
+$body$;
+
 DROP FUNCTION IF EXISTS pg_catalog.date_add(time, interval, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamp without time zone, interval, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.date_add(timestamptz, interval, boolean);
