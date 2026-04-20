@@ -5687,6 +5687,7 @@ bool lldiv_decode_datetime(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *
     bool ret = true;
     int code;
     const char *msg = NULL;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         lldiv_decode_tm(num, div, tm, fsec, date_flag, date_type);
@@ -5697,6 +5698,7 @@ bool lldiv_decode_datetime(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *
         if (SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
+            (void)MemoryContextSwitchTo(current_ctx);
             code = geterrcode();
             msg = pstrdup(Geterrmsg());
             FlushErrorState();
