@@ -222,6 +222,23 @@ insert into test values('date_format(100000101, ''%b'')', date_format(100000101,
 select date_format(date '0000-12-21', '%Y-%m-%d');
 -- date_format(timestamp, text)
 select date_format(timestamp '0000-12-21 00:00:00', '%Y-%m-%d');
+select date_format(timestamptz '0000-12-21 00:00:00', '%Y-%m-%d');
+drop table if exists test_date_format;
+create table test_date_format(a timestamp with time zone);
+insert into test_date_format values('2026-04-23 11:20:41.073');
+insert into test_date_format values('2026-04-23 11:20:42.023');
+insert into test_date_format values('2026-04-23 11:20:42.123');
+select a,date_format(a, '%Y-%m-%d %T.%f') from test_date_format;
+drop table test_date_format;
+
+drop table if exists test_date_format;
+create table test_date_format(a timestamp without time zone);
+insert into test_date_format values('2026-04-23 11:20:41.073');
+insert into test_date_format values('2026-04-23 11:20:42.023');
+insert into test_date_format values('2026-04-23 11:20:42.123');
+select a,date_format(a, '%Y-%m-%d %T.%f') from test_date_format;
+drop table test_date_format;
+
 -- test from_unixtime
 -- 严格模式或者非严格模式都有值
 -- 功能-单参数
