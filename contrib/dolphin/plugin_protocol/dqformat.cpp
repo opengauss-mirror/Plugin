@@ -693,7 +693,7 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
                     trim_trailing_space(val);
                 }
                 dq_append_string_lenenc(buf, val);
-                if (val != u_sess->utils_cxt.varcharoutput_buffer) {
+                if (val != KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, varcharoutput_buffer)) {
                     pfree(val);
                 }
             } else {
@@ -749,7 +749,7 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         case DOLPHIN_TYPE_NEWDECIMAL: {
             char *val = output_numeric_out(DatumGetNumeric(binval));
             dq_append_string_lenenc(buf, val);
-            if (val != u_sess->utils_cxt.numericoutput_buffer) {
+            if (val != KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, numericoutput_buffer)) {
                 pfree_ext(val);
             }
             break;

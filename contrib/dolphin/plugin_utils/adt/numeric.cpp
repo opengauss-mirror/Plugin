@@ -5442,8 +5442,8 @@ static char* output_get_str_from_var(NumericVar* var)
     if (len >= 64) {
         str = (char*)palloc(len);
     } else {
-        u_sess->utils_cxt.numericoutput_buffer[0] = '\0';
-        str = u_sess->utils_cxt.numericoutput_buffer;
+        KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, numericoutput_buffer)[0] = '\0';
+        str = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, numericoutput_buffer);
     }
     cp = str;
 

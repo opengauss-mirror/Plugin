@@ -2283,8 +2283,9 @@ static Node* transformUserVar(UserVar *uservar)
 {
     bool found = false;
 
-    GucUserParamsEntry *entry = (GucUserParamsEntry *)hash_search(u_sess->utils_cxt.set_user_params_htab,
-        uservar->name, HASH_FIND, &found);
+    GucUserParamsEntry *entry =
+        (GucUserParamsEntry *)hash_search(
+            KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, set_user_params_htab), uservar->name, HASH_FIND, &found);
     if (!found) {
         /* return a null const */
         Const *nullValue = makeConst(TEXTOID, -1, InvalidOid, -2, (Datum)0, true, false);
@@ -2295,7 +2296,8 @@ static Node* transformUserVar(UserVar *uservar)
         return (Node *)result;
     }
 
-    entry = (GucUserParamsEntry *)hash_search(u_sess->utils_cxt.set_user_params_htab, uservar->name, HASH_ENTER, &found);
+    entry = (GucUserParamsEntry *)hash_search(
+        KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, set_user_params_htab), uservar->name, HASH_ENTER, &found);
     if (entry == NULL) {
         ereport(ERROR,
             (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("Failed to create user_defined entry due to out of memory")));
