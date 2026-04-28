@@ -29,12 +29,15 @@
 #include "access/tableam.h"
 #include "libpq/libpq.h"
 #include "libpq/pqformat.h"
+#include "pgstat.h"
 #include "tcop/pquery.h"
+#include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "access/heapam.h"
 #include "catalog/pg_proc.h"
+#include "commands/prepare.h"
 #include "access/datavec/vector.h"
 #include "plugin_utils/float.h"
 #include "plugin_utils/timestamp.h"
@@ -49,12 +52,26 @@
 
 #define DOLPHIN_BLOB_LENGTH 65535
 #define BITS_PER_BYTE 8
+#define DEFAULT_ROW_DESC_BUF_LEN 1024
+
+typedef struct DolphinColumnDefCacheBuf {
+    int column_num;
+    bool valid;
+    TupleDesc typeinfo;
+    List *targetlist;
+    StringInfoData buf;  /* (4 bytes len + buf) * column_num */
+} DolphinColumnDefCacheBuf;
 
 static void printtup_startup(DestReceiver *self, int operation, TupleDesc typeinfo);
 static void printtup_shutdown(DestReceiver *self);
 static void printtup_destroy(DestReceiver *self);
 
-static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats);
+static void FreeDolphinColumnDefinitionCache(DolphinColumnDefCacheBuf *cache);
+static void DolphinSendColumnDefinition(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats,
+    CachedPlanSource *psrc);
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats,
+    CachedPlanSource *psrc = NULL);
+static List *ResolveDolphinRowDescTargetList(CachedPlanSource *psrc, Portal portal, List *fallback_target_list);
 static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int numAttrs);
 
 static void spi_sql_proc_dest_destroy(DestReceiver *self);
@@ -62,16 +79,17 @@ static void spi_sql_proc_dest_shutdown(DestReceiver *self);
 
 static inline bool check_need_free_varchar_output(const char* str)
 {
-    return ((char*)str == u_sess->utils_cxt.varcharoutput_buffer);
+    return ((char*)str == KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, varcharoutput_buffer));
 }
 static inline bool check_need_free_numeric_output(const char* str)
 {
-    return ((char*)str == u_sess->utils_cxt.numericoutput_buffer);
+    return ((char*)str == KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, numericoutput_buffer));
 }
 static inline bool check_need_free_date_output(const char* str)
 {
-    return ((char*)str == u_sess->utils_cxt.dateoutput_buffer);
+    return ((char*)str == KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer));
 }
+
 DestReceiver* CreateSqlProcSpiDestReciver(CommandDest dest)
 {
     DestReceiver* resdr = NULL;
@@ -153,6 +171,8 @@ void dolphin_set_DR_params(DestReceiver *self, List* target_list)
 static void printtup_startup(DestReceiver *self, int operation, TupleDesc typeinfo)
 {
     DR_printtup *myState = (DR_printtup *)self;
+    Portal portal = myState->portal;
+    CachedPlanSource *psrc = ResolveRowDescPlanSource(portal);
 
     /* create buffer to be used for all messages */
     initStringInfo(&myState->buf);
@@ -162,24 +182,56 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
      * descriptor of the tuples.
      */
     if (myState->sendDescrip) {
-        List *target_list = myState->portal != NULL ? FetchPortalTargetList(myState->portal) : myState->target_list;
-        myState->pub.sendRowDesc(&myState->buf, typeinfo, target_list, NULL);
+        List *target_list = ResolveDolphinRowDescTargetList(psrc, portal, myState->target_list);
+
+        myState->pub.sendRowDesc(&myState->buf,
+            typeinfo,
+            target_list,
+            portal != NULL ? portal->formats : NULL,
+            psrc);
     }
 }
 
-static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats)
+static void FreeDolphinColumnDefinitionCache(DolphinColumnDefCacheBuf *cache)
+{
+    if (cache == NULL) {
+        return;
+    }
+
+    pfree_ext(cache->buf.data);
+    pfree(cache);
+}
+
+static void DolphinSendColumnDefinition(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats,
+    CachedPlanSource *psrc)
 {
     FormData_pg_attribute *attrs = typeinfo->attrs;
     int natts = typeinfo->natts;
     int i;
     ListCell *tlist_item = list_head(targetlist);
     TargetEntry *tle = NULL;
+    DolphinColumnDefCacheBuf *col_def_buf = NULL;
+    MemoryContext old = NULL;
 
-    // FIELD_COUNT packet
-    send_field_count_packet(buf, natts);
-    
+    (void)formats;
+
     if (tlist_item != NULL) {
         tle = (TargetEntry *)lfirst(tlist_item);
+    }
+
+    if (psrc != NULL && psrc->describe_buf_context != NULL) {
+        FreeDolphinColumnDefinitionCache((DolphinColumnDefCacheBuf *)psrc->row_desc_bufs[ROW_DESC_CACHE_PROTOCOL_B]);
+        psrc->row_desc_bufs[ROW_DESC_CACHE_PROTOCOL_B] = NULL;
+        old = MemoryContextSwitchTo(psrc->describe_buf_context);
+        col_def_buf = (DolphinColumnDefCacheBuf *)palloc0(sizeof(DolphinColumnDefCacheBuf));
+        psrc->row_desc_bufs[ROW_DESC_CACHE_PROTOCOL_B] = col_def_buf;
+        col_def_buf->column_num = natts;
+        col_def_buf->valid = false;
+        col_def_buf->typeinfo = typeinfo;
+        col_def_buf->targetlist = targetlist;
+        initStringInfo(&col_def_buf->buf);
+        enlargeStringInfo(&col_def_buf->buf, DEFAULT_ROW_DESC_BUF_LEN);
+        MemoryContextSwitchTo(old);
     }
 
     for (i = 0; i < natts; ++i) {
@@ -209,13 +261,65 @@ static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo,
         dolphin_column_definition field;
         make_dolphin_column_definition(&attrs[i], NULL, oriColName, &field);
         send_column_definition41_packet(buf, &field);
+        if (col_def_buf != NULL) {
+            old = MemoryContextSwitchTo(psrc->describe_buf_context);
+            appendBinaryStringInfoNT(&col_def_buf->buf, (const char *)(&buf->len), sizeof(int));
+            appendBinaryStringInfoNT(&col_def_buf->buf, buf->data, buf->len);
+            MemoryContextSwitchTo(old);
+        }
         pfree_ext(oriColName);
     }
-    
+
+    if (col_def_buf != NULL) {
+        col_def_buf->valid = true;
+        pgstat_report_rowdesc_cache_store(ROW_DESC_CACHE_PROTOCOL_B);
+    }
+}
+
+static void DolphinSendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist, int16 *formats,
+    CachedPlanSource *psrc)
+{
+    DolphinColumnDefCacheBuf *col_def_buf = NULL;
+
+    if (psrc != NULL && psrc->describe_buf_context != NULL) {
+        col_def_buf = (DolphinColumnDefCacheBuf *)psrc->row_desc_bufs[ROW_DESC_CACHE_PROTOCOL_B];
+    }
+
+    // FIELD_COUNT packet
+    send_field_count_packet(buf, typeinfo->natts);
+
+    if (col_def_buf != NULL && col_def_buf->valid && col_def_buf->column_num == typeinfo->natts &&
+        col_def_buf->typeinfo == typeinfo && col_def_buf->targetlist == targetlist) {
+        char *content = col_def_buf->buf.data;
+        for (int i = 0; i < col_def_buf->column_num; ++i) {
+            int len = *(int *)content;
+            content += sizeof(int);
+            dq_putmessage(content, len);
+            content += len;
+        }
+        Assert(col_def_buf->buf.data + col_def_buf->buf.len == content);
+        pgstat_report_rowdesc_cache_hit(ROW_DESC_CACHE_PROTOCOL_B);
+    } else {
+        DolphinSendColumnDefinition(buf, typeinfo, targetlist, formats, psrc);
+    }
+
     // EOF packet
     if (!(GetSessionContext()->Conn_Mysql_Info->client_capabilities & CLIENT_DEPRECATE_EOF)) {
         send_network_eof_packet();
     }
+}
+
+static List *ResolveDolphinRowDescTargetList(CachedPlanSource *psrc, Portal portal, List *fallback_target_list)
+{
+    if (psrc != NULL) {
+        return CachedPlanGetTargetList(psrc);
+    }
+
+    if (portal != NULL) {
+        return FetchPortalTargetList(portal);
+    }
+
+    return fallback_target_list;
 }
 
 inline MemoryContext changeToTmpContext(DestReceiver *self)
@@ -273,13 +377,13 @@ static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free
     *need_free = false;
     switch (state->typoutput) {
         case F_INT4OUT: {
-            outputstr = u_sess->utils_cxt.int4output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int4output_buffer);
             int length = 0;
             pg_ltoa(DatumGetInt32(attr), outputstr, &length);
             break;
         }
         case F_INT8OUT: {
-            outputstr = u_sess->utils_cxt.int8output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int8output_buffer);
             int length = 0;
             pg_lltoa(DatumGetInt64(attr), outputstr, &length);
             break;
@@ -296,12 +400,12 @@ static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free
             *need_free = !check_need_free_varchar_output(outputstr);
             break;
         case F_FLOAT4OUT: {
-            outputstr = u_sess->utils_cxt.float4output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float4output_buffer);
             pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
             break;
         }
         case F_FLOAT8OUT: {
-            outputstr = u_sess->utils_cxt.float8output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float8output_buffer);
             dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
             break;
         }
@@ -318,17 +422,17 @@ static char* get_output_str(PrinttupAttrInfo *state, Datum attr, bool *need_free
             *need_free = !check_need_free_date_output(outputstr);
             break;
         case F_VECTOR_OUT:
-            outputstr = u_sess->utils_cxt.vectoroutput_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, vectoroutput_buffer);
             PrintOutVector(outputstr, attr);
             break;
         case F_TIMESTAMP_OUT: {
-            outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, timestamp_output_buffer);
             Timestamp ts = DatumGetTimestamp(attr);
             timestamp_out(ts, outputstr);
             break;
         }
         case F_TIMESTAMPTZ_OUT: {
-            outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+            outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, timestamp_output_buffer);
             Timestamp ts = DatumGetTimestampTz(attr);
             timestamptz_out_internal(ts, outputstr, false);
             break;
@@ -594,7 +698,7 @@ void spi_sql_proc_dest_startup(DestReceiver* self, int operation, TupleDesc type
      * descriptor of the tuples.
      */
     if (myState->sendDescrip)
-        SendRowDescriptionMessage(&myState->buf, typeinfo, FetchStatementTargetList(stmt), NULL);
+        SendRowDescriptionMessage(&myState->buf, typeinfo, FetchStatementTargetList(stmt), NULL, NULL);
 }
 
 /* ----------------
@@ -739,7 +843,7 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                 needFree = false;
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
-                        outputstr = u_sess->utils_cxt.int4output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int4output_buffer);
                         int length = 0;
                         pg_ltoa(DatumGetInt32(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
@@ -750,7 +854,7 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                         continue;
                     }
                     case F_INT8OUT: {
-                        outputstr = u_sess->utils_cxt.int8output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int8output_buffer);
                         int length = 0;
                         pg_lltoa(DatumGetInt64(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
@@ -761,14 +865,14 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
                         continue;
                     }
                     case F_FLOAT4OUT: {
-                        outputstr = u_sess->utils_cxt.float4output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float4output_buffer);
                         pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
                         pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
                                                     (void*)&thisState->convert_finfo);
                         continue;
                     }
                     case F_FLOAT8OUT: {
-                        outputstr = u_sess->utils_cxt.float8output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float8output_buffer);
                         dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
                         pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
@@ -1015,7 +1119,7 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                 need_free = false;
                 switch (thisState->typoutput) {
                     case F_INT4OUT: {
-                        outputstr = u_sess->utils_cxt.int4output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int4output_buffer);
                         int length = 0;
                         pg_ltoa(DatumGetInt32(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
@@ -1026,7 +1130,7 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         continue;
                     }
                     case F_INT8OUT: {
-                        outputstr = u_sess->utils_cxt.int8output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, int8output_buffer);
                         int length = 0;
                         pg_lltoa(DatumGetInt64(attr), outputstr, &length);
 #ifndef ENABLE_MULTIPLE_NODES
@@ -1048,14 +1152,14 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         need_free = !check_need_free_varchar_output(outputstr);
                         break;
                     case F_FLOAT4OUT: {
-                        outputstr = u_sess->utils_cxt.float4output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float4output_buffer);
                         pg_ftoa<MAXFLOATWIDTH>(DatumGetFloat4(attr), outputstr);
                         pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
                                                     (void*)&thisState->convert_finfo);
                         continue;
                     }
                     case F_FLOAT8OUT: {
-                        outputstr = u_sess->utils_cxt.float8output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, float8output_buffer);
                         dolphin_dtoa<MAXDOUBLEWIDTH>(DatumGetFloat8(attr), outputstr);
                         pq_sendcountedtext_printtup(buf, outputstr, std::strlen(outputstr), thisState->encoding,
                                                     (void *)&thisState->convert_finfo);
@@ -1070,11 +1174,11 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         need_free = !check_need_free_date_output(outputstr);
                         break;
                     case F_VECTOR_OUT:
-                        outputstr = u_sess->utils_cxt.vectoroutput_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, vectoroutput_buffer);
                         PrintOutVector(outputstr, attr);
                         break;
                     case F_TIMESTAMP_OUT: {
-                        outputstr = u_sess->utils_cxt.timestamp_output_buffer;
+                        outputstr = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, timestamp_output_buffer);
                         Timestamp ts = DatumGetTimestamp(attr);
 
                         timestamp_out(ts, outputstr);
@@ -1136,6 +1240,7 @@ static void dolphin_default_printtup_startup(DestReceiver *self, int operation, 
 {
     DR_printtup *myState = (DR_printtup *)self;
     Portal portal = myState->portal;
+    CachedPlanSource *psrc = ResolveRowDescPlanSource(portal);
 
     /* create buffer to be used for all messages */
     initStringInfo(&myState->buf);
@@ -1159,7 +1264,11 @@ static void dolphin_default_printtup_startup(DestReceiver *self, int operation, 
      * descriptor of the tuples.
      */
     if (myState->sendDescrip)
-        SendRowDescriptionMessage(&myState->buf, typeinfo, FetchPortalTargetList(portal), portal->formats);
+        SendRowDescriptionMessage(&myState->buf,
+            typeinfo,
+            ResolveDolphinRowDescTargetList(psrc, portal, NIL),
+            portal->formats,
+            psrc);
 
     /* ----------------
      * We could set up the derived attr info at this time, but we postpone it
@@ -1225,4 +1334,3 @@ DestReceiver* dophin_default_printtup_create_DR(CommandDest dest)
 }
 
 #endif
-

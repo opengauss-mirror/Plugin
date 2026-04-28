@@ -611,8 +611,8 @@ char* output_text_to_cstring(const text* t)
     if (len + 1 > 256) {
         result = (char*)palloc(len + 1);
     } else {
-        u_sess->utils_cxt.varcharoutput_buffer[0] = '\0';
-        result = u_sess->utils_cxt.varcharoutput_buffer;
+        KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, varcharoutput_buffer)[0] = '\0';
+        result = KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, varcharoutput_buffer);
     }
     memcpy(result, VARDATA_ANY(tunpacked), len);
     result[len] = '\0';

@@ -984,10 +984,10 @@ char* output_date_out(DateADT date)
 {
     struct pg_tm tt, *tm = &tt;
 
-    u_sess->utils_cxt.dateoutput_buffer[0] = '\0';
+    KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer)[0] = '\0';
 
     if (DATE_NOT_FINITE(date))
-        EncodeSpecialDate(date, u_sess->utils_cxt.dateoutput_buffer, MAXDATELEN + 1);
+        EncodeSpecialDate(date, KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer), MAXDATELEN + 1);
     else {
         if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
             ereport(ERROR,
@@ -996,13 +996,14 @@ char* output_date_out(DateADT date)
         }
         j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
 #ifdef DOLPHIN
-        EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, u_sess->utils_cxt.dateoutput_buffer);
+        EncodeDateOnlyForBDatabase(
+            tm, u_sess->time_cxt.DateStyle, KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer));
 #else
-        EncodeDateOnly(tm, u_sess->time_cxt.DateStyle, u_sess->utils_cxt.dateoutput_buffer);
+        EncodeDateOnly(tm, u_sess->time_cxt.DateStyle, KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer));
 #endif
     }
 
-    return u_sess->utils_cxt.dateoutput_buffer;
+    return KNL_UTILS_GUC_FIELD(&u_sess->utils_cxt, dateoutput_buffer);
 }
 
 /*

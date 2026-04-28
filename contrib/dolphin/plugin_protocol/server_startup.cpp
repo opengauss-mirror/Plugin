@@ -359,7 +359,7 @@ void server_listen_init(void)
         char gs_sock[MAXPGPATH];
 
         // backup gauss sock path
-        int ret = strcpy_s(gs_sock, MAXPGPATH, t_thrd.libpq_cxt.sock_path);
+        int ret = strcpy_s(gs_sock, MAXPGPATH, t_thrd.libpq_cxt.libpq_cold->sock_path);
         securec_check(ret, "\0", "\0");
 
         /* unix socket for dolphin port */
@@ -381,11 +381,11 @@ void server_listen_init(void)
                     g_instance.attr.attr_network.dolphin_server_port)));
         
         // save dolphin sock path
-        ret = strcpy_s(g_proto_ctx.sock_path, MAXPGPATH, t_thrd.libpq_cxt.sock_path);
+        ret = strcpy_s(g_proto_ctx.sock_path, MAXPGPATH, t_thrd.libpq_cxt.libpq_cold->sock_path);
         securec_check(ret, "\0", "\0");
 
         // restore gauss sock path
-        ret = strcpy_s(t_thrd.libpq_cxt.sock_path, MAXPGPATH, gs_sock);
+        ret = strcpy_s(t_thrd.libpq_cxt.libpq_cold->sock_path, MAXPGPATH, gs_sock);
         securec_check(ret, "\0", "\0");
 
         on_proc_exit(StreamDoUnlink, 0);
