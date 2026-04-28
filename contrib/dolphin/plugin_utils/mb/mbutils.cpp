@@ -92,7 +92,7 @@ int PrepareClientEncoding(int encoding)
         return 0;
     }
 
-    if (IsTransactionState()) {
+    if (IsTransactionState() || t_thrd.syncrep_cxt.syncrep_reload_config) {
         /*
          * If we're in a live transaction, it's safe to access the catalogs,
          * so look up the functions.  We repeat the lookup even if the info is
