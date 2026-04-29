@@ -22848,9 +22848,10 @@ CreatePackageStmt:
 							parser_yyerror("package name is invalid!");
 							break;
 					}
-                    pkgNameBegin = (char *)palloc(strlen(pkgName) + 1);
-                    pkgNameEnd = (char *)palloc(strlen(pkgName) + 1);
-                    strcpy(pkgNameBegin, pkgName);
+                    pkgNameBegin = (char *)palloc(NAMEDATALEN);
+                    pkgNameEnd = (char *)palloc(NAMEDATALEN);
+                    errno_t ret = strcpy_s(pkgNameBegin, NAMEDATALEN, pkgName);
+                    securec_check(ret, "", "");
 					pkgNameBegin = pg_strtolower(pkgNameBegin);
 
                     int tok = YYEMPTY;
@@ -22896,7 +22897,8 @@ CreatePackageStmt:
                                 pkg_name_temp = pg_strtolower(pkg_name_temp);
                                 truncate_identifier(pkg_name_temp, strlen(pkg_name_temp), false);
                                 if (strcmp(pkgNameBegin, pkg_name_temp) == 0) {
-                                    strcpy(pkgNameEnd, pkg_name_temp);
+                                    ret = strcpy_s(pkgNameEnd, NAMEDATALEN, pkg_name_temp);
+                                    securec_check(ret, "", "");
                                     pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = false;
                                     break;
                                 }
@@ -23269,8 +23271,9 @@ CreatePackageBodyStmt:
 							parser_yyerror("package name is invalid!");
 							break;
 					}
-                    pkgNameBegin = (char *)palloc(strlen(pkgName) + 1);
-                    strcpy(pkgNameBegin, pkgName);
+                    pkgNameBegin = (char *)palloc(NAMEDATALEN);
+                    errno_t ret = strcpy_s(pkgNameBegin, NAMEDATALEN, pkgName);
+                    securec_check(ret, "", "");
 					pkgNameBegin = pg_strtolower(pkgNameBegin);
                     int length = list_length($8);
 					def = (DefElem *)lsecond($8);
