@@ -636,6 +636,9 @@ static void ATExecDropOf(Relation rel, LOCKMODE lockmode);
 static void ATExecReplicaIdentity(Relation rel, ReplicaIdentityStmt* stmt, LOCKMODE lockmode);
 static void ATExecGenericOptions(Relation rel, List* options);
 static void ATExecSetCompress(Relation rel, const char* cmprsId);
+#ifdef ENABLE_HTAP
+static void ATCheckCharsetAlterForImcs(Relation rel);
+#endif
 #ifdef PGXC
 static void AtExecDistributeBy(Relation rel, DistributeBy* options);
 static void AtExecSubCluster(Relation rel, PGXCSubCluster* options);
@@ -9316,8 +9319,16 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
         case AT_AddOf:       /* OF */
         case AT_DropOf:      /* NOT OF */
         case AT_SetAutoIncrement:
+            ATSimplePermissions(rel, ATT_TABLE);
+            /* These commands never recurse */
+            /* No command-specific prep needed */
+            pass = AT_PASS_MISC;
+            break;
         case AT_SetCharsetCollate:
             ATSimplePermissions(rel, ATT_TABLE);
+#ifdef ENABLE_HTAP
+            ATCheckCharsetAlterForImcs(rel);
+#endif
             /* These commands never recurse */
             /* No command-specific prep needed */
             pass = AT_PASS_MISC;
@@ -9862,6 +9873,18 @@ static void sqlcmd_alter_exec_set_charsetcollate(Relation rel, CharsetCollateOpt
     ATExecSetRelOptions(rel, new_reloption, AT_SetRelOptions, lockmode);
 }
 
+#ifdef ENABLE_HTAP
+static void ATCheckCharsetAlterForImcs(Relation rel)
+{
+    if (RelHasImcs(RelationGetRelid(rel))) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("cannot alter charset or collation of IMCS table"),
+                errdetail("Relation \"%s\" is enabled with imcstore.", RelationGetRelationName(rel)),
+                errhint("Use ALTER TABLE ... UNIMCSTORED before altering charset or collation.")));
+    }
+}
+#endif
+
 static void sqlcmd_alter_prep_convert_charset(AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd,
                                               LOCKMODE lockmode)
 {
@@ -9875,6 +9898,10 @@ static void sqlcmd_alter_prep_convert_charset(AlteredTableInfo* tab, Relation re
     if (tab->relkind != RELKIND_RELATION)
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                 errmsg("\"%s\" should be a normal table", RelationGetRelationName(rel))));
+
+#ifdef ENABLE_HTAP
+    ATCheckCharsetAlterForImcs(rel);
+#endif
 
     if (cc->charset == PG_INVALID_ENCODING) {
         cc->charset = get_charset_by_collation(get_nsp_default_collation(RelationGetNamespace(rel)));
