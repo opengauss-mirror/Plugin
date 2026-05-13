@@ -2641,6 +2641,7 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
 
     /* Check the statement during online expansion. */
     BlockUnsupportedDDL(parse_tree);
+
 #ifdef ENABLE_MULTIPLE_NODES
     block_ts_rangevar_unsupport_ddl(parse_tree);
 #endif

@@ -30470,6 +30470,12 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 				$7->hintState = create_hintstate($3);
 				$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
 				$$ = (Node *) $7;
+				if ($8 != NULL) {
+					$7->is_dist_insertselect = false;
+				}
+				if ($6 != NULL && ($6->ispartition || $6->issubpartition)) {
+					$7->is_dist_insertselect = false;
+				}
 			}
             | REPLACE hint_string replace_empty insert_target insert_rest returning_clause
             {
@@ -30540,6 +30546,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 							 errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							 errmsg("WITH clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.")));
 					}
+						if (($7 != NULL || $8 != NULL) && $7 != NULL) {
+							$7->is_dist_insertselect = false;
+						}
 					/* enable_upsert_to_merge is always false */ 
 					if (u_sess->attr.attr_sql.enable_upsert_to_merge
 #ifdef ENABLE_MULTIPLE_NODES					
