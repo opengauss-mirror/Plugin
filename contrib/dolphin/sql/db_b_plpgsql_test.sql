@@ -157,6 +157,7 @@ end;
 delimiter ;
 
 call test_set(@res);
+select @res;
 drop procedure test_set;
 
 drop schema db_b_plpgsql_test cascade;

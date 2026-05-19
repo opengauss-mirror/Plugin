@@ -183,9 +183,10 @@ end;
 //
 delimiter ;
 call test_set(@res);
- res 
------
-   6
+select @res;
+ @res 
+------
+    6
 (1 row)
 
 drop procedure test_set;

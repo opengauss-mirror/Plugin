@@ -321,7 +321,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 show b_format_behavior_compat_options;
  b_format_behavior_compat_options 
 ----------------------------------
- 
+ enable_set_variables
 (1 row)
 
 show character_set_connection;

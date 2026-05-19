@@ -338,10 +338,25 @@ select 1::uint8 << 63;
 select 1::uint8 << 64;
 
 -- @
+set b_format_behavior_compat_options = '';
+set enable_set_variable_b_format = off;
 select @1::uint1;
 select @1::uint2;
 select @1::uint4;
 select @1::uint8;
+select @-1::uint1;
+select @-1::uint2;
+select @-1::uint4;
+select @-1::uint8;
+set b_format_behavior_compat_options = 'enable_set_variables';
+select @1::uint1;
+select @1::uint2;
+select @1::uint4;
+select @1::uint8;
+select @-1::uint1;
+select @-1::uint2;
+select @-1::uint4;
+select @-1::uint8;
 
 -- +
 select +1::uint1;

@@ -150,7 +150,7 @@ WARNING:  Invalid collation detected. default value set
 show b_format_behavior_compat_options;
  b_format_behavior_compat_options 
 ----------------------------------
- 
+ enable_set_variables
 (1 row)
 
 create table test_collate6(a text) charset gbk;
