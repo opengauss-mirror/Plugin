@@ -3069,7 +3069,6 @@ void DefineObjectTypeBody(CompositeTypeStmt* stmt)
             CreateFunctionStmt* method = (CreateFunctionStmt*)lfirst(func);
             char* funcname = NULL;
             Oid bodyreturntypeid = InvalidOid;
-            bool ismemberprocedure = method->isProcedure && OBJECTTYPE_MEMBER_PROC;
 
             QualifiedNameGetCreationNamespace(method->funcname, &funcname);
             /* comparete type declaration in type and type body */
@@ -3091,7 +3090,7 @@ void DefineObjectTypeBody(CompositeTypeStmt* stmt)
                 bodyreturntypeid = get_typeoid(PG_CATALOG_NAMESPACE, "void");
             }
 
-            if ((proc->prorettype != bodyreturntypeid) && (!ismemberprocedure))
+            if ((proc->prorettype != bodyreturntypeid) && (!method->isProcedure))
                     ereport(ERROR,
                             (errcode(ERRCODE_OBJECT_TYPE_METHOD_DEFINE_ERROR),
                                 errmsg("type body method \"%s\" define return type error", NameStr(proc->proname))));
