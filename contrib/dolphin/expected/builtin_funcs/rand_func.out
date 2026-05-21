@@ -429,13 +429,8 @@ mod | 0
 mod | 0
 
 SELECT mod(`uint1`, `uint1`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`int2`, `int2`) FROM t1;
 -[ RECORD 1 ]
 mod | 0
@@ -445,13 +440,8 @@ mod | 0
 mod | 0
 
 SELECT mod(`uint2`, `uint2`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`int4`, `int4`) FROM t1;
 -[ RECORD 1 ]
 mod | 0
@@ -461,13 +451,8 @@ mod | 0
 mod | 0
 
 SELECT mod(`uint4`, `uint4`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`int8`, `int8`) FROM t1;
 -[ RECORD 1 ]
 mod | 0
@@ -477,13 +462,8 @@ mod | 0
 mod | 0
 
 SELECT mod(`uint8`, `uint8`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`float4`, `float4`) FROM t1;
 -[ RECORD 1 ]
 mod | 0
@@ -509,13 +489,8 @@ mod | 0.000000
 mod | 0.000000
 
 SELECT mod(`bit1`, `bit1`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`bit64`, `bit64`) FROM t1;
 -[ RECORD 1 ]
 mod | 0
@@ -525,13 +500,8 @@ mod | 0
 mod | 0
 
 SELECT mod(`boolean`, `boolean`) FROM t1;
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 0
--[ RECORD 3 ]
-mod | 
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 SELECT mod(`char`, `char`) FROM t1;
 WARNING:  invalid input syntax for type numeric: "62.345*67-89"
 CONTEXT:  referenced column: mod
@@ -541,17 +511,8 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day."
 CONTEXT:  referenced column: mod
 WARNING:  invalid input syntax for type numeric: "Today is a good day."
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
+ERROR:  division by zero
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
-CONTEXT:  referenced column: mod
--[ RECORD 1 ]
-mod | 0.000
--[ RECORD 2 ]
-mod | 
--[ RECORD 3 ]
-mod | 
-
 SELECT mod(`varchar`, `varchar`) FROM t1;
 WARNING:  invalid input syntax for type numeric: "62.345*67-89"
 CONTEXT:  referenced column: mod
@@ -561,17 +522,8 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
 WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
+ERROR:  division by zero
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
-CONTEXT:  referenced column: mod
--[ RECORD 1 ]
-mod | 0.000
--[ RECORD 2 ]
-mod | 
--[ RECORD 3 ]
-mod | 
-
 SELECT mod(`binary`, `binary`) FROM t1;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
@@ -581,17 +533,8 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
 WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
+ERROR:  division by zero
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
-CONTEXT:  referenced column: mod
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 
--[ RECORD 3 ]
-mod | 
-
 SELECT mod(`varbinary`, `varbinary`) FROM t1;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
@@ -601,17 +544,8 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
 WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
+ERROR:  division by zero
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
-CONTEXT:  referenced column: mod
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 
--[ RECORD 3 ]
-mod | 
-
 SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
 ERROR:  function mod(tinyblob, tinyblob) is not unique
 LINE 1: SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
@@ -645,17 +579,8 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
 WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
+ERROR:  division by zero
 CONTEXT:  referenced column: mod
-WARNING:  invalid input syntax for numeric: ""
-CONTEXT:  referenced column: mod
--[ RECORD 1 ]
-mod | 0
--[ RECORD 2 ]
-mod | 
--[ RECORD 3 ]
-mod | 
-
 SELECT pow(`int1`, `int1`) FROM t1;
 -[ RECORD 1 ]----------------
 pow | 1
