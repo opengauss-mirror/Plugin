@@ -1,0 +1,20 @@
+create schema mod_zero;
+set current_schema to 'mod_zero';
+select 5 % 0;
+ERROR:  division by zero
+select int1mod(3, 0);
+ERROR:  division by zero
+CONTEXT:  referenced column: int1mod
+select int2mod(3, 0);
+ERROR:  division by zero
+CONTEXT:  referenced column: int2mod
+select int4mod(3, 0);
+ERROR:  division by zero
+CONTEXT:  referenced column: int4mod
+select int8mod(3, 0);
+ERROR:  division by zero
+CONTEXT:  referenced column: int8mod
+select numeric_mod(1234.5678, 0.0);
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric_mod
+drop schema mod_zero cascade;
