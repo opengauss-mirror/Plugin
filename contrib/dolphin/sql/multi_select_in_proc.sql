@@ -54,6 +54,11 @@ end;
 /
 
 --user var 
+set b_format_behavior_compat_options = 'enable_set_variables';
+call proc_b_1(1,@a,@b);
+
+set b_format_behavior_compat_options = '';
+set enable_set_variable_b_format = off;
 call proc_b_1(1,@a,@b);
 
 set enable_set_variable_b_format = 1;

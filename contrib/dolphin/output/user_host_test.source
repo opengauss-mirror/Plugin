@@ -4,6 +4,7 @@ show sql_compatibility;
  B
 (1 row)
 
+set b_compatibility_user_host_auth = off;
 create user 'test_user_host'@'%' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create user 'test_user_host'@'127.%' password 'test123@';

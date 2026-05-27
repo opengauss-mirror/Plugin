@@ -1,4 +1,5 @@
 show sql_compatibility;
+set b_compatibility_user_host_auth = off;
 create user 'test_user_host'@'%' password 'test123@';
 create user 'test_user_host'@'127.%' password 'test123@';
 create user 'test_user_host'@'127.0.0.%' password 'test123@';
