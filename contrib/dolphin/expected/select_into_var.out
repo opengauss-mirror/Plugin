@@ -42,6 +42,7 @@ RAISE INFO '成功获取数据: num=%, str=%, str1=%, str2=%', @num, @str, str1,
 end;
 /
 INFO:  成功获取数据: num=100, str=Hello World, str1=Tom, str2=Cat
+set b_format_behavior_compat_options = '';
 declare
   num int;
   cursor c_test is select a,b,c,d from test;
@@ -126,6 +127,101 @@ end;
 INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
 INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
 INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+set b_format_behavior_compat_options = 'fetch';
+declare
+  num int;
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 6 at FETCH
+declare
+  str varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, str, @str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, str, @str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 7 at FETCH
+declare
+  num int;
+  str1 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 7 at FETCH
+declare
+  num int;
+  str varchar(100);
+  str1 varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, str, str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, str, str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 9 at FETCH
+declare
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+INFO:  获取到数据: num=100, str=Hello World, str2=Tom, str2=Cat
+INFO:  获取到数据: num=200, str=Good Morning, str2=Jack, str2=Dog
+INFO:  获取到数据: num=300, str=Happy New Year, str2=Jenny, str2=Monkey
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 5 at FETCH
 create table test2(a int,b varchar(100), c varchar(100), d varchar(100));
 INSERT INTO test2 (a, b, c, d) VALUES ('100', 'Hello World', 'Tom', 'Cat');
 INSERT INTO test2 (a, b, c, d) VALUES ('200', NULL, NULL, NULL);
@@ -144,6 +240,8 @@ end;
 /
 INFO:  获取到数据: num=100, str=Hello World, str1=Tom, str2=Cat
 INFO:  获取到数据: num=200, str=<NULL>, str1=<NULL>, str2=<NULL>
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function inline_code_block line 6 at FETCH
 create table test3(a int,b varchar(100));
 INSERT INTO test3 (a, b) VALUES ('100', 'Hello World');
 begin

@@ -628,11 +628,8 @@ call create_procedure_016();
 NOTICE:  backbery : canada : 3
 NOTICE:  macrosoft : usa : 1
 NOTICE:  oracle : usa : 2
- create_procedure_016 
-----------------------
- 
-(1 row)
-
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function create_procedure_016() line 10 at FETCH
 call create_procedure_017();
 NOTICE:  declare condition successed
  create_procedure_017 
@@ -1216,11 +1213,8 @@ call create_procedure_016();
 NOTICE:  backbery : canada : 3
 NOTICE:  macrosoft : usa : 1
 NOTICE:  oracle : usa : 2
- create_procedure_016 
-----------------------
- 
-(1 row)
-
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function create_procedure_016() line 10 at FETCH
 call create_procedure_017();
 NOTICE:  declare condition successed
  create_procedure_017 

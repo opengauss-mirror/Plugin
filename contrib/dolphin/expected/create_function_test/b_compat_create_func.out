@@ -754,6 +754,7 @@ ar_loop:LOOP
   CALL p_log_job_info_bak();
 END;
 /
+set b_format_behavior_compat_options = '';
 call p_gen_rpt_init_self_recovery();
 NOTICE:  1
 CONTEXT:  SQL statement "CALL p_log_job_info_bak()"
@@ -763,6 +764,10 @@ PL/pgSQL function p_gen_rpt_init_self_recovery() line 18 at PERFORM
  
 (1 row)
 
+set b_format_behavior_compat_options = 'fetch';
+call p_gen_rpt_init_self_recovery();
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function p_gen_rpt_init_self_recovery() line 10 at FETCH
 drop procedure p_log_job_info_bak;
 DROP PROCEDURE p_gen_rpt_init_self_recovery;
 -- expect error: there is no parameter $1, other error is wrong!!!

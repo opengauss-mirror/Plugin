@@ -358,6 +358,9 @@ end;
 //
 delimiter ;
 set @x=0;
+set b_format_behavior_compat_options = '';
+call test_cursor_handler();
+set b_format_behavior_compat_options = 'fetch';
 call test_cursor_handler();
 select @x;
 

@@ -165,11 +165,9 @@ NOTICE:  macrosoft : usa : 1
 CONTEXT:  referenced column: create_function_013
 NOTICE:  oracle : usa : 2
 CONTEXT:  referenced column: create_function_013
- create_function_013 
----------------------
- 
-(1 row)
-
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function create_function_013() line 12 at FETCH
+referenced column: create_function_013
 --test declare condition
 delimiter //;
 create definer = test_function_definer function create_function_014 returns text
@@ -715,11 +713,9 @@ NOTICE:  macrosoft : usa : 1
 CONTEXT:  referenced column: create_function_013
 NOTICE:  oracle : usa : 2
 CONTEXT:  referenced column: create_function_013
- create_function_013 
----------------------
- 
-(1 row)
-
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function create_function_013() line 12 at FETCH
+referenced column: create_function_013
 select create_function_014();
      create_function_014     
 -----------------------------
@@ -1330,11 +1326,9 @@ NOTICE:  macrosoft : usa : 1
 CONTEXT:  referenced column: create_function_013
 NOTICE:  oracle : usa : 2
 CONTEXT:  referenced column: create_function_013
- create_function_013 
----------------------
- 
-(1 row)
-
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function create_function_013() line 12 at FETCH
+referenced column: create_function_013
 select create_function_014();
      create_function_014     
 -----------------------------

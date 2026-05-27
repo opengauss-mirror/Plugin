@@ -550,6 +550,9 @@ ar_loop:LOOP
 END;
 /
 
+set b_format_behavior_compat_options = '';
+call p_gen_rpt_init_self_recovery();
+set b_format_behavior_compat_options = 'fetch';
 call p_gen_rpt_init_self_recovery();
 drop procedure p_log_job_info_bak;
 DROP PROCEDURE p_gen_rpt_init_self_recovery;
