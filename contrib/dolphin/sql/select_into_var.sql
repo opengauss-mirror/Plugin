@@ -48,6 +48,7 @@ RAISE INFO '成功获取数据: num=%, str=%, str1=%, str2=%', @num, @str, str1,
 end;
 /
 
+set b_format_behavior_compat_options = '';
 
 declare
   num int;
@@ -62,7 +63,6 @@ begin
   close c_test;
 end;
 /
-
 
 
 declare
@@ -96,6 +96,85 @@ begin
 end;
 /
 
+
+declare
+  num int;
+  str varchar(100);
+  str1 varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, str, str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, str, str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+
+
+declare
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+
+
+set b_format_behavior_compat_options = 'fetch';
+declare
+  num int;
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, @str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, @str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
+
+
+declare
+  str varchar(100);
+  str2 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into @num, str, @str1, str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', @num, str, @str1, str2;
+  end loop;
+  close c_test;
+end;
+/
+
+
+declare
+  num int;
+  str1 varchar(100);
+  cursor c_test is select a,b,c,d from test;
+begin
+  open c_test;
+  loop
+    fetch c_test into num, @str, str1, @str2;
+    exit when c_test%notfound;
+    RAISE INFO '获取到数据: num=%, str=%, str2=%, str2=%', num, @str, str1, @str2;
+  end loop;
+  close c_test;
+end;
+/
 
 
 declare

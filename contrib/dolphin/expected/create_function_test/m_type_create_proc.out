@@ -463,6 +463,7 @@ end;
 //
 delimiter ;
 set @x=0;
+set b_format_behavior_compat_options = '';
 call test_cursor_handler();
 NOTICE:  backberry : canada : 3
 NOTICE:  macrosoft : usa : 1
@@ -472,6 +473,13 @@ NOTICE:  oracle : usa : 2
  
 (1 row)
 
+set b_format_behavior_compat_options = 'fetch';
+call test_cursor_handler();
+NOTICE:  backberry : canada : 3
+NOTICE:  macrosoft : usa : 1
+NOTICE:  oracle : usa : 2
+ERROR:  No data - zero rows fetched, selected, or processed
+CONTEXT:  PL/pgSQL function test_cursor_handler() line 11 at FETCH
 select @x;
  @x 
 ----

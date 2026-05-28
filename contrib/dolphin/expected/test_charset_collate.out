@@ -148,9 +148,9 @@ WARNING:  Invalid collation for column c1 detected. default value set
 WARNING:  Invalid collation detected. default value set
 -- different charset
 show b_format_behavior_compat_options;
- b_format_behavior_compat_options 
-----------------------------------
- enable_set_variables
+                          b_format_behavior_compat_options                           
+-------------------------------------------------------------------------------------
+ enable_set_variables,set_session_transaction,enable_modify_column,fetch,diagnostics
 (1 row)
 
 create table test_collate6(a text) charset gbk;
