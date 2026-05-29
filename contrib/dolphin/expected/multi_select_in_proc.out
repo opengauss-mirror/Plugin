@@ -96,7 +96,9 @@ call proc_b_1(1,@a,@b);
 set b_format_behavior_compat_options = '';
 set enable_set_variable_b_format = off;
 call proc_b_1(1,@a,@b);
-ERROR:  out args must be uservar type.
+ERROR:  @var_name is supported only in B-format database, and enable_set_variable_b_format = on.
+LINE 1: call proc_b_1(1,@a,@b);
+                        ^
 set enable_set_variable_b_format = 1;
 call proc_b_1(1,@a,@b);
  ?column? | a 
