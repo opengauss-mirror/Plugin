@@ -1466,24 +1466,47 @@ static List* ExpandAllTables(ParseState* pstate, int location)
     ListCell* l = NULL;
 
     /* Check for SELECT *; */
+#ifdef DOLPHIN
+    if (!pstate->p_varnamespace && !pstate->has_dummyTable) {
+#else
     if (!pstate->p_varnamespace) {
+#endif
         ereport(ERROR,
             (errcode(ERRCODE_SYNTAX_ERROR),
                 errmsg("SELECT * with no tables specified is not valid"),
                 parser_errposition(pstate, location)));
     }
+
     /* add star info(start, end, only) */
     pstate->p_star_start = lappend_int(pstate->p_star_start, pstate->p_next_resno);
     pstate->p_star_only = lappend_int(pstate->p_star_only, 1);
     foreach (l, pstate->p_varnamespace) {
         ParseNamespaceItem *nsitem = (ParseNamespaceItem *)lfirst(l);
         RangeTblEntry *rte = nsitem->p_rte;
-        int rtindex = RTERangeTablePosn(pstate, rte, NULL);
-
         /* Should not have any lateral-only items when parsing targetlist */
         Assert(!nsitem->p_lateral_only);
+#ifdef DOLPHIN
+        if (rte->dummyTable) {
+            char* label = "not_used";
+            /* returning `*` */
+            if (pstate->p_expr_kind == EXPR_KIND_RETURNING) {
+                continue;
+            }
 
-        target = list_concat(target, expandRelAttrs(pstate, rte, rtindex, 0, location));
+            Const* c = makeConst(INT8OID, -1, InvalidOid,
+                                             sizeof(int64),
+                                             Int64GetDatum(1), false,
+                                             true);
+            target = lappend(target, makeTargetEntry((Expr*)c,
+                                                     (AttrNumber)pstate->p_next_resno++,
+                                                     label, false));
+        } else {
+#endif
+            int rtindex = RTERangeTablePosn(pstate, rte, NULL);
+            target = list_concat(target, expandRelAttrs(pstate, rte, rtindex, 0, location));
+#ifdef DOLPHIN
+        }
+#endif
     }
     pstate->p_star_end = lappend_int(pstate->p_star_end, pstate->p_next_resno);
 
@@ -1492,7 +1515,7 @@ static List* ExpandAllTables(ParseState* pstate, int location)
 
 /*
  * ExpandIndirectionStar()
- *		Transforms foo.* into a list of expressions or targetlist entries.
+ *   Transforms foo.* into a list of expressions or targetlist entries.
  *
  * This handles the case where '*' appears as the last item in A_Indirection.
  * The code is shared between the case of foo.* at the top level in a SELECT

@@ -1502,6 +1502,7 @@ static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt)
     }
 
     /* done building the range table and jointree */
+
     qry->rtable = pstate->p_rtable;
     qry->jointree = makeFromExpr(pstate->p_joinlist, qual);
     transformLimitSortClause(pstate, stmt, qry, true);
@@ -5502,6 +5503,7 @@ static List* transformReturningList(ParseState* pstate, List* returningList)
     int save_next_resno;
     bool save_hasAggs = false;
     bool save_hasWindowFuncs = false;
+    ParseExprKind sv_expr_kind;
 
     if (returningList == NIL) {
         return NIL; /* nothing to do */
@@ -5520,9 +5522,11 @@ static List* transformReturningList(ParseState* pstate, List* returningList)
     pstate->p_hasAggs = false;
     save_hasWindowFuncs = pstate->p_hasWindowFuncs;
     pstate->p_hasWindowFuncs = false;
-
+    sv_expr_kind = pstate->p_expr_kind;
+    pstate->p_expr_kind = EXPR_KIND_RETURNING;
     /* transform RETURNING identically to a SELECT targetlist */
     rlist = transformTargetList(pstate, returningList, EXPR_KIND_RETURNING);
+    pstate->p_expr_kind = sv_expr_kind;
 
     /* check for disallowed stuff */
 

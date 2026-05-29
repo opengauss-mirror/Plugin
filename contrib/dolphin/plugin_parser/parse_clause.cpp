@@ -164,11 +164,22 @@ void transformFromClause(ParseState* pstate, List* frmList, bool isFirstNode, bo
 
         /* Mark the new relnamespace items as visible to LATERAL */
         setNamespaceLateralState(relnamespace, true, true);
-
         checkNameSpaceConflicts(pstate, pstate->p_relnamespace, relnamespace);
+        pstate->p_varnamespace = lappend(pstate->p_varnamespace, makeNamespaceItem(rte, true, true));
+
+#ifdef DOLPHIN
+        if (rte->dummyTable) {
+            /*
+             * add to p_varnamespace for `*` expansion.
+             * because `dual.xxx, dual.* ...` is syntax error,
+             * so no need add to p_relnamespace.
+             */
+            continue;
+        }
+#endif
+
         pstate->p_joinlist = lappend(pstate->p_joinlist, n);
         pstate->p_relnamespace = list_concat(pstate->p_relnamespace, relnamespace);
-        pstate->p_varnamespace = lappend(pstate->p_varnamespace, makeNamespaceItem(rte, true, true));
     }
 
     /*
@@ -1324,6 +1335,29 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
         RangeTblRef* rtr = NULL;
         RangeTblEntry* rte = NULL;
 
+#ifdef DOLPHIN
+        if (rv->dummyTable) {
+            RangeTblEntry* rte = makeNode(RangeTblEntry);
+            /*
+             * no need add to rtables.
+             * dual is not real relation, name is invisible.
+             */
+            rte->rtekind = RTE_RELATION;
+            rte->alias = makeAlias(NULL, NIL);
+            rte->eref = NULL; /* no columns exported */
+            rte->relid = InvalidOid;
+            rte->refSynOid = InvalidOid;
+            rte->inh = false;
+            rte->inFromCl = false;
+            rte->lateral = false;
+            rte->dummyTable = true;
+            *top_rte = rte;
+            *top_rti = 0;
+            *relnamespace = NIL;
+            pstate->has_dummyTable = true;
+            return NULL;
+        }
+#endif
         /* if it is an unqualified name, it might be a CTE reference */
         if (!rv->schemaname) {
             CommonTableExpr* cte = NULL;

@@ -51,11 +51,13 @@ select * from t1;
  3
 (3 rows)
 
--- error
+-- success
 select * from dual;
-ERROR:  SELECT * with no tables specified is not valid
-LINE 1: select * from dual;
-               ^
+ not_used 
+----------
+        1
+(1 row)
+
 -- keyword
 create table t2 (dual int);
 ERROR:  syntax error at or near "dual"
@@ -99,9 +101,342 @@ ERROR:  column "a" does not exist
 LINE 1: select a from dual;
                ^
 CONTEXT:  referenced column: a
+-- select * from dual
+select *;
+ERROR:  SELECT * with no tables specified is not valid
+LINE 1: select *;
+               ^
+select * from dual;
+ not_used 
+----------
+        1
+(1 row)
+
+select *, 'aaa' as x from dual;
+ not_used |  x  
+----------+-----
+        1 | aaa
+(1 row)
+
+select dual.* from dual; -- error
+ERROR:  syntax error at or near "dual"
+LINE 1: select dual.* from dual;
+               ^
+select * from dual s; -- error
+ERROR:  syntax error at or near "s"
+LINE 1: select * from dual s;
+                           ^
+select * from dual left join t1 using (not_used); -- syntax error, dual
+ERROR:  syntax error at or near "left"
+LINE 1: select * from dual left join t1 using (not_used);
+                           ^
+create table t4 (id int not null);
+insert into t4 values(1);
+insert into t4 values(2);
+-- sublink
+select distinct id from t4 where exists (select * from dual where (id = 2));
+ id 
+----
+  2
+(1 row)
+
+select distinct id from t4 where exists (select * from dual having id > 1);
+ id 
+----
+  2
+(1 row)
+
+select 1 from t4 where id in (select * from dual); -- 1
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1 from t4 where id in (select null from dual); -- non
+ ?column? 
+----------
+(0 rows)
+
+select id from t4 where id in (select * from dual); -- 1
+ id 
+----
+  1
+(1 row)
+
+select id from t4 where id in (select null from dual); -- non
+ id 
+----
+(0 rows)
+
+select id from t4 where id = any(array(select * from dual));
+ id 
+----
+  1
+(1 row)
+
+select id from t4 where id = any(array[1::int, 2::int]) order by id;
+ id 
+----
+  1
+  2
+(2 rows)
+
+select * from dual where exists(select * from dual); -- 1
+ not_used 
+----------
+        1
+(1 row)
+
+select * from dual where not exists(select * from dual); -- non
+ not_used 
+----------
+(0 rows)
+
+select *, (select * from dual) dual1, (select * from dual) from t4;
+ id | dual1 | not_used 
+----+-------+----------
+  1 |     1 |        1
+  2 |     1 |        1
+(2 rows)
+
+select *, (select * from dual) as dual1(not_used), (select * from dual) from t4;
+ERROR:  syntax error at or near "("
+LINE 1: select *, (select * from dual) as dual1(not_used), (select *...
+                                               ^
+-- expr_sublink
+select 1, (select * from dual) from dual; -- 1, 1
+ ?column? | not_used 
+----------+----------
+        1 |        1
+(1 row)
+
+select *, (select * from dual) dual1, (select * from dual) from t4;
+ id | dual1 | not_used 
+----+-------+----------
+  1 |     1 |        1
+  2 |     1 |        1
+(2 rows)
+
+-- from subquery
+select 1 from t4, (select * from dual) sub; -- 1, 1
+ ?column? 
+----------
+        1
+        1
+(2 rows)
+
+select id from t4, (select * from dual) sub order by id; -- 1, 2
+ id 
+----
+  1
+  2
+(2 rows)
+
+select 1 from t4, (select 2 as aa from dual) sub, (select 3 as bb from dual) sub1; -- 1,1
+ ?column? 
+----------
+        1
+        1
+(2 rows)
+
+select id from t4, (select 2 as aa from dual) sub, (select 3 as bb from dual) sub1; -- 1,2
+ id 
+----
+  1
+  2
+(2 rows)
+
+select sub1.not_used from (select * from dual) sub1; -- success
+ not_used 
+----------
+        1
+(1 row)
+
+select sub1.not_used from (select * from dual) sub1(not_used);
+ERROR:  syntax error at or near "sub1"
+LINE 1: select sub1.not_used from (select * from dual) sub1(not_used...
+                                                       ^
+select 1 as not_used, (select * from dual);
+ not_used | not_used 
+----------+----------
+        1 |        1
+(1 row)
+
+-- dml
+insert into t4 values (3) returning *; -- success
+ id 
+----
+  3
+(1 row)
+
+update t4 set id = 4 from dual where id = 3 returning *; -- success
+ id 
+----
+  4
+(1 row)
+
+delete t4 from dual where id = 4 returning *; -- error
+ERROR:  syntax error at or near "dual"
+LINE 1: delete t4 from dual where id = 4 returning *;
+                       ^
+delete t4 using dual where id = 4 returning *; -- error
+ERROR:  syntax error at or near "dual"
+LINE 1: delete t4 using dual where id = 4 returning *;
+                        ^
+-- CTE
+with dual1 as (
+    select * from dual
+) select * from dual1;
+ not_used 
+----------
+        1
+(1 row)
+
+with dual1 as (
+    select * from dual
+) select not_used from dual1;
+ not_used 
+----------
+        1
+(1 row)
+
+with dual1 as (
+    update t4 set id = 5 from dual where id = 4 returning * -- success
+) select * from dual1;
+ id 
+----
+  5
+(1 row)
+
+select * from t4 order by id;
+ id 
+----
+  1
+  2
+  5
+(3 rows)
+
+-- view
+create view v1 as select * from dual;
+select * from v1;
+ not_used 
+----------
+        1
+(1 row)
+
+\d+ v1
+                  View "dual_test.v1"
+  Column  |  Type  | Modifiers | Storage | Description 
+----------+--------+-----------+---------+-------------
+ not_used | bigint |           | plain   | 
+View definition:
+ SELECT  *;
+
+-- subqeury.* test
+select dual1.* from (select * from dual) dual1;
+ not_used 
+----------
+        1
+(1 row)
+
+-- not_used column visiable test
+create table t4_1 ( id int);
+create table t4_2 ( not_used int);
+create table t4_3 ( a int);
+insert into t4_1 values(1);
+insert into t4_2 values(1);
+insert into t4_3 values(1);
+create table t5 ( not_used int);
+insert into t5 values (10);
+select not_used from dual;
+ERROR:  column "not_used" does not exist
+LINE 1: select not_used from dual;
+               ^
+CONTEXT:  referenced column: not_used
+select * from dual where not_used = 1; -- error
+ERROR:  column "not_used" does not exist
+LINE 1: select * from dual where not_used = 1;
+                                 ^
+select * from dual order by not_used;
+ not_used 
+----------
+        1
+(1 row)
+
+select * from dual group by not_used;
+ not_used 
+----------
+        1
+(1 row)
+
+select not_used from t5, (select * from dual) sub1; -- ambiguous
+ERROR:  column reference "not_used" is ambiguous
+LINE 1: select not_used from t5, (select * from dual) sub1;
+               ^
+CONTEXT:  referenced column: not_used
+select t5.not_used, sub1.not_used from t5, (select * from dual) sub1;
+ not_used | not_used 
+----------+----------
+       10 |        1
+(1 row)
+
+select * from dual, (select * from dual) dual1, (select * from dual) dual2; -- syntax error
+ERROR:  syntax error at or near ","
+LINE 1: select * from dual, (select * from dual) dual1, (select * fr...
+                          ^
+select * from t5, (select * from dual) dual1, (select * from dual) dual2;
+ not_used | not_used | not_used 
+----------+----------+----------
+       10 |        1 |        1
+(1 row)
+
+select * from t4_1 , lateral (select * , not_used from dual); -- error, t4_1 no not_used column
+ERROR:  column "not_used" does not exist
+LINE 1: select * from t4_1 , lateral (select * , not_used from dual)...
+                                                 ^
+CONTEXT:  referenced column: not_used
+select * from t4_2 , lateral (select * , not_used from dual); -- lateral, not_used from t4_2
+ not_used | not_used | not_used 
+----------+----------+----------
+        1 |        1 |        1
+(1 row)
+
+select * from t4_2 join (select * from dual) s1 on t4_2.not_used = not_used; -- ambiguous
+ERROR:  column reference "not_used" is ambiguous
+LINE 1: ..._2 join (select * from dual) s1 on t4_2.not_used = not_used;
+                                                              ^
+select * from t4_2 join (select * from dual) s1 on t4_2.not_used = s1.not_used; -- success
+ not_used | not_used 
+----------+----------
+        1 |        1
+(1 row)
+
+select * from t4_1, (select * from dual) s1, lateral (select * from t4_3 where a = not_used); -- s1 exports not_used column, so WHERE in lateral subquery can see that
+ id | not_used | a 
+----+----------+---
+  1 |        1 | 1
+(1 row)
+
+select * from t4_2, (select * from dual) s1, lateral (select * from t4_3 where a = not_used); -- ambiguous
+ERROR:  column reference "not_used" is ambiguous
+LINE 1: ...m dual) s1, lateral (select * from t4_3 where a = not_used);
+                                                             ^
+update t5 set not_used = 11 from dual where not_used = 10; -- just see t5
+select not_used from t5;
+ not_used 
+----------
+       11
+(1 row)
+
 drop schema dual_test cascade;
-NOTICE:  drop cascades to 3 other objects
+NOTICE:  drop cascades to 9 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t3
 drop cascades to table dual
+drop cascades to table t4
+drop cascades to view v1
+drop cascades to table t4_1
+drop cascades to table t4_2
+drop cascades to table t4_3
+drop cascades to table t5
 reset current_schema;

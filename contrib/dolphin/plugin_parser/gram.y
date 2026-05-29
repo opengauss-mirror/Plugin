@@ -32698,7 +32698,13 @@ values_clause:
 
 from_clause:
 			FROM from_list							{ $$ = $2; }
-			| FROM DUAL_P							{ $$ = NIL; }
+			| FROM DUAL_P
+				{
+					RangeVar *n = makeNode(RangeVar);
+					n->relname = "dual";
+					n->dummyTable = true;
+					$$ = list_make1(n);
+				}
 			| /*EMPTY*/								%prec EMPTY_FROM_CLAUSE
 				{ $$ = NIL; }
 		;
