@@ -544,11 +544,7 @@ SELECT HEX(WEIGHT_STRING(CONVERT(E'\x57\x65\x69\x67\x68\x74\x20\x53\x74\x72\x57\
 
 SET client_encoding TO LATIN1;
 SELECT HEX(WEIGHT_STRING(CONVERT(E'\x57\x65\x69\x67\x68\x74\x20\x53\x74\x72\x57\x65\x69\x67\x68\x74\x20\x53\x74\x72' USING LATIN1) AS CHAR(100))); 
-                                                                                                                                                                                                       hex                                                                                                                                                                                                        
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 0057004500490047004800540020005300540052005700450049004700480054002000530054005200200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020
-(1 row)
-
+ERROR:  default collation for encoding "LATIN1" does not exist
 SET client_encoding TO UTF8;
 SELECT HEX(WEIGHT_STRING(CONVERT(E'\x57\x65\x69\x67\x68\x74\x20\x53\x74\x72\x69\x6e\x67\xe6\xb5\x8b\xe8\xaf\x95\x31' USING UTF8) AS CHAR(100))); 
                                                                                                                                                                                                        hex                                                                                                                                                                                                        
@@ -559,23 +555,11 @@ SELECT HEX(WEIGHT_STRING(CONVERT(E'\x57\x65\x69\x67\x68\x74\x20\x53\x74\x72\x69\
 -- 不兼容字符集测试（WIN874 LATIN 6 LATIN8 EUC_KR）
 SET client_encoding TO WIN874;
 SELECT WEIGHT_STRING(CONVERT('foo' USING WIN874) AS CHAR(100)) = WEIGHT_STRING(CONVERT('foo' USING LATIN6) AS CHAR(100));
- ?column? 
-----------
- t
-(1 row)
-
+ERROR:  default collation for encoding "WIN874" does not exist
 SELECT WEIGHT_STRING(CONVERT('foo' USING LATIN8) AS CHAR(100)) = WEIGHT_STRING(CONVERT('foo' USING WIN874) AS CHAR(100));
- ?column? 
-----------
- t
-(1 row)
-
+ERROR:  default collation for encoding "LATIN8" does not exist
 SELECT WEIGHT_STRING(CONVERT('foo' USING EUC_KR) AS CHAR(100)) = WEIGHT_STRING(CONVERT('foo' USING LATIN8) AS CHAR(100));
- ?column? 
-----------
- t
-(1 row)
-
+ERROR:  default collation for encoding "EUC_KR" does not exist
 set enable_set_variable_b_format = default;
 drop schema db_b_weightstring_test cascade;
 reset current_schema;

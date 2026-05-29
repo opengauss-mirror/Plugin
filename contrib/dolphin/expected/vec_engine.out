@@ -77,6 +77,7 @@ set enable_nestloop=off;
 set enable_mergejoin=off;
 set enable_hashjoin=on;
 set codegen_cost_threshold=0;
+set b_format_behavior_compat_options = '';
 explain (costs off) select
                 n_name,
                 sum(l_extendedprice * (1 - l_discount)) as revenue
@@ -127,6 +128,70 @@ explain (costs off) select
                                              ->  CStore Scan on region
                                                    Filter: (r_name = 'ASIA'::bpchar)
 (23 rows)
+
+set b_format_behavior_compat_options = 'enable_multi_charset';
+explain (costs off) select
+                n_name,
+                sum(l_extendedprice * (1 - l_discount)) as revenue
+        from
+                customer,
+                orders,
+                lineitem,
+                supplier,
+                nation,
+                region
+        where
+                c_custkey = o_custkey
+                and l_orderkey = o_orderkey
+                and l_suppkey = s_suppkey
+                and c_nationkey = s_nationkey
+                and s_nationkey = n_nationkey
+                and n_regionkey = r_regionkey
+                and r_name = 'ASIA'
+                and o_orderdate >= '1994-01-01'::date
+                and o_orderdate < '1994-01-01'::date + interval '1 year'
+        group by
+                n_name
+        order by
+                revenue desc;
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: (sum((lineitem.l_extendedprice OPERATOR(dolphin_catalog.*) (1::numeric - lineitem.l_discount)))) DESC NULLS LAST
+   ->  HashAggregate
+         Group By Key: nation.n_name
+         ->  Hash Join
+               Hash Cond: ((orders.o_custkey = customer.c_custkey) AND (orders.o_orderkey = lineitem.l_orderkey))
+               ->  Result
+                     Filter: ((orders.o_orderdate >= ('1994-01-01')::date) AND (orders.o_orderdate < date_add_interval(('1994-01-01')::date, '@ 1 year'::interval)))
+                     ->  Row Adapter
+                           ->  CStore Scan on orders
+               ->  Hash
+                     ->  Hash Join
+                           Hash Cond: (lineitem.l_suppkey = supplier.s_suppkey)
+                           ->  Row Adapter
+                                 ->  CStore Scan on lineitem
+                           ->  Hash
+                                 ->  Hash Join
+                                       Hash Cond: (supplier.s_nationkey = customer.c_nationkey)
+                                       ->  Row Adapter
+                                             ->  CStore Scan on supplier
+                                       ->  Hash
+                                             ->  Hash Join
+                                                   Hash Cond: (customer.c_nationkey = nation.n_nationkey)
+                                                   ->  Row Adapter
+                                                         ->  CStore Scan on customer
+                                                   ->  Hash
+                                                         ->  Hash Join
+                                                               Hash Cond: (nation.n_regionkey = region.r_regionkey)
+                                                               ->  Row Adapter
+                                                                     ->  CStore Scan on nation
+                                                               ->  Hash
+                                                                     ->  Result
+                                                                           Filter: (region.r_name = 'ASIA'::bpchar)
+                                                                           ->  Row Adapter
+                                                                                 ->  CStore Scan on region
+(35 rows)
 
 drop schema vec_engine_test cascade;
 NOTICE:  drop cascades to 6 other objects

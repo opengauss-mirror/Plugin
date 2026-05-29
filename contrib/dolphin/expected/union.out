@@ -1,5 +1,6 @@
 create schema union1;
 set current_schema to 'union1';
+set b_format_behavior_compat_options = '';
 CREATE TYPE enum_test AS ENUM ('a', 'b', 'c');
 create table test1(num int1 not null);
 create table test2(num int2 not null);

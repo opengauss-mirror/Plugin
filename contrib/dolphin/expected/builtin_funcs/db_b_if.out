@@ -34,11 +34,11 @@ select if('ASD', 1, 2);
 -- '2022-01-30' is text, date '2022-01-30' is date
 CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as date_type;
 \d+ test_view
-               View "db_b_if.test_view"
-  Column   | Type | Modifiers | Storage  | Description 
------------+------+-----------+----------+-------------
- text_type | text |           | extended | 
- date_type | date |           | plain    | 
+                                 View "db_b_if.test_view"
+  Column   | Type |                   Modifiers                   | Storage  | Description 
+-----------+------+-----------------------------------------------+----------+-------------
+ text_type | text | character set UTF8 collate utf8mb4_general_ci | extended | 
+ date_type | date |                                               | plain    | 
 View definition:
  SELECT '2022-01-30'::text AS text_type, 
     date_cast('2022-01-30'::cstring, true) AS date_type;

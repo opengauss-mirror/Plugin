@@ -69,8 +69,12 @@ create table test_collate5(c1 text collate 'aaa', c2 text collate 'utf8mb4_bin',
 
 -- different charset
 show b_format_behavior_compat_options;
+set b_format_behavior_compat_options = '';
 create table test_collate6(a text) charset gbk;
 create table test_collate6(a text) collate gbk_bin;
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create table test_collate6(a text) charset gbk;
+create table test_collate7(a text) collate gbk_bin;
 -- invalid schema collate
 create schema test1 charset 'aaa';
 set schema 'test1';

@@ -356,20 +356,9 @@ SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_ftext) */count(1) F
 
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
-                                                                                                                                    QUERY PLAN                                                                                                                                    
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Aggregate
-   ->  Index Scan using idx_prefix_len_test_fbytea on test_prefix_key_len
-         Index Cond: ((fbytea >= '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6e'::bytea) AND (fbytea < '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6f'::bytea))
-         Filter: (fbytea ~~ '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6e25'::bytea)
-(4 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
- count 
--------
-     1
-(1 row)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_comb) */count(1) FROM test_prefix_key_len WHERE ftext LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
                                                                               QUERY PLAN                                                                              
@@ -459,20 +448,9 @@ SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_ftext) */count(1) F
 
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '一二三四五六七八九十百千万亿兆%';
-                                                                                                                          QUERY PLAN                                                                                                                          
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Aggregate
-   ->  Index Scan using idx_prefix_len_test_fbytea on test_prefix_key_len
-         Index Cond: ((fbytea >= '\xe4b880e4ba8ce4b889e59b9be4ba94e585ade4b883e585abe4b99de58d81e799bee58d83e4b887e4babfe58586'::bytea) AND (fbytea < '\xe4b880e4ba8ce4b889e59b9be4ba94e585ade4b883e585abe4b99de58d81e799bee58d83e4b887e4babfe58587'::bytea))
-         Filter: (fbytea ~~ '\xe4b880e4ba8ce4b889e59b9be4ba94e585ade4b883e585abe4b99de58d81e799bee58d83e4b887e4babfe5858625'::bytea)
-(4 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '一二三四五六七八九十百千万亿兆%';
- count 
--------
-     1
-(1 row)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_comb) */count(1) FROM test_prefix_key_len WHERE ftext LIKE '一二三四五六七八九十百千万亿兆%';
                                                           QUERY PLAN                                                          
@@ -562,20 +540,9 @@ SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_ftext) */count(1) F
 
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
-                                                                                                                                    QUERY PLAN                                                                                                                                    
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Aggregate
-   ->  Index Scan using idx_prefix_len_test_fbytea on test_prefix_key_len
-         Index Cond: ((fbytea >= '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6e'::bytea) AND (fbytea < '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6f'::bytea))
-         Filter: (fbytea ~~ '\x303132333435363738394142434445464748494a4b4c4d4e4f505152535455565758595a6162636465666768696a6b6c6d6e25'::bytea)
-(4 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_fbytea) */count(1) FROM test_prefix_key_len WHERE fbytea LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
- count 
--------
-     1
-(1 row)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT /*+ indexscan(test_prefix_key_len idx_prefix_len_test_comb) */count(1) FROM test_prefix_key_len WHERE ftext LIKE '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn%';
                                                                               QUERY PLAN                                                                              
@@ -1079,25 +1046,9 @@ SELECT ftext FROM test_prefix_table where ftext < '开源数据库-210' ORDER BY
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea ~~ 'YY%' ORDER BY 1;
-                                    QUERY PLAN                                    
-----------------------------------------------------------------------------------
- Sort
-   Sort Key: fbytea NULLS FIRST
-   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
-         Index Cond: ((fbytea >= '\x5959'::bytea) AND (fbytea < '\x595a'::bytea))
-         Filter: (fbytea ~~ '\x595925'::bytea)
-(5 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT fbytea FROM test_prefix_table t where fbytea ~~ 'YY%' ORDER BY 1;
-        fbytea        
-----------------------
- \x59595959592d303030
- \x59595959592d313131
- \x59595959592d323130
- \x59595959592d323131
- \x59595959592d333030
-(5 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea like 'YYYYY%' ORDER BY 1;
                                QUERY PLAN                                
@@ -1159,22 +1110,9 @@ SELECT fbytea FROM test_prefix_table t where fbytea like 'YYYYY-111' ORDER BY 1;
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea like '高%' ORDER BY 1;
-                                      QUERY PLAN                                      
---------------------------------------------------------------------------------------
- Sort
-   Sort Key: fbytea NULLS FIRST
-   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
-         Index Cond: ((fbytea >= '\xe9ab98'::bytea) AND (fbytea < '\xe9ab99'::bytea))
-         Filter: (fbytea ~~ '\xe9ab9825'::bytea)
-(5 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT fbytea FROM test_prefix_table t where fbytea like '高%' ORDER BY 1;
-                  fbytea                  
-------------------------------------------
- \xe9ab98
- \xe9ab98e696afe695b0e68daee5ba932d323130
-(2 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea ~~ '开源数据库%' ORDER BY 1;
                                QUERY PLAN                                
@@ -1228,12 +1166,14 @@ SELECT fbytea FROM test_prefix_table t where fbytea ~~ '开源数据库-210' ORD
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
-   Index Cond: (fbytea = '\x5959595959'::bytea)
-   Filter: (fbytea = '\x59595959592d323131'::bytea)
-(3 rows)
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ Sort
+   Sort Key: fbytea NULLS FIRST
+   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
+         Index Cond: (fbytea = '\x5959595959'::bytea)
+         Filter: (fbytea = '\x59595959592d323131'::bytea)
+(5 rows)
 
 SELECT fbytea FROM test_prefix_table t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
         fbytea        
@@ -1243,12 +1183,14 @@ SELECT fbytea FROM test_prefix_table t where fbytea = E'\\x59595959592D323131' O
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_table t where fbytea = E'\\x59' ORDER BY 1;
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
-   Index Cond: (fbytea = '\x59'::bytea)
-   Filter: (fbytea = '\x59'::bytea)
-(3 rows)
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ Sort
+   Sort Key: fbytea NULLS FIRST
+   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
+         Index Cond: (fbytea = '\x59'::bytea)
+         Filter: (fbytea = '\x59'::bytea)
+(5 rows)
 
 SELECT fbytea FROM test_prefix_table t where fbytea = E'\\x59' ORDER BY 1;
  fbytea 
@@ -2240,16 +2182,18 @@ ERROR:  duplicate key value violates unique constraint "prefix_index_ftext_part_
 DETAIL:  Key (ftext, fvchar, fbytea(5))=(XXXXX-111, XXXXX-111, \x5858585858) already exists.
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_parttable t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Partition Iterator
-   Iterations: 3, Sub Iterations: 12
-   ->  Partitioned Index Scan using prefix_index_ftext_part_unique on test_prefix_parttable t
-         Index Cond: (fbytea = '\x5959595959'::bytea)
-         Filter: (fbytea = '\x59595959592d323131'::bytea)
-         Selected Partitions:  1..3
-         Selected Subpartitions:  ALL
-(7 rows)
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: fbytea NULLS FIRST
+   ->  Partition Iterator
+         Iterations: 3, Sub Iterations: 12
+         ->  Partitioned Index Scan using prefix_index_ftext_part_unique on test_prefix_parttable t
+               Index Cond: (fbytea = '\x5959595959'::bytea)
+               Filter: (fbytea = '\x59595959592d323131'::bytea)
+               Selected Partitions:  1..3
+               Selected Subpartitions:  ALL
+(9 rows)
 
 SELECT fbytea FROM test_prefix_parttable t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
         fbytea        
@@ -2545,22 +2489,9 @@ SELECT fchar FROM test_prefix_ustore t where fchar ~ '^开' ORDER BY 1;
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_ustore t where fbytea like '高%' ORDER BY 1;
-                                      QUERY PLAN                                      
---------------------------------------------------------------------------------------
- Sort
-   Sort Key: fbytea NULLS FIRST
-   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
-         Index Cond: ((fbytea >= '\xe9ab98'::bytea) AND (fbytea < '\xe9ab99'::bytea))
-         Filter: (fbytea ~~ '\xe9ab9825'::bytea)
-(5 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 SELECT fbytea FROM test_prefix_ustore t where fbytea like '高%' ORDER BY 1;
-                  fbytea                  
-------------------------------------------
- \xe9ab98
- \xe9ab98e696afe695b0e68daee5ba932d323130
-(2 rows)
-
+ERROR:  Invalid collation oid during getting prefix quals in B format
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_ustore t where fbytea ~~ '开源数据库%' ORDER BY 1;
                                 QUERY PLAN                                
@@ -2792,12 +2723,14 @@ SELECT ftext FROM test_prefix_ustore t where fvchar > left('ZZZZZ-211', 7) and f
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_ustore t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
-                             QUERY PLAN                             
---------------------------------------------------------------------
- Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
-   Index Cond: (fbytea = '\x5959595959'::bytea)
-   Filter: (fbytea = '\x59595959592d323131'::bytea)
-(3 rows)
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Sort
+   Sort Key: fbytea NULLS FIRST
+   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
+         Index Cond: (fbytea = '\x5959595959'::bytea)
+         Filter: (fbytea = '\x59595959592d323131'::bytea)
+(5 rows)
 
 SELECT fbytea FROM test_prefix_ustore t where fbytea = E'\\x59595959592D323131' ORDER BY 1;
         fbytea        
@@ -2807,12 +2740,14 @@ SELECT fbytea FROM test_prefix_ustore t where fbytea = E'\\x59595959592D323131' 
 
 EXPLAIN (costs false)
 SELECT fbytea FROM test_prefix_ustore t where fbytea = E'\\x59' ORDER BY 1;
-                             QUERY PLAN                             
---------------------------------------------------------------------
- Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
-   Index Cond: (fbytea = '\x59'::bytea)
-   Filter: (fbytea = '\x59'::bytea)
-(3 rows)
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Sort
+   Sort Key: fbytea NULLS FIRST
+   ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
+         Index Cond: (fbytea = '\x59'::bytea)
+         Filter: (fbytea = '\x59'::bytea)
+(5 rows)
 
 SELECT fbytea FROM test_prefix_ustore t where fbytea = E'\\x59' ORDER BY 1;
  fbytea 

@@ -1585,7 +1585,7 @@ select bttext_pattern_cmp('1', '1 '), bttext_pattern_cmp('1', '1   '), bttext_pa
 select bttextcmp('1', '1 '), bttextcmp('1', '1   '), bttextcmp('1', ' 1 '), bttextcmp('1', ' 1');
  bttextcmp | bttextcmp | bttextcmp | bttextcmp 
 -----------+-----------+-----------+-----------
-         0 |         0 |        17 |        17
+         0 |         0 |         1 |         1
 (1 row)
 
 --- row table + vec engine
@@ -3231,7 +3231,7 @@ select bttext_pattern_cmp('1', '1 '), bttext_pattern_cmp('1', '1   '), bttext_pa
 select bttextcmp('1', '1 '), bttextcmp('1', '1   '), bttextcmp('1', ' 1 '), bttextcmp('1', ' 1');
  bttextcmp | bttextcmp | bttextcmp | bttextcmp 
 -----------+-----------+-----------+-----------
-         0 |         0 |        17 |        17
+         0 |         0 |         1 |         1
 (1 row)
 
 drop table t_char1;

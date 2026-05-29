@@ -262,13 +262,13 @@ create view binary_maxmin_v as select
     min(b) as min_b
     from binary_maxmin_t;
 \d binary_maxmin_v;
-  View "public.binary_maxmin_v"
- Column |    Type     | Modifiers 
---------+-------------+-----------
- max_a  | "binary"    | 
- min_a  | "binary"    | 
- max_b  | "varbinary" | 
- min_b  | "varbinary" | 
+                 View "public.binary_maxmin_v"
+ Column |    Type     |               Modifiers                
+--------+-------------+----------------------------------------
+ max_a  | "binary"    | character set SQL_ASCII collate binary
+ min_a  | "binary"    | character set SQL_ASCII collate binary
+ max_b  | "varbinary" | character set SQL_ASCII collate binary
+ min_b  | "varbinary" | character set SQL_ASCII collate binary
 
 select * from binary_maxmin_v;
                                 max_a                                 |                                min_a                                 |    max_b     | min_b  
