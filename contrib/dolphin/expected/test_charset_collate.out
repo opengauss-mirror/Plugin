@@ -148,15 +148,19 @@ WARNING:  Invalid collation for column c1 detected. default value set
 WARNING:  Invalid collation detected. default value set
 -- different charset
 show b_format_behavior_compat_options;
-                          b_format_behavior_compat_options                           
--------------------------------------------------------------------------------------
- enable_set_variables,set_session_transaction,enable_modify_column,fetch,diagnostics
+                                     b_format_behavior_compat_options                                     
+----------------------------------------------------------------------------------------------------------
+ enable_set_variables,set_session_transaction,enable_modify_column,fetch,enable_multi_charset,diagnostics
 (1 row)
 
+set b_format_behavior_compat_options = '';
 create table test_collate6(a text) charset gbk;
 ERROR:  difference between the charset and the database encoding has not supported
 create table test_collate6(a text) collate gbk_bin;
 ERROR:  difference between the charset and the database encoding has not supported
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create table test_collate6(a text) charset gbk;
+create table test_collate7(a text) collate gbk_bin;
 -- invalid schema collate
 create schema test1 charset 'aaa';
 WARNING:  aaa is not a valid encoding name. default value set
@@ -491,13 +495,15 @@ drop cascades to table t_bin4
 drop cascades to table t_bin5
 drop cascades to table t_bin6
 drop schema test_charset cascade;
-NOTICE:  drop cascades to 6 other objects
+NOTICE:  drop cascades to 8 other objects
 DETAIL:  drop cascades to table test_charset.test_collate0
 drop cascades to table test_charset.test_collate1
 drop cascades to table test_charset.test_collate2
 drop cascades to table test_charset.test_collate3
 drop cascades to table test_charset.test_collate4
 drop cascades to table test_charset.test_collate5
+drop cascades to table test_charset.test_collate6
+drop cascades to table test_charset.test_collate7
 reset current_schema;
 create schema test_b1 charset='utf8' collate='utf8_general_ci';
 set current_schema to 'test_b1';

@@ -46,7 +46,7 @@ show collation_server;
 show collation_connection;
  collation_connection 
 ----------------------
- 
+ utf8mb4_general_ci
 (1 row)
 
 show init_connect;
@@ -159,9 +159,9 @@ SELECT * FROM pg_settings WHERE NAME='collation_server';
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='collation_connection';
-         name         | setting | unit |                      category                      |        short_desc         | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
-----------------------+---------+------+----------------------------------------------------+---------------------------+------------+---------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
- collation_connection |         |      | Client Connection Defaults / Locale and Formatting | Set collation_connection. |            | user    | string  | default |         |         |          |          |           |            |           
+         name         |      setting       | unit |                      category                      |        short_desc         | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val |     reset_val      | sourcefile | sourceline 
+----------------------+--------------------+------+----------------------------------------------------+---------------------------+------------+---------+---------+---------+---------+---------+----------+----------+--------------------+------------+------------
+ collation_connection | utf8mb4_general_ci |      | Client Connection Defaults / Locale and Formatting | Set collation_connection. |            | user    | string  | default |         |         |          |          | utf8mb4_general_ci |            |           
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='init_connect';

@@ -38,6 +38,8 @@ begin
 return x;
 end;
 $$ language plpgsql;
+ERROR:  default collation for encoding "WIN1258" does not exist
 drop function f2;
+ERROR:  function f2 does not exist
 reset current_schema;
 drop schema create_function_core;

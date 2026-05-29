@@ -10,6 +10,9 @@ create table test_enum_key1(a enum('a', 'a  ') collate utf8_bin);
 create table test_enum_key1(a enum('aaa', 'AAA  ') collate utf8_general_ci);
 create table test_enum_key1(a enum('高斯sS', '高斯ŠŠ  ') collate utf8_general_ci);
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'utf8');
+set b_format_behavior_compat_options = '';
+create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gbk');
+set b_format_behavior_compat_options = 'enable_multi_charset';
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gbk');
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gb18030');
 

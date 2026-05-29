@@ -26,15 +26,15 @@ select 'a' union select 1;
 select b'1' union select '';
  ?column? 
 ----------
- 
  \x01
+ 
 (2 rows)
 
 select b'1' union select ' ';
  ?column? 
 ----------
-  
  \x01
+  
 (2 rows)
 
 select null::int1 union select null::int16;

@@ -196,10 +196,10 @@ select char('2022-2-22 11:11:11.123456'::datetime(6));
 
 create view return_type as select char('2022-2-22 11:11:11'::timestamp);
 \d return_type;
-    View "db_char.return_type"
- Column |    Type     | Modifiers 
---------+-------------+-----------
- char   | "varbinary" | 
+                      View "db_char.return_type"
+ Column |    Type     |                   Modifiers                   
+--------+-------------+-----------------------------------------------
+ char   | "varbinary" | character set UTF8 collate utf8mb4_general_ci
 
 drop view return_type;
 select pg_catalog.chara('1'::bool);

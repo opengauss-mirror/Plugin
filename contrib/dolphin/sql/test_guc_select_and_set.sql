@@ -31,6 +31,12 @@ set character_set_client = utf8;
 set @@character_set_client = utf8;
 set @@session.character_set_client = utf8;
 
+set b_format_behavior_compat_options = 'enable_multi_charset';
+set character_set_connection = utf8;
+set @@character_set_connection = utf8;
+set @@session.character_set_connection = utf8;
+
+set b_format_behavior_compat_options = '';
 set character_set_connection = utf8;
 set @@character_set_connection = utf8;
 set @@session.character_set_connection = utf8;
@@ -151,8 +157,10 @@ SET FOREIGN_KEY_CHECKS=0;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
+reset b_format_behavior_compat_options;
 show b_format_behavior_compat_options;
 show character_set_connection;
+set b_format_behavior_compat_options = '';
 set character_set_connection = binary;
 set b_format_behavior_compat_options = 'enable_multi_charset';
 set character_set_connection = binary;

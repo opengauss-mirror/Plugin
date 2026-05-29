@@ -448,6 +448,16 @@ select Varlena2Varchar(1);
 select Varlena2Text(1);
 select varlena2bit(1,10);
 
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+drop procedure t_p;
+
+set b_format_behavior_compat_options = '';
 create OR REPLACE procedure t_p(out ret varchar) as
 begin
 select '{"a":"b"}'::json into ret;

@@ -132,13 +132,13 @@ CREATE VIEW tt1 AS
        ('0123456789', 'abc'::varchar(3), 42.12, 'abc'::varchar(4))
   ) as vv(a,b,c,d);
 \d+ tt1
-                         View "public.tt1"
- Column |         Type         | Modifiers | Storage  | Description 
---------+----------------------+-----------+----------+-------------
- a      | character varying    |           | extended | 
- b      | character varying    |           | extended | 
- c      | number               |           | main     | 
- d      | character varying(4) |           | extended | 
+                                           View "public.tt1"
+ Column |         Type         |                   Modifiers                   | Storage  | Description 
+--------+----------------------+-----------------------------------------------+----------+-------------
+ a      | character varying    | character set UTF8 collate utf8mb4_general_ci | extended | 
+ b      | character varying    | character set UTF8 collate utf8mb4_general_ci | extended | 
+ c      | number               |                                               | main     | 
+ d      | character varying(4) | character set UTF8 collate utf8mb4_general_ci | extended | 
 View definition:
  SELECT  *
    FROM ( VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) AS vv(a, b, c, d);
