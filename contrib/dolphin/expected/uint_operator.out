@@ -1500,29 +1500,21 @@ select 1::uint8 << 64;
 set b_format_behavior_compat_options = '';
 set enable_set_variable_b_format = off;
 select @1::uint1;
- ?column? 
-----------
- 1
-(1 row)
-
+ERROR:  @var_name is supported only in B-format database, and enable_set_variable_b_format = on.
+LINE 1: select @1::uint1;
+               ^
 select @1::uint2;
- ?column? 
-----------
- 1
-(1 row)
-
+ERROR:  @var_name is supported only in B-format database, and enable_set_variable_b_format = on.
+LINE 1: select @1::uint2;
+               ^
 select @1::uint4;
- ?column? 
-----------
- 1
-(1 row)
-
+ERROR:  @var_name is supported only in B-format database, and enable_set_variable_b_format = on.
+LINE 1: select @1::uint4;
+               ^
 select @1::uint8;
- ?column? 
-----------
- 1
-(1 row)
-
+ERROR:  @var_name is supported only in B-format database, and enable_set_variable_b_format = on.
+LINE 1: select @1::uint8;
+               ^
 select @-1::uint1;
  ?column? 
 ----------
