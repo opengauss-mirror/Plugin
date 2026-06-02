@@ -21166,7 +21166,7 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
             }
             ForbidUserToSetDefinedIndexOptions(rel, defList);
             Assert(oldRelHasUids == false);
-            relOpt = index_reloptions(rel->rd_am->amoptions, newOptions, true);
+            relOpt = index_reloptions(rel, newOptions, true);
             break;
         }
         default:

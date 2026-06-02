@@ -19,6 +19,7 @@
 
 #include <math.h>
 
+#include "access/amapi.h"
 #include "access/genam.h"
 #include "access/heapam.h"
 #include "access/tableam.h"
@@ -755,14 +756,17 @@ void get_relation_info(PlannerInfo* root, RangeTblEntry* rte, RelOptInfo* rel)
             }
 
             info->relam = indexRelation->rd_rel->relam;
-            info->amcostestimate = indexRelation->rd_am->amcostestimate;
+            info->amcostestimate_oid = indexRelation->rd_am->amcostestimate;
+            info->amcostestimate_func = indexRelation->rd_amroutine->amcostestimate;
             info->canreturn = index_can_return(indexRelation);
             info->amcanorderbyop = indexRelation->rd_am->amcanorderbyop;
             info->amoptionalkey = indexRelation->rd_am->amoptionalkey;
             info->amsearcharray = indexRelation->rd_am->amsearcharray;
             info->amsearchnulls = indexRelation->rd_am->amsearchnulls;
-            info->amhasgettuple = OidIsValid(indexRelation->rd_am->amgettuple);
-            info->amhasgetbitmap = OidIsValid(indexRelation->rd_am->amgetbitmap);
+            info->amhasgettuple = OidIsValid(indexRelation->rd_am->amgettuple) ||
+                (OidIsValid(indexRelation->rd_am->amhandler) && indexRelation->rd_amroutine->amgettuple);
+            info->amhasgetbitmap = OidIsValid(indexRelation->rd_am->amgetbitmap) ||
+                (OidIsValid(indexRelation->rd_am->amhandler) && indexRelation->rd_amroutine->amgetbitmap);
             info->isAnnIndex = (info->relam == HNSW_AM_OID || info->relam == IVFFLAT_AM_OID ||
                 info->relam == DISKANN_AM_OID);
 
