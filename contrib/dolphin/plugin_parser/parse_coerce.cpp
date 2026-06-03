@@ -4328,6 +4328,7 @@ Node *transferConstToAconst(Node *node)
         */
         default:
             {
+                MemoryContext oldcontext = CurrentMemoryContext;
                 PG_TRY();
                 {
                     Const* con = (Const *)node;
@@ -4342,6 +4343,8 @@ Node *transferConstToAconst(Node *node)
                 }
                 PG_CATCH();
                 {
+                    (void)MemoryContextSwitchTo(oldcontext);
+                    FlushErrorState();
                     ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), 
                                     errmsg("set value cannot be assigned to the %s type", format_type_be(consttype))));
                 }
