@@ -5,6 +5,7 @@
 create schema b_time_funcs2;
 set current_schema to 'b_time_funcs2';
 set datestyle to 'ISO,YMD';
+set b_format_behavior_compat_options = '';
 create table func_test2(functionName varchar(256),result varchar(256));
 truncate table func_test2;
 -- SUBTIME()
@@ -1177,7 +1178,7 @@ select * from func_test2 order by 1, 2;
  TIMESTAMP(null)                                                                             | 
  TIMESTAMP(NULL, NULL)                                                                       | 
  TIME(time'1:1:1')                                                                           | 01:01:01
---?.*
+(296 rows)
 
 -- 单独select边界测试
 select subtime('838:59:59', '-25:00');

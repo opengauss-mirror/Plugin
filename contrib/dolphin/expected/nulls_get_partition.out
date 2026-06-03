@@ -73,6 +73,7 @@ SHOW CREATE TABLE T_CREATE_TABLE_PARTITION_002;
                               |     "COL1" integer,                                       +
                               |     "COL2" integer                                        +
                               | )                                                         +
+                              | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"     +
                               | WITH (orientation=row, compression=no)                    +
                               | PARTITION BY RANGE ("COL1") SUBPARTITION BY RANGE ("COL2")+
                               | (                                                         +
@@ -106,6 +107,7 @@ SHOW CREATE TABLE TABLE_LIST1;
              |     "ID" integer,                                      +
              |     "ID2" integer                                      +
              | )                                                      +
+             | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"  +
              | WITH (orientation=row, compression=no)                 +
              | PARTITION BY LIST ("ID") SUBPARTITION BY LIST ("ID2")  +
              | (                                                      +
@@ -134,21 +136,22 @@ SHOW CREATE TABLE TABLE_LIST1;
 (1 row)
 
 SHOW CREATE TABLE MULTI_KEYS_LIST;
-      Table      |                    Create Table                     
------------------+-----------------------------------------------------
- MULTI_KEYS_LIST | SET search_path = "NULLS_GET_PARTITION";           +
-                 | CREATE TABLE "MULTI_KEYS_LIST" (                   +
-                 |     "F1" integer,                                  +
-                 |     "F2" integer,                                  +
-                 |     "F3" integer                                   +
-                 | )                                                  +
-                 | WITH (orientation=row, compression=no)             +
-                 | PARTITION BY LIST ("F1", "F2")                     +
-                 | (                                                  +
-                 |     PARTITION multi_keys_list_p0 VALUES ((0,NULL)),+
-                 |     PARTITION multi_keys_list_p1 VALUES ((15,0)),  +
-                 |     PARTITION multi_keys_list_p2 VALUES (DEFAULT)  +
-                 | )                                                  +
+      Table      |                     Create Table                      
+-----------------+-------------------------------------------------------
+ MULTI_KEYS_LIST | SET search_path = "NULLS_GET_PARTITION";             +
+                 | CREATE TABLE "MULTI_KEYS_LIST" (                     +
+                 |     "F1" integer,                                    +
+                 |     "F2" integer,                                    +
+                 |     "F3" integer                                     +
+                 | )                                                    +
+                 | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                 | WITH (orientation=row, compression=no)               +
+                 | PARTITION BY LIST ("F1", "F2")                       +
+                 | (                                                    +
+                 |     PARTITION multi_keys_list_p0 VALUES ((0,NULL)),  +
+                 |     PARTITION multi_keys_list_p1 VALUES ((15,0)),    +
+                 |     PARTITION multi_keys_list_p2 VALUES (DEFAULT)    +
+                 | )                                                    +
                  | ENABLE ROW MOVEMENT;
 (1 row)
 

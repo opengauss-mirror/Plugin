@@ -360,28 +360,29 @@ select * from test_round1;
 (4 rows)
 
 show create table test_round1;
-    Table    |              Create Table               
--------------+-----------------------------------------
- test_round1 | SET search_path = test;                +
-             | CREATE TABLE test_round1 (             +
-             |     round1 double precision,           +
-             |     round2 double precision,           +
-             |     round3 number,                     +
-             |     round4 double precision,           +
-             |     round5 double precision,           +
-             |     round6 double precision,           +
-             |     round7 double precision,           +
-             |     round8 double precision,           +
-             |     round9 double precision,           +
-             |     round10 double precision,          +
-             |     round11 double precision,          +
-             |     round12 double precision,          +
-             |     round13 double precision,          +
-             |     round14 double precision,          +
-             |     round15 double precision,          +
-             |     round16 double precision,          +
-             |     round17 double precision           +
-             | )                                      +
+    Table    |                     Create Table                      
+-------------+-------------------------------------------------------
+ test_round1 | SET search_path = test;                              +
+             | CREATE TABLE test_round1 (                           +
+             |     round1 double precision,                         +
+             |     round2 double precision,                         +
+             |     round3 number,                                   +
+             |     round4 double precision,                         +
+             |     round5 double precision,                         +
+             |     round6 double precision,                         +
+             |     round7 double precision,                         +
+             |     round8 double precision,                         +
+             |     round9 double precision,                         +
+             |     round10 double precision,                        +
+             |     round11 double precision,                        +
+             |     round12 double precision,                        +
+             |     round13 double precision,                        +
+             |     round14 double precision,                        +
+             |     round15 double precision,                        +
+             |     round16 double precision,                        +
+             |     round17 double precision                         +
+             | )                                                    +
+             | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
              | WITH (orientation=row, compression=no);
 (1 row)
 

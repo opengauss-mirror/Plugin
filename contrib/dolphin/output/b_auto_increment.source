@@ -6,6 +6,7 @@ NOTICE:  database "dolphin_autoinc_restore" does not exist, skipping
 create database dolphin_autoinc dbcompatibility 'b';
 create database dolphin_autoinc_restore dbcompatibility 'b';
 \c dolphin_autoinc
+set b_format_behavior_compat_options = '';
 -- bool auto_increment is not supported because there is only two valid value for bool
 CREATE TABLE test_create_autoinc(id bool auto_increment primary key, name varchar(200),a int) auto_increment=1; -- ERROR
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_id_seq" for serial column "test_create_autoinc.id"
@@ -528,11 +529,11 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
 
 DROP TABLE test_create_autoinc;
 \d test_alter_autoinc;
-            Table "public.test_alter_autoinc"
- Column |         Type          |        Modifiers        
---------+-----------------------+-------------------------
+                       Table "public.test_alter_autoinc"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  a      | integer               | 
- b      | character varying(32) | 
+ b      | character varying(32) | character set UTF8 collate utf8mb4_general_ci
  seq    | integer               | not null AUTO_INCREMENT
 Indexes:
     "test_alter_autoinc_uk" UNIQUE CONSTRAINT, btree (seq) TABLESPACE pg_default
@@ -545,10 +546,11 @@ SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
  SET search_path = public;                                                                                                          +
  CREATE TABLE test_alter_autoinc (                                                                                                  +
      a integer,                                                                                                                     +
-     b character varying(32),                                                                                                       +
+     b character varying(32) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci,                                                       +
      seq integer AUTO_INCREMENT NOT NULL,                                                                                           +
      CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                                                  +
  ) AUTO_INCREMENT = 1                                                                                                               +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                              +
  WITH (orientation=row, compression=no);                                                                                            +
  CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;                             +
  CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree ((((seq)::bigint + (1)::bigint)), seq) TABLESPACE pg_default;

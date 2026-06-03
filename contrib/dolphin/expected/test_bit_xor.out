@@ -1507,12 +1507,13 @@ drop table if exists test_type_table_3 cascade;
 NOTICE:  table "test_type_table_3" does not exist, skipping
 create table test_type_table_3(a int default 1^0);
 show create table test_type_table_3;
-       Table       |              Create Table               
--------------------+-----------------------------------------
- test_type_table_3 | SET search_path = test_bit_xor;        +
-                   | CREATE TABLE test_type_table_3 (       +
-                   |     a integer DEFAULT (1 ^ 0)          +
-                   | )                                      +
+       Table       |                     Create Table                      
+-------------------+-------------------------------------------------------
+ test_type_table_3 | SET search_path = test_bit_xor;                      +
+                   | CREATE TABLE test_type_table_3 (                     +
+                   |     a integer DEFAULT (1 ^ 0)                        +
+                   | )                                                    +
+                   | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
                    | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -2038,12 +2039,13 @@ insert ignore into test_type_table(`bigstring`) values(b'1' ^ b'0');
 drop table if exists test_type_table_3 cascade;
 create table test_type_table_3(a int default 1^0);
 show create table test_type_table_3;
-       Table       |              Create Table               
--------------------+-----------------------------------------
- test_type_table_3 | SET search_path = test_bit_xor;        +
-                   | CREATE TABLE test_type_table_3 (       +
-                   |     a integer DEFAULT (1 ^ 0)          +
-                   | )                                      +
+       Table       |                     Create Table                      
+-------------------+-------------------------------------------------------
+ test_type_table_3 | SET search_path = test_bit_xor;                      +
+                   | CREATE TABLE test_type_table_3 (                     +
+                   |     a integer DEFAULT (1 ^ 0)                        +
+                   | )                                                    +
+                   | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
                    | WITH (orientation=row, compression=no);
 (1 row)
 

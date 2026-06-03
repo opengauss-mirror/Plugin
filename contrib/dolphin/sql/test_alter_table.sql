@@ -1,5 +1,6 @@
 create schema db_alter_table;
 set current_schema to 'db_alter_table';
+set b_format_behavior_compat_options = '';
 
 create table alter_table_tbl1 (a int primary key, b int);
 create table alter_table_tbl2 (c int primary key, d int);

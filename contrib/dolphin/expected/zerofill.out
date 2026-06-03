@@ -26,7 +26,9 @@ create table t1_zerofill (
  i      | uint4    |           | plain   |              | 
  j      | uint8    |           | plain   |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 -- some unspported types
 create table t2_zerofill (a float zerofill);

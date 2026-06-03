@@ -59,17 +59,17 @@ CREATE TABLE test_prefix_table (
     INDEX prefix_index_fblob (fblob(5))
 ) ;
 \d test_prefix_table
-   Table "create_index.test_prefix_table"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                     Table "create_index.test_prefix_table"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | 
- fchar  | character(64)         | 
- fvchar | character varying(64) | 
- ftext  | text                  | 
- fclob  | clob                  | 
- fblob  | blob                  | 
+ fchar  | character(64)         | character set UTF8 collate utf8mb4_general_ci
+ fvchar | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ ftext  | text                  | character set UTF8 collate utf8mb4_general_ci
+ fclob  | clob                  | character set UTF8 collate utf8mb4_general_ci
+ fblob  | blob                  | character set SQL_ASCII collate binary
  fraw   | raw                   | 
- fbytea | bytea                 | 
+ fbytea | bytea                 | character set SQL_ASCII collate binary
 Indexes:
     "prefix_index_fblob" btree (fblob(5)) TABLESPACE pg_default
     "prefix_index_fchar_fbytea" btree (fchar(5), fbytea(5)) TABLESPACE pg_default
@@ -80,17 +80,17 @@ Indexes:
 ALTER TABLE test_prefix_table MODIFY ftext varchar(64);
 ALTER TABLE test_prefix_table ALTER COLUMN ftext TYPE text;
 \d test_prefix_table
-   Table "create_index.test_prefix_table"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                     Table "create_index.test_prefix_table"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | 
- fchar  | character(64)         | 
- fvchar | character varying(64) | 
- ftext  | text                  | 
- fclob  | clob                  | 
- fblob  | blob                  | 
+ fchar  | character(64)         | character set UTF8 collate utf8mb4_general_ci
+ fvchar | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ ftext  | text                  | character set UTF8 collate utf8mb4_general_ci
+ fclob  | clob                  | character set UTF8 collate utf8mb4_general_ci
+ fblob  | blob                  | character set SQL_ASCII collate binary
  fraw   | raw                   | 
- fbytea | bytea                 | 
+ fbytea | bytea                 | character set SQL_ASCII collate binary
 Indexes:
     "prefix_index_fblob" btree (fblob(5)) TABLESPACE pg_default
     "prefix_index_fchar_fbytea" btree (fchar(5), fbytea(5)) TABLESPACE pg_default

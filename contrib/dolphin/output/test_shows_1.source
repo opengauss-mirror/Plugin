@@ -185,28 +185,28 @@ show fields from tst_t1;
 (5 rows)
 
 show full columns from tst_t1;
-   Field   |         Type          | Collation | Null | Key | Default | Extra |               Privileges                | Comment  
------------+-----------------------+-----------+------+-----+---------+-------+-----------------------------------------+----------
- id        | integer               | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | identity
- name      | character varying(20) | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- addr      | text                  | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- phone     | text                  | es_ES     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- addr_code | text                  | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+   Field   |         Type          |     Collation      | Null | Key | Default | Extra |               Privileges                | Comment  
+-----------+-----------------------+--------------------+------+-----+---------+-------+-----------------------------------------+----------
+ id        | integer               | NULL               | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | identity
+ name      | character varying(20) | utf8mb4_general_ci | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr      | text                  | de_DE              | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ phone     | text                  | es_ES              | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text                  | utf8mb4_general_ci | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
 (5 rows)
 
 show full columns from tst_t1 like '%addr%';
-   Field   | Type | Collation | Null | Key | Default | Extra |               Privileges                | Comment 
------------+------+-----------+------+-----+---------+-------+-----------------------------------------+---------
- addr      | text | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- addr_code | text | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+   Field   | Type |     Collation      | Null | Key | Default | Extra |               Privileges                | Comment 
+-----------+------+--------------------+------+-----+---------+-------+-----------------------------------------+---------
+ addr      | text | de_DE              | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text | utf8mb4_general_ci | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
 (2 rows)
 
 show full columns from tst_t1 where Type = 'text';
-   Field   | Type | Collation | Null | Key | Default | Extra |               Privileges                | Comment 
------------+------+-----------+------+-----+---------+-------+-----------------------------------------+---------
- addr      | text | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- phone     | text | es_ES     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
- addr_code | text | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+   Field   | Type |     Collation      | Null | Key | Default | Extra |               Privileges                | Comment 
+-----------+------+--------------------+------+-----+---------+-------+-----------------------------------------+---------
+ addr      | text | de_DE              | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ phone     | text | es_ES              | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text | utf8mb4_general_ci | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
 (3 rows)
 
 -- test with normal role
@@ -235,13 +235,13 @@ SELECT CURRENT_USER;
 (1 row)
 
 show full columns from tst_t1 in tst_schema1;
-   Field   |         Type          | Collation | Null | Key | Default | Extra | Privileges | Comment  
------------+-----------------------+-----------+------+-----+---------+-------+------------+----------
- id        | integer               | NULL      | YES  |     | NULL    |       | SELECT     | identity
- name      | character varying(20) | NULL      | YES  |     | NULL    |       | SELECT     | 
- addr      | text                  | de_DE     | YES  |     | NULL    |       | SELECT     | 
- phone     | text                  | es_ES     | YES  |     | NULL    |       | SELECT     | 
- addr_code | text                  | NULL      | YES  |     | NULL    |       | SELECT     | 
+   Field   |         Type          |     Collation      | Null | Key | Default | Extra | Privileges | Comment  
+-----------+-----------------------+--------------------+------+-----+---------+-------+------------+----------
+ id        | integer               | NULL               | YES  |     | NULL    |       | SELECT     | identity
+ name      | character varying(20) | utf8mb4_general_ci | YES  |     | NULL    |       | SELECT     | 
+ addr      | text                  | de_DE              | YES  |     | NULL    |       | SELECT     | 
+ phone     | text                  | es_ES              | YES  |     | NULL    |       | SELECT     | 
+ addr_code | text                  | utf8mb4_general_ci | YES  |     | NULL    |       | SELECT     | 
 (5 rows)
 
 RESET ROLE;

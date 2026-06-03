@@ -350,10 +350,10 @@ explain (costs off) execute s1 using 1, 2, 3;
 
 prepare s1 as SELECT c_balance, c_first, c_middle, c_last FROM customer WHERE c_w_id = ? AND c_d_id = ? AND c_last = ? ORDER BY c_first;
 explain (costs off) execute s1 using 1, 2, 3;
-                      QUERY PLAN                       
--------------------------------------------------------
+                         QUERY PLAN                         
+------------------------------------------------------------
  Sort
-   Sort Key: c_first NULLS FIRST
+   Sort Key: c_first COLLATE utf8mb4_general_ci NULLS FIRST
    ->  Index Scan using customer_pkey on customer
          Index Cond: ((c_w_id = $1) AND (c_d_id = $2))
          Filter: ((c_last)::text = $3)

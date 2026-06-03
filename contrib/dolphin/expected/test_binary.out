@@ -58,11 +58,11 @@ create index on test_index using btree (b);
 create index on test_index using hash (b);
 create index on test_index using gin (to_tsvector(b::text));
 \d test_index
-    Table "test_binary.test_index"
- Column |      Type       | Modifiers 
---------+-----------------+-----------
- a      | "binary"(10)    | 
- b      | "varbinary"(10) | 
+                  Table "test_binary.test_index"
+ Column |      Type       |               Modifiers                
+--------+-----------------+----------------------------------------
+ a      | "binary"(10)    | character set SQL_ASCII collate binary
+ b      | "varbinary"(10) | character set SQL_ASCII collate binary
 Indexes:
     "test_index_a_idx" btree (a) TABLESPACE pg_default
     "test_index_a_idx1" hash (a) TABLESPACE pg_default

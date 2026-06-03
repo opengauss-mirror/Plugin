@@ -5,6 +5,7 @@
 --test COMMENT ON view's column
 \c table_name_test_db;
 set dolphin.lower_case_table_names TO 0;
+set b_format_behavior_compat_options = '';
 create table test_comment_normal_view_column_t(id1 int,id2 int);
 create or replace view test_comment_normal_view_column_v as select * from test_comment_normal_view_column_t;
 create temp table test_comment_temp_view_column_t(id1 int,id2 int);
@@ -132,13 +133,13 @@ CREATE VIEW tt1 AS
        ('0123456789', 'abc'::varchar(3), 42.12, 'abc'::varchar(4))
   ) as vv(a,b,c,d);
 \d+ tt1
-                                           View "public.tt1"
- Column |         Type         |                   Modifiers                   | Storage  | Description 
---------+----------------------+-----------------------------------------------+----------+-------------
- a      | character varying    | character set UTF8 collate utf8mb4_general_ci | extended | 
- b      | character varying    | character set UTF8 collate utf8mb4_general_ci | extended | 
- c      | number               |                                               | main     | 
- d      | character varying(4) | character set UTF8 collate utf8mb4_general_ci | extended | 
+                         View "public.tt1"
+ Column |         Type         | Modifiers | Storage  | Description 
+--------+----------------------+-----------+----------+-------------
+ a      | character varying    |           | extended | 
+ b      | character varying    |           | extended | 
+ c      | number               |           | main     | 
+ d      | character varying(4) |           | extended | 
 View definition:
  SELECT  *
    FROM ( VALUES ('abc'::character varying(3),'0123456789'::character varying,42,'abcd'::character varying(4)), ('0123456789'::character varying,'abc'::character varying(3),42.12,'abc'::character varying(4))) AS vv(a, b, c, d);

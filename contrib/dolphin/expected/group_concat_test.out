@@ -18,7 +18,7 @@ explain verbose select id, group_concat(VARIADIC ARRAY[id,':',v] order by id) as
    Group By Key: t.id
    ->  Sort  (cost=61.11..63.28 rows=869 width=64)
          Output: id, v
-         Sort Key: t.id
+         Sort Key: t.id COLLATE utf8mb4_general_ci
          ->  Seq Scan on t.t  (cost=0.00..18.69 rows=869 width=64)
                Output: id, v
 (8 rows)

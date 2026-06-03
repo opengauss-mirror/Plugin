@@ -72,12 +72,13 @@ show create schema "TESTSHOW";
 CREATE TABLE "TESTSHOW_TEST_TABLE"(a int);
 CREATE VIEW "TESTSHOW_TEST_VIEW"  AS SELECT * FROM "TESTSHOW_TEST_TABLE";
 SHOW CREATE TABLE "TESTSHOW_TEST_TABLE"; --success
-        Table        |              Create Table               
----------------------+-----------------------------------------
- TESTSHOW_TEST_TABLE | SET search_path = show_createdatabase; +
-                     | CREATE TABLE "TESTSHOW_TEST_TABLE" (   +
-                     |     a integer                          +
-                     | )                                      +
+        Table        |                     Create Table                      
+---------------------+-------------------------------------------------------
+ TESTSHOW_TEST_TABLE | SET search_path = show_createdatabase;               +
+                     | CREATE TABLE "TESTSHOW_TEST_TABLE" (                 +
+                     |     a integer                                        +
+                     | )                                                    +
+                     | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
                      | WITH (orientation=row, compression=no);
 (1 row)
 

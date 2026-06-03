@@ -25,13 +25,13 @@ FROM City
 GROUP BY State;
       State      |                       City/Name                        
 -----------------+--------------------------------------------------------
+ South Australia | ["Adelaide"]
+ Capital Region  | ["Canberra"]
  West Australia  | ["Perth"]
+ Victoria        | ["Melbourne", "Geelong"]
  Queensland      | ["Brisbane", "Gold Coast", "Townsville", "Cairns"]
  New South Wales | ["Sydney", "Newcastle", "Central Coast", "Wollongong"]
  Tasmania        | ["Hobart"]
- Victoria        | ["Melbourne", "Geelong"]
- South Australia | ["Adelaide"]
- Capital Region  | ["Canberra"]
 (7 rows)
 
 SELECT 
@@ -41,13 +41,13 @@ FROM City
 GROUP BY State;
       State      |          City/Population          
 -----------------+-----------------------------------
+ South Australia | [978100]
+ Capital Region  | [322723]
  West Australia  | [1096829]
+ Victoria        | [2865329, 125382]
  Queensland      | [1291117, 311932, 109914, 92273]
  New South Wales | [3276207, 270324, 227657, 219761]
  Tasmania        | [126118]
- Victoria        | [2865329, 125382]
- South Australia | [978100]
- Capital Region  | [322723]
 (7 rows)
 
 CREATE TEMP TABLE foo (serial_num int, name text, type text);

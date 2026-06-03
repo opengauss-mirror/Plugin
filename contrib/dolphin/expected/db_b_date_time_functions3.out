@@ -926,6 +926,29 @@ select * from test order by funcname;
  convert_tz(101, 'GMT', '+7:00')                                                                  | 2000-01-01 07:00:00
  convert_tz(null, '+1:00', '+0:00')                                                               | 
 --?.*
+ datediff('0000-01-01', '9999-12-31')                                                             | -3652424
+ datediff('10000-01-01', '2021-11-12')                                                            | 
+ datediff('2021-01-01', '2021-12-31')                                                             | -364
+ datediff('2021-11-12', '2021-11-13')                                                             | -1
+ datediff('2021-11-12', 101)                                                                      | 7986
+ datediff('2021-11-12', 101)                                                                      | 7986
+ datediff('2021-11-12', null)                                                                     | 
+ datediff('2021-12-31 12:12:12', '2022-01-01 10:10:10')                                           | -1
+ datediff('2021-12-31', '2022-01-01')                                                             | -1
+--?.*
+ datediff('9999-12-31', '0000-01-01')                                                             | 3652424
+ datediff(100000101, 20211112)                                                                    | 
+ datediff(101, '2021-11-12')                                                                      | -7986
+ datediff(20211112, 20211113)                                                                     | -1
+ datediff(99991231235959.9999995, 20211112)                                                       | 
+ datediff(9999999999999999999999, 20211112)                                                       | 
+ datediff(cast('0021-12-31 12:12:12' as date), cast('2022-01-01 10:10:10' as date))               | -730486
+ datediff(cast('2021-12-31 12:12:12' as datetime), cast('2022-01-01 10:10:10' as datetime))       | -1
+ datediff(date'2021-11-12', date'2021-11-13')                                                     | 0
+ datediff(null, '2021-11-12')                                                                     | 
+ datediff(null, null)                                                                             | 
+--?.*
+ datediff(time'10:10:10', time'10:10:10')                                                         | 0
  date_add('0001-01-01 12:12:12',INTERVAL 1 hour)                                                  | 0001-01-01 13:12:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 minute)                                                | 0001-01-01 12:13:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 second)                                                | 0001-01-01 12:12:13
@@ -1034,29 +1057,6 @@ select * from test order by funcname;
  date_sub(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:11
  date_sub(time'838:59:59', INTERVAL -1 second)                                                    | 
  date_sub(time'838:59:59', INTERVAL 1 second)                                                     | 838:59:58
- datediff('0000-01-01', '9999-12-31')                                                             | -3652424
- datediff('10000-01-01', '2021-11-12')                                                            | 
- datediff('2021-01-01', '2021-12-31')                                                             | -364
- datediff('2021-11-12', '2021-11-13')                                                             | -1
- datediff('2021-11-12', 101)                                                                      | 7986
- datediff('2021-11-12', 101)                                                                      | 7986
- datediff('2021-11-12', null)                                                                     | 
- datediff('2021-12-31 12:12:12', '2022-01-01 10:10:10')                                           | -1
- datediff('2021-12-31', '2022-01-01')                                                             | -1
---?.*
- datediff('9999-12-31', '0000-01-01')                                                             | 3652424
- datediff(100000101, 20211112)                                                                    | 
- datediff(101, '2021-11-12')                                                                      | -7986
- datediff(20211112, 20211113)                                                                     | -1
- datediff(99991231235959.9999995, 20211112)                                                       | 
- datediff(9999999999999999999999, 20211112)                                                       | 
- datediff(cast('0021-12-31 12:12:12' as date), cast('2022-01-01 10:10:10' as date))               | -730486
- datediff(cast('2021-12-31 12:12:12' as datetime), cast('2022-01-01 10:10:10' as datetime))       | -1
- datediff(date'2021-11-12', date'2021-11-13')                                                     | 0
- datediff(null, '2021-11-12')                                                                     | 
- datediff(null, null)                                                                             | 
---?.*
- datediff(time'10:10:10', time'10:10:10')                                                         | 0
  from_days('1111111111111111111')                                                                 | 0000-00-00
  from_days('2000000')                                                                             | 5475-10-25
  from_days('3652499')                                                                             | 10000-03-15

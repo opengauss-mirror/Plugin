@@ -300,23 +300,23 @@ select c_02,c_03,c_04 from t_if_005_1 group by if(1,c_04,c_02);
 select c_02,c_03,c_04 from t_if_005_1 group by if(0,c_04,c_02);
    c_02    | c_03 | c_04 
 -----------+------+------
- liyazhou  |   24 | t
- ningjie   |      | f
  leishuai  |   25 | t
  lizhuo    |   30 | t
  zhanghuan |   18 | f
            |   23 | f
+ liyazhou  |   24 | t
+ ningjie   |      | f
 (6 rows)
 
 select c_02,c_03,c_04 from t_if_005_1 group by if(1,c_02,c_04);
    c_02    | c_03 | c_04 
 -----------+------+------
- liyazhou  |   24 | t
- ningjie   |      | f
  leishuai  |   25 | t
  lizhuo    |   30 | t
  zhanghuan |   18 | f
            |   23 | f
+ liyazhou  |   24 | t
+ ningjie   |      | f
 (6 rows)
 
 select c_02,c_03,c_04 from t_if_005_1 group by if(0,c_02,c_04);

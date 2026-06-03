@@ -526,7 +526,9 @@ create table test_double(c1 double, c2 double(10, 0), c3 double(15, 3), c4 float
  c9     | numeric(7,5)     |           | main    |              | 
  c10    | real             |           | plain   |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 drop table test_double;
 set dolphin.treat_float_with_precision_as_float_type = true;
@@ -553,7 +555,9 @@ NOTICE:  it may cause the result in loss of precision when using float4 or float
  c9     | real             |           | plain   |              | 
  c10    | real             |           | plain   |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 insert into test_double values (12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456, 12.3456);
 select * from test_double;

@@ -182,7 +182,7 @@ Auto_increment:CHAR:null
 Check_time:VARCHAR:null
 Collation:VARCHAR:C
 Checksum:VARCHAR:null
-Create_options:VARCHAR:{orientation=row,compression=no}
+Create_options:VARCHAR:{orientation=row,compression=no,collate=1537}
 Comment:VARCHAR:null
 Database:VARCHAR:db_jdbc
 Table:VARCHAR:t3

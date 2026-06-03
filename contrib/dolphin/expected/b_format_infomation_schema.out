@@ -759,15 +759,15 @@ CREATE TABLE test_compression_7 (
     data TEXT
 );
 select table_name,row_format,create_options from INFORMATION_SCHEMA.TABLES where table_name like 'test_compression%'  and create_time is not null and update_time is not null order by table_name;
-     table_name     | row_format |             create_options              
---------------------+------------+-----------------------------------------
- test_compression_1 | Dynamic    | {orientation=column,compression=no}
- test_compression_2 | Compressed | {orientation=column,compression=yes}
- test_compression_3 | Compressed | {orientation=column,compression=low}
- test_compression_4 | Compressed | {orientation=column,compression=middle}
- test_compression_5 | Compressed | {orientation=column,compression=high}
- test_compression_6 | Compressed | {orientation=column,compression=low}
- test_compression_7 | Dynamic    | {orientation=row,compression=no}
+     table_name     | row_format |                    create_options                    
+--------------------+------------+------------------------------------------------------
+ test_compression_1 | Dynamic    | {orientation=column,compression=no,collate=1537}
+ test_compression_2 | Compressed | {orientation=column,compression=yes,collate=1537}
+ test_compression_3 | Compressed | {orientation=column,compression=low,collate=1537}
+ test_compression_4 | Compressed | {orientation=column,compression=middle,collate=1537}
+ test_compression_5 | Compressed | {orientation=column,compression=high,collate=1537}
+ test_compression_6 | Compressed | {orientation=column,compression=low,collate=1537}
+ test_compression_7 | Dynamic    | {orientation=row,compression=no,collate=1537}
 (7 rows)
 
 create table test_size_1(c1 int, c2 float8, c3 text, c4 varchar(5));
@@ -849,10 +849,10 @@ select auto_increment from  INFORMATION_SCHEMA.tables where table_name = 'test_a
 create table test_collation_1(c1 text) collate utf8_bin;
 create table test_collation_2(c1 text);
 select table_name, table_collation from information_schema.tables where table_name in ('test_collation_1', 'test_collation_2') order by table_name;
-    table_name    | table_collation 
-------------------+-----------------
+    table_name    |  table_collation   
+------------------+--------------------
  test_collation_1 | utf8_bin
- test_collation_2 | 
+ test_collation_2 | utf8mb4_general_ci
 (2 rows)
 
 drop table if exists having_alias_info_schema_test;

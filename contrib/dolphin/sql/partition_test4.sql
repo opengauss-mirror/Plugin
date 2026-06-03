@@ -1,5 +1,6 @@
 create schema partition_test4;
 set current_schema to 'partition_test4';
+set b_format_behavior_compat_options = '';
 CREATE TABLE test_range_subpart
 (
     a INT4 PRIMARY KEY,

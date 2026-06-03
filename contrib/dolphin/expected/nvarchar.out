@@ -34,13 +34,12 @@ SELECT '' AS six, c.*
    WHERE c.f1 <> 'a';
  six | f1 
 -----+----
-     | A
      | 1
      | 2
      | 3
      | 
      | c
-(6 rows)
+(5 rows)
 
 SELECT '' AS one, c.*
    FROM NVARCHAR_TBL c
@@ -48,7 +47,8 @@ SELECT '' AS one, c.*
  one | f1 
 -----+----
      | a
-(1 row)
+     | A
+(2 rows)
 
 SELECT '' AS five, c.*
    FROM NVARCHAR_TBL c
@@ -67,20 +67,20 @@ SELECT '' AS six, c.*
  six | f1 
 -----+----
      | a
+     | A
      | 1
      | 2
      | 3
      | 
-(5 rows)
+(6 rows)
 
 SELECT '' AS one, c.*
    FROM NVARCHAR_TBL c
    WHERE c.f1 > 'a';
  one | f1 
 -----+----
-     | A
      | c
-(2 rows)
+(1 row)
 
 SELECT '' AS two, c.*
    FROM NVARCHAR_TBL c

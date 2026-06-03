@@ -1,6 +1,7 @@
 create schema db_b_new_gram_test;
 set current_schema to 'db_b_new_gram_test';
 set dolphin.lower_case_table_names = 1;
+set b_format_behavior_compat_options = '';
 
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;

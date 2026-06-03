@@ -5,11 +5,11 @@ create database db_default dbcompatibility 'b';
 \c db_default
 create table t1(id int default 100, name varchar default 'tt');
 \d t1
-                      Table "public.t1"
- Column |       Type        |            Modifiers            
---------+-------------------+---------------------------------
+                                             Table "public.t1"
+ Column |       Type        |                                   Modifiers                                   
+--------+-------------------+-------------------------------------------------------------------------------
  id     | integer           | default 100
- name   | character varying | default 'tt'::character varying
+ name   | character varying | character set UTF8 collate utf8mb4_general_ci default 'tt'::character varying
 
 select default(name) from t1;
  mode_b_default 
@@ -78,12 +78,12 @@ create table t4 (c1 INT NOT NULL AUTO_INCREMENT PRIMARY KEY, c2 VARCHAR(100), c3
 NOTICE:  CREATE TABLE will create implicit sequence "t4_c1_seq" for serial column "t4.c1"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for table "t4"
 \d t4
-                     Table "public.t4"
- Column |          Type          |        Modifiers        
---------+------------------------+-------------------------
+                                Table "public.t4"
+ Column |          Type          |                   Modifiers                   
+--------+------------------------+-----------------------------------------------
  c1     | integer                | not null AUTO_INCREMENT
- c2     | character varying(100) | 
- c3     | character varying(100) | 
+ c2     | character varying(100) | character set UTF8 collate utf8mb4_general_ci
+ c3     | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "t4_pkey" PRIMARY KEY, btree (c1) TABLESPACE pg_default
 

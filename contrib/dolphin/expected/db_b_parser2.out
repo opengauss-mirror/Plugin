@@ -784,14 +784,23 @@ create database db_char_latin1 dbcompatibility 'B' encoding 'latin1' LC_CTYPE 'e
 \c db_char_latin1
 \encoding latin1;
 create table t1(a character(4));
+ERROR:  default collation for encoding "LATIN1" does not exist
 insert into t1 values('四个字符');
+ERROR:  relation "t1" does not exist on datanode1
+LINE 1: insert into t1 values('四个字符');
+                    ^
 insert into t1 values('四个字0');
+ERROR:  relation "t1" does not exist on datanode1
+LINE 1: insert into t1 values('四个字0');
+                    ^
 insert into t1 values('一二三四五');
-ERROR:  value too long for type character(4)
-CONTEXT:  referenced column: a
+ERROR:  relation "t1" does not exist on datanode1
+LINE 1: insert into t1 values('一二三四五');
+                    ^
 insert into t1 values('四个字01');
-ERROR:  value too long for type character(4)
-CONTEXT:  referenced column: a
+ERROR:  relation "t1" does not exist on datanode1
+LINE 1: insert into t1 values('四个字01');
+                    ^
 \c postgres
 drop database if exists db_char_latin1;
 drop database if exists db_char_utf8;
@@ -817,12 +826,16 @@ create database db_char_ascii dbcompatibility 'b' encoding 'sql_ascii';
 \encoding sql_ascii;
 create table t1(a character(4));
 insert into t1 values('四个字符');
+ERROR:  The input length:12 exceeds the maximum length:4.
+CONTEXT:  referenced column: a
 insert into t1 values('四个字0');
+ERROR:  The input length:10 exceeds the maximum length:4.
+CONTEXT:  referenced column: a
 insert into t1 values('一二三四五');
-ERROR:  value too long for type character(4)
+ERROR:  The input length:15 exceeds the maximum length:4.
 CONTEXT:  referenced column: a
 insert into t1 values('四个字01');
-ERROR:  value too long for type character(4)
+ERROR:  The input length:11 exceeds the maximum length:4.
 CONTEXT:  referenced column: a
 \c postgres
 drop database if exists db_char_ascii;

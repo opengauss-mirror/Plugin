@@ -81,12 +81,13 @@ show full tables;
 (2 rows)
 
 show create table test_quotes_2;
-     Table     |              Create Table               
----------------+-----------------------------------------
- test_quotes_2 | SET search_path = test_ansi_quotes;    +
-               | CREATE TABLE test_quotes_2 (           +
-               |     a text                             +
-               | )                                      +
+     Table     |                        Create Table                        
+---------------+------------------------------------------------------------
+ test_quotes_2 | SET search_path = test_ansi_quotes;                       +
+               | CREATE TABLE test_quotes_2 (                              +
+               |     a text CHARACTER SET `UTF8` COLLATE utf8mb4_general_ci+
+               | )                                                         +
+               | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"     +
                | WITH (orientation=row, compresstype=1);
 (1 row)
 
@@ -156,10 +157,10 @@ Table "test_ansi_quotes.ctas_test1"
 
 create table ctas_test3 select convert(0x21, binary);
 \d ctas_test3
-Table "test_ansi_quotes.ctas_test3"
- Column |   Type   | Modifiers 
---------+----------+-----------
- binary | `binary` | 
+            Table "test_ansi_quotes.ctas_test3"
+ Column |   Type   |               Modifiers                
+--------+----------+----------------------------------------
+ binary | `binary` | character set SQL_ASCII collate binary
 
 set dolphin.sql_mode TO 'treat_bxconst_as_binary,ansi_quotes';
 create table ctas_test2 select convert(0x21, unsigned);
@@ -173,10 +174,10 @@ Table "test_ansi_quotes.ctas_test2"
 
 create table ctas_test4 select convert(0x21, binary);
 \d ctas_test4
-Table "test_ansi_quotes.ctas_test4"
- Column |   Type   | Modifiers 
---------+----------+-----------
- binary | "binary" | 
+            Table "test_ansi_quotes.ctas_test4"
+ Column |   Type   |               Modifiers                
+--------+----------+----------------------------------------
+ binary | "binary" | character set SQL_ASCII collate binary
 
 drop table ctas_test1;
 drop table ctas_test2;

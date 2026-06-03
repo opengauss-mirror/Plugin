@@ -1,5 +1,7 @@
 create database table_test dbcompatibility 'B';
 \c table_test
+alter database table_test set b_format_behavior_compat_options = '';
+set b_format_behavior_compat_options = '';
 /*
  * establish objects
  */
@@ -288,6 +290,7 @@ set dolphin.b_compatibility_mode to off;
 drop database if exists table_test_restore;
 NOTICE:  database "table_test_restore" does not exist, skipping
 create database table_test_restore dbcompatibility 'B';
+alter database table_test_restore set b_format_behavior_compat_options = '';
 \! @abs_bindir@/gs_dump table_test -p @portstring@ -f @abs_bindir@/table_test.tar -F t >/dev/null 2>&1; echo $?
 0
 \! @abs_bindir@/gs_restore -d table_test_restore -p @portstring@ @abs_bindir@/table_test.tar >/dev/null 2>&1; echo $?

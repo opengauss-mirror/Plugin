@@ -82,10 +82,10 @@ select * from algo_c_v3;
 create or replace algorithm=TEMPTABLE definer= algorithm TEMPORARY view algo_c_v4 as select c1, c2 from va_1_t;
 \d algo_c_v4
 --?      View "pg_temp_.*.algo_c_v4"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  c1     | integer               | 
- c2     | character varying(20) | 
+ c2     | character varying(20) | character set UTF8 collate utf8mb4_general_ci
 
 -- test should error
 create algorithm TEMPTABLE view algo_c_v5 as select * from va_1_t;

@@ -88,7 +88,7 @@ CREATE TABLE "tab_1107262" (
     "id" integer,
     "c1" integer
 )
-WITH (orientation=row, compression=no);
+WITH (orientation=row, compression=no, collate=1537);
 ALTER TABLE "public"."tab_1107262" OWNER TO "Root_Test";
 COPY public."tab_1107262" ("id", "c1") FROM stdin;
 \.

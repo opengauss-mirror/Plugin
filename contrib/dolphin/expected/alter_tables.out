@@ -9,11 +9,11 @@ INSERT INTO altertbl_t (id, name) VALUES (1, 'vertifyname');
 INSERT INTO altertbl_t (id, name) VALUES (2, 'test');
 ALTER TABLE altertbl_t ADD COLUMN age INT;
 \d altertbl_t
-         Table "public.altertbl_t"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                           Table "public.altertbl_t"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  age    | integer               | 
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
@@ -21,14 +21,14 @@ Indexes:
 -- test ALTER TABLE ADD COLUMN for multiple columns
 ALTER TABLE altertbl_t ADD COLUMN salary DECIMAL(10, 2), ADD COLUMN department VARCHAR(50);
 \d altertbl_t
-           Table "public.altertbl_t"
-   Column   |         Type          | Modifiers 
-------------+-----------------------+-----------
+                             Table "public.altertbl_t"
+   Column   |         Type          |                   Modifiers                   
+------------+-----------------------+-----------------------------------------------
  id         | integer               | not null
- name       | character varying(50) | 
+ name       | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  age        | integer               | 
  salary     | numeric(10,2)         | 
- department | character varying(50) | 
+ department | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 
@@ -75,9 +75,9 @@ ALTER TABLE altertbl_t DROP COLUMN age;
    Column   |         Type          |                     Modifiers                     
 ------------+-----------------------+---------------------------------------------------
  id         | integer               | not null
- name       | character varying(50) | 
+ name       | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  salary     | numeric(10,2)         | default (1500.00 OPERATOR(dolphin_catalog.*) 1.1)
- department | character varying(50) | 
+ department | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 Check constraints:
@@ -86,11 +86,11 @@ Check constraints:
 
 ALTER TABLE altertbl_t DROP COLUMN salary, DROP COLUMN department;
 \d altertbl_t
-         Table "public.altertbl_t"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                           Table "public.altertbl_t"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 
@@ -101,11 +101,11 @@ CREATE TABLE IF NOT EXISTS atnt_t (
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "atnt_t_pkey" for table "atnt_t"
 \d atnt_t
-               Table "public.atnt_t"
-    Column    |          Type          | Modifiers 
---------------+------------------------+-----------
+                                 Table "public.atnt_t"
+    Column    |          Type          |                   Modifiers                   
+--------------+------------------------+-----------------------------------------------
  product_id   | integer                | not null
- product_name | character varying(100) | 
+ product_name | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "atnt_t_pkey" PRIMARY KEY, btree (product_id) TABLESPACE pg_default
 
@@ -156,11 +156,11 @@ SELECT * FROM collatetbl_t;
 CREATE TABLE IF NOT EXISTS liketbl_t LIKE altertbl_t;
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "liketbl_t_pkey" for table "liketbl_t"
 \d liketbl_t
-          Table "public.liketbl_t"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                            Table "public.liketbl_t"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "liketbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 
@@ -188,10 +188,10 @@ INSERT INTO altertbl_t (id, name) VALUES (2, 'test');
 ALTER TABLE altertbl_t ADD COLUMN age INT;
 \d altertbl_t
 --?.*
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  age    | integer               | 
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
@@ -200,13 +200,13 @@ Indexes:
 ALTER TABLE altertbl_t ADD COLUMN salary DECIMAL(10, 2), ADD COLUMN department VARCHAR(50);
 \d altertbl_t
 --?.*
-   Column   |         Type          | Modifiers 
-------------+-----------------------+-----------
+   Column   |         Type          |                   Modifiers                   
+------------+-----------------------+-----------------------------------------------
  id         | integer               | not null
- name       | character varying(50) | 
+ name       | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  age        | integer               | 
  salary     | numeric(10,2)         | 
- department | character varying(50) | 
+ department | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 
@@ -253,9 +253,9 @@ ALTER TABLE altertbl_t DROP COLUMN age;
    Column   |         Type          |                     Modifiers                     
 ------------+-----------------------+---------------------------------------------------
  id         | integer               | not null
- name       | character varying(50) | 
+ name       | character varying(50) | character set UTF8 collate utf8mb4_general_ci
  salary     | numeric(10,2)         | default (1500.00 OPERATOR(dolphin_catalog.*) 1.1)
- department | character varying(50) | 
+ department | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 Check constraints:
@@ -265,10 +265,10 @@ Check constraints:
 ALTER TABLE altertbl_t DROP COLUMN salary, DROP COLUMN department;
 \d altertbl_t
 --?.*
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "altertbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 
@@ -280,10 +280,10 @@ CREATE TEMPORARY TABLE IF NOT EXISTS atnt_t (
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "atnt_t_pkey" for table "atnt_t"
 \d atnt_t
 --?.*
-    Column    |          Type          | Modifiers 
---------------+------------------------+-----------
+    Column    |          Type          |                   Modifiers                   
+--------------+------------------------+-----------------------------------------------
  product_id   | integer                | not null
- product_name | character varying(100) | 
+ product_name | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "atnt_t_pkey" PRIMARY KEY, btree (product_id) TABLESPACE pg_default
 
@@ -335,10 +335,10 @@ CREATE TEMPORARY TABLE IF NOT EXISTS liketbl_t LIKE altertbl_t;
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "liketbl_t_pkey" for table "liketbl_t"
 \d liketbl_t
 --?.*
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  id     | integer               | not null
- name   | character varying(50) | 
+ name   | character varying(50) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "liketbl_t_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
 

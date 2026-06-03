@@ -714,10 +714,10 @@ select * from v1;
 (1 row)
 
 \d+ v1;
-            View "test_view_table_depend.v1"
- Column |   Type    | Modifiers | Storage | Description 
---------+-----------+-----------+---------+-------------
- c1     | t1_c1_set |           | plain   | 
+                              View "test_view_table_depend.v1"
+ Column |   Type    |                   Modifiers                   | Storage | Description 
+--------+-----------+-----------------------------------------------+---------+-------------
+ c1     | t1_c1_set | character set UTF8 collate utf8mb4_general_ci | plain   | 
 View definition:
  SELECT  *
    FROM t1;
@@ -884,13 +884,13 @@ select * from partition_v1;
 (2 rows)
 
 \d+ partition_v1
-               View "test_view_table_depend.partition_v1"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v1"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION(p_201901);
@@ -905,13 +905,13 @@ select * from partition_v2;
 (4 rows)
 
 \d+ partition_v2
-               View "test_view_table_depend.partition_v2"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v2"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION (p_201901, p_201902);
@@ -924,13 +924,13 @@ select * from partition_v3;
 (2 rows)
 
 \d+ partition_v3
-               View "test_view_table_depend.partition_v3"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v3"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION FOR('201901'::character varying(30));
@@ -942,13 +942,13 @@ select * from partition_v4;
 (1 row)
 
 \d+ partition_v4
-               View "test_view_table_depend.partition_v4"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v4"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 SUBPARTITION(p_201902_a);
@@ -960,13 +960,13 @@ select * from partition_v5;
 (1 row)
 
 \d+ partition_v5
-               View "test_view_table_depend.partition_v5"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v5"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 SUBPARTITION FOR('201902'::character varying(30) ,'2'::character varying(30));
@@ -978,13 +978,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v1
 WARNING:  View partition_v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v1"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v1"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION(p_201901);
@@ -995,13 +995,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v2
 WARNING:  View partition_v2 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v2"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v2"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION (p_201901, p_201902);
@@ -1012,13 +1012,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v3
 WARNING:  View partition_v3 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v3"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v3"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 PARTITION FOR('201901'::character varying(30));
@@ -1029,13 +1029,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v4
 WARNING:  View partition_v4 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v4"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v4"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 SUBPARTITION(p_201902_a);
@@ -1046,13 +1046,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v5
 WARNING:  View partition_v5 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v5"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v5"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT  *
    FROM partition_t1 SUBPARTITION FOR('201902'::character varying(30) ,'2'::character varying(30));
@@ -1089,13 +1089,13 @@ select * from partition_v1;
 (2 rows)
 
 \d+ partition_v1
-               View "test_view_table_depend.partition_v1"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v1"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1111,13 +1111,13 @@ select * from partition_v2;
 (4 rows)
 
 \d+ partition_v2
-               View "test_view_table_depend.partition_v2"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v2"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1131,13 +1131,13 @@ select * from partition_v3;
 (2 rows)
 
 \d+ partition_v3
-               View "test_view_table_depend.partition_v3"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v3"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1150,13 +1150,13 @@ select * from partition_v4;
 (1 row)
 
 \d+ partition_v4
-               View "test_view_table_depend.partition_v4"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v4"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1169,13 +1169,13 @@ select * from partition_v5;
 (1 row)
 
 \d+ partition_v5
-               View "test_view_table_depend.partition_v5"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v5"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1274,13 +1274,13 @@ HINT:  Please re-add missing table fields.
 \d+ partition_v5
 WARNING:  View partition_v5 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-               View "test_view_table_depend.partition_v5"
-   Column   |         Type          | Modifiers | Storage  | Description 
-------------+-----------------------+-----------+----------+-------------
- month_code | character varying(30) |           | extended | 
- dept_code  | character varying(30) |           | extended | 
- user_no    | character varying(30) |           | extended | 
- sales_amt  | integer               |           | plain    | 
+                                 View "test_view_table_depend.partition_v5"
+   Column   |         Type          |                   Modifiers                   | Storage  | Description 
+------------+-----------------------+-----------------------------------------------+----------+-------------
+ month_code | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ dept_code  | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
+ sales_amt  | integer               |                                               | plain    | 
 View definition:
  SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
     partition_t1.sales_amt
@@ -1362,11 +1362,11 @@ drop table t1;
 \d v1;
 WARNING:  View v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-      View "test_view_table_depend.v1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
+                        View "test_view_table_depend.v1"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
  c1     | integer               | 
- c2     | character varying(10) | 
+ c2     | character varying(10) | character set UTF8 collate utf8mb4_general_ci
 
 create table t1 (c1 text, c2 float8);
 \d v1;
@@ -1385,11 +1385,11 @@ drop table t1;
 \d+ v1;
 WARNING:  View v1 references invalid table(s), view(s) or column(s).
 CONTEXT:  referenced column: pg_get_viewdef
-                  View "test_view_table_depend.v1"
- Column |         Type          | Modifiers | Storage  | Description 
---------+-----------------------+-----------+----------+-------------
- c1     | integer               |           | plain    | 
- c2     | character varying(10) |           | extended | 
+                                    View "test_view_table_depend.v1"
+ Column |         Type          |                   Modifiers                   | Storage  | Description 
+--------+-----------------------+-----------------------------------------------+----------+-------------
+ c1     | integer               |                                               | plain    | 
+ c2     | character varying(10) | character set UTF8 collate utf8mb4_general_ci | extended | 
 View definition:
  SELECT  *
    FROM t1;

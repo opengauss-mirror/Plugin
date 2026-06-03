@@ -196,19 +196,19 @@ Indexes:
     "index010" btree (col1) TABLESPACE pg_default
 
 \d t_create_index_011;
-     Table "public.t_create_index_011"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- c1     | character(64)         | 
- c2     | character varying(64) | 
- c3     | character varying(64) | 
- c4     | nvarchar2(64)         | 
- c5     | nvarchar2(64)         | 
- c6     | text                  | 
- c7     | clob                  | 
- c8     | blob                  | 
+                       Table "public.t_create_index_011"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
+ c1     | character(64)         | character set UTF8 collate utf8mb4_general_ci
+ c2     | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ c3     | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ c4     | nvarchar2(64)         | character set UTF8 collate utf8mb4_general_ci
+ c5     | nvarchar2(64)         | character set UTF8 collate utf8mb4_general_ci
+ c6     | text                  | character set UTF8 collate utf8mb4_general_ci
+ c7     | clob                  | character set UTF8 collate utf8mb4_general_ci
+ c8     | blob                  | character set SQL_ASCII collate binary
  c9     | raw                   | 
- c10    | bytea                 | 
+ c10    | bytea                 | character set SQL_ASCII collate binary
 Indexes:
     "index011" btree (c1(1)) TABLESPACE pg_default
     "index012" btree (c2(1)) TABLESPACE pg_default
@@ -222,18 +222,18 @@ Indexes:
     "index020" btree (c10(2676)) TABLESPACE pg_default
 
 \d t_create_index_012;
-Unlogged table "public.t_create_index_012"
- Column | Type | Modifiers 
---------+------+-----------
- c      | text | 
+          Unlogged table "public.t_create_index_012"
+ Column | Type |                   Modifiers                   
+--------+------+-----------------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "index021" btree (c(2676)) TABLESPACE pg_default
 
 \d t_create_index_013;
-Table "public.t_create_index_013"
- Column | Type | Modifiers 
---------+------+-----------
- c      | text | 
+               Table "public.t_create_index_013"
+ Column | Type |                   Modifiers                   
+--------+------+-----------------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "index022" ubtree (c(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
@@ -354,19 +354,19 @@ Indexes:
     "index010" btree (col1) TABLESPACE pg_default
 
 \d t_create_index_011;
-     Table "public.t_create_index_011"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- c1     | character(64)         | 
- c2     | character varying(64) | 
- c3     | character varying(64) | 
- c4     | nvarchar2(64)         | 
- c5     | nvarchar2(64)         | 
- c6     | text                  | 
- c7     | clob                  | 
- c8     | blob                  | 
+                       Table "public.t_create_index_011"
+ Column |         Type          |                   Modifiers                   
+--------+-----------------------+-----------------------------------------------
+ c1     | character(64)         | character set UTF8 collate utf8mb4_general_ci
+ c2     | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ c3     | character varying(64) | character set UTF8 collate utf8mb4_general_ci
+ c4     | nvarchar2(64)         | character set UTF8 collate utf8mb4_general_ci
+ c5     | nvarchar2(64)         | character set UTF8 collate utf8mb4_general_ci
+ c6     | text                  | character set UTF8 collate utf8mb4_general_ci
+ c7     | clob                  | character set UTF8 collate utf8mb4_general_ci
+ c8     | blob                  | character set SQL_ASCII collate binary
  c9     | raw                   | 
- c10    | bytea                 | 
+ c10    | bytea                 | character set SQL_ASCII collate binary
 Indexes:
     "index011" btree (c1(1)) TABLESPACE pg_default
     "index012" btree (c2(1)) TABLESPACE pg_default
@@ -380,18 +380,18 @@ Indexes:
     "index020" btree (c10(2676)) TABLESPACE pg_default
 
 \d t_create_index_012;
-Unlogged table "public.t_create_index_012"
- Column | Type | Modifiers 
---------+------+-----------
- c      | text | 
+          Unlogged table "public.t_create_index_012"
+ Column | Type |                   Modifiers                   
+--------+------+-----------------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "index021" btree (c(2676)) TABLESPACE pg_default
 
 \d t_create_index_013;
-Table "public.t_create_index_013"
- Column | Type | Modifiers 
---------+------+-----------
- c      | text | 
+               Table "public.t_create_index_013"
+ Column | Type |                   Modifiers                   
+--------+------+-----------------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "index022" ubtree (c(2676)) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 
