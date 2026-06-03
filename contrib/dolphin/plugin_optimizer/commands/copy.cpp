@@ -4699,10 +4699,6 @@ uint64 CopyFrom(CopyState cstate)
         bool is_EOF = false;
         bool has_hash = false;
         uint64 res_hash = 0;
-
-
-    retry_copy:
-
         CHECK_FOR_INTERRUPTS();
 
         if (resetPerTupCxt) {
@@ -4721,6 +4717,7 @@ uint64 CopyFrom(CopyState cstate)
 
         if (IS_PGXC_COORDINATOR) {
 #ifdef ENABLE_MULTIPLE_NODES
+            volatile bool retryCopy = false;
             PG_TRY();
             {
                 is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4730,7 +4727,7 @@ uint64 CopyFrom(CopyState cstate)
             {
                 if (TrySaveImportError(cstate)) {
                     resetPerTupCxt = true;
-                    goto retry_copy;
+                    retryCopy = true;
                 } else {
                     ereport(LOG,
                         (errcode(ERRCODE_SUCCESSFUL_COMPLETION), errmsg("An error in Copy From cannot be catched.")));
@@ -4739,12 +4736,16 @@ uint64 CopyFrom(CopyState cstate)
             }
 
             PG_END_TRY();
+            if (retryCopy) {
+                continue;
+            }
 #endif
             if (unlikely(is_EOF))
                 break;
         } else {
             if (RelationIsPAXFormat(cstate->rel)) {
                 for (int i = 0; i < maxValuesCount; ++i) {
+                    volatile bool retryCopy = false;
                     PG_TRY();
                     {
                         is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4754,7 +4755,7 @@ uint64 CopyFrom(CopyState cstate)
                     {
                         if (TrySaveImportError(cstate)) {
                             resetPerTupCxt = true;
-                            goto retry_copy;
+                            retryCopy = true;
                         } else {
                             ereport(LOG,
                                 (errcode(ERRCODE_SUCCESSFUL_COMPLETION),
@@ -4764,6 +4765,9 @@ uint64 CopyFrom(CopyState cstate)
                     }
 
                     PG_END_TRY();
+                    if (retryCopy) {
+                        break;
+                    }
 
                     if (!is_EOF) {
                         if (cstate->rel->rd_att->constr)
@@ -4789,6 +4793,7 @@ uint64 CopyFrom(CopyState cstate)
                      * 2. memroy batchRowsPtr is using;
                      */
                     for (int i = 0; i < maxValuesCount; ++i) {
+                        volatile bool retryCStoreCopy = false;
                         PG_TRY();
                         {
                             is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4798,7 +4803,7 @@ uint64 CopyFrom(CopyState cstate)
                         {
                             if (TrySaveImportError(cstate)) {
                                 resetPerTupCxt = true;
-                                goto ctore_non_partition_retry_copy;
+                                retryCStoreCopy = true;
                             } else {
                                 ereport(LOG,
                                     (errcode(ERRCODE_SUCCESSFUL_COMPLETION),
@@ -4808,6 +4813,9 @@ uint64 CopyFrom(CopyState cstate)
                         }
 
                         PG_END_TRY();
+                        if (retryCStoreCopy) {
+                            break;
+                        }
 
                         if (!is_EOF) {
                             if (cstate->rel->rd_att->constr)
@@ -4833,8 +4841,6 @@ uint64 CopyFrom(CopyState cstate)
                     // so make resetPerTupCxt true.
                     // reset batchRowsPtr at the start of new loop.
                     //
-                    ctore_non_partition_retry_copy:
-
                     cstoreInsert->BatchInsert(batchRowsPtr, hi_options);
                     resetPerTupCxt = true;
                     if (cstoreInsert->IsEnd())
@@ -4844,6 +4850,7 @@ uint64 CopyFrom(CopyState cstate)
                 } else {
                     bool endFlag = false;
                     for (int i = 0; i < maxValuesCount; ++i) {
+                        volatile bool retryCopy = false;
                         PG_TRY();
                         {
                             is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4853,7 +4860,7 @@ uint64 CopyFrom(CopyState cstate)
                         {
                             if (TrySaveImportError(cstate)) {
                                 resetPerTupCxt = true;
-                                goto retry_copy;
+                                retryCopy = true;
                             } else {
                                 ereport(LOG,
                                     (errcode(ERRCODE_SUCCESSFUL_COMPLETION),
@@ -4863,6 +4870,9 @@ uint64 CopyFrom(CopyState cstate)
                         }
 
                         PG_END_TRY();
+                        if (retryCopy) {
+                            break;
+                        }
 
                         if (!is_EOF) {
                             if (cstate->rel->rd_att->constr)
@@ -4888,6 +4898,7 @@ uint64 CopyFrom(CopyState cstate)
             else if (RelationIsTsStore(cstate->rel)) {
                 bool endFlag = false;
                 while (true) {
+                    volatile bool retryCopy = false;
                     PG_TRY();
                     {
                         is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4897,7 +4908,7 @@ uint64 CopyFrom(CopyState cstate)
                     {
                         if(TrySaveImportError(cstate)) {
                             resetPerTupCxt = true;
-                            goto retry_copy;
+                            retryCopy = true;
                         } else {
                             ereport(LOG, (errcode(ERRCODE_SUCCESSFUL_COMPLETION),
                                     errmsg("An error in Copy From cannot be catched.")));
@@ -4906,6 +4917,9 @@ uint64 CopyFrom(CopyState cstate)
                     }
 
                     PG_END_TRY();
+                    if (retryCopy) {
+                        break;
+                    }
                     if (!is_EOF) {
                         tsstoreInsert->batch_insert(values, nulls, hi_options, false);
                     } else {
@@ -4922,6 +4936,7 @@ uint64 CopyFrom(CopyState cstate)
             }
 #endif   /* ENABLE_MULTIPLE_NODES */
             else {
+                volatile bool retryCopy = false;
                 PG_TRY();
                 {
                     is_EOF = !NextCopyFrom(cstate, econtext, values, nulls, &loaded_oid);
@@ -4966,7 +4981,7 @@ uint64 CopyFrom(CopyState cstate)
                             }
                         }
                         resetPerTupCxt = true;
-                        goto retry_copy;
+                        retryCopy = true;
                     } else {
                         ereport(LOG,
                             (errcode(ERRCODE_SUCCESSFUL_COMPLETION),
@@ -4976,6 +4991,9 @@ uint64 CopyFrom(CopyState cstate)
                 }
 
                 PG_END_TRY();
+                if (retryCopy) {
+                    continue;
+                }
 
                 if (is_EOF) {
                     break;

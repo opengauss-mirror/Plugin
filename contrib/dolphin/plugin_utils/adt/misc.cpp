@@ -1033,6 +1033,7 @@ Datum pg_test_err_contain_err(PG_FUNCTION_ARGS)
             }
             PG_CATCH();
             {
+                FlushErrorState();
                 ereport(ERROR, (errcode(ERRCODE_DIAGNOSTICS_EXCEPTION), errmsg_internal("ERROR CATCH")));
             }
             PG_END_TRY();
@@ -1061,6 +1062,7 @@ Datum pg_test_err_contain_err(PG_FUNCTION_ARGS)
             }
             PG_CATCH();
             {
+                FlushErrorState();
                 ereport(ERROR, (errcode(ERRCODE_DIAGNOSTICS_EXCEPTION), errmsg_internal("ERR ERR CATCH")));
             }
             PG_END_TRY();
