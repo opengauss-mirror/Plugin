@@ -312,7 +312,7 @@ Datum lpad(PG_FUNCTION_ARGS)
     text* string1 = PG_GETARG_TEXT_PP(0);
     int32 len = PG_GETARG_INT32(1);
     text* string2 = PG_GETARG_TEXT_PP(2);
-    text* ret = NULL;
+    text* volatile ret = NULL;
     char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL;
     int m, s1len, s2len;
 
@@ -359,9 +359,12 @@ Datum lpad(PG_FUNCTION_ARGS)
     {
         FlushErrorState();
         ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-        PG_RETURN_NULL();
+        ret = NULL;
     }
     PG_END_TRY();
+    if (ret == NULL) {
+        PG_RETURN_NULL();
+    }
 #else
     if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
         unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
@@ -507,7 +510,7 @@ Datum rpad(PG_FUNCTION_ARGS)
     text* string1 = PG_GETARG_TEXT_PP(0);
     int32 len = PG_GETARG_INT32(1);
     text* string2 = PG_GETARG_TEXT_PP(2);
-    text* ret = NULL;
+    text* volatile ret = NULL;
     char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL;
     int m, s1len, s2len;
     FUNC_CHECK_HUGE_POINTER(false, string1, "rpad()");
@@ -551,11 +554,15 @@ Datum rpad(PG_FUNCTION_ARGS)
     }
     PG_CATCH();
     {
+        FlushErrorState();
         ereport(level, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                 errmsg("requested length too large")));
-        PG_RETURN_NULL();
+        ret = NULL;
     }
     PG_END_TRY();
+    if (ret == NULL) {
+        PG_RETURN_NULL();
+    }
 #else
     if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), len, &bytelen)) ||
         unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||

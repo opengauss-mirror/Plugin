@@ -14651,7 +14651,6 @@ static bool precheck_before_accelerate()
                     errdetail("N/A"),
                     errcause("System error."),
                     erraction("Contact Huawei Engineer.")));
-            return false; /* suppress the static check warmings */
         }
 
         ereport(DEBUG1,
