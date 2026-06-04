@@ -1,5 +1,6 @@
 \c table_name_test_db;
 set dolphin.lower_case_table_names TO 0;
+set b_format_behavior_compat_options = '';
 --
 -- Test for Row Level Security feature
 --
@@ -26,6 +27,7 @@ SET search_path = regress_rls_schema;
 -- regress_rls_alice is the owner of all schema
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
 set dolphin.lower_case_table_names TO 0;
+set b_format_behavior_compat_options = '';
 -- setup of malicious function (NOT SHIPPABLE)
 CREATE OR REPLACE FUNCTION regress_rls_schema.rls_fleak1(text) RETURNS bool
 	COST 0.0000001 LANGUAGE plpgsql
@@ -857,6 +859,7 @@ ERROR:  database "regression" does not exist
 -- reconnect
 \c
 SET search_path = regress_rls_schema;
+set b_format_behavior_compat_options = '';
 -- check audit logs
 SELECT type, database, object_name, detail_info FROM pg_query_audit('2000-01-01 00:00:00', '2100-01-01 00:00:00')
   WHERE detail_info LIKE '%private object%' OR detail_info LIKE '%PRIVATE OBJECT%' ORDER BY detail_info;

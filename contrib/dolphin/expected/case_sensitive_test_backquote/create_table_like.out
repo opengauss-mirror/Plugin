@@ -1,5 +1,6 @@
 \c table_name_test_db;
 SET dolphin.lower_case_table_names TO 0;
+set b_format_behavior_compat_options = '';
 --
 --FOR BLACKLIST FEATURE: SEQUENCE、EXCLUDE、InheRITS is not supported.
 --

@@ -4,6 +4,7 @@ drop database if exists dolphin_autoinc_restore;
 create database dolphin_autoinc dbcompatibility 'b';
 create database dolphin_autoinc_restore dbcompatibility 'b';
 \c dolphin_autoinc
+set b_format_behavior_compat_options = '';
 
 -- bool auto_increment is not supported because there is only two valid value for bool
 CREATE TABLE test_create_autoinc(id bool auto_increment primary key, name varchar(200),a int) auto_increment=1; -- ERROR

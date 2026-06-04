@@ -132,6 +132,7 @@ select pg_get_tabledef('person_track_info');
      "OCCURRENCE_TIME" timestamp(6) without time zone NOT NULL,+
      "OCCURRENCE_TIMEtz" timestamp(6) with time zone NOT NULL  +
  )                                                             +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"         +
  WITH (orientation=row, compression=no)                        +
  PARTITION BY RANGE (yearweek("OCCURRENCE_TIME"))              +
  (                                                             +

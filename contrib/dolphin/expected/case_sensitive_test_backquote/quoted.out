@@ -25,7 +25,9 @@ insert into `test` values(10);
 --------+---------+-----------+---------+--------------+-------------
  ID     | integer |           | plain   |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 select * from `test` where "ID"=10;
  ID 
@@ -54,7 +56,9 @@ insert into `test` values(10);
 --------+---------+-----------+---------+--------------+-------------
  ID     | integer |           | plain   |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 select * from `test` where "ID"=10;
  ID 

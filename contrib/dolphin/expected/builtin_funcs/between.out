@@ -555,9 +555,9 @@ insert into test_nocollate values
 select c1 between c2 and c3 from test_nocollate ;
  b_between_and 
 ---------------
- f
- f
- f
+ t
+ t
+ t
 (3 rows)
 
 drop table test_nocollate;

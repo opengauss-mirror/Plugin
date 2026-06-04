@@ -325,9 +325,9 @@ SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 reset b_format_behavior_compat_options;
 show b_format_behavior_compat_options;
-                                     b_format_behavior_compat_options                                     
-----------------------------------------------------------------------------------------------------------
- enable_set_variables,set_session_transaction,enable_modify_column,fetch,enable_multi_charset,diagnostics
+                                              b_format_behavior_compat_options                                              
+----------------------------------------------------------------------------------------------------------------------------
+ enable_set_variables,set_session_transaction,enable_modify_column,default_collation,fetch,enable_multi_charset,diagnostics
 (1 row)
 
 show character_set_connection;

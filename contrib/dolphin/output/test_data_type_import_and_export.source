@@ -7,6 +7,8 @@ NOTICE:  database "restore_data_type_db" does not exist, skipping
 create database dump_data_type_db with dbcompatibility = 'B';
 create database restore_data_type_db with dbcompatibility = 'B';
 \c dump_data_type_db
+alter database dump_data_type_db set b_format_behavior_compat_options = '';
+set b_format_behavior_compat_options = '';
 --数值类型
 create table value_type_001(c tinyint(10));
 insert into value_type_001 values(-128);

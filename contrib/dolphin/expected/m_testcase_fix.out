@@ -131,7 +131,9 @@ CONTEXT:  referenced column: c
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t12;
                         Table "m_testcase_fix.t12"
@@ -139,7 +141,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t21;
                         Table "m_testcase_fix.t21"
@@ -147,7 +151,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t22;
                         Table "m_testcase_fix.t22"
@@ -155,7 +161,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t31;
                         Table "m_testcase_fix.t31"
@@ -163,7 +171,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t32;
                         Table "m_testcase_fix.t32"
@@ -171,7 +181,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t41;
                         Table "m_testcase_fix.t41"
@@ -179,7 +191,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 \d+ t42;
                         Table "m_testcase_fix.t42"
@@ -187,7 +201,9 @@ Options: orientation=row, compression=no
 --------+---------------+-----------+---------+--------------+-------------
  c      | numeric(10,0) |           | main    |              | 
 Has OIDs: no
-Options: orientation=row, compression=no
+Options: orientation=row, compression=no, collate=1537
+Character Set: UTF8
+Collate: utf8mb4_general_ci
 
 drop table t11;
 drop table t12;

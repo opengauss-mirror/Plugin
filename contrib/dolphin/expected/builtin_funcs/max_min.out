@@ -231,13 +231,13 @@ create view char_maxmin_v as select
     min(b) as min_b
     from char_maxmin_t;
 \d char_maxmin_v;
-      View "public.char_maxmin_v"
- Column |       Type        | Modifiers 
---------+-------------------+-----------
- max_a  | character varying | 
- min_a  | character varying | 
- max_b  | character varying | 
- min_b  | character varying | 
+                        View "public.char_maxmin_v"
+ Column |       Type        |                   Modifiers                   
+--------+-------------------+-----------------------------------------------
+ max_a  | character varying | character set UTF8 collate utf8mb4_general_ci
+ min_a  | character varying | character set UTF8 collate utf8mb4_general_ci
+ max_b  | character varying | character set UTF8 collate utf8mb4_general_ci
+ min_b  | character varying | character set UTF8 collate utf8mb4_general_ci
 
 select * from char_maxmin_v;
  max_a | min_a | max_b | min_b 

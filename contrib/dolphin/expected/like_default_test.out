@@ -1,5 +1,6 @@
 create schema like_default_test;
 set current_schema to 'like_default_test';
+set b_format_behavior_compat_options = '';
 
 create table test_nv (name national varchar(10));
 \d+ test_nv

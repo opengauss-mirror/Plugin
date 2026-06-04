@@ -1,5 +1,6 @@
 create schema test_table_index;
 set current_schema to 'test_table_index';
+set b_format_behavior_compat_options = '';
 
 -- test crate normal table
 create table t1(f1 int , index(f1));

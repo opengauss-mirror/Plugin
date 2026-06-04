@@ -245,6 +245,7 @@ SELECT pg_catalog.pg_get_tabledef('test_alter_autoinc');
      id uint4 AUTO_INCREMENT NOT NULL,                  +
      CONSTRAINT test_alter_autoinc_pkey PRIMARY KEY (id)+
  ) AUTO_INCREMENT = 203                                 +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"  +
  WITH (orientation=row, compression=no);
 (1 row)
 
@@ -450,6 +451,7 @@ SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
      col uint4 AUTO_INCREMENT NOT NULL,                 +
      CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY (col)+
  ) AUTO_INCREMENT = 3002                                +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"  +
  WITH (orientation=row, compression=no);
 (1 row)
 
@@ -465,6 +467,7 @@ SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
      col uint4 AUTO_INCREMENT NOT NULL,                                                                +
      CONSTRAINT test_alter_single_autoinc_pk_u2 UNIQUE (col)                                           +
  ) AUTO_INCREMENT = 3002                                                                               +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                 +
  WITH (orientation=row, compression=no);                                                               +
  ALTER TABLE single_autoinc_pk ADD CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE USING btree (col);+
  ALTER TABLE single_autoinc_pk ADD CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY USING btree  (col);
@@ -479,6 +482,7 @@ SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
      col uint4 AUTO_INCREMENT NOT NULL,                                                             +
      CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE (col)                                        +
  ) AUTO_INCREMENT = 3002                                                                            +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                              +
  WITH (orientation=row, compression=no);                                                            +
  ALTER TABLE single_autoinc_pk ADD CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY USING btree  (col);
 (1 row)
@@ -618,6 +622,7 @@ SELECT pg_catalog.pg_get_tabledef('single_autoinc_uk');
      col uint4 AUTO_INCREMENT,                        +
      CONSTRAINT single_autoinc_uk_col_key UNIQUE (col)+
  ) AUTO_INCREMENT = 3002                              +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
  WITH (orientation=row, compression=no);
 (1 row)
 
@@ -1033,6 +1038,7 @@ SELECT pg_catalog.pg_get_tabledef('ustore_single_autoinc');
      col uint4 AUTO_INCREMENT NOT NULL,                      +
      CONSTRAINT ustore_single_autoinc_pkey PRIMARY KEY (col) +
  ) AUTO_INCREMENT = 3002                                     +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"       +
  WITH (orientation=row, storage_type=ustore, compression=no);
 (1 row)
 
@@ -1685,6 +1691,7 @@ SELECT pg_catalog.pg_get_tabledef('gtemp_single_autoinc');
      col uint4 AUTO_INCREMENT NOT NULL,                              +
      CONSTRAINT gtemp_single_autoinc_pkey PRIMARY KEY (col)          +
  ) AUTO_INCREMENT = 3002                                             +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"               +
  WITH (orientation=row, compression=no, on_commit_delete_rows=false);
 (1 row)
 
@@ -1951,6 +1958,7 @@ SELECT pg_catalog.pg_get_tabledef('unlog_single_autoinc');
      col uint4 AUTO_INCREMENT NOT NULL,                    +
      CONSTRAINT unlog_single_autoinc_pkey PRIMARY KEY (col)+
  ) AUTO_INCREMENT = 3002                                   +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"     +
  WITH (orientation=row, compression=no);
 (1 row)
 
@@ -2240,6 +2248,7 @@ SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_pk');
      col3 integer NOT NULL,                                       +
      CONSTRAINT test_part_autoinc_pk_pkey PRIMARY KEY (col1, col2)+
  ) AUTO_INCREMENT = 3002                                          +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"            +
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (col1) SUBPARTITION BY HASH (col2)            +
  (                                                                +
@@ -2555,6 +2564,7 @@ SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_unique');
      col3 integer NOT NULL,                                                          +
      CONSTRAINT test_part_autoinc_unique_col1_col2_col3_key UNIQUE (col1, col2, col3)+
  ) AUTO_INCREMENT = 2203                                                             +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                               +
  WITH (orientation=row, compression=no)                                              +
  PARTITION BY RANGE (col2) SUBPARTITION BY HASH (col3)                               +
  (                                                                                   +

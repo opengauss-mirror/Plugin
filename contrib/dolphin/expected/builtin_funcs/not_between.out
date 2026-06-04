@@ -320,9 +320,9 @@ insert into test_nocollate values
 select c1 not between c2 and c3 from test_nocollate ;
  b_not_between_and 
 -------------------
- t
- t
- t
+ f
+ f
+ f
 (3 rows)
 
 drop table test_nocollate;

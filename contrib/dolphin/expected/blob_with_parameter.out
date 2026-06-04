@@ -2,30 +2,30 @@ create schema blob_with_parameter;
 set current_schema = blob_with_parameter;
 create table t_bb(a blob(255), b blob(256), c blob(65535), d blob(65536));
 \d t_bb;
-Table "blob_with_parameter.t_bb"
- Column |    Type    | Modifiers 
---------+------------+-----------
- a      | tinyblob   | 
- b      | blob       | 
- c      | blob       | 
- d      | mediumblob | 
+               Table "blob_with_parameter.t_bb"
+ Column |    Type    |               Modifiers                
+--------+------------+----------------------------------------
+ a      | tinyblob   | character set SQL_ASCII collate binary
+ b      | blob       | character set SQL_ASCII collate binary
+ c      | blob       | character set SQL_ASCII collate binary
+ d      | mediumblob | character set SQL_ASCII collate binary
 
 create table t1(a blob(0), b blob(16777215), c blob(16777216), d blob(4294967295));
 \d t1;
- Table "blob_with_parameter.t1"
- Column |    Type    | Modifiers 
---------+------------+-----------
- a      | tinyblob   | 
- b      | mediumblob | 
- c      | longblob   | 
- d      | longblob   | 
+                Table "blob_with_parameter.t1"
+ Column |    Type    |               Modifiers                
+--------+------------+----------------------------------------
+ a      | tinyblob   | character set SQL_ASCII collate binary
+ b      | mediumblob | character set SQL_ASCII collate binary
+ c      | longblob   | character set SQL_ASCII collate binary
+ d      | longblob   | character set SQL_ASCII collate binary
 
 create table t2(a blob(4294967295.5));
 \d t2;
-Table "blob_with_parameter.t2"
- Column |   Type   | Modifiers 
---------+----------+-----------
- a      | longblob | 
+               Table "blob_with_parameter.t2"
+ Column |   Type   |               Modifiers                
+--------+----------+----------------------------------------
+ a      | longblob | character set SQL_ASCII collate binary
 
 -- error
 create table t3(a blob(-1));

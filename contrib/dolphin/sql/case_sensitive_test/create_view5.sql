@@ -6,6 +6,7 @@
 --test COMMENT ON view's column
 \c table_name_test_db;
 set dolphin.lower_case_table_names TO 0;
+set b_format_behavior_compat_options = '';
 
 create table test_comment_normal_view_column_t(id1 int,id2 int);
 create or replace view test_comment_normal_view_column_v as select * from test_comment_normal_view_column_t;

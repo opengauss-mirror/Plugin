@@ -16,6 +16,7 @@ show create table t1;
        | CREATE TABLE t1 (                                                                         +
        |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone+
        | )                                                                                         +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                     +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -35,6 +36,7 @@ show create table t2;
        |     a integer,                                              +
        |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED+
        | )                                                           +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"       +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -54,6 +56,7 @@ show create table t3;
        |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone,+
        |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED                               +
        | )                                                                                          +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                      +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -71,6 +74,7 @@ show create table t4;
        | CREATE TABLE t4 (                                                                                                        +
        |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
        | )                                                                                                                        +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                    +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -113,6 +117,7 @@ show create table test;
        |     col2 double precision DEFAULT 2.2::double precision,+
        |     col3 real DEFAULT (-1100)::real                     +
        | )                                                       +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"   +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -127,14 +132,15 @@ drop table t7;
 create table t1(a int, b int as (a) stored);
 alter table t1 add gc bigint as (a) stored;
 show create table t1;
- Table |                 Create Table                  
--------+-----------------------------------------------
- t1    | SET search_path = test_default;              +
-       | CREATE TABLE t1 (                            +
-       |     a integer,                               +
-       |     b integer GENERATED ALWAYS AS (a) STORED,+
-       |     gc bigint GENERATED ALWAYS AS (a) STORED +
-       | )                                            +
+ Table |                     Create Table                      
+-------+-------------------------------------------------------
+ t1    | SET search_path = test_default;                      +
+       | CREATE TABLE t1 (                                    +
+       |     a integer,                                       +
+       |     b integer GENERATED ALWAYS AS (a) STORED,        +
+       |     gc bigint GENERATED ALWAYS AS (a) STORED         +
+       | )                                                    +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
        | WITH (orientation=row, compression=no);
 (1 row)
 

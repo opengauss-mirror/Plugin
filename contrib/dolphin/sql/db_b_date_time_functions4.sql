@@ -2,6 +2,7 @@ create schema b_datetime_func_test4;
 set current_schema to 'b_datetime_func_test4';
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
+set b_format_behavior_compat_options = '';
 create table test(funcname text, result text);
 -- test get_format
 -- 功能

@@ -5,6 +5,8 @@ drop database if exists restore_table_db;
 create database dump_table_db with dbcompatibility = 'B';
 create database restore_table_db with dbcompatibility = 'B';
 \c dump_table_db
+alter database dump_table_db set b_format_behavior_compat_options = '';
+set b_format_behavior_compat_options = '';
 
 --指定engine名字
 create table t_create_table_001(c int) engine = InnoDB;

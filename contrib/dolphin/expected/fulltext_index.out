@@ -11,12 +11,12 @@ FULLTEXT (title, boby) WITH PARSER ngram
 NOTICE:  CREATE TABLE will create implicit sequence "test_id_seq" for serial column "test.id"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
 \d test
-              Table "fulltext_test.test"
- Column |       Type        |        Modifiers        
---------+-------------------+-------------------------
+                         Table "fulltext_test.test"
+ Column |       Type        |                   Modifiers                   
+--------+-------------------+-----------------------------------------------
  id     | uint4             | not null AUTO_INCREMENT
- title  | character varying | 
- boby   | text              | 
+ title  | character varying | character set UTF8 collate utf8mb4_general_ci
+ boby   | text              | character set UTF8 collate utf8mb4_general_ci
  name   | name              | 
 Indexes:
     "test_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
@@ -156,11 +156,11 @@ title VARCHAR(100),
 FULLTEXT INDEX ngram_idx(title)WITH PARSER ngram
 );
 \d articles
-       Table "fulltext_test.articles"
- Column |          Type          | Modifiers 
---------+------------------------+-----------
+                         Table "fulltext_test.articles"
+ Column |          Type          |                   Modifiers                   
+--------+------------------------+-----------------------------------------------
  ID     | integer                | 
- title  | character varying(100) | 
+ title  | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "ngram_idx" gin (to_tsvector('ngram'::regconfig, title::text)) TABLESPACE pg_default
 
@@ -172,11 +172,11 @@ title VARCHAR(100),
 FULLTEXT INDEX (title)WITH PARSER ngram
 );
 \d articles
-       Table "fulltext_test.articles"
- Column |          Type          | Modifiers 
---------+------------------------+-----------
+                         Table "fulltext_test.articles"
+ Column |          Type          |                   Modifiers                   
+--------+------------------------+-----------------------------------------------
  ID     | integer                | 
- title  | character varying(100) | 
+ title  | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "articles_to_tsvector_idx" gin (to_tsvector('ngram'::regconfig, title::text)) TABLESPACE pg_default
 
@@ -188,11 +188,11 @@ title VARCHAR(100),
 FULLTEXT KEY keyngram_idx(title)WITH PARSER ngram
 );
 \d articles
-       Table "fulltext_test.articles"
- Column |          Type          | Modifiers 
---------+------------------------+-----------
+                         Table "fulltext_test.articles"
+ Column |          Type          |                   Modifiers                   
+--------+------------------------+-----------------------------------------------
  ID     | integer                | 
- title  | character varying(100) | 
+ title  | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "keyngram_idx" gin (to_tsvector('ngram'::regconfig, title::text)) TABLESPACE pg_default
 
@@ -204,11 +204,11 @@ title VARCHAR(100),
 FULLTEXT KEY (title)WITH PARSER ngram
 );
 \d articles
-       Table "fulltext_test.articles"
- Column |          Type          | Modifiers 
---------+------------------------+-----------
+                         Table "fulltext_test.articles"
+ Column |          Type          |                   Modifiers                   
+--------+------------------------+-----------------------------------------------
  ID     | integer                | 
- title  | character varying(100) | 
+ title  | character varying(100) | character set UTF8 collate utf8mb4_general_ci
 Indexes:
     "articles_to_tsvector_idx" gin (to_tsvector('ngram'::regconfig, title::text)) TABLESPACE pg_default
 
