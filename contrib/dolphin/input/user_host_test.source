@@ -54,14 +54,14 @@ alter session set session authorization test1@localhost password 'Test@123';
 \! echo 'b_compatibility_user_host_auth = on' >> @abs_srcdir@/tmp_check/datanode1/postgresql.conf
 \! sed -i 's#host.*all.*all.*127.0.0.1/32.*#host  all  all  all  sha256#g' @abs_srcdir@/tmp_check/datanode1/pg_hba.conf
 \! @abs_bindir@/gs_ctl restart -D @abs_srcdir@/tmp_check/datanode1  > /dev/null
-\! sleep 5
+\! sleep 20
 \! @abs_bindir@/gsql -p @portstring@ -h 127.0.0.1 -d user_host_db -r -U test_user_host -W 'test123@' -c "select current_user";
 \! @abs_bindir@/gsql -p @portstring@ -d user_host_db -r  -c "drop user if exists 'test_user_host'@'127.0.0.1'";
 \! @abs_bindir@/gs_ctl restart -D @abs_srcdir@/tmp_check/datanode1  > /dev/null
-\! sleep 5
+\! sleep 20
 \! @abs_bindir@/gsql -p @portstring@ -h 127.0.0.1 -d user_host_db -r -U test_user_host -W 'test123@' -c "select current_user";
 \! @abs_bindir@/gsql -p @portstring@ -d user_host_db -r  -c "drop user 'test_user_host'@'127.0.0.%'";
 \! @abs_bindir@/gs_ctl restart -D @abs_srcdir@/tmp_check/datanode1  > /dev/null
-\! sleep 5
+\! sleep 20
 \! @abs_bindir@/gsql -p @portstring@ -h 127.0.0.1 -d user_host_db -r -U test_user_host -W 'test123@' -c "select current_user";
 \! @abs_bindir@/gsql -p @portstring@ -h 127.0.0.1 -d user_host_db -r -U test_user_host -W 'test123@' -c "select * from test2";

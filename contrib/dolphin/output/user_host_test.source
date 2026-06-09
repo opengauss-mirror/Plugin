@@ -95,7 +95,7 @@ alter session set session authorization test1@localhost password 'Test@123';
 --?.*
 --?.*
 --?.*
-\! sleep 5
+\! sleep 20
 --?.*
        current_user       
 --------------------------
@@ -105,7 +105,7 @@ alter session set session authorization test1@localhost password 'Test@123';
 --?.*
 DROP ROLE
 --?.*
-\! sleep 5
+\! sleep 20
 --?.*
        current_user       
 --------------------------
@@ -115,7 +115,7 @@ DROP ROLE
 --?.*
 DROP ROLE
 --?.*
-\! sleep 5
+\! sleep 20
 --?.*
       current_user      
 ------------------------
