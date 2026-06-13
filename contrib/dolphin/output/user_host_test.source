@@ -37,6 +37,14 @@ LINE 1: create user 'test_user_host%' password 'test123@';
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 set b_compatibility_user_host_auth = on;
+set b_format_behavior_compat_options = '';
+set enable_set_variable_b_format = off;
+select @1::int;
+ ?column? 
+----------
+        1
+(1 row)
+
 CREATE USER 'da@localhost'@'%' PASSWORD 'test123@';
 ERROR:  @ can't be allowed in username
 create user if not exists 'test_user_host'@'%' password 'test123@';
@@ -92,6 +100,12 @@ grant insert on test2 to 'test_user_host'@'127.0.%';
 revoke insert on test2 from 'test_user_host'@'127.0.%';
 create user test1@localhost password 'Test@123';
 alter session set session authorization test1@localhost password 'Test@123';
+select current_user;
+  current_user   
+-----------------
+ test1@localhost
+(1 row)
+
 --?.*
 --?.*
 --?.*
