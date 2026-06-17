@@ -1797,6 +1797,9 @@ static int get_table_attribute(
             get_compression_mode(att_tup, buf);
 
             /* Add charset and collation if not default for the type */
+#ifdef DOLPHIN
+            bool collate_emitted = false;
+#endif
             if (OidIsValid(att_tup->attcollation) && att_tup->attcollation != get_typcollation(att_tup->atttypid)) {
                 /* always schema-qualify, don't try to be smart */
                 char* collname = get_collation_name(att_tup->attcollation);
@@ -1821,6 +1824,9 @@ static int get_table_attribute(
                     pfree_ext(namespace_name);
                 }
                 pfree_ext(collname);
+#ifdef DOLPHIN
+                collate_emitted = true;
+#endif
             }
 
             if (formatter != NULL) {
@@ -1877,6 +1883,20 @@ static int get_table_attribute(
                             generatedCol = DatumGetChar(adgencol);
                         }
                         const char* adsrc = TextDatumGetCString(txt);
+#ifdef DOLPHIN
+                        char* stripped_adsrc = NULL;
+                        if (collate_emitted) {
+                            const char* collate_pos = strstr(adsrc, " COLLATE ");
+                            if (collate_pos != NULL) {
+                                size_t prefix_len = (size_t)(collate_pos - adsrc);
+                                stripped_adsrc = (char*)palloc(prefix_len + 1);
+                                errno_t rc = strncpy_s(stripped_adsrc, prefix_len + 1, adsrc, prefix_len);
+                                securec_check_c(rc, "\0", "\0");
+                                stripped_adsrc[prefix_len] = '\0';
+                                adsrc = stripped_adsrc;
+                            }
+                        }
+#endif
                         if (generatedCol == ATTRIBUTE_GENERATED_STORED) {
                             appendStringInfo(buf, " GENERATED ALWAYS AS (%s) STORED", adsrc);
                         } else if (strcmp(adsrc, "AUTO_INCREMENT") == 0) {
@@ -1887,6 +1907,11 @@ static int get_table_attribute(
                         } else if (pg_strcasecmp(adsrc, "") != 0) {
                             appendStringInfo(buf, " DEFAULT %s", adsrc);
                         }
+#ifdef DOLPHIN
+                        if (stripped_adsrc != NULL) {
+                            pfree(stripped_adsrc);
+                        }
+#endif
                         if (isOnUpdate) {
                             if (pg_strcasecmp(TextDatumGetCString(onUpdateExpr), "pg_systimestamp()") == 0) {
                                 appendStringInfo(buf, " ON UPDATE CURRENT_TIMESTAMP");
