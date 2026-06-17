@@ -439,6 +439,28 @@ explain (costs off) select * from t_v31 where a < b;
 select a < b, a < c, a < d, a < e from t_v31;
 drop table t_v31;
 
+set collation_connection = 'utf8mb4_general_ci';
+create table t_binary_text_8175_l(a binary(100));
+create table t_binary_text_8175_r(a text);
+insert into t_binary_text_8175_l values('1.23a');
+insert into t_binary_text_8175_r values('1.23a');
+select t_binary_text_8175_l.a = t_binary_text_8175_r.a as b_eq_t,
+       t_binary_text_8175_l.a <> t_binary_text_8175_r.a as b_ne_t,
+       t_binary_text_8175_l.a < t_binary_text_8175_r.a as b_lt_t,
+       t_binary_text_8175_l.a <= t_binary_text_8175_r.a as b_le_t,
+       t_binary_text_8175_l.a > t_binary_text_8175_r.a as b_gt_t,
+       t_binary_text_8175_l.a >= t_binary_text_8175_r.a as b_ge_t
+from t_binary_text_8175_l, t_binary_text_8175_r;
+select t_binary_text_8175_r.a = t_binary_text_8175_l.a as t_eq_b,
+       t_binary_text_8175_r.a <> t_binary_text_8175_l.a as t_ne_b,
+       t_binary_text_8175_r.a < t_binary_text_8175_l.a as t_lt_b,
+       t_binary_text_8175_r.a <= t_binary_text_8175_l.a as t_le_b,
+       t_binary_text_8175_r.a > t_binary_text_8175_l.a as t_gt_b,
+       t_binary_text_8175_r.a >= t_binary_text_8175_l.a as t_ge_b
+from t_binary_text_8175_l, t_binary_text_8175_r;
+drop table t_binary_text_8175_l, t_binary_text_8175_r;
+set collation_connection = 'binary';
+
 set dolphin.sql_mode = 'pipes_as_concat';
 CREATE TABLE test_multi_type_table
 (
