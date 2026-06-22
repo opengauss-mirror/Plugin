@@ -68,18 +68,18 @@ CREATE FUNCTION
 ALTER FUNCTION
 SET
 SET
---?.*ERROR:  multiple COLLATE clauses not allowed
-LINE 6: ...f8mb4_general_ci" DEFAULT NULL::character varying COLLATE "u...
-                                                             ^
---?.*ERROR:  relation "envision.yx_channel" does not exist
---?.*ERROR:  relation "yx_channel" does not exist
---?.*ERROR:  relation "yx_channel" does not exist
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
 BEGIN
---?.*ERROR:  relation "yx_channel" does not exist
---?.*ERROR:  current transaction is aborted, commands ignored until end of transaction block, firstChar[Q]
-ROLLBACK
+CREATE TRIGGER
+ALTER TRIGGER
+COMMIT
 --?.*
 drop schema envision cascade;
-NOTICE:  drop cascades to function ti_yx_channel_trigger_function()
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to function ti_yx_channel_trigger_function()
+drop cascades to table yx_channel
 \c postgres
 drop database envision;
