@@ -1538,10 +1538,10 @@ select EXTRACTVALUE('', LPAD(0.1111E-15, '2011', 1));
 ERROR:  Failed to parse XML 
 CONTEXT:  referenced column: extractvalue
 select UPDATEXML(CONVERT(_latin1'<' USING utf8),'1','1');
-ERROR:  default collation for encoding "LATIN1" does not exist
+ERROR:  Failed to parse XML
 CONTEXT:  referenced column: updatexml
 select UPDATEXML(CONVERT(_latin1'<!--' USING utf8),'1','1');
-ERROR:  default collation for encoding "LATIN1" does not exist
+ERROR:  Failed to parse XML
 CONTEXT:  referenced column: updatexml
 select ExtractValue(CONVERT('<\"', BINARY(10)), 1);
 ERROR:  Failed to parse XML 

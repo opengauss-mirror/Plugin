@@ -5492,7 +5492,14 @@ static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
 #endif
     }
 
-    exprSetCollation(result, get_default_collation_by_charset(c->charset));
+    if (unlikely(DB_IS_CMPT(B_FORMAT))) {
+        Oid collid = get_default_collation_by_charset(c->charset, false);
+        if (OidIsValid(collid)) {
+            exprSetCollation(result, collid);
+        }
+    } else {
+        exprSetCollation(result, get_default_collation_by_charset(c->charset));
+    }
     return result;
 }
 

@@ -1018,7 +1018,8 @@ static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
             if (strncmp(func_name, "convert", strlen("convert")) == 0) {
                 Const* con = llast_node(Const, func->args);
                 int out_charset = pg_char_to_encoding(DatumGetName(con->constvalue)->data);
-                *out_collation = (out_charset > 0) ? get_default_collation_by_charset(out_charset) : InvalidOid;
+                Oid collid = (out_charset > 0) ? get_default_collation_by_charset(out_charset, false) : InvalidOid;
+                *out_collation = OidIsValid(collid) ? collid : *out_collation;
             }
             pfree_ext(func_name);
         }
