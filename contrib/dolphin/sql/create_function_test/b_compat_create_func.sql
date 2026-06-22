@@ -562,6 +562,58 @@ select :lable;
 select :loop;
 select :repeat;
 select :while;
+
+DELIMITER //
+CREATE FUNCTION fn_grade_label(grade varchar(20) CHARSET utf8mb4 collate utf8mb4_bin)
+RETURNS VARCHAR(20) CHARSET utf8mb4 collate utf8mb4_bin
+DETERMINISTIC
+BEGIN
+    IF grade = 'A' THEN
+RETURN 'Excellent';
+    ELSEIF grade = 'B' THEN
+        RETURN 'Good';
+    ELSEIF grade = 'C' THEN
+        RETURN 'Pass';
+    ELSE
+        RETURN 'Unknown';
+    END IF;
+END //
+DELIMITER ;
+
+
+SELECT fn_grade_label('A') AS a,
+        fn_grade_label('B') AS b,
+        fn_grade_label('C') AS c,
+        fn_grade_label('a') AS lower_a,
+        fn_grade_label('X') AS x;
+
+DROP FUNCTION fn_grade_label;
+
+DELIMITER //
+CREATE FUNCTION fn_grade_label(grade varchar(20) CHARSET utf8mb4)
+RETURNS VARCHAR(20) CHARSET utf8mb4
+DETERMINISTIC
+BEGIN
+    IF grade = 'A' THEN
+RETURN 'Excellent';
+    ELSEIF grade = 'B' THEN
+        RETURN 'Good';
+    ELSEIF grade = 'C' THEN
+        RETURN 'Pass';
+    ELSE
+        RETURN 'Unknown';
+    END IF;
+END //
+DELIMITER ;
+
+SELECT fn_grade_label('A') AS a,
+        fn_grade_label('B') AS b,
+        fn_grade_label('C') AS c,
+        fn_grade_label('a') AS lower_a,
+        fn_grade_label('X') AS x;
+
+DROP FUNCTION fn_grade_label;
+
 drop schema b_compat_create_func cascade;
 reset current_schema;
 reset role;
