@@ -431,6 +431,28 @@ select * from t_v30 inner join t_v25 on t_v30.col1=t_v25.col1;
 select * from t_v30 inner join t_v27 on t_v30.col1=t_v27.col1;
 
 reset dolphin.sql_mode;
+set b_format_behavior_compat_options = 'enable_multi_charset';
+set collation_connection = 'utf8mb4_general_ci';
+create table t_binary_text_8175_l(a binary(100));
+create table t_binary_text_8175_r(a text);
+insert into t_binary_text_8175_l values('1.23a');
+insert into t_binary_text_8175_r values('1.23a');
+select t_binary_text_8175_l.a = t_binary_text_8175_r.a as b_eq_t,
+       t_binary_text_8175_l.a <> t_binary_text_8175_r.a as b_ne_t,
+       t_binary_text_8175_l.a < t_binary_text_8175_r.a as b_lt_t,
+       t_binary_text_8175_l.a <= t_binary_text_8175_r.a as b_le_t,
+       t_binary_text_8175_l.a > t_binary_text_8175_r.a as b_gt_t,
+       t_binary_text_8175_l.a >= t_binary_text_8175_r.a as b_ge_t
+from t_binary_text_8175_l, t_binary_text_8175_r;
+select t_binary_text_8175_r.a = t_binary_text_8175_l.a as t_eq_b,
+       t_binary_text_8175_r.a <> t_binary_text_8175_l.a as t_ne_b,
+       t_binary_text_8175_r.a < t_binary_text_8175_l.a as t_lt_b,
+       t_binary_text_8175_r.a <= t_binary_text_8175_l.a as t_le_b,
+       t_binary_text_8175_r.a > t_binary_text_8175_l.a as t_gt_b,
+       t_binary_text_8175_r.a >= t_binary_text_8175_l.a as t_ge_b
+from t_binary_text_8175_l, t_binary_text_8175_r;
+drop table t_binary_text_8175_l, t_binary_text_8175_r;
+set collation_connection = 'binary';
 
 drop schema test_binary cascade;
 reset current_schema;
