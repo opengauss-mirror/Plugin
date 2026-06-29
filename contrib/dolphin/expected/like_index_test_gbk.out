@@ -12,12 +12,12 @@ create table test_gbk_table_bin_char(c1 char(10))charset GBK collate gbk_bin;
 create index on test_gbk_table_bin_char(c1);
 insert into test_gbk_table_bin_char values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_char where c1 like 'sde%';
-                                     QUERY PLAN                                      
--------------------------------------------------------------------------------------
+                              QUERY PLAN                              
+----------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_char
    Filter: (c1 ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_char_c1_idx
-         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 <= 'sdeþþþþþþþþþþþþþþ'::bpchar))
+         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 < 'sdf'::bpchar))
 (4 rows)
 
 select * from test_gbk_table_bin_char where c1 like 'sde%';
@@ -49,12 +49,12 @@ create table test_gbk_table_bin_varchar_length_nprefix(c1 varchar(10))charset GB
 create index on test_gbk_table_bin_varchar_length_nprefix(c1);
 insert into test_gbk_table_bin_varchar_length_nprefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_varchar_length_nprefix where c1 like 'sde%';
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_varchar_length_nprefix
    Filter: ((c1)::text ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_varchar_length_nprefix_c1_idx
-         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sdeþþþþþþþþþþþþþþ'::text))
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text < 'sdf'::text))
 (4 rows)
 
 select * from test_gbk_table_bin_varchar_length_nprefix where c1 like 'sde%';
@@ -119,12 +119,12 @@ create table test_gbk_table_bin_varchar_nlength_prefix(c1 varchar)charset GBK co
 create index on test_gbk_table_bin_varchar_nlength_prefix(c1(10));
 insert into test_gbk_table_bin_varchar_nlength_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_varchar_nlength_prefix where c1 like 'sde%';
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_varchar_nlength_prefix
    Filter: ((c1)::text ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_varchar_nlength_prefix_expr_idx
-         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sdeþþþþþþþþþþþþþþ'::text))
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text < 'sdf'::text))
 (4 rows)
 
 select * from test_gbk_table_bin_varchar_nlength_prefix where c1 like 'sde%';
@@ -156,12 +156,12 @@ create table test_gbk_table_bin_varchar_length_prefix(c1 varchar(10))charset GBK
 create index on test_gbk_table_bin_varchar_length_prefix(c1(2));
 insert into test_gbk_table_bin_varchar_length_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_varchar_length_prefix where c1 like 's%';
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_varchar_length_prefix
    Filter: ((c1)::text ~~ 's%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_varchar_length_prefix_expr_idx
-         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text <= 'sþþ'::text))
+         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text < 't'::text))
 (4 rows)
 
 select * from test_gbk_table_bin_varchar_length_prefix where c1 like 's%';
@@ -226,12 +226,12 @@ create table test_gbk_table_bin_text_prefix(c1 text)charset GBK collate gbk_bin;
 create index on test_gbk_table_bin_text_prefix(c1(10));
 insert into test_gbk_table_bin_text_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_text_prefix where c1 like 's%';
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                             QUERY PLAN                             
+--------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_text_prefix
    Filter: (c1 ~~ 's%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_text_prefix_expr_idx
-         Index Cond: ((c1 >= 's'::text) AND (c1 <= 'sþþþþþþþþþþþþþþþþþþ'::text))
+         Index Cond: ((c1 >= 's'::text) AND (c1 < 't'::text))
 (4 rows)
 
 select * from test_gbk_table_bin_text_prefix where c1 like 's%';
@@ -264,12 +264,12 @@ create table test_gbk_chinese_ci_char(c1 char(10))charset GBK collate gbk_chines
 create index on test_gbk_chinese_ci_char(c1);
 insert into test_gbk_chinese_ci_char values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_chinese_ci_char where c1 like 'sde%';
-                                     QUERY PLAN                                      
--------------------------------------------------------------------------------------
+                              QUERY PLAN                              
+----------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_chinese_ci_char
    Filter: (c1 ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_chinese_ci_char_c1_idx
-         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 <= 'sde©g©g©g©g©g©g©g'::bpchar))
+         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 < 'sdf'::bpchar))
 (4 rows)
 
 select * from test_gbk_chinese_ci_char where c1 like 'sde%';
@@ -301,12 +301,12 @@ create table test_gbk_chinese_ci_varchar_length_nprefix(c1 varchar(10))charset G
 create index on test_gbk_chinese_ci_varchar_length_nprefix(c1);
 insert into test_gbk_chinese_ci_varchar_length_nprefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_chinese_ci_varchar_length_nprefix where c1 like 'sde%';
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_chinese_ci_varchar_length_nprefix
    Filter: ((c1)::text ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_chinese_ci_varchar_length_nprefix_c1_idx
-         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde©g©g©g©g©g©g©g'::text))
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text < 'sdf'::text))
 (4 rows)
 
 select * from test_gbk_chinese_ci_varchar_length_nprefix where c1 like 'sde%';
@@ -371,12 +371,12 @@ create table test_gbk_chinese_ci_varchar_nlength_prefix(c1 varchar)charset GBK c
 create index on test_gbk_chinese_ci_varchar_nlength_prefix(c1(10));
 insert into test_gbk_chinese_ci_varchar_nlength_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_chinese_ci_varchar_nlength_prefix where c1 like 'sde%';
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_chinese_ci_varchar_nlength_prefix
    Filter: ((c1)::text ~~ 'sde%'::text)
    ->  Bitmap Index Scan on test_gbk_chinese_ci_varchar_nlength_prefix_expr_idx
-         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde©g©g©g©g©g©g©g'::text))
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text < 'sdf'::text))
 (4 rows)
 
 select * from test_gbk_chinese_ci_varchar_nlength_prefix where c1 like 'sde%';
@@ -408,12 +408,12 @@ create table test_gbk_chinese_ci_varchar_length_prefix(c1 varchar(10))charset GB
 create index on test_gbk_chinese_ci_varchar_length_prefix(c1(2));
 insert into test_gbk_chinese_ci_varchar_length_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_chinese_ci_varchar_length_prefix where c1 like 's%';
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_chinese_ci_varchar_length_prefix
    Filter: ((c1)::text ~~ 's%'::text)
    ->  Bitmap Index Scan on test_gbk_chinese_ci_varchar_length_prefix_expr_idx
-         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text <= 's©g'::text))
+         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text < 't'::text))
 (4 rows)
 
 select * from test_gbk_chinese_ci_varchar_length_prefix where c1 like 's%';
@@ -478,12 +478,12 @@ create table test_gbk_chinese_ci_text_prefix(c1 text)charset GBK collate gbk_chi
 create index on test_gbk_chinese_ci_text_prefix(c1(10));
 insert into test_gbk_chinese_ci_text_prefix values('sdeWf'), ('wertf');
 explain (costs off) select * from test_gbk_table_bin_text_prefix where c1 like 's%';
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                             QUERY PLAN                             
+--------------------------------------------------------------------
  Bitmap Heap Scan on test_gbk_table_bin_text_prefix
    Filter: (c1 ~~ 's%'::text)
    ->  Bitmap Index Scan on test_gbk_table_bin_text_prefix_expr_idx
-         Index Cond: ((c1 >= 's'::text) AND (c1 <= 'sþþþþþþþþþþþþþþþþþþ'::text))
+         Index Cond: ((c1 >= 's'::text) AND (c1 < 't'::text))
 (4 rows)
 
 select * from test_gbk_chinese_ci_text_prefix where c1 like 's%';

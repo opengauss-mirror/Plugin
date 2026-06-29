@@ -373,10 +373,10 @@ select sequence_name,sequence_schema,sequence_catalog,start_value,minimum_value,
 (2 rows)
 
 select * from information_schema.sequences;
-  sequence_catalog  | sequence_schema |         sequence_name         | data_type | numeric_precision | numeric_precision_radix | numeric_scale | start_value | minimum_value |    maximum_value    | increment | cycle_option 
---------------------+-----------------+-------------------------------+-----------+-------------------+-------------------------+---------------+-------------+---------------+---------------------+-----------+--------------
- contrib_regression | coverage        | proc_coverage_coverage_id_seq | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
- contrib_regression | db4ai           | snapshot_sequence             | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO
+  sequence_catalog  | sequence_schema |         sequence_name         | data_type | numeric_precision | numeric_precision_radix | numeric_scale | start_value | minimum_value |    maximum_value    | increment | cycle_option | global_cache_option 
+--------------------+-----------------+-------------------------------+-----------+-------------------+-------------------------+---------------+-------------+---------------+---------------------+-----------+--------------+---------------------
+ contrib_regression | coverage        | proc_coverage_coverage_id_seq | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO           | NO
+ contrib_regression | db4ai           | snapshot_sequence             | int16     |               128 |                       2 |             0 | 1           | 1             | 9223372036854775807 | 1         | NO           | NO
 (2 rows)
 
 select sequence_name,sequence_schema,sequence_catalog,start_value,minimum_value,maximum_value,increment from information_schema.sequences;

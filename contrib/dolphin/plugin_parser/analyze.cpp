@@ -614,6 +614,35 @@ static Query* TransformCompositeTypeStmt(ParseState* pstate, CompositeTypeStmt* 
     return result;
 }
 
+static void rewriteSequenceObject(DropStmt* stmt)
+{
+    ListCell* cell = NULL;
+    foreach (cell, stmt->objects) {
+        List* names = (List*)lfirst(cell);
+        RangeVar* relrv = makeRangeVarFromNameList(names);
+
+        if (relrv == NULL) {
+            continue;
+        }
+
+        Oid namespaceId = RangeVarGetCreationNamespace(relrv);
+        HeapTuple relTuple =
+            SearchSysCache2(RELNAMENSP, PointerGetDatum(relrv->relname), ObjectIdGetDatum(namespaceId));
+        if (!HeapTupleIsValid(relTuple)) {
+            pfree(relrv);
+            continue;
+        }
+        Form_pg_class classForm = (Form_pg_class)GETSTRUCT(relTuple);
+        if (classForm->relkind == RELKIND_SEQUENCE) {
+            stmt->removeType = OBJECT_SEQUENCE;
+        } else if (classForm->relkind == RELKIND_LARGE_SEQUENCE) {
+            stmt->removeType = OBJECT_LARGE_SEQUENCE;
+        }
+        ReleaseSysCache(relTuple);
+        pfree(relrv);
+    }
+}
+
 /*
  * transformStmt -
  *	  recursively transform a Parse tree into a Query tree.
@@ -755,7 +784,12 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result = transformCallStmt(pstate, (DolphinCallStmt*) parseTree);
             break;
         default:
-
+            if (nodeTag(parseTree) == T_DropStmt) {
+                DropStmt *stmt = (DropStmt*)parseTree;
+                if (stmt->removeType == OBJECT_SEQUENCE_GSC || stmt->removeType == OBJECT_LARGE_SEQUENCE_GSC) {
+                    rewriteSequenceObject(stmt);
+                }
+            }
             /*
              * other statements don't require any transformation; just return
              * the original parsetree with a Query node plastered on top.
@@ -2899,19 +2933,29 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
 #endif
 
     if (RelationHasRlspolicy(targetrel->rd_id) && CheckRlsPolicyForUpsert(targetrel)) {
+        const char* upsertStr = "";
+        if (upsertClause->action == UPSERT_UPDATE || upsertClause->action == UPSERT_NOTHING) {
+            upsertStr = "INSERT ON DUPLICATE KEY UPDATE";
+        } else if (upsertClause->action == ONCONFLICT_UPDATE || upsertClause->action == ONCONFLICT_NOTHING) {
+            upsertStr = "INSERT ON CONFLICT DO UPDATE/NOTHING.";
+        }
         ereport(ERROR,
             (errmodule(MOD_SEC_POLICY),
                 errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("Row level security policy is not supported by INSERT ON DUPLICATE KEY UPDATE."),
+                errmsg("Row level security policy is not supported by %s.", upsertStr),
                 errdetail("Table %s with row level security policy.", RelationGetRelationName(targetrel)),
                 errcause("Target table with row level security policy."),
-                erraction("Shutdown row level security policy, Use INSERT and UPDATE instead INSERT ON DUPLICATE KEY "
-                          "UPDATE.")));
+                erraction("Shutdown row level security policy, Use INSERT and UPDATE instead %s.", upsertStr)));
     }
 
-    if (upsertClause->targetList != NIL) {
+    if (upsertClause->targetList != NIL ||
+        (upsertClause->action == ONCONFLICT_UPDATE || upsertClause->action == ONCONFLICT_NOTHING)) {
         pstate->p_is_insert = false;
-        action = UPSERT_UPDATE;
+        if (t_thrd.proc->workingVersionNum < INSERT_ON_CONFLICT_VERSION_NUMBER) {
+            action = UPSERT_UPDATE;
+        } else {
+            action = upsertClause->action;
+        }
 #ifdef DOLPHIN
         exclRte = addRangeTableEntryForRelation(pstate, targetrel, upsertClause->aliasName, false, false);
 #else
@@ -2964,6 +3008,12 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
         if (IS_PGXC_COORDINATOR && !u_sess->attr.attr_sql.enable_upsert_to_merge) {
             checkUpsertTargetlist(targetrel, updateTlist);
         }
+#else
+#ifndef DOLPHIN
+        if (action == UPSERT_UPDATE) {
+            checkUpsertTargetlist(targetrel, updateTlist);
+        }
+#endif
 #endif
     }
 
@@ -2974,6 +3024,17 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
     result->exclRelTlist = exclRelTlist;
     result->upsertAction = action;
     result->upsertWhere = updateWhere;
+    if (t_thrd.proc->workingVersionNum >= INSERT_ON_CONFLICT_VERSION_NUMBER) {
+        List* arbiterElems;
+        Node* arbiterWhere;
+        Oid arbiterConstraint;
+
+        transformOnConflictArbiter(pstate, upsertClause, &arbiterElems, &arbiterWhere, &arbiterConstraint);
+        result->arbiterElems = arbiterElems;
+        result->arbiterWhere = arbiterWhere;
+        result->constraint = arbiterConstraint;
+    }
+
     return result;
 }
 
@@ -7231,25 +7292,32 @@ static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Rela
 #endif
 
     if (stmt->upsertClause != NULL) {
+        const char* clauseTypeStr = "";
+        if (stmt->upsertClause->action == UPSERT_UPDATE || stmt->upsertClause->action == UPSERT_NOTHING) {
+            clauseTypeStr = "ON DUPLICATE KEY";
+        } else if (stmt->upsertClause->action == ONCONFLICT_UPDATE ||
+                   stmt->upsertClause->action == ONCONFLICT_NOTHING) {
+            clauseTypeStr = "ON CONFLICT DO";
+        }
         /* non-supported upsert cases */
         if (unlikely(!u_sess->attr.attr_sql.enable_upsert_to_merge && RelationIsColumnFormat(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                             errmsg("INSERT ON DUPLICATE KEY UPDATE is not supported on column orientated table."))));
+                             errmsg("INSERT %s UPDATE is not supported on column orientated table.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsForeignTable(targetrel) || RelationIsStream(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                             errmsg("INSERT ON DUPLICATE KEY UPDATE is not supported on foreign table."))));
+                             errmsg("INSERT %s UPDATE is not supported on foreign table.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsView(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                            errmsg("INSERT ON DUPLICATE KEY UPDATE is not supported on VIEW."))));
+                            errmsg("INSERT %s UPDATE is not supported on VIEW.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsContquery(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                            errmsg("INSERT ON DUPLICATE KEY UPDATE is not supported on CONTQUERY."))));
+                            errmsg("INSERT %s UPDATE is not supported on CONTQUERY.", clauseTypeStr))));
         }
     }
 

@@ -208,7 +208,7 @@ static void drop_schema_for_graph(char *graph_name_str, const bool cascade)
     schema_name = makeString(get_graph_namespace_name(graph_name_str));
     label_id_seq_name = list_make2(schema_name, makeString(LABEL_ID_SEQ_NAME));
     drop_stmt->objects = list_make1(label_id_seq_name);
-    drop_stmt->removeType = OBJECT_SEQUENCE;
+    drop_stmt->removeType = OBJECT_SEQUENCE_GSC;
     drop_stmt->behavior = DROP_RESTRICT;
     drop_stmt->missing_ok = false;
     drop_stmt->concurrent = false;
