@@ -34753,38 +34753,6 @@ char* GetCreateViewCommand(const char *rel_name, HeapTuple tup, Form_pg_class re
     return buf.data;
 }
 
-static void ATAlterRecordRebuildView(AlteredTableInfo* tab, Relation rel, Oid pg_rewrite_oid, bool type_changed)
-{
-    HeapTuple tup;
-    char* view_def = NULL;
-    Oid view_oid = get_rewrite_relid(pg_rewrite_oid, true);
-    /* the view has been recorded */
-    if (list_member_oid(tab->changedViewOids, view_oid) || !type_changed) {
-        return;
-    }
-    /* get pg_class tuple by view oid */
-    tup = SearchSysCache1(RELOID, ObjectIdGetDatum(view_oid));
-    if (!HeapTupleIsValid(tup)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
-            errmsg("Invalid modify column operation"),
-            errdetail("modify or change a column used by materialized view or rule is not supported")));
-    }
-    Form_pg_class reltup = (Form_pg_class)GETSTRUCT(tup);
-    if (reltup->relkind != RELKIND_VIEW) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
-            errmsg("Invalid modify column operation"),
-            errdetail("modify or change a column used by materialized view or rule is not supported")));
-    }
-    /* print CREATE VIEW command */
-    view_def = GetCreateViewCommand(NameStr(rel->rd_rel->relname), tup, reltup, pg_rewrite_oid, view_oid);
-    ReleaseSysCache(tup);
-    if (view_def) {
-        /* record it */
-        tab->changedViewOids = lappend_oid(tab->changedViewOids, view_oid);
-        tab->changedViewDefs = lappend(tab->changedViewDefs, view_def);
-    }
-}
-
 static Node* CookRlspolicyQual(Relation rel, Node* src_qual)
 {
     ParseState* pstate = make_parsestate(NULL);
@@ -34972,9 +34940,23 @@ static void ATHandleObjectsDependOnModifiedColumn(AlteredTableInfo* tab, Relatio
                 ATAlterRecordRebuildConstraint(tab, found_object.objectId, found_dep);
                 break;
 
-            case OCLASS_REWRITE:
-                ATAlterRecordRebuildView(tab, rel, found_object.objectId, type_changed);
+            case OCLASS_REWRITE: {
+                if (!type_changed) {
+                    break;
+                }
+                Oid objOid = get_rewrite_relid(found_object.objectId, false);
+                char relKind = get_rel_relkind(objOid);
+                if (relKind == RELKIND_VIEW || relKind == RELKIND_MATVIEW) {
+                    (void)InvalidateDependView(objOid,
+                        relKind == RELKIND_VIEW ? OBJECT_TYPE_VIEW : OBJECT_TYPE_MATVIEW);
+                } else {
+                    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("cannot alter type of a column used by a relation kind %c", relKind),
+                        errdetail("%s depends on column \"%s\"", getObjectDescription(&found_object),
+                            NameStr(pg_attr->attname))));
+                }
                 break;
+            }
 
             case OCLASS_TRIGGER:
                 Assert(found_object.objectSubId == 0);
@@ -35325,18 +35307,6 @@ static void ATExecAlterModifyColumn(AlteredTableInfo* tab, Relation rel, AlterTa
         ATAlterModifyRebuildRlspolicyExpr(rel, lfirst_oid(rlspcell));
     }
     list_free_ext(tab->changedRLSPolicies);
-
-    /* recreate views */
-    foreach_cell(view_def_cell, tab->changedViewDefs) {
-        CommandCounterIncrement();
-        char* cmd_str = (char*)lfirst(view_def_cell);
-        List* raw_parsetree_list = raw_parser(cmd_str);
-        Node* stmt = (Node*)linitial(raw_parsetree_list);
-        Assert(IsA(stmt, ViewStmt));
-        DefineView((ViewStmt*)stmt, cmd_str);
-    }
-    list_free_ext(tab->changedViewOids);
-    list_free_ext(tab->changedViewDefs);
 
     if (cmd->is_first || cmd->after_name != NULL) {
         tab->is_first_after = true;
