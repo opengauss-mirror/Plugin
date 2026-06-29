@@ -264,6 +264,8 @@ select +(-128)::int1;
  -128
 (1 row)
 
+set b_format_behavior_compat_options = '';
+set enable_set_variable_b_format = off;
 select @1::int1;
  ?column? 
 ----------
@@ -280,6 +282,27 @@ select @127::int1;
  ?column? 
 ----------
  127
+(1 row)
+
+select @(-128)::int1;
+ERROR:  tinyint out of range
+set b_format_behavior_compat_options = 'enable_set_variables';
+select @1::int1;
+ int1 
+------
+ 
+(1 row)
+
+select @(-1)::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @127::int1;
+ int1 
+------
+ 
 (1 row)
 
 select @(-128)::int1;

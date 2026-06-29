@@ -421,11 +421,8 @@ select mod(16, 7);
 (1 row)
 
 select mod(0.0::float8, 0.0::numeric);
- mod 
------
-    
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 select sqrt(64::numeric);
        sqrt        
 -------------------
@@ -936,11 +933,8 @@ select mod(16, 7);
 (1 row)
 
 select mod(0.0::float8, 0.0::numeric);
- mod 
------
-    
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 select sqrt(64::numeric);
        sqrt        
 -------------------
@@ -1452,11 +1446,8 @@ select mod(16, 7);
 (1 row)
 
 select mod(0.0::float8, 0.0::numeric);
- mod 
------
-    
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 select sqrt(64::numeric);
        sqrt        
 -------------------
@@ -1966,11 +1957,8 @@ select mod(16, 7);
 (1 row)
 
 select mod(0.0::float8, 0.0::numeric);
- mod 
------
-    
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: mod
 select sqrt(64::numeric);
        sqrt        
 -------------------

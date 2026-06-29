@@ -2,53 +2,37 @@ create schema uint_mod2;
 set current_schema to 'uint_mod2';
 --uint8
 select 18446744073709551615::uint8 mod 0::int1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::int2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::int4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::int8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 18446744073709551615::uint8 mod null::int1;
  b_mod 
 -------
@@ -165,53 +149,37 @@ select 18446744073709551615::uint8 mod (-1)::int8;
 
 --uint4
 select 4294967295::uint4 mod 0::int1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::int2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::int4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::int8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 4294967295::uint4 mod null::int1;
  b_mod 
 -------
@@ -292,53 +260,37 @@ select 4294967295::uint4 mod 18446744073709551615::uint8;
 
 --uint2
 select 65535::uint2 mod 0::int1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::int2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::int4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::int8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 65535::uint2 mod null::int1;
  b_mod 
 -------
@@ -431,53 +383,37 @@ select 65535::uint2 mod 18446744073709551615::uint8;
 
 --uint1
 select 255::uint1 mod 0::int1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::int2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::int4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::int8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 255::uint1 mod null::int1;
  b_mod 
 -------
@@ -582,29 +518,21 @@ select 255::uint1 mod 18446744073709551615::uint8;
 
 --int8
 select 9223372036854775807::int8 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 9223372036854775807::int8 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 9223372036854775807::int8 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 9223372036854775807::int8 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 9223372036854775807::int8 mod null::uint1;
  b_mod 
 -------
@@ -685,29 +613,21 @@ select (-9223372036854775808)::int8 mod 18446744073709551615::uint8;
 
 --int4
 select 2147483647::int4 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 2147483647::int4 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 2147483647::int4 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 2147483647::int4 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 2147483647::int4 mod null::uint1;
  b_mod 
 -------
@@ -794,29 +714,21 @@ select (-2147483648)::int4 mod 18446744073709551615::uint8;
 
 --int2
 select 32767::int2 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 32767::int2 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 32767::int2 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 32767::int2 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 32767::int2 mod null::uint1;
  b_mod 
 -------
@@ -909,29 +821,21 @@ select (-32768)::int2 mod 18446744073709551615::uint8;
 
 --int1
 select 127::int1 mod 0::uint1;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 127::int1 mod 0::uint2;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 127::int1 mod 0::uint4;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 127::int1 mod 0::uint8;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  SQL function "b_mod" statement 1
+referenced column: b_mod
 select 127::int1 mod null::uint1;
  b_mod 
 -------

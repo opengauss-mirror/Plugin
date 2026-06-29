@@ -72,7 +72,7 @@ typedef struct BulkLoadFunc {
     void (*endBulkLoad)(CopyState cstate);
 } BulkLoadFunc;
 
-typedef int (*CopyGetDataFunc)(CopyState cstate, void* databuf, int minread, int maxread);
+typedef int (*CopyGetDataFunc)(CopyState cstate, char* databuf, int minread, int maxread);
 typedef bool (*CopyReadlineFunc)(CopyState cstate);
 typedef void (*CopyWriteLineFunc)(CopyState cstate);
 typedef bool (*GetNextCopyFunc)(CopyState cstate);

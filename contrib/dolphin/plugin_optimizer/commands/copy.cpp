@@ -298,7 +298,7 @@ static void CopySendData(CopyState cstate, const void* databuf, int datasize);
 template <bool skipEol>
 void CopySendEndOfRow(CopyState cstate);
 static int CopyGetData(CopyState cstate, void* databuf, int minread, int maxread);
-static int CopyGetDataDefault(CopyState cstate, void* databuf, int minread, int maxread);
+static int CopyGetDataDefault(CopyState cstate, char* databuf, int minread, int maxread);
 static void CopySendInt32(CopyState cstate, int32 val);
 static bool CopyGetInt32(CopyState cstate, int32* val);
 static void CopySendInt16(CopyState cstate, int16 val);
@@ -616,7 +616,7 @@ static int CopyGetData(CopyState cstate, void* databuf, int minread, int maxread
      */
     int ret = 0;
     EnableDoingCommandRead();
-    ret = cstate->copyGetDataFunc(cstate, databuf, minread, maxread);
+    ret = cstate->copyGetDataFunc(cstate, (char*)databuf, minread, maxread);
     DisableDoingCommandRead();
 
     return ret;
@@ -625,7 +625,7 @@ static int CopyGetData(CopyState cstate, void* databuf, int minread, int maxread
 /* the default implement of CopyGetData
  * the cstate->copyGetDataFunc is initialized in the  BeginCopy by CopyGetDataDefault
  */
-static int CopyGetDataDefault(CopyState cstate, void* databuf, int minread, int maxread)
+static int CopyGetDataDefault(CopyState cstate, char* databuf, int minread, int maxread)
 {
     int bytesread = 0;
 
@@ -652,7 +652,7 @@ static int CopyGetDataDefault(CopyState cstate, void* databuf, int minread, int 
              * slower than the code path was originally, and we don't care
              * much anymore about the performance of old protocol.
              */
-            if (pq_getbytes((char*)databuf, minread)) {
+            if (pq_getbytes(databuf, minread)) {
                 /* Only a \. terminator is legal EOF in old protocol */
                 ereport(ERROR,
                     (errcode(ERRCODE_CONNECTION_FAILURE),
@@ -743,8 +743,8 @@ static int CopyGetDataDefault(CopyState cstate, void* databuf, int minread, int 
                 avail = cstate->fe_msgbuf->len - cstate->fe_msgbuf->cursor;
                 if (avail > maxread)
                     avail = maxread;
-                pq_copymsgbytes(cstate->fe_msgbuf, (char*)databuf, avail);
-                databuf = (void*)((char*)databuf + avail);
+                pq_copymsgbytes(cstate->fe_msgbuf, databuf, avail);
+                databuf += avail;
                 maxread -= avail;
                 bytesread += avail;
             }
@@ -9849,7 +9849,7 @@ void endPrivateModeBulkLoad(CopyState cstate)
 /*
  * CopyGetData function for COPY_FILE
  */
-static int CopyGetDataFile(CopyState cstate, void* databuf, int minread, int maxread)
+static int CopyGetDataFile(CopyState cstate, char* databuf, int minread, int maxread)
 {
     PROFILING_MDIO_START();
     int bytesread = fread(databuf, 1, maxread, cstate->copy_file);
@@ -9863,7 +9863,7 @@ static int CopyGetDataFile(CopyState cstate, void* databuf, int minread, int max
 /*
  * CopyGetData function for COPY_FILE_SEGMENT
  */
-static int CopyGetDataFileSegment(CopyState cstate, void* databuf, int minread, int maxread)
+static int CopyGetDataFileSegment(CopyState cstate, char* databuf, int minread, int maxread)
 {
     Assert(cstate->curTaskPtr);
     int bytesread = 0;

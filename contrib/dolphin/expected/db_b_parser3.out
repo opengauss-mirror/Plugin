@@ -685,77 +685,41 @@ WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 (1 row)
 
 select c1 mod c1 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c2 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c3 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c4 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c5 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c6 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c7 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c8 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c9 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c10 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c11 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c12 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: select c1 mod c13 from div_test;
@@ -763,11 +727,8 @@ LINE 1: select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 select c1 mod c14 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c15 from div_test;
 ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
@@ -878,17 +839,41 @@ insert into tmp_res select c1/c15 from div_test;
 ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c1 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c2 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c3 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c4 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c5 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c6 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c7 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c8 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c9 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c10 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c11 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c12 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: insert into tmp_res select c1 mod c13 from div_test;
@@ -896,6 +881,8 @@ LINE 1: insert into tmp_res select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c14 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c15 from div_test;
 ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
@@ -1012,77 +999,41 @@ WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 (1 row)
 
 select c1 mod c1 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c2 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c3 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c4 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c5 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c6 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c7 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c8 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c9 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c10 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c11 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c12 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: select c1 mod c13 from div_test;
@@ -1090,20 +1041,15 @@ LINE 1: select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 select c1 mod c14 from div_test;
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 select c1 mod c15 from div_test;
 WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
+ERROR:  division by zero
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: b_mod
 select c1 div c1 from div_test;
  div 
 -----
@@ -1215,17 +1161,41 @@ insert into tmp_res select c1/c15 from div_test;
 WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c1 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c2 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c3 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c4 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c5 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c6 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c7 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c8 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c9 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c10 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c11 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c12 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: insert into tmp_res select c1 mod c13 from div_test;
@@ -1233,8 +1203,13 @@ LINE 1: insert into tmp_res select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c14 from div_test;
+ERROR:  division by zero
+CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c15 from div_test;
 WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: b_mod
+ERROR:  division by zero
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
 insert into tmp_res select c1 div c1 from div_test;
@@ -1364,101 +1339,41 @@ WARNING:  division by zero
 (1 row)
 
 select c1 mod c1 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c2 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c3 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c4 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c5 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c6 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c7 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c8 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c9 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c10 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c11 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c12 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: select c1 mod c13 from div_test;
@@ -1466,13 +1381,8 @@ LINE 1: select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 select c1 mod c14 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c15 from div_test;
 ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
@@ -1843,101 +1753,41 @@ WARNING:  division by zero
 (1 row)
 
 select c1 mod c1 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c2 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c3 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c4 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c5 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c6 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c7 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c8 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c9 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c10 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c11 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c12 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
 LINE 1: select c1 mod c13 from div_test;
@@ -1945,25 +1795,15 @@ LINE 1: select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 select c1 mod c14 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 mod c15 from div_test;
 WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select c1 div c1 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
@@ -2136,40 +1976,40 @@ CONTEXT:  referenced column: a
 WARNING:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c1 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c2 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c3 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c4 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c5 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c6 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c7 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c8 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c9 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c10 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c11 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c12 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c13 from div_test;
 ERROR:  function pg_catalog.b_mod(tinyint, `binary`) does not exist
@@ -2178,13 +2018,13 @@ LINE 1: insert into tmp_res select c1 mod c13 from div_test;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: b_mod
 insert into tmp_res select c1 mod c14 from div_test;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  referenced column: a
 insert into tmp_res select c1 mod c15 from div_test;
 WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
 referenced column: b_mod
 insert into tmp_res select c1 div c1 from div_test;
@@ -2240,13 +2080,13 @@ referenced column: div
 select count(*) from tmp_res;
  count 
 -------
-   129
+    88
 (1 row)
 
 select count(*) from tmp_res where a is null;
  count 
 -------
-   129
+    88
 (1 row)
 
 drop table tmp_res;
@@ -2271,14 +2111,9 @@ select 8 mod 3;
 (1 row)
 
 select 8 mod 0;
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  SQL function "b_mod" statement 1
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select 8mod 3, 8mod 3mod2, 8mod 3mod 2;
  b_mod | mod2 | b_mod 
 -------+------+-------
@@ -2324,14 +2159,9 @@ WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 0;
                ^
 CONTEXT:  referenced column: b_mod
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  SQL function "b_mod" statement 1
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select '-12.3abc' mod 5;
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 5;
@@ -2377,14 +2207,9 @@ WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod false;
                ^
 CONTEXT:  referenced column: b_mod
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  SQL function "b_mod" statement 1
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select '-12.3abc' mod 'null';
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 'null';
@@ -2394,14 +2219,9 @@ WARNING:  invalid input syntax for type numeric: "null"
 LINE 1: select '-12.3abc' mod 'null';
                               ^
 CONTEXT:  referenced column: b_mod
-WARNING:  division by zero
+ERROR:  division by zero
 CONTEXT:  SQL function "b_mod" statement 1
 referenced column: b_mod
- b_mod 
--------
-      
-(1 row)
-
 select 123456 mod 5 mod 4;
  b_mod 
 -------
