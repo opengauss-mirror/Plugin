@@ -529,6 +529,7 @@ static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
 static void CheckPartitionExpr(Node* expr, int* colCount);
 static char* GetValidUserHostId(char* userName, char* hostId);
+static char* GetUserHostIdFromVconst(char* hostId, bool appendDot);
 static void CheckHostId(char* hostId);
 static void CheckUserHostIsValid();
 
@@ -1012,7 +1013,7 @@ static bool GreaterThanHour (List* int_type);
 
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
-%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
+%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId UserHostPart
 %type <list>	var_list guc_value_extension_list schema_var_list
 %type <str>		ColId ColLabel CaseSensitiveColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
@@ -2125,13 +2126,9 @@ CreateOptRoleElem:
  *****************************************************************************/
 
 UserId:
-			SCONST SET_USER_IDENT
+			SCONST UserHostPart
 					{
 						$$ = GetValidUserHostId($1, $2);
-					}
-			| SCONST '@' SCONST
-					{
-						$$ = GetValidUserHostId($1, $3);
 					}
 			| SCONST
 					{
@@ -2142,7 +2139,7 @@ UserId:
 						}
 						$$ = $1;
 					}
-			| RoleId SET_USER_IDENT
+			| RoleId UserHostPart
 					{
 						$$ = GetValidUserHostId($1, $2);
 					}
@@ -2150,6 +2147,39 @@ UserId:
 					{
 						IsValidIdentUsername($1);
 						$$ = $1;
+					}
+		;
+
+UserHostPart:
+			SET_USER_IDENT
+					{
+						$$ = $1;
+					}
+			| '@' SCONST
+					{
+						$$ = $2;
+					}
+			| '@' ColId
+					{
+						$$ = $2;
+					}
+			| '@' Iconst
+					{
+						char buf[64];
+						snprintf(buf, sizeof(buf), "%d", $2);
+						$$ = pstrdup(buf);
+					}
+			| '@' FCONST
+					{
+						$$ = $2;
+					}
+			| '@' VCONST
+					{
+						$$ = GetUserHostIdFromVconst($2, false);
+					}
+			| '@' VCONST '.'
+					{
+						$$ = GetUserHostIdFromVconst($2, true);
 					}
 		;
 
@@ -17524,21 +17554,14 @@ privilege:	SELECT opt_column_list
 				n->cols = $2;
 				$$ = n;
 			}
-		| SCONST SET_USER_IDENT
+		| SCONST UserHostPart
 			{
 				AccessPriv *n = makeNode(AccessPriv);
 				n->priv_name = GetValidUserHostId($1, $2);
 				n->cols = NIL;
 				$$ = n;
 			}
-		| SCONST '@' SCONST
-			{
-				AccessPriv *n = makeNode(AccessPriv);
-				n->priv_name = GetValidUserHostId($1, $3);
-				n->cols = NIL;
-				$$ = n;
-			}
-		| PrivilegeColId SET_USER_IDENT
+		| PrivilegeColId UserHostPart
 			{
 				AccessPriv *n = makeNode(AccessPriv);
 				n->priv_name = GetValidUserHostId($1, $2);
@@ -39646,13 +39669,9 @@ Sconst:		SCONST 									{ $$ = $1; }
 
 
 DolphinUserId:		DolphinRoleId					{ $$ = $1; }
-					| SCONST SET_USER_IDENT
+					| SCONST UserHostPart
 							{
 								$$ = CreateDolphinIdent(GetValidUserHostId($1, $2), false);
-							}
-					| SCONST '@' SCONST
-							{
-								$$ = CreateDolphinIdent(GetValidUserHostId($1, $3), false);
 							}
 					| SCONST
 							{
@@ -39660,7 +39679,7 @@ DolphinUserId:		DolphinRoleId					{ $$ = $1; }
 									ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 								$$ = CreateDolphinIdent(pstrdup($1), false);
 							}
-					| RoleId SET_USER_IDENT
+					| RoleId UserHostPart
 							{
 								$$ = CreateDolphinIdent(GetValidUserHostId($1, $2), false);
 							}
@@ -43977,6 +43996,19 @@ static char* GetValidUserHostId(char* userName, char* hostId)
 		ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("String %s is too long for user name (should be no longer than 64)", buf.data)));
 	}
 	return buf.data;
+}
+
+static char* GetUserHostIdFromVconst(char* hostId, bool appendDot)
+{
+	Size len = strlen(hostId);
+	char* userHostId = (char*)palloc0(len + (appendDot ? 2 : 1));
+	for (Size i = 0; i < len; i++) {
+		userHostId[i] = (hostId[i] == DB4AI_SNAPSHOT_VERSION_SEPARATOR) ? '.' : hostId[i];
+	}
+	if (appendDot) {
+		userHostId[len] = '.';
+	}
+	return userHostId;
 }
 
 static void CheckHostId(char* hostId)
