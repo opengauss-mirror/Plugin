@@ -1185,7 +1185,8 @@ static bool TypeNameCheckIsUnsignedIntType(CreateStmtContext* cxt, TypeName* typ
  *		create a sequence owned by table, need to add record to pg_depend.
  *		used in CREATE TABLE and CREATE TABLE ... LIKE
  */
-static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool large, bool is_autoinc)
+static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool large, bool is_autoinc,
+    bool forIdentity = false, List* seqOptions = NIL)
 {
     Oid snamespaceid;
     char* snamespace = NULL;
@@ -1199,6 +1200,11 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
     AlterSeqStmt* altseqstmt = NULL;
     List* attnamelist = NIL;
     Constraint* constraint = NULL;
+    Oid typeOid = InvalidOid;
+
+    if (column->typname != NULL) {
+        typeOid = typenameTypeId(NULL, column->typname);
+    }
 
     /*
      * Determine namespace and name to use for the sequence.
@@ -1218,7 +1224,15 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
         RangeVarAdjustRelationPersistence(cxt->relation, snamespaceid);
     }
     snamespace = get_namespace_name(snamespaceid);
-    sname = ChooseRelationName(cxt->relation->relname, column->colname, "seq", strlen("seq"), snamespaceid);
+    if (forIdentity) {
+        sname = ChooseRelationName(cxt->relation->relname,
+                                   column->colname,
+                                   "seq_identity",
+                                   strlen("seq_identity"),
+                                   snamespaceid);
+    } else {
+        sname = ChooseRelationName(cxt->relation->relname, column->colname, "seq", strlen("seq"), snamespaceid);
+    }
 
     if (!preCheck || IS_SINGLE_NODE)
         ereport(NOTICE,
@@ -1235,9 +1249,10 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
      */
     seqstmt = makeNode(CreateSeqStmt);
     seqstmt->sequence = makeRangeVar(snamespace, sname, -1);
-    seqstmt->options = is_autoinc ? GetAutoIncSeqOptions(cxt) : NULL;
+    seqstmt->options = seqOptions;
 #ifdef DOLPHIN
     if (is_autoinc) {
+        seqstmt->options = GetAutoIncSeqOptions(cxt);
         Node* maxvalue = NULL;
         if (TypeNameCheckIsUnsignedIntType(cxt, column->typname)) {
             char buf[MAXINT8LEN + 1];
@@ -1250,6 +1265,13 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
         seqstmt->options = lappend(seqstmt->options, maxvalue);
     }
 #endif
+    if (forIdentity && OidIsValid(typeOid)) {
+        int typmod = -1;
+        if (column->typname->typmods != NULL) {
+            typmod = intVal(&((A_Const*)lfirst(list_head(column->typname->typmods)))->val);
+        }
+        seqstmt->options = lcons(makeDefElem("as", (Node*)makeTypeNameFromOid(typeOid, typmod)), seqstmt->options);
+    }
     seqstmt->is_autoinc = is_autoinc;
 #ifdef PGXC
     seqstmt->is_serial = true;
@@ -2380,10 +2402,18 @@ static void transformTableLikeClause(
                         if (seqs != NULL && list_member_oid(seqs, DatumGetObjectId(seqId))) {
                             /* is serial type */
                             def->is_serial = true;
-                            bool large = (get_rel_relkind(seqId) == RELKIND_LARGE_SEQUENCE);
-                            /* Special actions for SERIAL pseudo-types */
-
-                            createSeqOwnedByTable(cxt, def, preCheck, large, is_autoinc);
+                            char relkind = get_rel_relkind(seqId);
+                            bool large = (relkind == RELKIND_LARGE_SEQUENCE || relkind == RELKIND_LARGE_SEQUENCE_GSC);
+                            /* Special actions for SERIAL pseudo-types, treat serial and identity differently */
+                            bool isForIdentity = DB_IS_CMPT(D_FORMAT) &&
+                                                 StrEndWith(get_rel_name(seqId), "_seq_identity");
+                            List* seqoptions = NIL;
+                            if (isForIdentity) {
+                                // read identity sequence value from tuple.
+                                // keep def->is_serial = true, to avoid setting def->cooked_default
+                                seqoptions = sequence_to_options(seqId, large);
+                            }
+                            createSeqOwnedByTable(cxt, def, preCheck, large, is_autoinc, isForIdentity, seqoptions);
                         }
                     }
                 }
@@ -9260,14 +9290,13 @@ static void DropModifyColumnAutoIncrement(CreateStmtContext* cxt, Relation rel, 
         return;
     }
     DropStmt *drop = makeNode(DropStmt);
-    drop->removeType = OBJECT_LARGE_SEQUENCE;
+    drop->removeType = OBJECT_LARGE_SEQUENCE_GSC;
     drop->missing_ok = true;
     drop->objects = list_make1(list_make1(makeString(seqname)));
     drop->arguments = NIL;
     drop->behavior = DROP_RESTRICT;
     drop->concurrent = false;
     drop->purge = false;
- 
     cxt->alist = lappend(cxt->alist, drop);
 }
  

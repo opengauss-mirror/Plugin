@@ -1678,7 +1678,9 @@ bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_r
                 case OBJECT_VIEW:
                 case OBJECT_CONTQUERY:
                 case OBJECT_SEQUENCE:
-                case OBJECT_LARGE_SEQUENCE: {
+                case OBJECT_LARGE_SEQUENCE:
+                case OBJECT_SEQUENCE_GSC:
+                case OBJECT_LARGE_SEQUENCE_GSC: {
                     bool is_all_temp = false;
                     RemoteQueryExecType exec_type = EXEC_ON_ALL_NODES;
                     DropStmt* new_stmt = (DropStmt*)copyObject(parse_tree);
@@ -7156,6 +7158,8 @@ ExecDropStmt(DropStmt *parse_tree, const char *query_string,
             /* fall through */
         case OBJECT_SEQUENCE:
         case OBJECT_LARGE_SEQUENCE:
+        case OBJECT_SEQUENCE_GSC:
+        case OBJECT_LARGE_SEQUENCE_GSC:
         case OBJECT_VIEW:
         case OBJECT_CONTQUERY:
 #ifdef PGXC
@@ -8193,6 +8197,8 @@ static RemoteQueryExecType ExecUtilityFindNodes(ObjectType object_type, Oid obje
     switch (object_type) {
         case OBJECT_SEQUENCE:
         case OBJECT_LARGE_SEQUENCE:
+        case OBJECT_SEQUENCE_GSC:
+        case OBJECT_LARGE_SEQUENCE_GSC:
             exec_type = set_exec_type(object_id, is_temp);
             break;
 
@@ -8268,6 +8274,8 @@ static RemoteQueryExecType exec_utility_find_nodes_relkind(Oid rel_id, bool* is_
     switch (relkind_str) {
         case RELKIND_SEQUENCE:
         case RELKIND_LARGE_SEQUENCE:
+        case RELKIND_SEQUENCE_GSC:
+        case RELKIND_LARGE_SEQUENCE_GSC:
             *is_temp = IsTempTable(rel_id);
             exec_type = CHOOSE_EXEC_NODES(*is_temp);
             break;
@@ -8632,9 +8640,11 @@ static const char* AlterObjectTypeCommandTag(ObjectType obj_type)
             tag = "ALTER SCHEMA";
             break;
         case OBJECT_SEQUENCE:
+        case OBJECT_SEQUENCE_GSC:
             tag = "ALTER SEQUENCE";
             break;
         case OBJECT_LARGE_SEQUENCE:
+        case OBJECT_LARGE_SEQUENCE_GSC:
             tag = "ALTER LARGE SEQUENCE";
             break;
         case OBJECT_TABLE:
@@ -8971,9 +8981,11 @@ const char* CreateCommandTag(Node* parse_tree)
                     tag = "DROP TABLE";
                     break;
                 case OBJECT_SEQUENCE:
+                case OBJECT_SEQUENCE_GSC:
                     tag = "DROP SEQUENCE";
                     break;
                 case OBJECT_LARGE_SEQUENCE:
+                case OBJECT_LARGE_SEQUENCE_GSC:
                     tag = "DROP LARGE SEQUENCE";
                     break;
                 case OBJECT_VIEW:
@@ -10937,6 +10949,8 @@ static void drop_stmt_pre_treatment(
         case OBJECT_TABLE:
         case OBJECT_SEQUENCE:
         case OBJECT_LARGE_SEQUENCE:
+        case OBJECT_SEQUENCE_GSC:
+        case OBJECT_LARGE_SEQUENCE_GSC:
         case OBJECT_VIEW:
         case OBJECT_MATVIEW:
         case OBJECT_CONTQUERY:

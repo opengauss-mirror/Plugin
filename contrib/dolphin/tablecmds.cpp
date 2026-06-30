@@ -293,7 +293,19 @@ static const struct dropmsgstrings dropmsgstringarray[] = {{RELKIND_RELATION,
         gettext_noop("sequence \"%s\" does not exist, skipping"),
         gettext_noop("\"%s\" is not a sequence"),
         gettext_noop("Use DROP SEQUENCE to remove a sequence.")},
+    {RELKIND_SEQUENCE_GSC,
+        ERRCODE_UNDEFINED_TABLE,
+        gettext_noop("sequence \"%s\" does not exist"),
+        gettext_noop("sequence \"%s\" does not exist, skipping"),
+        gettext_noop("\"%s\" is not a sequence"),
+        gettext_noop("Use DROP SEQUENCE to remove a sequence.")},
     {RELKIND_LARGE_SEQUENCE,
+        ERRCODE_UNDEFINED_TABLE,
+        gettext_noop("large sequence \"%s\" does not exist"),
+        gettext_noop("large sequence \"%s\" does not exist, skipping"),
+        gettext_noop("\"%s\" is not a large sequence"),
+        gettext_noop("Use DROP LARGE SEQUENCE to remove a large sequence.")},
+    {RELKIND_LARGE_SEQUENCE_GSC,
         ERRCODE_UNDEFINED_TABLE,
         gettext_noop("large sequence \"%s\" does not exist"),
         gettext_noop("large sequence \"%s\" does not exist, skipping"),
@@ -431,7 +443,7 @@ struct AlterTableOptions {
 #define MLOG_MAP_SUPPORT_AT_CMD(cmd) ((cmd) == AT_SubCluster)
 
 #define HDFS_TBLSPC_SUPPORT_CREATE_LOGIC_OBJECT(kind)                                           \
-    ((kind) == RELKIND_VIEW || (kind) == RELKIND_FOREIGN_TABLE || (kind) == RELKIND_SEQUENCE || \
+    ((kind) == RELKIND_VIEW || (kind) == RELKIND_FOREIGN_TABLE || (kind) == RELKIND_SEQUENCE || (kind) == RELKIND_SEQUENCE_GSC || \
         (kind) == RELKIND_COMPOSITE_TYPE || (kind) == RELKIND_STREAM || (kind) == RELKIND_CONTQUERY)
 
 #define PARTITION_DDL_CMD(cmd)                                                          \
@@ -2533,8 +2545,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
         if (aclresult != ACLCHECK_OK)
             aclcheck_error(aclresult, ACL_KIND_TABLESPACE, get_tablespace_name(tablespaceId));
         /* view and sequence are not related to tablespace, so no need to check permissions */
-        if (isalter && relkind != RELKIND_VIEW && relkind != RELKIND_CONTQUERY &&
-            relkind != RELKIND_SEQUENCE && relkind != RELKIND_LARGE_SEQUENCE) {
+        if (isalter && relkind != RELKIND_VIEW && relkind != RELKIND_CONTQUERY && !RELKIND_IS_SEQUENCE(relkind)) {
             aclresult = pg_tablespace_aclcheck(tablespaceId, ownerId, ACL_CREATE);
             if (aclresult != ACLCHECK_OK)
                 aclcheck_error(aclresult, ACL_KIND_TABLESPACE, get_tablespace_name(tablespaceId));
@@ -3642,9 +3653,17 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
             relkind = RELKIND_SEQUENCE;
             relkind_s = "SEQUENCE";
             break;
+        case OBJECT_SEQUENCE_GSC:
+            relkind = RELKIND_SEQUENCE_GSC;
+            relkind_s = "SEQUENCE";
+            break;
 
         case OBJECT_LARGE_SEQUENCE:
             relkind = RELKIND_LARGE_SEQUENCE;
+            relkind_s = "LARGE SEQUENCE";
+            break;
+        case OBJECT_LARGE_SEQUENCE_GSC:
+            relkind = RELKIND_LARGE_SEQUENCE_GSC;
             relkind_s = "LARGE SEQUENCE";
             break;
 
@@ -3918,6 +3937,8 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     Bitmapset* indreloids = NULL;
     bool is_unique = false;
 #endif
+    List *seqOids = NIL;
+
     /* DROP CONCURRENTLY uses a weaker lock, and has some restrictions */
     if (drop->concurrent) {
         lockmode = ShareUpdateExclusiveLock;
@@ -3952,9 +3973,17 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
             relkind = RELKIND_SEQUENCE;
             relkind_s = "SEQUENCE";
             break;
+        case OBJECT_SEQUENCE_GSC:
+            relkind = RELKIND_SEQUENCE_GSC;
+            relkind_s = "SEQUENCE";
+            break;
 
         case OBJECT_LARGE_SEQUENCE:
             relkind = RELKIND_LARGE_SEQUENCE;
+            relkind_s = "LARGE SEQUENCE";
+            break;
+        case OBJECT_LARGE_SEQUENCE_GSC:
+            relkind = RELKIND_LARGE_SEQUENCE_GSC;
             relkind_s = "LARGE SEQUENCE";
             break;
 
@@ -4062,6 +4091,14 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
         relOid = RangeVarGetRelidExtended(
             rel, lockmode, true, false, false, false, RangeVarCallbackForDropRelation, (void*)&state);
 
+        /* record sequence reloid if drop sequence */
+        if (OBJECT_IS_SEQUENCE(drop->removeType)) {
+            SeqDropCacheInfo *info = (SeqDropCacheInfo*)palloc(sizeof(SeqDropCacheInfo));
+            info->relid = relOid;
+            info->is_global_cache = is_global_level_sequence_cache(relOid);
+            seqOids = lappend(seqOids, info);
+        }
+
         /*
          * Relation not found.
          *
@@ -4105,9 +4142,10 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
 #endif  /* ENABLE_MULTIPLE_NODES */
         if (relkind == RELKIND_RELATION) {
             DeleteUidEntry(relOid);
-        } else if (relkind == RELKIND_LARGE_SEQUENCE && CheckSeqOwnedByAutoInc(relOid)) {
+        } else if ((relkind == RELKIND_LARGE_SEQUENCE || relkind == RELKIND_LARGE_SEQUENCE_GSC) &&
+                   CheckSeqOwnedByAutoInc(relOid)) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("cannot drop sequence owned by auto_increment column")));
+                            errmsg("cannot drop sequence owned by auto_increment column")));
         }
 
         delrel = try_relation_open(relOid, NoLock);
@@ -4223,6 +4261,12 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     } else {
         /* Here we really delete them. */
         performMultipleDeletions(objects, drop->behavior, flags);
+    }
+
+    /* drop global sequence cache after drop sequence */
+    if (seqOids != NULL && OBJECT_IS_SEQUENCE(drop->removeType)) {
+        removeSequenceCacheOfRelOid(seqOids);
+        list_free(seqOids);
     }
 
     free_object_addresses(objects);
@@ -11825,7 +11869,9 @@ static void ATSimplePermissions(Relation rel, int allowed_targets)
             actual_target = ATT_FOREIGN_TABLE;
             break;
         case RELKIND_SEQUENCE:
-        case RELKIND_LARGE_SEQUENCE: {
+        case RELKIND_LARGE_SEQUENCE:
+        case RELKIND_SEQUENCE_GSC:
+        case RELKIND_LARGE_SEQUENCE_GSC: {
             if (u_sess->attr.attr_common.IsInplaceUpgrade) {
                 actual_target = ATT_SEQUENCE;
             } else
@@ -20053,6 +20099,8 @@ void ATExecChangeOwner(Oid relationOid, Oid newOwnerId, bool recursing, LOCKMODE
             break;
         case RELKIND_SEQUENCE:
         case RELKIND_LARGE_SEQUENCE:
+        case RELKIND_SEQUENCE_GSC:
+        case RELKIND_LARGE_SEQUENCE_GSC:
             if (!recursing && tuple_class->relowner != newOwnerId) {
                 /* if it's an owned sequence, disallow changing it by itself */
                 Oid tableId;
@@ -25062,8 +25110,14 @@ static void RangeVarCallbackForAlterRelation(
     if (reltype == OBJECT_SEQUENCE && relkind != RELKIND_SEQUENCE) {
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("\"%s\" is not a sequence", rv->relname)));
     }
+    if (reltype == OBJECT_SEQUENCE_GSC && relkind != RELKIND_SEQUENCE_GSC) {
+        ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("\"%s\" is not a sequence", rv->relname)));
+    }
 
     if (reltype == OBJECT_LARGE_SEQUENCE && relkind != RELKIND_LARGE_SEQUENCE) {
+        ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("\"%s\" is not a large sequence", rv->relname)));
+    }
+    if (reltype == OBJECT_LARGE_SEQUENCE_GSC && relkind != RELKIND_LARGE_SEQUENCE_GSC) {
         ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("\"%s\" is not a large sequence", rv->relname)));
     }
 
@@ -33647,9 +33701,15 @@ void DropTableThrowErrorExternal(RangeVar* relation, ObjectType removeType, bool
         case OBJECT_SEQUENCE:
             relkind = RELKIND_SEQUENCE;
             break;
+        case OBJECT_SEQUENCE_GSC:
+            relkind = RELKIND_SEQUENCE_GSC;
+            break;
 
         case OBJECT_LARGE_SEQUENCE:
             relkind = RELKIND_LARGE_SEQUENCE;
+            break;
+        case OBJECT_LARGE_SEQUENCE_GSC:
+            relkind = RELKIND_LARGE_SEQUENCE_GSC;
             break;
 
         case OBJECT_VIEW:
@@ -35574,9 +35634,6 @@ void CheckDropViewValidity(ObjectType stmtType, char relKind, const char* relnam
         case OBJECT_SEQUENCE:
             expectedRelKind = RELKIND_SEQUENCE;
             break;
-        case OBJECT_LARGE_SEQUENCE:
-            expectedRelKind = RELKIND_LARGE_SEQUENCE;
-            break;
         case OBJECT_MATVIEW:
             expectedRelKind = RELKIND_MATVIEW;
             break;
@@ -35661,7 +35718,11 @@ int128 EvaluateAutoIncrement(Relation rel, TupleDesc desc, AttrNumber attnum, Da
         if (rel->rd_rel->relpersistence == RELPERSISTENCE_TEMP) {
             autoinc = tmptable_autoinc_nextval(rel->rd_rel->relfilenode, cons_autoinc->next);
         } else {
-            autoinc = nextval_internal(cons_autoinc->seqoid);
+            if (is_global_level_sequence_cache(cons_autoinc->seqoid)) {
+                autoinc = nextval_internal_for_global_seq_cache(cons_autoinc->seqoid);
+            } else {
+                autoinc = nextval_internal(cons_autoinc->seqoid);
+            }
         }
         if (modify_value) {
             *is_null = false;

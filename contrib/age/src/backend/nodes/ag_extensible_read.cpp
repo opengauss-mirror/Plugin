@@ -3902,6 +3902,40 @@ static ExecNodes* _readExecNodes(void)
     READ_DONE();
 }
 
+static void _readArbiterIndexesFiled(char* token, int length, ModifyTable* local_node)
+{
+    token = pg_strtok(&length); /* skip:fldname */
+    token = pg_strtok(&length);
+    if (token[0] != '(') {
+        return;
+    }
+
+    while (token != NULL) {
+        Oid relid = InvalidOid;
+        char* relnamespace = NULL;
+        char* relname = NULL;
+
+        token = pg_strtok(&length);
+        if (token == NULL) {
+            ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("unterminated List structure")));
+        }
+        if (token[0] == ')') {
+            break;
+        }
+
+        relnamespace = nullable_string(token, length);
+        token = pg_strtok(&length);
+        relname = nullable_string(token, length);
+        if (relname != NULL) {
+            relid = get_valid_relname_relid(relnamespace, relname);
+        }
+
+        local_node->arbiterIndexes = lappend_oid(local_node->arbiterIndexes, relid);
+        pfree_ext(relname);
+        pfree_ext(relnamespace);
+    }
+}
+
 static ModifyTable* _readModifyTable(ModifyTable* local_node)
 {
     READ_LOCALS_NULL(ModifyTable);
@@ -3920,6 +3954,9 @@ static ModifyTable* _readModifyTable(ModifyTable* local_node)
     READ_NODE_FIELD(rowMarks);
     READ_INT_FIELD(epqParam);
     READ_BOOL_FIELD(partKeyUpdated);
+    IF_EXIST(isReplace) {
+        READ_BOOL_FIELD(isReplace);
+    }
 #ifdef PGXC
     READ_NODE_FIELD(remote_plans);
     READ_NODE_FIELD(remote_insert_plans);
@@ -3953,6 +3990,10 @@ static ModifyTable* _readModifyTable(ModifyTable* local_node)
         READ_NODE_FIELD(exclRelTlist);
     }
 
+    IF_EXIST(arbiterIndexes) {
+        _readArbiterIndexesFiled(token, length, local_node);
+    }
+
     IF_EXIST(exclRelRTIndex) {
         READ_INT_FIELD(exclRelRTIndex);
     }
@@ -3960,6 +4001,20 @@ static ModifyTable* _readModifyTable(ModifyTable* local_node)
     IF_EXIST(upsertWhere) {
         READ_NODE_FIELD(upsertWhere);
     }
+
+    IF_EXIST(targetlists) {
+        READ_NODE_FIELD(targetlists);
+    }
+
+    IF_EXIST(withCheckOptionLists) {
+        READ_NODE_FIELD(withCheckOptionLists);
+    }
+
+#ifdef USE_SPQ
+    IF_EXIST(isSplitUpdates) {
+        READ_NODE_FIELD(isSplitUpdates);
+    }
+#endif
 
     READ_DONE();
 }
@@ -3975,6 +4030,38 @@ static UpsertExpr* _readUpsertExpr(void)
     IF_EXIST(upsertWhere) {
         READ_NODE_FIELD(upsertWhere);
     }
+    IF_EXIST(arbiterElems) {
+        READ_NODE_FIELD(arbiterElems);
+    }
+    IF_EXIST(arbiterWhere) {
+        READ_NODE_FIELD(arbiterWhere);
+    }
+    IF_EXIST(constraint) {
+        READ_OID_FIELD(constraint);
+    }
+
+    READ_DONE();
+}
+
+static InferenceElem* _readInferenceElem(void)
+{
+    READ_LOCALS(InferenceElem);
+
+    READ_NODE_FIELD(expr);
+    READ_OID_FIELD(infercollid);
+    READ_OID_FIELD(inferopclass);
+
+    READ_DONE();
+}
+
+static InferClause* _readInferClause(void)
+{
+    READ_LOCALS(InferClause);
+
+    READ_NODE_FIELD(indexElems);
+    READ_NODE_FIELD(whereClause);
+    READ_STRING_FIELD(conname);
+    READ_INT_FIELD(location);
 
     READ_DONE();
 }
@@ -3983,7 +4070,16 @@ static UpsertClause* _readUpsertClause(void)
 {
     READ_LOCALS(UpsertClause);
 
+    IF_EXIST(action) {
+        READ_ENUM_FIELD(action, UpsertAction);
+    }
+    IF_EXIST(infer) {
+        READ_NODE_FIELD(infer);
+    }
     READ_NODE_FIELD(targetList);
+    IF_EXIST(aliasName) {
+        READ_NODE_FIELD(aliasName);
+    }
     READ_INT_FIELD(location);
     IF_EXIST(whereClause) {
         READ_NODE_FIELD(whereClause);
@@ -5798,6 +5894,8 @@ Node* parseNodeString_AG(void)
         return_value = _readJoinExpr();
     } else if (MATCH("FROMEXPR", 8)) {
         return_value = _readFromExpr();
+    } else if (MATCH("INFERENCEELEM", 13)) {
+        return_value = _readInferenceElem();
     } else if (MATCH("MERGEACTION", 11)) {
         return_value = _readMergeAction();
     } else if (MATCH("MERGEINTO", 9)) {
@@ -6086,6 +6184,8 @@ Node* parseNodeString_AG(void)
         return_value = _readColumnSetting();
     } else if (MATCH("UPSERTEXPR", 10)) {
         return_value = _readUpsertExpr();
+    } else if (MATCH("INFERCLAUSE", 11)) {
+        return_value = _readInferClause();
     } else if (MATCH("UPSERTCLAUSE", 12)) {
         return_value = _readUpsertClause();
     } else if (MATCH("PREDPUSHHINT", 12)) {
