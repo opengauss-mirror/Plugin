@@ -201,7 +201,7 @@ setup_tuple_slots_for_on_conflict_handling(ChunkDispatchState *state)
 	ModifyTableState *mtstate = state->mtstate;
 	ModifyTable *mtplan = castNode(ModifyTable, mtstate->ps.plan);
 
-	if (mtplan->onConflictAction == ONCONFLICT_UPDATE)
+	if (mtplan->upsertAction == ONCONFLICT_UPDATE)
 	{
 		TupleDesc tupdesc;
 

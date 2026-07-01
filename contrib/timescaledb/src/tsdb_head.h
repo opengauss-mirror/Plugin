@@ -10,6 +10,8 @@
 #include "catalog/pg_constraint.h"
 #include "catalog/pg_class.h"
 #include "parser/parse_coerce.h"
+#include "nodes/nodes.h"
+#include "nodes/primnodes.h"
 
 #include "access/heapam.h"
 #include "access/transam.h"
@@ -686,15 +688,11 @@ typedef void (*create_upper_paths_hook_type) (PlannerInfo *root,
 													 RelOptInfo *output_rel); 
 
 
-extern PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;   
-typedef enum OnConflictAction
-{
-	ONCONFLICT_NONE,			/* No "ON CONFLICT" clause */
-	ONCONFLICT_NOTHING,			/* ON CONFLICT ... DO NOTHING */
-	ONCONFLICT_UPDATE			/* ON CONFLICT ... DO UPDATE */
-} OnConflictAction;
-
-
+extern PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;
+typedef UpsertAction OnConflictAction;
+#ifndef ONCONFLICT_NONE
+#define ONCONFLICT_NONE UPSERT_NONE
+#endif
 
 typedef struct ParallelWorkerInfo
 {
@@ -1001,18 +999,6 @@ typedef enum WCOKind
 	WCO_RLS_UPDATE_CHECK,		/* RLS UPDATE WITH CHECK policy */
 	WCO_RLS_CONFLICT_CHECK		/* RLS ON CONFLICT DO UPDATE USING policy */
 } WCOKind; 
-
-
-
-
-typedef struct InferenceElem
-{
-	Expr		xpr;
-	Node	   *expr;			/* expression to infer from, or NULL */
-	Oid			infercollid;	/* OID of collation, or InvalidOid */
-	Oid			inferopclass;	/* OID of att opclass, or InvalidOid */
-} InferenceElem; 
-
 
 typedef struct VacuumParams
 {
