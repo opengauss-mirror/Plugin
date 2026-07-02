@@ -507,9 +507,9 @@ CONTEXT:  referenced column: format
 
 select format(123123.456,'513513413546587468514351345435413');
 WARNING:  value "513513413546587468514351345435413" is out of range for type bigint
-LINE 1: select format(123123.456,'513513413546587468514351345435413'...
-                                 ^
-CONTEXT:  referenced column: format
+CONTEXT:  referenced column: db_b_format
+SQL function "db_b_format" statement 1
+referenced column: format
  format  
 ---------
  123,123
