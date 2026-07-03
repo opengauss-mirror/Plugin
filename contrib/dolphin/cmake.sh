@@ -6,7 +6,7 @@ rm -f dolphin--5.3.sql
 touch dolphin--5.3.sql
 for i in `ls sql_script`; do cat sql_script/$i >> dolphin--5.3.sql; done
 for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--5.3.sql; done
-cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--4.3.sql upgrade_script/dolphin--4.3--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql upgrade_script/dolphin--5.2--5.3.sql >> dolphin--5.3.sql
+cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--4.3.sql upgrade_script/dolphin--4.3--4.4.sql upgrade_script/dolphin--4.4--4.5.sql upgrade_script/dolphin--4.5--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql upgrade_script/dolphin--5.2--5.3.sql >> dolphin--5.3.sql
 rm -f dolphin--1.0--1.1.sql
 cp upgrade_script/dolphin--1.0--1.1.sql dolphin--1.0--1.1.sql
 rm -f dolphin--1.1--1.0.sql
@@ -35,10 +35,14 @@ rm -f dolphin--4.3--4.4.sql
 cp upgrade_script/dolphin--4.3--4.4.sql dolphin--4.3--4.4.sql
 rm -f dolphin--4.4--4.3.sql
 cp rollback_script/dolphin--4.4--4.3.sql dolphin--4.4--4.3.sql
-rm -f dolphin--4.4--5.0.sql
-cp upgrade_script/dolphin--4.4--5.0.sql dolphin--4.4--5.0.sql
-rm -f dolphin--5.0--4.4.sql
-cp rollback_script/dolphin--5.0--4.4.sql dolphin--5.0--4.4.sql
+rm -f dolphin--4.4--4.5.sql
+cp upgrade_script/dolphin--4.4--4.5.sql dolphin--4.4--4.5.sql
+rm -f dolphin--4.5--4.4.sql
+cp rollback_script/dolphin--4.5--4.4.sql dolphin--4.5--4.4.sql
+rm -f dolphin--4.5--5.0.sql
+cp upgrade_script/dolphin--4.5--5.0.sql dolphin--4.5--5.0.sql
+rm -f dolphin--5.0--4.5.sql
+cp rollback_script/dolphin--5.0--4.5.sql dolphin--5.0--4.5.sql
 rm -f dolphin--5.0--5.1.sql
 cp upgrade_script/dolphin--5.0--5.1.sql dolphin--5.0--5.1.sql
 rm -f dolphin--5.1--5.0.sql

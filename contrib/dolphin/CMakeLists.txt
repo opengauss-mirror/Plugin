@@ -217,10 +217,16 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.3--4.4.sql
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4--4.3.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4--5.0.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.4--4.5.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--4.4.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.5--4.4.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--4.5--5.0.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--4.5.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--5.0--5.1.sql
