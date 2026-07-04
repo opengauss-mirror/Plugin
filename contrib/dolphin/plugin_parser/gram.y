@@ -20699,6 +20699,7 @@ ev_body:    {
 				/* Reset the flag which mark whether we are in slash proc. */
 				yyextra->core_yy_extra.in_slash_proc_body = false;
 				yyextra->core_yy_extra.dolqstart = NULL;
+				yyextra->core_yy_extra.is_createstmt = false;
 				$$ = ev_body_str;
 		}
 	;
@@ -21088,6 +21089,7 @@ ev_where_body:	{
 				/* Reset the flag which mark whether we are in slash proc. */
 				yyextra->core_yy_extra.in_slash_proc_body = false;
 				yyextra->core_yy_extra.dolqstart = NULL;
+				yyextra->core_yy_extra.is_createstmt = false;
 				$$ = ev_body_str;
 			}
 		;
@@ -21229,6 +21231,7 @@ b_proc_body:{
 				/* Reset the flag which mark whether we are in slash proc. */
 				yyextra->core_yy_extra.in_slash_proc_body = false;
 				yyextra->core_yy_extra.dolqstart = NULL;
+				yyextra->core_yy_extra.is_createstmt = false;
 
 				/*
 				 * Add the end location of slash proc to the locationlist for the multi-query 
@@ -21670,6 +21673,7 @@ CreatePackageStmt:
                     /* Reset the flag which mark whether we are in slash proc. */
                     yyextra->core_yy_extra.in_slash_proc_body = false;
                     yyextra->core_yy_extra.dolqstart = NULL;
+                    yyextra->core_yy_extra.is_createstmt = false;
                     /*
                      * Add the end location of slash proc to the locationlist for the multi-query 
                      * processed.
@@ -21942,6 +21946,7 @@ pkg_body_subprogram: {
                 /* Reset the flag which mark whether we are in slash proc. */
                 yyextra->core_yy_extra.in_slash_proc_body = false;
                 yyextra->core_yy_extra.dolqstart = NULL;
+                yyextra->core_yy_extra.is_createstmt = false;
                 /*
                 * Add the end location of slash proc to the locationlist for the multi-query 
                 * processed.
@@ -22656,6 +22661,7 @@ subprogram_body: 	{
 				/* Reset the flag which mark whether we are in slash proc. */
 				yyextra->core_yy_extra.in_slash_proc_body = false;
 				yyextra->core_yy_extra.dolqstart = NULL;
+				yyextra->core_yy_extra.is_createstmt = false;
 
 				/*
 				 * Add the end location of slash proc to the locationlist for the multi-query 
@@ -22933,6 +22939,7 @@ flow_control_func_body:
 				/* Reset the flag which mark whether we are in slash proc. */
 				yyextra->core_yy_extra.in_slash_proc_body = false;
 				yyextra->core_yy_extra.dolqstart = NULL;
+				yyextra->core_yy_extra.is_createstmt = false;
 
 				/*
 				 * Add the end location of slash proc to the locationlist for the multi-query
