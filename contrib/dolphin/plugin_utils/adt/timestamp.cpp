@@ -336,6 +336,10 @@ PG_FUNCTION_INFO_V1_PUBLIC(date_format_numeric);
 extern "C" DLL_PUBLIC Datum date_format_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_format_time);
 extern "C" DLL_PUBLIC Datum date_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_format_timestamptz);
+extern "C" DLL_PUBLIC Datum date_format_timestamptz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_format_timestamp);
+extern "C" DLL_PUBLIC Datum date_format_timestamp(PG_FUNCTION_ARGS); 
 PG_FUNCTION_INFO_V1_PUBLIC(str_to_date);
 extern "C" DLL_PUBLIC Datum str_to_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_one_arg);
@@ -10492,6 +10496,26 @@ static inline bool date_format_internal(char *str, char *buf, char *format, int 
     return true;
 }
 
+static inline text *date_format_tm_to_text(text *format_text, struct pg_tm *tm, fsec_t fsec)
+{
+    char buf[MAXDATELEN];          /* string for temporary storage */
+    char *format = text_to_cstring(format_text);
+    int format_len = strlen(format);
+    int remain = get_result_len(format, format_len);
+    char *str = (char*)palloc(remain + 1);
+
+    if (!date_format_internal(str, buf, format, format_len, remain, tm, fsec)) {
+        pfree(str);
+        pfree(format);
+        return NULL;
+    }
+
+    text *result_text = cstring_to_text(str);
+    pfree(str);
+    pfree(format);
+    return result_text;
+}
+
 /*
  * @Description: Create a formated date value in a string.
  * @return: The formated date value as a string.
@@ -10594,6 +10618,50 @@ Datum date_format_time(PG_FUNCTION_ARGS)
     }
     text *result_text = cstring_to_text(str);
     pfree(str);
+    PG_RETURN_TEXT_P(result_text);
+}
+
+Datum date_format_timestamptz(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tz;
+    const char *tzn = NULL;
+
+    if (TIMESTAMP_NOT_FINITE(timestamp)) {
+        PG_RETURN_NULL();
+    }
+    if (timestamp2tm(timestamp, &tz, tm, &fsec, &tzn, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+
+    text *result_text = date_format_tm_to_text(format_text, tm, fsec);
+    if (result_text == NULL) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(result_text);
+}
+
+Datum date_format_timestamp(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+
+    if (TIMESTAMP_NOT_FINITE(timestamp)) {
+        PG_RETURN_NULL();
+    }
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+
+    text *result_text = date_format_tm_to_text(format_text, tm, fsec);
+    if (result_text == NULL) {
+        PG_RETURN_NULL();
+    }
     PG_RETURN_TEXT_P(result_text);
 }
 

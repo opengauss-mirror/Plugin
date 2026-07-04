@@ -18,6 +18,7 @@ GRANT ALL PRIVILEGES TO proto_user;
 GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
+use db_jdbc;
 -- ****************************************************************************************************************************************************************************************************************
 \! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
 -- wrong password before setting set_native_password
@@ -543,6 +544,7 @@ TINYTEXT: NULL
 CHAR: NULL
 CHAR: NULL
 JSON: NULL
+RESET current_schema;
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
 \! rm @abs_builddir@/proto_jdbc/class/*.class

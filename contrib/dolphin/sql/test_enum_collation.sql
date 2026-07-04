@@ -354,3 +354,52 @@ drop table test_check1;
 
 drop schema test_enum_collation cascade;
 reset current_schema;
+
+set b_format_behavior_compat_options = 'default_collation';
+create schema test_enum_collation2 collate 'utf8mb4_bin';
+set current_schema = 'test_enum_collation2';
+
+drop table if exists t_enum_0022;
+create table t_enum_0022 (
+name varchar(40),
+col1 enum('small', 'SMALL', 'LARge', 'largE')
+) collate = 'utf8mb4_general_ci';
+
+drop table if exists t_enum_0022;
+create table t_enum_0022 (
+name varchar(40),
+col1 enum('small', 'SMALL', 'LARge', 'largE')
+);
+
+insert into t_enum_0022 values('asd', 'small'), ('qwe', 2);
+select * from t_enum_0022;
+
+drop table t_enum_0022;
+
+drop schema test_enum_collation2 cascade;
+reset current_schema;
+
+
+create schema test_enum_collation3 collate 'utf8mb4_general_ci';
+set current_schema = 'test_enum_collation3';
+
+drop table if exists t_enum_0021;
+create table t_enum_0021 (
+name varchar(40),
+col1 enum('small', 'SMALL', 'LARge', 'largE')
+);
+
+drop table if exists t_enum_0022;
+create table t_enum_0022 (
+name varchar(40),
+col1 enum('small', 'SMALL', 'LARge', 'largE')
+) collate = 'utf8mb4_bin';
+
+insert into t_enum_0022 values('asd', 'small'), ('qwe', 2);
+select * from t_enum_0022;
+
+drop table t_enum_0022;
+
+reset b_format_behavior_compat_options;
+drop schema test_enum_collation3 cascade;
+reset current_schema;

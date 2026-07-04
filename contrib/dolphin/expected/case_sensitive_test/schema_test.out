@@ -302,6 +302,19 @@ SELECT * from pg_catalog.LENGTH('aaa');
       3
 (1 row)
 
+CREATE SCHEMA sch_Opengauss_DATABASE_Case0003_1;
+SELECT nspname FROM pg_namespace WHERE nspname = 'sch_Opengauss_DATABASE_Case0003_1';
+              nspname              
+-----------------------------------
+ sch_Opengauss_DATABASE_Case0003_1
+(1 row)
+
+USE sch_Opengauss_DATABASE_Case0003_1;
+USE `sch_Opengauss_DATABASE_Case0003_1`;
+SET dolphin.sql_mode = 'ansi_quotes';
+USE "sch_Opengauss_DATABASE_Case0003_1";
+RESET dolphin.sql_mode;
+RESET current_schema;
 -- clean
 DROP USER Test_Schema_User CASCADE;
 DROP USER Test_Schema_User_bak CASCADE;
