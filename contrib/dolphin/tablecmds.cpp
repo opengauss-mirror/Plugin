@@ -8825,6 +8825,14 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
     cmd = (AlterTableCmd*)copyObject(cmd);
 
     cmd->recursing = recursing;
+    if (tab->b_compat_subcmds == NIL) {
+        errno_t rc;
+
+        rc = memset_s(tab->b_compat_phase1_subcmd_count, sizeof(tab->b_compat_phase1_subcmd_count), 0,
+            sizeof(tab->b_compat_phase1_subcmd_count));
+        securec_check(rc, "\0", "\0");
+    }
+    tab->b_compat_subcmds = lappend(tab->b_compat_subcmds, cmd);
     /*
      * Do permissions checking, recursion to child tables if needed, and any
      * additional phase-1 processing needed.
@@ -9287,6 +9295,7 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
 
     /* Add the subcommand to the appropriate list for phase 2 */
     tab->subcmds[pass] = lappend(tab->subcmds[pass], cmd);
+    tab->b_compat_phase1_subcmd_count[pass]++;
 }
 
 static bool ATCheckLedgerTableCmd(Relation rel, AlterTableCmd* cmd)
@@ -9421,6 +9430,81 @@ static void UpdateGeneratedExpr(AlteredTableInfo* tab)
 }
 
 /*
+ * In B format, each per-pass list is split into an already-executed prefix
+ * and a pending suffix. Written-order execution and immediate cleanup drains
+ * advance the executed prefix; pass-based phase 2 should continue from the
+ * first pending command afterwards.
+ */
+static ListCell* ATBCompatGetPendingSubcmdCell(const AlteredTableInfo* tab, int pass)
+{
+    List* subcmds = tab->subcmds[pass];
+
+    if (subcmds == NIL) {
+        return NULL;
+    }
+
+    int executedPrefixCount = tab->b_compat_phase1_subcmd_count[pass];
+
+    if (executedPrefixCount == 0) {
+        return list_head(subcmds);
+    }
+    if (executedPrefixCount >= list_length(subcmds)) {
+        return NULL;
+    }
+
+    return list_nth_cell(subcmds, executedPrefixCount);
+}
+
+static bool ATBCompatIsAlterTypeCmd(const AlterTableCmd* cmd)
+{
+    return cmd->subtype == AT_AlterColumnType || cmd->subtype == AT_ModifyColumn;
+}
+
+static void ATBCompatDrainPendingPasses(
+    List** wqueue, AlteredTableInfo* tab, LOCKMODE lockmode, bool fromReplace, int startPass, int endPass)
+{
+    int pass;
+
+    for (pass = startPass; pass <= endPass; pass++) {
+        ListCell* lcmd = NULL;
+        ListCell* startcmd = NULL;
+        Relation rel;
+        int executedCount = 0;
+
+        startcmd = ATBCompatGetPendingSubcmdCell(tab, pass);
+        if (startcmd == NULL) {
+            continue;
+        }
+
+        rel = relation_open(tab->relid, NoLock);
+        for_each_cell(lcmd, startcmd) {
+            ATExecCmd(wqueue, tab, rel, (AlterTableCmd*)lfirst(lcmd), lockmode, fromReplace);
+            executedCount++;
+        }
+        relation_close(rel, NoLock);
+
+        tab->b_compat_phase1_subcmd_count[pass] += executedCount;
+    }
+}
+
+static void ATBCompatFlushAlterTypeCleanup(
+    List** wqueue, AlteredTableInfo* tab, LOCKMODE lockmode, bool fromReplace)
+{
+    if (tab->isDeltaTable) {
+        return;
+    }
+
+    /*
+     * Match the original ALTER TYPE pipeline more closely: cleanup first
+     * drops/requeues dependent objects, then OLD_INDEX/OLD_CONSTR are
+     * executed for the same table before later original commands observe the
+     * catalog. Cross-table work still stays in the generic pass loop.
+     */
+    ATPostAlterTypeCleanup(wqueue, tab, lockmode);
+    ATBCompatDrainPendingPasses(wqueue, tab, lockmode, fromReplace, AT_PASS_OLD_INDEX, AT_PASS_OLD_CONSTR);
+}
+
+/*
  * ATRewriteCatalogs
  *
  * Traffic cop for ALTER TABLE Phase 2 operations.	Subcommands are
@@ -9431,6 +9515,44 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
 {
     int pass;
     ListCell* ltab = NULL;
+
+    /* Execute original subcommands in written order for dolphin ALTER. */
+    foreach (ltab, *wqueue) {
+        AlteredTableInfo* tab = (AlteredTableInfo*)lfirst(ltab);
+        ListCell* lcmd = NULL;
+        Relation rel;
+        bool pendingAlterTypeCleanup = false;
+
+        if (tab->b_compat_subcmds == NIL) {
+            continue;
+        }
+
+        rel = relation_open(tab->relid, NoLock);
+        foreach (lcmd, tab->b_compat_subcmds) {
+            AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lcmd);
+
+            /*
+             * Keep ALTER TYPE/MODIFY cleanup adjacent to the segment that
+             * produced it, so later original commands see the cleaned-up
+             * catalog state instead of a stale pre-cleanup state.
+             */
+            if (pendingAlterTypeCleanup && !ATBCompatIsAlterTypeCmd(cmd)) {
+                ATBCompatFlushAlterTypeCleanup(wqueue, tab, lockmode, fromReplace);
+                pendingAlterTypeCleanup = false;
+            }
+
+            ATExecCmd(wqueue, tab, rel, cmd, lockmode, fromReplace);
+            if (ATBCompatIsAlterTypeCmd(cmd)) {
+                pendingAlterTypeCleanup = true;
+            }
+        }
+
+        if (pendingAlterTypeCleanup) {
+            ATBCompatFlushAlterTypeCleanup(wqueue, tab, lockmode, fromReplace);
+        }
+
+        relation_close(rel, NoLock);
+    }
 
     /*
      * We process all the tables "in parallel", one pass at a time.  This is
@@ -9446,8 +9568,13 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
             List* subcmds = tab->subcmds[pass];
             Relation rel;
             ListCell* lcmd = NULL;
+            ListCell* startcmd = NULL;
 
             if (subcmds == NIL)
+                continue;
+
+            startcmd = ATBCompatGetPendingSubcmdCell(tab, pass);
+            if (startcmd == NULL)
                 continue;
 
             /*
@@ -9455,7 +9582,7 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace
              */
             rel = relation_open(tab->relid, NoLock);
 
-            foreach (lcmd, subcmds)
+            for_each_cell(lcmd, startcmd)
                 ATExecCmd(wqueue, tab, rel, (AlterTableCmd*)lfirst(lcmd), lockmode, fromReplace);
 
             /*
