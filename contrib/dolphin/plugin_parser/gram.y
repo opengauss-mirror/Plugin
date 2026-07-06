@@ -31582,15 +31582,6 @@ table_ref_for_no_table_function:		single_table
 				{
 					$$ = $1;
 				}
-			| LATERAL_EXPR func_table dolphin_alias_clause
-				{
-					RangeFunction *n = makeNode(RangeFunction);
-					n->funccallnode = $2;
-					n->alias = $3;
-					n->coldeflist = NIL;
-					n->lateral = true;
-					$$ = (Node *) n;
-				}
 			| func_table		%prec UMINUS
 				{
 					RangeFunction *n = makeNode(RangeFunction);
