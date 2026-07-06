@@ -1462,6 +1462,9 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
             nspname = strVal(field2);
             AssertEreport(IsA(field3, String), MOD_OPT, "");
             relname = strVal(field3);
+            ereport(DEBUG5, (errmodule(MOD_PARSER),
+                             errmsg("[PARSER] parsed columnref's catagory name: %s, namespace name: %s,"
+                                    "relation name: %s", catname, nspname, relname)));
 
             /*
              * We check the catalog name and then ignore it.
@@ -5308,6 +5311,7 @@ static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
 {
     Node *result = NULL;
     Const *con = NULL;
+    Oid collid = InvalidOid;
 
     Assert(DB_IS_CMPT_BD);
     result = transformExprRecurse(pstate, c->arg);
@@ -5352,7 +5356,7 @@ static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
     }
 
     if (unlikely(DB_IS_CMPT(B_FORMAT))) {
-        Oid collid = get_default_collation_by_charset(c->charset, false);
+        collid = get_default_collation_by_charset(c->charset, false);
         if (OidIsValid(collid)) {
             exprSetCollation(result, collid);
         }
