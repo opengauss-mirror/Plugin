@@ -652,7 +652,12 @@ static ParamListInfo EvaluateParams(CachedPlanSource* psrc, List* params, const 
     pstate->p_sourcetext = queryString;
 
     param_collation = GetCollationConnection();
+
+#ifdef DOLPHIN
     param_charset = GetCharsetConnection();
+#else
+    param_charset = GetDatabaseEncoding();
+#endif
     i = 0;
     foreach (l, params) {
         Node* expr = (Node*)lfirst(l);

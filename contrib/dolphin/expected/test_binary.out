@@ -1584,6 +1584,53 @@ from t_binary_text_8175_l, t_binary_text_8175_r;
 
 drop table t_binary_text_8175_l, t_binary_text_8175_r;
 set collation_connection = 'binary';
+set b_format_behavior_compat_options = 'enable_multi_charset';
+create table t_v31(a bool, b tinyblob, c blob, d mediumblob, e longblob);
+insert into t_v31 values(true, '+1.1', '+1.1', '+1.1', '+1.1');
+explain (costs off) select * from t_v31 where a < b;
+    QUERY PLAN     
+-------------------
+ Seq Scan on t_v31
+   Filter: (a < b)
+(2 rows)
+
+select a < b, a < c, a < d, a < e from t_v31;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | t        | t        | t
+(1 row)
+
+drop table t_v31;
+set dolphin.sql_mode = 'pipes_as_concat';
+CREATE TABLE test_multi_type_table
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `text` text
+);
+INSERT INTO test_multi_type_table VALUES(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+CREATE TABLE test_multi_type SELECT
+`int1` || `binary` AS `int1_||_binary`,
+`int1` || `varbinary` AS `int1_||_varbinary`
+FROM test_multi_type_table;
+drop table test_multi_type;
+drop table test_multi_type_table;
 drop schema test_binary cascade;
 NOTICE:  drop cascades to 10 other objects
 DETAIL:  drop cascades to table test_bytea

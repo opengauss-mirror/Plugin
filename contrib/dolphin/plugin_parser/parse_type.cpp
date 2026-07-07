@@ -55,6 +55,7 @@
 #include "catalog/pg_object.h"
 #include "catalog/gs_dependencies_fn.h"
 #include "catalog/pg_type_fn.h"
+#include "commands/extension.h"
 #ifdef DOLPHIN
 #include "miscadmin.h"
 #include "commands/typecmds.h"
@@ -849,10 +850,27 @@ Oid transform_bin_collation(ColumnDef* coldef, Oid cur_col_oid)
 }
 #endif
 
+bool IsBSupportCharsetType(Oid typeOid)
+{
+    switch (typeOid) {
+        case TEXTOID:
+        case VARCHAROID:
+        case BPCHAROID:
+        case NVARCHAR2OID:
+        case BLOBOID:
+            return true;
+        default:
+            if (IsBinaryType(typeOid) || type_is_enum(typeOid) || type_is_set(typeOid)) {
+                return true;
+            }
+            return false;
+    }
+}
+
 Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcollation,
     bool is_bin_type, Oid rel_coll_oid)
 {
-    if (coldef->typname->charset != PG_INVALID_ENCODING && !IsSupportCharsetType(typeOid) && !type_is_enum(typeOid) && !type_is_set(typeOid)) {
+    if (coldef->typname->charset != PG_INVALID_ENCODING && !IsBSupportCharsetType(typeOid)) {
         ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
                 errmsg("type %s not support set charset", format_type_be(typeOid))));
     }
@@ -893,7 +911,10 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
         } else if (is_bin_type) {
             result = BINARY_COLLATION_OID;
         } else {
-            result = get_default_collation_by_charset(GetDatabaseEncoding());
+            result = get_default_collation_by_charset(GetDatabaseEncoding(), !creating_extension);
+            if (!OidIsValid(result)) {
+                result = typcollation;
+            }
         }
     }
 #ifdef DOLPHIN

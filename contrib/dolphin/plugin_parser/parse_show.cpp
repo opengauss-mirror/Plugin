@@ -766,7 +766,7 @@ SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node* whereCla
     tl = lappend(tl, plpsMakeNormalColumn(NULL, "comment", "comment"));
     tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_comment", "index_comment"));
 
-    RangeVar* rv = makeRangeVar(NULL, "index_statistic", -1);
+    RangeVar* rv = makeRangeVar("public", "index_statistic", -1);
     List* fl = (List*)list_make1(rv);
 
     Node* condSchema = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("namespace"),

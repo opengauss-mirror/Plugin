@@ -31589,7 +31589,7 @@ table_ref_for_no_table_function:		single_table
 					n->coldeflist = NIL;
 					$$ = (Node *) n;
 				}
-			| func_table alias_clause
+			| func_table dolphin_alias_clause
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					n->funccallnode = $1;
@@ -31604,22 +31604,22 @@ table_ref_for_no_table_function:		single_table
 					n->coldeflist = $4;
 					$$ = (Node *) n;
 				}
-			| func_table AS ColId '(' TableFuncElementList ')'
+			| func_table AS DolphinColId '(' TableFuncElementList ')'
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					Alias *a = makeNode(Alias);
 					n->funccallnode = $1;
-					a->aliasname = $3;
+					a->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
 					n->alias = a;
 					n->coldeflist = $5;
 					$$ = (Node *) n;
 				}
-			| func_table ColId '(' TableFuncElementList ')'
+			| func_table DolphinColId '(' TableFuncElementList ')'
 				{
 					RangeFunction *n = makeNode(RangeFunction);
 					Alias *a = makeNode(Alias);
 					n->funccallnode = $1;
-					a->aliasname = $2;
+					a->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
 					n->alias = a;
 					n->coldeflist = $4;
 					$$ = (Node *) n;
@@ -43713,7 +43713,8 @@ static void with_rollup_check_elems_count(Node* expr)
 
 static inline char* GetDolphinObjName(char* string, bool is_quoted)
 {
-	return (GetSessionContext()->lower_case_table_names == 0) ? string : downcase_str(string, is_quoted);
+    return (GetSessionContext()->lower_case_table_names == 0 && !u_sess->attr.attr_common.IsInplaceUpgrade) ?
+        string : downcase_str(string, is_quoted);
 }
 
 static inline char* GetDolphinSchemaName(char* string, bool is_quoted)

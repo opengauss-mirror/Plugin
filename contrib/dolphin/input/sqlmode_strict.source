@@ -382,4 +382,19 @@ insert into t_text values(test1(1))// -- no recompile warning
 drop procedure test1//
 
 delimiter ;
+CREATE  OR REPLACE FUNCTION isnumeric(var varchar)
+ RETURNS integer
+ LANGUAGE plpgsql
+ AUTHID DEFINER NOT FENCED NOT SHIPPABLE
+AS $function$ 
+DECLARE x NUMERIC;
+BEGIN
+    x = $1::NUMERIC;
+    RETURN TRUE;
+EXCEPTION WHEN others THEN
+    RETURN FALSE;
+END;
+$function$;
+select isnumeric('4a'), isnumeric('4a');
+drop function isnumeric;
 drop schema strict_mode_test cascade;
