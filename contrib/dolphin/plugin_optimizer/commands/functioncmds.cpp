@@ -4211,6 +4211,8 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
 
         fcinfo.arg[i] = val;
         fcinfo.argnull[i] = isnull;
+        fcinfo.argTypes[i] = exprstate->resultType;
+
         i++;
     }
 
