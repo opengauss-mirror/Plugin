@@ -375,6 +375,7 @@ rollback;
 select * from t_autocommit_0038 order by a;
 call p_autocommit_0038_2(11, 22);
 commit;
+set autocommit = 1;
 
 drop table if exists t_autocommit_0038;
 drop procedure p_autocommit_0038_1(a int,b int);
