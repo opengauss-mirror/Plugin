@@ -847,33 +847,9 @@ WARNING:  Data truncated for input data: "1234"
 (2 rows)
 
 select c1 < c3, c1 > c3, c1 <= c3, c1 >= c3 from binary_operator;
-WARNING:  Data truncated for input data: "34"
-CONTEXT:  referenced column: float8lt
-SQL function "binary_time_lt" statement 1
-WARNING:  Data truncated for input data: "34"
-CONTEXT:  referenced column: float8gt
-SQL function "binary_time_gt" statement 1
-WARNING:  Data truncated for input data: "34"
-CONTEXT:  referenced column: float8le
-SQL function "binary_time_le" statement 1
-WARNING:  Data truncated for input data: "34"
-CONTEXT:  referenced column: float8ge
-SQL function "binary_time_ge" statement 1
-WARNING:  Data truncated for input data: "1234"
-CONTEXT:  referenced column: float8lt
-SQL function "binary_time_lt" statement 1
-WARNING:  Data truncated for input data: "1234"
-CONTEXT:  referenced column: float8gt
-SQL function "binary_time_gt" statement 1
-WARNING:  Data truncated for input data: "1234"
-CONTEXT:  referenced column: float8le
-SQL function "binary_time_le" statement 1
-WARNING:  Data truncated for input data: "1234"
-CONTEXT:  referenced column: float8ge
-SQL function "binary_time_ge" statement 1
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
- t        | f        | t        | f
+ f        | t        | f        | t
  f        | t        | f        | t
 (2 rows)
 

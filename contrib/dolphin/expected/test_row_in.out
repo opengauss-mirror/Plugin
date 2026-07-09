@@ -2737,14 +2737,12 @@ select row(1, row((select `time` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2787,9 +2785,6 @@ select row(1, row((select `time` from all_types_table limit 1),(select `longblob
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type int16: "67890 - 12345 = 55545"
-DETAIL:  text contain invalid character
-WARNING:  smallint unsigned out of range
  ?column? 
 ----------
  f
@@ -2856,14 +2851,12 @@ select row(1, row((select `time4` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type smallint unsigned: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2906,9 +2899,6 @@ select row(1, row((select `time4` from all_types_table limit 1),(select `longblo
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type int16: "67890 - 12345 = 55545"
-DETAIL:  text contain invalid character
-WARNING:  smallint unsigned out of range
  ?column? 
 ----------
  f

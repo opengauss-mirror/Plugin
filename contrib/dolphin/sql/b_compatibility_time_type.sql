@@ -855,6 +855,16 @@ insert into t_year_0001 values (3, current_timestamp(), current_timestamp(), cur
 select * from t_year_0001;
 drop table t_year_0001;
 
+create table t1(t time, c char(10));
+insert into t1 values('12:12:12', '12:12:12');
+select t = c, c = t from t1;
+create table t2(t time, c text);
+insert into t2 values('12:12:12', '12:12:12');
+select t = c, c = t from t2;
+create table t3(t time, c varchar(10));
+insert into t3 values('12:12:12', '12:12:12');
+select t = c, c = t from t3;
+drop table t1, t2, t3;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

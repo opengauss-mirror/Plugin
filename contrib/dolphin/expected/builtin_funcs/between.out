@@ -821,14 +821,10 @@ explain (costs off) select * from test where timestamp between '2024-12-12' and 
 (3 rows)
 
 explain (costs off) select * from test where time between '12:00:00'::text and '12:00:00'::text; -- N
-WARNING:  invalid input syntax for type int16: "12:00:00"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "12:00:00"
-DETAIL:  text contain invalid character
-                           QUERY PLAN                            
------------------------------------------------------------------
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
  Seq Scan on test
-   Filter: (("time" >= '12'::uint2) AND ("time" <= '12'::uint2))
+   Filter: (((time_out("time"))::text >= '12:00:00'::text) AND ((time_out("time"))::text <= '12:00:00'::text))
 (2 rows)
 
 explain (costs off) select * from test where timetz between '12:00:00'::text and '12:00:00'::text; -- N
@@ -863,12 +859,10 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::tex
 (3 rows)
 
 explain (costs off) select * from test where time between '12:00:00'::char(100) and '12:00:00'::char(100); -- N
-WARNING:  invalid input syntax for type smallint unsigned: "12:00:00"
-WARNING:  invalid input syntax for type smallint unsigned: "12:00:00"
-                           QUERY PLAN                            
------------------------------------------------------------------
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
  Seq Scan on test
-   Filter: (("time" >= '12'::uint2) AND ("time" <= '12'::uint2))
+   Filter: (((time_out("time"))::text >= '12:00:00'::text) AND ((time_out("time"))::text <= '12:00:00'::text))
 (2 rows)
 
 explain (costs off) select * from test where date between '2024-12-12'::char(100) and '2024-12-13'::char(100); -- N
@@ -897,8 +891,12 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::cha
 
 /* all no index. */
 explain (costs off) select * from test where time between '12:00:00'::blob and '12:00:00'::blob; -- failed
-ERROR:  operator is not unique: time without time zone >= blob
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on test
+   Filter: (blob_ge(((time_out("time"))::text)::blob, '\x31323a30303a3030'::blob) AND blob_le(((time_out("time"))::text)::blob, '\x31323a30303a3030'::blob))
+(2 rows)
+
 explain (costs off) select * from test where timetz between '12:00:00'::blob and '12:00:00'::blob; -- N
                                                                            QUERY PLAN                                                                            
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -931,10 +929,10 @@ explain (costs off) select * from test where timestamp between '2024-12-12'::blo
 
 /*  all no index. */
 explain (costs off) select * from test where time between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
-                                              QUERY PLAN                                               
--------------------------------------------------------------------------------------------------------
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
  Seq Scan on test
-   Filter: (("time" >= '\x31323a30303a3030'::"binary") AND ("time" <= '\x31323a30303a3030'::"binary"))
+   Filter: (((time_out("time"))::text >= '\x31323a30303a3030'::varbinary(100)) AND ((time_out("time"))::text <= '\x31323a30303a3030'::varbinary(100)))
 (2 rows)
 
 explain (costs off) select * from test where timetz between '12:00:00'::VARBINARY(100) and '12:00:00'::VARBINARY(100); -- N
