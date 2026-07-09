@@ -5486,8 +5486,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<>t13
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: t25<>t14
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: t25<>t15
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: t25<>t18
 WARNING:  invalid input syntax for type timestamp: "1.23a"
