@@ -327,22 +327,31 @@ static inline void InitPlanOperatorInfoTuple(int operator_plan_info_attrnum, Fun
 
 void pg_stat_get_stat_list(List** stat_list, uint32* statFlag_ref, Oid relid);
 
-void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore, TupleDesc tupDesc,
-                                               const PgBackendStatus *beentry);
-void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleDesc tupDesc,
-                                               const PgBackendStatus *beentry);
-void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry);
-
-void insert_pv_session_time(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionTimeEntry* entry);
-void insert_pv_session_stat(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionLevelStatistic* entry);
-void insert_pv_session_memory(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionLevelMemory* entry);
+static void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                               const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                 const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                               const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                    const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                               const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                               const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_pg_progress_info(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                    const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                        const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                        const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                             const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc tupDesc,
+                                                     const PgBackendStatus *beentry, StatFetchInfo f);
+static void insert_pv_session_time(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionTimeEntry* entry);
+static void insert_pv_session_stat(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionLevelStatistic* entry);
+static void insert_pv_session_memory(Tuplestorestate* tupStore, TupleDesc tupDesc, const SessionLevelMemory* entry);
 
 
 /*
@@ -2096,7 +2105,7 @@ Datum pg_stat_get_backend_idset(PG_FUNCTION_ARGS)
     FuncCallContext* funcctx = NULL;
     int* fctx = NULL;
     int32 result;
-    uint32 numbackends = 0;
+    uint32 numBackends = 0;
 
     /* stuff done only on the first call of the function */
     if (SRF_IS_FIRSTCALL()) {
@@ -2107,9 +2116,10 @@ Datum pg_stat_get_backend_idset(PG_FUNCTION_ARGS)
         funcctx->user_fctx = fctx;
 
         fctx[0] = 0;
+
         /* Only numbackends is required. */
-        numbackends = gs_stat_read_current_status(NULL, NULL, NULL);
-        fctx[1] = (int)numbackends;
+        gs_stat_read_current_status(&numBackends);
+        fctx[1] = (int)(numBackends);
     }
 
     /* stuff done on every call of the function */
@@ -2187,20 +2197,19 @@ Datum pg_stat_get_activity_helper(PG_FUNCTION_ARGS, bool has_conninfo)
 
     MemoryContextSwitchTo(oldcontext);
 
-    bool hasTID = false;
-    ThreadId tid = 0;
+    StatFetchInfoData f = { 0 };
     if (!PG_ARGISNULL(0)) {
-        hasTID = true;
-        tid = PG_GETARG_INT64(0);
+        f.hasTid = true;
+        f.threadId = PG_GETARG_INT64(0);
     }
 
     if (u_sess->attr.attr_common.pgstat_track_activities) {
         if (has_conninfo) {
             (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc,
-                                              insert_pg_stat_get_activity_with_conninfo, hasTID, tid);
+                                              insert_pg_stat_get_activity_with_conninfo, &f);
         } else {
             (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc,
-                                              insert_pg_stat_get_activity, hasTID, tid);
+                                              insert_pg_stat_get_activity, &f);
         }
     } else {
         ereport(INFO, (errmsg("The collection of information is disabled because track_activities is off.")));
@@ -2221,14 +2230,18 @@ char* GetGlobalSessionStr(GlobalSessionId globalSessionId)
     return gId.data;
 }
 
-void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore, TupleDesc tupDesc,
-                                               const PgBackendStatus *beentry)
+static void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                               const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_NUM = 22;
-
     Datum values[ATT_NUM];
     bool nulls[ATT_NUM];
     errno_t rc = 0;
+
+    if (f->hasTid && (f->threadId != beentry->st_procpid)) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
 
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
@@ -2438,15 +2451,24 @@ void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore, TupleD
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+
+    f->fres = f->hasTid ? StatFetchRes::SF_BREAK : StatFetchRes::SF_CONTINUE;
+
+    return;
 }
 
-void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                 const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_NUM = 21;
-
     Datum values[ATT_NUM];
     bool nulls[ATT_NUM];
     errno_t rc = 0;
+
+    if (f->hasTid && (f->threadId != beentry->st_procpid)) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
 
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
@@ -2652,6 +2674,10 @@ void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tupDesc, c
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+
+    f->fres = f->hasTid ? StatFetchRes::SF_BREAK : StatFetchRes::SF_CONTINUE;
+
+    return;
 }
 
 Datum pg_stat_get_activity_for_temptable(PG_FUNCTION_ARGS)
@@ -2659,8 +2685,9 @@ Datum pg_stat_get_activity_for_temptable(PG_FUNCTION_ARGS)
 
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
-
+    StatFetchInfoData f = { 0 };
     const int ATT_COUNT = 4;
+
     TupleDesc tupdesc = CreateTemplateTupleDesc(ATT_COUNT, false);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "datid", OIDOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "templineid", INT4OID, -1, 0);
@@ -2671,7 +2698,7 @@ Datum pg_stat_get_activity_for_temptable(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_activity_for_temptable);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_activity_for_temptable, &f);
 
     MemoryContextSwitchTo(oldcontext);
 
@@ -2681,8 +2708,8 @@ Datum pg_stat_get_activity_for_temptable(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleDesc tupDesc,
-                                               const PgBackendStatus *beentry)
+static void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                               const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_COUNT = 4;
     errno_t rc = 0;
@@ -2691,6 +2718,7 @@ void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleD
     Datum values[ATT_COUNT];
     bool nulls[ATT_COUNT];
 
+    f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
@@ -2710,11 +2738,14 @@ void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore, TupleD
     values[ARR_3] = Int64GetDatum(beentry->st_sessionid);
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    return;
 }
 
 Datum gs_stat_activity_timeout(PG_FUNCTION_ARGS)
 {
     const int ACTIVITY_TIMEOUT_ATTRS = 9;
+    StatFetchInfoData f = { 0 };
+
     int timeout_threshold = PG_GETARG_INT32(0);
     if (timeout_threshold < 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2747,8 +2778,8 @@ Datum gs_stat_activity_timeout(PG_FUNCTION_ARGS)
     MemoryContextSwitchTo(oldcontext);
 
     if (u_sess->attr.attr_common.pgstat_track_activities) {
-        gs_stat_get_timeout_beentry(timeout_threshold, rsinfo->setResult, rsinfo->setDesc,
-                                    insert_gs_stat_activity_timeout);
+        f.timeoutThreshold = timeout_threshold;
+        (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_gs_stat_activity_timeout, &f);
     }
 
     /* clean up and return the tuplestore */
@@ -2757,13 +2788,30 @@ Datum gs_stat_activity_timeout(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+inline static bool check_beentry_not_timeout(int timeoutThreshold, TimestampTz currentTime,
+                                             const PgBackendStatus  *beentry)
 {
-    const int ACTIVITY_TIMEOUT_ATTRS = 9;
+    return (beentry->st_state != STATE_RUNNING || beentry->st_activity_start_timestamp == 0 ||
+            !TimestampDifferenceExceeds(
+                beentry->st_activity_start_timestamp, currentTime, timeoutThreshold * MSECS_PER_SEC));
+}
+
+static void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc tupDesc,
+                                                    const PgBackendStatus *beentry, StatFetchInfo f)
+{
     int i = 0;
+    const int ACTIVITY_TIMEOUT_ATTRS = 9;
+    TimestampTz currentTime = GetCurrentTimestamp();
+    f->fres = StatFetchRes::SF_CONTINUE;
 
     char* dbname = get_database_name(beentry->st_databaseid);
     if (dbname == NULL || dbname[0] == '\0') {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
+
+    if (check_beentry_not_timeout(f->timeoutThreshold, currentTime, beentry)) {
+        f->fres = StatFetchRes::SF_SKIP;
         return;
     }
 
@@ -2841,10 +2889,11 @@ Datum pg_stat_get_activity_ng(PG_FUNCTION_ARGS)
         ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_activity_ng")));
     }
 
+    StatFetchInfoData f = { 0 };
     const int ATT_NUM = 4;
+
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
-
     TupleDesc tupdesc = CreateTemplateTupleDesc(ATT_NUM, false);
 
     TupleDescInitEntry(tupdesc, (AttrNumber)ARG_1, "datid", OIDOID, -1, 0);
@@ -2857,14 +2906,12 @@ Datum pg_stat_get_activity_ng(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    bool hasTID = false;
-    ThreadId tid = 0;
     if (!PG_ARGISNULL(0)) {
-        hasTID = true;
-        tid = PG_GETARG_INT64(0);
+        f.hasTid = true;
+        f.threadId = PG_GETARG_INT64(0);
     }
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_activity_ng, hasTID, tid);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_activity_ng, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -2873,12 +2920,18 @@ Datum pg_stat_get_activity_ng(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                   const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_NUM = 4;
     Datum values[ATT_NUM];
     bool nulls[ATT_NUM];
     errno_t rc = 0;
+
+    if (f->hasTid && (f->threadId != beentry->st_procpid)) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
 
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
@@ -2902,6 +2955,9 @@ void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc tupDesc
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    f->fres = f->hasTid ? StatFetchRes::SF_BREAK : StatFetchRes::SF_CONTINUE;
+
+    return;
 }
 
 char* getThreadWaitStatusDesc(PgBackendStatus* beentry)
@@ -3552,7 +3608,9 @@ Datum pg_stat_get_status(PG_FUNCTION_ARGS)
         ereport(ERROR, (errmsg("Uninitialized resultinfo when calling pg_stat_get_status")));
     }
 
+    StatFetchInfoData f = { 0 };
     const int ATT_NUM = 16;
+
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
@@ -3580,14 +3638,12 @@ Datum pg_stat_get_status(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    bool hasTID = false;
-    ThreadId tid = 0;
     if (!PG_ARGISNULL(0)) {
-        hasTID = true;
-        tid = PG_GETARG_INT64(0);
+        f.hasTid = true;
+        f.threadId = PG_GETARG_INT64(0);
     }
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_status, hasTID, tid);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_status, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -3595,10 +3651,15 @@ Datum pg_stat_get_status(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                              const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_NUM = 16;
     errno_t rc = 0;
+    if (f->hasTid && (f->threadId != beentry->st_procpid)) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
 
     /* for each row */
     Datum values[ATT_NUM];
@@ -3611,6 +3672,9 @@ void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDesc, con
 
     ConstructWaitStatus(beentry, values, nulls);
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    f->fres = f->hasTid ? StatFetchRes::SF_BREAK : StatFetchRes::SF_CONTINUE;
+
+    return;
 }
 
 static void CheckVersion()
@@ -3639,7 +3703,10 @@ Datum pgxc_stat_get_status(PG_FUNCTION_ARGS)
             errmsg("pgxc view cannot be executed on datanodes!")));
     }
     Assert(STATE_WAIT_NUM == sizeof(WaitStateDesc) / sizeof(WaitStateDesc[0]));
+
     const int ATT_NUM = 16;
+    StatFetchInfoData f = { 0 };
+
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
@@ -3667,7 +3734,7 @@ Datum pgxc_stat_get_status(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_status);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_status, &f);
     /* step2. fetch way for remote nodes. */
     ThreadWaitStatusInfo* threadWaitStatusInfo = getGlobalThreadWaitStatus(rsinfo->setDesc);
     MemoryContextSwitchTo(oldcontext);
@@ -3995,7 +4062,9 @@ Datum pg_stat_get_sql_count(PG_FUNCTION_ARGS)
 
 Datum pg_stat_get_thread(PG_FUNCTION_ARGS)
 {
+    StatFetchInfoData f = { 0 };
     const int ATT_NUM = 5;
+
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
@@ -4011,7 +4080,7 @@ Datum pg_stat_get_thread(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_thread);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_get_thread, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -4020,14 +4089,15 @@ Datum pg_stat_get_thread(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                              const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int ATT_NUM = 5;
-
     errno_t rc = 0;
     Datum values[ATT_NUM];
     bool nulls[ATT_NUM];
 
+    f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
@@ -4074,6 +4144,7 @@ void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDesc, con
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    return;
 }
 
 
@@ -4502,6 +4573,85 @@ Datum pg_stat_get_backend_client_port(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     PG_RETURN_DATUM(DirectFunctionCall1(int4in, CStringGetDatum(remote_port)));
+}
+
+/*
+ * Returns command progress information for the named command.
+ */
+#define PG_STAT_GET_PROGRESS_COLS    (PGSTAT_NUM_PROGRESS_PARAM + 3)
+Datum pg_stat_get_progress_info(PG_FUNCTION_ARGS)
+{
+    char       *cmd = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    ProgressCommandType cmdtype;
+    StatFetchInfoData f = { 0 };
+
+    ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
+    /* Translate command name into command type code. */
+    if (pg_strcasecmp(cmd, "COPY") == 0) {
+        cmdtype = PROGRESS_COMMAND_COPY;
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("invalid command name: \"%s\"", cmd)));
+    }
+
+    InitMaterializedSRF(fcinfo, 0);
+    MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
+
+    f.cmdType = cmdtype;
+
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_pg_stat_pg_progress_info, &f);
+    MemoryContextSwitchTo(oldcontext);
+    /* clean up and return the tuplestore */
+    tuplestore_donestoring(rsinfo->setResult);
+    pfree_ext(cmd);
+    return (Datum) 0;
+}
+
+static void insert_pg_stat_pg_progress_info(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                   const PgBackendStatus *beentry, StatFetchInfo f)
+{
+    errno_t rc = 0;
+    int i;
+    PgStatProgressInfo* info = NULL;
+    Datum   values[PG_STAT_GET_PROGRESS_COLS] = {0};
+    bool    nulls[PG_STAT_GET_PROGRESS_COLS] = {0};
+
+    info = beentry->pg_stat_progress_info;
+    f->fres = StatFetchRes::SF_CONTINUE;
+
+    Assert(beentry != NULL && (beentry->st_procpid > 0 || beentry->st_sessionid > 0));
+
+    if (!info || info->stProgressCommand != f->cmdType) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
+
+    rc = memset_s(values, sizeof(values), 0, sizeof(values));
+    securec_check_c(rc, "\0", "\0");
+    rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
+    securec_check_c(rc, "\0", "\0");
+
+    /* Value available to all callers */
+    values[ARR_0] = Int64GetDatum(beentry->st_procpid > 0 ? beentry->st_procpid : beentry->st_sessionid);
+    values[ARR_1] = ObjectIdGetDatum(beentry->st_databaseid);
+
+    /* Values only available to same user or superuser */
+    if (superuser() || isMonitoradmin(GetUserId()) || beentry->st_userid == GetUserId()) {
+        values[ARR_2] = ObjectIdGetDatum(info->stProgressCommandTarget);
+        for (i = 0; i < PGSTAT_NUM_PROGRESS_PARAM; i++) {
+            values[i + 3] = Int64GetDatum(info->stProgressParam[i]);
+        }
+    } else {
+        /* No permissions to view data about this session */
+        nulls[ARR_2] = true;
+        for (i = 0; i < PGSTAT_NUM_PROGRESS_PARAM; i++) {
+            nulls[i + 3] = true;
+        }
+    }
+
+    tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    return;
 }
 
 Datum pg_stat_get_db_numbackends(PG_FUNCTION_ARGS)
@@ -5622,6 +5772,7 @@ Datum pg_stat_get_wlm_statistics(PG_FUNCTION_ARGS)
 Datum pg_stat_get_session_wlmstat(PG_FUNCTION_ARGS)
 {
     const int SESSION_WLMSTAT_NUM = 26;
+    StatFetchInfoData f = {0};
 
     if (!superuser()) {
         aclcheck_error(ACLCHECK_NO_PRIV, ACL_KIND_PROC,
@@ -5663,15 +5814,13 @@ Datum pg_stat_get_session_wlmstat(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    bool hasTID = false;
-    ThreadId tid = 0;
     if (!PG_ARGISNULL(0)) {
-        hasTID = true;
-        tid = PG_GETARG_INT64(0);
+        f.hasTid = true;
+        f.threadId = PG_GETARG_INT64(0);
     }
 
     (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc,
-                                      insert_pg_stat_get_session_wlmstat, hasTID, tid);
+                                      insert_pg_stat_get_session_wlmstat, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -5680,13 +5829,19 @@ Datum pg_stat_get_session_wlmstat(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                       const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int SESSION_WLMSTAT_NUM = 26;
     Datum values[SESSION_WLMSTAT_NUM];
     bool nulls[SESSION_WLMSTAT_NUM];
-
     errno_t rc = 0;
+
+    if (f->hasTid && (f->threadId != beentry->st_procpid)) {
+        f->fres = StatFetchRes::SF_SKIP;
+        return;
+    }
+
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
@@ -5788,6 +5943,9 @@ void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleDesc tup
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+
+    f->fres = f->hasTid ? StatFetchRes::SF_BREAK : StatFetchRes::SF_CONTINUE;
+    return;
 }
 
 /*
@@ -5801,6 +5959,7 @@ Datum pg_stat_get_session_respool(PG_FUNCTION_ARGS)
     }
 
     const int SESSION_WLMSTAT_RESPOOL_NUM = 7;
+    StatFetchInfoData f = {0};
 
     ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
@@ -5819,7 +5978,7 @@ Datum pg_stat_get_session_respool(PG_FUNCTION_ARGS)
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
     (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc,
-                                      insert_pg_stat_get_session_respool);
+                                      insert_pg_stat_get_session_respool, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -5828,13 +5987,16 @@ Datum pg_stat_get_session_respool(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                                       const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int SESSION_WLMSTAT_RESPOOL_NUM = 7;
     Datum values[SESSION_WLMSTAT_RESPOOL_NUM];
     bool nulls[SESSION_WLMSTAT_RESPOOL_NUM];
     int i = -1;
     errno_t rc = 0;
+
+    f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
@@ -5866,7 +6028,7 @@ void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleDesc tup
     }
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
-
+    return;
 }
 
 
@@ -11235,6 +11397,7 @@ void set_comm_client_info(Datum *values, bool *nulls, const PgBackendStatus *bee
 Datum comm_client_info(PG_FUNCTION_ARGS)
 {
     const int CLIENT_INFO_TUPLE_NATTS = 9;
+    StatFetchInfoData f = {0};
 
     if (!superuser()) {
         ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
@@ -11261,7 +11424,7 @@ Datum comm_client_info(PG_FUNCTION_ARGS)
     rsinfo->setResult = tuplestore_begin_heap(true, false, u_sess->attr.attr_memory.work_mem);
     rsinfo->setDesc = BlessTupleDesc(tupdesc);
 
-    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_comm_client_info);
+    (void)gs_stat_read_current_status(rsinfo->setResult, rsinfo->setDesc, insert_comm_client_info, &f);
 
     MemoryContextSwitchTo(oldcontext);
     /* clean up and return the tuplestore */
@@ -11270,7 +11433,8 @@ Datum comm_client_info(PG_FUNCTION_ARGS)
     return (Datum) 0;
 }
 
-void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc, const PgBackendStatus *beentry)
+static void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc,
+                                            const PgBackendStatus *beentry, StatFetchInfo f)
 {
     const int CLIENT_INFO_TUPLE_NATTS = 9;
     Datum values[CLIENT_INFO_TUPLE_NATTS];
@@ -11278,6 +11442,7 @@ void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc, const
     char waitStatus[WAITSTATELEN];
     errno_t rc = 0;
 
+    f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
@@ -11292,6 +11457,7 @@ void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc, const
     set_comm_client_info(values, nulls, beentry);
 
     tuplestore_putvalues(tupStore, tupDesc, values, nulls);
+    return;
 }
 
 void fill_callcxt_for_comm_check_connection_status(FuncCallContext *funcctx)

@@ -378,6 +378,7 @@ typedef struct CopyStateData {
     bool has_escape;
     bool* verified;
 #endif
+    uint64  bytes_processed;    /* number of bytes processed so far */
 } CopyStateData;
 
 typedef struct InsertCopyLogInfoData {

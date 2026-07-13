@@ -72,6 +72,12 @@ SelectStmt *MakeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr
 SelectStmt *MakeShowCharacterQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *MakeShowCollationQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 
+/* Hooks for sharks */
+typedef List* (*RewriteTypmodExprHookType) (List *exprList);
+typedef bool (*CheckIsMssqlHexHookType) (char *str);
+typedef Oid (*GetVarbinaryOidHookType) ();
+typedef bool (*preTransformTargetHookType) (ResTarget *res, ParseState* pstate, int exprKind);
+
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *makeShowStatusQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);

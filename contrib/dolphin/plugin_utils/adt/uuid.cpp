@@ -12,6 +12,7 @@
  */
 #include <cstdio>
 
+#include <openssl/rand.h>
 #include "postgres.h"
 #include "pgxc/pgxcnode.h"
 #include "knl/knl_variable.h"
@@ -32,6 +33,7 @@ static int uuid_internal_cmp(const pg_uuid_t* arg1, const pg_uuid_t* arg2);
 
 PG_FUNCTION_INFO_V1_PUBLIC(uuid_generate);
 extern "C" DLL_PUBLIC Datum uuid_generate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(gen_random_uuid);
 
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(uuid_short);
@@ -602,3 +604,82 @@ Datum uuid_short(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(uuid);
 }
 #endif
+
+/*
+ * PGStrongRandom
+ *
+ * Generate requested number of random bytes. The returned bytes are
+ * cryptographically secure, suitable for use e.g. in authentication.
+ *
+ * We rely on system facilities for actually generating the numbers:
+ *
+ * OpenSSL's RAND_bytes()
+ *
+ */
+
+static void PGStrongRandom(pg_uuid_t *buf, size_t len)
+{
+    int i;
+
+    /*
+     * Check that OpenSSL's CSPRNG has been sufficiently seeded, and if not
+     * add more seed data using RAND_poll().  With some older versions of
+     * OpenSSL, it may be necessary to call RAND_poll() a number of times.  If
+     * RAND_poll() fails to generate seed data within the given amount of
+     * retries, subsequent RAND_bytes() calls will fail, but we allow that to
+     * happen to let PGStrongRandom() callers handle that with appropriate
+     * error handling.
+     */
+#define NUM_RAND_POLL_RETRIES 8
+
+    for (i = 0; i < NUM_RAND_POLL_RETRIES; i++) {
+        if (RAND_status() == 1) {
+            /* The CSPRNG is sufficiently seeded */
+            break;
+        }
+
+        RAND_poll();
+    }
+
+    int ret = RAND_bytes((unsigned char*)buf, len);
+    if (ret != 1) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INTERNAL_ERROR),
+                 errmsg("could not generate random values, errcode:%d", ret)));
+    }
+}
+
+/*
+ * Set the given UUID version and the variant bits
+ */
+static inline void UUIDSetVersion(pg_uuid_t *uuid, unsigned char version)
+{
+    /* set version field, top four bits */
+    int versionField = 6;
+    int variantField = 8;
+    int hibit = 4;
+    uuid->data[versionField] = (uuid->data[versionField] & 0x0f) | (version << hibit);
+
+    /* set variant field, top two bits are 1, 0 */
+    uuid->data[variantField] = (uuid->data[variantField] & 0x3f) | 0x80;
+}
+
+/*
+ * Generate UUID version 4.
+ *
+ * All UUID bytes are filled with strong random numbers except version and
+ * variant bits.
+ */
+Datum gen_random_uuid(PG_FUNCTION_ARGS)
+{
+    pg_uuid_t  *uuid = (pg_uuid_t*)palloc(UUID_LEN);
+
+    PGStrongRandom(uuid, UUID_LEN);
+    /*
+     * Set magic numbers for a "version 4" (pseudorandom) UUID and variant,
+     * see https://datatracker.ietf.org/doc/html/rfc9562#name-uuid-version-4
+     */
+    UUIDSetVersion(uuid, 4);
+
+    PG_RETURN_UUID_P(uuid);
+}

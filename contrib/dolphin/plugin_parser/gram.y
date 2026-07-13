@@ -26947,18 +26947,18 @@ CreateContQueryStmt: CREATE CONTVIEW qualified_name opt_reloptions AS SelectStmt
  *****************************************************************************/
 
 ViewStmt: CREATE ViewStmtBaseBody
-				{
-					ViewStmt *n = (ViewStmt*) $2;
-					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
-					$$ = (Node*) n;
-				}
-		| CREATE OR REPLACE ViewStmtBaseBody
-				{
-					ViewStmt *n = (ViewStmt*) $4;
-					n->replace = true;
-					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
-					$$ = (Node*) n;
-				}
+					{
+						ViewStmt *n = (ViewStmt*) $2;
+						n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
+						$$ = (Node*) n;
+					}
+			| CREATE OR REPLACE ViewStmtBaseBody
+					{
+						ViewStmt *n = (ViewStmt*) $4;
+						n->replace = true;
+						n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
+						$$ = (Node*) n;
+					}
 		| CREATE opt_or_replace definer_expression ViewStmtBaseBody
 				{
 					ViewStmt *n = (ViewStmt*) $4;
@@ -27019,22 +27019,28 @@ ViewStmt: CREATE ViewStmtBaseBody
  				}
 		;
 
-ViewStmtBaseBody: OptTemp VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
-	{
-		ViewStmt* stmt = makeNode(ViewStmt);
-		stmt->view = $3;
-		stmt->aliases = $4;
-		stmt->options = $5;
+ViewStmtBaseBody: OptTemp opt_force VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
+		{
+			if (!DB_IS_CMPT(A_FORMAT) && $2) {
+				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("Create force view is only supported in A compatibility database.")));
+			}
+			ViewStmt* stmt = makeNode(ViewStmt);
+			stmt->view = $4;
+			stmt->aliases = $5;
+			stmt->options = $6;
 
-		/* 'AS' is here */
+			/* 'AS' is here */
 
-		stmt->query = $7;
-		stmt->withCheckOption = (ViewCheckOption)$8;
-		stmt->replace = false;
-		stmt->sql_statement = NULL;
-		stmt->view->relpersistence = $1;
-		$$ = (Node*)stmt;
-	}
+			stmt->query = $8;
+			stmt->withCheckOption = (ViewCheckOption)$9;
+			stmt->replace = false;
+			stmt->sql_statement = NULL;
+			stmt->view->relpersistence = $1;
+			stmt->is_force = $2;
+			stmt->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
+			$$ = (Node*)stmt;
+		}
 
 /* algorithm optionals of view statement */
 view_algo_expr:

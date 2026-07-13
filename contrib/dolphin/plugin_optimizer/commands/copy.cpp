@@ -78,6 +78,7 @@
 #include "bulkload/utils.h"
 #include "commands/copypartition.h"
 #include "access/cstore_insert.h"
+#include "commands/progress.h"
 #include "commands/copy.h"
 #include "plugin_parser/parser.h"
 #include "catalog/pg_attrdef.h"
@@ -641,6 +642,10 @@ void CopySendEndOfRow(CopyState cstate)
             return;
     }
 
+    /* Update the progress */
+    cstate->bytes_processed += fe_msgbuf->len;
+    PgStatProgressUpdateParam(PROGRESS_COPY_BYTES_PROCESSED, cstate->bytes_processed);
+
     resetStringInfo(fe_msgbuf);
 }
 
@@ -902,6 +907,9 @@ bool CopyLoadRawBuf(CopyState cstate)
     cstate->raw_buf[nbytes] = '\0';
     cstate->raw_buf_index = 0;
     cstate->raw_buf_len = nbytes;
+    cstate->bytes_processed += inbytes;
+    PgStatProgressUpdateParam(PROGRESS_COPY_BYTES_PROCESSED, cstate->bytes_processed);
+
     return (inbytes > 0);
 }
 
@@ -1225,6 +1233,7 @@ Oid DoCopy(CopyStmt* stmt, const char* queryString, uint64 *processed)
         }
         PG_CATCH();
         {
+            PgstatProgressEndCommand();
             CleanBulkloadStates();
             PG_RE_THROW();
         }
@@ -2930,6 +2939,7 @@ static void EndCopy(CopyState cstate)
         cstate->logger->Destroy();
     }
 
+    PgstatProgressEndCommand();
     /* This memcontext delete operation is responsible for no memory leaking in COPY.
      *
      *	Might not be a good way to deal with it, tbh, especially
@@ -3045,6 +3055,14 @@ CopyState BeginCopyTo(Relation rel, Node* query, const char* queryString,
     CopyState cstate;
     bool pipe = (filename == NULL);
     MemoryContext oldcontext;
+    const int    progressCols[] = {
+        PROGRESS_COPY_COMMAND,
+        PROGRESS_COPY_TYPE
+    };
+    int64        progressVals[] = {
+        PROGRESS_COPY_COMMAND_TO,
+        0
+    };
     bool flag = rel != NULL && rel->rd_rel->relkind != RELKIND_RELATION;
 
     if (flag) {
@@ -3055,6 +3073,7 @@ CopyState BeginCopyTo(Relation rel, Node* query, const char* queryString,
     oldcontext = MemoryContextSwitchTo(cstate->copycontext);
 
     if (pipe) {
+        progressVals[1] = PROGRESS_COPY_TYPE_PIPE;
         if (t_thrd.postgres_cxt.whereToSendOutput != DestRemote)
             cstate->copy_file = stdout;
     } else {
@@ -3062,7 +3081,7 @@ CopyState BeginCopyTo(Relation rel, Node* query, const char* queryString,
         bool dirIsExist = false;
         struct stat checkdir;
         mode_t oumask; /* Pre-existing umask value */
-
+        progressVals[1] = PROGRESS_COPY_TYPE_FILE;
         /*
          * Prevent write to relative path ... too easy to shoot oneself in the
          * foot by overwriting a database file ...
@@ -3113,6 +3132,13 @@ CopyState BeginCopyTo(Relation rel, Node* query, const char* queryString,
     }
 
     cstate->writelineFunc = CopySendEndOfRow<false>;
+
+    /* initialize progress */
+    PgstatProgressStartCommand(PROGRESS_COMMAND_COPY,
+                               cstate->rel ? RelationGetRelid(cstate->rel) : InvalidOid);
+    cstate->bytes_processed = 0;
+    PgStatProgressUpdateMultiParam(2, progressCols, progressVals);
+
     (void)MemoryContextSwitchTo(oldcontext);
 
     return cstate;
@@ -3253,6 +3279,12 @@ static uint64 CStoreCopyTo(CopyState cstate, TupleDesc tupDesc, Datum* values, b
         batch = CStoreGetNextBatch(scandesc);
         DeformCopyTuple(perBatchMcxt, cstate, batch, tupDesc, values, nulls);
         processed += batch->m_rows;
+        /*
+         * Increment the number of processed tuples, and report the
+         * progress.
+         */
+        PgStatProgressUpdateParam(PROGRESS_COPY_TUPLES_PROCESSED,
+                                  processed);
     } while (!CStoreIsEndScan(scandesc));
 
     /* End cstore scan and destroy MemroyContext. */
@@ -3320,7 +3352,7 @@ static uint64 CopyTo(CopyState cstate, bool isFirst, bool isLast)
      * Create a temporary memory context that we can reset once per row to
      * recover palloc'd memory.  This avoids any problems with leaks inside
      * datatype output routines, and should be faster than retail pfree's
-     * anyway.	(We don't need a whole econtext as CopyFrom does.)
+     * anyway.    (We don't need a whole econtext as CopyFrom does.)
      */
     cstate->rowcontext = AllocSetContextCreate(
         CurrentMemoryContext, "COPY TO", ALLOCSET_DEFAULT_MINSIZE, ALLOCSET_DEFAULT_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
@@ -3426,7 +3458,12 @@ static uint64 CopyTo(CopyState cstate, bool isFirst, bool isLast)
                     } else {
                         CopyOneRowTo(cstate, InvalidOid, values, nulls);
                     }
-                    processed++;
+                    /*
+                    * Increment the number of processed tuples, and report the
+                    * progress.
+                    */
+                    PgStatProgressUpdateParam(PROGRESS_COPY_TUPLES_PROCESSED,
+                                                 ++processed);
                 }
 
                 scan_handler_tbl_endscan(scandesc);
@@ -5057,10 +5094,14 @@ uint64 CopyFrom(CopyState cstate)
             }
 
             if (!skip_tuple && isForeignTbl) {
-                resultRelInfo->ri_FdwRoutine->ExecForeignInsert(estate, resultRelInfo, slot, NULL);
+                TupleTableSlot *slot1 = resultRelInfo->ri_FdwRoutine->ExecForeignInsert(estate, resultRelInfo, slot, NULL);
                 Assert(!useHeapMultiInsert);
                 resetPerTupCxt = true;
-                processed++;
+                if (slot1 != NULL) {
+                    /* count only tuples not suppressed by FDW. */
+                    PgStatProgressUpdateParam(PROGRESS_COPY_TUPLES_PROCESSED,
+                                                 ++processed);
+                }
             } else if (!skip_tuple) {
                 /*
                  * Compute stored generated columns
@@ -5152,6 +5193,7 @@ uint64 CopyFrom(CopyState cstate)
                         }
                         partitionList = list_append_unique_oid(partitionList, targetPartOid);
                     }
+
                 } else {
                     List* recheckIndexes = NIL;
                     Relation targetRel;
@@ -5329,7 +5371,9 @@ uint64 CopyFrom(CopyState cstate)
                  * this is the same definition used by execMain.c for counting
                  * tuples inserted by an INSERT command.
                  */
-                processed++;
+                PgStatProgressUpdateParam(PROGRESS_COPY_TUPLES_PROCESSED,
+                                          ++processed);
+
             } else {/*skip_tupe == true*/
                 /*
                  * only the before row insert trigget would make skip_tupe==true
@@ -6259,6 +6303,16 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
     bool volatile_defexprs = false;
     int* attr_encodings = NULL;
     FmgrInfo* in_convert_funcs = NULL;
+    const int    progressCols[] = {
+        PROGRESS_COPY_COMMAND,
+        PROGRESS_COPY_TYPE,
+        PROGRESS_COPY_BYTES_TOTAL
+    };
+    int64        progressVals[] = {
+        PROGRESS_COPY_COMMAND_FROM,
+        0,
+        0
+    };
 
     cstate = BeginCopy(true, rel, NULL, queryString, attnamelist, options);
     oldcontext = MemoryContextSwitchTo(cstate->copycontext);
@@ -6404,6 +6458,11 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
     }
 #endif
 
+    /* initialize progress */
+    PgstatProgressStartCommand(PROGRESS_COMMAND_COPY,
+                                  cstate->rel ? RelationGetRelid(cstate->rel) : InvalidOid);
+    cstate->bytes_processed = 0;
+
     /* We keep those variables in cstate. */
     cstate->in_functions = in_functions;
     cstate->typioparams = typioparams;
@@ -6416,15 +6475,17 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
     cstate->in_convert_funcs = in_convert_funcs;
 
     if (func) {
+        progressVals[1] = PROGRESS_COPY_TYPE_CALLBACK;
         cstate->copyGetDataFunc = func;
     } else if (pipe) {
+        progressVals[1] = PROGRESS_COPY_TYPE_PIPE;
         if (t_thrd.postgres_cxt.whereToSendOutput == DestRemote)
             ReceiveCopyBegin(cstate);
         else
             cstate->copy_file = stdin;
     } else {
         struct stat st;
-
+        progressVals[1] = PROGRESS_COPY_TYPE_FILE;
         cstate->filename = pstrdup(filename);
         if (!u_sess->sec_cxt.last_roleid_is_super && CheckCopyFileInBlackList(cstate->filename)) {
             ereport(ERROR,
@@ -6446,6 +6507,7 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
         fstat(fileno(cstate->copy_file), &st);
         if (S_ISDIR(st.st_mode))
             ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("\"%s\" is a directory", cstate->filename)));
+        progressVals[2] = st.st_size;
     }
 
     if (!IS_BINARY(cstate)) {
@@ -6483,6 +6545,8 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
         getTypeBinaryInputInfo(OIDOID, &in_func_oid, &cstate->oid_typioparam);
         fmgr_info(in_func_oid, &cstate->oid_in_function);
     }
+
+    PgStatProgressUpdateMultiParam(3, progressCols, progressVals);
 
     /* create workspace for CopyReadAttributes results */
     if (!IS_BINARY(cstate)) {
@@ -7083,7 +7147,7 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
              * if client chooses to send that now.
              *
              * Note that we MUST NOT try to read more data in an old-protocol
-             * copy, since there is no protocol-level EOF marker then.	We
+             * copy, since there is no protocol-level EOF marker then. We
              * could go either way for copy from file, but choose to throw
              * error if there's data after the EOF marker, for consistency
              * with the new-protocol case.
@@ -7159,7 +7223,7 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
 
     /*
      * Now compute and insert any defaults available for the columns not
-     * provided by the input data.	Anything not processed here or above will
+     * provided by the input data. Anything not processed here or above will
      * remain NULL.
      */
     for (i = 0; i < num_defaults; i++) {
@@ -7326,7 +7390,7 @@ void EndCopyFrom(CopyState cstate)
  * server encoding.
  *
  * Result is true if read was terminated by EOF, false if terminated
- * by newline.	The terminating newline or EOF marker is not included
+ * by newline. The terminating newline or EOF marker is not included
  * in the final value of line_buf.
  */
 static bool CopyReadLine(CopyState cstate)
@@ -7555,7 +7619,7 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
          * of read-ahead and avoid the many calls to
          * IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(), but the COPY_OLD_FE protocol
          * does not allow us to read too far ahead or we might read into the
-         * next data, so we read-ahead only as far we know we can.	One
+         * next data, so we read-ahead only as far we know we can. One
          * optimization would be to read-ahead four byte here if
          * cstate->copy_dest != COPY_OLD_FE, but it hardly seems worth it,
          * considering the size of the buffer.
@@ -7564,7 +7628,7 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
             REFILL_LINEBUF;
 
             /*
-             * Try to read some more data.	This will certainly reset
+             * Try to read some more data. This will certainly reset
              * raw_buf_index to zero, and raw_buf_ptr must go with it.
              */
             if (!CopyLoadRawBuf(cstate))
@@ -7707,7 +7771,7 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
             /*
              * Updating the line count for embedded CR and/or LF chars is
              * necessarily a little fragile - this test is probably about the
-             * best we can do.	(XXX it's arguable whether we should do this
+             * best we can do. (XXX it's arguable whether we should do this
              * at all --- is cur_lineno a physical or logical count?)
              */
             if (in_quote && c == (cstate->eol_type == EOL_NL ? '\n' : '\r'))
@@ -7943,7 +8007,7 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
                      * after a backslash is special, so we skip over that second
                      * character too.  If we didn't do that \\. would be
                      * considered an eof-of copy, while in non-CSV mode it is a
-                     * literal backslash followed by a period.	In CSV mode,
+                     * literal backslash followed by a period. In CSV mode,
                      * backslashes are not special, so we want to process the
                      * character after the backslash just like a normal character,
                      * so we don't increment in those cases.
@@ -8011,7 +8075,7 @@ static bool CopyReadLineText(CopyState cstate)
 }
 
 /*
- *	Return decimal value for a hexadecimal digit
+ * Return decimal value for a hexadecimal digit
  */
 int GetDecimalFromHex(char hex)
 {
@@ -8093,7 +8157,7 @@ static int CopyReadAttributesTextT(CopyState cstate)
     /*
      * The de-escaped attributes will certainly not be longer than the input
      * data line, so we can just force attribute_buf to be large enough and
-     * then transfer data without any checks for enough space.	We need to do
+     * then transfer data without any checks for enough space. We need to do
      * it this way because enlarging attribute_buf mid-stream would invalidate
      * pointers already stored into cstate->raw_fields[]. Because each field
      * stores an extra '\0', you need to add the number of fields.
@@ -8393,7 +8457,7 @@ static int CopyReadAttributesCSVT(CopyState cstate)
     /*
      * The de-escaped attributes will certainly not be longer than the input
      * data line, so we can just force attribute_buf to be large enough and
-     * then transfer data without any checks for enough space.	We need to do
+     * then transfer data without any checks for enough space. We need to do
      * it this way because enlarging attribute_buf mid-stream would invalidate
      * pointers already stored into cstate->raw_fields[]. Because each field
      * stores an extra '\0', you need to add the number of fields.
@@ -9325,7 +9389,10 @@ static void copy_dest_receive(TupleTableSlot* slot, DestReceiver* self)
 
     /* And send the data */
     CopyOneRowTo(cstate, InvalidOid, slot->tts_values, slot->tts_isnull);
-    myState->processed++;
+
+    /* Increment the number of processed tuples, and report the progress */
+    PgStatProgressUpdateParam(PROGRESS_COPY_TUPLES_PROCESSED,
+                              ++myState->processed);
 }
 
 /*
