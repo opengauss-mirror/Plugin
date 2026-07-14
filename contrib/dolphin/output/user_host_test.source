@@ -109,7 +109,7 @@ select current_user;
 --?.*
 --?.*
 --?.*
-\! sleep 20
+\! sleep 5
 --?.*
        current_user       
 --------------------------
@@ -119,7 +119,7 @@ select current_user;
 --?.*
 DROP ROLE
 --?.*
-\! sleep 20
+\! sleep 5
 --?.*
        current_user       
 --------------------------
@@ -129,7 +129,7 @@ DROP ROLE
 --?.*
 DROP ROLE
 --?.*
-\! sleep 20
+\! sleep 5
 --?.*
       current_user      
 ------------------------
