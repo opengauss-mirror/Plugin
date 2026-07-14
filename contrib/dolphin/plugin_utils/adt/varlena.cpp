@@ -21,6 +21,8 @@
 #include <cinttypes>
 #include <cstring>
 #include <cmath>
+#include <cfloat>
+#include <cerrno>
 
 #ifdef DOLPHIN
 #include <openssl/rand.h>
@@ -441,6 +443,12 @@ extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_cstring);
 extern "C" DLL_PUBLIC Datum db_b_format_cstring(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_varchar);
+extern "C" DLL_PUBLIC Datum db_b_format_varchar(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_numeric_precision);
+extern "C" DLL_PUBLIC Datum db_b_format_numeric_precision(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
 extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
@@ -8432,13 +8440,161 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
     return ch_value;
 }
 
+static char* db_b_format_get_dbl_max_cstring(bool is_negative)
+{
+    const int max_double_str_len = 512;
+    char* result = (char*)palloc(max_double_str_len);
+    errno_t rc = snprintf_s(result, max_double_str_len, max_double_str_len - 1,
+        is_negative ? "-%.0f" : "%.0f", DBL_MAX);
+    securec_check_ss(rc, "\0", "\0");
+    return result;
+}
+
+static char* db_b_format_get_zero_cstring(bool is_negative)
+{
+    char* result = (char*)palloc(is_negative ? 3 : 2);
+    errno_t rc = strcpy_s(result, is_negative ? 3 : 2, is_negative ? "-0" : "0");
+    securec_check_c(rc, "\0", "\0");
+    return result;
+}
+
+static char* db_b_format_trim_varchar_leading_zero(char* ch_value)
+{
+    bool is_negative = ch_value[0] == ASCII_MINUS;
+    char* int_start = is_negative ? ch_value + 1 : ch_value;
+    char* first_non_zero = int_start;
+    while (*first_non_zero == ASCII_0) {
+        first_non_zero++;
+    }
+
+    if (first_non_zero == int_start) {
+        return ch_value;
+    }
+
+    if (*first_non_zero == '\0') {
+        if (is_negative) {
+            int_start[0] = '0';
+            int_start[1] = '\0';
+            return ch_value;
+        }
+        return first_non_zero - 1;
+    }
+
+    if (*first_non_zero == ASCII_DOT) {
+        if (is_negative) {
+            int_start[0] = '0';
+            errno_t rc = memmove_s(int_start + 1, strlen(first_non_zero) + 1, first_non_zero,
+                strlen(first_non_zero) + 1);
+            securec_check_c(rc, "\0", "\0");
+            return ch_value;
+        }
+        return first_non_zero - 1;
+    }
+
+    if (is_negative) {
+        errno_t rc = memmove_s(int_start, strlen(first_non_zero) + 1, first_non_zero,
+            strlen(first_non_zero) + 1);
+        securec_check_c(rc, "\0", "\0");
+        return ch_value;
+    }
+    return first_non_zero;
+}
+
+static char* db_b_format_normalize_scientific_cstring(char* ch_value, char* tmp)
+{
+    if (strchr(ch_value, 'e') == NULL && strchr(ch_value, 'E') == NULL) {
+        return ch_value;
+    }
+
+    errno = 0;
+    char* end_ptr = NULL;
+    double double_value = strtod(ch_value, &end_ptr);
+    if (end_ptr == ch_value) {
+        return ch_value;
+    }
+
+    char* result = NULL;
+    char saved = *end_ptr;
+    *end_ptr = '\0';
+    if (errno == ERANGE) {
+        *end_ptr = saved;
+        result = (double_value == 0.0) ? db_b_format_get_zero_cstring(ch_value[0] == ASCII_MINUS)
+                                      : db_b_format_get_dbl_max_cstring(ch_value[0] == ASCII_MINUS);
+    } else {
+        Numeric value = DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(ch_value),
+            ObjectIdGetDatum(0), Int32GetDatum(-1)));
+        result = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(value)));
+        *end_ptr = saved;
+    }
+
+    if (tmp != NULL) {
+        pfree(tmp);
+    }
+    return result;
+}
+
+static char* db_b_format_get_varchar_cstring(Datum param, Oid param_oid)
+{
+    Oid float8_oid = FLOAT8OID;
+    char* ch_value;
+    char* tmp = NULL;
+    if (can_coerce_type(1, &param_oid, &float8_oid, COERCION_IMPLICIT)) {
+        ch_value = to_cstring_type(param, param_oid);
+        tmp = ch_value;
+        ch_value = trim(ch_value);
+        if (!can_transform_to_float8(ch_value)) {
+            pfree(tmp);
+            ch_value = "0";
+            tmp = NULL;
+        }
+    } else {
+        ch_value = to_cstring_type(param, param_oid);
+        if (param_oid == BOOLOID && param) {
+            ch_value = "1";
+        } else {
+            ch_value = "0";
+        }
+    }
+    if (ch_value[0] == ASCII_ADD) {
+        ch_value = ch_value + 1;
+    }
+    if (ch_value[0] == '.' || (ch_value[0] == '-' && ch_value[1] == '.')) {
+        int dot_pos = ch_value[0] == ASCII_DOT ? 0 : 1;
+        int len = strlen(ch_value);
+        char* value = (char *) palloc(len + 2);
+        if (dot_pos == 1) {
+            value[0] = ch_value[0];
+        }
+        value[dot_pos] = '0';
+        errno_t ascii_dot_errorno = strcpy_s(value + dot_pos + 1, len + 1, ch_value + dot_pos);
+        securec_check_c(ascii_dot_errorno, "\0", "\0");
+        if (tmp != NULL) {
+            pfree(tmp);
+        }
+        return db_b_format_normalize_scientific_cstring(
+            db_b_format_trim_varchar_leading_zero(value), NULL);
+    }
+    return db_b_format_normalize_scientific_cstring(
+        db_b_format_trim_varchar_leading_zero(ch_value), tmp);
+}
+
+static int db_b_format_get_varchar_precision(Datum param, Oid param_oid)
+{
+    char* ch_precision = to_cstring_type(param, param_oid);
+    ch_precision = trim(ch_precision);
+
+    /* MySQL FORMAT precision uses integer-prefix conversion; do not expand e/E notation here. */
+    return DatumGetInt32(DirectFunctionCall1(int4in, CStringGetDatum(ch_precision)));
+}
+
 Datum db_b_format_locale(PG_FUNCTION_ARGS)
 {
     if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
         PG_RETURN_NULL();
     }
     Oid first_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid);
+    char* ch_value = db_b_format_normalize_scientific_cstring(
+        db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid), NULL);
     int precision = (int)PG_GETARG_INT64(1);
 
     Oid third_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 2);
@@ -8455,7 +8611,8 @@ Datum db_b_format(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
+    char* ch_value = db_b_format_normalize_scientific_cstring(
+        db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid), NULL);
     int precision = (int)PG_GETARG_INT64(1);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
@@ -8466,8 +8623,33 @@ Datum db_b_format_cstring(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
+    char* ch_value = db_b_format_normalize_scientific_cstring(
+        db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid), NULL);
     int precision = DatumGetInt32(DirectFunctionCall1(int4in, PG_GETARG_DATUM(1)));
+    PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
+}
+
+Datum db_b_format_varchar(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
+    Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    char* ch_value = db_b_format_get_varchar_cstring(PG_GETARG_DATUM(0), first_oid);
+    Oid second_oid = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    int precision = db_b_format_get_varchar_precision(PG_GETARG_DATUM(1), second_oid);
+    PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
+}
+
+Datum db_b_format_numeric_precision(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
+    Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    char* ch_value = db_b_format_normalize_scientific_cstring(
+        db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid), NULL);
+    int precision = (int)DatumGetInt64(DirectFunctionCall1(numeric_int8, PG_GETARG_DATUM(1)));
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
 

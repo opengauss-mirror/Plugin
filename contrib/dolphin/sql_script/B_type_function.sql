@@ -71,6 +71,7 @@ DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4, "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(varchar, varchar) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_varchar';
 
 CREATE OR REPLACE FUNCTION pg_catalog.float8_bool(float8) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'float8_bool';
 CREATE CAST (float8 as boolean) WITH FUNCTION float8_bool(float8) AS IMPLICIT;

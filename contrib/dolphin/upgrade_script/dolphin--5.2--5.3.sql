@@ -4,6 +4,11 @@ DROP FUNCTION IF EXISTS pg_catalog.date_format (timestamp with time zone, text);
 CREATE OR REPLACE FUNCTION pg_catalog.date_format (timestamp with time zone, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_format_timestamptz';
 
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select db_b_format($1::anyelement , $2::bigint)';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, number) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_numeric_precision';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int8) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int4) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.db_b_format($1, $2::bigint)';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, number) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_numeric_precision';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(varchar, varchar) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_varchar';
 
 CREATE OR REPLACE FUNCTION pg_catalog.text_binary_eq(text, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS
 'SELECT pg_catalog.byteaeq($1::bytea, $2::bytea)';
