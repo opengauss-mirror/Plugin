@@ -1966,15 +1966,6 @@ typedef struct XactLockTableWaitInfo
 	ItemPointer ctid;
 } XactLockTableWaitInfo;
 
-typedef enum ProgressCommandType
-{
-	PROGRESS_COMMAND_INVALID,
-	PROGRESS_COMMAND_VACUUM
-} ProgressCommandType; 
-
-
-
-
 typedef struct WaitEvent
 {
 	int			pos;			/* position in the event data structure */
