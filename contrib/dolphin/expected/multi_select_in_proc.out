@@ -693,11 +693,6 @@ END;
 /
 set @alias = 'F011';
 CALL p_define_config_check(@alias);
- p_define_config_check 
------------------------
- 
-(1 row)
-
 drop table string_tables;
 DROP PROCEDURE IF EXISTS  p_define_config_check;
 CREATE TABLE point_tbl(f1 point);

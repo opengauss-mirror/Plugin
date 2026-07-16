@@ -52,11 +52,6 @@ alter procedure proc1(a int) language java;
 ERROR:  Do not support language java for ALTER FUNCTION.
 call proc1(1);
 NOTICE:  aaa
- proc1 
--------
- 
-(1 row)
-
 --retest for language sql problem 
 create table language_1093039(id int,age int,name varchar2(16));
 insert into language_1093039 values(1,22,'小王');
@@ -157,41 +152,14 @@ end;
 /
 ERROR:  JAVA UDF is not yet supported in current version.
 call fun_1(1,2,'a');
- fun_1 
--------
-     3
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call fun_2(1,2,'a');
- fun_2 
--------
-     4
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call fun_3(1,2,'a');
- fun_3 
--------
-     5
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call pro_1(1,2,'a');
- pro_1 
--------
- 
-(1 row)
-
 call pro_2(1,2,'a');
- pro_2 
--------
- 
-(1 row)
-
 call pro_3(1,2,'a');
- pro_3 
--------
- 
-(1 row)
-
 drop schema db_alter_func_sql cascade;
 NOTICE:  drop cascades to 10 other objects
 DETAIL:  drop cascades to function f1(character)

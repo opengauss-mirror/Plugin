@@ -3,6 +3,7 @@ set current_schema to 'show_createdatabase';
 CREATE USER test_showcreate_database WITH PASSWORD 'openGauss@123';
 GRANT ALL PRIVILEGES TO test_showcreate_database;
 SET ROLE test_showcreate_database PASSWORD 'openGauss@123';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 create schema test_get_database;
 show create database test_get_database;
      Database      |                             Create Database                             

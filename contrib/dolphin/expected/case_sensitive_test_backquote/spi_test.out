@@ -16,11 +16,7 @@ execute immediate `insert_str`;
 end;
 /
 call `f_letter_0028`();
- f_letter_0028 
----------------
- 
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop table if exists `T_LETTER_0029`;
 NOTICE:  table "T_LETTER_0029" does not exist, skipping
 create table `T_LETTER_0029`
@@ -36,8 +32,3 @@ execute immediate `insert_str`;
 end;
 /
 call `p_letter_0029`();
- p_letter_0029 
----------------
- 
-(1 row)
-

@@ -81,11 +81,6 @@ do pro_do_(3,'dd',5,'ll');
 END;
 /
 call pro2_do();
- pro2_do 
----------
- 
-(1 row)
-
 select * from time_table4 order by id;
  id |    c1    |  c3   
 ----+----------+-------
@@ -106,11 +101,7 @@ return;
 END;
 /
 call func_do();
- func_do 
----------
- 
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 select * from time_table4 order by id;
  id |    c1    |  c3   
 ----+----------+-------
@@ -119,12 +110,9 @@ select * from time_table4 order by id;
   3 | zz       | zz
   4 | ss       | ss
   5 | dd       | ll1
-  5 | dd       | ll1
-  6 | dd       | ll12
   6 | dd       | ll12
   7 | dd       | ll123
-  7 | dd       | ll123
-(10 rows)
+(7 rows)
 
 drop table time_table4;
 create table time_table4(id int,c1 char(8),c3 varchar(16));

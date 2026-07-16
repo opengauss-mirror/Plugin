@@ -192,9 +192,9 @@ ERROR:  Variable 'license' is a read only variable.
 set @@session.license = "MulanPSL-2.0";
 ERROR:  Variable 'license' is a read only variable.
 show dolphin.sql_mode;
-                                           dolphin.sql_mode                                           
-------------------------------------------------------------------------------------------------------
- sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+                                                                                       dolphin.sql_mode                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,block_return_multi_results,error_for_division_by_zero,escape_quotes,disable_escape_bytea
 (1 row)
 
 show sql_mode;
@@ -206,9 +206,9 @@ show sql_mode;
 set sql_mode = '';
 WARNING:  Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.
 show dolphin.sql_mode;
-                                           dolphin.sql_mode                                           
-------------------------------------------------------------------------------------------------------
- sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+                                                                                       dolphin.sql_mode                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,block_return_multi_results,error_for_division_by_zero,escape_quotes,disable_escape_bytea
 (1 row)
 
 show sql_mode;

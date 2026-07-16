@@ -148,11 +148,6 @@ END;
 /
 begin;
 CALL proc_mutil(1,2);
- proc_mutil 
-------------
- 
-(1 row)
-
 select * from t_t_mutil_t1;
  col1 | col2 
 ------+------

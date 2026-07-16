@@ -154,11 +154,6 @@ end;
 /
 --调用
 call p_enum1();
- p_enum1 
----------
- 
-(1 row)
-
 select * from t1;
  c_id | c_name | c_age 
 ------+--------+-------

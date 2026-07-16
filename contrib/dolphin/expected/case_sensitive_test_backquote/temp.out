@@ -283,6 +283,7 @@ select `relname`, `relpages`, `reltuples` from `pg_class` where `relname` = '`te
 
 Analyze `temp_col2`;
 --Use
+set dolphin.sql_mode = '';
 select `a`/0 from `test_temp1`;
  ?column? 
 ----------

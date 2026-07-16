@@ -56,18 +56,8 @@ end;
 /
 call proc1(1);
 NOTICE:  3
- proc1 
--------
- 
-(1 row)
-
 call proc1(2);
 NOTICE:  4
- proc1 
--------
- 
-(1 row)
-
 drop procedure proc1;
 declare
 i int;
