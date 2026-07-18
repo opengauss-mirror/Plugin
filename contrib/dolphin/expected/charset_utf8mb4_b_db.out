@@ -2516,11 +2516,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB', _gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation,@concat_res_assign; -- utf8mb4_general_ci
   @concat_res   |   @collation_res   |   real_collation   | @concat_res_assign 
 ----------------+--------------------+--------------------+--------------------
@@ -2528,11 +2523,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation,@
 (1 row)
 
 CALL merge_collation_func(_gb18030'高斯DB', _gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation,@concat_res_assign; -- utf8mb4_general_ci
    @concat_res    |   @collation_res   |   real_collation   | @concat_res_assign 
 ------------------+--------------------+--------------------+--------------------
@@ -2540,11 +2530,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation,@
 (1 row)
 
 CALL merge_collation_func(_gb18030'高斯DB', _gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation,@concat_res_assign; -- utf8mb4_general_ci
    @concat_res    |   @collation_res   |   real_collation   | @concat_res_assign 
 ------------------+--------------------+--------------------+--------------------
@@ -2572,11 +2557,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- conflict
  @concat_res  | @collation_res |   real_collation   
 --------------+----------------+--------------------
@@ -2584,11 +2564,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func('高斯DB' collate utf8mb4_general_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- conflict
  @concat_res  | @collation_res |   real_collation   
 --------------+----------------+--------------------
@@ -2596,11 +2571,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation;; -- conflict
   @concat_res   | @collation_res |   real_collation   
 ----------------+----------------+--------------------
@@ -2608,11 +2578,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation;;
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation;; -- conflict
   @concat_res   | @collation_res |   real_collation   
 ----------------+----------------+--------------------
@@ -2640,11 +2605,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_general_ci
  @concat_res  |   @collation_res   |   real_collation   
 --------------+--------------------+--------------------
@@ -2652,11 +2612,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func('高斯DB' collate utf8mb4_general_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_general_ci
  @concat_res  |   @collation_res   |   real_collation   
 --------------+--------------------+--------------------
@@ -2664,11 +2619,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_general_ci
   @concat_res   |   @collation_res   |   real_collation   
 ----------------+--------------------+--------------------
@@ -2676,11 +2626,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_general_ci
   @concat_res   |   @collation_res   |   real_collation   
 ----------------+--------------------+--------------------
@@ -2708,11 +2653,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
  @concat_res  | @collation_res |   real_collation   
 --------------+----------------+--------------------
@@ -2720,11 +2660,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func('高斯DB' collate utf8mb4_general_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
  @concat_res  | @collation_res |   real_collation   
 --------------+----------------+--------------------
@@ -2732,11 +2667,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
   @concat_res   | @collation_res |   real_collation   
 ----------------+----------------+--------------------
@@ -2744,11 +2674,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
   @concat_res   | @collation_res |   real_collation   
 ----------------+----------------+--------------------
@@ -2776,11 +2701,6 @@ begin
 end;
 /
 CALL merge_collation_func(100);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
  @concat_res | @collation_res |   real_collation   
 -------------+----------------+--------------------
@@ -2823,11 +2743,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- conflict
  @concat_res  |   @collation_res   |   real_collation   
 --------------+--------------------+--------------------
@@ -2835,11 +2750,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func('高斯DB' collate utf8mb4_general_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- conflict
  @concat_res  |   @collation_res   |   real_collation   
 --------------+--------------------+--------------------
@@ -2847,11 +2757,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_unicode_ci
   @concat_res   |   @collation_res   |   real_collation   
 ----------------+--------------------+--------------------
@@ -2859,11 +2764,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- utf8mb4_unicode_ci
   @concat_res   |   @collation_res   |   real_collation   
 ----------------+--------------------+--------------------
@@ -2879,11 +2779,6 @@ begin
 end;
 /
 CALL merge_collation_func('高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
  @concat_res  | @collation_res | real_collation 
 --------------+----------------+----------------
@@ -2891,11 +2786,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func('高斯DB' collate utf8mb4_general_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
  @concat_res  | @collation_res | real_collation 
 --------------+----------------+----------------
@@ -2903,11 +2793,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB');
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
   @concat_res   | @collation_res | real_collation 
 ----------------+----------------+----------------
@@ -2915,11 +2800,6 @@ SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; 
 (1 row)
 
 CALL merge_collation_func(_gbk'高斯DB' collate gbk_chinese_ci);
- merge_collation_func 
-----------------------
- 
-(1 row)
-
 SELECT @concat_res,@collation_res,pg_collation_for(@concat_res) real_collation; -- gbk_bin
   @concat_res   | @collation_res | real_collation 
 ----------------+----------------+----------------

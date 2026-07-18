@@ -100,11 +100,7 @@ return 1;
 end;
 /
 call testfunc3();
- testfunc3 
------------
-         1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 CREATE FUNCTION testfunc2() return int as
 declare
 a#b int := 5
@@ -115,11 +111,7 @@ return 1;
 end;
 /
 call testfunc2();
- testfunc2 
------------
-         1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 set dolphin.b_compatibility_mode  = 0;
 CREATE FUNCTION testfunc12() return int as
 declare

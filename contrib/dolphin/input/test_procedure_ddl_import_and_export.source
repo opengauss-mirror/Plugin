@@ -4,6 +4,8 @@ drop database if exists dump_procedure_db;
 drop database if exists restore_procedure_db;
 create database dump_procedure_db lc_collate='C' dbcompatibility = 'B';
 create database restore_procedure_db lc_collate='C' dbcompatibility = 'B';
+alter database dump_procedure_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+alter database restore_procedure_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 \c dump_procedure_db
 
 create user test_procedure_definer password 'Test@123';

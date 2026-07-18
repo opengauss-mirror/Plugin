@@ -2,25 +2,13 @@ create schema db_func_call1;
 set current_schema to 'db_func_call1';
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  CONTAINS SQL AS $$ select 1 $$ ;
 call f1('a');
- f1 
-----
-  1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function f1; 
 CREATE FUNCTION f1 () RETURNS int  no SQL AS $$ select 1 $$ ;
 call f1;
- f1 
-----
-  1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call f1; 
- f1 
-----
-  1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function f1;
 create table tb_object0015(data int,name varchar(25) ,"deptId" int,salary float);
 create table tb_object0015_01(data int,name varchar(25) ,"deptId" int,salary float);
@@ -61,26 +49,20 @@ insert into tb_object0015(U&"d\0041t\+000061",salary) values(3,3.3);
 END;
 $$ LANGUAGE plpgsql;
 call f_2();
- f_2 
------
- 
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 select * from tb_object0015 order by data;
  data | name | deptId | salary 
 ------+------+--------+--------
     1 | 1000 |      1 |    1.1
     2 | 2000 |      2 |    2.2
-    3 |      |        |    3.3
-(3 rows)
+(2 rows)
 
 select * from tb_object0015_01 order by data;
  data | name | deptId | salary 
 ------+------+--------+--------
     1 | 1000 |      1 |    2.2
     2 | 2000 |      2 |    4.4
-    3 |      |        |    6.6
-(3 rows)
+(2 rows)
 
 CREATE OR REPLACE FUNCTION f_3() RETURNS nchar AS
 $$
@@ -91,11 +73,7 @@ return a;
 END;
 $$ LANGUAGE plpgsql;
 call f_3();
- f_3 
------
- A
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop schema db_func_call1 cascade;
 NOTICE:  drop cascades to 5 other objects
 DETAIL:  drop cascades to table tb_object0015

@@ -2,48 +2,56 @@ create schema uint_div;
 set current_schema to 'uint_div';
 --uint8
 select 18446744073709551615::uint8 / 0::int1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::int2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::int4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::int8;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 18446744073709551615::uint8 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -117,48 +125,56 @@ select 18446744073709551615::uint8 / (-1)::int8;
 
 --uint4
 select 4294967295::uint4 / 0::int1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::int2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::int4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::int8;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 4294967295::uint4 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -196,48 +212,56 @@ select 4294967295::uint4 / 18446744073709551615::uint8;
 
 --uint2
 select 65535::uint2 / 0::int1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::int2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::int4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::int8;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 65535::uint2 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -287,48 +311,56 @@ select 65535::uint2 / 18446744073709551615::uint8;
 
 --uint1
 select 255::uint1 / 0::int1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::int2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::int4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::int8;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 255::uint1 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -390,24 +422,28 @@ select 255::uint1 / 18446744073709551615::uint8;
 
 --int8
 select 9223372036854775807::int8 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 9223372036854775807::int8 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 9223372036854775807::int8 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 9223372036854775807::int8 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -445,24 +481,28 @@ select 9223372036854775807::int8 / 1::uint8;
 
 --int4
 select 2147483647::int4 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 2147483647::int4 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 2147483647::int4 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 2147483647::int4 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -506,24 +546,28 @@ select 2147483647::int4 / 1::uint8;
 
 --int2
 select 32767::int2 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 32767::int2 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 32767::int2 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 32767::int2 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          
@@ -573,24 +617,28 @@ select 32767::int2 / 1::uint8;
 
 --int1
 select 127::int1 / 0::uint1;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 127::int1 / 0::uint2;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 127::int1 / 0::uint4;
+WARNING:  division by zero
  ?column? 
 ----------
          
 (1 row)
 
 select 127::int1 / 0::uint8;
+WARNING:  division by zero
  ?column? 
 ----------
          

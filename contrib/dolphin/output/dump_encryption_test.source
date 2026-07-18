@@ -54,17 +54,7 @@ SELECT count(*) AS procs_tgt FROM pg_proc
 (1 row)
 
 CALL p_begin_body();
- p_begin_body 
---------------
- 
-(1 row)
-
 CALL p_declare_body();
- p_declare_body 
-----------------
- 
-(1 row)
-
 SELECT count(*) AS bulk_data_after_calls FROM bulk_data;
  bulk_data_after_calls 
 -----------------------

@@ -5,29 +5,13 @@ CREATE FUNCTION f2 (s int) RETURNS int DETERMINISTIC AS $$ select s; $$ ;
 CREATE FUNCTION f3 (s int) RETURNS int  DETERMINISTIC LANGUAGE SQL AS $$ select s; $$ ;
 CREATE FUNCTION f4 (s int) RETURNS int NOT DETERMINISTIC LANGUAGE SQL AS $$ select s; $$ ;
 call f1(1);
- f1 
-----
-  1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call f2(2);
- f2 
-----
-  2
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call f3(3);
- f3 
-----
-  3
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 call f4(4);
- f4 
-----
-  4
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop schema db_func_1 cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to function f1(character)

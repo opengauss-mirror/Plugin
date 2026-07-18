@@ -234,6 +234,7 @@ select `relname`, `relpages`, `reltuples` from `pg_class` where `relname` = '`te
 Analyze `temp_col2`;
 
 --Use
+set dolphin.sql_mode = '';
 select `a`/0 from `test_temp1`;
 select * from `test_temp1` order by 1 limit 30;
 select `t1`.`a`, `t2`.`a` from `test_temp1` `t1`, `test_temp2` `t2` where `t1`.`a` = `t2`.`a` order by `t1`.`a` limit 50;

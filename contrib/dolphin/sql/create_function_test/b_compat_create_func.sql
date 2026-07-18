@@ -67,6 +67,7 @@ end/
 delimiter ;
 select currval('a');
 
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 drop function if exists currval(varchar(50));
 delimiter //
 create function currval(seq_name varchar(50)) returns integer
@@ -81,6 +82,7 @@ delimiter ;
 select currval('a');
 show create function currval;
 
+reset dolphin.sql_mode;
 drop function if exists currval(varchar(50));
 delimiter /
 create function currval(seq_name varchar(50)) returns integer

@@ -6,6 +6,8 @@ drop database if exists restore_function_db;
 NOTICE:  database "restore_function_db" does not exist, skipping
 create database dump_function_db lc_collate='C' dbcompatibility = 'B';
 create database restore_function_db lc_collate='C' dbcompatibility = 'B';
+alter database dump_function_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+alter database restore_function_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 \c dump_function_db
 create user test_function_definer password 'Test@123';
 --test language sql

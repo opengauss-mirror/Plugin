@@ -6,6 +6,8 @@ drop database if exists restore_trigger_db;
 NOTICE:  database "restore_trigger_db" does not exist, skipping
 create database dump_trigger_db with dbcompatibility = 'B' lc_collate 'C';
 create database restore_trigger_db with dbcompatibility = 'B' lc_collate 'C';
+alter database dump_trigger_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+alter database restore_trigger_db set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 \c dump_trigger_db
 --test definer,if not exists
 create table t_create_trigger_001(c int);

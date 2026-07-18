@@ -4,16 +4,26 @@ set current_schema to 'xdescape_test';
 create table test1(c1 text);
 create table fact_weatherstation_daily(site_id varchar(200), weather_i18n json);
 
+set dolphin.sql_mode = '';
 insert into test1 values ("ab\"c");
-
 insert into fact_weatherstation_daily (`site_id`, `weather_i18n`) values("Sunny", "{\"defaultValue\":\"Sunny\",\"i18nValue\":{\"en_US\":\"Sunny\",\"zh_CN\":\"晴\",\"es_ES\":\"Soleado\",\"ja_JP\":\"晴れ\"}}");
-
+select * from test1;
+select * from fact_weatherstation_daily;
 
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,escape_quotes';
-
 insert into test1 values ("ab\"c");
-
 insert into fact_weatherstation_daily (`site_id`, `weather_i18n`) values("Sunny", "{\"defaultValue\":\"Sunny\",\"i18nValue\":{\"en_US\":\"Sunny\",\"zh_CN\":\"晴\",\"es_ES\":\"Soleado\",\"ja_JP\":\"晴れ\"}}");
+select * from test1;
+select * from fact_weatherstation_daily;
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,escape_quotes,ansi_quotes';
+insert into test1 values ("ab\"c");
+insert into fact_weatherstation_daily (`site_id`, `weather_i18n`) values("Sunny", "{\"defaultValue\":\"Sunny\",\"i18nValue\":{\"en_US\":\"Sunny\",\"zh_CN\":\"晴\",\"es_ES\":\"Soleado\",\"ja_JP\":\"晴れ\"}}");
+select * from test1;
+select * from fact_weatherstation_daily;
+
+insert into test1 values ('ab\"c');
+insert into fact_weatherstation_daily (`site_id`, `weather_i18n`) values('Sunny', '{\"defaultValue\":\"Sunny\",\"i18nValue\":{\"en_US\":\"Sunny\",\"zh_CN\":\"晴\",\"es_ES\":\"Soleado\",\"ja_JP\":\"晴れ\"}}');
 
 select * from test1;
 select * from fact_weatherstation_daily;

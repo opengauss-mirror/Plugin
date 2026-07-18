@@ -105,6 +105,7 @@ select currval('a');
      999
 (1 row)
 
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 drop function if exists currval(varchar(50));
 delimiter //
 create function currval(seq_name varchar(50)) returns integer
@@ -135,6 +136,7 @@ show create function currval;
           |                                                                                  |                                                                                                      |                      |                      | 
 (1 row)
 
+reset dolphin.sql_mode;
 drop function if exists currval(varchar(50));
 delimiter /
 create function currval(seq_name varchar(50)) returns integer
@@ -234,11 +236,7 @@ begin
 END|
 delimiter ;
 call func_ddl_0011(1, 5);
- func_ddl_0011 
----------------
-             6
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function if exists simplecompare;
 delimiter //
 create function simplecompare(n int, m int) returns varchar(20)
@@ -253,11 +251,7 @@ begin
 end //
 delimiter ;
 call simplecompare(1, 2);
- simplecompare 
----------------
- 1 < 2
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 -- test for function body with flow control stmt
 drop function if exists func1;
 NOTICE:  function func1() does not exist, skipping
@@ -584,11 +578,7 @@ begin
 end|
 delimiter ;
 call m_func(6);
- m_func 
---------
-      6
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function if exists m_func(int);
 insert into t1 values(1);
 delimiter |
@@ -600,11 +590,7 @@ begin
 end|
 delimiter ;
 call m_func();
- m_func 
---------
-      1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function if exists m_func();
 drop table if exists t1;
 create table t1(c int);
@@ -622,11 +608,7 @@ begin
 end|
 delimiter ;
 call func_call_proc1(1);
- func_call_proc1 
------------------
-               1
-(1 row)
-
+ERROR:  Only support procedure in muiti result call statement
 drop function if exists func_call_proc1(int);
 -- test for begin-end surrounded body statement without return
 drop table if exists t_create_begin_end_func_no_return;
@@ -758,12 +740,7 @@ set b_format_behavior_compat_options = '';
 call p_gen_rpt_init_self_recovery();
 NOTICE:  1
 CONTEXT:  SQL statement "CALL p_log_job_info_bak()"
-PL/pgSQL function p_gen_rpt_init_self_recovery() line 18 at PERFORM
- p_gen_rpt_init_self_recovery 
-------------------------------
- 
-(1 row)
-
+PL/pgSQL function p_gen_rpt_init_self_recovery() line 18 at SQL statement
 set b_format_behavior_compat_options = 'fetch';
 call p_gen_rpt_init_self_recovery();
 ERROR:  No data - zero rows fetched, selected, or processed

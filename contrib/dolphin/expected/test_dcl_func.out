@@ -127,11 +127,6 @@ begin
 end;
 /
 call test_cursor_2();
- test_cursor_2 
----------------
- 
-(1 row)
-
 create or replace procedure test_cursor_3
 as
     a int;

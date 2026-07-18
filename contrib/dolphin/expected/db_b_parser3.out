@@ -466,6 +466,8 @@ select 8 div 3;
 (1 row)
 
 select 8 div 0;
+WARNING:  division by zero
+CONTEXT:  referenced column: div
  div 
 -----
     
@@ -512,6 +514,9 @@ CONTEXT:  referenced column: div
 
 select '-12.3abc' div 0;
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
+referenced column: div
+WARNING:  division by zero
 CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
@@ -563,6 +568,8 @@ WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div false;
                ^
 CONTEXT:  referenced column: div
+WARNING:  division by zero
+CONTEXT:  referenced column: div
  div 
 -----
     
@@ -573,6 +580,9 @@ WARNING:  invalid input syntax for type numeric: "-12.3abc"
 CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  invalid input syntax for type numeric: "null"
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
+referenced column: div
+WARNING:  division by zero
 CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
  div 

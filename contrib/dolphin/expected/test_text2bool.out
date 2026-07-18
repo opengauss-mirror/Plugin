@@ -10,11 +10,6 @@ end;
 /
 call text2bool();
 INFO:  false
- text2bool 
------------
- 
-(1 row)
-
 create or replace procedure text2bool()
 as
 declare
@@ -30,8 +25,3 @@ end;
 /
 call text2bool();
 INFO:  false
- text2bool 
------------
- 
-(1 row)
-

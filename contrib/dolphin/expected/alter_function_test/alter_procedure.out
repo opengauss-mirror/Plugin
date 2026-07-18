@@ -8,11 +8,6 @@ END;
 /
 call proc1();
 NOTICE:  aaa
- proc1 
--------
- 
-(1 row)
-
 ALTER PROCEDURE proc1() NO SQL;
 ALTER PROCEDURE proc1() CONTAINS SQL;
 	 
