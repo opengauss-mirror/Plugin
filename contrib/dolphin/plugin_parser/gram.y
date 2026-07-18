@@ -567,6 +567,8 @@ static void setAccessMethod(Constraint *n);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
 static List* handleCreateDolphinFuncOptions(List* input_options);
+static bool isCharacterTypeName(TypeName *t);
+static void applyMysqlTypeAttrsToTypeName(TypeName *t, TypeAttr *a);
 static char* appendString(char* source, char* target, int offset);
 static inline void ChangeBpcharCastType(TypeName* typname);
 static List* TransformToConstStrNode(List *inExprList, char* raw_str);
@@ -1039,7 +1041,7 @@ static List* PreHandleTymod(List* origin);
 %type <ival>	charset convert_charset default_charset
 %type <str>		collate opt_collate default_collate set_names_collate
 %type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
-%type <typeattr> opt_charset
+%type <typeattr> opt_charset opt_mysql_type_attrs mysql_type_attrs mysql_type_attr
 
 %type <boolean> opt_varying opt_timezone opt_no_inherit opt_bin_mode
 
@@ -21409,7 +21411,7 @@ range_subpartition_index_item:
 
 CreateFunctionStmt:
 			CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
-			RETURNS func_return createfunc_opt_list opt_definition
+			RETURNS func_return opt_mysql_type_attrs createfunc_opt_list opt_definition
 				{
 					set_function_style_pg();
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21419,12 +21421,13 @@ CreateFunctionStmt:
 					n->definer = $3;
 					if (n->replace && NULL != n->definer) {
 						parser_yyerror("not support DEFINER function");
-					}			
+					}
 					n->funcname = $5;
 					n->parameters = $6;
 					n->returnType = $8;
-					n->options = $9;
-					n->withClause = $10;
+					applyMysqlTypeAttrsToTypeName(n->returnType, $9);
+					n->options = $10;
+					n->withClause = $11;
 					n->isProcedure = false;
 					$$ = (Node *)n;
 				}
@@ -21512,7 +21515,7 @@ CreateFunctionStmt:
 					$$ = (Node *)n;
 				}
 			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
-				RETURNS func_return opt_createfunc_opt_list {
+				RETURNS func_return opt_mysql_type_attrs opt_createfunc_opt_list {
 					u_sess->parser_cxt.eaten_declare = false;
 					u_sess->parser_cxt.eaten_begin = false;
 					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
@@ -21522,10 +21525,10 @@ CreateFunctionStmt:
 					int rc = 0;
 					rc = CompileWhich();
 					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
-					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @9);
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @10);
 					}
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
-					FunctionSources *funSource = (FunctionSources*)$12;
+					FunctionSources *funSource = (FunctionSources*)$13;
 					/* check whether function body has RETURN */
 					if (!funSource->hasReturn) {
 						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
@@ -21541,8 +21544,9 @@ CreateFunctionStmt:
 					n->parameters = $6;
 					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = $8;
+					applyMysqlTypeAttrsToTypeName(n->returnType, $9);
 					List* filtered_options = NIL;
-					n->options = handleCreateDolphinFuncOptions($9);
+					n->options = handleCreateDolphinFuncOptions($10);
 					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
 					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
 
@@ -21552,7 +21556,7 @@ CreateFunctionStmt:
 					$$ = (Node*)n;
 				}
 			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
-				RETURNS func_return opt_createfunc_opt_list {
+				RETURNS func_return opt_mysql_type_attrs opt_createfunc_opt_list {
 					u_sess->parser_cxt.eaten_declare = false;
 					u_sess->parser_cxt.eaten_begin = false;
 					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
@@ -21563,10 +21567,10 @@ CreateFunctionStmt:
 					int rc = 0;
 					rc = CompileWhich();
 					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
-					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @9);
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @10);
 					}
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
-					FunctionSources *funSource = (FunctionSources*)$11;
+					FunctionSources *funSource = (FunctionSources*)$12;
 					n->isOraStyle = false;
 					n->isPrivate = false;
 					n->replace = $2;
@@ -21578,8 +21582,9 @@ CreateFunctionStmt:
 					n->parameters = $6;
 					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = $8;
+					applyMysqlTypeAttrsToTypeName(n->returnType, $9);
 					List* filtered_options = NIL;
-					n->options = handleCreateDolphinFuncOptions($9);
+					n->options = handleCreateDolphinFuncOptions($10);
 					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
 					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
 
@@ -23416,29 +23421,32 @@ func_args_with_defaults_list:
  * - thomas 2000-03-22
  */
 func_arg:
-			arg_class param_name func_type
+			arg_class param_name func_type opt_mysql_type_attrs
 				{
 					FunctionParameter *n = makeNode(FunctionParameter);
 					n->name = $2;
 					n->argType = $3;
+					applyMysqlTypeAttrsToTypeName(n->argType, $4);
 					n->mode = $1;
 					n->defexpr = NULL;
 					$$ = n;
 				}
-			| param_name arg_class func_type
+			| param_name arg_class func_type opt_mysql_type_attrs
 				{
 					FunctionParameter *n = makeNode(FunctionParameter);
 					n->name = $1;
 					n->argType = $3;
+					applyMysqlTypeAttrsToTypeName(n->argType, $4);
 					n->mode = $2;
 					n->defexpr = NULL;
 					$$ = n;
 				}
-			| param_name func_type
+			| param_name func_type opt_mysql_type_attrs
 				{
 					FunctionParameter *n = makeNode(FunctionParameter);
 					n->name = $1;
 					n->argType = $2;
+					applyMysqlTypeAttrsToTypeName(n->argType, $3);
 					n->mode = FUNC_PARAM_IN;
 					n->defexpr = NULL;
 					$$ = n;
@@ -34916,6 +34924,59 @@ Character:  CharacterWithLength
 			| CharacterWithoutLength
 				{
 					$$ = $1;
+				}
+		;
+
+opt_mysql_type_attrs:
+			/* empty */
+				{
+					$$ = NULL;
+				}
+			| mysql_type_attrs
+				{
+					$$ = $1;
+				}
+		;
+
+mysql_type_attrs:
+			mysql_type_attr
+				{
+					$$ = $1;
+				}
+			| mysql_type_attrs mysql_type_attr
+				{
+					if ($2->charset != PG_INVALID_ENCODING)
+						$1->charset = $2->charset;
+					if ($2->binary)
+						$1->binary = true;
+					pfree($2);
+					$$ = $1;
+				}
+		;
+
+mysql_type_attr:
+			charset
+				{
+					TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+					n->charset = $1;
+					$$ = n;
+				}
+			| COLLATE collate_name
+				{
+					/* COLLATE on a function parameter/return type is accepted
+					 * grammatically for MySQL compatibility but has no semantic
+					 * effect; the collation name is intentionally discarded. */
+					TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+					n->charset = PG_INVALID_ENCODING;
+					(void) $2;
+					$$ = n;
+				}
+			| BINARY
+				{
+					TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+					n->charset = PG_INVALID_ENCODING;
+					n->binary = true;
+					$$ = n;
 				}
 		;
 
@@ -46397,6 +46458,45 @@ static List* TransformToConstStrNode(List *inExprList, char* raw_str)
 	return inExprList;
 }
 
+
+/* The appended charset/collate syntax on types should only work on Character types. */
+static bool isCharacterTypeName(TypeName *t)
+{
+	char *name = NULL;
+
+	if (t == NULL || t->names == NIL)
+		return false;
+	/* base type name is the last element of the qualified name list */
+	name = strVal(llast(t->names));
+	if (name == NULL)
+		return false;
+	return (strcmp(name, "bpchar") == 0 ||
+			strcmp(name, "varchar") == 0 ||
+			strcmp(name, "text") == 0 ||
+			strcmp(name, "nvarchar2") == 0);
+}
+
+/*
+* If opt_mysql_type_attrs/mysql_type_attrs does exist, we extrat the 
+* charset from it and assign. The collation is only grammarly supported
+* which will not be handled after parsing.
+*
+* Binding charset/collation after Character types will cause collision 
+* with 'Typename opt_charset' in column ddl, so we bind the 
+* charset/collation/binary only after the function parameters and 
+* return value. 
+*/
+static void applyMysqlTypeAttrsToTypeName(TypeName *t, TypeAttr *a)
+{
+	if (t == NULL || a == NULL)
+		return;
+	if (!isCharacterTypeName(t))
+		ereport(ERROR,
+			(errcode(ERRCODE_SYNTAX_ERROR),
+			 errmsg("CHARACTER SET/CHARSET, COLLATE or BINARY is only supported on character types")));
+	if (a->charset != PG_INVALID_ENCODING)
+		t->charset = a->charset;
+}
 
 /* return a function option list that is filtered. */
 static List* handleCreateDolphinFuncOptions(List* input_options)
