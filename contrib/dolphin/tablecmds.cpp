@@ -19177,11 +19177,14 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     systable_endscan(scan);
 
     DelDependencONDataType(rel, depRel, attTup);
+    bool old_attnotnull = attTup->attnotnull;
+    bool is_primary_key = ModifiedColumnIsPrimaryKey(tab, attnum);
 
 #ifdef DOLPHIN
     /* Primary key column must be not null. */
-    def->is_not_null = def->is_not_null ? def->is_not_null : ModifiedColumnIsPrimaryKey(tab, attnum);
-    if (!attTup->attnotnull && def->is_not_null) {
+    bool new_attnotnull = old_attnotnull || is_primary_key;
+
+    if (!old_attnotnull && new_attnotnull) {
         tab->new_notnull = true;
     }
 #endif
@@ -19205,7 +19208,7 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     attTup->attalign = tform->typalign;
     attTup->attstorage = tform->typstorage;
 #ifdef DOLPHIN
-    attTup->attnotnull = def->is_not_null;
+    attTup->attnotnull = new_attnotnull;
 #endif
 
     ReleaseSysCache(typeTuple);

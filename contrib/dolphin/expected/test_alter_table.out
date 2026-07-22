@@ -736,7 +736,7 @@ ALTER TABLE test_at_modify_syntax MODIFY b varchar(8); -- alter column type only
  Column |         Type         | Modifiers | Storage  | Stats target | Description 
 --------+----------------------+-----------+----------+--------------+-------------
  a      | integer              |           | plain    |              | 
- b      | character varying(8) |           | extended |              | 
+ b      | character varying(8) | not null  | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
 
@@ -781,11 +781,11 @@ Options: orientation=row, compression=no
 
 ALTER TABLE test_at_modify_syntax MODIFY b varchar(8);
 \d+ test_at_modify_syntax;
-                       Table "public.test_at_modify_syntax"
- Column |         Type         | Modifiers | Storage  | Stats target | Description 
---------+----------------------+-----------+----------+--------------+-------------
- a      | integer              |           | plain    |              | 
- b      | character varying(8) | default 5 | extended |              | 
+                            Table "public.test_at_modify_syntax"
+ Column |         Type         |     Modifiers      | Storage  | Stats target | Description 
+--------+----------------------+--------------------+----------+--------------+-------------
+ a      | integer              |                    | plain    |              | 
+ b      | character varying(8) | not null default 5 | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
 
