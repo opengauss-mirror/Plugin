@@ -84,3 +84,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_ge(boolean, longblob) ret
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_ge(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text >= $2::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_le(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text <= $2::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_le(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text <= $2::text)';
+
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format(varchar, varchar);
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, int4);
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, number);
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, int8);
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format(number, number);
