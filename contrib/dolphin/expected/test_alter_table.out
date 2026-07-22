@@ -646,3 +646,387 @@ DETAIL:  drop cascades to type lockmodes
 drop cascades to view my_locks
 drop cascades to table t_grammar0029
 reset current_schema;
+-- test alter table rename column in b_format(mysql) database
+set b_format_behavior_compat_options = 'enable_modify_column';  --exist view dependency
+drop view if exists view1;
+NOTICE:  view "view1" does not exist, skipping
+drop table if exists test1;
+NOTICE:  table "test1" does not exist, skipping
+create table test1(id int, col2 varchar(10));
+create view view1 as select * from test1;
+select * from view1;
+ id | col2 
+----+------
+(0 rows)
+
+\d+ test1;
+                                Table "public.test1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ col2   | character varying(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+alter table test1 modify col2 varchar(5);
+\d+ test1;
+                               Table "public.test1"
+ Column |         Type         | Modifiers | Storage  | Stats target | Description 
+--------+----------------------+-----------+----------+--------------+-------------
+ id     | integer              |           | plain    |              | 
+ col2   | character varying(5) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+set b_format_behavior_compat_options = '';
+drop view if exists view1;
+drop table if exists test1;
+create table test1(id int, col2 varchar(10));
+\d+ test1;
+                                Table "public.test1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ col2   | character varying(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+create view view1 as select * from test1;
+select * from view1;
+ id | col2 
+----+------
+(0 rows)
+
+alter table test1 modify col2 varchar(5);
+\d+ test1;
+                               Table "public.test1"
+ Column |         Type         | Modifiers | Storage  | Stats target | Description 
+--------+----------------------+-----------+----------+--------------+-------------
+ id     | integer              |           | plain    |              | 
+ col2   | character varying(5) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+-- enable_modify_column with not null constraint
+set b_format_behavior_compat_options = '';
+drop table if exists test_at_modify_syntax;
+NOTICE:  table "test_at_modify_syntax" does not exist, skipping
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null
+);
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+\d+ test_at_modify_syntax;
+                Table "public.test_at_modify_syntax"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ a      | integer |           | plain   |              | 
+ b      | integer | not null  | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8); -- alter column type only
+\d+ test_at_modify_syntax;
+                       Table "public.test_at_modify_syntax"
+ Column |         Type         | Modifiers | Storage  | Stats target | Description 
+--------+----------------------+-----------+----------+--------------+-------------
+ a      | integer              |           | plain    |              | 
+ b      | character varying(8) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+set b_format_behavior_compat_options = 'enable_modify_column';
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ enable_modify_column
+(1 row)
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+                        Table "public.test_at_modify_syntax"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ a      | integer               |           | plain    |              | 
+ b      | character varying(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+DROP TABLE test_at_modify_syntax;
+-- enable_modify_column with default constraint
+set b_format_behavior_compat_options = '';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null default 5
+);
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+\d+ test_at_modify_syntax;
+                     Table "public.test_at_modify_syntax"
+ Column |  Type   |     Modifiers      | Storage | Stats target | Description 
+--------+---------+--------------------+---------+--------------+-------------
+ a      | integer |                    | plain   |              | 
+ b      | integer | not null default 5 | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8);
+\d+ test_at_modify_syntax;
+                       Table "public.test_at_modify_syntax"
+ Column |         Type         | Modifiers | Storage  | Stats target | Description 
+--------+----------------------+-----------+----------+--------------+-------------
+ a      | integer              |           | plain    |              | 
+ b      | character varying(8) | default 5 | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+DROP TABLE test_at_modify_syntax;
+set b_format_behavior_compat_options = 'enable_modify_column';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null default 5
+);
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ enable_modify_column
+(1 row)
+
+\d+ test_at_modify_syntax;
+                     Table "public.test_at_modify_syntax"
+ Column |  Type   |     Modifiers      | Storage | Stats target | Description 
+--------+---------+--------------------+---------+--------------+-------------
+ a      | integer |                    | plain   |              | 
+ b      | integer | not null default 5 | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+                        Table "public.test_at_modify_syntax"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ a      | integer               |           | plain    |              | 
+ b      | character varying(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+DROP TABLE test_at_modify_syntax;
+-- enable_modify_column with unique constraint
+set b_format_behavior_compat_options = '';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int unique
+);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_at_modify_syntax_b_key" for table "test_at_modify_syntax"
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+\d+ test_at_modify_syntax;
+                Table "public.test_at_modify_syntax"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ a      | integer |           | plain   |              | 
+ b      | integer |           | plain   |              | 
+Indexes:
+    "test_at_modify_syntax_b_key" UNIQUE CONSTRAINT, btree (b) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8);
+\d+ test_at_modify_syntax;
+                       Table "public.test_at_modify_syntax"
+ Column |         Type         | Modifiers | Storage  | Stats target | Description 
+--------+----------------------+-----------+----------+--------------+-------------
+ a      | integer              |           | plain    |              | 
+ b      | character varying(8) |           | extended |              | 
+Indexes:
+    "test_at_modify_syntax_b_key" UNIQUE CONSTRAINT, btree (b) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+drop table test_at_modify_syntax;
+create table test_at_modify_syntax(
+    a int,
+    b int unique
+);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_at_modify_syntax_b_key" for table "test_at_modify_syntax"
+set b_format_behavior_compat_options = 'enable_modify_column';
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ enable_modify_column
+(1 row)
+
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+                        Table "public.test_at_modify_syntax"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ a      | integer               |           | plain    |              | 
+ b      | character varying(10) |           | extended |              | 
+Indexes:
+    "test_at_modify_syntax_b_key" UNIQUE CONSTRAINT, btree (b) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+DROP TABLE test_at_modify_syntax;
+-- test alter table rename column in b_format(mysql) database
+set b_format_behavior_compat_options = 'enable_modify_column';
+create table test_modify(
+c_id int,
+c_integer integer,
+c_real real,
+c_float float,
+c_cdouble binary_double,
+c_decimal decimal(38),
+c_number number(38),
+c_number1 number,
+c_number2 number(20,10),
+c_numeric numeric(38),
+c_char char(50) default null,
+c_varchar varchar(20),
+c_varchar2 varchar2(4000),
+c_clob clob,
+c_date date,
+c_timestamp timestamp
+) with (ORIENTATION = COLUMN);
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ enable_modify_column
+(1 row)
+
+\d+ test_modify;
+                                        Table "public.test_modify"
+   Column    |            Type             |      Modifiers       | Storage  | Stats target | Description 
+-------------+-----------------------------+----------------------+----------+--------------+-------------
+ c_id        | integer                     |                      | plain    |              | 
+ c_integer   | integer                     |                      | plain    |              | 
+ c_real      | real                        |                      | plain    |              | 
+ c_float     | real                        |                      | plain    |              | 
+ c_cdouble   | double precision            |                      | plain    |              | 
+ c_decimal   | numeric(38,0)               |                      | main     |              | 
+ c_number    | numeric(38,0)               |                      | main     |              | 
+ c_number1   | number                      |                      | main     |              | 
+ c_number2   | numeric(20,10)              |                      | main     |              | 
+ c_numeric   | numeric(38,0)               |                      | main     |              | 
+ c_char      | character(50)               | default NULL::bpchar | extended |              | 
+ c_varchar   | character varying(20)       |                      | extended |              | 
+ c_varchar2  | character varying(4000)     |                      | extended |              | 
+ c_clob      | clob                        |                      | extended |              | 
+ c_date      | date                        |                      | plain    |              | 
+ c_timestamp | timestamp(0) with time zone |                      | plain    |              | 
+Has OIDs: no
+Options: orientation=column, compression=low
+
+alter table test_modify modify (c_id varchar,c_integer varchar(20),c_real varchar);
+\d+ test_modify;
+                                        Table "public.test_modify"
+   Column    |            Type             |      Modifiers       | Storage  | Stats target | Description 
+-------------+-----------------------------+----------------------+----------+--------------+-------------
+ c_id        | character varying           |                      | extended |              | 
+ c_integer   | character varying(20)       |                      | extended |              | 
+ c_real      | character varying           |                      | extended |              | 
+ c_float     | real                        |                      | plain    |              | 
+ c_cdouble   | double precision            |                      | plain    |              | 
+ c_decimal   | numeric(38,0)               |                      | main     |              | 
+ c_number    | numeric(38,0)               |                      | main     |              | 
+ c_number1   | number                      |                      | main     |              | 
+ c_number2   | numeric(20,10)              |                      | main     |              | 
+ c_numeric   | numeric(38,0)               |                      | main     |              | 
+ c_char      | character(50)               | default NULL::bpchar | extended |              | 
+ c_varchar   | character varying(20)       |                      | extended |              | 
+ c_varchar2  | character varying(4000)     |                      | extended |              | 
+ c_clob      | clob                        |                      | extended |              | 
+ c_date      | date                        |                      | plain    |              | 
+ c_timestamp | timestamp(0) with time zone |                      | plain    |              | 
+Has OIDs: no
+Options: orientation=column, compression=low
+
+DROP TABLE test_modify;
+set b_format_behavior_compat_options = '';
+create table test_modify(
+c_id int,
+c_integer integer,
+c_real real,
+c_float float,
+c_cdouble binary_double,
+c_decimal decimal(38),
+c_number number(38),
+c_number1 number,
+c_number2 number(20,10),
+c_numeric numeric(38),
+c_char char(50) default null,
+c_varchar varchar(20),
+c_varchar2 varchar2(4000),
+c_clob clob,
+c_date date,
+c_timestamp timestamp
+) with (ORIENTATION = COLUMN);
+show b_format_behavior_compat_options;
+ b_format_behavior_compat_options 
+----------------------------------
+ 
+(1 row)
+
+\d+ test_modify;
+                                        Table "public.test_modify"
+   Column    |            Type             |      Modifiers       | Storage  | Stats target | Description 
+-------------+-----------------------------+----------------------+----------+--------------+-------------
+ c_id        | integer                     |                      | plain    |              | 
+ c_integer   | integer                     |                      | plain    |              | 
+ c_real      | real                        |                      | plain    |              | 
+ c_float     | real                        |                      | plain    |              | 
+ c_cdouble   | double precision            |                      | plain    |              | 
+ c_decimal   | numeric(38,0)               |                      | main     |              | 
+ c_number    | numeric(38,0)               |                      | main     |              | 
+ c_number1   | number                      |                      | main     |              | 
+ c_number2   | numeric(20,10)              |                      | main     |              | 
+ c_numeric   | numeric(38,0)               |                      | main     |              | 
+ c_char      | character(50)               | default NULL::bpchar | extended |              | 
+ c_varchar   | character varying(20)       |                      | extended |              | 
+ c_varchar2  | character varying(4000)     |                      | extended |              | 
+ c_clob      | clob                        |                      | extended |              | 
+ c_date      | date                        |                      | plain    |              | 
+ c_timestamp | timestamp(0) with time zone |                      | plain    |              | 
+Has OIDs: no
+Options: orientation=column, compression=low
+
+alter table test_modify modify (c_id varchar,c_integer varchar(20),c_real varchar);
+\d+ test_modify;
+                                        Table "public.test_modify"
+   Column    |            Type             |      Modifiers       | Storage  | Stats target | Description 
+-------------+-----------------------------+----------------------+----------+--------------+-------------
+ c_id        | character varying           |                      | extended |              | 
+ c_integer   | character varying(20)       |                      | extended |              | 
+ c_real      | character varying           |                      | extended |              | 
+ c_float     | real                        |                      | plain    |              | 
+ c_cdouble   | double precision            |                      | plain    |              | 
+ c_decimal   | numeric(38,0)               |                      | main     |              | 
+ c_number    | numeric(38,0)               |                      | main     |              | 
+ c_number1   | number                      |                      | main     |              | 
+ c_number2   | numeric(20,10)              |                      | main     |              | 
+ c_numeric   | numeric(38,0)               |                      | main     |              | 
+ c_char      | character(50)               | default NULL::bpchar | extended |              | 
+ c_varchar   | character varying(20)       |                      | extended |              | 
+ c_varchar2  | character varying(4000)     |                      | extended |              | 
+ c_clob      | clob                        |                      | extended |              | 
+ c_date      | date                        |                      | plain    |              | 
+ c_timestamp | timestamp(0) with time zone |                      | plain    |              | 
+Has OIDs: no
+Options: orientation=column, compression=low
+
+DROP TABLE test_modify;

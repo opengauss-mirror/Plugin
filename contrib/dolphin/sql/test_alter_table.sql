@@ -266,3 +266,134 @@ drop table alter_type_child, alter_type_parent;
 
 drop schema db_alter_table cascade;
 reset current_schema;
+
+
+-- test alter table rename column in b_format(mysql) database
+set b_format_behavior_compat_options = 'enable_modify_column';  --exist view dependency
+drop view if exists view1;
+drop table if exists test1;
+create table test1(id int, col2 varchar(10));
+create view view1 as select * from test1;
+select * from view1;
+\d+ test1;
+alter table test1 modify col2 varchar(5);
+\d+ test1;
+set b_format_behavior_compat_options = '';
+drop view if exists view1;
+drop table if exists test1;
+create table test1(id int, col2 varchar(10));
+\d+ test1;
+create view view1 as select * from test1;
+select * from view1;
+alter table test1 modify col2 varchar(5);
+\d+ test1;
+
+-- enable_modify_column with not null constraint
+set b_format_behavior_compat_options = '';
+drop table if exists test_at_modify_syntax;
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null
+);
+show b_format_behavior_compat_options;
+\d+ test_at_modify_syntax;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8); -- alter column type only
+\d+ test_at_modify_syntax;
+set b_format_behavior_compat_options = 'enable_modify_column';
+show b_format_behavior_compat_options;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+DROP TABLE test_at_modify_syntax;
+
+
+-- enable_modify_column with default constraint
+set b_format_behavior_compat_options = '';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null default 5
+);
+show b_format_behavior_compat_options;
+\d+ test_at_modify_syntax;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8);
+\d+ test_at_modify_syntax;
+DROP TABLE test_at_modify_syntax;
+set b_format_behavior_compat_options = 'enable_modify_column';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int not null default 5
+);
+show b_format_behavior_compat_options;
+\d+ test_at_modify_syntax;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+DROP TABLE test_at_modify_syntax;
+-- enable_modify_column with unique constraint
+set b_format_behavior_compat_options = '';
+CREATE TABLE test_at_modify_syntax(
+    a int,
+    b int unique
+);
+show b_format_behavior_compat_options;
+\d+ test_at_modify_syntax;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(8);
+\d+ test_at_modify_syntax;
+drop table test_at_modify_syntax;
+create table test_at_modify_syntax(
+    a int,
+    b int unique
+);
+set b_format_behavior_compat_options = 'enable_modify_column';
+show b_format_behavior_compat_options;
+ALTER TABLE test_at_modify_syntax MODIFY b varchar(10);
+\d+ test_at_modify_syntax;
+DROP TABLE test_at_modify_syntax;
+
+-- test alter table rename column in b_format(mysql) database
+set b_format_behavior_compat_options = 'enable_modify_column';
+create table test_modify(
+c_id int,
+c_integer integer,
+c_real real,
+c_float float,
+c_cdouble binary_double,
+c_decimal decimal(38),
+c_number number(38),
+c_number1 number,
+c_number2 number(20,10),
+c_numeric numeric(38),
+c_char char(50) default null,
+c_varchar varchar(20),
+c_varchar2 varchar2(4000),
+c_clob clob,
+c_date date,
+c_timestamp timestamp
+) with (ORIENTATION = COLUMN);
+show b_format_behavior_compat_options;
+\d+ test_modify;
+alter table test_modify modify (c_id varchar,c_integer varchar(20),c_real varchar);
+\d+ test_modify;
+DROP TABLE test_modify;
+set b_format_behavior_compat_options = '';
+create table test_modify(
+c_id int,
+c_integer integer,
+c_real real,
+c_float float,
+c_cdouble binary_double,
+c_decimal decimal(38),
+c_number number(38),
+c_number1 number,
+c_number2 number(20,10),
+c_numeric numeric(38),
+c_char char(50) default null,
+c_varchar varchar(20),
+c_varchar2 varchar2(4000),
+c_clob clob,
+c_date date,
+c_timestamp timestamp
+) with (ORIENTATION = COLUMN);
+show b_format_behavior_compat_options;
+\d+ test_modify;
+alter table test_modify modify (c_id varchar,c_integer varchar(20),c_real varchar);
+\d+ test_modify;
+DROP TABLE test_modify;
