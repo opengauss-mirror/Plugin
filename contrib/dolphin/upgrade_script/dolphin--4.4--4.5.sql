@@ -130,3 +130,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_ge(boolean, longblob) ret
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_ge(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 >= $2::float8)';
 CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_le(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 <= $2::float8)';
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_le(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float8 <= $2::float8)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(number, number) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_numeric_precision';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int8) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int4) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.db_b_format($1, $2::bigint)';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, number) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_numeric_precision';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(varchar, varchar) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_varchar';
