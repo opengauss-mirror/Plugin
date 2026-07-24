@@ -315,6 +315,14 @@ SET dolphin.sql_mode = 'ansi_quotes';
 USE "sch_Opengauss_DATABASE_Case0003_1";
 RESET dolphin.sql_mode;
 RESET current_schema;
+SET dolphin.lower_case_table_names TO 1;
+CREATE SCHEMA sch_Opengauss_DATABASE_Case0003_2;
+USE sch_Opengauss_DATABASE_Case0003_2;
+SET dolphin.sql_mode = 'ansi_quotes';
+USE "sch_Opengauss_DATABASE_Case0003_2";
+RESET dolphin.sql_mode;
+RESET current_schema;
+SET dolphin.lower_case_table_names TO 0;
 -- clean
 DROP USER Test_Schema_User CASCADE;
 DROP USER Test_Schema_User_bak CASCADE;

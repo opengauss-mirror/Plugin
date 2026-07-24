@@ -3554,7 +3554,8 @@ set_expr_extension:
 UseStmt:
 			USE DolphinColId
 				{
-					char *schemaName = GetDolphinSchemaName($2->str, $2->is_quoted);
+					bool isQuoted = GetSessionContext()->lower_case_table_names == 0 ? $2->is_quoted : false;
+					char *schemaName = GetDolphinSchemaName($2->str, isQuoted);
 					if (!OidIsValid(get_namespace_oid(schemaName, true))) {
 						ereport(errstate,
 							(errcode(ERRCODE_UNDEFINED_SCHEMA),
