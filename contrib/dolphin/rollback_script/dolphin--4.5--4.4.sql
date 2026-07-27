@@ -90,3 +90,13 @@ DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, int4);
 DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, number);
 DROP FUNCTION IF EXISTS pg_catalog.db_b_format(unknown, int8);
 DROP FUNCTION IF EXISTS pg_catalog.db_b_format(number, number);
+
+-- left/right for text type
+DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
+DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
+
+DROP FUNCTION IF EXISTS pg_catalog.left(varbinary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(binary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(bytea, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.left(bit, boolean);

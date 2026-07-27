@@ -22,18 +22,6 @@ AS $$ select CAST(uint8out($1) AS VARCHAR)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
 CREATE CAST (uint8 AS VARCHAR) WITH FUNCTION TO_VARCHAR(uint8) AS IMPLICIT;
 
--- left/right for text type
-DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
-CREATE OR REPLACE FUNCTION pg_catalog.left(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_left_text';
-DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
-CREATE OR REPLACE FUNCTION pg_catalog.right(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_right_text';
-
-CREATE OR REPLACE FUNCTION pg_catalog.left(bytea, integer) RETURNS bytea LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bytea_left';
-CREATE OR REPLACE FUNCTION pg_catalog.left(binary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
-CREATE OR REPLACE FUNCTION pg_catalog.left(varbinary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
-
-CREATE OR REPLACE FUNCTION pg_catalog.left(bit, boolean) RETURNS bytea LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1, $2::integer)';
-
 -- max/min for bool type
 CREATE OR REPLACE FUNCTION pg_catalog.bool_larger(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_larger';
 CREATE OR REPLACE FUNCTION pg_catalog.bool_smaller(boolean, boolean) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bool_smaller';
@@ -65,7 +53,7 @@ CREATE CAST (bool AS anyset) WITH FUNCTION pg_catalog.set(bool, int4) AS ASSIGNM
 
 -- reverse
 CREATE OR REPLACE FUNCTION pg_catalog.reverse(bool) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.reverse($1::text)::varchar $$;
- 
+
 CREATE FUNCTION pg_catalog.int16_text(int16) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_text';
 CREATE CAST(int16 AS text) WITH FUNCTION pg_catalog.int16_text(int16)   AS IMPLICIT;
 

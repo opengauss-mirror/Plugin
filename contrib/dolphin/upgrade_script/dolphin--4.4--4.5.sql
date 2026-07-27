@@ -136,3 +136,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int8) RETURNS text LA
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, int4) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.db_b_format($1, $2::bigint)';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(unknown, number) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_numeric_precision';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format(varchar, varchar) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_varchar';
+
+-- left/right for text type
+DROP FUNCTION IF EXISTS pg_catalog.left(text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.left(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_left_text';
+DROP FUNCTION IF EXISTS pg_catalog.right(text, text);
+CREATE OR REPLACE FUNCTION pg_catalog.right(text, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_right_text';
+
+CREATE OR REPLACE FUNCTION pg_catalog.left(bytea, integer) RETURNS bytea LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bytea_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(binary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.left(varbinary, integer) RETURNS varbinary(65535) LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1::bytea, $2)::varbinary(65535)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.left(bit, boolean) RETURNS bytea LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left($1, $2::integer)';
