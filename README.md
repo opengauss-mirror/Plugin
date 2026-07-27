@@ -1,38 +1,20 @@
 # Plugin
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+### 介绍
+Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件用于在 openGauss-server 基础上补充 B 库语法、函数、数据类型、类型转换等能力。
 
-#### 软件架构
-软件架构说明
+### 参与贡献
 
-
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 使用说明
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  按照社区特性设计模板（ https://gitee.com/opengauss/community/tree/master/design/template ）撰写特性设计说明书，并在plugin sig例会上评审通过
+1.  按照社区特性设计模板（ https://gitcode.com/opengauss/community/tree/master/design/template ）撰写特性设计说明书，并在plugin sig例会上评审通过
 2.  代码编写/自测，提交代码review，修改检视意见
-3.  如果需求涉及资料修改，同步提交资料PR（ https://gitee.com/opengauss/docs ），dolphin相关的语法文档入口为 https://gitee.com/opengauss/docs/blob/master/content/zh/docs/ExtensionReference/dolphin-Extension.md ，对应官网页面： https://docs.opengauss.org/zh/docs/latest/docs/ExtensionReference/dolphin-Extension.html
-4.  按照社区check-in模板（ https://gitee.com/opengauss/community/tree/master/check-in/template ）撰写checkin说明书，并在plugin sig例会上评审通过
+3.  如果需求涉及资料修改，同步提交资料PR（ https://gitcode.com/opengauss/docs ），dolphin相关的语法文档入口为 https://gitcode.com/opengauss/docs/tree/master/docs/zh/extension_reference ，对应官网页面： https://docs.opengauss.org/zh/docs/latest/docs/ExtensionReference/dolphin-Extension.html
+4.  按照社区check-in模板（ https://gitcode.com/opengauss/community/tree/master/check-in/template ）撰写checkin说明书，并在plugin sig例会上评审通过
 5.  代码合入
-6.  按照社区QA测试报告模板（ https://gitee.com/opengauss/QA/tree/master/Test_Delivery_Templates ）撰写openGauss XX版本XX特性测试报告模板.md，并在 QA sig例会上评审通过（QA sig例会请通过订阅QA SIG邮件列表获知信息： https://mailweb.opengauss.org/postorius/lists/qa.opengauss.org/ ）
+6.  按照社区QA测试报告模板（ https://gitcode.com/opengauss/QA/tree/master/Test_Delivery_Templates ）撰写openGauss XX版本XX特性测试报告模板.md，并在 QA sig例会上评审通过（QA sig例会请通过订阅QA SIG邮件列表获知信息： https://mailweb.opengauss.org/postorius/lists/qa.opengauss.org/ ）
 
 ### dolphin插件开发须知
 1.  插件开发指南： https://opengauss.org/zh/blogs/ganyang/SQL%E5%BC%95%E6%93%8E%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%AF%BC.html
-2.  修改如涉及文档，需要同步在docs仓提交文档修改，插件相关文档入口： https://gitee.com/opengauss/docs/tree/master/content/zh/docs/ExtensionReference/dolphin-Extension.md 。注意添加SQL语法时，需要增加必要的示例。
+2.  修改如涉及文档，需要同步在docs仓提交文档修改，插件相关文档入口： https://gitcode.com/opengauss/docs/tree/master/docs/zh/extension_reference 。注意添加SQL语法时，需要增加必要的示例。
 3.  新增/修改的代码需要使用宏 DOLPHIN 进行控制，方便后续回合openGauss-server仓代码时，区分哪些是插件修改的代码，哪些是内核修改的代码。修改的代码通过宏的IF/ELSE分支保留原始代码。主要控制 ```.h/.cpp``` 文件， ```.y``` 文件不太好使用宏控制，可以不处理。
 4.  代码中涉及dolphin.b_compatibility_mode判断的地方，统一使用宏ENABLE_B_CMPT_MODE控制。
 5.  涉及插件升级/回滚脚本修改的，应本地自验插件的升级/回滚流程，确保脚本正确，简单验证方式如下。 `2.0`，`3.0`是dolphin插件的版本，当前最新版本为 `3.0`，后续版本号升级的话，就分别改为 `3.0`，`4.0`，以此类推
@@ -51,17 +33,76 @@ alter system set upgrade_mode to 0;
 ```
 
 ### check用例编写规范
+
 1. check用例默认使用的数据库为contrib_regression数据库，B兼容类型。编写用例时无需自己手动创建B类型数据库。
 2. 建议通过schema的方式隔离不同用例间的结果影响。可参考现有用例的写法。
 3. 单个用例执行时间不宜太长，建议不超过10s，超过的应当考虑优化用例或进行拆分。
 4. 非必要不新增测试组，一个测试组可允许5~10个用例一起并行执行。
 5. 对于SELECT语句强烈建议增加order by子句，保证SELECT语句查询结果稳定。
 
-#### 特技
+### dolphin 插件 check 用例执行
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1. 拉取代码仓
+
+   分别拉取 [openGauss-server仓](https://gitcode.com/opengauss/openGauss-server) 和 [Plugin仓](https://gitcode.com/opengauss/Plugin) 代码。
+
+2. 准备 dolphin 插件目录
+
+   将 Plugin 仓中 `contrib/dolphin` 目录复制或软链接到 openGauss-server 仓的 `contrib` 目录下，最终目录结构应为：
+
+   ```text
+   openGauss-server/contrib/dolphin
+   ```
+
+3. 编译 openGauss-server
+
+   在 openGauss-server 仓根目录下执行 `make` 编译项目代码。
+
+   > 注：dolphin check 用例依赖 make 编译产物，需使用 `make` 完成编译。
+
+4. 执行 dolphin check 用例
+
+   dolphin 用例按照 schedule 文件分组执行，主要对应以下两个文件：
+
+   ```text
+   contrib/dolphin/parallel_schedule_dolphinA
+   contrib/dolphin/parallel_schedule_dolphinB
+   ```
+
+   先确认目标用例位于哪个 schedule 文件中。若用例在 `parallel_schedule_dolphinA` 中，则进入 `contrib/dolphin` 目录后执行：
+
+   ```bash
+   cd contrib/dolphin
+   make check p=38000 PART=A
+   ```
+
+   若用例在 `parallel_schedule_dolphinB` 中，则执行：
+
+   ```bash
+   cd contrib/dolphin
+   make check p=38000 PART=B
+   ```
+
+   其中，`p` 为数据库监听端口，可根据本地环境调整；`PART` 用于指定执行 A 组或 B 组用例。
+
+5. 执行单个用例
+
+   若只需执行单个用例，建议先备份对应的 schedule 文件。例如用例属于 A 组：
+
+   ```bash
+   cp parallel_schedule_dolphinA parallel_schedule_dolphinA.bak
+   ```
+
+   然后新建或修改 `parallel_schedule_dolphinA`，仅保留需要执行的用例，格式可参考原文件中的写法，例如：
+
+   ```text
+   test: your_test_name
+   ```
+
+   修改完成后执行：
+
+   ```bash
+   make check p=38000 PART=A
+   ```
+
+   执行结束后，可根据需要恢复原 schedule 文件。
