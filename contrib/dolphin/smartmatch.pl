@@ -33,6 +33,7 @@ my $bFirstLine; # Indicates whether the line going to be printed is the first or
 my $iuo;             # counter I for counting lines within an UnOrdered set
 my $seenspecialinuo; # Seen special marker inside unordered group
 my $smartmatch;	     # seen any special match syntax	   	
+my $last_result_had_newline; # whether the last result line ended with newline
 
 my $rc = 0;              # Return Code
 
@@ -57,6 +58,7 @@ open $NEW_EXPECTED  , ">", $ARGV[2] or die $!;
 $insideuo = 0;
 $iuo = 0;
 $smartmatch = 0;
+$last_result_had_newline = 0;
 
 $bFirstLine = 1;
 
@@ -72,6 +74,7 @@ while( 1 )
 	undef $!;
 
 	$result = <$RESULT>;
+	$last_result_had_newline = ($result =~ /\n$/) ? 1 : 0 if defined($result);
 
 
 	# one file finished but not the other
@@ -578,6 +581,9 @@ while( 1 )
 
 close $EXPECTED;
 close $RESULT;
+if (!$bFirstLine && $last_result_had_newline) {
+	print $NEW_EXPECTED "\n";
+}
 close $NEW_EXPECTED;
 
 exit( $rc + $smartmatch );
