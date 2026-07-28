@@ -1165,8 +1165,8 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                                                     (void *)&thisState->convert_finfo);
                         continue;
                     }
-                    case F_NUMERIC_OUT: 
-                        outputstr = output_numeric_out(DatumGetNumeric(attr));
+                    case F_NUMERIC_OUT:
+                        outputstr = output_numeric_out(DatumGetNumeric(attr), true);
                         need_free = !check_need_free_numeric_output(outputstr);
                         break;
                     case F_DATE_OUT:
