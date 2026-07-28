@@ -9773,11 +9773,12 @@ Datum yearweek_timestamptz(PG_FUNCTION_ARGS)
     }
     uint year = 0;
     int32 week = 0;
+    int tz = 0;
     const char* tzn = NULL;
     struct pg_tm tm;
     fsec_t fsec;
     TimestampTz stamp = PG_GETARG_TIMESTAMPTZ(0);
-    if (timestamp2tm(stamp, NULL, &tm, &fsec, &tzn, NULL) == 0) {
+    if (timestamp2tm(stamp, &tz, &tm, &fsec, &tzn, NULL) == 0) {
         week_internal(&tm, &week, mode, &year);
         PG_RETURN_INT64(year * 100 + week);
     } else {
