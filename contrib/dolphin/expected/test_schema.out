@@ -14,3 +14,23 @@ SELECT pg_typeof(SCHEMA());
 
 drop schema schema_test cascade;
 reset current_schema;
+-- test not exist schema
+-- 不存在的一个schema
+set current_schema to 'test_ansi_quotes';  
+CREATE TABLE test_quotes (a text); 
+ERROR:  schema "test_ansi_quotes" does not exist
+desc test_quotes; 
+ERROR:  No schema has been selected.
+set current_schema to 'public';
+DROP TABLE IF EXISTS test_quotes;
+NOTICE:  table "test_quotes" does not exist, skipping
+CREATE TABLE test_quotes (a text); 
+desc test_quotes; 
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+ a     | text | YES  |     | NULL    | 
+(1 row)
+
+set current_schema to 'test_ansi_quotes'; 
+desc test_quotes;
+ERROR:  No schema has been selected.
