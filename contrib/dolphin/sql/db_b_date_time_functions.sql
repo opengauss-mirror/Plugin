@@ -2,6 +2,10 @@ create schema b_datetime_func_test1;
 set current_schema to 'b_datetime_func_test1';
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
+-- test yearweek and date function
+select yearweek(date(20220102), 2 * 2);
+select yearweek('2022-01-02', 4);
+
 -- test part-one function
 -- test curdate()
 select curdate();
