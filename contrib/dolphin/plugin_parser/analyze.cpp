@@ -3238,10 +3238,107 @@ static int count_rowexpr_columns(ParseState* pstate, Node* expr)
     return -1;
 }
 
+static bool IsCtasQuerySpace(char ch)
+{
+    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f';
+}
+
+static bool IsCtasIdentifierChar(char ch)
+{
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') ||
+        ch == '_' || ch == '$';
+}
+
+static char* SkipCtasSqlComment(char* pos)
+{
+    if (pos[0] == '-' && pos[1] == '-') {
+        pos += 2;
+        while (*pos != '\0' && *pos != '\n' && *pos != '\r') {
+            pos++;
+        }
+    } else if (pos[0] == '/' && pos[1] == '*') {
+        pos += 2;
+        while (*pos != '\0') {
+            if (pos[0] == '*' && pos[1] == '/') {
+                return pos + 2;
+            }
+            pos++;
+        }
+    }
+    return pos;
+}
+
+static char* SkipCtasQuerySpaceAndComment(char* pos)
+{
+    while (*pos != '\0') {
+        while (IsCtasQuerySpace(*pos)) {
+            pos++;
+        }
+        char* next = SkipCtasSqlComment(pos);
+        if (next == pos) {
+            return pos;
+        }
+        pos = next;
+    }
+    return pos;
+}
+
+static char* SkipCtasQuotedText(char* pos, char quote)
+{
+    pos++;
+    while (*pos != '\0') {
+        if (*pos == '\\' && pos[1] != '\0') {
+            pos += 2;
+            continue;
+        }
+        if (*pos == quote && pos[1] == quote) {
+            pos += 2;
+            continue;
+        }
+        if (*pos == quote) {
+            return pos + 1;
+        }
+        pos++;
+    }
+    return pos;
+}
+
+static bool IsCtasToken(char* pos, const char* token)
+{
+    int len = strlen(token);
+    return pg_strncasecmp(pos, token, len) == 0 && !IsCtasIdentifierChar(pos[len]);
+}
+
 static char* fetchSelectStmtFromCTAS(char* source_text)
 {
-    char* select_pos = strcasestr(source_text, "SELECT");
-    return select_pos;
+    int level = 0;
+    for (char* pos = source_text; *pos != '\0'; pos++) {
+        if (*pos == '\'' || *pos == '"' || *pos == '`') {
+            pos = SkipCtasQuotedText(pos, *pos) - 1;
+            continue;
+        }
+        char* next = SkipCtasSqlComment(pos);
+        if (next != pos) {
+            pos = next - 1;
+            continue;
+        }
+        if (*pos == '(') {
+            level++;
+            continue;
+        }
+        if (*pos == ')') {
+            level = level > 0 ? level - 1 : 0;
+            continue;
+        }
+        if (level == 0 && IsCtasToken(pos, "AS") && (pos == source_text || !IsCtasIdentifierChar(pos[-1]))) {
+            char* query_pos = SkipCtasQuerySpaceAndComment(pos + strlen("AS"));
+            if (IsCtasToken(query_pos, "SELECT") || IsCtasToken(query_pos, "WITH") ||
+                IsCtasToken(query_pos, "VALUES")) {
+                return query_pos;
+            }
+        }
+    }
+    return NULL;
 }
 
 static bool shouldTransformStartWithStmt(ParseState* pstate, SelectStmt* stmt, Query* selectQuery)
@@ -5701,6 +5798,16 @@ static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* 
 
     /* transform contained query */
     stmt->query = (Node*)transformStmt(pstate, stmt->query);
+    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && pstate->p_sourcetext != NULL &&
+        IsA(stmt->query, Query)) {
+        char* sourceText = (char*)pstrdup(pstate->p_sourcetext);
+        char* selectStmt = fetchSelectStmtFromCTAS(sourceText);
+        if (selectStmt != NULL && strchr(selectStmt, '`') != NULL) {
+            ((Query*)stmt->query)->sql_statement = selectStmt;
+        } else {
+            pfree(sourceText);
+        }
+    }
 
     if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
         /* CREATE TABLE AS SELECT is not allowed with Foreign Key and Tablelike Clause*/
