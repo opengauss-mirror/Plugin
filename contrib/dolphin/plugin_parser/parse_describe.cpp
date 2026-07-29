@@ -689,6 +689,12 @@ SelectStmt *checkTableExistence(RangeVar *classrel)
     recomputeNamespacePath();
     nspname = (classrel->schemaname != NULL) ? classrel->schemaname : get_namespace_name(getCurrentNamespace());
 
+    if (nspname == NULL) {
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_SCHEMA),
+                 errmsg("No schema has been selected.")));
+    }
+
     Oid nspid = get_namespace_oid(nspname, true);
     Oid relOid = get_relname_relid(classrel->relname, nspid);
     char relKind = get_rel_relkind(relOid);
