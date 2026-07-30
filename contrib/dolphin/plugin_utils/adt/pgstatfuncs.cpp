@@ -2240,6 +2240,7 @@ static void insert_pg_stat_get_activity_with_conninfo(Tuplestorestate *tupStore,
     bool nulls[ATT_NUM];
     errno_t rc = 0;
 
+    Assert(f);
     if (f->hasTid && (f->threadId != beentry->st_procpid)) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
@@ -2467,6 +2468,7 @@ static void insert_pg_stat_get_activity(Tuplestorestate *tupStore, TupleDesc tup
     bool nulls[ATT_NUM];
     errno_t rc = 0;
 
+    Assert(f);
     if (f->hasTid && (f->threadId != beentry->st_procpid)) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
@@ -2715,10 +2717,10 @@ static void insert_pg_stat_get_activity_for_temptable(Tuplestorestate *tupStore,
 {
     const int ATT_COUNT = 4;
     errno_t rc = 0;
-
-    /* for each row */
     Datum values[ATT_COUNT];
     bool nulls[ATT_COUNT];
+
+    Assert(f);
 
     f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
@@ -2804,6 +2806,8 @@ static void insert_gs_stat_activity_timeout(Tuplestorestate* tupStore, TupleDesc
     int i = 0;
     const int ACTIVITY_TIMEOUT_ATTRS = 9;
     TimestampTz currentTime = GetCurrentTimestamp();
+
+    Assert(f);
     f->fres = StatFetchRes::SF_CONTINUE;
 
     char* dbname = get_database_name(beentry->st_databaseid);
@@ -2930,6 +2934,7 @@ static void insert_pg_stat_get_activity_ng(Tuplestorestate *tupStore, TupleDesc 
     bool nulls[ATT_NUM];
     errno_t rc = 0;
 
+    Assert(f);
     if (f->hasTid && (f->threadId != beentry->st_procpid)) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
@@ -3658,6 +3663,8 @@ static void insert_pg_stat_get_status(Tuplestorestate *tupStore, TupleDesc tupDe
 {
     const int ATT_NUM = 16;
     errno_t rc = 0;
+
+    Assert(f);
     if (f->hasTid && (f->threadId != beentry->st_procpid)) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
@@ -4099,6 +4106,7 @@ static void insert_pg_stat_get_thread(Tuplestorestate *tupStore, TupleDesc tupDe
     Datum values[ATT_NUM];
     bool nulls[ATT_NUM];
 
+    Assert(f);
     f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
@@ -4615,16 +4623,13 @@ static void insert_pg_stat_pg_progress_info(Tuplestorestate *tupStore, TupleDesc
 {
     errno_t rc = 0;
     int i;
-    PgStatProgressInfo* info = NULL;
-    Datum   values[PG_STAT_GET_PROGRESS_COLS] = {0};
-    bool    nulls[PG_STAT_GET_PROGRESS_COLS] = {0};
+    Datum   values[PG_STAT_GET_PROGRESS_COLS] = { 0 };
+    bool    nulls[PG_STAT_GET_PROGRESS_COLS] = { 0 };
 
-    info = beentry->pg_stat_progress_info;
+    Assert(f != NULL && beentry != NULL && (beentry->st_procpid > 0 || beentry->st_sessionid > 0));
     f->fres = StatFetchRes::SF_CONTINUE;
 
-    Assert(beentry != NULL && (beentry->st_procpid > 0 || beentry->st_sessionid > 0));
-
-    if (!info || info->stProgressCommand != f->cmdType) {
+    if (beentry->stProgressCommand != f->cmdType) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
     }
@@ -4640,9 +4645,9 @@ static void insert_pg_stat_pg_progress_info(Tuplestorestate *tupStore, TupleDesc
 
     /* Values only available to same user or superuser */
     if (superuser() || isMonitoradmin(GetUserId()) || beentry->st_userid == GetUserId()) {
-        values[ARR_2] = ObjectIdGetDatum(info->stProgressCommandTarget);
+        values[ARR_2] = ObjectIdGetDatum(beentry->stProgressCommandTarget);
         for (i = 0; i < PGSTAT_NUM_PROGRESS_PARAM; i++) {
-            values[i + 3] = Int64GetDatum(info->stProgressParam[i]);
+            values[i + 3] = Int64GetDatum(beentry->stProgressParam[i]);
         }
     } else {
         /* No permissions to view data about this session */
@@ -5839,6 +5844,7 @@ static void insert_pg_stat_get_session_wlmstat(Tuplestorestate *tupStore, TupleD
     bool nulls[SESSION_WLMSTAT_NUM];
     errno_t rc = 0;
 
+    Assert(f);
     if (f->hasTid && (f->threadId != beentry->st_procpid)) {
         f->fres = StatFetchRes::SF_SKIP;
         return;
@@ -5998,6 +6004,7 @@ static void insert_pg_stat_get_session_respool(Tuplestorestate *tupStore, TupleD
     int i = -1;
     errno_t rc = 0;
 
+    Assert(f);
     f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
     securec_check(rc, "\0", "\0");
@@ -11527,6 +11534,8 @@ static void insert_comm_client_info(Tuplestorestate *tupStore, TupleDesc tupDesc
     bool nulls[CLIENT_INFO_TUPLE_NATTS];
     char waitStatus[WAITSTATELEN];
     errno_t rc = 0;
+
+    Assert(f);
 
     f->fres = StatFetchRes::SF_CONTINUE;
     rc = memset_s(values, sizeof(values), 0, sizeof(values));
