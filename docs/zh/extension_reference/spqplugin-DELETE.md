@@ -44,4 +44,4 @@ openGauss=# drop table t1;
 
 ## 相关链接
 
-[DELETE](../sql_reference/delete.md)
+[DELETE](https://docs.opengauss.org/zh/docs/latest/sql_reference/delete.html)

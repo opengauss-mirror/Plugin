@@ -145,7 +145,7 @@ SELECT [/*+ plan_hint */] [ ALL | DISTINCT [ ON ( expression [, ...] ) ] ]
 
 > [!NOTE]说明
 > 
-> 涉及的其它参数说明可见[SELECT](../sql_reference/select.md)。
+> 涉及的其它参数说明可见[SELECT](https://docs.opengauss.org/zh/docs/latest/sql_reference/select.html)。
 
 ## 示例<a name="zh-cn_topic_0283136463_zh-cn_topic_0237122184_zh-cn_topic_0059777449_sc1b5e63c90c946b89430696c38fc86c0"></a>
 
@@ -664,4 +664,4 @@ RESET
 
 ## 相关链接<a name="section156744489391"></a>
 
-[SELECT](../sql_reference/select.md)
+[SELECT](https://docs.opengauss.org/zh/docs/latest/sql_reference/select.html)

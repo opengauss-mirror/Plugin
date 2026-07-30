@@ -38,4 +38,4 @@ rename user
 
 ## Helpful Links <a name="en-us_topic_0283136462_en-us_topic_0237122152_en-us_topic_0059778107_s08580f38742d47efa6a955c9385d6ae2"> </a>
 
-[ALTER USER](../sql_reference/alter_user.html)
+[ALTER USER](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_user.html)

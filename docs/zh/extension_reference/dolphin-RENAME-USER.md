@@ -38,4 +38,4 @@ rename user
 
 ## 相关链接<a name="zh-cn_topic_0283136462_zh-cn_topic_0237122152_zh-cn_topic_0059778107_s08580f38742d47efa6a955c9385d6ae2"> </a>
 
-[ALTER USER](../sql_reference/alter_user.md)
+[ALTER USER](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_user.html)

@@ -48,4 +48,4 @@ openGauss=# drop table t2;
 
 ## 相关链接
 
-[SELECT](../sql_reference/select.md)
+[SELECT](https://docs.opengauss.org/zh/docs/latest/sql_reference/select.html)

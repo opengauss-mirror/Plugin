@@ -1347,4 +1347,4 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
 
 ## 相关链接<a name="zh-cn_topic_0283136653_zh-cn_topic_0237122119_zh-cn_topic_0059777586_s4e5ff679edd643b5a6cd6679fd1055a1"></a>
 
-[ALTER TABLE PARTITION](../sql_reference/alter_table_partition.md)，[DROP TABLE](../sql_reference/drop_table.md)
+[ALTER TABLE PARTITION](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/alter_table_partition.html)，[DROP TABLE](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/drop_table.html)

@@ -52,7 +52,7 @@
 
         - **database**  （默认为空）
 
-            无实际意义，仅做语法兼容。指定MySQL Server/MariaDB连接的数据库请在[CREATE FOREIGN TABLE](../sql_reference/create_foreign_table.md)或[ALTER FOREIGN TABLE](../sql_reference/alter_foreign_table.md)中完成。
+            无实际意义，仅做语法兼容。指定MySQL Server/MariaDB连接的数据库请在[CREATE FOREIGN TABLE](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_foreign_table.html)或[ALTER FOREIGN TABLE](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_foreign_table.html)中完成。
 
         - **owner**  （默认为空）
 
@@ -80,4 +80,4 @@ ALTER SERVER
 
 ## 相关链接<a name="zh-cn_topic_0283136932_section13898752175613"></a>
 
-[CREATE SERVER](dolphin-CREATE-SERVER.md)，[DROP SERVER](../sql_reference/drop_server.md)
+[CREATE SERVER](dolphin-CREATE-SERVER.md)，[DROP SERVER](https://docs.opengauss.org/zh/docs/latest/sql_reference/drop_server.html)

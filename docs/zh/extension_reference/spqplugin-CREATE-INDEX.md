@@ -72,4 +72,4 @@ openGauss=# drop table t1;
 
 ## 相关链接
 
-[CREATE INDEX](../sql_reference/create_index.md)
+[CREATE INDEX](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_index.html)

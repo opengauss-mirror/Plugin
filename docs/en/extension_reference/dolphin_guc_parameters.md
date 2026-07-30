@@ -52,7 +52,7 @@ Parameter description: The parameter value is a character string separated by co
 
 7. no\_auto\_value\_on\_zero: affects handling of AUTO_INCREMENT columns. Normally, you generate the next sequence number for the column by inserting either NULL or 0 into it. NO_AUTO_VALUE_ON_ZERO suppresses this behavior for 0 so that only NULL generates the next sequence number.
 
-This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](../database_administration_guide/reset_parameters.md).
+This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html).
 
 **Value range**: a string
 
@@ -92,7 +92,7 @@ openGauss=# DROP TABLE test1;
 
 **Parameter description:** The parameter value is a floating point number. This parameter affects the curdate, current_time, curtime, current_timestamp, localtime, localtimestamp, and now functions in Dolphin. If this parameter is set to **0**, the preceding functions return the current date or time. If the parameter value is within the range [1,2147483647], the preceding functions use the value of this parameter as the second offset and return the date or time corresponding to 1970-01-01 00:00:00 UTC + Second offset + Current time zone offset. If the value of this parameter is not in the preceding valid range, an error is reported.
 
-This parameter is a USERSET parameter. Set it based on instructions provided in [Table 1](../database_administration_guide/reset_parameters.md).
+This parameter is a USERSET parameter. Set it based on instructions provided in [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html).
 
 **Value range:** [1.0, 2147483647.0]
 
@@ -126,7 +126,7 @@ openGauss=# select now();
 
 **Parameter description:** The parameter value is an integer. This parameter affects the week function in the Dolphin plug-in. The value range of this parameter is [0,7], which corresponds to eight calculation policies. For details about these policies, see [Time and Date Functions](dolphin_date_and_time_processing_functions_and_operators.md). If the value of this GUC parameter exceeds the corresponding boundary value, a warning is reported and the GUC parameter is set to the corresponding boundary value.
 
-This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](../database_administration_guide/reset_parameters.md).
+This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html).
 
 **Value range:** [0, 7]
 
@@ -161,7 +161,7 @@ week
 
 **Parameter description:** Specifies the language in which the dayname and monthname functions of the dolphin plug-in output results. The parameter value is a character string. There are 111 values for this parameter. If the value of a parameter is not within the valid value range, an error is reported.
 
-This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](../database_administration_guide/reset_parameters.md).
+This parameter is a SIGHUP parameter. Set it based on instructions provided in [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html).
 
 **Value range**:
 The options of lc\_time\_names are as follows:
@@ -305,7 +305,7 @@ Saturday
 
 **Parameter description**: Specifies the default database name used by dolphin protocol plugin.
 
-This parameter is a SIGHUP parameter. Set it based on instructions provided in  [Table 1](../database_administration_guide/reset_parameters.md#en-us_topic_0283137176_en-us_topic_0237121562_en-us_topic_0059777490_t91a6f212010f4503b24d7943aed6d846).
+This parameter is a SIGHUP parameter. Set it based on instructions provided in  [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html#en-us_topic_0283137176_en-us_topic_0237121562_en-us_topic_0059777490_t91a6f212010f4503b24d7943aed6d846).
 
 **Value range:**  a string
 
@@ -335,7 +335,7 @@ Other affected parameters:
 
 1. [?](dolphin-prepare.md#en-us_topic_0283137542_en-us_topic_0237122167_en-us_topic_0059778902_sdd2da7fe44624eb99ee77013ff96c6bd)
 
-This parameter is a USERSET parameter. Set it based on instructions provided in [Table 1](../database_administration_guide/reset_parameters.md).
+This parameter is a USERSET parameter. Set it based on instructions provided in [Table 1](https://docs.opengauss.org/en/docs/latest/database_administration_guide/reset_parameters.html).
 
 **Value range**: Boolean
 

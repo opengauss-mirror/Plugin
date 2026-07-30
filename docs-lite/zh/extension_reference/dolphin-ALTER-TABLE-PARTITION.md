@@ -133,7 +133,7 @@
        >
        >- 不指定切割点的方式，partition\_start\_end\_item指定的第一个新分区的起始点（如果存在的话）必须等于正在被切割的分区的前一个分区（如果存在的话）的分区键，partition\_start\_end\_item指定的最后一个分区的终止点（如果存在的话）必须等于正在被切割的分区的分区键。
        >
-       >- partition\_less\_than\_item支持的分区键个数最多为4，而partition\_start\_end\_item仅支持1个分区键，其支持的数据类型参见[PARTITION BY RANGE\(parti...](../sql_reference/create_table_partition.md#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
+       >- partition\_less\_than\_item支持的分区键个数最多为4，而partition\_start\_end\_item仅支持1个分区键，其支持的数据类型参见[PARTITION BY RANGE\(parti...](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_table_partition.html#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
        >
        >- 在同一语句中partition\_less\_than\_item和partition\_start\_end\_item两者不可同时使用；不同split语句之间没有限制。
 
@@ -144,7 +144,7 @@
             [ TABLESPACE tablespacename ]
         ```
 
-- 分区项partition\_start\_end\_item的语法为，其约束参见[START END语法描述](../sql_reference/create_table_partition.md#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
+- 分区项partition\_start\_end\_item的语法为，其约束参见[START END语法描述](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_table_partition.html#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
 
         ```
         PARTITION partition_name {
@@ -173,7 +173,7 @@
     ```
 
     >[!TIP]须知
-    >- partition\_list\_item仅支持的1个分区键，其支持的数据类型参见[PARTITION BY LIST\(partit...](../sql_reference/create_table_partition.md#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
+    >- partition\_list\_item仅支持的1个分区键，其支持的数据类型参见[PARTITION BY LIST\(partit...](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_table_partition.html#zh-cn_topic_0283136653_zh-cn_topic_0237122119_section1163224811518)。
     >
     >- 间隔/哈希分区表不支持添加分区。
 
@@ -383,4 +383,4 @@
 
 ## 相关链接<a name="zh-cn_topic_0283137443_zh-cn_topic_0237122077_zh-cn_topic_0059778761_s267aeb502b5546f69f580c79c0a728df"></a>
 
-[CREATE TABLE PARTITION](dolphin-CREATE-TABLE-PARTITION.md)，[DROP TABLE](../sql_reference/drop_table.md)
+[CREATE TABLE PARTITION](dolphin-CREATE-TABLE-PARTITION.md)，[DROP TABLE](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/drop_table.html)

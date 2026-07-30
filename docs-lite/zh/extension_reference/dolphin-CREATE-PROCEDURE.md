@@ -136,4 +136,4 @@ CALL
 
 ## 相关链接<a name="zh-cn_topic_0283136646_zh-cn_topic_0237122110_zh-cn_topic_0059778640_sfe39b39f278f4933914a438f40c63954"></a>
 
-[CREATE PROCEDURE](../sql_reference/create_procedure.md)
+[CREATE PROCEDURE](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_procedure.html)

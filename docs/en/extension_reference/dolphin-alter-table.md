@@ -113,7 +113,7 @@ Modifies tables, including modifying table definitions, renaming tables, renamin
 
 >[!NOTE]NOTE
 >
->For details about the involved parameters, see [ALTER TABLE](../sql_reference/alter_table.md).
+>For details about the involved parameters, see [ALTER TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_table.html).
 
 ## Examples<a name="en-us_topic_0283137126_en-us_topic_0237122076_en-us_topic_0059779051_se4f9dc97861c410bb51554bb58bcd76d"></a>
 
@@ -172,4 +172,4 @@ openGauss=# DROP TABLE alter_table_tbl1, alter_table_tbl2;
 
 ## Helpful Links<a name="section156744489391"></a>
 
-[ALTER TABLE](../sql_reference/alter_table.md)
+[ALTER TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_table.html)

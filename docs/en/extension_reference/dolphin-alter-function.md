@@ -91,4 +91,4 @@ Compared with the original openGauss, Dolphin modifies the ALTER FUNCTION syntax
 
 ## Helpful Links<a name="en-us_topic_0283136989_en-us_topic_0237122061_en-us_topic_0059778614_sacb869eb702a48fdbb64acb219ced069"></a>
 
-[ALTER FUNCTION](../sql_reference/alter_function.md)
+[ALTER FUNCTION](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_function.html)

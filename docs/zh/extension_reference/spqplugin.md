@@ -7,7 +7,7 @@ SPQ基于的是sharedEverything分布式架构，所有节点都共享集群内�
 
 ## 限制
 
-- 暂时仅支持[shared_preload_libraries](../database_reference/kernel_resource_usage.md)方式加载插件。如通过[CREATE Extension](../sql_reference/create_extension.md)方式加载，将无法删除插件。
+- 暂时仅支持[shared_preload_libraries](https://docs.opengauss.org/zh/docs/latest/database_reference/kernel_resource_usage.html)方式加载插件。如通过[CREATE Extension](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_extension.html)方式加载，将无法删除插件。
 - 插件依赖xerces-c 3.0及以上版本
 - 磁盘预留空间不够时，会导致执行语句失败。
 

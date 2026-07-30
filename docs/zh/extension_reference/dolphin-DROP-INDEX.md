@@ -49,8 +49,8 @@ DROP INDEX [ CONCURRENTLY ] [ IF EXISTS ]
 
 ## 示例<a name="zh-cn_topic_0283136794_zh-cn_topic_0237122140_zh-cn_topic_0059779018_s95dd4a9a45334e81be4841d86d7a47f1"></a>
 
-请参见CREATE INDEX的[示例](../sql_reference/create_index.md#zh-cn_topic_0283136578_zh-cn_topic_0237122106_zh-cn_topic_0059777455_s985289833081489e9d77c485755bd362)。
+请参见CREATE INDEX的[示例](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_index.html#zh-cn_topic_0283136578_zh-cn_topic_0237122106_zh-cn_topic_0059777455_s985289833081489e9d77c485755bd362)。
 
 ## 相关链接<a name="zh-cn_topic_0283136794_zh-cn_topic_0237122140_zh-cn_topic_0059779018_s299c55b981d1489986df6a6cf27b73d1"></a>
 
-[ALTER INDEX](../sql_reference/alter_index.md)，[CREATE INDEX](../sql_reference/create_index.md)
+[ALTER INDEX](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_index.html)，[CREATE INDEX](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_index.html)

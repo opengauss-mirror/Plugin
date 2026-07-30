@@ -1293,4 +1293,4 @@ Where create\_option is:
 
 ## Helpful Links<a name="en-us_topic_0283136653_en-us_topic_0237122119_en-us_topic_0059777586_s4e5ff679edd643b5a6cd6679fd1055a1"></a>
 
-[ALTER TABLE PARTITION](../sql_reference/alter_table_partition.md), [DROP TABLE](../sql_reference/drop_table.md)
+[ALTER TABLE PARTITION](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_table_partition.html), [DROP TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/drop_table.html)
