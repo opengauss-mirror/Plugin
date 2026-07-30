@@ -29,9 +29,14 @@
 #include "miscadmin.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#else
+#ifdef __aarch64__
+#include <arm_neon.h>
+#endif
 #endif
 
-static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
+template <bool doltrim, bool dortrim, bool single_blank>
+static text* dotrim(const char* string, int stringlen, const char* set, int setlen, int* res_len);
 #ifdef DOLPHIN
 extern char* bit_to_str(VarBit *bits, bool is_escape_zero = false);
 
@@ -620,12 +625,19 @@ Datum btrim(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
+    int res_len;
 
     FUNC_CHECK_HUGE_POINTER(false, string, "btrim()");
 
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, true);
+    ret = dotrim<true, true, false>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),
+        VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), &res_len);
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
@@ -641,21 +653,53 @@ Datum btrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    int res_len;
 
     FUNC_CHECK_HUGE_POINTER(false, string, "btrim1()");
 
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, true);
+    ret = dotrim<true, true, true>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, &res_len);
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
 }
 
+#ifndef DOLPHIN
+/* check if a UTF-8 string is all ASCII characters */
+static bool inline utf8_string_is_ascii(const char* string, int stringlen)
+{
+    int cur_pos = 0;
+#ifdef __aarch64__
+    const int arm_neon_load_byte = 8;
+    for (; stringlen - cur_pos > arm_neon_load_byte; cur_pos += arm_neon_load_byte) {
+        /* load 8 char values into vector uint8x8_t */
+        uint8x8_t vec_arg1 = vld1_u8((const unsigned char *)&string[cur_pos]);
+        /* return false if there are char bigger than 0x80 */
+        if (vmaxv_u8(vec_arg1) >= 0x80) {
+            return false;
+        }
+    }
+#endif
+    for (; stringlen - cur_pos > 0; cur_pos++) {
+        if (string[cur_pos] >= 0x80) {
+            return false;
+        }
+    }
+    return true;
+}
+#endif
+
 /*
  * Common implementation for btrim, ltrim, rtrim
  */
-static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim)
+template <bool doltrim, bool dortrim, bool single_blank>
+static text* dotrim(const char* string, int stringlen, const char* set, int setlen, int* res_len)
 {
 #ifdef DOLPHIN    
     /* Nothing to do if either string or set is empty */
@@ -675,13 +719,18 @@ static text* dotrim(const char* string, int stringlen, const char* set, int setl
             }
         }
     }
+    *res_len = stringlen;
     return cstring_to_text_with_len(string, stringlen);
 #else
     int i;
+    bool db_is_utf8 = GetDatabaseEncoding() == PG_UTF8;
+    bool string_is_ascii = db_is_utf8 && utf8_string_is_ascii(string, stringlen);
+    bool set_is_ascii = db_is_utf8 && utf8_string_is_ascii(set, setlen);
 
     /* Nothing to do if either string or set is empty */
     if (stringlen > 0 && setlen > 0) {
-        if (pg_database_encoding_max_length() > 1) {
+        /* If either string or set is not all ASCII string, we need to handle it as multi-byte string */
+        if ((!string_is_ascii || !set_is_ascii) && pg_database_encoding_max_length() > 1) {
             /*
              * In the multibyte-encoding case, build arrays of pointers to
              * character starts, so that we can avoid inefficient checks in
@@ -771,37 +820,54 @@ static text* dotrim(const char* string, int stringlen, const char* set, int setl
              * In the single-byte-encoding case, we don't need such overhead.
              */
             if (doltrim) {
-                while (stringlen > 0) {
-                    char str_ch = *string;
-
-                    for (i = 0; i < setlen; i++) {
-                        if (str_ch == set[i])
-                            break;
+                if (single_blank) {
+                    while (*string && *string == ' ') {
+                        string++;
+                        stringlen--;
                     }
-                    if (i >= setlen)
-                        break; /* no match here */
-                    string++;
-                    stringlen--;
+                } else {
+                    while (stringlen > 0) {
+                        char str_ch = *string;
+
+                        for (i = 0; i < setlen; i++) {
+                            if (str_ch == set[i]) {
+                                break;
+                            }
+                        }
+                        if (i >= setlen) {
+                            break; /* no match here */
+                        }
+                        string++;
+                        stringlen--;
+                    }
                 }
             }
 
             if (dortrim) {
-                while (stringlen > 0) {
-                    char str_ch = string[stringlen - 1];
-
-                    for (i = 0; i < setlen; i++) {
-                        if (str_ch == set[i])
-                            break;
+                if (single_blank) {
+                    while (stringlen > 0 && string[stringlen - 1] == ' ') {
+                        stringlen--;
                     }
-                    if (i >= setlen)
-                        break; /* no match here */
-                    stringlen--;
+                } else {
+                    while (stringlen > 0) {
+                        char str_ch = string[stringlen - 1];
+
+                        for (i = 0; i < setlen; i++) {
+                            if (str_ch == set[i]) {
+                                break;
+                            }
+                        }
+                        if (i >= setlen) {
+                            break; /* no match here */
+                        }
+                        stringlen--;
+                    }
                 }
             }
         }
     }
 
-    /* Return selected portion of string */
+    *res_len = stringlen;
     return cstring_to_text_with_len(string, stringlen);
 #endif
 }
@@ -954,12 +1020,19 @@ Datum ltrim(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
+    int res_len;
 
     FUNC_CHECK_HUGE_POINTER(false, string, "ltrim()");
 
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, false);
+    ret = dotrim<true, false, false>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),
+        VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), &res_len);
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
@@ -975,11 +1048,17 @@ Datum ltrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    int res_len;
     FUNC_CHECK_HUGE_POINTER(false, string, "ltrim1()");
 
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, false);
+    ret = dotrim<true, false, true>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, &res_len);
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
@@ -1005,11 +1084,18 @@ Datum rtrim(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
+    int res_len;
     FUNC_CHECK_HUGE_POINTER(false, string, "rtrim()");
 
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), false, true);
+    ret = dotrim<false, true, false>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),
+        VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), &res_len);
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
@@ -1025,6 +1111,7 @@ Datum rtrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    int res_len = 0;
     FUNC_CHECK_HUGE_POINTER(false, string, "rtrim1");
 
     if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT
@@ -1035,10 +1122,15 @@ Datum rtrim1(PG_FUNCTION_ARGS)
          */
         PG_RETURN_TEXT_P(string);
     } else {
-        ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, false, true);
+        ret = dotrim<false, true, true>(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, &res_len);
     }
 
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#ifdef DOLPHIN
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+#else
+    if (res_len == 0 && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT &&
+        !ACCEPT_EMPTY_STR)
+#endif
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(ret);
