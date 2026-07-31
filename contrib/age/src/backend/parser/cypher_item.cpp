@@ -158,14 +158,12 @@ static List *ExpandAllTables(ParseState *pstate, int location)
     foreach(l, pstate->p_varnamespace) {
         ParseNamespaceItem *nsitem = (ParseNamespaceItem *) lfirst(l);
         RangeTblEntry *rte = nsitem->p_rte;
-        int rtindex = RTERangeTablePosn(pstate, rte, NULL);
-
         /* Should not have any lateral-only items when parsing targetlist */
         Assert(!nsitem->p_lateral_only);
 
+        int rtindex = RTERangeTablePosn(pstate, rte, NULL);
         target = list_concat(target, expand_rel_attrs(pstate, rte, rtindex, 0, location));
     }
-
     return target;
 }
 

@@ -719,6 +719,13 @@ Node* colNameToVar(ParseState* pstate, char* colname, bool localonly, int locati
             if (nsitem->p_lateral_only && !pstate->p_lateral_active)
                 continue;
 
+#ifdef DOLPHIN
+            /* dummy table has no columns */
+            if (rte->dummyTable) {
+                continue;
+            }
+#endif
+
             /* use orig_pstate here to get the right sublevels_up */
             newresult = scanRTEForColumn(orig_pstate, rte, colname, location, true);
 
