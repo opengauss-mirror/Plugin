@@ -220,4 +220,4 @@ openGauss=# DROP TABLE value_test;
 
 ## 相关链接<a name="section156744489391"></a>
 
-[INSERT](../sql_reference/INSERT.md)
+[INSERT](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/INSERT.html)

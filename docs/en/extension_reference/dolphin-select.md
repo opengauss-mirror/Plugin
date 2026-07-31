@@ -91,7 +91,7 @@ SELECT [/*+ plan_hint */] [ ALL | DISTINCT [ ON ( expression [, ...] ) ] ]
 
 > [!NOTE]NOTE
 > 
-> For details about other parameters, see [SELECT](../sql_reference/select.md).
+> For details about other parameters, see [SELECT](https://docs.opengauss.org/en/docs/latest/sql_reference/select.html).
 
 ## Examples<a name="en-us_topic_0283136463_en-us_topic_0237122184_en-us_topic_0059777449_sc1b5e63c90c946b89430696c38fc86c0"></a>
 
@@ -204,4 +204,4 @@ openGauss=# select a.* from multi_partition_select_test partition (test_part1, t
 
 ## Helpful Links<a name="section156744489391"></a>
 
-[SELECT](../sql_reference/select.md)
+[SELECT](https://docs.opengauss.org/en/docs/latest/sql_reference/select.html)

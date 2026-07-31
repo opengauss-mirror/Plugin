@@ -284,7 +284,7 @@ ADD [ COLUMN ] column_name data_type [ CHARACTER SET | CHARSET [ = ] charset ] [
 
 >[!NOTE]说明
 >
->涉及的参数说明可见[ALTER TABLE](../sql_reference/alter_table.md)。
+>涉及的参数说明可见[ALTER TABLE](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_table.html)。
 
 ## 示例<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_se4f9dc97861c410bb51554bb58bcd76d"></a>
 
@@ -363,4 +363,4 @@ gin, for table "fulltext_test.test"
 
 ## 相关链接<a name="section156744489391"></a>
 
-[ALTER TABLE](../sql_reference/alter_table.md)
+[ALTER TABLE](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_table.html)

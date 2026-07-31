@@ -91,4 +91,4 @@
 
 ## 相关链接<a name="zh-cn_topic_0283136989_zh-cn_topic_0237122061_zh-cn_topic_0059778614_sacb869eb702a48fdbb64acb219ced069"></a>
 
-[ALTER FUNCTION](../sql_reference/alter_function.md)
+[ALTER FUNCTION](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_function.html)

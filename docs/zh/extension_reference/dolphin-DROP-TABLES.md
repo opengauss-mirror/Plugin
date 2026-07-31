@@ -39,7 +39,7 @@ DROP TABLES [ IF EXISTS ]
 
     该参数表示即使开启回收站功能，DROP表时，也会直接物理删除表，而不是将其放入回收站中。
 
->涉及的参数表现与[DROP TABLE]相同(../sql_reference/drop_table.md)。
+>涉及的参数表现与[DROP TABLE]相同(https://docs.opengauss.org/zh/docs/latest/sql_reference/drop_table.html)。
 
 ## 示例<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_se4f9dc97861c410bb51554bb58bcd76d"></a>
 
@@ -53,4 +53,4 @@ openGauss=# DROP TABLES table_to_drop3;
 
 ## 相关链接<a name="section156744489391"></a>
 
-[DROP TABLE](../sql_reference/drop_table.md)
+[DROP TABLE](https://docs.opengauss.org/zh/docs/latest/sql_reference/drop_table.html)

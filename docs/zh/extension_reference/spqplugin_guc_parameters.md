@@ -18,7 +18,7 @@
 spqplugin.cluster_map格式：
 pgxc_node_name|ip|port
 
-- pgxc_node_name 当前计算节点名称，与guc参数[pgxc_node_name](../database_reference/opengauss_transaction.md)一致。且各个计算节点配置的节点名称应互不相同。
+- pgxc_node_name 当前计算节点名称，与guc参数[pgxc_node_name](https://docs.opengauss.org/zh/docs/latest/database_reference/opengauss_transaction.html)一致。且各个计算节点配置的节点名称应互不相同。
 - ip 当前计算节点用于libcomm通信的ip地址，建议与集群通信ip配置为不同网段，避免相互之间网络影响。
 - port 当前数据库端口。
 

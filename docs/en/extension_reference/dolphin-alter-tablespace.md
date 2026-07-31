@@ -101,7 +101,7 @@ Compared with the original openGauss, Dolphin modifies the ALTER TABLESPACE synt
     Value:
 
     - **UNLIMITED**: No limit is set for this tablespace.
-    - The value is determined by space\_size. For details about the format, see [CREATE TABLESPACE](../sql_reference/create_tablespace.md).
+    - The value is determined by space\_size. For details about the format, see [CREATE TABLESPACE](https://docs.opengauss.org/en/docs/latest/sql_reference/create_tablespace.html).
 
         >[!NOTE]NOTE
         >- If the adjusted quota is smaller than the current tablespace usage, the adjustment is successful. You need to decrease the tablespace usage to a value less than the new quota before writing data to the tablespace.

@@ -47,4 +47,4 @@ openGauss=# drop table t1;
 
 ## 相关链接
 
-[UPDATE](../sql_reference/update.md)
+[UPDATE](https://docs.opengauss.org/zh/docs/latest/sql_reference/update.html)

@@ -11,7 +11,7 @@ ANALYZE VERIFY用于检测数据库中普通表（行存表、列存表）的数
 ## 注意事项<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_s8ea536d5b8ff459e9e3614e35f53bc2a"></a>
 
 [!NOTE]说明
-注意事项可见[ANALYZE](../sql_reference/analyze_analyse.md)。
+注意事项可见[ANALYZE](https://docs.opengauss.org/zh/docs/latest/sql_reference/analyze_analyse.html)。
 
 ## 语法格式<a name="zh-cn_topic_0283136969_zh-cn_topic_0237122086_zh-cn_topic_0059779340_sd95698dc205444ad9f4bbe049cc5d488"></a>
 
@@ -28,7 +28,7 @@ ANALYZE VERIFY用于检测数据库中普通表（行存表、列存表）的数
     仅作语法，无实际用途
 
 [!NOTE]说明
-涉及的参数可见[ANALYZE](../sql_reference/analyze_analyse.md)。
+涉及的参数可见[ANALYZE](https://docs.opengauss.org/zh/docs/latest/sql_reference/analyze_analyse.html)。
 
 ## 示例<a name="zh-cn_topic_0283136969_zh-cn_topic_0237122086_zh-cn_topic_0059779340_s70741e0e8d4843c29a3d2916af35ad25"></a>
 
@@ -85,4 +85,4 @@ openGauss=# DROP TABLE customer_par;
 
 ## 相关链接<a name="section156744489391"></a>
 
-[ANALYZE](../sql_reference/analyze_analyse.md)
+[ANALYZE](https://docs.opengauss.org/zh/docs/latest/sql_reference/analyze_analyse.html)

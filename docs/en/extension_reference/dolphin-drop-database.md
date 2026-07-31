@@ -34,8 +34,8 @@ DROP DATABASE [ IF EXISTS ] database_name ;
 
 ## Examples<a name="en-us_topic_0283137424_en-us_topic_0237122133_en-us_topic_0059778607_sabd40dc25b604e1b8c213e7e9f6b5200"></a>
 
-See [Examples](../sql_reference/create_database.md#en-us_topic_0283137050_en-us_topic_0237122099_en-us_topic_0059778277_s6be7b8abbb4b4aceb9dae686434d672c) in **CREATE DATABASE**.
+See [Examples](https://docs.opengauss.org/en/docs/latest/sql_reference/create_database.html#en-us_topic_0283137050_en-us_topic_0237122099_en-us_topic_0059778277_s6be7b8abbb4b4aceb9dae686434d672c) in **CREATE DATABASE**.
 
 ## Helpful Links<a name="en-us_topic_0283137424_en-us_topic_0237122133_en-us_topic_0059778607_s5f331542a3f84ab58b896c25bfff41db"></a>
 
-[CREATE DATABASE](../sql_reference/create_database.md),  [DROP DATABASE](dolphin-drop-database.md)
+[CREATE DATABASE](https://docs.opengauss.org/en/docs/latest/sql_reference/create_database.html),  [DROP DATABASE](https://docs.opengauss.org/en/docs/latest/extension_reference/dolphin-drop-database.html)

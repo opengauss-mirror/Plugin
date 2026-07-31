@@ -186,4 +186,4 @@ openGauss=# select func10(9);
 
 ## 相关链接<a name="zh-cn_topic_0283136560_zh-cn_topic_0237122104_zh-cn_topic_0059778837_sfbe47252e2d24b638c428f7160f181ec"></a>
 
-[CREATE FUNCTION](../sql_reference/create_function.md)
+[CREATE FUNCTION](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_function.html)

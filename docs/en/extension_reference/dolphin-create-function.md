@@ -139,4 +139,4 @@ SQL SECURITY INVOKER  READS SQL DATA LANGUAGE SQL AS $$ select s; $$ ;
 
 ## Helpful Links<a name="en-us_topic_0283136560_en-us_topic_0237122104_en-us_topic_0059778837_sfbe47252e2d24b638c428f7160f181ec"></a>
 
-[CREATE FUNCTION](../sql_reference/create_function.md)
+[CREATE FUNCTION](https://docs.opengauss.org/en/docs/latest/sql_reference/create_function.html)

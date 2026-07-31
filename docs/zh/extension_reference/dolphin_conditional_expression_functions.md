@@ -2,7 +2,7 @@
 
 ## 注意事项<a name="zh-cn_topic_0283137529_zh-cn_topic_0237122159_zh-cn_topic_0059777895_s115556a9029e407ca47ff01fea8de0cb"></a>
 
-- 本章节仅包含dolphin新增的条件表达式函数，原openGauss的条件表达式函数请参考[条件表达式函数](../sql_reference/conditional_expression_functions.md)
+- 本章节仅包含dolphin新增的条件表达式函数，原openGauss的条件表达式函数请参考[条件表达式函数](https://docs.opengauss.org/zh/docs/latest/sql_reference/conditional_expression_functions.html)
 
 ## 条件表达式函数<a name="zh-cn_topic_0283136903_zh-cn_topic_0237121986_zh-cn_topic_0059778809_s67706c61c09047c4bca384689f7f5c08"></a>
 

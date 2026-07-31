@@ -36,7 +36,7 @@ DO expr[,expr...];
 
 - **expr**
 
-  Specifies expressions. Multiple expressions are separated by commas (,). For details, see [Expressions](../sql_reference/simple_expressions.md).
+  Specifies expressions. Multiple expressions are separated by commas (,). For details, see [Expressions](https://docs.opengauss.org/en/docs/latest/sql_reference/simple_expressions.html).
 
 ## Examples<a name="en-us_topic_0283137438_en-us_topic_0237122132_en-us_topic_0059778658_s414adb8f7846482184cbbd960d4adfcf"></a>
 

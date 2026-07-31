@@ -118,4 +118,4 @@ GRANT INDEX TO TEST_USER;
 
 ## Helpful Links<a name="section156744489391"></a>
 
-[GRANT](../sql_reference/grant.md)
+[GRANT](https://docs.opengauss.org/en/docs/latest/sql_reference/grant.html)

@@ -52,7 +52,7 @@ Adds, modifies, or deletes parameters of an existing server. You can query exist
 
         - **database** \(default value: empty\)
 
-            This option has no actual meaning and is used only for syntax compatibility. You can specify the database to be connected to MySQL Server or MariaDB by referring to [CREATE FOREIGN TABLE](../sql_reference/create_foreign_table.md) and [ALTER FOREIGN TABLE](../sql_reference/alter_foreign_table.md).
+            This option has no actual meaning and is used only for syntax compatibility. You can specify the database to be connected to MySQL Server or MariaDB by referring to [CREATE FOREIGN TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/create_foreign_table.html) and [ALTER FOREIGN TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/alter_foreign_table.html).
 
         - **owner** \(default value: empty\)
 
@@ -80,4 +80,4 @@ ALTER SERVER
 
 ## Helpful Links<a name="en-us_topic_0283136932_section13898752175613"></a>
 
-[CREATE SERVER](dolphin-create-server.md) and [DROP SERVER](../sql_reference/drop_server.md)
+[CREATE SERVER](dolphin-create-server.md) and [DROP SERVER](https://docs.opengauss.org/en/docs/latest/sql_reference/drop_server.html)

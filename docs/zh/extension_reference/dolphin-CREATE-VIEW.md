@@ -106,7 +106,7 @@ CREATE [ OR REPLACE ] [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}] [DEFINER = u
 
 如果一个可自动更新的视图包含一个WHERE条件，该条件会限制底层关系的哪些行可以被该视图上的UPDATE以及DELETE语句修改。不过，一个允许被UPDATE修改的行可能让该行不再满足WHERE条件，并且因此也不再能从视图中可见。类似的，一个INSERT命令可能插入不满足WHERE条件的行，因此从该视图中看不到这些行。CHECK OPTION可以用来阻止INSERT和UPDATE命令创建这类从视图中无法看到的行。
 
-一个更加复杂的、不满足上述条件的视图默认是只读的，系统不允许在该视图上执行INSERT、UPDATE和DELETE语句。可以通过在该视图上创建一个INSTEAD OF触发器来获得可更新视图的效果，该触发器必须把该视图上尝试的插入转换成其他表上合法的动作，更多信息请见[CREATE TRIGGER](../sql_reference/create_trigger.md)。另一种方式是创建规则（见[CREATE RULE](../sql_reference/create_rule.md)）。
+一个更加复杂的、不满足上述条件的视图默认是只读的，系统不允许在该视图上执行INSERT、UPDATE和DELETE语句。可以通过在该视图上创建一个INSTEAD OF触发器来获得可更新视图的效果，该触发器必须把该视图上尝试的插入转换成其他表上合法的动作，更多信息请见[CREATE TRIGGER](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_trigger.html)。另一种方式是创建规则（见[CREATE RULE](https://docs.opengauss.org/zh/docs/latest/sql_reference/create_rule.html)）。
 
 注意在视图上执行插入、更新或删除的用户必须具有该视图上相应的插入、更新或删除特权。此外，视图的所有者必须拥有底层关系上对应的权限，但执行的用户并不需要底层关系上的任何权限。
 
@@ -126,4 +126,4 @@ openGauss=# DROP VIEW myView;
 
 ## 相关链接<a name="zh-cn_topic_0283137480_zh-cn_topic_0237122126_zh-cn_topic_0059779377_sfc32bec2a548470ebab19d6ca7d6abe2"></a>
 
-[ALTER VIEW](../sql_reference/alter_view.md)，[DROP VIEW](../sql_reference/drop_view.md)
+[ALTER VIEW](https://docs.opengauss.org/zh/docs/latest/sql_reference/alter_view.html)，[DROP VIEW](https://docs.opengauss.org/zh/docs/latest/sql_reference/drop_view.html)

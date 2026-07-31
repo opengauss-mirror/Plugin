@@ -52,4 +52,4 @@ openGauss=# drop table t2;
 
 ## 相关链接
 
-[INSERT](../sql_reference/insert.md)
+[INSERT](https://docs.opengauss.org/zh/docs/latest/sql_reference/insert.html)
