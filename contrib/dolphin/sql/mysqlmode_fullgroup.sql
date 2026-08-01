@@ -21,6 +21,12 @@ insert into t1 values(1,10);
 --can't use index scan
 explain(costs off) select a, max(b) from t1;
 select a, max(b) from t1;
+--can't use min/max optimize for an ungrouped order by column in a subquery
+set enable_seqscan = off;
+select count(*) from (select max(b) from t1 order by a) as s;
+--can't use min/max optimize for an ungrouped output column in a subquery
+select count(a) from (select a, max(b) from t1) as s;
+reset enable_seqscan;
 --use index scan
 explain(costs off) select max(b) from t1;
 select max(b) from t1;
