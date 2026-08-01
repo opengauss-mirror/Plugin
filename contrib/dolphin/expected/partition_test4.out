@@ -971,6 +971,19 @@ select pg_get_tabledef('b_range_at1');
  ENABLE ROW MOVEMENT;
 (1 row)
 
+-- test replaying a dumped partition expression with an implicit cast
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length';
+create table test_todays_dump(
+"CAP_DAY" date
+)
+partition by range (to_days(("CAP_DAY")::timestamp without time zone))
+(
+partition p202210 values less than (738825),
+partition p202211 values less than (738855)
+)
+enable row movement;
+drop table test_todays_dump;
+reset dolphin.sql_mode;
 --test some error cases
 create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
 with (segment=on)
