@@ -3186,6 +3186,7 @@ typedef struct ColVersionMap {
 static ColVersionMap col_version_maps[] = {
     /* pg_attribute */
     {AttributeRelationId, Anum_pg_attribute_attdroppedname, FLUSH_LSN_FUN_VERSION_NUM},
+    {AttributeRelationId, Anum_pg_attribute_attidentity, PG_IDENTITY_VERSION_NUM},
 
     /* pg_index */
     {IndexRelationId, Anum_pg_index_indisvisible, SRF_FUSION_VERSION_NUM},
@@ -3498,7 +3499,7 @@ void get_rte_attribute_type(RangeTblEntry* rte, AttrNumber attnum, Oid* vartype,
             *vartype = att_tup->atttypid;
             *vartypmod = att_tup->atttypmod;
             *varcollid = att_tup->attcollation;
-            if (kvtype != NULL && att_tup->attkvtype == ATT_KV_HIDE) {
+            if (kvtype != NULL && GET_ATTR_KVTYPE(att_tup) == ATT_KV_HIDE) {
                 *kvtype = ATT_KV_HIDE;
             }
             ReleaseSysCache(tp);
@@ -3565,7 +3566,7 @@ void get_rte_attribute_type(RangeTblEntry* rte, AttrNumber attnum, Oid* vartype,
                 *vartype = att_tup->atttypid;
                 *vartypmod = att_tup->atttypmod;
                 *varcollid = att_tup->attcollation;
-                if (kvtype != NULL && att_tup->attkvtype == ATT_KV_HIDE) {
+                if (kvtype != NULL && GET_ATTR_KVTYPE(att_tup) == ATT_KV_HIDE) {
                     *kvtype = ATT_KV_HIDE;
                 }
             } else if (functypclass == TYPEFUNC_SCALAR) {
@@ -3899,7 +3900,7 @@ Oid attnumTypeId(Relation rd, int attid)
 /*
  * given attribute id, return collation of that attribute
  *
- *	This should only be used if the relation is already heap_open()'ed.
+ * This should only be used if the relation is already heap_open()'ed.
  */
 Oid attnumCollationId(Relation rd, int attid)
 {

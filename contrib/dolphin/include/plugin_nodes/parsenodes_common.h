@@ -40,6 +40,14 @@
 /* Sort ordering options for ORDER BY and CREATE INDEX */
 typedef enum RoleLockType { DO_NOTHING, LOCK_ROLE, UNLOCK_ROLE } RoleLockType;
 
+/* overriding clause type */
+typedef enum OverridingKind
+{
+    OVERRIDING_NOT_SET = 0,
+    OVERRIDING_USER_VALUE,
+    OVERRIDING_SYSTEM_VALUE
+} OverridingKind;
+
 /*
  * When a command can act on several kinds of objects with only one
  * parse structure required, use these constants to designate the
@@ -509,6 +517,7 @@ typedef struct InsertStmt {
     List *returningList;        /* list of expressions to return */
     WithClause *withClause;     /* WITH clause */
     UpsertClause *upsertClause; /* DUPLICATE KEY UPDATE clause */
+    OverridingKind override;    /* OVERRIDING clause */
     HintState *hintState;
     bool isReplace;
     List *targetList;
@@ -1004,9 +1013,11 @@ typedef enum AlterTableType {
     AT_ImcstoredWithShm,
     AT_UnImcstored,
     AT_ModifyPartitionImcstored,
-    AT_ModifyPartitionUnImcstored
+    AT_ModifyPartitionUnImcstored,
+    AT_AddIdentity, /* ADD IDENTITY */
+    AT_SetIdentity, /* SET identity column options */
+    AT_DropIdentity, /* DROP IDENTITY */
 #ifdef DOLPHIN
-    ,
     AT_DropIndex,
     AT_DropForeignKey,
     AT_RenameIndex,
@@ -1222,11 +1233,13 @@ typedef struct ColumnDef {
     bool is_not_null;          /* NOT NULL constraint specified? */
     bool is_from_type;         /* column definition came from table type */
     bool is_serial;            /* column is serial type or not */
-    bool is_identity;          /* column is identity or not */
     char storage;              /* attstorage setting, or 0 for default */
     int8 cmprs_mode;           /* compression method applied to this column */
     Node *raw_default;         /* default value (untransformed parse tree) */
     Node *cooked_default;      /* default value (transformed expr tree) */
+    char identity;             /* attidentity setting */
+    RangeVar *identitySequence;   /* to store identity sequence name for
+                                     * ALTER TABLE ... ADD COLUMN */
     CollateClause *collClause; /* untransformed COLLATE spec, if any */
     Oid collOid;               /* collation OID (InvalidOid if not set) */
     List *constraints;         /* other constraints on column */
@@ -1234,7 +1247,8 @@ typedef struct ColumnDef {
     List *columnOptions;       /* b compatiblity options */
     ClientLogicColumnRef *clientLogicColumnRef;
     Position *position;
-    Form_pg_attribute dropped_attr; /* strcuture for dropped attribute during create table like OE */
+    Form_pg_attribute droppedAttr; /* strcuture for dropped attribute during create table like OE */
+    Form_pg_attribute_extra droppedAttrExtra; /* dropped attribute */
     char generatedCol;         /* generated column setting */
     Node *update_default;
     char *initdefval;
@@ -1505,8 +1519,9 @@ typedef enum ConstrType { /* types of constraints */
     CONSTR_ATTR_DEFERRED,
     CONSTR_ATTR_IMMEDIATE,
     CONSTR_GENERATED,
+    CONSTR_GENERATED_IDENTITY, /* generated xx as identity */
     CONSTR_AUTO_INCREMENT,
-    CONSTR_IDENTITY
+    CONSTR_D_IDENTITY /* identity in D format */
 } ConstrType;
 
 typedef struct Constraint {
@@ -1574,7 +1589,7 @@ typedef struct TableLikeClause {
     bits32 options; /* OR of TableLikeOption flags */
 } TableLikeClause;
 
-#define MAX_TABLE_LIKE_OPTIONS (15)
+#define MAX_TABLE_LIKE_OPTIONS (16)
 typedef enum TableLikeOption {
     CREATE_TABLE_LIKE_DEFAULTS = 1 << 0,
     CREATE_TABLE_LIKE_CONSTRAINTS = 1 << 1,
@@ -1587,11 +1602,12 @@ typedef enum TableLikeOption {
     CREATE_TABLE_LIKE_OIDS = 1 << 8,
     CREATE_TABLE_LIKE_DEFAULTS_SERIAL = 1 << 9, /* Backward compatibility. Inherits serial defaults by default. */
     CREATE_TABLE_LIKE_GENERATED = 1 << 10,
+    CREATE_TABLE_LIKE_IDENTITY = 1 << 11,
 #ifdef DOLPHIN
-    CREATE_TABLE_LIKE_M_STYLE = 1 << 11,
-    CREATE_TABLE_LIKE_EXCLUDING_INDEXES = 1 << 12,
-    CREATE_TABLE_LIKE_EXCLUDING_PARTITION = 1 << 13,
-    CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS = 1 << 14,
+    CREATE_TABLE_LIKE_M_STYLE = 1 << 12,
+    CREATE_TABLE_LIKE_EXCLUDING_INDEXES = 1 << 13,
+    CREATE_TABLE_LIKE_EXCLUDING_PARTITION = 1 << 14,
+    CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS = 1 << 15,
     CREATE_TABLE_LIKE_MAX = 1 << MAX_TABLE_LIKE_OPTIONS,
 #endif
     CREATE_TABLE_LIKE_ALL = 0x7FFFFFFF
@@ -2112,7 +2128,6 @@ typedef struct A_Const {
     int location; /* token location, or -1 if unknown */
 } A_Const;
 
-
 /* Possible sources of a Query */
 typedef enum QuerySource {
     QSRC_ORIGINAL,          /* original parsetree (explicit query) */
@@ -2235,6 +2250,8 @@ typedef struct Query {
     bool isFetch;        /* is fetch stmt? */
 
     List* rowMarks; /* a list of RowMarkClause's */
+
+    OverridingKind override; /* OVERRIDING clause */
 
     Node* setOperations; /* set-operation tree if this is top level of
                           * a UNION/INTERSECT/EXCEPT query */
@@ -2385,6 +2402,7 @@ typedef struct MergeWhenClause {
     CmdType commandType; /* INSERT/UPDATE/DELETE */
     Node *condition;     /* WHERE conditions (raw parser) */
     List *targetList;    /* INSERT/UPDATE targetlist */
+    OverridingKind override; /* OVERRIDING clause */
     /* the following members are only useful for INSERT action */
     List *cols;   /* optional: names of the target columns */
     List *values; /* VALUES to INSERT, or NULL */
@@ -2399,6 +2417,7 @@ typedef struct MergeAction {
     Node *qual;          /* transformed WHERE conditions */
     CmdType commandType; /* INSERT/UPDATE/DELETE */
     List *targetList;    /* the target list (of ResTarget) */
+    OverridingKind override; /* OVERRIDING clause */
     /*
      * the replaced targetlist after simple subquery pullup. In stream plan,
      * we don't do the replacement to targetlist and quals, but this pulluped

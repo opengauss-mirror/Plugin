@@ -1957,7 +1957,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     AssertEreport(pstate->p_ctenamespace == NIL, MOD_OPT, "para should be NIL");
 
     RightRefState* rightRefState = MakeRightRefStateIfSupported((SelectStmt*)stmt->selectStmt);
-    
+
     qry->commandType = CMD_INSERT;
     pstate->p_is_insert = true;
     pstate->p_has_ignore = stmt->hasIgnore;
@@ -1975,7 +1975,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
             selectStmt = (SelectStmt *)stmt->selectStmt;
             ListCell* o_target = NULL;
             List *ctext_expr_list = NULL;
-            
+
             foreach (o_target, stmt->targetList) {
                 ResTarget* res = (ResTarget*)lfirst(o_target);
 
@@ -2068,7 +2068,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
-    
+
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -2481,6 +2481,9 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
                     errdetail("column stored relation doesn't support INSERT returning")));
         }
     }
+
+    /* overriding clause */
+    qry->override = stmt->override;
 
     /* done building the range table and jointree */
     qry->rtable = pstate->p_rtable;
@@ -5565,7 +5568,7 @@ static List* transformUpdateTargetList(ParseState* pstate, List* qryTlist, List*
             UndefinedColumnError(pstate, origTarget, targetRelationNum);
         }
         updateTargetListEntry(pstate, tle, origTarget->name, attrno, origTarget->indirection, origTarget->location,
-            targetrel, target_rte);
+                              targetrel, target_rte);
         checkSRFInMultiUpdate(tle->expr, targetRelationNum);
         tle->rtindex = rtindex;
         new_tle[rtindex - 1] = lappend(new_tle[rtindex - 1], tle);
@@ -7399,6 +7402,22 @@ static Node* TransformAconstToTarget(A_Const* con, ColumnTypeForm& typeItem, boo
     }
 }
 
+static bool CheckInsertOnConflictCompatibility(char* format)
+{
+    if (DB_IS_CMPT(A_FORMAT) || DB_IS_CMPT(PG_FORMAT)) {
+        return true;
+    }
+
+    if (DB_IS_CMPT(B_FORMAT)) {
+        *format = 'B';
+    } else if (DB_IS_CMPT(C_FORMAT)) {
+        *format = 'C';
+    } else if (DB_IS_CMPT(D_FORMAT)) {
+        *format = 'D';
+    }
+    return false;
+}
+
 static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Relation targetrel, bool isRelationNullOk)
 {
     if (unlikely(targetrel == NULL)) {
@@ -7442,30 +7461,45 @@ static void CheckInsertTargetRelation(ParseState* pstate, InsertStmt* stmt, Rela
     if (stmt->upsertClause != NULL) {
         const char* clauseTypeStr = "";
         if (stmt->upsertClause->action == UPSERT_UPDATE || stmt->upsertClause->action == UPSERT_NOTHING) {
-            clauseTypeStr = "ON DUPLICATE KEY";
-        } else if (stmt->upsertClause->action == ONCONFLICT_UPDATE ||
-                   stmt->upsertClause->action == ONCONFLICT_NOTHING) {
-            clauseTypeStr = "ON CONFLICT DO";
+            clauseTypeStr = "ON DUPLICATE KEY UPDATE";
+        } else if (stmt->upsertClause->action == ONCONFLICT_UPDATE) {
+            clauseTypeStr = "ON CONFLICT DO UPDATE";
+        } else if (stmt->upsertClause->action == ONCONFLICT_NOTHING) {
+            clauseTypeStr = "ON CONFLICT DO NOTHING";
         }
+        /*
+         * ON CONFLICT syntax is only supported in A and PG compatibility modes.
+         * ON DUPLICATE KEY (B compatibility) is not affected.
+         */
+        if (stmt->upsertClause->action == ONCONFLICT_UPDATE ||
+            stmt->upsertClause->action == ONCONFLICT_NOTHING) {
+            char format = 0;
+            bool support = CheckInsertOnConflictCompatibility(&format);
+            if (!support) {
+                ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                 errmsg("INSERT ON CONFLICT is not supported in %c_FORMAT", format))));
+            }
+        }
+
         /* non-supported upsert cases */
         if (unlikely(!u_sess->attr.attr_sql.enable_upsert_to_merge && RelationIsColumnFormat(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                             errmsg("INSERT %s UPDATE is not supported on column orientated table.", clauseTypeStr))));
+                             errmsg("INSERT %s is not supported on column orientated table.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsForeignTable(targetrel) || RelationIsStream(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                             errmsg("INSERT %s UPDATE is not supported on foreign table.", clauseTypeStr))));
+                             errmsg("INSERT %s is not supported on foreign table.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsView(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                            errmsg("INSERT %s UPDATE is not supported on VIEW.", clauseTypeStr))));
+                            errmsg("INSERT %s is not supported on VIEW.", clauseTypeStr))));
         }
 
         if (unlikely(RelationIsContquery(targetrel))) {
             ereport(ERROR, ((errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                            errmsg("INSERT %s UPDATE is not supported on CONTQUERY.", clauseTypeStr))));
+                            errmsg("INSERT %s is not supported on CONTQUERY.", clauseTypeStr))));
         }
     }
 
