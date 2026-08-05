@@ -1,7 +1,7 @@
 create schema test_dolphin_catalog;
 set current_schema = test_dolphin_catalog;
-create user test password 'Huawei@123';
-SET SESSION AUTHORIZATION test PASSWORD 'Huawei@123';
+create user test password 'Dolphin_Test@123';
+SET SESSION AUTHORIZATION test PASSWORD 'Dolphin_Test@123';
 set dolphin.b_compatibility_mode to on;
 select 1+1;
 RESET SESSION AUTHORIZATION;

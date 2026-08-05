@@ -1,6 +1,6 @@
 top_builddir = ../../..
 base_dir = contrib/dolphin
-REGRESS_PREP = tablespace-setup
+REGRESS_PREP = tablespace-setup generate-test-sslcert
 
 all: dolphin
 
@@ -10,10 +10,13 @@ dolphin:
 #a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
 REGRESS:=dummy
 
-.PHONY: tablespace-setup
+.PHONY: tablespace-setup generate-test-sslcert
 tablespace-setup:
 	rm -rf ./testtablespace
 	mkdir ./testtablespace
+
+generate-test-sslcert:
+	$(MAKE) -C .. generate-test-sslcert
 
 # now we use same regconf and postgres conf with common dolphin check
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_server_fastcheck_dolphin --regconf=../regress.conf -r 1 -n --keep_last_data=false --temp-config=../make_check_postgresql.conf --dbcmpt=B --dbname=regression

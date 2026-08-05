@@ -229,8 +229,8 @@ install()
         ' - ${envfilepath} ${shellfilepath} ${password} ${xmlpath}  ${scriptpath} ${logdir}
         #' - ${envfilepath} ${scriptpath} ${xmlpath} ${logdir}
         #expect {
-         #   \"Please enter password for database\" {send \"Huawei@123\n\";exp_continue};
-          #  \"Please repeat for database\" {send \"Huawei@123\n\";exp_continue};
+         #   \"Please enter password for database\" {send \"${password}\n\";exp_continue};
+          #  \"Please repeat for database\" {send \"${password}\n\";exp_continue};
            # eof {exit 0;}
            #}"
         installresult=$?

@@ -169,6 +169,7 @@ tablecmds.o: tablecmds.cpp
 EXTENSION = dolphin
 #a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
 REGRESS:=dummy
+REGRESS_PREP = generate-test-sslcert
 
 ifdef MJDBC_TEST
 	REGRESS+=b_proto_jdbc
@@ -180,7 +181,11 @@ export dp = $(shell expr $(p) + 3)
 
 export THIRD_PARTY_LIBS = $(with_3rd)
 
-plugin_check:
+.PHONY: generate-test-sslcert plugin_check
+generate-test-sslcert:
+	sh "$(srcdir)/proto_jdbc/generate_test_sslcert.sh" "$(CURDIR)/proto_jdbc/mysql_sslcert"
+
+plugin_check: generate-test-sslcert
 	sed -i 's/dolphin\_server\_port=.*/dolphin\_server\_port=${dp}/g' ./make_check_postgresql.conf
 	make check
 
