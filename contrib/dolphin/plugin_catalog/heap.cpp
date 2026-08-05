@@ -963,7 +963,7 @@ void InsertTablebucketidAttribute(Oid newRelOid)
     securec_check(rc, "\0", "\0");
     attStruct.attrelid = newRelOid;
 
-    InsertPgAttributeTuple(rel, &attStruct, indstate);
+    InsertPgAttributeTuple(rel, &attStruct, NULL, indstate);
     CatalogCloseIndexes(indstate);
     heap_close(rel, RowExclusiveLock);
 }
@@ -980,7 +980,8 @@ void InsertTablebucketidAttribute(Oid newRelOid)
  * NULL, in which case we'll fetch the necessary info.  (Don't do this when
  * inserting multiple attributes, because it's a tad more expensive.)
  */
-void InsertPgAttributeTuple(Relation pg_attribute_rel, Form_pg_attribute new_attribute, CatalogIndexState indstate)
+void InsertPgAttributeTuple(Relation pg_attribute_rel, Form_pg_attribute new_attribute,
+                            Form_pg_attribute_extra attrExtra, CatalogIndexState indstate)
 {
     Datum values[Natts_pg_attribute];
     bool nulls[Natts_pg_attribute];
@@ -1011,7 +1012,16 @@ void InsertPgAttributeTuple(Relation pg_attribute_rel, Form_pg_attribute new_att
     values[Anum_pg_attribute_attcmprmode - 1] = Int8GetDatum(new_attribute->attcmprmode);
     values[Anum_pg_attribute_attinhcount - 1] = Int32GetDatum(new_attribute->attinhcount);
     values[Anum_pg_attribute_attcollation - 1] = ObjectIdGetDatum(new_attribute->attcollation);
-    values[Anum_pg_attribute_attkvtype - 1] = Int8GetDatum(new_attribute->attkvtype);
+
+    if (attrExtra) {
+        values[Anum_pg_attribute_attkvtype - 1] = Int8GetDatum(attrExtra->attkvtype);
+        values[Anum_pg_attribute_attdroppedname - 1] = NameGetDatum(&attrExtra->attdroppedname);
+        values[Anum_pg_attribute_attidentity - 1] = CharGetDatum(attrExtra->attidentity);
+    } else {
+        values[Anum_pg_attribute_attkvtype - 1] = Int8GetDatum(0);
+        values[Anum_pg_attribute_attidentity - 1] = CharGetDatum('\0');
+        nulls[Anum_pg_attribute_attdroppedname - 1] = true;
+    }
 
     /* start out with empty permissions and empty options */
     nulls[Anum_pg_attribute_attacl - 1] = true;
@@ -1020,7 +1030,6 @@ void InsertPgAttributeTuple(Relation pg_attribute_rel, Form_pg_attribute new_att
 
     /* at default, new fileld attinitdefval of pg_attribute is null. */
     nulls[Anum_pg_attribute_attinitdefval - 1] = true;
-    nulls[Anum_pg_attribute_attdroppedname - 1] = true;
 
     tup = heap_form_tuple(RelationGetDescr(pg_attribute_rel), values, nulls);
 
@@ -1064,14 +1073,16 @@ static bool make_gs_depend_param_body(GsDependParamBody* gs_depend_param_body, c
 }
 
 /* --------------------------------
- *		AddNewAttributeTuples
+ *    AddNewAttributeTuples
  *
- *		this registers the new relation's schema by adding
- *		tuples to pg_attribute.
+ *    this registers the new relation's schema by adding
+ *    tuples to pg_attribute.
  * --------------------------------
  */
 static void AddNewAttributeTuples(Oid new_rel_oid, TupleDesc tupdesc, char relkind,
-    bool oidislocal, int oidinhcount, bool hasbucket, bool hasuids, List* depend_extend, const char* typ_name, Oid namespace_oid)
+                                  bool oidislocal, int oidinhcount, bool hasbucket, bool hasuids,
+                                  List* depend_extend, const char* typ_name, Oid namespace_oid,
+                                  Form_pg_attribute_extra attrExtra)
 {
     Form_pg_attribute attr;
     int i;
@@ -1105,7 +1116,9 @@ static void AddNewAttributeTuples(Oid new_rel_oid, TupleDesc tupdesc, char relki
         attr->attstattarget = -1;
         attr->attcacheoff = -1;
 
-        InsertPgAttributeTuple(rel, attr, indstate);
+        InsertPgAttributeTuple(rel, attr,
+                               attrExtra ? &attrExtra[i] : NULL,
+                               indstate);
 
         /*
          * During inplace/grey upgrade, we don't record dependencies
@@ -1180,7 +1193,7 @@ static void AddNewAttributeTuples(Oid new_rel_oid, TupleDesc tupdesc, char relki
                 attStruct.attinhcount = oidinhcount;
             }
 
-            InsertPgAttributeTuple(rel, &attStruct, indstate);
+            InsertPgAttributeTuple(rel, &attStruct, NULL, indstate);
         }
     }
 
@@ -2714,7 +2727,7 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
                              bool allow_system_table_mods, PartitionState *partTableState, int8 row_compress,
                              HashBucketInfo *bucketinfo, bool record_dependce, List *ceLst, StorageType storage_type,
                              LOCKMODE partLockMode, ObjectAddress *typaddress, List* depend_extend, Oid relrewrite,
-                             Oid typbasetype)
+                             Oid typbasetype, Form_pg_attribute_extra attrExtra)
 {
     Relation pg_class_desc;
     Relation new_rel_desc;
@@ -3133,8 +3146,10 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
     /*
      * now add tuples to pg_attribute for the attributes in our new relation.
      */
-    AddNewAttributeTuples(
-        relid, new_rel_desc->rd_att, relkind, oidislocal, oidinhcount, relhasbucket, relhasuids, depend_extend, relname, relnamespace);
+    AddNewAttributeTuples(relid, new_rel_desc->rd_att, relkind, oidislocal,
+                          oidinhcount, relhasbucket, relhasuids, depend_extend,
+                          relname, relnamespace, attrExtra);
+
     if (ceLst != NULL) {
         AddNewGsSecEncryptedColumnsTuples(relid, ceLst);
     }
@@ -3499,6 +3514,7 @@ void RemoveAttributeById(Oid relid, AttrNumber attnum)
         values[Anum_pg_attribute_attstattarget - 1] = Int32GetDatum(0);
 
         values[Anum_pg_attribute_attdroppedname - 1] = NameGetDatum(&(attStruct->attname));
+        values[Anum_pg_attribute_attidentity - 1] = CharGetDatum('\0');
 
         /*
          * Change the column name to something that isn't likely to conflict
@@ -3514,6 +3530,7 @@ void RemoveAttributeById(Oid relid, AttrNumber attnum)
         replaces[Anum_pg_attribute_attstattarget - 1] = true;
         replaces[Anum_pg_attribute_attdroppedname - 1] = true;
         replaces[Anum_pg_attribute_attname - 1] = true;
+        replaces[Anum_pg_attribute_attidentity - 1] = true;
 
         newatttuple = heap_modify_tuple(atttuple, RelationGetDescr(attr_rel), values, nulls, replaces);
         simple_heap_update(attr_rel, &newatttuple->t_self, newatttuple);
@@ -3675,6 +3692,35 @@ void RemoveAttrDefaultById(Oid attrdefId)
 
     /* Keep lock on attribute's rel until end of xact */
     relation_close(myrel, NoLock);
+}
+
+char HeapTupleGetIdentity(HeapTuple tuple, Relation attr)
+{
+    bool isNull;
+    Datum d;
+    char identity = '\0';
+
+    d = tableam_tops_tuple_getattr(tuple, Anum_pg_attribute_attidentity, RelationGetDescr(attr), &isNull);
+    if (!isNull) {
+        identity = DatumGetChar(d);
+    }
+
+    return identity;
+}
+
+HeapTuple HeapTupleModifyIdentity(HeapTuple tuple, Relation attr, char identity)
+{
+    HeapTuple newTuple;
+    Datum values[Natts_pg_attribute] = { 0 };
+    bool nulls[Natts_pg_attribute] = { false };
+    bool replaces[Natts_pg_attribute] = { false };
+
+    replaces[Anum_pg_attribute_attidentity - 1] = true;
+    values[Anum_pg_attribute_attidentity - 1] = CharGetDatum(identity);
+
+    newTuple = heap_modify_tuple(tuple, RelationGetDescr(attr), values, nulls, replaces);
+    heap_freetuple(tuple);
+    return newTuple;
 }
 
 /*
@@ -8491,7 +8537,7 @@ void AddOrDropUidsAttr(Oid relOid, bool oldRelHasUids, bool newRelHasUids)
         securec_check(rc, "\0", "\0");
         /* Fill in the correct relation OID in the copied tuple */
         attStruct.attrelid = relOid;
-        InsertPgAttributeTuple(rel, &attStruct, indstate);
+        InsertPgAttributeTuple(rel, &attStruct, NULL, indstate);
         CatalogCloseIndexes(indstate);
         heap_close(rel, RowExclusiveLock);
 
@@ -8594,7 +8640,7 @@ HeapTuple heaptuple_from_pg_attribute(Relation pg_attribute_rel,
     values[Anum_pg_attribute_attcmprmode - 1] = Int8GetDatum(new_attribute->attcmprmode);
     values[Anum_pg_attribute_attinhcount - 1] = Int32GetDatum(new_attribute->attinhcount);
     values[Anum_pg_attribute_attcollation - 1] = ObjectIdGetDatum(new_attribute->attcollation);
-    values[Anum_pg_attribute_attkvtype - 1] = Int8GetDatum(new_attribute->attkvtype);
+    values[Anum_pg_attribute_attidentity - 1] = CharGetDatum('\0');
 
     /* start out with empty permissions and empty options */
     nulls[Anum_pg_attribute_attacl - 1] = true;

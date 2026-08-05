@@ -790,7 +790,7 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
             result = transformSubLink(pstate, (SubLink*)expr);
             break;
 
-	case T_SelectIntoVarList:
+        case T_SelectIntoVarList:
             result = transformSelectIntoVarList(pstate, (SelectIntoVarList*)expr);
             break;
 

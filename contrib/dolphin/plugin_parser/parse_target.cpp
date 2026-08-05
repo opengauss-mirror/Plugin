@@ -1195,6 +1195,13 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
             if (is_blockchain_rel && strcmp(col->name, "hash") == 0) {
                 continue;
             }
+
+            /* skip the identity default value in D format */
+            if (DB_IS_CMPT(D_FORMAT) && OidIsValid(getIdentitySequence(RelationGetRelid(targetrel),
+                                                                       attr[i].attnum, true, true))) {
+                continue;
+            }
+
             col->indirection = NIL;
             col->val = NULL;
             col->location = -1;
