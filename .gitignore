@@ -1,3 +1,4 @@
+.pre-commit-venv/
 .vscode
 .idea
 .gitee
