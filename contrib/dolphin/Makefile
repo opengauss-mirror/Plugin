@@ -23,6 +23,34 @@ PART=
 git_repo_path=
 git_commit = $(shell if test -d $(git_repo_path); then cd $(git_repo_path) && git log 2>/dev/null | grep commit | head -1 | awk '{print $$2}' | cut -b 1-8; fi)
 
+ifeq (,$(wildcard $(top_builddir)/src/Makefile.global))
+-include $(top_builddir)/cmake_check.mk
+endif
+
+ifneq ($(CMAKE_CHECK_BUILD_DIR),)
+REGRESS := dummy
+ifdef MJDBC_TEST
+	REGRESS += b_proto_jdbc
+	REGRESS += b_proto_jdbc_8_0_28
+endif
+REGRESS_OPTS = --dbname=contrib_regression --dlpath=$(CMAKE_CHECK_INSTALL_PREFIX)/lib -c 0 -d 1 --single_node -p ${p} --schedule=$(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphin${PART} --regconf=$(CMAKE_CHECK_INPUT_DIR)/regress.conf -r 1 -n --keep_last_data=false --temp-config=$(CMAKE_CHECK_INPUT_DIR)/make_check_postgresql.conf --dbcmpt=B --abs_gausshome=$(CMAKE_CHECK_INSTALL_PREFIX)
+export dp = $(shell expr $(p) + 3)
+CMAKE_CHECK_PREP = generate-test-sslcert dolphin-prepare-check
+CMAKE_CHECK_CLEAN_FILES = $(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphin
+include ../../cmake/check/contrib-regress.mk
+
+.PHONY: generate-test-sslcert dolphin-prepare-check
+parallel_schedule_dolphin: parallel_schedule_dolphinA parallel_schedule_dolphinB
+	cat $^ > $@
+
+generate-test-sslcert:
+	sh "$(CMAKE_CHECK_INPUT_DIR)/proto_jdbc/generate_test_sslcert.sh" "$(CMAKE_CHECK_INPUT_DIR)/proto_jdbc/mysql_sslcert"
+
+dolphin-prepare-check: parallel_schedule_dolphin
+	sed -i 's/dolphin\_server\_port=.*/dolphin\_server\_port=${dp}/g' ./make_check_postgresql.conf
+
+else
+
 OBJS = $(protocol)/password.o $(protocol)/server_startup.o $(protocol)/auth.o $(protocol)/handler.o \
 $(protocol)/dqformat.o $(protocol)/bytestream.o $(protocol)/printtup.o
 
@@ -187,7 +215,7 @@ generate-test-sslcert:
 
 plugin_check: generate-test-sslcert
 	sed -i 's/dolphin\_server\_port=.*/dolphin\_server\_port=${dp}/g' ./make_check_postgresql.conf
-	make check
+	$(MAKE) check
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS
@@ -203,3 +231,5 @@ endif
 
 openGauss_expr_dolphin.ir:
 	cp llvmir/openGauss_expr_dolphin_$(host_cpu).ir $@
+
+endif

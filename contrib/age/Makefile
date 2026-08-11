@@ -84,6 +84,10 @@ override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC
 top_builddir = ../..
 #include $(top_builddir)/src/Makefile.global
 
+ifeq (,$(wildcard $(top_builddir)/src/Makefile.global))
+-include $(top_builddir)/cmake_check.mk
+endif
+
 
 #limiao
 FLEX = /bin/flex
@@ -165,6 +169,35 @@ kwlist_d.h: ./src/include/parser/kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
 src/include/parser/cypher_kwlist_d.h: ./src/include/parser/cypher_kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
 	$(GEN_KEYWORDLIST_AGE) --extern --varname CypherKeyword --output ./src/include/parser  $<
 
+ifneq ($(CMAKE_CHECK_BUILD_DIR),)
+
+# CMake builds use the generated install tree and the shared contribution
+# regression driver, while keeping AGE's regression files under regress/.
+REGRESS_OPTS = --dbname=contrib_regression \
+	           --load-extension=age --encoding=UTF-8 \
+	           --dlpath=$(CMAKE_CHECK_INSTALL_PREFIX)/lib/postgresql \
+	           --temp-install=$(CMAKE_CHECK_INPUT_DIR)/instance \
+	           --port=61958 -c 0 -d 1 --single_node \
+	           --abs_gausshome=$(CMAKE_CHECK_INSTALL_PREFIX)
+CMAKE_CHECK_PREP = age-prepare-check
+CMAKE_CHECK_CLEAN_FILES = $(CMAKE_CHECK_INPUT_DIR)/.sql \
+	                        $(CMAKE_CHECK_INPUT_DIR)/regression.diffs \
+	                        $(CMAKE_CHECK_INPUT_DIR)/regression.out \
+	                        $(CMAKE_CHECK_INPUT_DIR)/instance \
+	                        $(CMAKE_CHECK_INPUT_DIR)/tmp_check \
+	                        $(CMAKE_CHECK_INPUT_DIR)/log \
+	                        $(CMAKE_CHECK_INPUT_DIR)/results \
+	                        $(CMAKE_CHECK_INPUT_DIR)/smartmatch.pl
+include ../../cmake/check/contrib-regress.mk
+override CMAKE_CHECK_INPUT_DIR := $(CURDIR)/regress
+
+.PHONY: age-prepare-check
+age-prepare-check:
+	cp $(top_builddir)/src/test/regress/smartmatch.pl $(CMAKE_CHECK_INPUT_DIR)/smartmatch.pl
+	chmod +x $(CMAKE_CHECK_INPUT_DIR)/smartmatch.pl
+
+else
+
 ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
@@ -179,3 +212,5 @@ installcheck:	use_smartmatch
 
 use_smartmatch: 
 	cp $(top_builddir)/src/test/regress/smartmatch.pl $(srcdir)/regress/smartmatch.pl
+
+endif
