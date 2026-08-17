@@ -1720,8 +1720,11 @@ Datum text_date(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, textValue));
-
-    result = DirectFunctionCall1(date_in, CStringGetDatum(tmp));
+    if (pg_strcasecmp(tmp, "now") == 0) {
+        result = DirectFunctionCall0(curdate);
+    } else {
+        result = DirectFunctionCall1(date_in, CStringGetDatum(tmp));
+    }
 
     pfree_ext(tmp);
 
