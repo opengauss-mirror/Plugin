@@ -152,7 +152,7 @@ SELECT * FROM public.pg_vector_collection ORDER BY embedding <=> '[1,2,3,4]' LIM
 drop table pg_vector_collection;
 ```
 
-## 函数参考
+## 函数与参数参考
 
 ### 分布式表相关
 
@@ -411,6 +411,30 @@ drop table pg_vector_collection;
      spq_check_connection_to_node
     ------------------------------
      t
+    ```
+
+### 全文索引
+
+- enable_bm25_global_idf
+
+    描述：控制分布表执行BM25索引查询时是否自动收集分布式全局统计信息，并使用全局逆文档频率（IDF）和平均文档长度（avgdl）计算文档得分。该参数在CN节点设置，仅对分布表的BM25查询生效。
+
+    参数类型：USERSET
+
+    取值范围：
+
+    - on：自动收集分布式全局统计信息，并使用全局IDF和avgdl计算BM25得分。
+    - off：使用各分片的本地统计信息计算BM25得分。
+
+    默认值：off
+
+    设置建议：默认情况下，分布表的BM25索引使用各分片的本地统计信息计算得分。当分片间数据分布不均衡时，本地统计信息可能导致查询结果召回率下降。对于存在明显数据倾斜的分布表，建议在CN节点开启该参数，使BM25查询使用全局文档数量等统计信息，提升查询召回率，使查询效果接近单机表。
+
+    示例：
+
+    ```sql
+    openGauss=# set enable_bm25_global_idf = on;
+    SET
     ```
 
 ## 系统表及视图说明
