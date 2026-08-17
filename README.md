@@ -48,7 +48,7 @@ alter system set upgrade_mode to 0;
 
 2. 准备 dolphin 插件目录
 
-   将 Plugin 仓中 `contrib/dolphin` 目录复制或软链接到 openGauss-server 仓的 `contrib` 目录下，最终目录结构应为：
+   将 Plugin 仓中 `contrib/dolphin` 目录复制到 openGauss-server 仓的 `contrib` 目录下，最终目录结构应为：
 
    ```text
    openGauss-server/contrib/dolphin
@@ -56,9 +56,7 @@ alter system set upgrade_mode to 0;
 
 3. 编译 openGauss-server
 
-   在 openGauss-server 仓根目录下执行 `make` 编译项目代码。
-
-   > 注：dolphin check 用例依赖 make 编译产物，需使用 `make` 完成编译。
+   在 openGauss-server 仓根目录下编译项目代码，当前支持 `make` 和 `cmake` 两种编译方式，同时 release/debug/memcheck 版本均可以执行用例。为提高用例执行效率，推荐使用 cmake 编译 release 版本执行用例。
 
 4. 执行 dolphin check 用例
 
@@ -83,7 +81,7 @@ alter system set upgrade_mode to 0;
    make check p=38000 PART=B
    ```
 
-   其中，`p` 为数据库监听端口，可根据本地环境调整；`PART` 用于指定执行 A 组或 B 组用例。
+   其中，`p` 为数据库监听端口，可根据本地环境调整；`PART` 用于指定执行 A 组或 B 组用例，若不指定 `PART`，则会合并 A/B 两组用例一起执行。
 
 5. 执行单个用例
 
