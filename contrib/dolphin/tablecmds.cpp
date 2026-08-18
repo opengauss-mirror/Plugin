@@ -771,7 +771,7 @@ static void checkValidationForExchange(Relation partTableRel, Relation ordTableR
 static void finishIndexSwap(List* partIndexList, List* ordIndexList);
 static Oid getPartitionOid(Relation partTableRel, const char* partName, Node* rangePartDef);
 #ifdef DOLPHIN
-static void AddNewPartitionForTable(Relation rel, List* destPartDefList);
+static void AddNewPartitionForTable(Relation rel, List* destPartDefList, List** newPartOidList);
 static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd);
 #endif
 static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd, AlteredTableInfo* tab);
@@ -31539,7 +31539,16 @@ static void SetPartitionState(Relation rel, PartitionDefState* partDef, Partitio
     }
 }
 
-static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
+/*
+ * Add the destination partitions of a REORGANIZE PARTITION.
+ *
+ * newPartOidList collects the oids that must be reindexed afterwards, so the
+ * caller can restrict index maintenance to the partitions this command actually
+ * created instead of rebuilding every index of the table. For a subpartitioned
+ * table the *subpartition* oids are collected, because that is the level local
+ * indexes are attached to.
+ */
+static void AddNewPartitionForTable(Relation rel, List* destPartDefList, List** newPartOidList)
 {
     Relation pgPartRel = NULL;
     Oid newPartOid = InvalidOid;
@@ -31670,12 +31679,18 @@ static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
                 Oid subpartOid = lfirst_oid(lc);
                 addIndexForPartition(rel, subpartOid);
                 addToastTableForNewPartition(partrel, subpartOid, true);
+                if (newPartOidList != NULL) {
+                    *newPartOidList = lappend_oid(*newPartOidList, subpartOid);
+                }
             }
             releaseDummyRelation(&partrel);
             partitionClose(rel, part, NoLock);
         } else {
             addIndexForPartition(rel, newPartOid);
             addToastTableForNewPartition(rel, newPartOid);
+            if (newPartOidList != NULL) {
+                *newPartOidList = lappend_oid(*newPartOidList, newPartOid);
+            }
         }
 
         /* invalidate relation */
@@ -31760,7 +31775,7 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         if (!checkPartitionLocalIndexesUsable(srcPartOid)) {
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_OBJECT_DEFINITION),
-                    errmsg("can't reorganize partition bacause partition %s has unusable local index", (char*)lfirst(cell)),
+                    errmsg("can't reorganize partition bacause partition %s has unusable local index", partName),
                     errhint("please reindex the unusable index first.")));
         }
 
@@ -31867,6 +31882,14 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
             CommandCounterIncrement();
             partitionClose(partTableRel, part, AccessExclusiveLock);
             tempTableOidList = lappend_oid(tempTableOidList, tempTableOid);
+            /*
+             * The GPI still holds entries pointing into the partition we are
+             * about to drop. They are harmless to queries (a GPI scan resolves
+             * the partition oid stored in each index tuple and skips the ones
+             * whose partition no longer exists, see GPIGetNextPartRelation),
+             * but vacuum has to be told to reclaim them.
+             */
+            AlterPartitionedSetWaitCleanGPI(true, partTableRel, srcPartOid);
             // drop src partition
             fastDropPartition(partTableRel, srcPartOid, "REORGANIZE PARTITION");
         }
@@ -31892,6 +31915,8 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
                 finishPartitionHeapSwap(srcSubPartOid, tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
                 CommandCounterIncrement();
                 partitionClose(partRel, subPart, AccessExclusiveLock);
+                /* let vacuum reclaim the GPI entries of the dropped subpartition */
+                AlterSubPartitionedSetWaitCleanGPI(true, partTableRel, srcPartOid, srcSubPartOid);
                 fastDropPartition(partRel, srcSubPartOid, "REORGANIZE PARTITION", InvalidOid, false);
             }
             list_free_ext(srcSubPartOidList);
@@ -31899,6 +31924,7 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
             releaseDummyRelation(&partRel);
             partitionClose(partTableRel, part, AccessExclusiveLock);
             // drop src partition
+            AlterPartitionedSetWaitCleanGPI(true, partTableRel, srcPartOid);
             fastDropPartition(partTableRel, srcPartOid, "REORGANIZE PARTITION");
         }
     }
@@ -31937,7 +31963,8 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         }
     }
 
-    AddNewPartitionForTable(partTableRel, destPartDefList);
+    List* newPartOidList = NIL;
+    AddNewPartitionForTable(partTableRel, destPartDefList, &newPartOidList);
     /* inplace update on partitioned table, because we can't cover the wait_clean_gpi info, which is inplace updated */
     UpdateCurrentPartitionNo(RelOidGetPartitionTupleid(partTableRel->rd_id), -partitionno, true);
 
@@ -31956,9 +31983,76 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         performDeletion(&object, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
     }
     list_free_ext(tempTableOidList);
-    // reindex dest partitions
-    ReindexRelation(RelationGetRelid(partTableRel), REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
-        REINDEX_ALL_INDEX, NULL, NULL);
+
+    /*
+     * Reindex the destination partitions only.
+     *
+     * readTuplesAndInsert() populates the new partitions without maintaining
+     * any index, so the index entries of *those* partitions have to be built
+     * here. The partitions this command did not touch keep their heap
+     * relfilenode and never had a tuple moved, so their local index partitions
+     * are still correct and must not be rebuilt -- doing so made the cost of
+     * REORGANIZE PARTITION proportional to the size of the whole table instead
+     * of the partitions named in the command.
+     *
+     * Global partition indexes are a different matter: their entries span all
+     * partitions, so the rows of the new partitions have to be inserted into
+     * them. AddGPIForPartition() scans just the new partition and inserts into
+     * the existing GPI, the same incremental path SPLIT/MERGE PARTITION use
+     * with UPDATE GLOBAL INDEX. REORGANIZE PARTITION has no UPDATE GLOBAL INDEX
+     * clause (MySQL, whose syntax this command follows, has no global indexes
+     * at all), and it has never left a GPI unusable, so GPI maintenance is
+     * unconditional here.
+     */
+    bool isSubPartitioned = RelationIsSubPartitioned(partTableRel);
+    List* gpiList = RelationGetSpecificKindIndexList(partTableRel, true);
+    bool hasGpi = (gpiList != NIL);
+    /*
+     * A GPI that is already unusable on entry cannot be maintained
+     * incrementally in a meaningful way: inserting into an index nobody trusts
+     * is wasted work. Rebuild it instead, which is what the previous
+     * whole-relation ReindexRelation() call did implicitly.
+     */
+    bool rebuildGpi = false;
+    ListCell* gpiCell = NULL;
+    foreach (gpiCell, gpiList) {
+        HeapTuple gpiTuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(lfirst_oid(gpiCell)));
+        if (!HeapTupleIsValid(gpiTuple)) {
+            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                errmsg("could not find tuple for index %u", lfirst_oid(gpiCell))));
+        }
+        if (!IndexIsUsable((Form_pg_index)GETSTRUCT(gpiTuple))) {
+            rebuildGpi = true;
+        }
+        ReleaseSysCache(gpiTuple);
+        if (rebuildGpi) {
+            break;
+        }
+    }
+    list_free_ext(gpiList);
+
+    foreach (cell, newPartOidList) {
+        Oid newPartOid = lfirst_oid(cell);
+
+        reindexPartition(partTableOid, newPartOid,
+            REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+            REINDEX_ALL_INDEX);
+
+        if (hasGpi && !rebuildGpi) {
+            if (isSubPartitioned) {
+                AddGPIForSubPartition(partTableOid, partid_get_parentid(newPartOid), newPartOid);
+            } else {
+                AddGPIForPartition(partTableOid, newPartOid);
+            }
+        }
+    }
+    list_free_ext(newPartOidList);
+
+    if (rebuildGpi) {
+        ReindexRelation(partTableOid,
+            REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+            REINDEX_ALL_INDEX, NULL, NULL, false, GLOBAL_INDEX);
+    }
 }
 #endif
 
