@@ -2518,7 +2518,7 @@ static void transformTableLikeClause(
                 bool forDIdentity = attrExtra->attidentity == ATTRIBUTE_IDENTITY_D;
                 seqId = getIdentitySequence(RelationGetRelid(relation), attribute->attnum, false, forDIdentity);
                 if (OidIsValid(seqId)) {
-                    large = (get_rel_relkind(seqId) == RELKIND_LARGE_SEQUENCE);
+                    large = RELKIND_IS_LARGE_SEQUENCE(get_rel_relkind(seqId));
                     seqoptions = sequence_to_options(seqId, large);
                     createSeqOwnedByTable(cxt, def, preCheck, large, false, !forDIdentity, forDIdentity, seqoptions);
                     def->identity = attrExtra->attidentity;
