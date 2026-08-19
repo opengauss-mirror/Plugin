@@ -131,6 +131,8 @@ sections:
             href: ./dolphin-grant-revoke-proxy.md
           - label: INSERT
             href: ./dolphin-insert.md
+          - label: INDEX STAITISTIC
+            href: ./dolphin-index-statistic.md
           - label: KILL
             href: ./dolphin-kill.md
           - label: LOAD DATA
@@ -139,6 +141,8 @@ sections:
             href: ./dolphin-optimize-table.md
           - label: PREPARE
             href: ./dolphin-prepare.md
+          - label: PG TYPE NONSTRICT BASIC VALUE
+            href: ./dolphin-pg-type-nonstrict-basic-value.md
           - label: RENAME-TABLE
             href: ./dolphin-rename-table.md
           - label: RENAME USER

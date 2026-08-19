@@ -120,4 +120,4 @@ REVOKE INDEX FROM TEST_USER;
 
 ## 相关链接<a name="section156744489391"></a>
 
-[REVOKE](../sql_reference/REVOKE.md)
+[REVOKE](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/revoke.html)

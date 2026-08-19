@@ -53,4 +53,4 @@ DROP INDEX [ CONCURRENTLY ] [ IF EXISTS ]
 
 ## 相关链接<a name="zh-cn_topic_0283136794_zh-cn_topic_0237122140_zh-cn_topic_0059779018_s299c55b981d1489986df6a6cf27b73d1"></a>
 
-[ALTER INDEX](../sql_reference/alter_index.md)，[CREATE INDEX](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_index_1.html)
+[ALTER INDEX](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/alter_index.html)，[CREATE INDEX](https://docs.opengauss.org/zh/docs/latest-lite/sql_reference/create_index_1.html)
