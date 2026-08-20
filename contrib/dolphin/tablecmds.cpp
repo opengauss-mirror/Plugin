@@ -10603,6 +10603,32 @@ static void UpdateValueModifyFirstAfter(NewColumnValue *ex, Datum* values, bool*
     }
 }
 
+/*
+ * ADD column position records must be applied before MODIFY position records,
+ * but their attnum is the insertion position at that stage and must not be
+ * replaced with the column's final attnum.
+ */
+#ifdef DOLPHIN
+static List* OrderRewriteNewvals(AlteredTableInfo* tab)
+{
+    List* ordered = NIL;
+    ListCell* l = NULL;
+    foreach (l, tab->newvals) {
+        NewColumnValue* ex = (NewColumnValue*)lfirst(l);
+        if (ex->is_addloc) {
+            ordered = lappend(ordered, ex);
+        }
+    }
+    foreach (l, tab->newvals) {
+        NewColumnValue* ex = (NewColumnValue*)lfirst(l);
+        if (!ex->is_addloc) {
+            ordered = lappend(ordered, ex);
+        }
+    }
+    return ordered;
+}
+#endif
+
 static void UpdateGeneratedColumnIsnull(AlteredTableInfo* tab, bool* isnull, bool has_generated)
 {
     ListCell* l = NULL;
@@ -11039,7 +11065,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                      */
                     econtext->ecxt_scantuple = oldslot;
 
+#ifdef DOLPHIN
+                    List* rewrite_newvals = OrderRewriteNewvals(tab);
+                    foreach(l, rewrite_newvals)
+#else
                     foreach(l, tab->newvals)
+#endif
                     {
                         NewColumnValue *ex = (NewColumnValue*)lfirst(l);
 
@@ -11071,6 +11102,10 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                             UpdateValueModifyFirstAfter(ex, values, isnull);
                         }
                     }
+
+#ifdef DOLPHIN
+                    list_free_ext(rewrite_newvals);
+#endif
 
                     /* generated column */
                     UpdateGeneratedColumnIsnull(tab, isnull, has_generated);
@@ -11223,7 +11258,13 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                     (void)ExecStoreTuple(tuple, oldslot, InvalidBuffer, false);
                     econtext->ecxt_scantuple = oldslot;
 
-                    foreach (l, tab->newvals) {
+#ifdef DOLPHIN
+                    List* rewrite_newvals = OrderRewriteNewvals(tab);
+                    foreach(l, rewrite_newvals)
+#else
+                    foreach(l, tab->newvals)
+#endif
+                    {
                         NewColumnValue* ex = (NewColumnValue*)lfirst(l);
 
                         if (ex->is_addloc) {
@@ -11259,6 +11300,10 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                             UpdateValueModifyFirstAfter(ex, values, isnull);
                         }
                     }
+
+#ifdef DOLPHIN
+                    list_free_ext(rewrite_newvals);
+#endif
 
                     /* generated column */
                     UpdateGeneratedColumnIsnull(tab, isnull, has_generated);
@@ -12961,6 +13006,35 @@ static void UpdatePgAttrdefFirstAfter(Relation rel, int startattnum, int endattn
 }
 
 /*
+ * Invalid views retain the old Var attnums in pg_rewrite so they can be
+ * rebuilt after missing columns are re-added.  FIRST/AFTER must not shift the
+ * matching pg_depend entries without also rewriting that saved query tree.
+ */
+static bool IsInvalidViewRewriteForFirstAfter(Oid rewriteOid)
+{
+    bool isInvalid = false;
+    ScanKeyData key;
+    ScanKeyInit(&key, ObjectIdAttributeNumber, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rewriteOid));
+
+    Relation rewriteRel = heap_open(RewriteRelationId, AccessShareLock);
+    SysScanDesc scan = systable_beginscan(rewriteRel, RewriteOidIndexId, true, NULL, 1, &key);
+    HeapTuple tuple = systable_getnext(scan);
+    if (HeapTupleIsValid(tuple)) {
+        Form_pg_rewrite rewriteForm = (Form_pg_rewrite)GETSTRUCT(tuple);
+        if (strcmp(NameStr(rewriteForm->rulename), ViewSelectRuleName) == 0) {
+            char relkind = get_rel_relkind(rewriteForm->ev_class);
+            if ((relkind == RELKIND_VIEW || relkind == RELKIND_MATVIEW) &&
+                !GetPgObjectValid(rewriteForm->ev_class, relkind)) {
+                isInvalid = true;
+            }
+        }
+    }
+    systable_endscan(scan);
+    heap_close(rewriteRel, AccessShareLock);
+    return isInvalid;
+}
+
+/*
  * update pg_depend.
  * 1. add column with first or after col_name.
  * 2. modify column to first or after column.
@@ -12991,6 +13065,11 @@ static void UpdatePgDependFirstAfter(Relation rel, int startattnum, int endattnu
         HeapTuple new_dep_tuple;
 
         dep_form  = (Form_pg_depend)GETSTRUCT(dep_tuple);
+
+        if (dep_form->classid == RewriteRelationId &&
+            IsInvalidViewRewriteForFirstAfter(dep_form->objid)) {
+            continue;
+        }
 
         if (dep_form->refobjsubid >= startattnum && dep_form->refobjsubid <= endattnum) {
             values[Anum_pg_depend_refobjsubid - 1] = is_increase ?
@@ -13978,7 +14057,18 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
         UpdateIndexFirstAfter(rel);
 
         /* create or replace view */
-        ReplaceViewQueryFirstAfter(query_str);
+        ListCell* viewinfo = NULL;
+        bool isViewValid = true;
+        foreach (viewinfo, query_str) {
+            ViewInfoForAdd *info = (ViewInfoForAdd *)lfirst(viewinfo);
+            isViewValid &= GetPgObjectValid(info->ev_class, get_rel_relkind(info->ev_class));
+            if (!isViewValid) {
+                break;
+            }
+        }
+        if (isViewValid) {
+            ReplaceViewQueryFirstAfter(query_str);
+        }
     } else if (rel->rd_rel->relkind == RELKIND_RELATION && query_str != NIL) {
         ListCell* viewinfo = NULL;
         bool isViewValid = true;
