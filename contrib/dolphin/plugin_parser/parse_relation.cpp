@@ -1402,6 +1402,10 @@ bool search_rte_walker(Node* node, search_rte_context* context)
         foreach (lc, query->rtable) {
             RangeTblEntry *rte = (RangeTblEntry *)lfirst(lc);
             if (rte->relid == context->rel_oid) {
+                if (context->attnum <= 0 ||
+                    context->attnum > list_length(rte->eref->colnames)) {
+                    return false;
+                }
                 context->attname = strVal(list_nth(rte->eref->colnames, context->attnum - 1));
                 return false;
             }
@@ -1421,16 +1425,74 @@ static char* get_attname_from_rte(Query* query, Oid rel_oid, int2 attnum)
     search_rte_context context;
     context.rel_oid = rel_oid;
     context.attnum = attnum;
+    context.attname = NULL;
 
     (void)search_rte_walker((Node*)query, &context);
     return context.attname;
 }
 
+/*
+ * Find the original output name of a directly selected relation column.
+ * This is used when the column's old pg_attribute entry has been dropped:
+ * the RTE column-name slot is then empty, while a view created from SELECT *
+ * still keeps both the old Var attnum and the original TargetEntry name.
+ */
+static char* get_attname_from_targetlist(Query* query, Oid rel_oid, int2 attnum)
+{
+    ListCell* lc = NULL;
+    foreach (lc, query->targetList) {
+        TargetEntry* tle = (TargetEntry*)lfirst(lc);
+        if (tle->resjunk || tle->resname == NULL || !IsA(tle->expr, Var)) {
+            continue;
+        }
+
+        Var* var = (Var*)tle->expr;
+        if (var->varlevelsup != 0 || var->varattno != attnum || var->varno <= 0 ||
+            var->varno > list_length(query->rtable)) {
+            continue;
+        }
+
+        RangeTblEntry* rte = (RangeTblEntry*)list_nth(query->rtable, var->varno - 1);
+        if (rte->rtekind == RTE_RELATION && rte->relid == rel_oid) {
+            return tle->resname;
+        }
+    }
+    return NULL;
+}
+
 /* return true column if exists, and set newAttnum. */
 static bool CheckRelationColumnExists(Oid rel_oid, int2 attnum, Query* query, int2* newAttnum)
 {
-    /* get origin attname from rte->eref->colnames of query */
-    char* attname = get_attname_from_rte(query, rel_oid, attnum);
+    /*
+     * A dropped column keeps its old attnum in pg_attribute, but a view
+     * created with SELECT * still retains the original output name and old
+     * Var attnum in its target entry. Use that matching target entry when the
+     * dependency points to a dropped slot, so a same-named column added later
+     * can rebuild the view without accidentally binding to another column.
+     */
+    char* attname = NULL;
+    HeapTuple oldTuple = SearchSysCache2(ATTNUM, ObjectIdGetDatum(rel_oid), Int16GetDatum(attnum));
+    bool oldDropped = false;
+    if (HeapTupleIsValid(oldTuple)) {
+        Form_pg_attribute oldForm = (Form_pg_attribute)GETSTRUCT(oldTuple);
+        oldDropped = oldForm->attisdropped;
+        ReleaseSysCache(oldTuple);
+    }
+
+    /*
+     * Prefer the TargetEntry mapping even when the old attnum is currently
+     * occupied by another column.  Dolphin column reordering can reuse a
+     * physical position after the view has already become invalid; looking
+     * up that position in the refreshed RTE would bind the dependency to the
+     * wrong column (for example f2 AS f1).
+     */
+    attname = get_attname_from_targetlist(query, rel_oid, attnum);
+    if (attname == NULL && !oldDropped) {
+        attname = get_attname_from_rte(query, rel_oid, attnum);
+    }
+    if (attname == NULL) {
+        return false;
+    }
 
     HeapTuple tuple;
     Form_pg_attribute attForm;
@@ -1479,6 +1541,24 @@ static bool findDependentTable(Relation rel, Oid type_id)
     }
     systable_endscan(scan_dep);
     return found;
+}
+
+typedef struct ViewColumnAttnumChange {
+    Oid relid;
+    int2 oldAttnum;
+    int2 newAttnum;
+    HeapTuple depTuple;
+} ViewColumnAttnumChange;
+
+static void FreeViewColumnAttnumChanges(List* changes)
+{
+    ListCell* lc = NULL;
+    foreach (lc, changes) {
+        ViewColumnAttnumChange* change = (ViewColumnAttnumChange*)lfirst(lc);
+        heap_freetuple_ext(change->depTuple);
+        pfree_ext(change);
+    }
+    list_free_ext(changes);
 }
 
 static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List** list, bool force, StringInfo buf)
@@ -1548,6 +1628,7 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
     scan_dep = systable_beginscan(rel_dep, DependDependerIndexId, true, NULL, keyNum, key_dep);
     bool circularDependency = false;
     List* depViewList = NIL;
+    List* attnumChanges = NIL;
     while (HeapTupleIsValid((tup_dep = systable_getnext(scan_dep)))) {
         Form_pg_depend depform = (Form_pg_depend)GETSTRUCT(tup_dep);
         if (depform->refclassid != RelationRelationId || depform->deptype != DEPENDENCY_NORMAL ||
@@ -1564,24 +1645,14 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
              * type and attnum may have changed, so try to get the new attnum.
              */
             isValid &= CheckRelationColumnExists(dep_objid, dep_objsubid, query, &newAttnum);
-            if (newAttnum > 0) {
-                /* if newAttnum is not equal to refobjsubid, update it. */
-                if (newAttnum != dep_objsubid) {
-                    Datum values[Natts_pg_depend] = { 0 };
-                    bool nulls[Natts_pg_depend] = { 0 };
-                    bool replaces[Natts_pg_depend] = { 0 };
-                    HeapTuple new_dep_tuple;
-                    values[Anum_pg_depend_refobjsubid - 1] = Int32GetDatum(newAttnum);
-                    replaces[Anum_pg_depend_refobjsubid - 1] = true;
-                    new_dep_tuple = heap_modify_tuple(tup_dep, RelationGetDescr(rel_dep), values, nulls, replaces);
-                    simple_heap_update(rel_dep, &new_dep_tuple->t_self, new_dep_tuple);
-                    CatalogUpdateIndexes(rel_dep, new_dep_tuple);
-                    heap_freetuple_ext(new_dep_tuple);
-                    CommandCounterIncrement();
-
-                    /* change varattno of vars by the way */
-                    change_var_attno(query, dep_objid, dep_objsubid, newAttnum);
-                }
+            if (newAttnum > 0 && newAttnum != dep_objsubid) {
+                ViewColumnAttnumChange* change =
+                    (ViewColumnAttnumChange*)palloc0(sizeof(ViewColumnAttnumChange));
+                change->relid = dep_objid;
+                change->oldAttnum = dep_objsubid;
+                change->newAttnum = newAttnum;
+                change->depTuple = heap_copytuple(tup_dep);
+                attnumChanges = lappend(attnumChanges, change);
             }
         } else if (relkind == RELKIND_VIEW || relkind == RELKIND_MATVIEW) {
             /* when force compile view, and depend on multiple columns from other views, recompile only once */
@@ -1609,15 +1680,50 @@ static ValidateDependResult ValidateDependView(Oid view_oid, char objType, List*
             }
             circularDependency |= (result == ValidateDependCircularDepend);
         }
-        if (!isValid) {
-            list_free_ext(depViewList);
-            systable_endscan(scan_dep);
-            heap_close(rel_dep, RowExclusiveLock);
-            return ValidateDependInvalid;
-        }
     }
     list_free_ext(depViewList);
     systable_endscan(scan_dep);
+    if (!isValid) {
+        FreeViewColumnAttnumChanges(attnumChanges);
+        heap_close(rel_dep, RowExclusiveLock);
+        return ValidateDependInvalid;
+    }
+
+    /*
+     * Do not update pg_depend or the query tree until every dependency has
+     * been validated.  Otherwise an invalid view can persist only part of a
+     * column reorder, leaving pg_depend and pg_rewrite with different attnums.
+     * Move Vars to temporary attnums first so mappings such as 5->7 and 7->8
+     * cannot rewrite the first mapping a second time.
+     */
+    ListCell* changeCell = NULL;
+    foreach (changeCell, attnumChanges) {
+        ViewColumnAttnumChange* change = (ViewColumnAttnumChange*)lfirst(changeCell);
+        int temporaryAttnum = -(10000 + change->oldAttnum);
+        change_var_attno(query, change->relid, change->oldAttnum, temporaryAttnum);
+    }
+
+    foreach (changeCell, attnumChanges) {
+        ViewColumnAttnumChange* change = (ViewColumnAttnumChange*)lfirst(changeCell);
+        Datum values[Natts_pg_depend] = { 0 };
+        bool nulls[Natts_pg_depend] = { 0 };
+        bool replaces[Natts_pg_depend] = { 0 };
+        values[Anum_pg_depend_refobjsubid - 1] = Int32GetDatum(change->newAttnum);
+        replaces[Anum_pg_depend_refobjsubid - 1] = true;
+        HeapTuple newDepTuple = heap_modify_tuple(
+            change->depTuple, RelationGetDescr(rel_dep), values, nulls, replaces);
+        simple_heap_update(rel_dep, &newDepTuple->t_self, newDepTuple);
+        CatalogUpdateIndexes(rel_dep, newDepTuple);
+        heap_freetuple_ext(newDepTuple);
+        CommandCounterIncrement();
+    }
+
+    foreach (changeCell, attnumChanges) {
+        ViewColumnAttnumChange* change = (ViewColumnAttnumChange*)lfirst(changeCell);
+        int temporaryAttnum = -(10000 + change->oldAttnum);
+        change_var_attno(query, change->relid, temporaryAttnum, change->newAttnum);
+    }
+    FreeViewColumnAttnumChanges(attnumChanges);
     /*
      * 3.3 find views or tables which depend on this view directly,
      * and report error if tables exist.

@@ -6150,6 +6150,54 @@ static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
     heap_close(ev_relation, AccessShareLock);
 }
 
+/*
+ * An invalid Dolphin view can outlive additional FIRST/AFTER column
+ * reordering on its base table.  Its saved Vars still use the old attnums,
+ * while the RTE column-name list may have been refreshed to the table's new
+ * physical order.  Restore names for directly selected columns from the
+ * TargetEntry names before deparsing, otherwise pg_get_viewdef can display
+ * unrelated columns such as "f2 AS f1".
+ */
+static void restore_invalid_view_column_names(Query* query)
+{
+    ListCell* lc = NULL;
+    foreach (lc, query->targetList) {
+        TargetEntry* tle = (TargetEntry*)lfirst(lc);
+        if (tle->resjunk || tle->resname == NULL || !IsA(tle->expr, Var)) {
+            continue;
+        }
+
+        Var* var = (Var*)tle->expr;
+        if (var->varlevelsup != 0 || var->varattno <= 0 || var->varno <= 0 ||
+            var->varno > list_length(query->rtable)) {
+            continue;
+        }
+
+        RangeTblEntry* rte = (RangeTblEntry*)list_nth(query->rtable, var->varno - 1);
+        if (rte->rtekind != RTE_RELATION || rte->eref == NULL) {
+            continue;
+        }
+
+        while (list_length(rte->eref->colnames) < var->varattno) {
+            rte->eref->colnames = lappend(rte->eref->colnames, makeString(pstrdup("")));
+        }
+        ListCell* colname = list_nth_cell(rte->eref->colnames, var->varattno - 1);
+        lfirst(colname) = makeString(pstrdup(tle->resname));
+    }
+
+    /*
+     * The parser records target-entry ranges expanded from '*' so that a valid
+     * view can be deparsed with the original compact notation. For an invalid
+     * view, this notation does not identify the missing columns and may reflect
+     * the base table's current column layout. Clear only the top-level star
+     * metadata so get_target_list emits each saved TargetEntry explicitly.
+     * Nested queries retain their own star metadata.
+     */
+    query->starStart = NIL;
+    query->starEnd = NIL;
+    query->starOnly = NIL;
+}
+
 /* ----------
  * make_viewdef			- reconstruct the SELECT part of a
  *				  view rewrite rule
@@ -6228,6 +6276,7 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
             ereport(WARNING,
                     (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("View %s references invalid table(s), view(s) or column(s).", get_rel_name(ev_class))));
+            restore_invalid_view_column_names(query);
         } else {
             /* if view becomes valid, return buf directly, since it has been assigned. */
             heap_close(ev_relation, AccessShareLock);
@@ -9261,7 +9310,11 @@ static char* get_variable(
 
     if (attnum == InvalidAttrNumber)
         attname = NULL;
-    else
+    else if (context->viewdef && context->skip_lock && rte->rtekind == RTE_RELATION && attnum > 0 &&
+             attnum <= list_length(rte->eref->colnames)) {
+        Node* colname = (Node*)list_nth(rte->eref->colnames, attnum - 1);
+        attname = (colname != NULL && IsA(colname, String)) ? pstrdup(strVal(colname)) : NULL;
+    } else
         attname = get_rte_attribute_name(rte, attnum, true);
 
     if (refname && (context->varprefix || attname == NULL)) {

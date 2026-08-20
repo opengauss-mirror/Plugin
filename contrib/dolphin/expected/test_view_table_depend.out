@@ -11,7 +11,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 create table t1 (c1 int);
@@ -50,7 +50,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 select * from v1;
@@ -219,7 +219,7 @@ CONTEXT:  referenced column: pg_get_viewdef
  c2     | integer |           | plain   | 
  c3     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1, t1.c2, t1.c3
    FROM t1;
 
 drop view v1;
@@ -295,7 +295,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 \d+ v2;
@@ -306,7 +306,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT v1.c1
    FROM v1;
 
 select * from v1;
@@ -682,7 +682,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+------+-----------+---------+-------------
  c1     | ???  |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 create table t1(c1 enum('male','female') not null);
@@ -734,7 +734,7 @@ CONTEXT:  referenced column: pg_get_viewdef
 --------+------+-----------+---------+-------------
  c1     | ???  |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 create table t1(c1 set('a','b','c') not null);
@@ -794,7 +794,7 @@ CONTEXT:  referenced column: pg_get_viewdef
  a      | integer |           | plain   | 
  b      | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT partition_t1.a, partition_t1.b
    FROM partition_t1 PARTITION(p1);
 
 create table partition_t1 (a int, b int)
@@ -986,7 +986,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
  sales_amt  | integer               |                                               | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION(p_201901);
 
 select * from partition_v2;
@@ -1003,7 +1004,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
  sales_amt  | integer               |                                               | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION (p_201901, p_201902);
 
 select * from partition_v3;
@@ -1020,7 +1022,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
  sales_amt  | integer               |                                               | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 PARTITION FOR('201901'::character varying(30));
 
 select * from partition_v4;
@@ -1037,7 +1040,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
  sales_amt  | integer               |                                               | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION(p_201902_a);
 
 select * from partition_v5;
@@ -1054,7 +1058,8 @@ CONTEXT:  referenced column: pg_get_viewdef
  user_no    | character varying(30) | character set UTF8 collate utf8mb4_general_ci | extended | 
  sales_amt  | integer               |                                               | plain    | 
 View definition:
- SELECT  *
+ SELECT partition_t1.month_code, partition_t1.dept_code, partition_t1.user_no, 
+    partition_t1.sales_amt
    FROM partition_t1 SUBPARTITION FOR('201902'::character varying(30) ,'2'::character varying(30));
 
 CREATE TABLE partition_t1
@@ -1391,7 +1396,7 @@ CONTEXT:  referenced column: pg_get_viewdef
  c1     | integer               |                                               | plain    | 
  c2     | character varying(10) | character set UTF8 collate utf8mb4_general_ci | extended | 
 View definition:
- SELECT  *
+ SELECT t1.c1, t1.c2
    FROM t1;
 
 create table t1 (c1 text, c2 float8);
