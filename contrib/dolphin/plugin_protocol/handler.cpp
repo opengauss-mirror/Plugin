@@ -258,6 +258,20 @@ int dolphin_process_command(StringInfo buf)
             execute_com_stmt_close(buf);
             break;
         }
+        case COM_SET_OPTION: {
+            uint32 option;
+            dq_get_int2(buf, &option);
+            if (option == 0) {
+                GetSessionContext()->Conn_Mysql_Info->client_capabilities |= CLIENT_MULTI_STATEMENTS;
+            } else if (option == 1) {
+                GetSessionContext()->Conn_Mysql_Info->client_capabilities &= ~CLIENT_MULTI_STATEMENTS;
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
+                    errmsg("invalid COM_SET_OPTION value: %u", option)));
+            }
+            send_general_ok_packet();
+            break;
+        }
         default:
             // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
             ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported.")));
@@ -475,7 +489,8 @@ int execute_com_stmt_prepare(StringInfo buf)
     
     for (int i = 0; i < column_count; i++) {
         dolphin_column_definition column_field;
-        make_dolphin_column_definition("", NULL, &column_field);
+        /* Use real column attributes for column name, matching COM_QUERY behavior. */
+        make_dolphin_column_definition(&psrc->resultDesc->attrs[i], NULL, NULL, &column_field);
         send_column_definition41_packet(sql, &column_field);
     }
     if (column_count != 0 && !client_dep_eof) {
