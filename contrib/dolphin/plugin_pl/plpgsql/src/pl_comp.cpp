@@ -1606,8 +1606,20 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
         plpgsql_scanner_finish();
         pfree_ext(proc_source);
         PopOverrideSearchPath();
+#ifdef DOLPHIN
+        GetSessionContext()->is_b_declare = false;
+#endif
+        u_sess->misc_cxt.Pseudo_CurrentUserId = saved_pseudo_current_userId;
+        t_thrd.log_cxt.error_context_stack = pl_err_context.previous;
+        curr_compile->plpgsql_error_funcname = NULL;
+        curr_compile->plpgsql_curr_compile = NULL;
+        curr_compile->plpgsql_check_syntax = false;
         u_sess->plsql_cxt.curr_compile_context = popCompileContext();
         clearCompileContext(curr_compile);
+        CompileStatusSwtichTo(save_compile_status);
+        if (temp != NULL) {
+            MemoryContextSwitchTo(temp);
+        }
         return NULL;
     }
 #ifndef ENABLE_MULTIPLE_NODES
@@ -1845,6 +1857,9 @@ PLpgSQL_function* plpgsql_compile_inline(char* proc_source)
     if (oldCompileStatus == NONE_STATUS) {
         CompileStatusSwtichTo(COMPILIE_ANON_BLOCK);
     }
+#ifdef DOLPHIN
+    GetSessionContext()->is_b_declare = false;
+#endif
     PLpgSQL_compile_context* curr_compile = createCompileContext("PL/pgSQL function context");
     SPI_NESTCOMPILE_LOG(curr_compile->compile_cxt);
     MemoryContext temp = NULL;

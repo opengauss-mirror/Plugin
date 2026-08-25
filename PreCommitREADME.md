@@ -1,4 +1,4 @@
-# pre-commit 提交前检查（openGauss-GaussMaster）
+# pre-commit 提交前检查
 
 本仓库在 `git commit` 前自动对**本次改动**做基础检查与格式化，减少低级错误进入版本库。
 
@@ -44,9 +44,11 @@ pre-commit install-hooks
 - **手动试跑**（不提交）：
 
 ```bash
-.pre-commit-venv/bin/pre-commit run --files GaussMaster/startup.py
+.pre-commit-venv/bin/pre-commit run --files {file.cpp}
 # 或检查全部已暂存文件
 .pre-commit-venv/bin/pre-commit run
+# 或者全量检查
+.pre-commit-venv/bin/pre-commit run --all-files
 ```
 
 - **跳过单次检查**（不推荐，仅紧急场景）：
