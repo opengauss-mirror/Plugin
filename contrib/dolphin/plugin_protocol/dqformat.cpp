@@ -205,7 +205,10 @@ void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet)
     okPacket[offset++] = 0;
     offset += dq_store_int_lenenc(&okPacket[offset], ok_packet->affected_rows);
     offset += dq_store_int_lenenc(&okPacket[offset], ok_packet->insert_id);
-    dq_store_int2(&okPacket[offset], ok_packet->server_status);
+    /* Set SERVER_MORE_RESULTS_EXISTS flag for multi-statement intermediate results.
+     * Required to prevent libmysqlclient connection desync. */
+    dq_store_int2(&okPacket[offset],
+        ok_packet->server_status | (u_sess->proc_cxt.nextQuery ? SERVER_MORE_RESULTS_EXISTS : 0));
     offset += BYTE_2_LEN;
     dq_store_int2(&okPacket[offset], ok_packet->warnings);
     offset += BYTE_2_LEN;
