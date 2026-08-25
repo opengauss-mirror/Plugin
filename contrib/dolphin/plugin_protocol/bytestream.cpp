@@ -151,59 +151,111 @@ int dq_special_getmessage(StringInfo buf)
 
 int dq_getmessage(StringInfo buf, uint32 maxlen)
 {
-    uint32 len;
-    uint8 seq_id;
+    const uint32 maxPayloadLength = 0xFFFFFF;
+    uint32 payloadLength;
+    uint8 sequenceId;
 
     resetStringInfo(buf);
 
     enlargeStringInfo(buf, PROTO_PAYLOAD_LEN);
-    // Read PROTO_PAYLOAD_LEN bytes from recvbuf
     if (pq_getbytes(buf->data, PROTO_PAYLOAD_LEN) == EOF) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within PROTO_PAYLOAD_LEN word")));
+        ereport(COMMERROR,
+            (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within PROTO_PAYLOAD_LEN word")));
         return EOF;
     }
     buf->len = PROTO_PAYLOAD_LEN;
+    dq_get_payload_len(buf, &payloadLength);
 
-    // convert payload length bytes stream to uint32
-    dq_get_payload_len(buf, &len);
-
-    // read one byte sequence id
-    seq_id = pq_getbyte();
-    if (seq_id == EOF) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within seq_id word")));
-        return EOF; 
-    }
-    u_sess->proc_cxt.nextSeqid = ++seq_id;
-
-    if (unlikely(len == 0)) {
-        return 0;
-    }
-
-    /* no enough room */
-    if (len >= buf->maxlen) {
-        PG_TRY();
-        {
-            enlargeStringInfo(buf, len);
-        }
-        PG_CATCH();
-        {
-            if (pq_discardbytes(len) == EOF) {
-                ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
-            }
-            PG_RE_THROW();
-        }
-        PG_END_TRY();
-    }
-
-    // read playload_lenght bytes into buf->data
-    if (pq_getbytes(buf->data, len) == EOF) {
-        ereport(COMMERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+    sequenceId = pq_getbyte();
+    if (sequenceId == EOF) {
+        ereport(COMMERROR,
+            (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within seq_id word")));
         return EOF;
     }
+    u_sess->proc_cxt.nextSeqid = ++sequenceId;
 
-    buf->len = len;
+    resetStringInfo(buf);
+
+    while (true) {
+        Size currentMessageLength = (Size)buf->len;
+        Size newMessageLength = currentMessageLength + (Size)payloadLength;
+        if (newMessageLength > MaxAllocSize || (maxlen > 0 && newMessageLength > (Size)maxlen)) {
+            ereport(COMMERROR,
+                (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("MySQL protocol message is too large")));
+            return EOF;
+        }
+
+        if (unlikely(payloadLength == 0)) {
+            break;
+        }
+
+        if (newMessageLength >= (Size)buf->maxlen) {
+            PG_TRY();
+            {
+                enlargeStringInfo(buf, payloadLength);
+            }
+            PG_CATCH();
+            {
+                if (pq_discardbytes(payloadLength) == EOF) {
+                    ereport(COMMERROR,
+                        (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+                }
+                PG_RE_THROW();
+            }
+            PG_END_TRY();
+        }
+
+        if (pq_getbytes(buf->data + buf->len, payloadLength) == EOF) {
+            ereport(COMMERROR,
+                (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("incomplete message from client")));
+            return EOF;
+        }
+        buf->len += payloadLength;
+
+        if (payloadLength < maxPayloadLength) {
+            break;
+        }
+
+        /*
+         * A payload length of 0xFFFFFF means that the logical MySQL message continues in the next packet.
+         * If the message length is an exact multiple of 0xFFFFFF, the client sends an extra zero-length
+         * packet to terminate the message. Read that packet and validate its sequence ID before finishing.
+         */
+        char payloadLengthBytes[PROTO_PAYLOAD_LEN] = {0};
+        StringInfoData payloadLengthBuffer;
+        payloadLengthBuffer.data = payloadLengthBytes;
+        payloadLengthBuffer.len = PROTO_PAYLOAD_LEN;
+        payloadLengthBuffer.maxlen = PROTO_PAYLOAD_LEN;
+        payloadLengthBuffer.cursor = 0;
+
+        if (pq_getbytes(payloadLengthBytes, PROTO_PAYLOAD_LEN) == EOF) {
+            ereport(COMMERROR,
+                (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within PROTO_PAYLOAD_LEN word")));
+            return EOF;
+        }
+        dq_get_payload_len(&payloadLengthBuffer, &payloadLength);
+
+        int continuationSequenceId = pq_getbyte();
+        if (continuationSequenceId == EOF) {
+            ereport(COMMERROR,
+                (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("unexpected EOF within seq_id word")));
+            return EOF;
+        }
+
+        uint8 currentSequenceId = (uint8)continuationSequenceId;
+        if (currentSequenceId != u_sess->proc_cxt.nextSeqid) {
+            ereport(COMMERROR,
+                (errcode(ERRCODE_PROTOCOL_VIOLATION),
+                    errmsg("unexpected MySQL packet sequence ID %u, expected %u",
+                        currentSequenceId,
+                        u_sess->proc_cxt.nextSeqid)));
+            return EOF;
+        }
+        u_sess->proc_cxt.nextSeqid = (uint8)(currentSequenceId + 1);
+    }
+
     buf->cursor = 0;
-    buf->data[len] = '\0';
+    buf->data[buf->len] = '\0';
 
     return 0;
 }
