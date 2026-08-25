@@ -245,9 +245,6 @@ void InsertGsSource(Oid objId, Oid nspid, const char* name, const char* type, bo
     appendStringInfo(&str,
         "delete from DBE_PLDEVELOPER.gs_source where nspid=%u and name=\'%s\' and type = \'%s\';\n",
         nspid, tmp, type);
-    appendStringInfo(&str,
-        "delete from DBE_PLDEVELOPER.gs_source where nspid=%u and name=\'%s\' and type = \'%s\';\n",
-        nspid, tmp, type);
     if (!u_sess->attr.attr_common.plsql_show_all_error || status)  {
         appendStringInfo(&str,
             "delete from DBE_PLDEVELOPER.gs_errors where " 
