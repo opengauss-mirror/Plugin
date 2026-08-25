@@ -189,3 +189,5 @@ test: prepare_index_con tpcc_plan parse_fusion tpcc_opt
 
 # Preserve index comments during ALTER COLUMN TYPE.
 test: alter_type_index_comment
+
+test: test_create_function
