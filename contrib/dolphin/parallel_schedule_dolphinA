@@ -100,3 +100,5 @@ test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
 test: test_show_open_tables_cleanup
 
 test: drop_view
+
+test: test_create_function
