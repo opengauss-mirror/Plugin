@@ -30830,7 +30830,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->returningList = $9;
 						$7->withClause = $1;
 						$7->upsertClause = (UpsertClause *)$8;
-						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						if ($7->upsertClause != NULL) {
+							$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						}
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
 						$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
