@@ -114,6 +114,8 @@ typedef struct com_stmt_param {
         } d;
         proto_tm tm;
     } value;
+    int length;
+    bool has_length;
 } com_stmt_param;
 
 typedef struct com_stmt_exec_request {

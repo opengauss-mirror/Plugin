@@ -502,14 +502,29 @@ int execute_com_stmt_prepare(StringInfo buf)
     return 0;
 }
 
-static inline Datum stringtype_input(Oid type, char* str)
+static inline Datum stringtype_input(Oid type, char* str, int len)
 {
+    /* Binary: use the type's receive fn (bytearecv, length-aware) to read all bytes,
+       not the strlen text input which truncates at 0x00. Decided by BINARY_FLAG. */
+    const TypeItem *item = OidIsValid(type) ? GetItemByTypeOid(type) : NULL;
+    if (dolphin_type_is_binary(item)) {
+        StringInfo si = makeStringInfo();
+        appendBinaryStringInfo(si, str, len);
+        Oid typreceive;
+        Oid typioparam;
+        getTypeBinaryInputInfo(type, &typreceive, &typioparam);
+        Datum r = OidReceiveFunctionCall(typreceive, si, typioparam, -1);
+        pfree(si->data);
+        pfree(si);
+        return r;
+    }
+
     switch (type) {
         case BPCHAROID:
-            PG_RETURN_BPCHAR_P(bpchar_input(str, strlen(str), -1));
+            PG_RETURN_BPCHAR_P(bpchar_input(str, len, -1));
             break;
         case VARCHAROID:
-            PG_RETURN_VARCHAR_P(varchar_input(str, strlen(str), -1));
+            PG_RETURN_VARCHAR_P(varchar_input(str, len, -1));
             break;
         default: {
             Oid typinput;
@@ -555,7 +570,8 @@ void dolphin_get_param_list_info(BindMessage* pqBindMessage, CachedPlanSource* p
         switch (param[i].type) {
             case TYPE_STRING: {
                 if (param[i].value.text) {
-                    pval = stringtype_input(ptype, (char*)param[i].value.text);
+                    int efflen = param[i].has_length ? param[i].length : (int)strlen(param[i].value.text);
+                    pval = stringtype_input(ptype, (char*)param[i].value.text, efflen);
                 } else {
                     isNull = true;
                 }
@@ -668,6 +684,7 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     exec_pre_bind_message();
 
     com_stmt_exec_request *req = read_com_stmt_exec_request(buf, &pstmt, &psrc);
+    uint32 statement_id = req->statement_id;
     char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
     char statement_id_str[MAX_INT32_LEN + 1];
 
@@ -686,8 +703,21 @@ static void execute_binary_protocol_req_process_b(StringInfo buf)
     pqBindMessage.rformats = NULL;
     pqBindMessage.needFormat = false;
 
-    exec_bind_message(&pqBindMessage, pstmt, psrc, false, dolphin_get_param_list_info);
+    /* The SEND_LONG_DATA chunks are consumed while binding. Clear them right
+       after (also on error) so a repeat execute / reset never sees stale data. */
+    PG_TRY();
+    {
+        exec_bind_message(&pqBindMessage, pstmt, psrc, false, dolphin_get_param_list_info);
+    }
+    PG_CATCH();
+    {
+        RemoveCachedParamBlob(statement_id);
+        free_com_stmt_exec_request(req);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
     free_com_stmt_exec_request(req);
+    RemoveCachedParamBlob(statement_id);
 }
 
 static void execute_binary_protocol_req_process_e()
@@ -706,17 +736,7 @@ static void execute_binary_protocol_req_process_e()
 
 void remove_cached_stmt_data(uint32 *statement_id)
 {
-    if (GetSessionContext()->b_sendBlobHash) {
-        HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id,
-                                                            HASH_REMOVE, NULL);
-        if (entry != NULL) {
-            for (uint32 i = 0; i < entry->value->count; i++) {
-                pfree_ext(entry->value->data[i]);
-            }
-            pfree_ext(entry->value->data);
-            pfree_ext(entry->value);
-        }
-    }
+    RemoveCachedParamBlob(*statement_id);
 
     if (GetSessionContext()->b_stmtInputTypeHash) {
         HashEntryStmtParamType *entry = b_stmt_input_lookup(GetSessionContext()->b_stmtInputTypeHash, *statement_id);
@@ -733,7 +753,9 @@ void execute_com_stmt_reset(StringInfo buf)
 {
     uint32 statement_id;
     dq_get_int4(buf, &statement_id);
-    remove_cached_stmt_data(&statement_id);
+    /* RESET clears the long-data chunks but keeps the cached parameter types, so
+       a following execute with new_params_bind_flag=0 still binds correctly. */
+    RemoveCachedParamBlob(statement_id);
     send_general_ok_packet();
 }
 
