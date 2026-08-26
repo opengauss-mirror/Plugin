@@ -1,0 +1,3 @@
+.gitcode/scripts/*.sh text eol=lf
+.gitcode/workflows/*.yml text eol=lf
+.gitcode/workflows/*.yaml text eol=lf
