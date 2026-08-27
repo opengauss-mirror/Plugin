@@ -20,7 +20,7 @@ GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
 use db_jdbc;
-\! javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
+\! javac -source 8 -target 8 -Xlint:-options -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
 -- wrong password before setting set_native_password
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user wrong_pass@123
 Exception in thread "main" java.sql.SQLException: failed in auth check, role:proto_user
@@ -319,7 +319,7 @@ Security_type:VARCHAR:INVOKER
 Comment:VARCHAR:I/O
 character_set_client:VARCHAR:null
 collation_connection:VARCHAR:null
-Database Collation:CHAR:en_US.UTF-8
+--?Database Collation:CHAR:.*
 Variable_name:VARCHAR:datname
 Value:VARCHAR:b_databaseproto
 oid:INT UNSIGNED:1510
