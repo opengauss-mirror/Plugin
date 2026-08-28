@@ -40,6 +40,8 @@
 #define SHOW_TAG_LEN 4
 #define EXPLAIN_TAG_LEN 7
 #define EXPLAIN_SUCCESS_TAG_LEN 15
+#define MYSQL_DUP_ENTRY_ERROR 1062
+#define MYSQL_INTEGRITY_CONSTRAINT_VIOLATION "23000"
 
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(StringInfo buf);
@@ -54,6 +56,49 @@ static bool parse_query_bind_params(uint param_count,
                                     size_t *inout_packet_left,
                                     bool receive_named_params,
                                     bool receive_parameter_set_count);
+
+static bool is_duplicate_key_error(const ErrorData* edata)
+{
+    /* Only these storage paths report duplicate row/index data.  Other
+     * ERRCODE_UNIQUE_VIOLATION sites, such as duplicate constraint names,
+     * must retain their original error code.
+     */
+    static const char* duplicateKeyFiles[] = {
+        "nbtinsert.cpp",
+        "ubtinsert.cpp",
+        "ubtpcrinsert.cpp",
+        "tuplesort.cpp",
+        "mot_fdw_error.cpp"
+    };
+
+    if (edata->sqlerrcode != ERRCODE_UNIQUE_VIOLATION || edata->is_signal || edata->filename == NULL) {
+        return false;
+    }
+
+    const char* filename = strrchr(edata->filename, '/');
+    filename = filename == NULL ? edata->filename : filename + 1;
+    for (size_t i = 0; i < sizeof(duplicateKeyFiles) / sizeof(duplicateKeyFiles[0]); i++) {
+        if (strcmp(filename, duplicateKeyFiles[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool get_explicit_mysql_errno(const ErrorData* edata, uint16* errorCode)
+{
+    if (edata->mysql_errno == NULL) {
+        return false;
+    }
+
+    char* end = NULL;
+    long value = strtol(edata->mysql_errno, &end, 10);
+    if (end == edata->mysql_errno || *end != '\0' || value < 0 || value > MYSQL_ERRNO_MAX) {
+        return false;
+    }
+    *errorCode = (uint16)value;
+    return true;
+}
 
 void dophin_send_ready_for_query(CommandDest dest)
 {
@@ -111,11 +156,25 @@ void dolphin_send_message(ErrorData *edata)
         return;
     }
 
+    bool duplicateKeyError = is_duplicate_key_error(edata);
+    uint16 errorCode = 0;
     network_mysqld_err_packet_t *err_packet =
         (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
-    err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
+    if (get_explicit_mysql_errno(edata, &errorCode)) {
+        err_packet->errcode = errorCode;
+    } else if (duplicateKeyError) {
+        err_packet->errcode = MYSQL_DUP_ENTRY_ERROR;
+    } else {
+        err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
+    }
     err_packet->errmsg = edata->message;
-    err_packet->sqlstate = "HY000";   // convert errcode to mysql SQLSTATE later
+    if (edata->sqlstate != NULL) {
+        err_packet->sqlstate = edata->sqlstate;
+    } else if (duplicateKeyError) {
+        err_packet->sqlstate = MYSQL_INTEGRITY_CONSTRAINT_VIOLATION;
+    } else {
+        err_packet->sqlstate = "HY000";
+    }
 
     StringInfo buf = makeStringInfo();
     send_network_err_packet(buf, err_packet);

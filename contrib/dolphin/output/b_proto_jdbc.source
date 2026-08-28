@@ -562,12 +562,12 @@ ID2
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAllowZeroDayQueryTest localhost $dp db_jdbc proto_user Gauss@123
 0001-01-01 00:00:00.0
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTypeNameMetadataTest localhost $dp db_jdbc proto_user Gauss@123
-v:varchar:varchar
+v:varchar:varchar(50)
 d:double:double
 b:tinyint(1):tinyint(1)
-ts:timestamp:timestamp
-dt:datetime:datetime
-n:decimal:decimal
+ts:timestamp:timestamp(0)
+dt:datetime:datetime(0)
+n:decimal:decimal(10,2)
 i:int:int
 Field:v:varchar(50)
 Field:d:double

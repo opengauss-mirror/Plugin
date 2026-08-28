@@ -78,7 +78,15 @@ public class MySQLJdbcTypeNameMetadataTest {
                     "where table_schema = database() and table_name = 'type_name_metadata_probe' " +
                     "order by ordinal_position");
             while (resultSet.next()) {
-                System.out.println(resultSet.getString(1) + ":" + resultSet.getString(2) + ":" + resultSet.getString(3));
+                String columnName = resultSet.getString(1);
+                String dataType = resultSet.getString(2);
+                String columnType = resultSet.getString(3);
+                System.out.println(columnName + ":" + dataType + ":" + columnType);
+                if ("n".equals(columnName) &&
+                        (!"decimal".equals(dataType) || !"decimal(10,2)".equals(columnType))) {
+                    throw new AssertionError("numeric metadata expected decimal/decimal(10,2), got " +
+                            dataType + "/" + columnType);
+                }
             }
 
             // SHOW COLUMNS Type column should return MySQL type names
