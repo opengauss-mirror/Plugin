@@ -1194,6 +1194,50 @@ select * from t1_view1;
 
 drop view t1_view1;
 drop table t1;
+create table t1(f1 int, f2 varchar(20), f3 int, primary key(f1, f3));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+insert into t1 values(1, 'a', 1), (2, 'b', 2);
+\d+ t1
+                             Table "db_alter_table.t1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ f1     | integer               | not null  | plain    |              | 
+ f2     | character varying(20) |           | extended |              | 
+ f3     | integer               | not null  | plain    |              | 
+Indexes:
+    "t1_pkey" PRIMARY KEY, btree (f1, f3) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+select * from t1;
+ f1 | f2 | f3 
+----+----+----
+  1 | a  |  1
+  2 | b  |  2
+(2 rows)
+
+alter table t1 modify f1 text after f3, add f10 int default 10 after f2;
+\d+ t1
+                              Table "db_alter_table.t1"
+ Column |         Type          | Modifiers  | Storage  | Stats target | Description 
+--------+-----------------------+------------+----------+--------------+-------------
+ f2     | character varying(20) |            | extended |              | 
+ f10    | integer               | default 10 | plain    |              | 
+ f3     | integer               | not null   | plain    |              | 
+ f1     | text                  | not null   | extended |              | 
+Indexes:
+    "t1_pkey" PRIMARY KEY, btree (f1, f3) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+select * from t1;
+ f2 | f10 | f3 | f1 
+----+-----+----+----
+ a  |  10 |  1 | 1
+ b  |  10 |  2 | 2
+(2 rows)
+
+drop table t1;
 -- test alter-type cleanup does not recreate a later dropped index
 create table alter_cleanup_idx_test(a int, b int);
 create index alter_cleanup_idx_test_b_idx on alter_cleanup_idx_test(b);
@@ -1225,6 +1269,895 @@ Table "db_alter_table.alter_type_parent"
 Indexes:
     "alter_type_parent_pkey" PRIMARY KEY, btree (a) TABLESPACE pg_default
     "alter_type_parent_b_idx" btree (b) TABLESPACE pg_default
+Referenced by:
+    TABLE "alter_type_child" CONSTRAINT "alter_type_child_a_fkey" FOREIGN KEY (a) REFERENCES alter_type_parent(a)
+
+\d alter_type_child
+Table "db_alter_table.alter_type_child"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+Foreign-key constraints:
+    "alter_type_child_a_fkey" FOREIGN KEY (a) REFERENCES alter_type_parent(a)
+
+insert into alter_type_parent values (2, 20);
+insert into alter_type_child values (2);
+insert into alter_type_child values (3);
+ERROR:  insert or update on table "alter_type_child" violates foreign key constraint "alter_type_child_a_fkey"
+DETAIL:  Key (a)=(3) is not present in table "alter_type_parent".
+drop table alter_type_child, alter_type_parent;
+drop table if exists t1 cascade;
+NOTICE:  table "t1" does not exist, skipping
+create table t1(f1 int, f2 text, f3 int, f4 bigint, f5 int generated always as (f1 + f3) stored);
+insert into t1 values(1, 'aaa', 3, 1);
+insert into t1 values(11, 'bbb', 33, 2);
+insert into t1 values(111, 'ccc', 333, 3);
+insert into t1 values(1111, 'ddd', 3333, 4);
+select * from t1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN f2, ADD COLUMN f2 INT after f4;
+\d+ t1
+                                                      Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+---------+--------------+-------------
+ f1     | integer |                                                                            | plain   |              | 
+ f3     | integer |                                                                            | plain   |              | 
+ f4     | bigint  |                                                                            | plain   |              | 
+ f2     | integer |                                                                            | plain   |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+select * from t1;
+  f1  |  f3  | f4 | f2 |  f5  
+------+------+----+----+------
+    1 |    3 |  1 |    |    4
+   11 |   33 |  2 |    |   44
+  111 |  333 |  3 |    |  444
+ 1111 | 3333 |  4 |    | 4444
+(4 rows)
+
+alter table t1 change f4 f6 text, drop column f2, add column f2 int;
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f6     | text    |                                                                            | extended |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+ f2     | integer |                                                                            | plain    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+select * from t1;
+  f1  |  f3  | f6 |  f5  | f2 
+------+------+----+------+----
+    1 |    3 | 1  |    4 |   
+   11 |   33 | 2  |   44 |   
+  111 |  333 | 3  |  444 |   
+ 1111 | 3333 | 4  | 4444 |   
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN f2, ADD COLUMN f2 INT DEFAULT 10 AFTER f3;
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f2     | integer | default 10                                                                 | plain    |              | 
+ f6     | text    |                                                                            | extended |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+select * from t1;
+  f1  |  f3  | f2 | f6 |  f5  
+------+------+----+----+------
+    1 |    3 | 10 | 1  |    4
+   11 |   33 | 10 | 2  |   44
+  111 |  333 | 10 | 3  |  444
+ 1111 | 3333 | 10 | 4  | 4444
+(4 rows)
+
+drop table if exists t1 cascade;
+create table t1(f1 int, f2 text, f3 int, f4 bigint, f5 int generated always as (f1 + f3) stored)
+    with (storage_type=ustore);
+insert into t1 values(1, 'aaa', 3, 1);
+insert into t1 values(11, 'bbb', 33, 2);
+insert into t1 values(111, 'ccc', 333, 3);
+insert into t1 values(1111, 'ddd', 3333, 4);
+select * from t1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN f2, ADD COLUMN f2 INT after f4;
+\d+ t1
+                                                      Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+---------+--------------+-------------
+ f1     | integer |                                                                            | plain   |              | 
+ f3     | integer |                                                                            | plain   |              | 
+ f4     | bigint  |                                                                            | plain   |              | 
+ f2     | integer |                                                                            | plain   |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain   |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+select * from t1;
+  f1  |  f3  | f4 | f2 |  f5  
+------+------+----+----+------
+    1 |    3 |  1 |    |    4
+   11 |   33 |  2 |    |   44
+  111 |  333 |  3 |    |  444
+ 1111 | 3333 |  4 |    | 4444
+(4 rows)
+
+alter table t1 change f4 f6 text, drop column f2, add column f2 int;
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f6     | text    |                                                                            | extended |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+ f2     | integer |                                                                            | plain    |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=USTORE
+
+select * from t1;
+  f1  |  f3  | f6 |  f5  | f2 
+------+------+----+------+----
+    1 |    3 | 1  |    4 |   
+   11 |   33 | 2  |   44 |   
+  111 |  333 | 3  |  444 |   
+ 1111 | 3333 | 4  | 4444 |   
+(4 rows)
+
+ALTER TABLE t1 DROP COLUMN f2, ADD COLUMN f2 INT DEFAULT 10 AFTER f3;
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f2     | integer | default 10                                                                 | plain    |              | 
+ f6     | text    |                                                                            | extended |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=USTORE
+
+select * from t1;
+  f1  |  f3  | f2 | f6 |  f5  
+------+------+----+----+------
+    1 |    3 | 10 | 1  |    4
+   11 |   33 | 10 | 2  |   44
+  111 |  333 | 10 | 3  |  444
+ 1111 | 3333 | 10 | 4  | 4444
+(4 rows)
+
+drop table if exists t1 cascade;
+-- test alter order with after/first
+drop table if exists alter_order_test;
+NOTICE:  table "alter_order_test" does not exist, skipping
+create table alter_order_test(a int, b int) with (storage_type=ustore);
+alter table alter_order_test
+    add column c int after a,
+    add column d int after c,
+    change column b b int after d;
+\d alter_order_test
+Table "db_alter_table.alter_order_test"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ c      | integer | 
+ d      | integer | 
+ b      | integer | 
+
+drop table alter_order_test;
+drop table if exists alter_order_generated_test cascade;
+NOTICE:  table "alter_order_generated_test" does not exist, skipping
+create table alter_order_generated_test(
+    f1 int, f2 text, f3 int, f4 bigint,
+    f5 int generated always as (f1 + f3) stored)
+    with (storage_type=ustore);
+\d alter_order_generated_test
+                       Table "db_alter_table.alter_order_generated_test"
+ Column |  Type   |                                 Modifiers                                  
+--------+---------+----------------------------------------------------------------------------
+ f1     | integer | 
+ f2     | text    | 
+ f3     | integer | 
+ f4     | bigint  | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored
+
+insert into alter_order_generated_test values
+    (1, 'aaa', 3, 1),
+    (11, 'bbb', 33, 2),
+    (111, 'ccc', 333, 3),
+    (1111, 'ddd', 3333, 4);
+select * from alter_order_generated_test;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+create view alter_order_generated_test_v as
+    select * from alter_order_generated_test;
+\d alter_order_generated_test_v
+View "db_alter_table.alter_order_generated_test_v"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ f1     | integer | 
+ f2     | text    | 
+ f3     | integer | 
+ f4     | bigint  | 
+ f5     | integer | 
+
+select * from alter_order_generated_test_v;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+alter table alter_order_generated_test
+    add f6 int first,
+    add f7 int after f4,
+    modify f1 int after f2,
+    modify f3 int first;
+\d alter_order_generated_test
+                            Table "db_alter_table.alter_order_generated_test"
+ Column |  Type   |                                      Modifiers                                       
+--------+---------+--------------------------------------------------------------------------------------
+ f3     | integer | 
+ f6     | integer | 
+ f2     | text    | 
+ f1     | integer | 
+ f4     | bigint  | 
+ f7     | integer | 
+ f5     | integer | generated always as (((f1)::bigint OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored
+
+select * from alter_order_generated_test;
+  f3  | f6 | f2  |  f1  | f4 | f7 |  f5  
+------+----+-----+------+----+----+------
+    3 |    | aaa |    1 |  1 |    |    4
+   33 |    | bbb |   11 |  2 |    |   44
+  333 |    | ccc |  111 |  3 |    |  444
+ 3333 |    | ddd | 1111 |  4 |    | 4444
+(4 rows)
+
+\d alter_order_generated_test_v
+View "db_alter_table.alter_order_generated_test_v"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ f1     | integer | 
+ f2     | text    | 
+ f3     | integer | 
+ f4     | bigint  | 
+ f5     | integer | 
+
+select * from alter_order_generated_test_v;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+drop view alter_order_generated_test_v;
+create view alter_order_generated_test_v as
+    select * from alter_order_generated_test;
+\d alter_order_generated_test_v
+View "db_alter_table.alter_order_generated_test_v"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ f3     | integer | 
+ f6     | integer | 
+ f2     | text    | 
+ f1     | integer | 
+ f4     | bigint  | 
+ f7     | integer | 
+ f5     | integer | 
+
+select * from alter_order_generated_test_v;
+  f3  | f6 | f2  |  f1  | f4 | f7 |  f5  
+------+----+-----+------+----+----+------
+    3 |    | aaa |    1 |  1 |    |    4
+   33 |    | bbb |   11 |  2 |    |   44
+  333 |    | ccc |  111 |  3 |    |  444
+ 3333 |    | ddd | 1111 |  4 |    | 4444
+(4 rows)
+
+drop view alter_order_generated_test_v;
+drop table alter_order_generated_test;
+drop table if exists t1 cascade;
+NOTICE:  table "t1" does not exist, skipping
+create table t1(f1 int, f2 text, f3 int, f4 bigint, f5 int generated always as (f1 + f3) stored)
+    with (storage_type=ustore);
+insert into t1 values(1, 'aaa', 3, 1);
+insert into t1 values(11, 'bbb', 33, 2);
+insert into t1 values(111, 'ccc', 333, 3);
+insert into t1 values(1111, 'ddd', 3333, 4);
+select * from t1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+create view t1_view1 as select * from t1;
+\d+ t1_view1;
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+select * from t1_view1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+alter table t1 add f6 int first, add f7 int after f4, modify f1 int after f2, modify f3 int first;
+select * from t1;
+  f3  | f6 | f2  |  f1  | f4 | f7 |  f5  
+------+----+-----+------+----+----+------
+    3 |    | aaa |    1 |  1 |    |    4
+   33 |    | bbb |   11 |  2 |    |   44
+  333 |    | ccc |  111 |  3 |    |  444
+ 3333 |    | ddd | 1111 |  4 |    | 4444
+(4 rows)
+
+\d+ t1_view1;
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+alter table t1 drop f4;
+select * from t1;
+  f3  | f6 | f2  |  f1  | f7 |  f5  
+------+----+-----+------+----+------
+    3 |    | aaa |    1 |    |    4
+   33 |    | bbb |   11 |    |   44
+  333 |    | ccc |  111 |    |  444
+ 3333 |    | ddd | 1111 |    | 4444
+(4 rows)
+
+\d+ t1_view1;
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1; --error
+ERROR:  The view t1_view1 is invalid, please make it valid before operation.
+HINT:  Please re-add missing table fields.
+alter table t1 add f8 int first, drop f2;
+select * from t1;
+ f8 |  f3  | f6 |  f1  | f7 |  f5  
+----+------+----+------+----+------
+    |    3 |    |    1 |    |    4
+    |   33 |    |   11 |    |   44
+    |  333 |    |  111 |    |  444
+    | 3333 |    | 1111 |    | 4444
+(4 rows)
+
+\d+ t1_view1;
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1; --error
+ERROR:  The view t1_view1 is invalid, please make it valid before operation.
+HINT:  Please re-add missing table fields.
+alter table t1 drop f5;
+select * from t1;
+ f8 |  f3  | f6 |  f1  | f7 
+----+------+----+------+----
+    |    3 |    |    1 |   
+    |   33 |    |   11 |   
+    |  333 |    |  111 |   
+    | 3333 |    | 1111 |   
+(4 rows)
+
+\d+ t1_view1;
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1; --error
+ERROR:  The view t1_view1 is invalid, please make it valid before operation.
+HINT:  Please re-add missing table fields.
+alter table t1 add f9 int after f1, drop f2; --error
+ERROR:  column "f2" of relation "t1" does not exist
+select * from t1;
+ f8 |  f3  | f6 |  f1  | f7 
+----+------+----+------+----
+    |    3 |    |    1 |   
+    |   33 |    |   11 |   
+    |  333 |    |  111 |   
+    | 3333 |    | 1111 |   
+(4 rows)
+
+\d+ t1_view1;
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1; --error
+ERROR:  The view t1_view1 is invalid, please make it valid before operation.
+HINT:  Please re-add missing table fields.
+alter table t1 drop f3, add f10 int after f3; --error
+--? ERROR:  The f3 column of relation .* is not exists.
+select * from t1;
+ f8 |  f3  | f6 |  f1  | f7 
+----+------+----+------+----
+    |    3 |    |    1 |   
+    |   33 |    |   11 |   
+    |  333 |    |  111 |   
+    | 3333 |    | 1111 |   
+(4 rows)
+
+\d+ t1_view1;
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+select * from t1_view1; --error
+ERROR:  The view t1_view1 is invalid, please make it valid before operation.
+HINT:  Please re-add missing table fields.
+alter table t1 add f2 text, add f4 bigint, add f5 int generated always as (f1 + f3) stored; -- view rebuild
+select * from t1;
+ f8 |  f3  | f6 |  f1  | f7 | f2 | f4 |  f5  
+----+------+----+------+----+----+----+------
+    |    3 |    |    1 |    |    |    |    4
+    |   33 |    |   11 |    |    |    |   44
+    |  333 |    |  111 |    |    |    |  444
+    | 3333 |    | 1111 |    |    |    | 4444
+(4 rows)
+
+\d+ t1_view1;
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5 FROM t1;
+
+select * from t1_view1;
+  f1  | f2 |  f3  | f4 |  f5  
+------+----+------+----+------
+    1 |    |    3 |    |    4
+   11 |    |   33 |    |   44
+  111 |    |  333 |    |  444
+ 1111 |    | 3333 |    | 4444
+(4 rows)
+
+drop view t1_view1;
+drop table t1;
+create table t1(f1 int, f2 text, f3 int, f4 bigint, f5 int generated always as (f1 + f3) stored)
+    with (storage_type=ustore);
+insert into t1 values(1, 'aaa', 3, 1);
+insert into t1 values(11, 'bbb', 33, 2);
+insert into t1 values(111, 'ccc', 333, 3);
+insert into t1 values(1111, 'ddd', 3333, 4);
+select * from t1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+create view t1_view1 as select * from t1;
+select * from t1_view1;
+  f1  | f2  |  f3  | f4 |  f5  
+------+-----+------+----+------
+    1 | aaa |    3 |  1 |    4
+   11 | bbb |   33 |  2 |   44
+  111 | ccc |  333 |  3 |  444
+ 1111 | ddd | 3333 |  4 | 4444
+(4 rows)
+
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f2     | text    |                                                                            | extended |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f4     | bigint  |                                                                            | plain    |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=ustore
+
+\d+ t1_view1
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT  *
+   FROM t1;
+
+alter table t1 drop f4;
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f1     | integer |                                                                            | plain    |              | 
+ f2     | text    |                                                                            | extended |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=ustore
+
+\d+ t1_view1
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+alter table t1 add f8 int first, drop f2;
+\d+ t1
+                                                      Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+---------+--------------+-------------
+ f8     | integer |                                                                            | plain   |              | 
+ f1     | integer |                                                                            | plain   |              | 
+ f3     | integer |                                                                            | plain   |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain   |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+\d+ t1_view1
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+alter table t1 drop f5;
+\d+ t1
+                      Table "db_alter_table.t1"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ f8     | integer |           | plain   |              | 
+ f1     | integer |           | plain   |              | 
+ f3     | integer |           | plain   |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+\d+ t1_view1
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+alter table t1 add f9 int after f1, drop f2;
+ERROR:  column "f2" of relation "t1" does not exist
+\d+ t1
+                      Table "db_alter_table.t1"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ f8     | integer |           | plain   |              | 
+ f1     | integer |           | plain   |              | 
+ f3     | integer |           | plain   |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+\d+ t1_view1
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+alter table t1 add f4 bigint, add f5 int generated always as (f1 + f3) stored;
+select * from t1;
+ f8 |  f1  |  f3  | f4 |  f5  
+----+------+------+----+------
+    |    1 |    3 |    |    4
+    |   11 |   33 |    |   44
+    |  111 |  333 |    |  444
+    | 1111 | 3333 |    | 4444
+(4 rows)
+
+\d+ t1
+                                                      Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+---------+--------------+-------------
+ f8     | integer |                                                                            | plain   |              | 
+ f1     | integer |                                                                            | plain   |              | 
+ f3     | integer |                                                                            | plain   |              | 
+ f4     | bigint  |                                                                            | plain   |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain   |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+\d+ t1_view1
+WARNING:  View t1_view1 references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: pg_get_viewdef
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+ SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5
+   FROM t1;
+
+alter table t1 add f2 text;
+select * from t1;
+ f8 |  f1  |  f3  | f4 |  f5  | f2 
+----+------+------+----+------+----
+    |    1 |    3 |    |    4 | 
+    |   11 |   33 |    |   44 | 
+    |  111 |  333 |    |  444 | 
+    | 1111 | 3333 |    | 4444 | 
+(4 rows)
+
+\d+ t1
+                                                       Table "db_alter_table.t1"
+ Column |  Type   |                                 Modifiers                                  | Storage  | Stats target | Description 
+--------+---------+----------------------------------------------------------------------------+----------+--------------+-------------
+ f8     | integer |                                                                            | plain    |              | 
+ f1     | integer |                                                                            | plain    |              | 
+ f3     | integer |                                                                            | plain    |              | 
+ f4     | bigint  |                                                                            | plain    |              | 
+ f5     | integer | generated always as ((f1 OPERATOR(dolphin_catalog.+) (f3)::bigint)) stored | plain    |              | 
+ f2     | text    |                                                                            | extended |              | 
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=USTORE
+
+\d+ t1_view1
+            View "db_alter_table.t1_view1"
+ Column |  Type   | Modifiers | Storage  | Description 
+--------+---------+-----------+----------+-------------
+ f1     | integer |           | plain    | 
+ f2     | text    |           | extended | 
+ f3     | integer |           | plain    | 
+ f4     | bigint  |           | plain    | 
+ f5     | integer |           | plain    | 
+View definition:
+SELECT t1.f1, t1.f2, t1.f3, t1.f4, t1.f5 FROM t1;
+
+select * from t1_view1;
+  f1  | f2 |  f3  | f4 |  f5  
+------+----+------+----+------
+    1 |    |    3 |    |    4
+   11 |    |   33 |    |   44
+  111 |    |  333 |    |  444
+ 1111 |    | 3333 |    | 4444
+(4 rows)
+
+drop view t1_view1;
+drop table t1;
+create table t1(f1 int, f2 varchar(20), f3 int, primary key(f1, f3)) with (storage_type=ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+insert into t1 values(1, 'a', 1), (2, 'b', 2);
+\d+ t1
+                             Table "db_alter_table.t1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ f1     | integer               | not null  | plain    |              | 
+ f2     | character varying(20) |           | extended |              | 
+ f3     | integer               | not null  | plain    |              | 
+Indexes:
+    "t1_pkey" PRIMARY KEY, ubtree (f1, f3) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no
+
+select * from t1;
+ f1 | f2 | f3 
+----+----+----
+  1 | a  |  1
+  2 | b  |  2
+(2 rows)
+
+alter table t1 modify f1 text after f3, add f10 int default 10 after f2;
+\d+ t1
+                              Table "db_alter_table.t1"
+ Column |         Type          | Modifiers  | Storage  | Stats target | Description 
+--------+-----------------------+------------+----------+--------------+-------------
+ f2     | character varying(20) |            | extended |              | 
+ f10    | integer               | default 10 | plain    |              | 
+ f3     | integer               | not null   | plain    |              | 
+ f1     | text                  | not null   | extended |              | 
+Indexes:
+    "t1_pkey" PRIMARY KEY, ubtree (f1, f3) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, storage_type=ustore, compression=no, toast.storage_type=USTORE
+
+select * from t1;
+ f2 | f10 | f3 | f1 
+----+-----+----+----
+ a  |  10 |  1 | 1
+ b  |  10 |  2 | 2
+(2 rows)
+
+drop table t1;
+-- test alter-type cleanup does not recreate a later dropped index
+drop table if exists alter_cleanup_idx_test;
+NOTICE:  table "alter_cleanup_idx_test" does not exist, skipping
+create table alter_cleanup_idx_test(a int, b int) with (storage_type=ustore);
+create index alter_cleanup_idx_test_b_idx on alter_cleanup_idx_test(b);
+alter table alter_cleanup_idx_test
+    modify b bigint,
+    drop key alter_cleanup_idx_test_b_idx;
+\d alter_cleanup_idx_test
+Table "db_alter_table.alter_cleanup_idx_test"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | bigint  | 
+
+drop table alter_cleanup_idx_test;
+-- test modify alias keeps dependent objects in B-format execution order
+drop table if exists alter_type_parent, alter_type_child;
+NOTICE:  table "alter_type_parent" does not exist, skipping
+NOTICE:  table "alter_type_child" does not exist, skipping
+create table alter_type_parent(a int primary key, b int) with (storage_type=ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "alter_type_parent_pkey" for table "alter_type_parent"
+create index alter_type_parent_b_idx on alter_type_parent(b);
+create table alter_type_child(a int references alter_type_parent(a)) with (storage_type=ustore);
+insert into alter_type_parent values (1, 10);
+insert into alter_type_child values (1);
+alter table alter_type_parent modify a bigint;
+\d alter_type_parent
+Table "db_alter_table.alter_type_parent"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | bigint  | not null
+ b      | integer | 
+Indexes:
+    "alter_type_parent_pkey" PRIMARY KEY, ubtree (a) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
+    "alter_type_parent_b_idx" ubtree (b) WITH (storage_type=ustore, index_type=rcr) TABLESPACE pg_default
 Referenced by:
     TABLE "alter_type_child" CONSTRAINT "alter_type_child_a_fkey" FOREIGN KEY (a) REFERENCES alter_type_parent(a)
 
