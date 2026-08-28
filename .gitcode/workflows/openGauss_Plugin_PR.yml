@@ -1,0 +1,332 @@
+name: openGauss_Plugin_PR
+
+on:
+  push:
+    branches:
+      - master
+  pull_request_target:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  repository: read
+  pr: write
+  note: write
+
+env:
+  GITCODE_REPO: opengauss/Plugin
+  PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
+  SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
+  PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
+
+jobs:
+  prepare:
+    name: Mark running
+    runs-on: [self-hosted, plugin_1]
+    steps:
+      - name: Manual checkout source code
+        run: |
+          set -e
+          workspace="$PWD"
+          repo="${ATOMGIT_REPOSITORY:-}"
+          if [ -z "${repo}" ]; then
+            repo="${GITCODE_REPOSITORY:-}"
+          fi
+          if [ -z "${repo}" ]; then
+            echo "ERROR: ATOMGIT_REPOSITORY/GITCODE_REPOSITORY is required"
+            exit 1
+          fi
+          server="${ATOMGIT_SERVER_URL:-}"
+          if [ -z "${server}" ]; then
+            server="${GITCODE_SERVER_URL:-}"
+          fi
+          if [ -z "${server}" ]; then
+            server="https://gitcode.com"
+          fi
+          repo_url="${server%/}/${repo}.git"
+          ref="${ATOMGIT_REF:-}"
+          if [ -z "${ref}" ]; then
+            ref="${GITCODE_REF:-}"
+          fi
+          if [ -z "${ref}" ]; then
+            ref="refs/heads/master"
+          fi
+          sha="${ATOMGIT_SHA:-}"
+          if [ -z "${sha}" ]; then
+            sha="${GITCODE_SHA:-}"
+          fi
+          if [ -z "${sha}" ]; then
+            sha="FETCH_HEAD"
+          fi
+          echo "Manual checkout ${repo_url} ${ref} ${sha}"
+
+          mkdir -p "${workspace}"
+          cd "${workspace}"
+          if [ ! -d .git ]; then
+            git init
+          fi
+          if git remote | grep -qx origin; then
+            git remote set-url origin "${repo_url}"
+          else
+            git remote add origin "${repo_url}"
+          fi
+          git fetch --depth=1 origin "${ref}"
+          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
+      - name: Resolve GitCode event variables
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+
+      - name: Mark PR as running
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+          bash .gitcode/scripts/gitcode_pr_labels.sh running
+        env:
+          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+
+  compile_plugin_1:
+    name: openGauss_Plugin_Compile
+    needs: prepare
+    runs-on: [self-hosted, plugin_1]
+    timeout-minutes: 120
+    steps:
+      - name: Manual checkout source code
+        run: |
+          set -e
+          workspace="$PWD"
+          repo="${ATOMGIT_REPOSITORY:-}"
+          if [ -z "${repo}" ]; then
+            repo="${GITCODE_REPOSITORY:-}"
+          fi
+          if [ -z "${repo}" ]; then
+            echo "ERROR: ATOMGIT_REPOSITORY/GITCODE_REPOSITORY is required"
+            exit 1
+          fi
+          server="${ATOMGIT_SERVER_URL:-}"
+          if [ -z "${server}" ]; then
+            server="${GITCODE_SERVER_URL:-}"
+          fi
+          if [ -z "${server}" ]; then
+            server="https://gitcode.com"
+          fi
+          repo_url="${server%/}/${repo}.git"
+          ref="${ATOMGIT_REF:-}"
+          if [ -z "${ref}" ]; then
+            ref="${GITCODE_REF:-}"
+          fi
+          if [ -z "${ref}" ]; then
+            ref="refs/heads/master"
+          fi
+          sha="${ATOMGIT_SHA:-}"
+          if [ -z "${sha}" ]; then
+            sha="${GITCODE_SHA:-}"
+          fi
+          if [ -z "${sha}" ]; then
+            sha="FETCH_HEAD"
+          fi
+          echo "Manual checkout ${repo_url} ${ref} ${sha}"
+
+          mkdir -p "${workspace}"
+          cd "${workspace}"
+          if [ ! -d .git ]; then
+            git init
+          fi
+          if git remote | grep -qx origin; then
+            git remote set-url origin "${repo_url}"
+          else
+            git remote add origin "${repo_url}"
+          fi
+          git fetch --depth=1 origin "${ref}"
+          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
+      - name: Run openGauss plugin compile on plugin-1
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+          bash .gitcode/scripts/plugin_compile.sh
+        env:
+          WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
+
+  compile_plugin_2:
+    name: openGauss_Plugin_Compile_Part2
+    needs: prepare
+    runs-on: [self-hosted, docker_1]
+    timeout-minutes: 120
+    steps:
+      - name: Manual checkout source code
+        run: |
+          set -e
+          workspace="$PWD"
+          repo="${ATOMGIT_REPOSITORY:-}"
+          if [ -z "${repo}" ]; then
+            repo="${GITCODE_REPOSITORY:-}"
+          fi
+          if [ -z "${repo}" ]; then
+            echo "ERROR: ATOMGIT_REPOSITORY/GITCODE_REPOSITORY is required"
+            exit 1
+          fi
+          server="${ATOMGIT_SERVER_URL:-}"
+          if [ -z "${server}" ]; then
+            server="${GITCODE_SERVER_URL:-}"
+          fi
+          if [ -z "${server}" ]; then
+            server="https://gitcode.com"
+          fi
+          repo_url="${server%/}/${repo}.git"
+          ref="${ATOMGIT_REF:-}"
+          if [ -z "${ref}" ]; then
+            ref="${GITCODE_REF:-}"
+          fi
+          if [ -z "${ref}" ]; then
+            ref="refs/heads/master"
+          fi
+          sha="${ATOMGIT_SHA:-}"
+          if [ -z "${sha}" ]; then
+            sha="${GITCODE_SHA:-}"
+          fi
+          if [ -z "${sha}" ]; then
+            sha="FETCH_HEAD"
+          fi
+          echo "Manual checkout ${repo_url} ${ref} ${sha}"
+
+          mkdir -p "${workspace}"
+          cd "${workspace}"
+          if [ ! -d .git ]; then
+            git init
+          fi
+          if git remote | grep -qx origin; then
+            git remote set-url origin "${repo_url}"
+          else
+            git remote add origin "${repo_url}"
+          fi
+          git fetch --depth=1 origin "${ref}"
+          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
+      - name: Run openGauss plugin compile on docker-1
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+          bash .gitcode/scripts/plugin_compile.sh
+        env:
+          WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
+
+  report_success:
+    name: Mark success
+    needs:
+      - compile_plugin_1
+      - compile_plugin_2
+    runs-on: [self-hosted, plugin_1]
+    steps:
+      - name: Manual checkout source code
+        run: |
+          set -e
+          workspace="$PWD"
+          repo="${ATOMGIT_REPOSITORY:-}"
+          if [ -z "${repo}" ]; then
+            repo="${GITCODE_REPOSITORY:-}"
+          fi
+          if [ -z "${repo}" ]; then
+            echo "ERROR: ATOMGIT_REPOSITORY/GITCODE_REPOSITORY is required"
+            exit 1
+          fi
+          server="${ATOMGIT_SERVER_URL:-}"
+          if [ -z "${server}" ]; then
+            server="${GITCODE_SERVER_URL:-}"
+          fi
+          if [ -z "${server}" ]; then
+            server="https://gitcode.com"
+          fi
+          repo_url="${server%/}/${repo}.git"
+          ref="${ATOMGIT_REF:-}"
+          if [ -z "${ref}" ]; then
+            ref="${GITCODE_REF:-}"
+          fi
+          if [ -z "${ref}" ]; then
+            ref="refs/heads/master"
+          fi
+          sha="${ATOMGIT_SHA:-}"
+          if [ -z "${sha}" ]; then
+            sha="${GITCODE_SHA:-}"
+          fi
+          if [ -z "${sha}" ]; then
+            sha="FETCH_HEAD"
+          fi
+          echo "Manual checkout ${repo_url} ${ref} ${sha}"
+
+          mkdir -p "${workspace}"
+          cd "${workspace}"
+          if [ ! -d .git ]; then
+            git init
+          fi
+          if git remote | grep -qx origin; then
+            git remote set-url origin "${repo_url}"
+          else
+            git remote add origin "${repo_url}"
+          fi
+          git fetch --depth=1 origin "${ref}"
+          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
+      - name: Mark PR as success
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+          bash .gitcode/scripts/gitcode_pr_labels.sh success
+        env:
+          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+
+  report_failed:
+    name: Mark failed
+    if: ${{ failed() }}
+    needs:
+      - compile_plugin_1
+      - compile_plugin_2
+    runs-on: [self-hosted, plugin_1]
+    steps:
+      - name: Manual checkout source code
+        run: |
+          set -e
+          workspace="$PWD"
+          repo="${ATOMGIT_REPOSITORY:-}"
+          if [ -z "${repo}" ]; then
+            repo="${GITCODE_REPOSITORY:-}"
+          fi
+          if [ -z "${repo}" ]; then
+            echo "ERROR: ATOMGIT_REPOSITORY/GITCODE_REPOSITORY is required"
+            exit 1
+          fi
+          server="${ATOMGIT_SERVER_URL:-}"
+          if [ -z "${server}" ]; then
+            server="${GITCODE_SERVER_URL:-}"
+          fi
+          if [ -z "${server}" ]; then
+            server="https://gitcode.com"
+          fi
+          repo_url="${server%/}/${repo}.git"
+          ref="${ATOMGIT_REF:-}"
+          if [ -z "${ref}" ]; then
+            ref="${GITCODE_REF:-}"
+          fi
+          if [ -z "${ref}" ]; then
+            ref="refs/heads/master"
+          fi
+          sha="${ATOMGIT_SHA:-}"
+          if [ -z "${sha}" ]; then
+            sha="${GITCODE_SHA:-}"
+          fi
+          if [ -z "${sha}" ]; then
+            sha="FETCH_HEAD"
+          fi
+          echo "Manual checkout ${repo_url} ${ref} ${sha}"
+
+          mkdir -p "${workspace}"
+          cd "${workspace}"
+          if [ ! -d .git ]; then
+            git init
+          fi
+          if git remote | grep -qx origin; then
+            git remote set-url origin "${repo_url}"
+          else
+            git remote add origin "${repo_url}"
+          fi
+          git fetch --depth=1 origin "${ref}"
+          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
+      - name: Mark PR as failed
+        run: |
+          source .gitcode/scripts/resolve_gitcode_env.sh
+          bash .gitcode/scripts/gitcode_pr_labels.sh failed
+        env:
+          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
