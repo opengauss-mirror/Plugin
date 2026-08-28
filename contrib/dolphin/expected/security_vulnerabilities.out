@@ -1,0 +1,5 @@
+\set ECHO none
+security_upsert_clause: completed without backend crash
+security_schema_null: completed without backend crash
+security_truncate_identifier_b: completed without backend crash
+security_truncate_identifier_a: completed without backend crash
