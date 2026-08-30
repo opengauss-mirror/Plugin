@@ -25,6 +25,7 @@
 #include "utils/syscache.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
+#include "plugin_postgres.h"
 
 #define MAX_INT32_LEN 11
 
@@ -36,6 +37,46 @@ static char* psnprintf(size_t len, const char* fmt, ...)
     __attribute__((format(PG_PRINTF_ATTRIBUTE, 2, 3)));
 static char* get_buf(Oid type_oid, int32 typemod, Form_pg_type typeform, bits16 flags);
 static bool is_reg_array(Oid type_oid, Form_pg_type *typeform, HeapTuple tuple, bits16 flags);
+#ifdef DOLPHIN
+static char* pg_type_string_to_mysql(const char* pg_type);
+static char* convert_to_mysql_base(const char* phrase);
+
+/* openGauss type name -> MySQL type name, used for Dolphin/MySQL protocol sessions. */
+struct pg_mysql_type_entry {
+    const char* pg_name;
+    const char* mysql_name;
+};
+static const struct pg_mysql_type_entry pg_mysql_type_mapping[] = {
+    {"character varying", "varchar"},
+    {"character", "char"},
+    {"double precision", "double"},
+    {"nvarchar2", "varchar"},
+    {"timestamp with time zone", "timestamp"},
+    {"timestamp without time zone", "datetime"},
+    {"time with time zone", "time"},
+    {"time without time zone", "time"},
+    {"bit varying", "bit"},
+    {"boolean", "tinyint(1)"},
+    {"integer", "int"},
+    {"real", "float"},
+    {"numeric", "decimal"},
+    {"number", "decimal"},
+    {"bytea", "blob"},
+    {"timestamptz", "timestamp"},
+    {"timestamp", "datetime"},
+    {"bpchar", "char"},
+    {"varbit", "bit"},
+    {"uint1", "tinyint unsigned"},
+    {"uint2", "smallint unsigned"},
+    {"uint4", "int unsigned"},
+    {"uint8", "bigint unsigned"},
+    {"oid", "int unsigned"},
+    {"name", "varchar(64)"},
+    {"bool", "tinyint(1)"},
+};
+#define PG_MYSQL_TYPE_MAPPING_SIZE \
+    (sizeof(pg_mysql_type_mapping) / sizeof(pg_mysql_type_mapping[0]))
+#endif
 
 /*
  * SQL function: format_type(type_oid, typemod)
@@ -68,6 +109,9 @@ Datum format_type(PG_FUNCTION_ARGS)
     Oid type_oid;
     int32 typemod;
     char* result = NULL;
+#ifdef DOLPHIN
+    char* mysql_name = NULL;
+#endif
 
     /* Since this function is not strict, we must test for null args */
     if (PG_ARGISNULL(0))
@@ -81,6 +125,17 @@ Datum format_type(PG_FUNCTION_ARGS)
         typemod = PG_GETARG_INT32(1);
         result = format_type_internal(type_oid, typemod, true, true);
     }
+
+    /* MySQL-protocol sessions get MySQL type names unless the GUC is off. */
+#ifdef DOLPHIN
+    if (GetSessionContext()->enable_type_name_map_in_protocol && GetSessionContext()->Conn_Mysql_Info != NULL) {
+        mysql_name = pg_type_string_to_mysql(result);
+        if (mysql_name != NULL) {
+            pfree(result);
+            result = mysql_name;
+        }
+    }
+#endif
 
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
@@ -773,6 +828,79 @@ Datum oidvectortypes(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
+
+#ifdef DOLPHIN
+/* Map an openGauss type name to a MySQL name; unknown types are returned unchanged. */
+static char* pg_type_string_to_mysql(const char* pg_type)
+{
+    const char* paren;
+    const char* close_paren;
+    char* phrase;
+    char* mapped;
+    char* result;
+    size_t head_len;
+    size_t tail_len;
+    size_t paren_len;
+    StringInfoData buf;
+
+    if (pg_type == NULL) {
+        return NULL;
+    }
+    if (pg_type[0] == '\0') {
+        return pstrdup(pg_type);
+    }
+
+    /* Split into head, "(modifier)", tail. */
+    paren = strchr(pg_type, '(');
+    if (paren == NULL) {
+        return convert_to_mysql_base(pg_type);
+    }
+
+    close_paren = strchr(paren, ')');
+    if (close_paren == NULL) {
+        return convert_to_mysql_base(pg_type);
+    }
+
+    head_len = (size_t)(paren - pg_type);
+    paren_len = (size_t)(close_paren - paren + 1);
+    tail_len = strlen(close_paren + 1);
+
+    /* Rebuild "head + tail" as the base phrase. */
+    initStringInfo(&buf);
+    appendBinaryStringInfo(&buf, pg_type, head_len);
+    appendBinaryStringInfo(&buf, close_paren + 1, tail_len);
+    phrase = buf.data;
+
+    /* Not a known builtin: return unchanged. */
+    mapped = convert_to_mysql_base(phrase);
+    if (strcmp(mapped, phrase) == 0) {
+        pfree(phrase);
+        pfree(mapped);
+        return pstrdup(pg_type);
+    }
+
+    /* Re-attach "(...)" modifier right after the mapped base. */
+    initStringInfo(&buf);
+    appendStringInfoString(&buf, mapped);
+    appendBinaryStringInfo(&buf, paren, paren_len);
+    result = buf.data;
+    pfree(phrase);
+    pfree(mapped);
+    return result;
+}
+
+/* Convert a plain openGauss type phrase (no modifiers) to a MySQL type name. */
+static char* convert_to_mysql_base(const char* phrase)
+{
+    size_t i;
+    for (i = 0; i < PG_MYSQL_TYPE_MAPPING_SIZE; i++) {
+        if (strcmp(phrase, pg_mysql_type_mapping[i].pg_name) == 0) {
+            return pstrdup(pg_mysql_type_mapping[i].mysql_name);
+        }
+    }
+    return pstrdup(phrase);
+}
+#endif
 
 /* snprintf into a palloc'd string */
 static char* psnprintf(size_t len, const char* fmt, ...)
