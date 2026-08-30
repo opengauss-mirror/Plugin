@@ -1110,6 +1110,15 @@ void init_session_vars(void)
                              0,
                              CheckNullsMinimalPolicy, NULL, NULL);
 
+    DefineCustomBoolVariable("dolphin.type_name_map_in_protocol",
+                             "Map openGauss type names to MySQL names on MySQL-protocol metadata access.",
+                             NULL,
+                             &GetSessionContext()->enable_type_name_map_in_protocol,
+                             true,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
+
     DefineCustomBoolVariable("dolphin.enable_procedure_executestmt",
                              "Enable mysql EXECUTE statement behavior in procedures.",
                              NULL,
