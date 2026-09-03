@@ -1,5 +1,3 @@
-test: security_vulnerabilities
-
 test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4 b_plugin_signal_resignal b_database_greatest
 
 # show storage engines
