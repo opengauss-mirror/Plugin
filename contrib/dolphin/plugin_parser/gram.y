@@ -30830,7 +30830,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->returningList = $9;
 						$7->withClause = $1;
 						$7->upsertClause = (UpsertClause *)$8;
-						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						if ($7->upsertClause != NULL) {
+							$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						}
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
 						$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
@@ -32930,6 +32932,7 @@ func_table_with_table:
 		$$ = MakeNoArgFunctionCall(list_make1(makeString(pstrdup($3))), @3);
 	}
 	| TABLE '(' DolphinColId dolphin_indirection ')'			{
+		check_dolphin_qualified_name($4, yyscanner);
 		int len = list_length($4);
 		if (len == 1) {
 			/* schema_name.func_name */
@@ -41342,6 +41345,7 @@ dolphin_func_name:	type_function_name
 						{ $$ = list_make1(makeString($1)); }
 					| DolphinColId dolphin_indirection
 						{
+							check_dolphin_qualified_name($2, yyscanner);
 							int len = list_length($2);
 							if (len == 1) {
 								/* schema_name.func_name */
@@ -43551,7 +43555,8 @@ static void check_dolphin_qualified_name(List *names, core_yyscan_t yyscanner)
 	foreach(i, names)
 	{
 		DolphinString* elem = (DolphinString*)lfirst(i);
-		if (!IsA(elem->node, String))
+		if (elem == NULL || elem->node == NULL ||
+			!IsA(elem->node, String) || elem->str == NULL)
 			parser_yyerror("syntax error");
 	}
 }
@@ -46201,6 +46206,12 @@ static List* GetNameListFromDolphinString(List* dolphinStringList)
 	ListCell* cell = NULL;
 	foreach (cell, dolphinStringList) {
 		DolphinString* element = (DolphinString*)lfirst(cell);
+		if (element == NULL || element->node == NULL ||
+			!IsA(element->node, String) || element->str == NULL) {
+			ereport(ERROR,
+				(errcode(ERRCODE_SYNTAX_ERROR),
+				 errmsg("invalid qualified name")));
+		}
 		element->str = downcase_str(element->str, element->is_quoted);
 		result = lappend(result, element->node);
 	}
@@ -46237,6 +46248,12 @@ static inline char* GetDolphinObjName(char* string, bool is_quoted)
 
 static inline char* GetDolphinSchemaName(char* string, bool is_quoted)
 {
+	if (string == NULL) {
+		ereport(ERROR,
+			(errcode(ERRCODE_SYNTAX_ERROR),
+			 errmsg("invalid schema name")));
+	}
+
 	/* public is a special schema, if it's not quoted, public is lowercase  */
 	for (const char* sys_schema : sys_schemas) {
 		if (DolphinObjNameCmp(string, sys_schema, false)) {
@@ -46322,6 +46339,9 @@ static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte)
 
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 {
+	if (s1 == NULL || s2 == NULL) {
+		return false;
+	}
 	if (strlen(s1) != strlen(s2)) {
 		return false;
 	}
