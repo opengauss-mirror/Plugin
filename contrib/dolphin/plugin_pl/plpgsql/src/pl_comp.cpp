@@ -363,6 +363,7 @@ recheck:
             if (package_compile_context != NULL) {
                 PLpgSQL_compile_context* save_compile_context = u_sess->plsql_cxt.curr_compile_context;
                 int save_compile_status = getCompileStatus();
+                volatile bool packageFuncCompiled = false;
                 PG_TRY();
                 {
                     if (!hashkey_valid) {
@@ -377,7 +378,7 @@ recheck:
                     ReleaseSysCache(proc_tup);
                     fcinfo->flinfo->fn_extra = (void*)func;
                     restoreCallFromPkgOid(old_value);
-                    return func;
+                    packageFuncCompiled = true;
                 }
                 PG_CATCH();
                 {
@@ -387,6 +388,9 @@ recheck:
                     PG_RE_THROW();
                 }
                 PG_END_TRY();
+                if (packageFuncCompiled) {
+                    return func;
+                }
             }
             ereport(NOTICE, (errcode(ERRCODE_UNDEFINED_FUNCTION), 
                 errmsg("not found function %u in package", fcinfo->flinfo->fn_oid)));

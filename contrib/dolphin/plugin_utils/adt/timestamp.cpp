@@ -12440,6 +12440,8 @@ Datum convert_tz(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     datetime = raw_datetime;
+    volatile bool returnNull = false;
+    volatile bool returnOriginal = false;
 
     PG_TRY();
     {
@@ -12450,23 +12452,33 @@ Datum convert_tz(PG_FUNCTION_ARGS)
             datetime = (Timestamp)DirectFunctionCall2(timestamp_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
         }
         if (!datetime_in_unixtimestmap(datetime)) {
-            PG_RETURN_TIMESTAMP(raw_datetime);
-        }
-        if (to_ok == 0) {
-            datetime = (Timestamp)DirectFunctionCall2(timestamptz_zone, PointerGetDatum(expr3), TimestampGetDatum(datetime));
+            returnOriginal = true;
         } else {
-            interval = (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str3), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
-            datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
+            if (to_ok == 0) {
+                datetime = (Timestamp)DirectFunctionCall2(timestamptz_zone, PointerGetDatum(expr3), TimestampGetDatum(datetime));
+            } else {
+                interval =
+                    (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str3), ObjectIdGetDatum(InvalidOid),
+                        Int32GetDatum(-1));
+                datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval),
+                    TimestampGetDatum(datetime));
+            }
         }
-        PG_RETURN_TIMESTAMP(datetime);
     }
     PG_CATCH();
     {
         // If catch an error, just empty the error stack and return NULL.
         FlushErrorState();
-        PG_RETURN_NULL();
+        returnNull = true;
     }
     PG_END_TRY();
+    if (returnNull) {
+        PG_RETURN_NULL();
+    }
+    if (returnOriginal) {
+        PG_RETURN_TIMESTAMP(raw_datetime);
+    }
+    PG_RETURN_TIMESTAMP(datetime);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(timediff_datetime_text);
