@@ -68,7 +68,7 @@ alter system set upgrade_mode to 0;
     `mppdb_temp_install/lib/postgresql/dolphin.so`；
     编译日志：容器内 `/workspace/verify.log`
 
-3.  执行 A 组 check 用例（等价于 `make check p=38000 PART=A`）：
+3.  测试 UT 执行 S 组 check 用例即可（等价于 `make check p=38000 PART=S`）：
 
     ```bash
     docker exec og-build /opt/makecheck.sh
@@ -97,38 +97,30 @@ alter system set upgrade_mode to 0;
 
 4. 执行 dolphin check 用例
 
-   dolphin 用例按照 schedule 文件分组执行，主要对应以下两个文件：
+   执行 Dolphin 的 S 组轻量 UT，对应 schedule 文件：
 
    ```text
-   contrib/dolphin/parallel_schedule_dolphinA
-   contrib/dolphin/parallel_schedule_dolphinB
+   contrib/dolphin/parallel_schedule_dolphinS
    ```
 
-   先确认目标用例位于哪个 schedule 文件中。若用例在 `parallel_schedule_dolphinA` 中，则进入 `contrib/dolphin` 目录后执行：
+   进入 `contrib/dolphin` 目录后执行：
 
    ```bash
    cd contrib/dolphin
-   make check p=38000 PART=A
+   make check p=38000 PART=S
    ```
 
-   若用例在 `parallel_schedule_dolphinB` 中，则执行：
-
-   ```bash
-   cd contrib/dolphin
-   make check p=38000 PART=B
-   ```
-
-   其中，`p` 为数据库监听端口，可根据本地环境调整；`PART` 用于指定执行 A 组或 B 组用例，若不指定 `PART`，则会合并 A/B 两组用例一起执行。
+   其中，`p` 为数据库监听端口，可根据本地环境调整；工程项目执行时必须显式指定 `PART=S`，不要省略 `PART`。
 
 5. 执行单个用例
 
-   若只需执行单个用例，建议先备份对应的 schedule 文件。例如用例属于 A 组：
+   若只需执行 S 组中的单个用例，建议先备份 S schedule 文件：
 
    ```bash
-   cp parallel_schedule_dolphinA parallel_schedule_dolphinA.bak
+   cp parallel_schedule_dolphinS parallel_schedule_dolphinS.bak
    ```
 
-   然后新建或修改 `parallel_schedule_dolphinA`，仅保留需要执行的用例，格式可参考原文件中的写法，例如：
+   然后修改 `parallel_schedule_dolphinS`，仅保留需要执行的用例，格式如下：
 
    ```text
    test: your_test_name
@@ -137,7 +129,7 @@ alter system set upgrade_mode to 0;
    修改完成后执行：
 
    ```bash
-   make check p=38000 PART=A
+   make check p=38000 PART=S
    ```
 
    执行结束后，可根据需要恢复原 schedule 文件。

@@ -36,10 +36,15 @@ endif
 REGRESS_OPTS = --dbname=contrib_regression --dlpath=$(CMAKE_CHECK_INSTALL_PREFIX)/lib -c 0 -d 1 --single_node -p ${p} --schedule=$(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphin${PART} --regconf=$(CMAKE_CHECK_INPUT_DIR)/regress.conf -r 1 -n --keep_last_data=false --temp-config=$(CMAKE_CHECK_INPUT_DIR)/make_check_postgresql.conf --dbcmpt=B --abs_gausshome=$(CMAKE_CHECK_INSTALL_PREFIX)
 export dp = $(shell expr $(p) + 3)
 CMAKE_CHECK_PREP = generate-test-sslcert dolphin-prepare-check
-CMAKE_CHECK_CLEAN_FILES = $(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphin
+CMAKE_CHECK_CLEAN_FILES = $(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphinA \
+$(CMAKE_CHECK_INPUT_DIR)/parallel_schedule_dolphin
 include ../../cmake/check/contrib-regress.mk
 
 .PHONY: generate-test-sslcert dolphin-prepare-check
+parallel_schedule_dolphinA: parallel_schedule_dolphinS parallel_schedule_dolphinA_base
+	cat $^ > $@
+
+# parallel_schedule_dolphinA already contains S; full schedule is A (S + A_base) plus B.
 parallel_schedule_dolphin: parallel_schedule_dolphinA parallel_schedule_dolphinB
 	cat $^ > $@
 
@@ -152,6 +157,7 @@ extra_clean:
 	make clean -C $(pl)
 	make clean -C $(catalog)
 clean: extra_clean
+	rm -f parallel_schedule_dolphinA
 
 dolphin--5.3.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--4.3.sql upgrade_script/dolphin--4.3--4.4.sql upgrade_script/dolphin--4.4--4.5.sql upgrade_script/dolphin--4.5--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql upgrade_script/dolphin--5.2--5.3.sql
 	cat $^ > $@
@@ -162,6 +168,10 @@ dolphin--4.0--4.0.1.sql: upgrade_script/dolphin--2.0--2.0.1.sql
 dolphin--4.0.1--4.0.sql: rollback_script/dolphin--2.0.1--2.0.sql
 	cat $^ > $@
 
+parallel_schedule_dolphinA: parallel_schedule_dolphinS parallel_schedule_dolphinA_base
+	cat $^ > $@
+
+# parallel_schedule_dolphinA already contains S; full schedule is A (S + A_base) plus B.
 parallel_schedule_dolphin: parallel_schedule_dolphinA parallel_schedule_dolphinB
 	cat $^ > $@
 
@@ -197,7 +207,7 @@ tablecmds.o: tablecmds.cpp
 EXTENSION = dolphin
 #a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
 REGRESS:=dummy
-REGRESS_PREP = generate-test-sslcert
+REGRESS_PREP = generate-test-sslcert parallel_schedule_dolphinA
 
 ifdef MJDBC_TEST
 	REGRESS+=b_proto_jdbc

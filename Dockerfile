@@ -229,7 +229,7 @@ RUN printf '#!/bin/bash\n' > /opt/build.sh \
     >> /opt/build.sh \
   && chmod +x /opt/build.sh && chown omm:omm /opt/build.sh
 
-# dolphin 回归测试脚本(以 omm 运行)
+# dolphin 回归测试脚本(以 omm 运行)，工程镜像默认执行轻量 S 用例
 RUN printf '#!/bin/bash\n' > /opt/makecheck.sh \
   && printf 'set -o pipefail\n' >> /opt/makecheck.sh \
   && printf 'exec > >(tee -a /workspace/verify.log) 2>&1\n' \
@@ -241,7 +241,7 @@ RUN printf '#!/bin/bash\n' > /opt/makecheck.sh \
     >> /opt/makecheck.sh \
   && printf 'cd /workspace/openGauss-server/contrib/dolphin\n' \
     >> /opt/makecheck.sh \
-  && printf 'make check p=38000 PART=A\n' >> /opt/makecheck.sh \
+  && printf 'make check p=38000 PART=S\n' >> /opt/makecheck.sh \
   && chmod +x /opt/makecheck.sh \
   && chown omm:omm /opt/makecheck.sh
 
