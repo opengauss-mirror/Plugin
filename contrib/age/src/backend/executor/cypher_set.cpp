@@ -106,10 +106,10 @@ static HeapTuple update_entity_tuple(ResultRelInfo *resultRelInfo,
     HeapTuple tuple = NULL;
     LockTupleMode lockmode;
     TM_FailureData hufd;
-    TM_Result lock_result;
+    volatile TM_Result lock_result;
     TM_Result update_result;
     Buffer buffer;
-    bool errFlag = false;
+    volatile bool errFlag = false;
 
     ResultRelInfo *saved_resultRelInfo = estate->es_result_relation_info;
     estate->es_result_relation_info = resultRelInfo;
@@ -125,8 +125,7 @@ static HeapTuple update_entity_tuple(ResultRelInfo *resultRelInfo,
     {
         lock_result = TM_Invisible;
         errFlag = true;
-        // openGauss PG_CATCH catch 5 times core dump  so reset  -1
-        t_thrd.log_cxt.errordata_stack_depth = -1;
+        FlushErrorState();
     }
     PG_END_TRY();
 

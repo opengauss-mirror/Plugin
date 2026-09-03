@@ -1921,9 +1921,12 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
     mystatus = kept->lockStatus;
     mystatus->currIdx = 0;
 
-    bool setSqlMode = true;
+    volatile bool setSqlMode = true;
+    volatile bool returnNext = false;
+    volatile bool returnDone = false;
+    volatile Datum returnValue = (Datum)0;
     HeapTuple tuple = NULL;
-    Relation rel = NULL;
+    Relation volatile rel = NULL;
     PG_TRY();
     {
         if (funcctx->call_cntr < funcctx->max_calls) {
@@ -1955,10 +1958,8 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
                     getLockCnt(mystatus, rid, &values[LOCKCNT_COL], &values[ACCESSEXCLUSIVE_LOCKCNT_COL]);
                 }
                 tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
-                t_thrd.log_cxt.PG_exception_stack = save_exception_stack;
-                t_thrd.log_cxt.error_context_stack = save_context_stack;
-                gstrace_tryblock_exit(false, oldTryCounter);
-                SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
+                returnValue = HeapTupleGetDatum(tuple);
+                returnNext = true;
             }
         } else {
             setSqlMode = false;
@@ -1970,10 +1971,7 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
             }
             pfree_ext(kept->lockStatus);
             pfree_ext(funcctx->user_fctx);
-            t_thrd.log_cxt.PG_exception_stack = save_exception_stack;
-            t_thrd.log_cxt.error_context_stack = save_context_stack;
-            gstrace_tryblock_exit(false, oldTryCounter);
-            SRF_RETURN_DONE(funcctx);
+            returnDone = true;
         }
     }
     PG_CATCH();
@@ -1984,6 +1982,12 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
         PG_RE_THROW();
     }
     PG_END_TRY();
+    if (returnNext) {
+        SRF_RETURN_NEXT(funcctx, returnValue);
+    }
+    if (returnDone) {
+        SRF_RETURN_DONE(funcctx);
+    }
     return (Datum)0;
 }
 #endif

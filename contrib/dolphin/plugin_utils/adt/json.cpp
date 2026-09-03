@@ -208,6 +208,8 @@ Datum json_in(PG_FUNCTION_ARGS)
     /* validate it */
     lex = makeJsonLexContext(result, false);
     MemoryContext oldcxt = CurrentMemoryContext;
+    volatile bool returnIgnored = false;
+    volatile Datum ignoredResult = (Datum)0;
     PG_TRY();
     {
         pg_parse_json(lex, &nullSemAction);
@@ -216,18 +218,20 @@ Datum json_in(PG_FUNCTION_ARGS)
     {
         if (fcinfo->can_ignore) {
             (void)MemoryContextSwitchTo(oldcxt);
-            ErrorData *edata = CopyErrorData();
+            FlushErrorState();
             ereport(WARNING,
                     (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for type json")));
-            FlushErrorState();
-            FreeErrorData(edata);
-            PG_RETURN_DATUM((Datum)DirectFunctionCall1(json_in, CStringGetDatum("null")));
+            ignoredResult = (Datum)DirectFunctionCall1(json_in, CStringGetDatum("null"));
+            returnIgnored = true;
         } else {
             PG_RE_THROW();
         }
     }
     PG_END_TRY();
 
+    if (returnIgnored) {
+        PG_RETURN_DATUM(ignoredResult);
+    }
     /* Internal representation is the same as text, for now */
     PG_RETURN_TEXT_P(result);
 }
@@ -3012,6 +3016,7 @@ Datum json_valid(PG_FUNCTION_ARGS)
     lex = makeJsonLexContext(result, false);
 
     MemoryContext old_context = CurrentMemoryContext;
+    volatile bool returnInvalid = false;
     PG_TRY();
     {
         pg_parse_json(lex, &nullSemAction);
@@ -3026,8 +3031,7 @@ Datum json_valid(PG_FUNCTION_ARGS)
             /* the old edata is no longer used */
             FreeErrorData(edata);
 
-            MemoryContextSwitchTo(cxt);
-            PG_RETURN_INT64((int64)false);
+            returnInvalid = true;
         } else {
             MemoryContextSwitchTo(cxt);
             ReThrowError(edata);
@@ -3035,6 +3039,9 @@ Datum json_valid(PG_FUNCTION_ARGS)
     }
     PG_END_TRY();
 
+    if (returnInvalid) {
+        PG_RETURN_INT64((int64)false);
+    }
     PG_RETURN_INT64((int64)true);
 }
 
