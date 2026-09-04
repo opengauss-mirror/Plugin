@@ -8,11 +8,11 @@ Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件�
 > 前提：aarch64 机器，Docker ≥ 18.09.0，Docker 数据目录所在磁盘预留 ≥ 30G。
 > 权限配置、seccomp 修复等一次性前置操作，见本仓库根目录 `Dockerfile` 头部注释【操作步骤】步骤一/步骤二。
 
-> 注：仅进行 Docker 快速测试时，按本节步骤操作即可；贡献流程、开发须知和手动 check 用例说明可暂不阅读。首次搭建环境或遇到权限、seccomp 问题时，请同时查看 Dockerfile 头部注释。
+> 注: 采用 AI 测试该代码仓 / 进行 Docker 快速搭建环境及测试，只需阅读本节步骤即可；首次搭建环境或遇到权限、seccomp 问题时，请同时查看 Dockerfile 头部注释。
 
 1.  拉取本仓库，进入 Dockerfile 所在目录
 
-2.  构建镜像并编译（整段复制执行，详见 Dockerfile 注释【操作步骤】步骤四）：
+2.  构建镜像并编译（整段复制执行，详见 Dockerfile 注释【操作步骤】步骤四） ---> 预估耗时 13min 左右：
 
     ```bash
     docker rm -f og-build 2>/dev/null; \
@@ -33,7 +33,7 @@ Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件�
     `mppdb_temp_install/lib/postgresql/dolphin.so`；
     编译日志：容器内 `/workspace/verify.log`
 
-3.  测试 UT 执行 S 组 check 用例即可（等价于 `make check p=38000 PART=S`）：
+3.  测试 UT 执行 S 组 check 用例即可（等价于 `make check p=38000 PART=S`） ---> 预估耗时 2min 左右：
 
     ```bash
     docker exec og-build /opt/makecheck.sh
