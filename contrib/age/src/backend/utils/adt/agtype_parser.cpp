@@ -30,13 +30,15 @@
  */
 
 #include "postgres.h"
-
+#include "varatt.h"
 #include "catalog/pg_type.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
+#include "utils/varlena.h"
 
+#include "utils/agtype.h"
 #include "utils/agtype_parser.h"
 
 /*
@@ -72,78 +74,14 @@ static void parse_object(agtype_lex_context *lex, agtype_sem_action *sem);
 static void parse_array_element(agtype_lex_context *lex,
                                 agtype_sem_action *sem);
 static void parse_array(agtype_lex_context *lex, agtype_sem_action *sem);
-static void report_parse_error(agtype_parse_context ctx,
-                               agtype_lex_context *lex)
-__attribute__((noreturn));
-static void report_invalid_token(agtype_lex_context *lex)
-__attribute__((noreturn));
-
+static pg_noreturn void report_parse_error(agtype_parse_context ctx,
+                               agtype_lex_context *lex);
+static pg_noreturn void report_invalid_token(agtype_lex_context *lex);
 static int report_agtype_context(agtype_lex_context *lex);
 static char *extract_mb_char(char *s);
 
-int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
-int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
-int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
-{
-#ifdef HAVE_INT64_TIMESTAMP
-    tm->tm_hour = time / USECS_PER_HOUR;
-    time -= tm->tm_hour * USECS_PER_HOUR;
-    tm->tm_min = time / USECS_PER_MINUTE;
-    time -= tm->tm_min * USECS_PER_MINUTE;
-    tm->tm_sec = time / USECS_PER_SEC;
-    time -= tm->tm_sec * USECS_PER_SEC;
-    *fsec = time;
-#else
-    double trem;
-
-recalc:
-    trem = time;
-    TMODULO(trem, tm->tm_hour, (double)SECS_PER_HOUR);
-    TMODULO(trem, tm->tm_min, (double)SECS_PER_MINUTE);
-    TMODULO(trem, tm->tm_sec, 1.0);
-    trem = TIMEROUND(trem);
-    /* roundoff may need to propagate to higher-order fields */
-    if (trem >= 1.0) {
-        time = ceil(time);
-        goto recalc;
-    }
-    *fsec = trem;
-#endif
-
-    return 0;
-}
-int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
-{
-    TimeOffset trem = time->time;
-
-#ifdef HAVE_INT64_TIMESTAMP
-    tm->tm_hour = trem / USECS_PER_HOUR;
-    trem -= tm->tm_hour * USECS_PER_HOUR;
-    tm->tm_min = trem / USECS_PER_MINUTE;
-    trem -= tm->tm_min * USECS_PER_MINUTE;
-    tm->tm_sec = trem / USECS_PER_SEC;
-    *fsec = trem - tm->tm_sec * USECS_PER_SEC;
-#else
-recalc:
-    TMODULO(trem, tm->tm_hour, (double)SECS_PER_HOUR);
-    TMODULO(trem, tm->tm_min, (double)SECS_PER_MINUTE);
-    TMODULO(trem, tm->tm_sec, 1.0);
-    trem = TIMEROUND(trem);
-    /* roundoff may need to propagate to higher-order fields */
-    if (trem >= 1.0) {
-        trem = ceil(time->time);
-        goto recalc;
-    }
-    *fsec = trem;
-#endif
-
-    if (tzp != NULL)
-        *tzp = time->zone;
-
-    return 0;
-}
-
 /* Recursive Descent parser support routines */
+
 /*
  * lex_peek
  *
@@ -178,7 +116,7 @@ static inline bool lex_accept(agtype_lex_context *lex, agtype_token_type token,
             else
             {
                 int len = (lex->token_terminator - lex->token_start);
-                char *tokstr = (char *)palloc(len + 1);
+                char *tokstr = palloc(len + 1);
 
                 memcpy(tokstr, lex->token_start, len);
                 tokstr[len] = '\0';
@@ -201,9 +139,7 @@ static inline void lex_expect(agtype_parse_context ctx,
                               agtype_lex_context *lex, agtype_token_type token)
 {
     if (!lex_accept(lex, token, NULL))
-    {
         report_parse_error(ctx, lex);
-    }
 }
 
 /* chars to consider as part of an alphanumeric token */
@@ -223,9 +159,7 @@ bool is_valid_agtype_number(const char *str, int len)
     agtype_lex_context dummy_lex;
 
     if (len <= 0)
-    {
         return false;
-    }
 
     /*
      * agtype_lex_number expects a leading  '-' to have been eaten already.
@@ -270,7 +204,7 @@ agtype_lex_context *make_agtype_lex_context(text *t, bool need_escapes)
 agtype_lex_context *make_agtype_lex_context_cstring_len(char *str, int len,
                                                         bool need_escapes)
 {
-    agtype_lex_context *lex = (agtype_lex_context *)palloc0(sizeof(agtype_lex_context));
+    agtype_lex_context *lex = palloc0(sizeof(agtype_lex_context));
 
     lex->input = lex->token_terminator = lex->line_start = str;
     lex->line_number = 1;
@@ -410,7 +344,7 @@ static inline void parse_scalar(agtype_lex_context *lex,
     }
 
     /* parse annotations (typecasts) */
-    parse_scalar_annotation(lex, (void *)sfunc, &annotation);
+    parse_scalar_annotation(lex, sfunc, &annotation);
 
     if (sfunc != NULL)
         (*sfunc)(sem->semstate, val, tok, annotation);
@@ -1231,7 +1165,7 @@ static void report_parse_error(agtype_parse_context ctx,
 
     /* Separate out the current token. */
     toklen = lex->token_terminator - lex->token_start;
-    token = (char *)palloc(toklen + 1);
+    token = palloc(toklen + 1);
     memcpy(token, lex->token_start, toklen);
     token[toklen] = '\0';
 
@@ -1328,7 +1262,7 @@ static void report_invalid_token(agtype_lex_context *lex)
 
     /* Separate out the offending token. */
     toklen = lex->token_terminator - lex->token_start;
-    token = (char *)palloc(toklen + 1);
+    token = palloc(toklen + 1);
     memcpy(token, lex->token_start, toklen);
     token[toklen] = '\0';
 
@@ -1394,7 +1328,7 @@ static int report_agtype_context(agtype_lex_context *lex)
 
     /* Get a null-terminated copy of the data to present */
     ctxtlen = context_end - context_start;
-    ctxt = (char *)palloc(ctxtlen + 1);
+    ctxt = palloc(ctxtlen + 1);
     memcpy(ctxt, context_start, ctxtlen);
     ctxt[ctxtlen] = '\0';
 
@@ -1423,7 +1357,7 @@ static char *extract_mb_char(char *s)
     int len;
 
     len = pg_mblen(s);
-    res = (char *)palloc(len + 1);
+    res = palloc(len + 1);
     memcpy(res, s, len);
     res[len] = '\0';
 
@@ -1437,7 +1371,7 @@ static char *extract_mb_char(char *s)
 char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 {
     if (!buf)
-        buf = (char *)palloc(MAXDATELEN + 1);
+        buf = palloc(MAXDATELEN + 1);
 
     switch (typid)
     {
@@ -1451,7 +1385,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         /* Same as date_out(), but forcing DateStyle */
         if (DATE_NOT_FINITE(date))
         {
-            ;
+            EncodeSpecialDate(date, buf);
         }
         else
         {
@@ -1468,6 +1402,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         fsec_t fsec;
 
         /* Same as time_out(), but forcing DateStyle */
+        time2tm(time, tm, &fsec);
         EncodeTimeOnly(tm, fsec, false, 0, USE_XSD_DATES, buf);
     }
     break;
@@ -1479,6 +1414,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         int tz;
 
         /* Same as timetz_out(), but forcing DateStyle */
+        timetz2tm(time, tm, &fsec, &tz);
         EncodeTimeOnly(tm, fsec, true, tz, USE_XSD_DATES, buf);
     }
     break;
@@ -1492,7 +1428,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         /* Same as timestamp_out(), but forcing DateStyle */
         if (TIMESTAMP_NOT_FINITE(timestamp))
         {
-            ;
+            EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, NULL, &tm, &fsec, NULL, NULL) == 0)
         {
@@ -1517,7 +1453,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         /* Same as timestamptz_out(), but forcing DateStyle */
         if (TIMESTAMP_NOT_FINITE(timestamp))
         {
-            ;
+            EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, &tz, &tm, &fsec, &tzn, NULL) == 0)
         {

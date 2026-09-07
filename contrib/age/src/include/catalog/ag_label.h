@@ -20,11 +20,7 @@
 #ifndef AG_AG_LABEL_H
 #define AG_AG_LABEL_H
 
-#include "postgres.h"
-
 #include "nodes/execnodes.h"
-
-#include "catalog/ag_catalog.h"
 
 #define Anum_ag_label_vertex_table_id 1
 #define Anum_ag_label_vertex_table_properties 2
@@ -49,47 +45,44 @@
 #define Anum_ag_label_id 3
 #define Anum_ag_label_kind 4
 #define Anum_ag_label_relation 5
+#define Anum_ag_label_seq_name 6
 
-#define Natts_ag_label 5
+
+#define Natts_ag_label 6
 
 #define ag_label_relation_id() ag_relation_id("ag_label", "table")
-#define ag_label_oid_index_id() ag_relation_id("ag_label_oid_index", "index")
 #define ag_label_name_graph_index_id() \
     ag_relation_id("ag_label_name_graph_index", "index")
-#define ag_label_graph_id_index_id() \
-    ag_relation_id("ag_label_graph_id_index", "index")
+#define ag_label_graph_oid_index_id() \
+    ag_relation_id("ag_label_graph_oid_index", "index")
 #define ag_label_relation_index_id() \
     ag_relation_id("ag_label_relation_index", "index")
+#define ag_label_seq_name_graph_index_id() \
+    ag_relation_id("ag_label_seq_name_graph_index", "index")
 
 #define LABEL_ID_SEQ_NAME "_label_id_seq"
 
 #define LABEL_KIND_VERTEX 'v'
 #define LABEL_KIND_EDGE 'e'
-#define ObjectAddressSubSet(addr, class_id, object_id, object_sub_id) \
-    do { \
-            (addr).classId = (class_id); \
-            (addr).objectId = (object_id); \
-            (addr).objectSubId = (object_sub_id); \
-    } while (0)
 
-#define ObjectAddressSet(addr, class_id, object_id) \
-    ObjectAddressSubSet(addr, class_id, object_id, 0)
-
-Oid insert_label(const char *label_name, Oid label_graph, int32 label_id,
-                 char label_kind, Oid label_relation);
+void insert_label(const char *label_name, Oid graph_oid, int32 label_id,
+                  char label_kind, Oid label_relation, const char *seq_name);
 void delete_label(Oid relation);
 
-Oid get_label_oid(const char *label_name, Oid label_graph);
-int32 get_label_id(const char *label_name, Oid label_graph);
-Oid get_label_relation(const char *label_name, Oid label_graph);
-char *get_label_relation_name(const char *label_name, Oid label_graph);
+int32 get_label_id(const char *label_name, Oid graph_oid);
+Oid get_label_relation(const char *label_name, Oid graph_oid);
+char *get_label_relation_name(const char *label_name, Oid graph_oid);
+char get_label_kind(const char *label_name, Oid label_graph);
+char *get_label_seq_relation_name(const char *label_name);
+char *get_label_name(int32 label_id, Oid graph_oid);
 
-bool label_id_exists(Oid label_graph, int32 label_id);
-RangeVar *get_label_range_var(char *graph_name, Oid graph_oid, char *label_name);
+bool label_id_exists(Oid graph_oid, int32 label_id);
+RangeVar *get_label_range_var(char *graph_name, Oid graph_oid,
+                              char *label_name);
 
 List *get_all_edge_labels_per_graph(EState *estate, Oid graph_oid);
 
 #define label_exists(label_name, label_graph) \
-    OidIsValid(get_label_oid(label_name, label_graph))
+    OidIsValid(get_label_id(label_name, label_graph))
 
 #endif

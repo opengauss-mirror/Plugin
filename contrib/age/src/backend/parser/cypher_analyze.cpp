@@ -19,36 +19,40 @@
 
 #include "postgres.h"
 
-#include "catalog/pg_type.h"
+#include "catalog/ag_catalog.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
-#include "nodes/nodes.h"
-#include "nodes/parsenodes.h"
-#include "nodes/pg_list.h"
-#include "nodes/primnodes.h"
 #include "parser/analyze.h"
 #include "parser/parse_coerce.h"
 #include "parser/parse_collate.h"
-#include "parser/parse_node.h"
 #include "parser/parse_relation.h"
 #include "parser/parse_target.h"
-#include "parser/parsetree.h"
 #include "utils/builtins.h"
 
 #include "catalog/ag_graph.h"
-#include "nodes/ag_nodes.h"
 #include "parser/cypher_analyze.h"
 #include "parser/cypher_clause.h"
-#include "parser/cypher_parse_node.h"
 #include "parser/cypher_parser.h"
 #include "utils/ag_func.h"
-#include "utils/agtype.h"
+#include "utils/age_session_info.h"
 
+typedef bool (*cypher_expression_condition)(Node *expr);
+
+/*
+ * extra_node is a global variable to this source to store, at the moment, the
+ * explain stmt node passed up by the parser. The return value from the parser
+ * contains an 'extra' value, hence the name.
+ */
 static Node *extra_node = NULL;
+/*
+ * Takes a query node and builds an explain stmt query node. It then replaces
+ * the passed query node with the new explain stmt query node.
+ */
+static void build_explain_query(Query *query, Node *explain_node);
 
 static post_parse_analyze_hook_type prev_post_parse_analyze_hook;
 
-static void post_parse_analyze(ParseState *pstate, Query *query);
+static void post_parse_analyze(ParseState *pstate, Query *query, JumbleState *jstate);
 static bool convert_cypher_walker(Node *node, ParseState *pstate);
 static bool is_rte_cypher(RangeTblEntry *rte);
 static bool is_func_cypher(FuncExpr *funcexpr);
@@ -58,11 +62,11 @@ static const char *expr_get_const_cstring(Node *expr, const char *source_str);
 static int get_query_location(const int location, const char *source_str);
 static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
                              const char *query_str, int query_loc,
-                             char *graph_name, Oid graph_oid, Param *params);
-static Query *analyze_cypher_and_coerce(List *stmt, RangeTblEntry *rte,
+                             char *graph_name, uint32 graph_oid, Param *params);
+static Query *analyze_cypher_and_coerce(List *stmt, RangeTblFunction *rtfunc,
                                         ParseState *parent_pstate,
                                         const char *query_str, int query_loc,
-                                        char *graph_name, Oid graph_oid,
+                                        char *graph_name, uint32 graph_oid,
                                         Param *params);
 
 void post_parse_analyze_init(void)
@@ -76,20 +80,49 @@ void post_parse_analyze_fini(void)
     post_parse_analyze_hook = prev_post_parse_analyze_hook;
 }
 
-static void post_parse_analyze(ParseState *pstate, Query *query)
+static void post_parse_analyze(ParseState *pstate, Query *query, JumbleState *jstate)
 {
     if (prev_post_parse_analyze_hook)
-        prev_post_parse_analyze_hook(pstate, query);
+    {
+        prev_post_parse_analyze_hook(pstate, query, jstate);
+    }
+
+    if (!is_age_extension_exists())
+    {
+        return;
+    }
+
+    /*
+     * extra_node is set in the parsing stage to keep track of EXPLAIN.
+     * So it needs to be set to NULL prior to any cypher parsing.
+     */
+    extra_node = NULL;
 
     convert_cypher_walker((Node *)query, pstate);
+
+    /*
+     * If there is an extra_node returned, we need to check to see if
+     * it is an EXPLAIN.
+     */
+    if (extra_node != NULL)
+    {
+        /* process the EXPLAIN node */
+        if (nodeTag(extra_node) == T_ExplainStmt)
+        {
+            build_explain_query(query, extra_node);
+        }
+
+        /* reset extra_node */
+        pfree_if_not_null(extra_node);
+        extra_node = NULL;
+    }
 }
 
-// find cypher() calls in FROM clauses and convert them to SELECT subqueries
+/* find cypher() calls in FROM clauses and convert them to SELECT subqueries */
 static bool convert_cypher_walker(Node *node, ParseState *pstate)
 {
-    if (!node) {
+    if (!node)
         return false;
-    }
 
     if (IsA(node, RangeTblEntry))
     {
@@ -98,7 +131,7 @@ static bool convert_cypher_walker(Node *node, ParseState *pstate)
         switch (rte->rtekind)
         {
         case RTE_SUBQUERY:
-            // traverse other RTE_SUBQUERYs
+            /* traverse other RTE_SUBQUERYs */
             return convert_cypher_walker((Node *)rte->subquery, pstate);
         case RTE_FUNCTION:
             if (is_rte_cypher(rte))
@@ -114,6 +147,57 @@ static bool convert_cypher_walker(Node *node, ParseState *pstate)
      * expression. We can let the FuncExpr case below handle it but do this
      * here to throw a better error message.
      */
+    if (IsA(node, RangeTblFunction))
+    {
+        RangeTblFunction *rtfunc = (RangeTblFunction *)node;
+        FuncExpr *funcexpr = (FuncExpr *)rtfunc->funcexpr;
+
+        /*
+         * It is better to throw a kind error message here instead of the
+         * internal error message that cypher() throws later when it is called.
+         */
+        if (is_func_cypher(funcexpr))
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("cypher(...) in ROWS FROM is not supported"),
+                     parser_errposition(pstate, exprLocation((Node *)funcexpr))));
+        }
+
+        /*
+         * From PG -
+         * SQLValueFunction - parameterless functions with special grammar
+         *                    productions.
+         * CoerceViaIO - represents a type coercion between two types whose textual
+         *               representations are compatible
+         * Var - expression node representing a variable (ie, a table column)
+         * OpExpr - expression node for an operator invocation
+         * Const - constant value or expression node
+         * BoolExpr - expression node for the basic Boolean operators AND, OR, NOT
+         * JsonConstructorExpr - wrapper over FuncExpr/Aggref/WindowFunc for
+         *                       SQL/JSON constructors
+         *
+         * Added the following, although only the first 2 caused crashes in tests -
+         * CoalesceExpr, MinMaxExpr, CaseExpr, XmlExpr, ArrayExpr, RowExpr
+         *
+         * These are all special case that needs to be ignored.
+         *
+         */
+        if (IsA(funcexpr, SQLValueFunction)
+            || IsA(funcexpr, CoerceViaIO)
+            || IsA(funcexpr, Var)   || IsA(funcexpr, OpExpr)
+            || IsA(funcexpr, Const) || IsA(funcexpr, BoolExpr)
+            || IsA(funcexpr, JsonConstructorExpr)
+            || IsA(funcexpr, CoalesceExpr) || IsA(funcexpr, MinMaxExpr)
+            || IsA(funcexpr, CaseExpr) || IsA(funcexpr, XmlExpr)
+            || IsA(funcexpr, ArrayExpr) || IsA(funcexpr, RowExpr))
+        {
+            return false;
+        }
+
+        return expression_tree_walker((Node *)funcexpr->args,
+                                      convert_cypher_walker, pstate);
+    }
 
     /*
      * This handles cypher() calls in expressions. Those in RTE_FUNCTIONs are
@@ -134,7 +218,7 @@ static bool convert_cypher_walker(Node *node, ParseState *pstate)
         }
 
         return expression_tree_walker((Node *)funcexpr->args,
-                                      (bool (*)())convert_cypher_walker, pstate);
+                                      convert_cypher_walker, pstate);
     }
 
     if (IsA(node, Query))
@@ -142,6 +226,27 @@ static bool convert_cypher_walker(Node *node, ParseState *pstate)
         int flags;
         bool result = false;
         Query *query = (Query *)node;
+
+        /*
+         * If this is a utility command, we need to unwrap the internal query
+         * and pass it as the query.
+         *
+         * NOTE: This code only "knows" about the following utility commands -
+         *
+         * CREATE TABLE AS
+         *
+         * Others need to be added on a case by case basis.
+         */
+        if (query->utilityStmt != NULL &&
+            IsA(query->utilityStmt, CreateTableAsStmt))
+        {
+            CreateTableAsStmt *ctas = (CreateTableAsStmt *)query->utilityStmt;
+
+            if (IsA(ctas->query, Query))
+            {
+                query = (Query *)ctas->query;
+            }
+        }
 
         /*
          * QTW_EXAMINE_RTES
@@ -156,68 +261,71 @@ static bool convert_cypher_walker(Node *node, ParseState *pstate)
          * QTW_IGNORE_JOINALIASES
          *     We are not interested in this.
          */
-        flags = QTW_EXAMINE_RTES | QTW_IGNORE_RT_SUBQUERIES |
+        flags = QTW_EXAMINE_RTES_BEFORE | QTW_IGNORE_RT_SUBQUERIES |
                 QTW_IGNORE_JOINALIASES;
 
-        /* clear the global variable extra_node */
-        extra_node = NULL;
-
         /* recurse on query */
-        result = query_tree_walker(query, (bool (*)())convert_cypher_walker, pstate, flags);
-
-        /* check for EXPLAIN */
-        if (extra_node != NULL && nodeTag(extra_node) == T_ExplainStmt)
-        {
-            ExplainStmt *estmt = NULL;
-            Query *query_copy = NULL;
-            Query *query_node = NULL;
-
-            /*
-             * Create a copy of the query node. This is purposely a shallow copy
-             * because we are only moving the contents to another pointer.
-             */
-            query_copy = (Query *) palloc(sizeof(Query));
-            memcpy(query_copy, query, sizeof(Query));
-
-            /* build our Explain node and store the query node copy in it */
-            estmt = makeNode(ExplainStmt);
-            estmt->query = (Node *)query_copy;
-            estmt->options = ((ExplainStmt *)extra_node)->options;
-
-            /* build our replacement query node */
-            query_node = makeNode(Query);
-            query_node->commandType = CMD_UTILITY;
-            query_node->utilityStmt = (Node *)estmt;
-            query_node->canSetTag = true;
-
-            /* now replace the top query node with our replacement query node */
-            memcpy(query, query_node, sizeof(Query));
-
-            /*
-             * We need to free and clear the global variable when done. But, not
-             * the ExplainStmt options. Those will get freed by PG when the
-             * query is deleted.
-             */
-            ((ExplainStmt *)extra_node)->options = NULL;
-            pfree(extra_node);
-            extra_node = NULL;
-
-            /* we need to free query_node as it is no longer needed */
-            pfree(query_node);
-        }
+        result = query_tree_walker(query, convert_cypher_walker, pstate, flags);
 
         return result;
     }
 
-    return expression_tree_walker(node, (bool (*)())convert_cypher_walker, pstate);
+    return expression_tree_walker(node, convert_cypher_walker, pstate);
+}
+
+/*
+ * Takes a query node and builds an explain stmt query node. It then replaces
+ * the passed query node with the new explain stmt query node.
+ */
+static void build_explain_query(Query *query, Node *explain_node)
+{
+    ExplainStmt *estmt = NULL;
+    Query *query_copy = NULL;
+    Query *query_node = NULL;
+
+    /*
+     * Create a copy of the query node. This is purposely a shallow copy
+     * because we are only moving the contents to another pointer.
+     */
+    query_copy = (Query *) palloc(sizeof(Query));
+    memcpy(query_copy, query, sizeof(Query));
+
+    /* build our Explain node and store the query node copy in it */
+    estmt = makeNode(ExplainStmt);
+    estmt->query = (Node *)query_copy;
+    estmt->options = ((ExplainStmt *)explain_node)->options;
+
+    /* build our replacement query node */
+    query_node = makeNode(Query);
+    query_node->commandType = CMD_UTILITY;
+    query_node->utilityStmt = (Node *)estmt;
+    query_node->canSetTag = true;
+
+    /* now replace the top query node with our replacement query node */
+    memcpy(query, query_node, sizeof(Query));
+
+    /*
+     * We need to free and clear the global variable when done. But, not
+     * the ExplainStmt options. Those will get freed by PG when the
+     * query is deleted.
+     */
+    ((ExplainStmt *)explain_node)->options = NULL;
+
+    /* we need to free query_node as it is no longer needed */
+    pfree_if_not_null(query_node);
 }
 
 static bool is_rte_cypher(RangeTblEntry *rte)
 {
-    FuncExpr *funcexpr = NULL;
-    if (rte->funcexpr == NULL) {
+    RangeTblFunction *rtfunc;
+    FuncExpr *funcexpr;
+
+    /*
+     * The planner expects RangeTblFunction nodes in rte->functions list.
+     * We cannot replace one of them to a SELECT subquery.
+     */
+    if (list_length(rte->functions) != 1)
         return false;
-    }
 
     /*
      * A plain function call or a ROWS FROM expression with one function call
@@ -226,7 +334,8 @@ static bool is_rte_cypher(RangeTblEntry *rte)
      * their meaning.
      */
 
-    funcexpr=(FuncExpr *)rte->funcexpr;
+    rtfunc = linitial(rte->functions);
+    funcexpr = (FuncExpr *)rtfunc->funcexpr;
     return is_func_cypher(funcexpr);
 }
 
@@ -236,46 +345,89 @@ static bool is_rte_cypher(RangeTblEntry *rte)
  */
 static bool is_func_cypher(FuncExpr *funcexpr)
 {
+    /*
+     * From PG -
+     * SQLValueFunction - parameterless functions with special grammar
+     *                    productions.
+     * CoerceViaIO - represents a type coercion between two types whose textual
+     *               representations are compatible
+     * Var - expression node representing a variable (ie, a table column)
+     * OpExpr - expression node for an operator invocation
+     * Const - constant value or expression node
+     * BoolExpr - expression node for the basic Boolean operators AND, OR, NOT
+     * JsonConstructorExpr - wrapper over FuncExpr/Aggref/WindowFunc for
+     *                       SQL/JSON constructors
+     *
+     * Added the following, although only the first 2 caused crashes in tests -
+     * CoalesceExpr, MinMaxExpr, CaseExpr, XmlExpr, ArrayExpr, RowExpr
+     *
+     * These are all special case that needs to be ignored.
+     *
+     */
+    if (IsA(funcexpr, SQLValueFunction)
+            || IsA(funcexpr, CoerceViaIO)
+            || IsA(funcexpr, Var)   || IsA(funcexpr, OpExpr)
+            || IsA(funcexpr, Const) || IsA(funcexpr, BoolExpr)
+            || IsA(funcexpr, JsonConstructorExpr)
+            || IsA(funcexpr, CoalesceExpr) || IsA(funcexpr, MinMaxExpr)
+            || IsA(funcexpr, CaseExpr) || IsA(funcexpr, XmlExpr)
+            || IsA(funcexpr, ArrayExpr) || IsA(funcexpr, RowExpr))
+    {
+        return false;
+    }
+
     return is_oid_ag_func(funcexpr->funcid, "cypher");
 }
 
-// convert cypher() call to SELECT subquery in-place
+/* convert cypher() call to SELECT subquery in-place */
 static void convert_cypher_to_subquery(RangeTblEntry *rte, ParseState *pstate)
 {
-    FuncExpr *funcexpr = (FuncExpr *)rte->funcexpr;
-    Node *arg;
-    Name graph_name;
-    Oid graph_oid;
-    const char *query_str;
-    int query_loc;
-    Param *params;
-    errpos_ecb_state ecb_state;
-    List *stmt;
-    Query *query;
+    RangeTblFunction *rtfunc = linitial(rte->functions);
+    FuncExpr *funcexpr = (FuncExpr *)rtfunc->funcexpr;
+    Node *arg1 = NULL;
+    Node *arg2 = NULL;
+    Node *arg3 = NULL;
+    Name graph_name = NULL;
+    char *graph_name_str = NULL;
+    Oid graph_oid = InvalidOid;
+    const char *query_str = NULL;
+    int query_loc = -1;
+    Param *params = NULL;
+    errpos_ecb_state ecb_state = {{0}};
+    List *stmt = NULL;
+    Query *query = NULL;
 
-    arg = (Node*)linitial(funcexpr->args);
-    Assert(exprType(arg) == NAMEOID);
-
-    graph_name = expr_get_const_name(arg);
-    if (!graph_name)
-    {
-        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
-                        errmsg("a name constant is expected"),
-                        parser_errposition(pstate, exprLocation(arg))));
-        return; /* suppress the static check warmings */
-    }
-
-    graph_oid = get_graph_oid(NameStr(*graph_name));
-    if (!OidIsValid(graph_oid))
+    /*
+     * We cannot apply this feature directly to SELECT subquery because the
+     * planner does not support it. Adding a "row_number() OVER ()" expression
+     * to the subquery as a result target might be a workaround but we throw an
+     * error for now.
+     */
+    if (rte->funcordinality)
     {
         ereport(ERROR,
-                (errcode(ERRCODE_UNDEFINED_SCHEMA),
-                 errmsg("graph \"%s\" does not exist", NameStr(*graph_name)),
-                 parser_errposition(pstate, exprLocation(arg))));
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("WITH ORDINALITY is not supported"),
+                 parser_errposition(pstate, exprLocation((Node *)funcexpr))));
     }
 
-    arg = (Node*)lsecond(funcexpr->args);
-    Assert(exprType(arg) == CSTRINGOID);
+    /* verify that we have 2 input parameters as it is possible to get 1 or 0 */
+    if (funcexpr->args == NULL || list_length(funcexpr->args) < 2)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                 errmsg("cypher function requires a minimum of 2 arguments"),
+                 parser_errposition(pstate, -1)));
+    }
+
+    /* get our first 2 arguments */
+    arg1 = linitial(funcexpr->args);
+    arg2 = lsecond(funcexpr->args);
+
+    Assert(exprType(arg1) == NAMEOID);
+    Assert(exprType(arg2) == CSTRINGOID);
+
+    graph_name = expr_get_const_name(arg1);
 
     /*
      * Since cypher() function is nothing but an interface to get a Cypher
@@ -289,32 +441,131 @@ static void convert_cypher_to_subquery(RangeTblEntry *rte, ParseState *pstate)
      *   may differ from what they are shown. This will confuse users.
      * * In the case above, the error position may not be accurate.
      */
-    query_str = expr_get_const_cstring(arg, pstate->p_sourcetext);
-    if (!query_str)
-    {
-        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
-                        errmsg("a dollar-quoted string constant is expected"),
-                        parser_errposition(pstate, exprLocation(arg))));
-    }
-    query_loc = get_query_location(((Const *)arg)->location,
-                                   pstate->p_sourcetext);
+    query_str = expr_get_const_cstring(arg2, pstate->p_sourcetext);
 
     /*
-     * Check to see if the cypher function had any parameters passed to it,
+     * Validate appropriate cypher function usage -
+     *
+     * Session info OVERRIDES ANY INPUT PASSED and if any is passed, it will
+     * cause the cypher function to error out.
+     *
+     * If this is using session info, both of the first 2 input parameters need
+     * to be NULL, in addition to the session info being set up. Furthermore,
+     * the input parameters passed in by session info need to both be non-NULL.
+     *
+     * If this is not using session info, both input parameters need to be
+     * non-NULL.
+     *
+     */
+    if (is_session_info_prepared())
+    {
+        /* check to see if either input parameter is non-NULL*/
+        if (graph_name != NULL || query_str != NULL)
+        {
+            Node *arg = (graph_name == NULL) ? arg1 : arg2;
+
+            /*
+             * Make sure to clean up session info because the ereport will
+             * cause the function to exit.
+             */
+            reset_session_info();
+
+            ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("session info requires cypher(NULL, NULL) to be passed"),
+                     parser_errposition(pstate, exprLocation(arg))));
+        }
+        /* get our input parameters from session info */
+        else
+        {
+            graph_name_str = get_session_info_graph_name();
+            query_str = get_session_info_cypher_statement();
+
+            /* check to see if either are NULL */
+            if (graph_name_str == NULL || query_str == NULL)
+            {
+                /*
+                 * Make sure to clean up session info because the ereport will
+                 * cause the function to exit.
+                 */
+                reset_session_info();
+
+                ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("both session info parameters need to be non-NULL"),
+                     parser_errposition(pstate, -1)));
+            }
+        }
+    }
+    /* otherwise, we get the parameters from the passed function input */
+    else
+    {
+        /* get the graph name string from the passed parameters */
+        if (!graph_name)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("a name constant is expected"),
+                     parser_errposition(pstate, exprLocation(arg1))));
+        }
+        else
+        {
+            graph_name_str = NameStr(*graph_name);
+        }
+        /* get the query string from the passed parameters */
+        if (!query_str)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("a dollar-quoted string constant is expected"),
+                     parser_errposition(pstate, exprLocation(arg2))));
+        }
+    }
+
+    /*
+     * The session info is only valid for one cypher call. Now that we are done
+     * with it, if it was used, we need to reset it to free the memory used.
+     * Additionally, the query location is dependent on how we got the query
+     * string, so set the location accordingly.
+     */
+    if (is_session_info_prepared())
+    {
+        reset_session_info();
+        query_loc = 0;
+    }
+    else
+    {
+        /* this call will crash if we use session info */
+        query_loc = get_query_location(((Const *)arg2)->location,
+                                       pstate->p_sourcetext);
+    }
+
+    /* validate the graph exists */
+    graph_oid = get_graph_oid(graph_name_str);
+    if (!OidIsValid(graph_oid))
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_SCHEMA),
+                 errmsg("graph \"%s\" does not exist", graph_name_str),
+                 parser_errposition(pstate, exprLocation(arg1))));
+    }
+
+    /*
+     * Check to see if the cypher function had a third parameter passed to it,
      * if so make sure Postgres parsed the second argument to a Param node.
      */
     if (list_length(funcexpr->args) == 3)
     {
-        arg = (Node*)lthird(funcexpr->args);
-        if (!IsA(arg, Param))
+        arg3 = lthird(funcexpr->args);
+        if (!IsA(arg3, Param))
         {
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("third argument of cypher function must be a parameter"),
-                     parser_errposition(pstate, exprLocation(arg))));
+                     parser_errposition(pstate, exprLocation(arg3))));
         }
 
-        params = (Param *)arg;
+        params = (Param *)arg3;
     }
     else
     {
@@ -340,22 +591,26 @@ static void convert_cypher_to_subquery(RangeTblEntry *rte, ParseState *pstate)
      */
     if (extra_node == NULL)
     {
-        extra_node = (Node*)llast(stmt);
-        list_delete_ptr(stmt, extra_node);
+        extra_node = llast(stmt);
+        stmt = list_delete_ptr(stmt, extra_node);
     }
     else
     {
-        Node *temp = (Node*)llast(stmt);
+        Node *temp = llast(stmt);
 
-        list_delete_ptr(stmt, temp);
+        ereport(WARNING,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("too many extra_nodes passed from parser")));
+
+        stmt = list_delete_ptr(stmt, temp);
     }
 
     cancel_errpos_ecb(&ecb_state);
 
     Assert(pstate->p_expr_kind == EXPR_KIND_NONE);
     pstate->p_expr_kind = EXPR_KIND_FROM_SUBSELECT;
-    // transformRangeFunction() always sets p_lateral_active to true.
-    // FYI, rte is RTE_FUNCTION and is being converted to RTE_SUBQUERY here.
+    /* transformRangeFunction() always sets p_lateral_active to true. */
+    /* FYI, rte is RTE_FUNCTION and is being converted to RTE_SUBQUERY here. */
     pstate->p_lateral_active = true;
 
     /*
@@ -366,34 +621,34 @@ static void convert_cypher_to_subquery(RangeTblEntry *rte, ParseState *pstate)
     if (is_ag_node(llast(stmt), cypher_create) || is_ag_node(llast(stmt), cypher_set) ||
         is_ag_node(llast(stmt), cypher_delete) || is_ag_node(llast(stmt), cypher_merge))
     {
-        // column definition list must be ... AS relname(colname agtype) ...
-        if (!(rte->funccoltypes->length == 1 &&
-              linitial_oid(rte->funccoltypes) == AGTYPEOID))
+        /* column definition list must be ... AS relname(colname agtype) ... */
+        if (!(rtfunc->funccolcount == 1 &&
+              linitial_oid(rtfunc->funccoltypes) == AGTYPEOID))
         {
             ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                      errmsg("column definition list for CREATE clause must contain a single agtype attribute"),
                      errhint("... cypher($$ ... CREATE ... $$) AS t(c agtype) ..."),
-                     parser_errposition(pstate, exprLocation(rte->funcexpr))));
+                     parser_errposition(pstate, exprLocation(rtfunc->funcexpr))));
         }
 
         query = analyze_cypher(stmt, pstate, query_str, query_loc,
-                               NameStr(*graph_name), graph_oid, params);
+                               graph_name_str, graph_oid, params);
     }
     else
     {
-        query = analyze_cypher_and_coerce(stmt, rte, pstate, query_str,
-                                          query_loc, NameStr(*graph_name),
-                                          graph_oid, params);
+        query = analyze_cypher_and_coerce(stmt, rtfunc, pstate, query_str,
+                                          query_loc, graph_name_str, graph_oid,
+                                          params);
     }
 
     pstate->p_lateral_active = false;
     pstate->p_expr_kind = EXPR_KIND_NONE;
 
-    // rte->functions and rte->funcordinality are kept for debugging.
-    // rte->alias, rte->eref, and rte->lateral need to be the same.
-    // rte->inh is always false for both RTE_FUNCTION and RTE_SUBQUERY.
-    // rte->inFromCl is always true for RTE_FUNCTION.
+    /* rte->functions and rte->funcordinality are kept for debugging. */
+    /* rte->alias, rte->eref, and rte->lateral need to be the same. */
+    /* rte->inh is always false for both RTE_FUNCTION and RTE_SUBQUERY. */
+    /* rte->inFromCl is always true for RTE_FUNCTION. */
     rte->rtekind = RTE_SUBQUERY;
     rte->subquery = query;
 }
@@ -444,9 +699,259 @@ static int get_query_location(const int location, const char *source_str)
     return strchr(p + 1, '$') - source_str + 1;
 }
 
+
+/*
+ * This is an extension of postgres's raw_expression_tree_walker() function.
+ * It can walk cypher-specific nodes found in the expression tree during
+ * parse analysis.
+ * 
+ * More nodes can be added to this function as needed.
+ */
+bool cypher_raw_expr_tree_walker_impl(Node *node,
+                                      bool (*walker)(Node *node, void *context),
+                                      void *context)
+{
+    ListCell *temp;
+
+    if (node == NULL)
+        return false;
+
+#define WALK(n) walker((Node *) (n), context)
+#define LIST_WALK(l) cypher_raw_expr_tree_walker_impl((Node *) (l), walker, context)
+
+    if (IsA(node, ExtensibleNode))
+    {
+        if (is_ag_node(node, cypher_bool_const) ||
+            is_ag_node(node, cypher_integer_const) ||
+            is_ag_node(node, cypher_param) ||
+            is_ag_node(node, cypher_sub_pattern) ||
+            is_ag_node(node, cypher_sub_query))
+            /* Add more non-recursible node types here as needed */
+        {
+            return false;
+        }
+        else if (is_ag_node(node, cypher_map))
+        {
+            cypher_map *cm = (cypher_map *)node;
+            ListCell *le;
+
+            Assert(list_length(cm->keyvals) % 2 == 0);
+
+            le = list_head(cm->keyvals);
+
+            while(le != NULL)
+            {
+                Node *val;
+
+                le = lnext(cm->keyvals, le);
+
+                val = lfirst(le);
+
+                if (WALK(val))
+                {
+                    return true;
+                }
+
+                le = lnext(cm->keyvals, le);
+
+            }
+        }
+        else if (is_ag_node(node, cypher_map_projection))
+        {
+            cypher_map_projection *cmp = (cypher_map_projection *)node;
+
+            if (LIST_WALK(cmp->map_elements))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_list))
+        {
+            cypher_list *cl = (cypher_list *)node;
+            
+            if (LIST_WALK(cl->elems))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_string_match))
+        {
+            cypher_string_match *csm = (cypher_string_match *)node;
+
+            if (WALK(csm->lhs))
+            {
+                return true;
+            }
+
+            if (WALK(csm->rhs))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_typecast))
+        {
+            cypher_typecast *t = (cypher_typecast *)node;
+
+            if (WALK(t->expr))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_comparison_aexpr))
+        {
+            cypher_comparison_aexpr *a = (cypher_comparison_aexpr *)node;
+
+            if (WALK(a->lexpr))
+            {
+                return true;
+            }
+
+            if (WALK(a->rexpr))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_comparison_boolexpr))
+        {
+            cypher_comparison_boolexpr *b = (cypher_comparison_boolexpr *)node;
+            
+            if (LIST_WALK(b->args))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_unwind))
+        {
+            cypher_unwind *unw = (cypher_unwind *)node;
+
+            if (WALK(unw->target))
+            {
+                return true;
+            }
+        }
+
+        else if (is_ag_node(node, cypher_list_comprehension))
+        {
+            cypher_list_comprehension *lc = (cypher_list_comprehension *)node;
+
+            if (WALK(lc->expr))
+            {
+                return true;
+            }
+
+            if (WALK(lc->where))
+            {
+                return true;
+            }
+
+            if (WALK(lc->mapping_expr))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_predicate_function))
+        {
+            cypher_predicate_function *pf;
+
+            pf = (cypher_predicate_function *)node;
+
+            if (WALK(pf->expr))
+            {
+                return true;
+            }
+
+            if (WALK(pf->where))
+            {
+                return true;
+            }
+        }
+        else if (is_ag_node(node, cypher_reduce))
+        {
+            cypher_reduce *rd = (cypher_reduce *)node;
+
+            if (WALK(rd->init_expr))
+            {
+                return true;
+            }
+
+            if (WALK(rd->list_expr))
+            {
+                return true;
+            }
+
+            if (WALK(rd->body_expr))
+            {
+                return true;
+            }
+        }
+        /* Add more node types here as needed */
+        else
+        {
+            ereport(ERROR,
+                (errmsg_internal("unrecognized ExtensibleNode: %s",
+                                 ((ExtensibleNode *)node)->extnodename)));
+        }
+    }
+    /*
+     * postgres's raw expresssion tree walker does not handle List
+     */
+    else if (IsA(node, List))
+    {
+        foreach(temp, (List *) node)
+        {
+            if (WALK((Node *) lfirst(temp)))
+                return true;
+        }
+    }
+
+#undef LIST_WALK
+    else
+    {
+        return raw_expression_tree_walker(node, walker, context);
+    }
+    
+    return false;
+}
+
+/*
+ * This is an extension of postgres's expression_tree_walker() function.
+ * It is meant to walk cypher-specific nodes found in the expression tree
+ * post parse analysis.
+ *
+ * More nodes can be added to this function as needed.
+ */
+bool cypher_expr_tree_walker_impl(Node *node,
+                                  bool (*walker)(Node *node, void *context),
+                                  void *context)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+#define LIST_WALK(l) cypher_expr_tree_walker_impl((Node *) (l), walker, context)
+
+    if (IsA(node, ExtensibleNode))
+    {
+        /* Add our nodes that can appear post parsing stage */
+
+        ereport(ERROR,
+                (errmsg_internal("unrecognized ExtensibleNode: %s",
+                                 ((ExtensibleNode *)node)->extnodename)));
+    }
+#undef WALK
+#undef LIST_WALK
+    else
+    {
+        return expression_tree_walker(node, walker, context);
+    }
+
+    return false;
+}
+
 static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
                              const char *query_str, int query_loc,
-                             char *graph_name, Oid graph_oid, Param *params)
+                             char *graph_name, uint32 graph_oid, Param *params)
 {
     cypher_clause *clause;
     ListCell *lc;
@@ -465,13 +970,15 @@ static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
     {
         cypher_clause *next;
 
-        next = (cypher_clause*)palloc(sizeof(*next));
+        next = palloc(sizeof(*next));
         next->next = NULL;
-        next->self = (Node*)lfirst(lc);
+        next->self = lfirst(lc);
         next->prev = clause;
 
         if (clause != NULL)
+        {
             clause->next = next;
+        }
         clause = next;
     }
 
@@ -479,9 +986,8 @@ static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
      * convert ParseState into cypher_parsestate temporarily to pass it to
      * make_cypher_parsestate()
      */
+    MemSet(&parent_cpstate, 0, sizeof(parent_cpstate));
     parent_cpstate.pstate = *parent_pstate;
-    parent_cpstate.graph_name = NULL;
-    parent_cpstate.params = NULL;
 
     cpstate = make_cypher_parsestate(&parent_cpstate);
 
@@ -502,6 +1008,7 @@ static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
     cpstate->params = params;
     cpstate->default_alias_num = 0;
     cpstate->entities = NIL;
+    cpstate->subquery_where_flag = false;
     /*
      * install error context callback to adjust an error position since
      * locations in stmt are 0 based
@@ -522,17 +1029,17 @@ static Query *analyze_cypher(List *stmt, ParseState *parent_pstate,
  * BY), we cannot apply the coercion directly to the expressions of the target
  * entries. Therefore, we do the coercion by doing SELECT over subquery.
  */
-static Query *analyze_cypher_and_coerce(List *stmt, RangeTblEntry *rte,
+static Query *analyze_cypher_and_coerce(List *stmt, RangeTblFunction *rtfunc,
                                         ParseState *parent_pstate,
                                         const char *query_str, int query_loc,
-                                        char *graph_name, Oid graph_oid,
+                                        char *graph_name, uint32 graph_oid,
                                         Param *params)
 {
     ParseState *pstate;
     Query *query;
     const bool lateral = false;
     Query *subquery;
-    RangeTblEntry *newRte;
+    ParseNamespaceItem *pnsi;
     int rtindex;
     ListCell *lt;
     ListCell *lc1;
@@ -560,66 +1067,78 @@ static Query *analyze_cypher_and_coerce(List *stmt, RangeTblEntry *rte,
     pstate->p_lateral_active = false;
     pstate->p_expr_kind = EXPR_KIND_NONE;
 
-    // ALIAS Syntax makes `RESJUNK`. So, It must be skipping.
+    /* ALIAS Syntax makes `RESJUNK`. So, It must be skipping. */
     foreach(lt, subquery->targetList)
     {
-        TargetEntry *te = (TargetEntry*)lfirst(lt);
+        TargetEntry *te = lfirst(lt);
         if (!te->resjunk)
         {
             attr_count++;
         }
     }
 
-    // check the number of attributes first
-    if (attr_count != list_length(rte->eref->colnames))
+    /* check the number of attributes first */
+    if (attr_count != rtfunc->funccolcount)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                  errmsg("return row and column definition list do not match"),
-                 parser_errposition(pstate, exprLocation(rte->funcexpr))));
+                 parser_errposition(pstate, exprLocation(rtfunc->funcexpr))));
     }
 
-    newRte = addRangeTableEntryForSubquery(pstate, subquery, makeAlias("_", NIL),
-        lateral, true);
-    rtindex = list_length(pstate->p_rtable);
-    Assert(rtindex == 1); // rte is the only RangeTblEntry in pstate
-    addRTEtoQuery(pstate, newRte, true, true, true);
+    pnsi = addRangeTableEntryForSubquery(pstate, subquery, makeAlias("_", NIL),
+                                        lateral, true);
 
-    query->targetList = expandRelAttrs(pstate, newRte, rtindex, 0, -1);
+    rtindex = list_length(pstate->p_rtable);
+    /* rte is the only RangeTblEntry in pstate */
+    if (rtindex !=1 )
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                 errmsg("invalid value for rtindex")));
+    }
+
+
+    addNSItemToQuery(pstate, pnsi, true, true, true);
+    query->targetList = expandNSItemAttrs(pstate, pnsi, 0, true, -1);
 
     markTargetListOrigins(pstate, query->targetList);
 
-    // do the type coercion for each target entry
-    lc1 = list_head(rte->eref->colnames);
-    lc2 = list_head(rte->funccoltypes);
-    lc3 = list_head(rte->funccoltypmods);
+    /* do the type coercion for each target entry */
+    lc1 = list_head(rtfunc->funccolnames);
+    lc2 = list_head(rtfunc->funccoltypes);
+    lc3 = list_head(rtfunc->funccoltypmods);
     foreach (lt, query->targetList)
     {
-        TargetEntry *te = (TargetEntry*)lfirst(lt);
+        TargetEntry *te = lfirst(lt);
         Node *expr = (Node *)te->expr;
         Oid current_type;
+        int32 current_typmod;
         Oid target_type;
+        int32 target_typmod;
 
         Assert(!te->resjunk);
 
         current_type = exprType(expr);
+        current_typmod = exprTypmod(expr);
         target_type = lfirst_oid(lc2);
-        if (current_type != target_type)
+        target_typmod = lfirst_int(lc3);
+
+        if ((current_type != target_type) ||
+            (current_typmod != target_typmod))
         {
-            int32 target_typmod = lfirst_int(lc3);
             Node *new_expr;
 
             /*
              * The coercion context of this coercion is COERCION_EXPLICIT
-             * because the target type is explicitly metioned in the column
+             * because the target type is explicitly mentioned in the column
              * definition list and we need to do this by looking up all
              * possible coercion.
              */
             new_expr = coerce_to_target_type(pstate, expr, current_type,
                                              target_type, target_typmod,
                                              COERCION_EXPLICIT,
-                                             COERCE_EXPLICIT_CAST,
-                                             NULL, NULL, -1);
+                                             COERCE_EXPLICIT_CAST, -1);
             if (!new_expr)
             {
                 char *colname = strVal(lfirst(lc1));
@@ -630,18 +1149,19 @@ static Query *analyze_cypher_and_coerce(List *stmt, RangeTblEntry *rte,
                                 format_type_be(current_type),
                                 format_type_be(target_type), colname),
                          parser_errposition(pstate,
-                                            exprLocation(rte->funcexpr))));
+                                            exprLocation(rtfunc->funcexpr))));
             }
 
             te->expr = (Expr *)new_expr;
         }
 
-        lc1 = lnext(lc1);
-        lc2 = lnext(lc2);
-        lc3 = lnext(lc3);
+        lc1 = lnext(rtfunc->funccolnames, lc1);
+        lc2 = lnext(rtfunc->funccoltypes, lc2);
+        lc3 = lnext(rtfunc->funccoltypmods, lc3);
     }
 
     query->rtable = pstate->p_rtable;
+    query->rteperminfos = pstate->p_rteperminfos;
     query->jointree = makeFromExpr(pstate->p_joinlist, NULL);
 
     assign_query_collations(pstate, query);

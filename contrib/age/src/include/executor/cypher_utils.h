@@ -20,20 +20,19 @@
 #ifndef AG_CYPHER_UTILS_H
 #define AG_CYPHER_UTILS_H
 
+#include "access/heapam.h"
 #include "nodes/execnodes.h"
-#include "nodes/nodes.h"
-#include "nodes/plannodes.h"
 
 #include "nodes/cypher_nodes.h"
 #include "utils/agtype.h"
 
-// declaration of a useful postgres macro that isn't in a header file
+/* declaration of a useful postgres macro that isn't in a header file */
 #define DatumGetItemPointer(X)	 ((ItemPointer) DatumGetPointer(X))
 #define ItemPointerGetDatum(X)	 PointerGetDatum(X)
 
 /*
  * When executing the children of the CREATE, SET, REMOVE, and
- * DELETE clasues, we need to alter the command id in the estate
+ * DELETE clauses, we need to alter the command id in the estate
  * and the snapshot. That way we can hide the modified tuples from
  * the sub clauses that should not know what their parent clauses are
  * doing.
@@ -46,12 +45,13 @@
     estate->es_output_cid--; \
     estate->es_snapshot->curcid--;
 
+#define DELETE_VERTEX_HTAB_NAME "delete_vertex_htab"
+#define DELETE_VERTEX_HTAB_SIZE 1000000
+
 typedef struct cypher_create_custom_scan_state
 {
-    ExtensiblePlanState css;
-
-    ExtensiblePlan *cs;
-
+    CustomScanState css;
+    CustomScan *cs;
     List *pattern;
     List *path_values;
     uint32 flags;
@@ -61,31 +61,43 @@ typedef struct cypher_create_custom_scan_state
 
 typedef struct cypher_set_custom_scan_state
 {
-    ExtensiblePlanState css;
-
-    ExtensiblePlan *cs;
-
+    CustomScanState css;
+    CustomScan *cs;
     cypher_update_information *set_list;
     int flags;
 } cypher_set_custom_scan_state;
 
 typedef struct cypher_delete_custom_scan_state
 {
-    ExtensiblePlanState css;
-
-    ExtensiblePlan *cs;
-
+    CustomScanState css;
+    CustomScan *cs;
     cypher_delete_information *delete_data;
     int flags;
     List *edge_labels;
+
+    /*
+     * Deleted vertex IDs are stored in this hashtable.
+     *
+     * When a vertex item is deleted, it must be checked if there is any edges
+     * connected to it. The connected edges are either deleted or an error is
+     * thrown depending on the DETACH option. However, the check for connected
+     * edges is not done immediately. Instead the deleted vertex IDs are stored
+     * in the hashtable. Once all vertices are deleted, this hashtable is used
+     * to process the connected edges with only one scan of the edge tables.
+     *
+     * Note on performance: Additional performance gain may be possible if
+     * the standard DELETE .. USING .. command can be used instead of this
+     * hashtable. Because Postgres may create a better plan to execute that
+     * command depending on the statistics and available indexes on start_id
+     * and end_id column.
+     */
+    HTAB *vertex_id_htab;
 } cypher_delete_custom_scan_state;
 
 typedef struct cypher_merge_custom_scan_state
 {
-    ExtensiblePlanState css;
-
-    ExtensiblePlan *cs;
-
+    CustomScanState css;
+    CustomScan *cs;
     cypher_merge_information *merge_information;
     int flags;
     cypher_create_path *path;
@@ -94,62 +106,63 @@ typedef struct cypher_merge_custom_scan_state
     AttrNumber merge_function_attr;
     bool created_new_path;
     bool found_a_path;
+    CommandId base_currentCommandId;
+    struct created_path *created_paths_list;
+    List *eager_tuples;
+    int eager_tuples_index;
+    bool eager_buffer_filled;
+    cypher_update_information *on_match_set_info;   /* NULL if not specified */
+    cypher_update_information *on_create_set_info;   /* NULL if not specified */
 } cypher_merge_custom_scan_state;
 
-typedef struct cypher_vle_custom_scan_state
-{
-    ExtensiblePlanState css;
+/* Reusable SET logic callable from MERGE executor */
+void apply_update_list(CustomScanState *node,
+                       cypher_update_information *set_info);
 
-    ExtensiblePlan *cs;
-
-	TupleTableSlot *slot;
-
-    Oid graph_oid;
-    char * label_name;
-
-	/* For Subplan tuples */
-	PlanState  *subplan;
-	TupleTableSlot *subplan_tuple;
-	bool		need_new_sp_tuple;
-
-	/* target edges. */
-	ResultRelInfo *target_rel_infos;
-	TupleTableSlot *current_scan_tuple;
-	int			num_target_rel_info;
-
-	/* Results */
-	graphid		first_start_id;
-	graphid		last_end_id;
-	ArrayBuildState *edge_ids;
-	ArrayBuildState *edges;
-	ArrayBuildState *vertices;
-
-	/* About VLE Path. */
-	int			minimum_output_depth;
-	int			maximum_output_depth;
-	cypher_rel_dir		cypher_rel_direction;
-
-	/* Scanning depth infos */
-	List	   *table_scan_desc_list;	/* List for saving scan descriptions. */
-	bool		use_vertex_output;
-    ExprState *prop_expr_state;  
-    Node* edge_property_constraint_expr; 
-    agtype * edge_property_constraint;
-
-} cypher_vle_custom_scan_state;
-
-TupleTableSlot *populate_vertex_tts(TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *properties);
+void clear_entity_slot(TupleTableSlot *elemTupleSlot);
+TupleTableSlot *populate_vertex_tts(TupleTableSlot *elemTupleSlot,
+                                    agtype_value *id, agtype_value *properties);
 TupleTableSlot *populate_edge_tts(
     TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *startid,
     agtype_value *endid, agtype_value *properties);
 
-ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name, char *label_name);
-
+ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name,
+                                             char *label_name);
 void destroy_entity_result_rel_info(ResultRelInfo *result_rel_info);
 
 bool entity_exists(EState *estate, Oid graph_oid, graphid id);
 HeapTuple insert_entity_tuple(ResultRelInfo *resultRelInfo,
                               TupleTableSlot *elemTupleSlot,
                               EState *estate);
+HeapTuple insert_entity_tuple_cid(ResultRelInfo *resultRelInfo,
+                                  TupleTableSlot *elemTupleSlot,
+                                  EState *estate, CommandId cid);
+
+/* RLS support */
+void setup_wcos(ResultRelInfo *resultRelInfo, EState *estate,
+                CustomScanState *node, CmdType cmd);
+List *setup_security_quals(ResultRelInfo *resultRelInfo, EState *estate,
+                           CustomScanState *node, CmdType cmd);
+bool check_security_quals(List *qualExprs, TupleTableSlot *slot,
+                          ExprContext *econtext);
+bool check_rls_for_tuple(Relation rel, HeapTuple tuple, CmdType cmd);
+
+/* Hash table entry for caching RLS state per label */
+typedef struct RLSCacheEntry
+{
+    Oid relid;                      /* hash key */
+    /* Security quals (USING policies) for UPDATE/DELETE */
+    List *qualExprs;
+    TupleTableSlot *slot;           /* slot for old tuple (RLS check) */
+    /* WCOs - used only in SET */
+    List *withCheckOptions;
+    List *withCheckOptionExprs;
+} RLSCacheEntry;
+
+/* Hash table entry for caching index OIDs per label */
+typedef struct IndexCacheEntry {
+    Oid relid;      /* hash key */
+    Oid index_oid;
+} IndexCacheEntry;
 
 #endif

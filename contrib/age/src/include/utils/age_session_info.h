@@ -17,21 +17,15 @@
  * under the License.
  */
 
-#ifndef AG_AG_CATALOG_H
-#define AG_AG_CATALOG_H
-
-#include "postgres.h"
+#ifndef AGE_SESSION_INFO_H
+#define AGE_SESSION_INFO_H
 
 #include "utils/agtype.h"
 
-bool is_age_extension_exists(void);
-
-void object_access_hook_init(void);
-void object_access_hook_fini(void);
-
-void process_utility_hook_init(void);
-void process_utility_hook_fini(void);
-
-Oid ag_relation_id(const char *name, const char *kind);
+bool is_session_info_prepared(void);
+char *get_session_info_graph_name(void);
+char *get_session_info_cypher_statement(void);
+void reset_session_info(void);
 
 #endif
+

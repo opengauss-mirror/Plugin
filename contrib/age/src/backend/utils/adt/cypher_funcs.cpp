@@ -22,7 +22,7 @@
 #include "fmgr.h"
 
 PG_FUNCTION_INFO_V1(cypher);
-extern "C" Datum  cypher(PG_FUNCTION_ARGS);
+
 Datum cypher(PG_FUNCTION_ARGS)
 {
     const char *s;
@@ -36,36 +36,29 @@ Datum cypher(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(_cypher_create_clause);
-extern "C" Datum  _cypher_create_clause(PG_FUNCTION_ARGS);
+
 Datum _cypher_create_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_set_clause);
-extern "C" Datum  _cypher_set_clause(PG_FUNCTION_ARGS);
+
 Datum _cypher_set_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_delete_clause);
-extern "C" Datum  _cypher_delete_clause(PG_FUNCTION_ARGS);
+
 Datum _cypher_delete_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_merge_clause);
-extern "C" Datum  _cypher_merge_clause(PG_FUNCTION_ARGS);
-Datum _cypher_merge_clause(PG_FUNCTION_ARGS)
-{
-    PG_RETURN_NULL();
-}
 
-PG_FUNCTION_INFO_V1(_cypher_vle_clause);
-extern "C" Datum  _cypher_vle_clause(PG_FUNCTION_ARGS);
-Datum _cypher_vle_clause(PG_FUNCTION_ARGS)
+Datum _cypher_merge_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }

@@ -19,10 +19,7 @@
 
 #include "postgres.h"
 
-#include "nodes/bitmapset.h"
-#include "nodes/ag_extensible.h"
-#include "nodes/nodes.h"
-#include "utils/palloc.h"
+#include "nodes/extensible.h"
 
 #include "nodes/cypher_copyfuncs.h"
 #include "nodes/cypher_nodes.h"
@@ -36,7 +33,7 @@
  * named 'extended_newnode' and 'extended_from'.
  */
 
-// Declare the local fields needed to copy extensible nodes
+/* Declare the local fields needed to copy extensible nodes */
 #define COPY_LOCALS(nodeTypeName) \
     nodeTypeName *extended_newnode = (nodeTypeName *)newnode; \
     nodeTypeName *extended_from = (nodeTypeName *)from; \
@@ -44,19 +41,19 @@
     Assert(is_ag_node(from, nodeTypeName));
 
 
-// Copy a simple scalar field (int, float, bool, enum, etc)
+/* Copy a simple scalar field (int, float, bool, enum, etc) */
 #define COPY_SCALAR_FIELD(fldname) \
         (extended_newnode->fldname = extended_from->fldname)
 
-// Copy a field that is a pointer to some kind of Node or Node tree
+/* Copy a field that is a pointer to some kind of Node or Node tree */
 #define COPY_NODE_FIELD(fldname) \
-        (extended_newnode->fldname = (decltype(fldname))copyObject(extended_from->fldname))
+        (extended_newnode->fldname = copyObject(extended_from->fldname))
 
-// Copy a field that is a pointer to a Bitmapset
+/* Copy a field that is a pointer to a Bitmapset */
 #define COPY_BITMAPSET_FIELD(fldname) \
         (extended_newnode->fldname = bms_copy(extended_from->fldname))
 
-// Copy a field that is a pointer to a C string, or perhaps NULL
+/* Copy a field that is a pointer to a C string, or perhaps NULL */
 #define COPY_STRING_FIELD(fldname) \
         (extended_newnode->fldname = extended_from->fldname ? \
             pstrdup(extended_from->fldname) : (char *) NULL)
@@ -71,7 +68,7 @@ void copy_ag_node(ExtensibleNode *newnode,
     ereport(ERROR, (errmsg("unexpected copyObject() over ag_node")));
 }
 
-// copy function for cypher_create_target_nodes
+/* copy function for cypher_create_target_nodes */
 void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_create_target_nodes);
@@ -79,24 +76,20 @@ void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNo
     COPY_SCALAR_FIELD(flags);
     COPY_SCALAR_FIELD(graph_oid);
 
-    extended_newnode->paths = (List *)copyObject(extended_from->paths);
-}
-void copy_cypher_vle_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from)
-{
-   ereport(NOTICE, (errmsg("cypher_vle_target_nodes do not need copy")));
+    COPY_NODE_FIELD(paths);
 }
 
-// copy function for cypher_create_path
+/* copy function for cypher_create_path */
 void copy_cypher_create_path(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_create_path);
 
     COPY_SCALAR_FIELD(path_attr_num);
     COPY_STRING_FIELD(var_name);
-    extended_newnode->target_nodes = (List *)copyObject(extended_from->target_nodes);
+    COPY_NODE_FIELD(target_nodes);
 }
 
-// copy function for cypher_target_node
+/* copy function for cypher_target_node */
 void copy_cypher_target_node(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_target_node);
@@ -111,27 +104,27 @@ void copy_cypher_target_node(ExtensibleNode *newnode, const ExtensibleNode *from
     COPY_STRING_FIELD(label_name);
     COPY_STRING_FIELD(variable_name);
 
-    extended_newnode->id_expr = (Expr *)copyObject(extended_from->id_expr);
-    extended_newnode->id_expr_state = (ExprState *)copyObject(extended_from->id_expr_state);
-    extended_newnode->prop_expr = (Expr *)copyObject(extended_from->prop_expr);
-    extended_newnode->prop_expr_state = (ExprState *)copyObject(extended_from->prop_expr_state);
-    extended_newnode->resultRelInfo = (ResultRelInfo *)copyObject(extended_from->resultRelInfo);
-    extended_newnode->elemTupleSlot = (TupleTableSlot *)copyObject(extended_from->elemTupleSlot);
+    COPY_NODE_FIELD(id_expr);
+    COPY_NODE_FIELD(id_expr_state);
+    COPY_NODE_FIELD(prop_expr);
+    COPY_NODE_FIELD(prop_expr_state);
+    COPY_NODE_FIELD(resultRelInfo);
+    COPY_NODE_FIELD(elemTupleSlot);
 }
 
-// copy function for cypher_update_information
+/* copy function for cypher_update_information */
 void copy_cypher_update_information(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_update_information);
 
-    extended_newnode->set_items = (List *)copyObject(extended_from->set_items);
+    COPY_NODE_FIELD(set_items);
     COPY_SCALAR_FIELD(flags);
     COPY_SCALAR_FIELD(tuple_position);
     COPY_STRING_FIELD(graph_name);
     COPY_STRING_FIELD(clause_name);
 }
 
-// copy function for cypher_update_item
+/* copy function for cypher_update_item */
 void copy_cypher_update_item(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_update_item);
@@ -140,32 +133,35 @@ void copy_cypher_update_item(ExtensibleNode *newnode, const ExtensibleNode *from
     COPY_SCALAR_FIELD(entity_position);
     COPY_STRING_FIELD(var_name);
     COPY_STRING_FIELD(prop_name);
-    extended_newnode->qualified_name = (List *)copyObject(extended_from->qualified_name);
+    COPY_NODE_FIELD(qualified_name);
     COPY_SCALAR_FIELD(remove_item);
+    COPY_SCALAR_FIELD(is_add);
+    COPY_NODE_FIELD(prop_expr);
+    COPY_NODE_FIELD(prop_expr_state);
 }
 
-// copy function for cypher_delete_information
+/* copy function for cypher_delete_information */
 void copy_cypher_delete_information(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_delete_information);
 
-    extended_newnode->delete_items = (List *)copyObject(extended_from->delete_items);
+    COPY_NODE_FIELD(delete_items);
     COPY_SCALAR_FIELD(flags);
     COPY_STRING_FIELD(graph_name);
     COPY_SCALAR_FIELD(graph_oid);
     COPY_SCALAR_FIELD(detach);
 }
 
-// copy function for cypher_delete_item
+/* copy function for cypher_delete_item */
 void copy_cypher_delete_item(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_delete_item);
 
-    extended_newnode->entity_position = (Value *)copyObject(extended_from->entity_position);
+    COPY_NODE_FIELD(entity_position);
     COPY_STRING_FIELD(var_name);
 }
 
-// copy function for cypher_merge_information
+/* copy function for cypher_merge_information */
 void copy_cypher_merge_information(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
     COPY_LOCALS(cypher_merge_information);
@@ -173,5 +169,31 @@ void copy_cypher_merge_information(ExtensibleNode *newnode, const ExtensibleNode
     COPY_SCALAR_FIELD(flags);
     COPY_SCALAR_FIELD(graph_oid);
     COPY_SCALAR_FIELD(merge_function_attr);
-    extended_newnode->path = (cypher_create_path *)copyObject(extended_from->path);
+    COPY_NODE_FIELD(path);
+    COPY_NODE_FIELD(on_match_set_info);
+    COPY_NODE_FIELD(on_create_set_info);
+}
+
+/* copy function for cypher_predicate_function */
+void copy_cypher_predicate_function(ExtensibleNode *newnode,
+                                    const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_predicate_function);
+
+    COPY_SCALAR_FIELD(kind);
+    COPY_STRING_FIELD(varname);
+    COPY_NODE_FIELD(expr);
+    COPY_NODE_FIELD(where);
+}
+
+/* copy function for cypher_reduce */
+void copy_cypher_reduce(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_reduce);
+
+    COPY_STRING_FIELD(acc_varname);
+    COPY_NODE_FIELD(init_expr);
+    COPY_STRING_FIELD(elem_varname);
+    COPY_NODE_FIELD(list_expr);
+    COPY_NODE_FIELD(body_expr);
 }

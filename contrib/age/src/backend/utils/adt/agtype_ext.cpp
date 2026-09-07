@@ -18,8 +18,6 @@
  */
 
 #include "utils/agtype_ext.h"
-#include "utils/agtype.h"
-#include "utils/graphid.h"
 
 /* define the type and size of the agt_header */
 #define AGT_HEADER_TYPE uint32
@@ -59,7 +57,14 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         /* copy in the int_value data */
         numlen = sizeof(int64);
         offset = reserve_from_buffer(buffer, numlen);
-        *((int64 *)(buffer->data + offset)) = scalar_val->val.int_value;
+        /*
+         * Use memcpy because the AGT_HEADER (4 bytes) leaves the buffer
+         * write position 4-byte-aligned but not necessarily 8-byte-aligned.
+         * Direct *((int64 *) ...) = ... is undefined behavior under strict
+         * alignment rules (UBSan flags it; works in practice on x86_64).
+         */
+        memcpy(buffer->data + offset, &scalar_val->val.int_value,
+               sizeof(int64));
 
         *agtentry = AGTENTRY_IS_AGTYPE | (padlen + numlen + AGT_HEADER_SIZE);
         break;
@@ -70,7 +75,8 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         /* copy in the float_value data */
         numlen = sizeof(scalar_val->val.float_value);
         offset = reserve_from_buffer(buffer, numlen);
-        *((float8 *)(buffer->data + offset)) = scalar_val->val.float_value;
+        memcpy(buffer->data + offset, &scalar_val->val.float_value,
+               sizeof(float8));
 
         *agtentry = AGTENTRY_IS_AGTYPE | (padlen + numlen + AGT_HEADER_SIZE);
         break;
@@ -91,7 +97,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -111,7 +117,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -131,7 +137,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -156,12 +162,17 @@ void ag_deserialize_extended_type(char *base_addr, uint32 offset,
     {
     case AGT_HEADER_INTEGER:
         result->type = AGTV_INTEGER;
-        result->val.int_value = *((int64 *)(base + AGT_HEADER_SIZE));
+        /* See comment in ag_serialize_extended_type. The 4-byte AGT_HEADER
+         * leaves the int64 at a 4-byte-aligned but not 8-byte-aligned
+         * address, so a direct typed load is undefined behavior. */
+        memcpy(&result->val.int_value, base + AGT_HEADER_SIZE,
+               sizeof(int64));
         break;
 
     case AGT_HEADER_FLOAT:
         result->type = AGTV_FLOAT;
-        result->val.float_value = *((float8 *)(base + AGT_HEADER_SIZE));
+        memcpy(&result->val.float_value, base + AGT_HEADER_SIZE,
+               sizeof(float8));
         break;
 
     case AGT_HEADER_VERTEX:
@@ -177,7 +188,7 @@ void ag_deserialize_extended_type(char *base_addr, uint32 offset,
         break;
 
     default:
-        elog(ERROR, "Invalid AGT header value.");
+        ereport(ERROR, (errmsg("Invalid AGT header value: 0x%08x", agt_header)));
     }
 }
 
@@ -192,9 +203,10 @@ static void ag_deserialize_composite(char *base, enum agtype_value_type type,
     agtype_parse_state *parse_state = NULL;
     agtype_value *r = NULL;
     agtype_value *parsed_agtype_value = NULL;
-    //offset container by the extended type header
+    /* offset container by the extended type header */
     char *container_base = base + AGT_HEADER_SIZE;
-    r = (agtype_value *)palloc(sizeof(agtype_value));
+
+    r = palloc(sizeof(agtype_value));
 
     it = agtype_iterator_init((agtype_container *)container_base);
     while ((tok = agtype_iterator_next(&it, r, true)) != WAGT_DONE)

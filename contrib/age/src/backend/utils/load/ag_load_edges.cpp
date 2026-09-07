@@ -16,72 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "postgres.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "access/heapam.h"
+#include "access/table.h"
+#include "catalog/namespace.h"
+#include "commands/copy.h"
+#include "executor/executor.h"
+#include "nodes/makefuncs.h"
+#include "parser/parse_node.h"
+#include "utils/memutils.h"
+#include "utils/rel.h"
 
-#include "utils/load/csv.h"
 #include "utils/load/ag_load_edges.h"
-#include "utils/load/age_load.h"
 
-static void setVertex(char** vertex, char* oriname);
-static void setVertex(char** vertex, char* oriname){
-    char *start_lab = strchr(oriname, (int)'(');
-    char *end_lab = strchr(oriname, (int)')');
-    char dest[100];
-    memcpy(dest, start_lab + 1, end_lab - start_lab-1);
-    dest[end_lab - start_lab-1] = '\0'; 
-    char *temp = (char *)malloc(100);
-    memset(temp,0,100);
-    strcpy(temp,dest);
-    int length = strlen(temp);
-    
-    for (int i = 0; i < length; i++) {
-        temp[i] = tolower(temp[i]);
-    }
-    *vertex = temp;
-}
-
-void edge_field_cb(void *field, size_t field_len, void *data)
+/*
+ * Process a single edge row from COPY's raw fields.
+ * Edge CSV format: start_id, start_vertex_type, end_id, end_vertex_type, [properties...]
+ */
+static void process_edge_row(char **fields, int nfields,
+                             char **header, int header_count,
+                             int label_id, Oid label_seq_relid,
+                             Oid graph_oid, bool load_as_agtype,
+                             batch_insert_state *batch_state)
 {
-
-    csv_edge_reader *cr = (csv_edge_reader*)data;
-    if (cr->error)
-    {
-        cr->error = 1;
-        ereport(NOTICE,(errmsg("There is some unknown error")));
-    }
-
-    // check for space to store this field
-    if (cr->cur_field == cr->alloc)
-    {
-        cr->alloc *= 2;
-        cr->fields = (char**)realloc(cr->fields, sizeof(char *) * cr->alloc);
-        cr->fields_len = (size_t*)realloc(cr->header, sizeof(size_t *) * cr->alloc);
-        if (cr->fields == NULL)
-        {
-            cr->error = 1;
-            ereport(ERROR,
-                    (errmsg("field_cb: failed to reallocate %zu bytes\n",
-                            sizeof(char *) * cr->alloc)));
-        }
-    }
-    cr->fields_len[cr->cur_field] = field_len;
-    cr->curr_row_length += field_len;
-    cr->fields[cr->cur_field] = strndup((char*)field, field_len);
-    cr->cur_field += 1;
-}
-
-// Parser calls this function when it detects end of a row
-void edge_row_cb(int delim __attribute__((unused)), void *data)
-{
-
-    csv_edge_reader *cr = (csv_edge_reader*)data;
-
-    size_t i, n_fields;
     int64 start_id_int;
     graphid start_vertex_graph_id;
     int start_vertex_type_id;
@@ -90,210 +48,283 @@ void edge_row_cb(int delim __attribute__((unused)), void *data)
     graphid end_vertex_graph_id;
     int end_vertex_type_id;
 
-    graphid object_graph_id;
+    graphid edge_id;
+    int64 entry_id;
+    TupleTableSlot *slot;
 
-    agtype* props = NULL;
+    char *start_vertex_type;
+    char *end_vertex_type;
+    agtype *edge_properties;
 
-    n_fields = cr->cur_field;
-
-    if (cr->row == 0)
+    /*
+     * Guard the fixed fields[0..3] accesses below and the header[i]/fields[i]
+     * pairing in create_agtype_from_list_i() against out-of-bounds reads on
+     * malformed or mis-delimited rows. A row must have at least the 4 fixed
+     * columns and no more columns than the header (rows with fewer trailing
+     * property columns than the header are allowed, matching existing
+     * behavior). A single-column row from a non-comma-delimited file is
+     * rejected here (previously it segfaulted).
+     */
+    if (nfields < 4 || nfields > header_count)
     {
-        cr->header_num = cr->cur_field;
-        cr->header_row_length = cr->curr_row_length;
-        cr->header_len = (size_t* )malloc(sizeof(size_t *) * cr->cur_field);
-        cr->header = (char**)malloc((sizeof (char*) * cr->cur_field));
-        if(cr->with_neo4j_like_header){
-            cr->col_type = (agtype_value_type *)malloc((sizeof (agtype_value_type*) * cr->cur_field));
-        }
-
-        for ( i = 0; i<cr->cur_field; i++)
-        {
-            cr->header_len[i] = cr->fields_len[i];
-            if(cr->with_neo4j_like_header){
-                char *start = NULL;
-                char dest[100];
-                char type[100];
-
-                // creationDate:LONG|:START_ID(Person)|:END_ID(Organisation)|workFrom:LONG
-                char *startid =  strstr(cr->fields[i], "START_ID"); 
-                if(startid) {
-                    cr->start_col = i;
-                    cr->header[i] = "start_id";
-                    setVertex(&cr->start_vertex,cr->fields[i]);
-                } 
-                char *endid =  strstr(cr->fields[i], "END_ID"); 
-                if(endid) {
-                    setVertex(&cr->end_vertex,cr->fields[i]);
-                    cr->header[i] = "end_id";
-                    cr->end_col = i;
-                } 
-                if(startid || endid){
-                    cr->col_type[i] = AGTV_NUMERIC;
-                    continue;
-                }
-            
-
-                start = strchr(cr->fields[i], (int)':');         // 找到字符':'的位置
-                memcpy(dest, cr->fields[i], start - cr->fields[i]);
-                dest[start - cr->fields[i]] = '\0';        // 将字符串dest的最后一个字符']'改成'\0'，如果最后一个字符不是'\0'的话，那么在该字符串的最后一位是乱码的
-                cr->header[i] = strndup(dest, strlen(dest));
-
-                memcpy(type, start + 1, cr->fields[i]+strlen(cr->fields[i])-start);// 将字符串s中'['之后的所有内容都copy出来包括字符']'，这是为了之后的分割字符串使用的
-                type[ cr->fields[i]+strlen(cr->fields[i])-start-1] = '\0';
-
-                if(strcmp(type, "LONG") == 0){
-                    cr->col_type[i] = AGTV_NUMERIC;
-                }else  if(strcmp(type, "STRING") == 0){
-                    cr->col_type[i] = AGTV_STRING;
-                }else  if(strcmp(type, "BOOL") == 0){
-                    cr->col_type[i] = AGTV_BOOL;
-                }else{
-                    cr->col_type[i] = AGTV_STRING;
-                }
-            }else{
-                cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
-            }
-        } 
-    }
-    else
-    {
-        object_graph_id = make_graphid(cr->object_id, (int64)cr->row);
-
-        if(cr->with_neo4j_like_header){
-            start_id_int = strtol(cr->fields[cr->start_col], NULL, 10);
-            start_vertex_type_id = get_label_id(cr->start_vertex, cr->graph_id);
-            end_id_int = strtol(cr->fields[cr->end_col], NULL, 10);
-            end_vertex_type_id = get_label_id(cr->end_vertex, cr->graph_id);
-
-            if(cr->adjust_id){
-                start_id_int =start_id_int +1;
-                end_id_int = end_id_int +1;
-            }
-           
-        }else{
-            start_id_int = strtol(cr->fields[0], NULL, 10);
-            start_vertex_type_id = get_label_id(cr->fields[1], cr->graph_id);
-            end_id_int = strtol(cr->fields[2], NULL, 10);
-            end_vertex_type_id = get_label_id(cr->fields[3], cr->graph_id);
-        }
-        
-
-        start_vertex_graph_id = make_graphid(start_vertex_type_id, start_id_int);
-        end_vertex_graph_id = make_graphid(end_vertex_type_id, end_id_int);
-
-        props = create_agtype_from_list_i(cr->header, cr->fields,cr->col_type,
-                                          n_fields, cr->start_col,cr->end_col);
-
-        insert_edge_simple(cr->graph_id, cr->object_name,
-                           object_graph_id, start_vertex_graph_id,
-                           end_vertex_graph_id, props);
-        if(cr->free_context){
-            MemoryContextReset(CurrentMemoryContext);
-        }  
-
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("edge file row has %d columns; expected at least 4 "
+                        "and no more than the header's %d columns",
+                        nfields, header_count)));
     }
 
-    for (i = 0; i < n_fields; ++i)
+    /* Generate edge ID */
+    entry_id = nextval_internal(label_seq_relid, true);
+    edge_id = make_graphid(label_id, entry_id);
+
+    /* Trim whitespace from vertex type names */
+    start_vertex_type = trim_whitespace(fields[1]);
+    end_vertex_type = trim_whitespace(fields[3]);
+
+    /* Parse start vertex info */
+    start_id_int = strtol(fields[0], NULL, 10);
+    start_vertex_type_id = get_label_id(start_vertex_type, graph_oid);
+
+    /* Parse end vertex info */
+    end_id_int = strtol(fields[2], NULL, 10);
+    end_vertex_type_id = get_label_id(end_vertex_type, graph_oid);
+
+    /* Create graphids for start and end vertices */
+    start_vertex_graph_id = make_graphid(start_vertex_type_id, start_id_int);
+    end_vertex_graph_id = make_graphid(end_vertex_type_id, end_id_int);
+
+    /* Get the appropriate slot from the batch state */
+    slot = batch_state->slots[batch_state->num_tuples];
+
+    /* Clear the slots contents */
+    ExecClearTuple(slot);
+
+    /* Build the agtype properties */
+    edge_properties = create_agtype_from_list_i(header, fields,
+                                                nfields, 4, load_as_agtype);
+
+    /* Fill the values in the slot */
+    slot->tts_values[0] = GRAPHID_GET_DATUM(edge_id);
+    slot->tts_values[1] = GRAPHID_GET_DATUM(start_vertex_graph_id);
+    slot->tts_values[2] = GRAPHID_GET_DATUM(end_vertex_graph_id);
+    slot->tts_values[3] = AGTYPE_P_GET_DATUM(edge_properties);
+    slot->tts_isnull[0] = false;
+    slot->tts_isnull[1] = false;
+    slot->tts_isnull[2] = false;
+    slot->tts_isnull[3] = false;
+
+    /* Make the slot as containing virtual tuple */
+    ExecStoreVirtualTuple(slot);
+
+    batch_state->buffered_bytes += VARSIZE(edge_properties);
+    batch_state->num_tuples++;
+
+    /* Insert the batch when tuple count OR byte threshold is reached */
+    if (batch_state->num_tuples >= BATCH_SIZE ||
+        batch_state->buffered_bytes >= MAX_BUFFERED_BYTES)
     {
-        free(cr->fields[i]);
+        insert_batch(batch_state);
+        batch_state->num_tuples = 0;
+        batch_state->buffered_bytes = 0;
     }
-
-    if (cr->error)
-    {
-        ereport(NOTICE,(errmsg("THere is some error")));
-    }
-
-
-    cr->cur_field = 0;
-    cr->curr_row_length = 0;
-    cr->row += 1;
 }
 
-static int is_space(unsigned char c)
+/*
+ * Create COPY options for CSV parsing.
+ * Returns a List of DefElem nodes.
+ */
+static List *create_copy_options(char delimiter)
 {
-    if(c == CSV_SPACE || c == CSV_TAB) return 1;
-    return 0;
-}
+    List *options = NIL;
 
-static int is_term(unsigned char c)
-{
-    if (c == CSV_CR || c == CSV_LF)
+    /* FORMAT csv */
+    options = lappend(options,
+                      makeDefElem("format",
+                                  (Node *) makeString("csv"),
+                                  -1));
+
+    /* HEADER false - we'll read the header ourselves */
+    options = lappend(options,
+                      makeDefElem("header",
+                                  (Node *) makeBoolean(false),
+                                  -1));
+
+    /* DELIMITER */
     {
-        return 1;
+        char delimiter_str[2];
+        delimiter_str[0] = delimiter;
+        delimiter_str[1] = '\0';
+        options = lappend(options,
+                          makeDefElem("delimiter",
+                                      (Node *) makeString(pstrdup(delimiter_str)),
+                                      -1));
     }
-    return 0;
+
+    return options;
 }
 
+/*
+ * Load edges from CSV file using pg's COPY infrastructure.
+ */
 int create_edges_from_csv_file(char *file_path,
                                char *graph_name,
-                               Oid graph_id,
-                               char *object_name,
-                               int object_id,bool with_header,bool adjust_id,bool free_context )
+                               Oid graph_oid,
+                               char *label_name,
+                               int label_id,
+                               bool load_as_agtype,
+                               char delimiter)
 {
+    Relation        label_rel;
+    Oid             label_relid;
+    CopyFromState   cstate;
+    List           *copy_options;
+    ParseState     *pstate;
+    char          **fields;
+    int             nfields;
+    char          **header = NULL;
+    int             header_count = 0;
+    bool            is_first_row = true;
+    char           *label_seq_name;
+    Oid             label_seq_relid;
+    batch_insert_state *batch_state = NULL;
+    MemoryContext   batch_context;
+    MemoryContext   old_context;
 
-    FILE *fp;
-    struct csv_parser p;
-    char buf[1024];
-    size_t bytes_read;
-    unsigned char options = 0;
-    csv_edge_reader cr;
+    /* Create a memory context for batch processing - reset after each batch */
+    batch_context = AllocSetContextCreate(CurrentMemoryContext,
+                                          "AGE CSV Edge Load Batch Context",
+                                          ALLOCSET_DEFAULT_SIZES);
 
-    if (csv_init(&p, options) != 0)
+    /* Get the label relation */
+    label_relid = get_label_relation(label_name, graph_oid);
+    label_rel = table_open(label_relid, RowExclusiveLock);
+
+    /* Get sequence info */
+    label_seq_name = get_label_seq_relation_name(label_name);
+    label_seq_relid = get_relname_relid(label_seq_name, graph_oid);
+
+    /* Initialize the batch insert state */
+    init_batch_insert(&batch_state, label_name, graph_oid);
+
+    /* Create COPY options for CSV parsing */
+    copy_options = create_copy_options(delimiter);
+
+    /* Create a minimal ParseState for BeginCopyFrom */
+    pstate = make_parsestate(NULL);
+
+    PG_TRY();
     {
-        ereport(ERROR,
-                (errmsg("Failed to initialize csv parser\n")));
-        return EXIT_FAILURE; /* suppress the static check warmings */
-    }
+        /*
+         * Initialize COPY FROM state.
+         * We pass the label relation but will only use NextCopyFromRawFields
+         * which returns raw parsed strings without type conversion.
+         */
+        cstate = BeginCopyFrom(pstate,
+                               label_rel,
+                               NULL,           /* whereClause */
+                               file_path,
+                               false,          /* is_program */
+                               NULL,           /* data_source_cb */
+                               NIL,            /* attnamelist */
+                               copy_options);
 
-    csv_set_space_func(&p, is_space);
-    csv_set_term_func(&p, is_term);
-
-    fp = fopen(file_path, "rb");
-    if (!fp)
-    {
-        ereport(ERROR,
-                (errmsg("Failed to open %s\n", file_path)));
-        return EXIT_FAILURE; /* suppress the static check warmings */
-    }
-
-    memset((void*)&cr, 0, sizeof(csv_edge_reader));
-    cr.alloc = 128;
-    cr.fields = (char**)malloc(sizeof(char *) * cr.alloc);
-    cr.fields_len = (size_t*)malloc(sizeof(size_t *) * cr.alloc);
-    cr.header_row_length = 0;
-    cr.curr_row_length = 0;
-    cr.graph_name = graph_name;
-    cr.graph_id = graph_id;
-    cr.object_name = object_name;
-    cr.object_id = object_id;
-
-    if(with_header){
-        cr.with_neo4j_like_header = true;
-        p.delim_char = CSV_SHUXIAN;
-    }
-    cr.adjust_id = adjust_id;
-    cr.free_context = free_context;
-
-    while ((bytes_read=fread(buf, 1, 1024, fp)) > 0)
-    {
-        if (csv_parse(&p, buf, bytes_read, edge_field_cb,
-                      edge_row_cb, &cr) != bytes_read)
+        /*
+         * Process rows using COPY's csv parsing.
+         * NextCopyFromRawFields uses 64KB buffers internally.
+         */
+        while (NextCopyFromRawFields(cstate, &fields, &nfields))
         {
-            ereport(ERROR, (errmsg("Error while parsing file: %s\n",
-                                   csv_strerror(csv_error(&p)))));
+            if (is_first_row)
+            {
+                int i;
+
+                /* First row is the header - save column names (in main context) */
+                header_count = nfields;
+                header = (char **) palloc(sizeof(char *) * nfields);
+
+                for (i = 0; i < nfields; i++)
+                {
+                    /* Trim whitespace from header fields */
+                    header[i] = trim_whitespace(fields[i]);
+                }
+
+                /*
+                 * Edge files require the four fixed columns start_id,
+                 * start_vertex_type, end_id and end_vertex_type. A smaller
+                 * count almost always means the file is not comma-delimited
+                 * (COPY defaults to comma). Fail clearly here instead of
+                 * reading past the parsed fields in process_edge_row(), which
+                 * previously caused a segfault.
+                 */
+                if (header_count < 4)
+                {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                             errmsg("edge file must have at least 4 columns "
+                                    "(start_id, start_vertex_type, end_id, "
+                                    "end_vertex_type), but the header has %d",
+                                    header_count),
+                             errhint("load_edges_from_file expects a "
+                                     "comma-delimited CSV; check the file's "
+                                     "delimiter.")));
+                }
+
+                is_first_row = false;
+            }
+            else
+            {
+                /* Switch to batch context for row processing */
+                old_context = MemoryContextSwitchTo(batch_context);
+
+                /* Data row - process it */
+                process_edge_row(fields, nfields,
+                                 header, header_count,
+                                 label_id, label_seq_relid,
+                                 graph_oid, load_as_agtype,
+                                 batch_state);
+
+                /* Switch back to main context */
+                MemoryContextSwitchTo(old_context);
+
+                /* Reset batch context after each batch to free memory */
+                if (batch_state->num_tuples == 0)
+                {
+                    MemoryContextReset(batch_context);
+                }
+            }
         }
+
+        /* Finish any remaining batch inserts */
+        finish_batch_insert(&batch_state);
+        MemoryContextReset(batch_context);
+
+        /* Clean up COPY state */
+        EndCopyFrom(cstate);
     }
-
-    csv_fini(&p, edge_field_cb, edge_row_cb, &cr);
-
-    if (ferror(fp))
+    PG_FINALLY();
     {
-        ereport(ERROR, (errmsg("Error while reading file %s\n", file_path)));
+        /* Free header if allocated */
+        if (header != NULL)
+        {
+            int i;
+            for (i = 0; i < header_count; i++)
+            {
+                pfree(header[i]);
+            }
+            pfree(header);
+        }
+
+        /* Close the relation */
+        table_close(label_rel, RowExclusiveLock);
+
+        /* Delete batch context */
+        MemoryContextDelete(batch_context);
+
+        /* Free parse state */
+        free_parsestate(pstate);
     }
+    PG_END_TRY();
 
-    fclose(fp);
-
-    free(cr.fields);
-    csv_free(&p);
     return EXIT_SUCCESS;
 }

@@ -19,85 +19,95 @@
 
 #include "postgres.h"
 
-#include "nodes/ag_extensible.h"
-#include "nodes/nodes.h"
-#include "nodes/pg_list.h"
-#include "nodes/relation.h"
+#include "nodes/extensible.h"
 
 #include "optimizer/cypher_createplan.h"
 #include "optimizer/cypher_pathnode.h"
-#include "optimizer/pathnode.h"
+#include "parser/cypher_analyze.h"
+#include "executor/cypher_utils.h"
+#include "optimizer/subselect.h"
+#include "nodes/makefuncs.h"
 
-const ExtensiblePathMethods cypher_create_path_methods = {
-    CREATE_PATH_NAME, plan_cypher_create_path};
-const ExtensiblePathMethods cypher_set_path_methods = {
-    SET_PATH_NAME, plan_cypher_set_path};
-const ExtensiblePathMethods cypher_delete_path_methods = {
-    DELETE_PATH_NAME, plan_cypher_delete_path};
-const ExtensiblePathMethods cypher_merge_path_methods = {
-    MERGE_PATH_NAME, plan_cypher_merge_path};
-const ExtensiblePathMethods cypher_vle_path_methods = {
-    VLE_PATH_NAME, plan_cypher_vle_path};
+static Const *convert_sublink_to_subplan(PlannerInfo *root,
+                                         List *custom_private);
+static bool expr_has_sublink(Node *node, void *context);
 
-ExtensiblePath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
-                                          List *custom_private)
+const CustomPathMethods cypher_create_path_methods = {
+    CREATE_PATH_NAME, plan_cypher_create_path, NULL};
+const CustomPathMethods cypher_set_path_methods = {
+    SET_PATH_NAME, plan_cypher_set_path, NULL};
+const CustomPathMethods cypher_delete_path_methods = {
+    DELETE_PATH_NAME, plan_cypher_delete_path, NULL};
+const CustomPathMethods cypher_merge_path_methods = {
+    MERGE_PATH_NAME, plan_cypher_merge_path, NULL};
+
+CustomPath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
+                                      List *custom_private)
 {
-    ExtensiblePath *cp;
+    CustomPath *cp;
 
-    cp = makeNode(ExtensiblePath);
+    cp = makeNode(CustomPath);
 
-    cp->path.pathtype = T_ExtensiblePlan;
+    cp->path.pathtype = T_CustomScan;
 
     cp->path.parent = rel;
+    cp->path.pathtarget = rel->reltarget;
 
     cp->path.param_info = NULL;
 
-    // Do not allow parallel methods
+    /* Do not allow parallel methods */
+    cp->path.parallel_aware = false;
+    cp->path.parallel_safe = false;
+    cp->path.parallel_workers = 0;
 
-    cp->path.rows = 0; // Basic CREATE will not return rows
-    cp->path.startup_cost = 0; // Basic CREATE will not fetch any pages
+    cp->path.rows = 0; /* Basic CREATE will not return rows */
+    cp->path.startup_cost = 0; /* Basic CREATE will not fetch any pages */
     cp->path.total_cost = 0;
 
-    // No output ordering for basic CREATE
+    /* No output ordering for basic CREATE */
     cp->path.pathkeys = NULL;
 
-    // Disable all custom flags for now
+    /* Disable all custom flags for now */
     cp->flags = 0;
 
-    cp->extensible_paths = rel->pathlist;
-    cp->extensible_private = custom_private;
+    cp->custom_paths = rel->pathlist;
+    cp->custom_private = custom_private;
     cp->methods = &cypher_create_path_methods;
 
     return cp;
 }
 
-ExtensiblePath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
+CustomPath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
                                    List *custom_private)
 {
-    ExtensiblePath *cp;
+    CustomPath *cp;
 
-    cp = makeNode(ExtensiblePath);
+    cp = makeNode(CustomPath);
 
-    cp->path.pathtype = T_ExtensiblePlan;
+    cp->path.pathtype = T_CustomScan;
 
     cp->path.parent = rel;
+    cp->path.pathtarget = rel->reltarget;
 
     cp->path.param_info = NULL;
 
-    // Do not allow parallel methods
+    /* Do not allow parallel methods */
+    cp->path.parallel_aware = false;
+    cp->path.parallel_safe = false;
+    cp->path.parallel_workers = 0;
 
-    cp->path.rows = 0; // Basic SET will not return rows
-    cp->path.startup_cost = 0; // Basic SET will not fetch any pages
+    cp->path.rows = 0; /* Basic SET will not return rows */
+    cp->path.startup_cost = 0; /* Basic SET will not fetch any pages */
     cp->path.total_cost = 0;
 
-    // No output ordering for basic SET
+    /* No output ordering for basic SET */
     cp->path.pathkeys = NULL;
 
-    // Disable all custom flags for now
+    /* Disable all custom flags for now */
     cp->flags = 0;
 
-    cp->extensible_paths = rel->pathlist;
-    cp->extensible_private = custom_private;
+    cp->custom_paths = rel->pathlist;
+    cp->custom_private = custom_private;
     cp->methods = &cypher_set_path_methods;
 
     return cp;
@@ -107,113 +117,154 @@ ExtensiblePath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
  * Creates a Delete Path. Makes the original path a child of the new
  * path. We leave it to the caller to replace the pathlist of the rel.
  */
-ExtensiblePath *create_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
-                                          List *custom_private)
+CustomPath *create_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
+                                   List *custom_private)
 {
-    ExtensiblePath *cp;
+    CustomPath *cp;
 
-    cp = makeNode(ExtensiblePath);
+    cp = makeNode(CustomPath);
 
-    cp->path.pathtype = T_ExtensiblePlan;
+    cp->path.pathtype = T_CustomScan;
 
     cp->path.parent = rel;
+    cp->path.pathtarget = rel->reltarget;
 
     cp->path.param_info = NULL;
 
-    // Do not allow parallel methods
+    /* Do not allow parallel methods */
+    cp->path.parallel_aware = false;
+    cp->path.parallel_safe = false;
+    cp->path.parallel_workers = 0;
 
     cp->path.rows = 0;
     cp->path.startup_cost = 0;
     cp->path.total_cost = 0;
 
-    // No output ordering for basic SET
+    /* No output ordering for basic SET */
     cp->path.pathkeys = NULL;
 
-    // Disable all custom flags for now
+    /* Disable all custom flags for now */
     cp->flags = 0;
 
-    // Make the original paths the children of the new path
-    cp->extensible_paths = rel->pathlist;
-    // Store the metadata Delete will need in the execution phase.
-    cp->extensible_private = custom_private;
-    // Tells Postgres how to turn this path to the correct CustomScan
+    /* Make the original paths the children of the new path */
+    cp->custom_paths = rel->pathlist;
+    /* Store the metadata Delete will need in the execution phase. */
+    cp->custom_private = custom_private;
+    /* Tells Postgres how to turn this path to the correct CustomScan */
     cp->methods = &cypher_delete_path_methods;
 
     return cp;
 }
 
 /*
- * Creates a Delete Path. Makes the original path a child of the new
+ * Creates a merge path. Makes the original path a child of the new
  * path. We leave it to the caller to replace the pathlist of the rel.
  */
-ExtensiblePath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
+CustomPath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
                                    List *custom_private)
 {
-    ExtensiblePath *cp;
+    CustomPath *cp;
 
-    cp = makeNode(ExtensiblePath);
+    cp = makeNode(CustomPath);
 
-    cp->path.pathtype = T_ExtensiblePlan;
+    cp->path.pathtype = T_CustomScan;
 
     cp->path.parent = rel;
+    cp->path.pathtarget = rel->reltarget;
 
     cp->path.param_info = NULL;
 
-    // Do not allow parallel methods
+    /* Do not allow parallel methods */
+    cp->path.parallel_aware = false;
+    cp->path.parallel_safe = false;
+    cp->path.parallel_workers = 0;
 
     cp->path.rows = 0;
     cp->path.startup_cost = 0;
     cp->path.total_cost = 0;
 
-    // No output ordering for basic SET
+    /* No output ordering for basic SET */
     cp->path.pathkeys = NULL;
 
-    // Disable all custom flags for now
+    /* Disable all custom flags for now */
     cp->flags = 0;
 
-    // Make the original paths the children of the new path
-    cp->extensible_paths = rel->pathlist;
-    // Store the metadata Delete will need in the execution phase.
-    cp->extensible_private = custom_private;
-    // Tells Postgres how to turn this path to the correct CustomScan
+    /* Make the original paths the children of the new path */
+    cp->custom_paths = rel->pathlist;
+
+    /*
+     * Store the metadata Merge will need in the execution phase.
+     * We may have a sublink here in case the user used a list
+     * comprehension in merge.
+     */
+    if (rel->subroot->parse->hasSubLinks)
+    {
+        cp->custom_private = list_make1(convert_sublink_to_subplan(root, custom_private));
+    }
+    else
+    {
+        cp->custom_private = custom_private;
+    }
+
+    /* Tells Postgres how to turn this path to the correct CustomScan */
     cp->methods = &cypher_merge_path_methods;
 
     return cp;
 }
 
-ExtensiblePath *create_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
-                                         List *custom_private)
+/*
+ * Deserializes the merge information and checks if any property
+ * expression (prop_expr) contains a SubLink.
+ * If found, converts the SubLink to a SubPlan, updates the
+ * structure accordingly, and serializes it back.
+ */
+static Const *convert_sublink_to_subplan(PlannerInfo *root, List *custom_private)
 {
-    ExtensiblePath *cp;
+    cypher_merge_information *merge_information;
+    char *serialized_data = NULL;
+    Const *c = NULL;
+    ListCell *lc = NULL;
+    StringInfo str = makeStringInfo();
 
-    cp = makeNode(ExtensiblePath);
+    c = linitial(custom_private);
+    serialized_data = (char *)c->constvalue;
+    merge_information = stringToNode(serialized_data);
 
-    cp->path.pathtype = T_ExtensiblePlan;
+    Assert(is_ag_node(merge_information, cypher_merge_information));
 
-    cp->path.parent = rel;
+    /* Only part where we can expect a sublink is in prop_expr. */
+    foreach (lc, merge_information->path->target_nodes)
+    {
+        cypher_target_node *node = (cypher_target_node *)lfirst(lc);
+        Node *prop_expr = (Node *) node->prop_expr;
 
-    cp->path.param_info = get_baserel_parampathinfo(root, rel, rel->lateral_relids);
+        if (expr_has_sublink(prop_expr, NULL))
+        {
+            node->prop_expr = (Expr *) SS_process_sublinks(root, prop_expr, false);
+        }
+    }
 
-    cp->path.pathtarget = rel->reltarget;
+    /* Serialize the information again and return it. */
+    outNode(str, (Node *)merge_information);
 
-    // set a default for optimizer
-    rel->rows = 10;
-    cp->path.rows = 1000;
-    cp->path.startup_cost = 0;
-    cp->path.total_cost = 0;
+    return makeConst(INTERNALOID, -1, InvalidOid, str->len,
+                     PointerGetDatum(str->data), false, false);
+}
 
-    // No output ordering for basic SET
-    cp->path.pathkeys = NULL;
+/*
+ * Helper function to check if the node has a sublink.
+ */
+static bool expr_has_sublink(Node *node, void *context)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
 
-    // Disable all custom flags for now
-    cp->flags = 0;
+    if (IsA(node, SubLink))
+    {
+        return true;
+    }
 
-    // Make the original paths the children of the new path
-    cp->extensible_paths = rel->pathlist;
-    // Store the metadata Delete will need in the execution phase.
-    cp->extensible_private = custom_private;
-    // Tells Postgres how to turn this path to the correct CustomScan
-    cp->methods = &cypher_vle_path_methods;
-
-    return cp;
+    return cypher_expr_tree_walker(node, expr_has_sublink, context);
 }

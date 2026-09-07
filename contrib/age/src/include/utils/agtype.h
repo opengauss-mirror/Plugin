@@ -31,23 +31,16 @@
 #ifndef AG_AGTYPE_H
 #define AG_AGTYPE_H
 
-#include "fmgr.h"
-
-#include "access/htup.h"
-
-#include "lib/stringinfo.h"
-#include "nodes/pg_list.h"
 #include "utils/array.h"
+#include "utils/memutils.h"
 #include "utils/numeric.h"
-#include "utils/syscache.h"
 
-#include "catalog/ag_namespace.h"
 #include "utils/graphid.h"
 
 /* Tokens used when sequentially processing an agtype value */
 typedef enum
 {
-    WAGT_DONE,
+    WAGT_DONE = 0x0,
     WAGT_KEY,
     WAGT_VALUE,
     WAGT_ELEM,
@@ -65,6 +58,7 @@ typedef enum
 #define AGTYPE_EXISTS_STRATEGY_NUMBER 9
 #define AGTYPE_EXISTS_ANY_STRATEGY_NUMBER 10
 #define AGTYPE_EXISTS_ALL_STRATEGY_NUMBER 11
+#define AGTYPE_CONTAINS_TOP_LEVEL_STRATEGY_NUMBER 12
 
 /*
  * In the standard agtype_ops GIN opclass for agtype, we choose to index both
@@ -295,6 +289,8 @@ typedef struct
     ((*(uint32 *)VARDATA(agtp_) & AGT_FBINARY) != 0)
 #define AGT_ROOT_BINARY_FLAGS(agtp_) \
     (*(uint32 *)VARDATA(agtp_) & AGT_FBINARY_MASK)
+#define AGT_ROOT_IS_VPC(agtp_) \
+    (AGT_ROOT_IS_BINARY(agtp_) && (AGT_ROOT_BINARY_FLAGS(agtp_) == AGT_FBINARY_TYPE_VLE_PATH))
 
 /* values for the AGTYPE header field to denote the stored data type */
 #define AGT_HEADER_INTEGER 0x00000000
@@ -305,7 +301,7 @@ typedef struct
 
 /*
  * IMPORTANT NOTE: For agtype_value_type, IS_A_AGTYPE_SCALAR() checks that the
- * type is between AGTV_NULL and AGTV_BOOL, inclusive. So, new scalars need to
+ * type is between AGTV_NULL and AGTV_ARRAY, excluding AGTV_ARRAY. So, new scalars need to
  * be between these values.
  */
 enum agtype_value_type
@@ -326,6 +322,109 @@ enum agtype_value_type
     /* Binary (i.e. struct agtype) AGTV_ARRAY/AGTV_OBJECT */
     AGTV_BINARY
 };
+
+/*
+ * Direct field access indices for vertex and edge objects.
+ *
+ * Vertex and edge objects are serialized with keys sorted by length first,
+ * then lexicographically (via uniqueify_agtype_object). This means field
+ * positions are deterministic and can be accessed directly without binary
+ * search, providing O(1) access instead of O(log n).
+ *
+ * Vertex keys by length: "id"(2), "label"(5), "properties"(10)
+ * Edge keys by length: "id"(2), "label"(5), "end_id"(6), "start_id"(8), "properties"(10)
+ */
+#define VERTEX_FIELD_ID         0
+#define VERTEX_FIELD_LABEL      1
+#define VERTEX_FIELD_PROPERTIES 2
+#define VERTEX_NUM_FIELDS       3
+
+#define EDGE_FIELD_ID           0
+#define EDGE_FIELD_LABEL        1
+#define EDGE_FIELD_END_ID       2
+#define EDGE_FIELD_START_ID     3
+#define EDGE_FIELD_PROPERTIES   4
+#define EDGE_NUM_FIELDS         5
+
+/*
+ * Macros for direct field access from vertex/edge agtype_value objects.
+ * These avoid the binary search overhead of GET_AGTYPE_VALUE_OBJECT_VALUE.
+ * Validation is integrated - macros will error if field count is incorrect.
+ * Uses GCC statement expressions to allow validation within expressions.
+ */
+#define AGTYPE_VERTEX_GET_ID(v) \
+    ({ \
+        if ((v)->val.object.num_pairs != VERTEX_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid vertex structure: expected %d fields, found %d", \
+                            VERTEX_NUM_FIELDS, (v)->val.object.num_pairs))); \
+        &(v)->val.object.pairs[VERTEX_FIELD_ID].value; \
+    })
+#define AGTYPE_VERTEX_GET_LABEL(v) \
+    ({ \
+        if ((v)->val.object.num_pairs != VERTEX_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid vertex structure: expected %d fields, found %d", \
+                            VERTEX_NUM_FIELDS, (v)->val.object.num_pairs))); \
+        &(v)->val.object.pairs[VERTEX_FIELD_LABEL].value; \
+    })
+#define AGTYPE_VERTEX_GET_PROPERTIES(v) \
+    ({ \
+        if ((v)->val.object.num_pairs != VERTEX_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid vertex structure: expected %d fields, found %d", \
+                            VERTEX_NUM_FIELDS, (v)->val.object.num_pairs))); \
+        &(v)->val.object.pairs[VERTEX_FIELD_PROPERTIES].value; \
+    })
+
+#define AGTYPE_EDGE_GET_ID(e) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[EDGE_FIELD_ID].value; \
+    })
+#define AGTYPE_EDGE_GET_LABEL(e) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[EDGE_FIELD_LABEL].value; \
+    })
+#define AGTYPE_EDGE_GET_END_ID(e) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[EDGE_FIELD_END_ID].value; \
+    })
+#define AGTYPE_EDGE_GET_START_ID(e) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[EDGE_FIELD_START_ID].value; \
+    })
+#define AGTYPE_EDGE_GET_PROPERTIES(e) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[EDGE_FIELD_PROPERTIES].value; \
+    })
 
 /*
  * agtype_value: In-memory representation of agtype.  This is a convenient
@@ -471,6 +570,8 @@ agtype_value *find_agtype_value_from_container(agtype_container *container,
                                                agtype_value *key);
 agtype_value *get_ith_agtype_value_from_container(agtype_container *container,
                                                   uint32 i);
+enum agtype_value_type get_ith_agtype_value_type(agtype_container *container,
+                                                 uint32 i);
 agtype_value *push_agtype_value(agtype_parse_state **pstate,
                                 agtype_iterator_token seq,
                                 agtype_value *agtval);
@@ -480,7 +581,65 @@ agtype_iterator_token agtype_iterator_next(agtype_iterator **it,
                                            bool skip_nested);
 agtype *agtype_value_to_agtype(agtype_value *val);
 bool agtype_deep_contains(agtype_iterator **val,
-                          agtype_iterator **m_contained);
+                          agtype_iterator **m_contained, bool skip_nested);
+
+/*
+ * Per-call agtype build arena.
+ *
+ * Many top-level Datum functions in agtype.c follow the pattern:
+ *   1. Allocate / build an agtype_value tree
+ *   2. Serialize it via agtype_value_to_agtype()
+ *   3. Recursively pfree the tree
+ *
+ * Step 3 (pfree_agtype_value_content) is an O(N) walk that frees each tree
+ * node individually. By building the tree inside a dedicated AllocSet
+ * MemoryContext and resetting the context after serialization, we trade
+ * the O(N) walk for an O(K) block reset (K << N) and eliminate per-node
+ * AllocSetFree overhead. The AllocSetAlloc cost is also reduced because
+ * the arena uses a small initial block size and grows on demand.
+ *
+ * Two usage patterns:
+ *
+ *   Pattern A — disposable per-call arena (one-shot):
+ *       MemoryContext arena = agt_arena_begin();
+ *       MemoryContext caller = MemoryContextSwitchTo(arena);
+ *       ... build tree ...
+ *       MemoryContextSwitchTo(caller);
+ *       result = agtype_value_to_agtype(val);  // copies into caller
+ *       agt_arena_end(arena);                   // resets / discards
+ *
+ *   Pattern B — long-lived shared arena (sort comparator, hot inner loop):
+ *       static MemoryContext shared_arena = NULL;
+ *       if (shared_arena == NULL)
+ *       {
+ *           shared_arena = AGT_ARENA_BEGIN_SHARED("comparator");
+ *       }
+ *       MemoryContext caller = MemoryContextSwitchTo(shared_arena);
+ *       ... allocate / use ...
+ *       MemoryContextSwitchTo(caller);
+ *       agt_arena_reset(shared_arena);          // O(1) cheap reset
+ *
+ * Pattern A creates a fresh context per call (microseconds). Pattern B
+ * amortizes the create cost across many calls (single AllocSetCreate at
+ * the very first call), and pays only a MemoryContextReset (~100 ns) per
+ * subsequent call. Use Pattern B when the function is invoked many times
+ * per query (e.g. a sort comparator called O(N log N) times).
+ */
+MemoryContext agt_arena_begin(void);
+/*
+ * Pattern-B shared-arena creator. Implemented as a macro because PG's
+ * AllocSetContextCreate enforces memory-context names be compile-time
+ * constants via a StaticAssert. Use with a string literal:
+ *     static MemoryContext my_arena = NULL;
+ *     if (my_arena == NULL)
+ *     {
+ *         my_arena = AGT_ARENA_BEGIN_SHARED("my comparator workspace");
+ *     }
+ */
+#define AGT_ARENA_BEGIN_SHARED(_name) \
+    AllocSetContextCreate(CacheMemoryContext, (_name), ALLOCSET_SMALL_SIZES)
+void agt_arena_reset(MemoryContext arena);
+void agt_arena_end(MemoryContext arena);
 void agtype_hash_scalar_value(const agtype_value *scalar_val, uint32 *hash);
 void agtype_hash_scalar_value_extended(const agtype_value *scalar_val,
                                        uint64 *hash, uint64 seed);
@@ -490,6 +649,10 @@ void convert_extended_object(StringInfo buffer, agtentry *pheader,
                              agtype_value *val);
 Datum get_numeric_datum_from_agtype_value(agtype_value *agtv);
 bool is_numeric_result(agtype_value *lhs, agtype_value *rhs);
+void copy_agtype_value(agtype_parse_state* pstate,
+                       agtype_value* original_agtype_value,
+                       agtype_value **copied_agtype_value, bool is_top_level);
+Oid find_usable_btree_index_for_attr(Relation rel, AttrNumber attnum);
 
 /* agtype.c support functions */
 /*
@@ -525,7 +688,9 @@ bool is_decimal_needed(char *numstr);
 int compare_agtype_scalar_values(agtype_value *a, agtype_value *b);
 agtype_value *alter_property_value(agtype_value *properties, char *var_name,
                                    agtype *new_v, bool remove_property);
-
+void remove_null_from_agtype_object(agtype_value *object);
+agtype_value *alter_properties(agtype_value *original_properties,
+                               agtype *new_properties);
 agtype *get_one_agtype_from_variadic_args(FunctionCallInfo fcinfo,
                                           int variadic_offset,
                                           int expected_nargs);
@@ -543,29 +708,31 @@ agtype_value *get_agtype_value(char *funcname, agtype *agt_arg,
                                enum agtype_value_type type, bool error);
 bool is_agtype_null(agtype *agt_arg);
 agtype_value *string_to_agtype_value(char *s);
-agtype_value *boolean_to_agtype_value(bool bol);
 agtype_value *integer_to_agtype_value(int64 int_value);
-
+void add_agtype(Datum val, bool is_null, agtype_in_state *result, Oid val_type,
+                bool key_scalar);
 agtype_value *extract_entity_properties(agtype *object, bool error_on_scalar);
 agtype_iterator *get_next_list_element(agtype_iterator *it,
                                        agtype_container *agtc,
                                        agtype_value *elem);
-agtype_value *execute_map_access_operator(agtype *map,
-                                                 agtype_value* map_value,
-                                                 agtype *key);                                       
-bool agtype_extract_scalar(agtype_container *agtc, agtype_value *res);
-void add_agtype(Datum val, bool is_null, agtype_in_state *result, Oid val_type,
-                bool key_scalar);
-// OID of agtype and _agtype
-#define AGTYPEOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("agtype"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
-#define AGTYPEARRAYOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("_agtype"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
+void pfree_agtype_value(agtype_value* value);
+void pfree_agtype_value_content(agtype_value* value);
+void pfree_agtype_in_state(agtype_in_state* value);
+void pfree_if_not_null(void *ptr);
+void *repalloc_check(void *ptr, size_t len);
+agtype_value *agtype_value_from_cstring(char *str, int len);
+/* Oid accessors for AGTYPE */
+Oid get_AGTYPEOID(void);
+Oid get_AGTYPEARRAYOID(void);
+void clear_global_Oids_AGTYPE(void);
+#define AGTYPEOID get_AGTYPEOID()
+#define AGTYPEARRAYOID get_AGTYPEARRAYOID()
 
-
-#define AGTYPEOIDSTR "ag_catalog.agtype"
-#define AGTYPEARRAYOIDSTR "ag_catalog._agtype"
+/* Oid accessors for vertex and edge composite types */
+Oid get_VERTEXOID(void);
+Oid get_EDGEOID(void);
+void clear_global_Oids_VERTEX_EDGE(void);
+#define VERTEXOID get_VERTEXOID()
+#define EDGEOID get_EDGEOID()
 
 #endif

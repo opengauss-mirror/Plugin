@@ -27,19 +27,15 @@
  */
 
 #include "postgres.h"
-// #include "varatt.h"
-
-#include <cmath>
-#include <cctype>
-#include <limits>
+#include "varatt.h"
 
 #include "access/gin.h"
 #include "access/hash.h"
 #include "catalog/pg_collation.h"
 #include "utils/agtype.h"
-#include "utils/plpgsql.h"
+#include "utils/float.h"
 #include "utils/builtins.h"
-// #include "utils/varlena.h"
+#include "utils/varlena.h"
 
 typedef struct PathHashStack
 {
@@ -63,7 +59,6 @@ static Datum make_scalar_key(const agtype_value *scalar_val, bool is_key);
  * function.
  */
 PG_FUNCTION_INFO_V1(gin_compare_agtype);
-extern "C" Datum  gin_compare_agtype(PG_FUNCTION_ARGS);
 Datum gin_compare_agtype(PG_FUNCTION_ARGS)
 {
     text *arg1, *arg2;
@@ -100,7 +95,6 @@ Datum gin_compare_agtype(PG_FUNCTION_ARGS)
  * item contains no keys.
  */
 PG_FUNCTION_INFO_V1(gin_extract_agtype);
-extern "C" Datum  gin_extract_agtype(PG_FUNCTION_ARGS);
 Datum gin_extract_agtype(PG_FUNCTION_ARGS)
 {
     agtype *agt;
@@ -184,7 +178,6 @@ Datum gin_extract_agtype(PG_FUNCTION_ARGS)
  * or exists all strategy are used and the passed map is empty.
  */
 PG_FUNCTION_INFO_V1(gin_extract_agtype_query);
-extern "C" Datum  gin_extract_agtype_query(PG_FUNCTION_ARGS);
 Datum gin_extract_agtype_query(PG_FUNCTION_ARGS)
 {
     int32 *nentries;
@@ -202,7 +195,8 @@ Datum gin_extract_agtype_query(PG_FUNCTION_ARGS)
     strategy = PG_GETARG_UINT16(2);
     searchMode = (int32 *) PG_GETARG_POINTER(6);
 
-    if (strategy == AGTYPE_CONTAINS_STRATEGY_NUMBER)
+    if (strategy == AGTYPE_CONTAINS_STRATEGY_NUMBER ||
+        strategy == AGTYPE_CONTAINS_TOP_LEVEL_STRATEGY_NUMBER)
     {
         /* Query is a agtype, so just apply gin_extract_agtype... */
         entries = (Datum *)
@@ -312,7 +306,6 @@ Datum gin_extract_agtype_query(PG_FUNCTION_ARGS)
  * originally indexed item.
  */
 PG_FUNCTION_INFO_V1(gin_consistent_agtype);
-extern "C" Datum  gin_consistent_agtype(PG_FUNCTION_ARGS);
 Datum gin_consistent_agtype(PG_FUNCTION_ARGS)
 {
     bool *check;
@@ -333,7 +326,8 @@ Datum gin_consistent_agtype(PG_FUNCTION_ARGS)
     nkeys = PG_GETARG_INT32(3);
     recheck = (bool *) PG_GETARG_POINTER(5);
 
-    if (strategy == AGTYPE_CONTAINS_STRATEGY_NUMBER)
+    if (strategy == AGTYPE_CONTAINS_STRATEGY_NUMBER ||
+        strategy == AGTYPE_CONTAINS_TOP_LEVEL_STRATEGY_NUMBER)
     {
         /*
          * We must always recheck, since we can't tell from the index whether
@@ -411,7 +405,6 @@ Datum gin_consistent_agtype(PG_FUNCTION_ARGS)
  * function.
  */
 PG_FUNCTION_INFO_V1(gin_triconsistent_agtype);
-extern "C" Datum  gin_triconsistent_agtype(PG_FUNCTION_ARGS);
 Datum gin_triconsistent_agtype(PG_FUNCTION_ARGS)
 {
     GinTernaryValue *check;
@@ -435,6 +428,7 @@ Datum gin_triconsistent_agtype(PG_FUNCTION_ARGS)
      * function, for the reasons listed there.
      */
     if (strategy == AGTYPE_CONTAINS_STRATEGY_NUMBER ||
+        strategy == AGTYPE_CONTAINS_TOP_LEVEL_STRATEGY_NUMBER ||
         strategy == AGTYPE_EXISTS_ALL_STRATEGY_NUMBER)
     {
         /* All extracted keys must be present */
@@ -506,36 +500,6 @@ static Datum make_text_key(char flag, const char *str, int len)
     return PointerGetDatum(item);
 }
 
-#define MAXDOUBLEWIDTH 128
-static char *
-float8out_internal(double num)
-{
-	char	   *ascii = (char *) palloc(MAXDOUBLEWIDTH + 1);
-
-	if (std::isnan(num))
-		return strcpy(ascii, "NaN");
-
-	switch (std::isinf(num))
-	{
-		case 1:
-			strcpy(ascii, "Infinity");
-			break;
-		case -1:
-			strcpy(ascii, "-Infinity");
-			break;
-		default:
-			{
-				int			ndig = DBL_DIG;
-
-				if (ndig < 1)
-					ndig = 1;
-
-				snprintf(ascii, MAXDOUBLEWIDTH + 1, "%.*g", ndig, num);
-			}
-	}
-
-	return ascii;
-}
 /*
  * Create a textual representation of a agtype_value that will serve as a GIN
  * key in a agtype_ops index.  is_key is true if the JsonbValue is a key,
@@ -589,7 +553,7 @@ static Datum make_scalar_key(const agtype_value *scalarVal, bool is_key)
          */
         cstr = numeric_normalize(scalarVal->val.numeric);
         item = make_text_key(AGT_GIN_FLAG_NUM, cstr, strlen(cstr));
-        pfree(cstr);
+        pfree_if_not_null(cstr);
         break;
     case AGTV_STRING:
         item = make_text_key(is_key ? AGT_GIN_FLAG_KEY : AGT_GIN_FLAG_STR,

@@ -17,21 +17,28 @@
  * under the License.
  */
 
-#ifndef AG_AG_CATALOG_H
-#define AG_AG_CATALOG_H
+#ifndef AG_GUC_H
+#define AG_GUC_H
 
-#include "postgres.h"
+/*
+ * AGE configuration parameters.
+ *
+ * Ideally, these parameters should be documented in a .sgml file.
+ *
+ * To add a new parameter, add a global variable. Add its definition
+ * in the `define_config_params` function. Include this header file
+ * to use the global variable. The parameters can be set just like
+ * regular Postgres parameters. See guc.h for more details.
+ */
 
-#include "utils/agtype.h"
+/*
+ * If set true, MATCH's property filter is transformed into the @>
+ * (containment) operator. Otherwise, the -> operator is used. The former case
+ * is useful when GIN index is desirable, the latter case is useful for Btree
+ * expression index.
+ */
+extern bool age_enable_containment;
 
-bool is_age_extension_exists(void);
-
-void object_access_hook_init(void);
-void object_access_hook_fini(void);
-
-void process_utility_hook_init(void);
-void process_utility_hook_fini(void);
-
-Oid ag_relation_id(const char *name, const char *kind);
+void define_config_params(void);
 
 #endif

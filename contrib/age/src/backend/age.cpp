@@ -18,33 +18,69 @@
  */
 
 #include "postgres.h"
-
-#include "fmgr.h"
+#include "miscadmin.h"
 
 #include "catalog/ag_catalog.h"
 #include "nodes/ag_nodes.h"
 #include "optimizer/cypher_paths.h"
 #include "parser/cypher_analyze.h"
+#include "utils/ag_guc.h"
+#include "utils/age_global_graph.h"
+
+#if PG_VERSION_NUM < 170000
+
+/* saved hook pointers for PG < 17 shmem path */
+static shmem_request_hook_type prev_shmem_request_hook = NULL;
+static shmem_startup_hook_type prev_shmem_startup_hook = NULL;
+
+static void age_shmem_request_hook(void)
+{
+    if (prev_shmem_request_hook)
+    {
+        prev_shmem_request_hook();
+    }
+    age_graph_version_shmem_request();
+}
+
+static void age_shmem_startup_hook(void)
+{
+    if (prev_shmem_startup_hook)
+    {
+        prev_shmem_startup_hook();
+    }
+    age_graph_version_shmem_startup();
+}
+#endif /* PG_VERSION_NUM < 170000 */
 
 PG_MODULE_MAGIC;
 
-extern "C" void _PG_init(void);
+void _PG_init(void);
 
 void _PG_init(void)
 {
-	if (g_instance.attr.attr_common.enable_thread_pool) {
-        ereport(ERROR, (errmsg("Currently age is not compatiable with thread pool. "),
-                        errhint("please disable thread pool by configuring "
-                                "enable_thread_pool = OFF. ")));
+    if (IsBinaryUpgrade)
+    {
+        return;
     }
+
     register_ag_nodes();
     set_rel_pathlist_init();
     object_access_hook_init();
     process_utility_hook_init();
     post_parse_analyze_init();
+    define_config_params();
+
+#if PG_VERSION_NUM < 170000
+    /* Register shared memory hooks for graph version tracking.
+     * On PG 17+, DSM is used instead (no hooks needed). */
+    prev_shmem_request_hook = shmem_request_hook;
+    shmem_request_hook = age_shmem_request_hook;
+    prev_shmem_startup_hook = shmem_startup_hook;
+    shmem_startup_hook = age_shmem_startup_hook;
+#endif
 }
 
-extern "C" void _PG_fini(void);
+void _PG_fini(void);
 
 void _PG_fini(void)
 {

@@ -20,85 +20,25 @@
 #ifndef AG_LOAD_EDGES_H
 #define AG_LOAD_EDGES_H
 
+#include "utils/load/age_load.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
+/*
+ * Load edges from a CSV file using pg's COPY infrastructure.
+ *
+ * CSV format: start_id, start_vertex_type, end_id, end_vertex_type, [properties...]
+ *
+ * Parameters:
+ *   file_path       - Path to the CSV file (must be in /tmp/age/)
+ *   graph_name      - Name of the graph
+ *   graph_oid       - OID of the graph
+ *   label_name      - Name of the edge label
+ *   label_id        - ID of the label
+ *   load_as_agtype  - If true, parse CSV values as agtype (JSON-like)
+ *
+ * Returns EXIT_SUCCESS on success.
+ */
+int create_edges_from_csv_file(char *file_path, char *graph_name, Oid graph_oid,
+                               char *label_name, int label_id,
+                               bool load_as_agtype, char delimiter);
 
-
-#include "postgres.h"
-
-#include "access/heapam.h"
-#include "access/xact.h"
-#include "catalog/dependency.h"
-#include "catalog/namespace.h"
-#include "catalog/objectaddress.h"
-#include "commands/defrem.h"
-#include "commands/sequence.h"
-#include "commands/tablecmds.h"
-#include "miscadmin.h"
-#include "nodes/makefuncs.h"
-#include "nodes/nodes.h"
-#include "nodes/parsenodes.h"
-#include "nodes/pg_list.h"
-#include "nodes/plannodes.h"
-#include "nodes/primnodes.h"
-#include "nodes/value.h"
-#include "parser/parse_node.h"
-#include "parser/parser.h"
-#include "tcop/dest.h"
-#include "tcop/utility.h"
-#include "utils/acl.h"
-#include "utils/builtins.h"
-#include "utils/inval.h"
-#include "utils/lsyscache.h"
-#include "utils/rel.h"
-
-#include "catalog/ag_graph.h"
-#include "catalog/ag_label.h"
-#include "commands/label_commands.h"
-#include "utils/ag_cache.h"
-#include "utils/agtype.h"
-#include "utils/graphid.h"
-
-
-
-typedef struct {
-    size_t row;
-    char **header;
-    size_t *header_len;
-    size_t header_num;
-    char **fields;
-    size_t *fields_len;
-    size_t alloc;
-    size_t cur_field;
-    int error;
-    size_t header_row_length;
-    size_t curr_row_length;
-    char *graph_name;
-    Oid graph_id;
-    char *object_name;
-    int object_id;
-    char *start_vertex;
-    char *end_vertex;
-    uint16 start_vertex_type_id;
-    uint16 end_vertex_type_id;
-    size_t start_col;
-    size_t end_col;
-    agtype_value_type* col_type;
-    bool with_neo4j_like_header;
-    bool adjust_id;
-    bool free_context;
-} csv_edge_reader;
-
-
-void edge_field_cb(void *field, size_t field_len, void *data);
-void edge_row_cb(int delim __attribute__((unused)), void *data);
-
-int create_edges_from_csv_file(char *file_path, char *graph_name, Oid graph_id,
-                                char *object_name, int object_id ,bool with_header = false,bool adjust_id = false,bool free_context = true);
-
-#endif //AG_LOAD_EDGES_H
-
+#endif /* AG_LOAD_EDGES_H */

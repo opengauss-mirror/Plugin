@@ -20,40 +20,41 @@
 #ifndef AG_CYPHER_READFUNCS_H
 #define AG_CYPHER_READFUNCS_H
 
-#include "postgres.h"
-
-#include "nodes/ag_extensible.h"
-#include "nodes/nodes.h"
+#include "nodes/extensible.h"
 
 /*
  * Deserialization functions for AGE's ExtensibleNodes. We assign
- * each node to its deserialization functionin the DEFINE_NODE_METHODS
+ * each node to its deserialization function in the DEFINE_NODE_METHODS
  * and DEFINE_NODE_METHODS_EXTENDED macros in ag_nodes.c.
 
  *
  * All functions are dependent on the pg_strtok function. We do not
- * setup pg_strtok. That is for the the caller to do. By default that
+ * setup pg_strtok. That is for the caller to do. By default that
  * is the responsibility of Postgres' nodeRead function. We assume
  * that was setup correctly.
  */
 
 void read_ag_node(ExtensibleNode *node);
 
-// create data structures
+/* create data structures */
 void read_cypher_create_target_nodes(struct ExtensibleNode *node);
 void read_cypher_create_path(struct ExtensibleNode *node);
 void read_cypher_target_node(struct ExtensibleNode *node);
 
-// set/remove data structures
+/* set/remove data structures */
 void read_cypher_update_information(struct ExtensibleNode *node);
 void read_cypher_update_item(struct ExtensibleNode *node);
 
-// delete data structures
+/* delete data structures */
 void read_cypher_delete_information(struct ExtensibleNode *node);
 void read_cypher_delete_item(struct ExtensibleNode *node);
 
 void read_cypher_merge_information(struct ExtensibleNode *node);
 
-// vle data structures
-void read_cypher_vle_target_nodes(struct ExtensibleNode *node);
+/* predicate function data structure */
+void read_cypher_predicate_function(struct ExtensibleNode *node);
+
+/* reduce data structure */
+void read_cypher_reduce(struct ExtensibleNode *node);
+
 #endif

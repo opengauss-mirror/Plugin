@@ -18,8 +18,7 @@
  */
 
 #include "postgres.h"
-#include "utils/agtype.h"
-#include "utils/agtype_ext.h"
+
 #include "utils/agtype_raw.h"
 
 /*
@@ -27,9 +26,9 @@
  */
 struct agtype_build_state
 {
-    int a_offset;        // next location to write agtentry
-    int i;               // index of current agtentry being processed
-    int d_start;         // start of variable-length portion
+    int a_offset;        /* next location to write agtentry */
+    int i;               /* index of current agtentry being processed */
+    int d_start;         /* start of variable-length portion */
     StringInfo buffer;
 };
 
@@ -123,21 +122,21 @@ agtype_build_state *init_agtype_build_state(uint32 size, uint32 header_flag)
     int agtentry_len;
     agtype_build_state *bstate;
 
-    bstate = (agtype_build_state*)palloc0(sizeof(agtype_build_state));
+    bstate = palloc0(sizeof(agtype_build_state));
     bstate->buffer = makeStringInfo();
     bstate->a_offset = 0;
     bstate->i = 0;
 
-    // reserve for varlen header
+    /* reserve for varlen header */
     BUFFER_RESERVE(VARHDRSZ);
     bstate->a_offset += VARHDRSZ;
 
-    // write container header
+    /* write container header */
     BUFFER_RESERVE(sizeof(uint32));
     BUFFER_WRITE_CONST(bstate->a_offset, uint32, header_flag | size);
     bstate->a_offset += sizeof(uint32);
 
-    // reserve for agtentry headers
+    /* reserve for agtentry headers */
     if ((header_flag & AGT_FOBJECT) != 0)
     {
         agtentry_count = size * 2;
@@ -151,7 +150,6 @@ agtype_build_state *init_agtype_build_state(uint32 size, uint32 header_flag)
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("Invalid container type.")));
-        agtentry_count = 0; /* suppress the static check warmings */
     }
 
     agtentry_len = sizeof(agtentry) * agtentry_count;
@@ -174,8 +172,8 @@ void pfree_agtype_build_state(agtype_build_state *bstate)
      * bstate->buffer->data is not pfree'd because this pointer
      * is returned by the `build_agtype` function.
      */
-    pfree(bstate->buffer);
-    pfree(bstate);
+    pfree_if_not_null(bstate->buffer);
+    pfree_if_not_null(bstate);
 }
 
 void write_string(agtype_build_state *bstate, char *str)
@@ -192,18 +190,29 @@ void write_graphid(agtype_build_state *bstate, graphid graphid)
 {
     int length = 0;
 
-    // padding
+    /* padding */
     length += BUFFER_WRITE_PAD();
 
-    // graphid header
+    /* graphid header */
     write_const(AGT_HEADER_INTEGER, AGT_HEADER_TYPE);
     length += AGT_HEADER_SIZE;
 
-    // graphid value
-    write_const(graphid, int64);
-    length += sizeof(int64);
+    /*
+     * graphid value (int64). The 4-byte AGT_HEADER above leaves the buffer
+     * write position 4-byte-aligned but not 8-byte-aligned, so the typed
+     * write done by write_const(graphid, int64) is undefined behavior under
+     * strict alignment rules. Use memcpy. (UBSan flags the typed write as
+     * "store to misaligned address ... requires 8 byte alignment".)
+     */
+    {
+        int numlen = sizeof(int64);
+        int g_offset = BUFFER_RESERVE(numlen);
 
-    // agtentry
+        memcpy(bstate->buffer->data + g_offset, &graphid, sizeof(int64));
+        length += numlen;
+    }
+
+    /* agtentry */
     write_agt(AGTENTRY_IS_AGTYPE | length);
 
     bstate->i++;
@@ -213,13 +222,20 @@ void write_container(agtype_build_state *bstate, agtype *agtype)
 {
     int length = 0;
 
-    // padding
+    /* padding */
     length += BUFFER_WRITE_PAD();
 
-    // varlen data
-    length += write_ptr((char *) &agtype->root, VARSIZE(agtype));
+    /*
+     * Copy the inner agtype_container only, NOT the outer varlena header.
+     * VARSIZE(agtype) reports the total varlena size (including the 4-byte
+     * vl_len_ header), but we are starting our copy at &agtype->root, which
+     * is already past that header. Subtracting VARHDRSZ avoids reading
+     * VARHDRSZ bytes past the source allocation (caught by ASan as
+     * heap-buffer-overflow in __interceptor_memcpy from write_pointer).
+     */
+    length += write_ptr((char *) &agtype->root, VARSIZE(agtype) - VARHDRSZ);
 
-    // agtentry
+    /* agtentry */
     write_agt(AGTENTRY_IS_CONTAINER | length);
 
     bstate->i++;
@@ -233,17 +249,17 @@ void write_extended(agtype_build_state *bstate, agtype *val, uint32 header)
 {
     int length = 0;
 
-    // padding
+    /* padding */
     length += BUFFER_WRITE_PAD();
 
-    // vertex header
+    /* vertex header */
     write_const(header, AGT_HEADER_TYPE);
     length += AGT_HEADER_SIZE;
 
-    // vertex data
+    /* vertex data */
     length += write_ptr((char *) &val->root, VARSIZE(val));
 
-    // agtentry
+    /* agtentry */
     write_agt(AGTENTRY_IS_AGTYPE | length);
 
     bstate->i++;

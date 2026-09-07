@@ -24,131 +24,131 @@
 #include "nodes/cypher_readfuncs.h"
 #include "nodes/cypher_nodes.h"
 
-/*
- * Copied From openGauss
- *
- * Macros for declaring appropriate local variables.
- * needs <stdlib.h>
- * changed by limiao
- */
-#define atooid(x) ((Oid)strtoul((x), NULL, 10))
-
+static char *nullable_string(const char *token, int length);
 /*
  * Copied From Postgres
  *
  * Macros for declaring appropriate local variables.
  */
-// Declare the extensible node and local fields for the pg_strtok
+/* A few guys need only local_node */
+#define READ_LOCALS_NO_FIELDS(nodeTypeName) \
+    nodeTypeName *local_node = (nodeTypeName *) node
+
+/* And a few guys need only the pg_strtok support fields */
+#define READ_TEMP_LOCALS() \
+    const char *token; \
+    int length
+
+/* ... but most need both */
 #define READ_LOCALS(nodeTypeName) \
-        nodeTypeName *local_node = (nodeTypeName *)node; \
-        char *token; \
-        int  length;
+    READ_LOCALS_NO_FIELDS(nodeTypeName); \
+    READ_TEMP_LOCALS()
 
 /*
- * The READ_*_FIELD defines first skips the :fildname token (key) part of the string
+ * The READ_*_FIELD defines first skips the :fldname token (key) part of the string
  * and then converts the next token (value) to the correct data type.
  *
  * pg_strtok will split the passed string by whitespace, skipping whitespace in
- * strings. We do not setup pg_strtok. That is for the the caller to do. By default
+ * strings. We do not setup pg_strtok. That is for the caller to do. By default
  * that is the responsibility of Postgres' nodeRead function. We assume that was setup
  * correctly.
  */
 
-// Read an integer field (anything written as ":fldname %d")
+/* Read an integer field (anything written as ":fldname %d") */
 #define READ_INT_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
-        local_node->fldname = atoi(token)
+        local_node->fldname = strtol(token, 0, 10)
 
-// Read an unsigned integer field (anything written as ":fldname %u")
+/* Read an unsigned integer field (anything written as ":fldname %u") */
 #define READ_UINT_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = atoui(token)
-// Read an unsigned integer field (anything written using UINT64_FORMAT)
+/* Read an unsigned integer field (anything written using UINT64_FORMAT) */
 #define READ_UINT64_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = pg_strtouint64(token, NULL, 10)
 
-// Read a long integer field (anything written as ":fldname %ld")
+/* Read a long integer field (anything written as ":fldname %ld") */
 #define READ_LONG_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = atol(token)
 
-// Read an OID field (don't hard-wire assumption that OID is same as uint)
+/* Read an OID field (don't hard-wire assumption that OID is same as uint) */
 #define READ_OID_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = atooid(token)
 
-// Read a char field (ie, one ascii character)
+/* Read a char field (ie, one ascii character) */
 #define READ_CHAR_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         /* avoid overhead of calling debackslash() for one char */ \
         local_node->fldname = (length == 0) ? '\0' : (token[0] == '\\' ? token[1] : token[0])
 
-// Read an enumerated-type field that was written as an integer code
+/* Read an enumerated-type field that was written as an integer code */
 #define READ_ENUM_FIELD(fldname, enumtype) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
-        local_node->fldname = (enumtype) atoi(token)
+        local_node->fldname = (enumtype) strtol(token, 0, 10)
 
-// Read a float field
+/* Read a float field */
 #define READ_FLOAT_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = atof(token)
 
-// Read a boolean field
+/* Read a boolean field */
 #define READ_BOOL_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = strtobool(token)
 
-// Read a character-string field
+/* Read a character-string field */
 #define READ_STRING_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
-        local_node->fldname = (decltype(local_node->fldname))non_nullable_string(token, length)
+        local_node->fldname = nullable_string(token, length)
 
-// Read a parse location field (and throw away the value, per notes above)
+/* Read a parse location field (and throw away the value, per notes above) */
 #define READ_LOCATION_FIELD(fldname) \
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         (void) token; \
         local_node->fldname = -1
 
-// Read a Node field
+/* Read a Node field */
 #define READ_NODE_FIELD(fldname) \
         token = pg_strtok(&length);  \
         (void) token; \
-        local_node->fldname = (decltype(local_node->fldname))nodeRead_AG(NULL, 0)
+        local_node->fldname = nodeRead(NULL, 0)
 
-// Read a bitmapset field
+/* Read a bitmapset field */
 #define READ_BITMAPSET_FIELD(fldname) \
         token = pg_strtok(&length); \
         (void) token; \
         local_node->fldname = _readBitmapset()
 
-// Read an attribute number array
+/* Read an attribute number array */
 #define READ_ATTRNUMBER_ARRAY(fldname, len) \
         token = pg_strtok(&length); \
         local_node->fldname = readAttrNumberCols(len);
 
-// Read an oid array
+/* Read an oid array */
 #define READ_OID_ARRAY(fldname, len) \
         token = pg_strtok(&length); \
         local_node->fldname = readOidCols(len);
 
-// Read an int array
+/* Read an int array */
 #define READ_INT_ARRAY(fldname, len) \
         token = pg_strtok(&length); \
         local_node->fldname = readIntCols(len);
 
-// Read a bool array
+/* Read a bool array */
 #define READ_BOOL_ARRAY(fldname, len) \
         token = pg_strtok(&length); \
         local_node->fldname = readBoolCols(len);
@@ -163,11 +163,22 @@
 
 #define strtobool(x)  ((*(x) == 't') ? true : false)
 
-#define nullable_string(token,length)  \
-        ((length) == 0 ? NULL : debackslash(token, length))
-
-#define non_nullable_string(token,length)  \
-        ((length) == 0 ? "" : debackslash(token, length))
+/* copied from PG16 function of the same name for consistency */
+static char *nullable_string(const char *token, int length)
+{
+    /* outToken emits <> for NULL, and pg_strtok makes that an empty string */
+    if (length == 0)
+    {
+        return NULL;
+    }
+    /* outToken emits "" for empty string */
+    if (length == 2 && token[0] == '"' && token[1] == '"')
+    {
+        return pstrdup("");
+    }
+    /* otherwise, we must remove protective backslashes added by outToken */
+    return debackslash(token, length);
+}
 
 /*
  * Default read function for cypher nodes. For most nodes, we don't expect
@@ -186,29 +197,9 @@ void read_cypher_create_target_nodes(struct ExtensibleNode *node)
 {
     READ_LOCALS(cypher_create_target_nodes);
 
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->paths = (List *)nodeRead_AG(NULL, 0);
-
-    READ_INT_FIELD(flags);
-    READ_OID_FIELD(graph_oid);
-}
-
-/*
- * Deserialize a string representing the cypher_vle_target_nodes
- * data structure.
- */
-void read_cypher_vle_target_nodes(struct ExtensibleNode *node)
-{
-    READ_LOCALS(cypher_vle_target_nodes);
-    READ_INT_FIELD(minimum_output_depth);
-    READ_INT_FIELD(maximum_output_depth);
-    READ_ENUM_FIELD(cypher_rel_direction, cypher_rel_dir);
-    READ_STRING_FIELD(label_name);
-    READ_OID_FIELD(graph_oid);
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->edge_property_constraint =  (Node *)nodeRead_AG(NULL, 0);
+    READ_NODE_FIELD(paths);
+    READ_UINT_FIELD(flags);
+    READ_UINT_FIELD(graph_oid);
 }
 
 /*
@@ -219,15 +210,9 @@ void read_cypher_create_path(struct ExtensibleNode *node)
 {
     READ_LOCALS(cypher_create_path);
 
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->target_nodes =  (List *)nodeRead_AG(NULL, 0);
-
+    READ_NODE_FIELD(target_nodes);
     READ_INT_FIELD(path_attr_num);
-
-    token = pg_strtok(&length);
-    token = pg_strtok(&length);
-    local_node->var_name = (char *)non_nullable_string(token, length);
+    READ_STRING_FIELD(var_name);
 }
 
 /*
@@ -239,25 +224,12 @@ void read_cypher_target_node(struct ExtensibleNode *node)
     READ_LOCALS(cypher_target_node);
 
     READ_CHAR_FIELD(type);
-    READ_INT_FIELD(flags);
+    READ_UINT_FIELD(flags);
     READ_ENUM_FIELD(dir, cypher_rel_dir);
-
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->id_expr =  (Expr *)nodeRead_AG(NULL, 0);
-
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->id_expr_state =  (ExprState *)nodeRead_AG(NULL, 0);
-
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->prop_expr =  (Expr *)nodeRead_AG(NULL, 0);
-
-    token = pg_strtok(&length);
-    (void) token;
-    local_node->prop_expr_state = (ExprState *)nodeRead_AG(NULL, 0);
-
+    READ_NODE_FIELD(id_expr);
+    READ_NODE_FIELD(id_expr_state);
+    READ_NODE_FIELD(prop_expr);
+    READ_NODE_FIELD(prop_expr_state);
     READ_INT_FIELD(prop_attr_num);
     READ_NODE_FIELD(resultRelInfo);
     READ_NODE_FIELD(elemTupleSlot);
@@ -276,7 +248,7 @@ void read_cypher_update_information(struct ExtensibleNode *node)
     READ_LOCALS(cypher_update_information);
 
     READ_NODE_FIELD(set_items);
-    READ_INT_FIELD(flags);
+    READ_UINT_FIELD(flags);
     READ_INT_FIELD(tuple_position);
     READ_STRING_FIELD(graph_name);
     READ_STRING_FIELD(clause_name);
@@ -296,6 +268,9 @@ void read_cypher_update_item(struct ExtensibleNode *node)
     READ_STRING_FIELD(prop_name);
     READ_NODE_FIELD(qualified_name);
     READ_BOOL_FIELD(remove_item);
+    READ_BOOL_FIELD(is_add);
+    READ_NODE_FIELD(prop_expr);
+    READ_NODE_FIELD(prop_expr_state);
 }
 
 /*
@@ -307,9 +282,9 @@ void read_cypher_delete_information(struct ExtensibleNode *node)
     READ_LOCALS(cypher_delete_information);
 
     READ_NODE_FIELD(delete_items);
-    READ_INT_FIELD(flags);
+    READ_UINT_FIELD(flags);
     READ_STRING_FIELD(graph_name);
-    READ_OID_FIELD(graph_oid);
+    READ_UINT_FIELD(graph_oid);
     READ_BOOL_FIELD(detach);
 }
 
@@ -333,8 +308,38 @@ void read_cypher_merge_information(struct ExtensibleNode *node)
 {
     READ_LOCALS(cypher_merge_information);
 
-    READ_INT_FIELD(flags);
-    READ_OID_FIELD(graph_oid);
+    READ_UINT_FIELD(flags);
+    READ_UINT_FIELD(graph_oid);
     READ_INT_FIELD(merge_function_attr);
     READ_NODE_FIELD(path);
+    READ_NODE_FIELD(on_match_set_info);
+    READ_NODE_FIELD(on_create_set_info);
+}
+
+/*
+ * Deserialize a string representing the cypher_predicate_function
+ * data structure.
+ */
+void read_cypher_predicate_function(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_predicate_function);
+
+    READ_ENUM_FIELD(kind, cypher_predicate_function_kind);
+    READ_STRING_FIELD(varname);
+    READ_NODE_FIELD(expr);
+    READ_NODE_FIELD(where);
+}
+
+/*
+ * Deserialize a string representing the cypher_reduce data structure.
+ */
+void read_cypher_reduce(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_reduce);
+
+    READ_STRING_FIELD(acc_varname);
+    READ_NODE_FIELD(init_expr);
+    READ_STRING_FIELD(elem_varname);
+    READ_NODE_FIELD(list_expr);
+    READ_NODE_FIELD(body_expr);
 }

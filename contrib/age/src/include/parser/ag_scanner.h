@@ -45,8 +45,9 @@ typedef enum ag_token_type
     AG_TOKEN_DOT_DOT,
     AG_TOKEN_TYPECAST,
     AG_TOKEN_PLUS_EQ,
-    AG_TOKEN_EQ_TILDE,
-    AG_TOKEN_CHAR
+    AG_TOKEN_CHAR,
+    AG_TOKEN_BQIDENT,
+    AG_TOKEN_OP
 } ag_token_type;
 
 /*
@@ -74,7 +75,7 @@ typedef struct ag_token
     int location;
 } ag_token;
 
-// an opaque data structure encapsulating the current state of the scanner
+/* an opaque data structure encapsulating the current state of the scanner */
 typedef void *ag_scanner_t;
 
 ag_scanner_t ag_scanner_create(const char *s);
