@@ -155,10 +155,10 @@ set(TGT_age_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/${CADIR}/ag_cache.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/${CADIR}/agehash.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/${LODIR}/ag_csv_reader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/${LODIR}/age_load.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/${LODIR}/ag_load_edges.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/${LODIR}/ag_load_labels.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/${LODIR}/libcsv.cpp
 )
 
 set(TGT_age_INC 

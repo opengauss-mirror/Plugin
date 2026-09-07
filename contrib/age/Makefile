@@ -74,10 +74,10 @@ OBJS = src/backend/age.o \
        src/backend/utils/ag_guc.o \
        src/backend/utils/cache/ag_cache.o \
        src/backend/utils/cache/agehash.o \
+       src/backend/utils/load/ag_csv_reader.o \
        src/backend/utils/load/ag_load_labels.o \
        src/backend/utils/load/ag_load_edges.o \
-       src/backend/utils/load/age_load.o \
-       src/backend/utils/load/libcsv.o
+       src/backend/utils/load/age_load.o
 
 DEPFILES = $(OBJS:.o=.d)
 

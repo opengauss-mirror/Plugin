@@ -16,315 +16,344 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #include "postgres.h"
 
-#include "access/heapam.h"
-#include "access/table.h"
-#include "catalog/namespace.h"
-#include "commands/copy.h"
-#include "executor/executor.h"
-#include "nodes/makefuncs.h"
-#include "parser/parse_node.h"
-#include "utils/memutils.h"
-#include "utils/rel.h"
+#include <cctype>
 
+#include "utils/builtins.h"
+#include "utils/memutils.h"
+
+#include "catalog/ag_label.h"
+#include "utils/agtype.h"
+#include "utils/graphid.h"
+
+#include "utils/load/ag_csv_reader.h"
 #include "utils/load/ag_load_edges.h"
+#include "utils/load/age_load.h"
+
+#define DECIMAL_RADIX 10
+#define EDGE_CSV_MINIMUM_FIELD_COUNT 4
+#define EDGE_CSV_START_ID_COL 0
+#define EDGE_CSV_START_LABEL_COL 1
+#define EDGE_CSV_END_ID_COL 2
+#define EDGE_CSV_END_LABEL_COL 3
+#define EDGE_CSV_NO_COLUMN ((size_t)-1)
+
+/* Per-file state of the edge loader; everything lives in load_context. */
+typedef struct csv_edge_reader {
+    /* header row: trimmed column names, NULL/"" columns carry no property */
+    char **header;
+    int header_num;
+    /* neo4j-style header only */
+    agtype_value_type *col_type;
+    size_t start_col;
+    size_t end_col;
+    char *start_vertex;
+    char *end_vertex;
+
+    Oid graph_id;
+    char *object_name;
+    int object_id;
+    bool load_as_agtype;
+    bool with_neo4j_like_header;
+    bool adjust_id;
+
+    Oid sequence_id;
+
+    loader_target *target;
+} csv_edge_reader;
+
+static char *parse_endpoint_label(const char *header_column);
+static void parse_edge_header(csv_edge_reader *cr, char **fields, int nfields);
+static void process_edge_row(csv_edge_reader *cr, char **fields, int nfields);
 
 /*
- * Process a single edge row from COPY's raw fields.
- * Edge CSV format: start_id, start_vertex_type, end_id, end_vertex_type, [properties...]
+ * ":START_ID(Person)" -> "person".  neo4j-import labels are matched case
+ * insensitively, AGE labels are not, so the name is lower-cased.
  */
-static void process_edge_row(char **fields, int nfields,
-                             char **header, int header_count,
-                             int label_id, Oid label_seq_relid,
-                             Oid graph_oid, bool load_as_agtype,
-                             batch_insert_state *batch_state)
+static char *parse_endpoint_label(const char *header_column)
 {
-    int64 start_id_int;
-    graphid start_vertex_graph_id;
-    int start_vertex_type_id;
+    const char *start_lab = strchr(header_column, '(');
+    const char *end_lab = strchr(header_column, ')');
+    char *label;
+    size_t i;
 
-    int64 end_id_int;
-    graphid end_vertex_graph_id;
-    int end_vertex_type_id;
-
-    graphid edge_id;
-    int64 entry_id;
-    TupleTableSlot *slot;
-
-    char *start_vertex_type;
-    char *end_vertex_type;
-    agtype *edge_properties;
-
-    /*
-     * Guard the fixed fields[0..3] accesses below and the header[i]/fields[i]
-     * pairing in create_agtype_from_list_i() against out-of-bounds reads on
-     * malformed or mis-delimited rows. A row must have at least the 4 fixed
-     * columns and no more columns than the header (rows with fewer trailing
-     * property columns than the header are allowed, matching existing
-     * behavior). A single-column row from a non-comma-delimited file is
-     * rejected here (previously it segfaulted).
-     */
-    if (nfields < 4 || nfields > header_count)
-    {
+    if (start_lab == NULL || end_lab == NULL || end_lab <= start_lab + 1) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                 errmsg("edge file row has %d columns; expected at least 4 "
-                        "and no more than the header's %d columns",
-                        nfields, header_count)));
+                 errmsg("invalid vertex header: \"%s\"", header_column)));
     }
 
-    /* Generate edge ID */
-    entry_id = nextval_internal(label_seq_relid, true);
-    edge_id = make_graphid(label_id, entry_id);
+    label = pnstrdup(start_lab + 1, end_lab - start_lab - 1);
+    for (i = 0; label[i] != '\0'; i++) {
+        label[i] = tolower((unsigned char)label[i]);
+    }
 
-    /* Trim whitespace from vertex type names */
-    start_vertex_type = trim_whitespace(fields[1]);
-    end_vertex_type = trim_whitespace(fields[3]);
+    return label;
+}
 
-    /* Parse start vertex info */
-    start_id_int = strtol(fields[0], NULL, 10);
-    start_vertex_type_id = get_label_id(start_vertex_type, graph_oid);
+/*
+ * The header row.  Plain files: start_id, start_vertex_type, end_id,
+ * end_vertex_type, then property names.  neo4j-import style files:
+ * ":START_ID(Label)", ":END_ID(Label)" and "name:TYPE" columns in any order.
+ * File content is untrusted: every column is validated before use.
+ */
+static void parse_edge_header(csv_edge_reader *cr, char **fields, int nfields)
+{
+    int i;
 
-    /* Parse end vertex info */
-    end_id_int = strtol(fields[2], NULL, 10);
-    end_vertex_type_id = get_label_id(end_vertex_type, graph_oid);
+    cr->header_num = nfields;
+    cr->header = (char **)palloc0(sizeof(char *) * nfields);
 
-    /* Create graphids for start and end vertices */
+    if (!cr->with_neo4j_like_header) {
+        if (nfields < EDGE_CSV_MINIMUM_FIELD_COUNT) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("edge file must have at least 4 columns "
+                            "(start_id, start_vertex_type, end_id, "
+                            "end_vertex_type), but the header has %d",
+                            nfields),
+                     errhint("load_edges_from_file expects a comma-delimited "
+                             "CSV; check the file's delimiter.")));
+        }
+
+        for (i = 0; i < nfields; i++) {
+            cr->header[i] = trim_csv_value(fields[i]);
+        }
+        return;
+    }
+
+    cr->col_type = (agtype_value_type *)palloc0(
+        sizeof(agtype_value_type) * nfields);
+
+    for (i = 0; i < nfields; i++) {
+        char *field = trim_csv_value(fields[i]);
+
+        // creationDate:LONG|:START_ID(Person)|:END_ID(Organisation)|workFrom:LONG
+        if (strstr(field, "START_ID") != NULL) {
+            if (cr->start_col != EDGE_CSV_NO_COLUMN) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("edge file header has more than one "
+                                "START_ID column")));
+            }
+            cr->start_col = i;
+            cr->start_vertex = parse_endpoint_label(field);
+            cr->header[i] = "start_id";
+            cr->col_type[i] = AGTV_NUMERIC;
+            continue;
+        }
+
+        if (strstr(field, "END_ID") != NULL) {
+            if (cr->end_col != EDGE_CSV_NO_COLUMN) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("edge file header has more than one "
+                                "END_ID column")));
+            }
+            cr->end_col = i;
+            cr->end_vertex = parse_endpoint_label(field);
+            cr->header[i] = "end_id";
+            cr->col_type[i] = AGTV_NUMERIC;
+            continue;
+        }
+
+        char *colon = strchr(field, ':');
+        if (colon == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("edge file header column %d (\"%s\") "
+                            "must have the form name:TYPE",
+                            i + 1, field)));
+        }
+
+        *colon = '\0';
+        cr->header[i] = field;
+        const char *type = colon + 1;
+
+        if (strcmp(type, "LONG") == 0) {
+            cr->col_type[i] = AGTV_NUMERIC;
+        }
+        else if (strcmp(type, "BOOL") == 0) {
+            cr->col_type[i] = AGTV_BOOL;
+        }
+        else {
+            /* STRING and any unknown type are loaded as strings */
+            cr->col_type[i] = AGTV_STRING;
+        }
+    }
+
+    if (cr->start_col == EDGE_CSV_NO_COLUMN || cr->end_col == EDGE_CSV_NO_COLUMN) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("edge file header must contain START_ID and END_ID columns")));
+    }
+}
+
+static int64 edge_endpoint_id(const char *field, bool adjust_id)
+{
+    int64 id = strtol(field != NULL ? field : "", NULL, DECIMAL_RADIX);
+
+    return adjust_id ? id + 1 : id;
+}
+
+static int32 edge_endpoint_label_id(csv_edge_reader *cr, const char *field)
+{
+    char *label_name = trim_csv_value(field);
+
+    return get_label_id(label_name, cr->graph_id);
+}
+
+static void process_edge_row(csv_edge_reader *cr, char **fields, int nfields)
+{
+    int64 start_id_int;
+    int64 end_id_int;
+    int32 start_vertex_type_id;
+    int32 end_vertex_type_id;
+    graphid object_graph_id;
+    graphid start_vertex_graph_id;
+    graphid end_vertex_graph_id;
+    agtype *props;
+
+    if (!cr->with_neo4j_like_header) {
+        if (nfields < EDGE_CSV_MINIMUM_FIELD_COUNT || nfields > cr->header_num) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("edge file row has %d columns; expected at least "
+                            "4 and no more than the header's %d columns",
+                            nfields, cr->header_num)));
+        }
+
+        start_id_int = edge_endpoint_id(fields[EDGE_CSV_START_ID_COL], false);
+        start_vertex_type_id = edge_endpoint_label_id(cr, fields[EDGE_CSV_START_LABEL_COL]);
+        end_id_int = edge_endpoint_id(fields[EDGE_CSV_END_ID_COL], false);
+        end_vertex_type_id = edge_endpoint_label_id(cr, fields[EDGE_CSV_END_LABEL_COL]);
+    }
+    else {
+        if (nfields > cr->header_num) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("edge file row has %d columns, more than the "
+                            "header's %d columns",
+                            nfields, cr->header_num)));
+        }
+
+        if (cr->start_col >= (size_t)nfields || cr->end_col >= (size_t)nfields) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("edge file row has %d columns and does not "
+                            "contain both endpoint id columns",
+                            nfields)));
+        }
+
+        start_id_int = edge_endpoint_id(fields[cr->start_col], cr->adjust_id);
+        start_vertex_type_id = get_label_id(cr->start_vertex, cr->graph_id);
+        end_id_int = edge_endpoint_id(fields[cr->end_col], cr->adjust_id);
+        end_vertex_type_id = get_label_id(cr->end_vertex, cr->graph_id);
+    }
+
+    /* make_graphid() rejects unknown labels (id 0) and out-of-range ids */
+    object_graph_id = make_graphid(
+        cr->object_id, next_loader_sequence_value(cr->sequence_id));
     start_vertex_graph_id = make_graphid(start_vertex_type_id, start_id_int);
     end_vertex_graph_id = make_graphid(end_vertex_type_id, end_id_int);
 
-    /* Get the appropriate slot from the batch state */
-    slot = batch_state->slots[batch_state->num_tuples];
+    props = create_agtype_from_list_i(cr->header, fields, cr->col_type,
+                                      nfields, cr->start_col, cr->end_col,
+                                      cr->load_as_agtype);
 
-    /* Clear the slots contents */
-    ExecClearTuple(slot);
-
-    /* Build the agtype properties */
-    edge_properties = create_agtype_from_list_i(header, fields,
-                                                nfields, 4, load_as_agtype);
-
-    /* Fill the values in the slot */
-    slot->tts_values[0] = GRAPHID_GET_DATUM(edge_id);
-    slot->tts_values[1] = GRAPHID_GET_DATUM(start_vertex_graph_id);
-    slot->tts_values[2] = GRAPHID_GET_DATUM(end_vertex_graph_id);
-    slot->tts_values[3] = AGTYPE_P_GET_DATUM(edge_properties);
-    slot->tts_isnull[0] = false;
-    slot->tts_isnull[1] = false;
-    slot->tts_isnull[2] = false;
-    slot->tts_isnull[3] = false;
-
-    /* Make the slot as containing virtual tuple */
-    ExecStoreVirtualTuple(slot);
-
-    batch_state->buffered_bytes += VARSIZE(edge_properties);
-    batch_state->num_tuples++;
-
-    /* Insert the batch when tuple count OR byte threshold is reached */
-    if (batch_state->num_tuples >= BATCH_SIZE ||
-        batch_state->buffered_bytes >= MAX_BUFFERED_BYTES)
-    {
-        insert_batch(batch_state);
-        batch_state->num_tuples = 0;
-        batch_state->buffered_bytes = 0;
-    }
+    insert_edge_simple(cr->target, object_graph_id, start_vertex_graph_id,
+                       end_vertex_graph_id, props);
 }
 
-/*
- * Create COPY options for CSV parsing.
- * Returns a List of DefElem nodes.
- */
-static List *create_copy_options(char delimiter)
-{
-    List *options = NIL;
-
-    /* FORMAT csv */
-    options = lappend(options,
-                      makeDefElem("format",
-                                  (Node *) makeString("csv"),
-                                  -1));
-
-    /* HEADER false - we'll read the header ourselves */
-    options = lappend(options,
-                      makeDefElem("header",
-                                  (Node *) makeBoolean(false),
-                                  -1));
-
-    /* DELIMITER */
-    {
-        char delimiter_str[2];
-        delimiter_str[0] = delimiter;
-        delimiter_str[1] = '\0';
-        options = lappend(options,
-                          makeDefElem("delimiter",
-                                      (Node *) makeString(pstrdup(delimiter_str)),
-                                      -1));
-    }
-
-    return options;
-}
-
-/*
- * Load edges from CSV file using pg's COPY infrastructure.
- */
 int create_edges_from_csv_file(char *file_path,
                                char *graph_name,
-                               Oid graph_oid,
-                               char *label_name,
-                               int label_id,
+                               Oid graph_id,
+                               char *object_name,
+                               int object_id,
                                bool load_as_agtype,
-                               char delimiter)
+                               char delimiter,
+                               bool with_header,
+                               bool adjust_id)
 {
-    Relation        label_rel;
-    Oid             label_relid;
-    CopyFromState   cstate;
-    List           *copy_options;
-    ParseState     *pstate;
-    char          **fields;
-    int             nfields;
-    char          **header = NULL;
-    int             header_count = 0;
-    bool            is_first_row = true;
-    char           *label_seq_name;
-    Oid             label_seq_relid;
-    batch_insert_state *batch_state = NULL;
-    MemoryContext   batch_context;
-    MemoryContext   old_context;
+    csv_edge_reader *reader;
+    ag_csv_reader *volatile csv = NULL;
+    char **fields;
+    int nfields;
+    bool is_header_row = true;
+    MemoryContext load_context;
+    MemoryContext row_context;
+    MemoryContext old_context;
 
-    /* Create a memory context for batch processing - reset after each batch */
-    batch_context = AllocSetContextCreate(CurrentMemoryContext,
-                                          "AGE CSV Edge Load Batch Context",
-                                          ALLOCSET_DEFAULT_SIZES);
+    /*
+     * load_context holds the reader, the header and the CSV record buffers
+     * for the whole file; row_context holds one row's properties and SPI
+     * query text and is reset after every row.  The caller's context is never
+     * touched: it still owns the function arguments (label name, path).
+     */
+    load_context = AllocSetContextCreate(CurrentMemoryContext,
+                                         "AGE CSV edge loader",
+                                         ALLOCSET_DEFAULT_SIZES);
+    row_context = AllocSetContextCreate(load_context,
+                                        "AGE CSV edge loader row",
+                                        ALLOCSET_DEFAULT_SIZES);
+    old_context = MemoryContextSwitchTo(load_context);
 
-    /* Get the label relation */
-    label_relid = get_label_relation(label_name, graph_oid);
-    label_rel = table_open(label_relid, RowExclusiveLock);
+    reader = (csv_edge_reader *)palloc0(sizeof(csv_edge_reader));
+    reader->start_col = EDGE_CSV_NO_COLUMN;
+    reader->end_col = EDGE_CSV_NO_COLUMN;
+    reader->graph_id = graph_id;
+    reader->object_name = object_name;
+    reader->object_id = object_id;
+    reader->load_as_agtype = load_as_agtype;
+    reader->with_neo4j_like_header = with_header;
+    reader->adjust_id = adjust_id;
+    reader->sequence_id = get_loader_label_sequence_oid(graph_id, object_name);
 
-    /* Get sequence info */
-    label_seq_name = get_label_seq_relation_name(label_name);
-    label_seq_relid = get_relname_relid(label_seq_name, graph_oid);
-
-    /* Initialize the batch insert state */
-    init_batch_insert(&batch_state, label_name, graph_oid);
-
-    /* Create COPY options for CSV parsing */
-    copy_options = create_copy_options(delimiter);
-
-    /* Create a minimal ParseState for BeginCopyFrom */
-    pstate = make_parsestate(NULL);
+    /* neo4j-import style files are always '|' separated */
+    if (with_header)
+    {
+        delimiter = '|';
+    }
 
     PG_TRY();
     {
-        /*
-         * Initialize COPY FROM state.
-         * We pass the label relation but will only use NextCopyFromRawFields
-         * which returns raw parsed strings without type conversion.
-         */
-        cstate = BeginCopyFrom(pstate,
-                               label_rel,
-                               NULL,           /* whereClause */
-                               file_path,
-                               false,          /* is_program */
-                               NULL,           /* data_source_cb */
-                               NIL,            /* attnamelist */
-                               copy_options);
+        reader->target = open_loader_target(graph_id, graph_name, object_name);
 
-        /*
-         * Process rows using COPY's csv parsing.
-         * NextCopyFromRawFields uses 64KB buffers internally.
-         */
-        while (NextCopyFromRawFields(cstate, &fields, &nfields))
+        /* file_path was resolved and checked by build_safe_csv_path() */
+        csv = ag_csv_open(file_path, delimiter);
+
+        while (ag_csv_next_record(csv, &fields, &nfields))
         {
-            if (is_first_row)
-            {
-                int i;
-
-                /* First row is the header - save column names (in main context) */
-                header_count = nfields;
-                header = (char **) palloc(sizeof(char *) * nfields);
-
-                for (i = 0; i < nfields; i++)
-                {
-                    /* Trim whitespace from header fields */
-                    header[i] = trim_whitespace(fields[i]);
-                }
-
-                /*
-                 * Edge files require the four fixed columns start_id,
-                 * start_vertex_type, end_id and end_vertex_type. A smaller
-                 * count almost always means the file is not comma-delimited
-                 * (COPY defaults to comma). Fail clearly here instead of
-                 * reading past the parsed fields in process_edge_row(), which
-                 * previously caused a segfault.
-                 */
-                if (header_count < 4)
-                {
-                    ereport(ERROR,
-                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                             errmsg("edge file must have at least 4 columns "
-                                    "(start_id, start_vertex_type, end_id, "
-                                    "end_vertex_type), but the header has %d",
-                                    header_count),
-                             errhint("load_edges_from_file expects a "
-                                     "comma-delimited CSV; check the file's "
-                                     "delimiter.")));
-                }
-
-                is_first_row = false;
+            if (is_header_row) {
+                parse_edge_header(reader, fields, nfields);
+                is_header_row = false;
+                continue;
             }
-            else
-            {
-                /* Switch to batch context for row processing */
-                old_context = MemoryContextSwitchTo(batch_context);
 
-                /* Data row - process it */
-                process_edge_row(fields, nfields,
-                                 header, header_count,
-                                 label_id, label_seq_relid,
-                                 graph_oid, load_as_agtype,
-                                 batch_state);
-
-                /* Switch back to main context */
-                MemoryContextSwitchTo(old_context);
-
-                /* Reset batch context after each batch to free memory */
-                if (batch_state->num_tuples == 0)
-                {
-                    MemoryContextReset(batch_context);
-                }
-            }
+            MemoryContextSwitchTo(row_context);
+            process_edge_row(reader, fields, nfields);
+            MemoryContextSwitchTo(load_context);
+            MemoryContextReset(row_context);
         }
-
-        /* Finish any remaining batch inserts */
-        finish_batch_insert(&batch_state);
-        MemoryContextReset(batch_context);
-
-        /* Clean up COPY state */
-        EndCopyFrom(cstate);
     }
-    PG_FINALLY();
+    PG_CATCH();
     {
-        /* Free header if allocated */
-        if (header != NULL)
+        /* the file handle and the relation are also released by the abort */
+        if (csv != NULL)
         {
-            int i;
-            for (i = 0; i < header_count; i++)
-            {
-                pfree(header[i]);
-            }
-            pfree(header);
+            ag_csv_close(csv);
         }
-
-        /* Close the relation */
-        table_close(label_rel, RowExclusiveLock);
-
-        /* Delete batch context */
-        MemoryContextDelete(batch_context);
-
-        /* Free parse state */
-        free_parsestate(pstate);
+        MemoryContextSwitchTo(old_context);
+        MemoryContextDelete(load_context);
+        PG_RE_THROW();
     }
     PG_END_TRY();
 
+    ag_csv_close(csv);
+    close_loader_target(reader->target);
+    MemoryContextSwitchTo(old_context);
+    MemoryContextDelete(load_context);
     return EXIT_SUCCESS;
 }

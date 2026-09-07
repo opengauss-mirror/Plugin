@@ -16,292 +16,270 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #include "postgres.h"
 
-#include "access/heapam.h"
-#include "access/table.h"
-#include "catalog/namespace.h"
-#include "commands/copy.h"
-#include "executor/executor.h"
-#include "nodes/makefuncs.h"
-#include "parser/parse_node.h"
+#include "utils/builtins.h"
 #include "utils/memutils.h"
-#include "utils/rel.h"
 
+#include "catalog/ag_label.h"
+#include "utils/agtype.h"
+#include "utils/graphid.h"
+
+#include "utils/load/ag_csv_reader.h"
 #include "utils/load/ag_load_labels.h"
+#include "utils/load/age_load.h"
+
+#define DECIMAL_RADIX 10
+
+/* Per-file state of the vertex loader; everything lives in load_context. */
+typedef struct csv_vertex_reader {
+    /* header row: trimmed column names, NULL/"" columns carry no property */
+    char **header;
+    int header_num;
+    /* neo4j-style header only: per-column type and the "id" column index */
+    agtype_value_type *col_type;
+    int id_col;
+
+    Oid graph_id;
+    char *object_name;
+    int object_id;
+    bool id_field_exists;
+    bool load_as_agtype;
+    bool with_neo4j_like_header;
+    bool adjust_id;
+
+    Oid sequence_id;
+    /* last value handed out by the sequence when the load started */
+    int64 current_sequence_value;
+    /* highest explicit id seen; the sequence is moved past it once at the end */
+    int64 highest_explicit_id;
+
+    loader_target *target;
+} csv_vertex_reader;
+
+static void parse_vertex_header(csv_vertex_reader *cr, char **fields,
+                                int nfields);
+static int64 resolve_vertex_row_id(csv_vertex_reader *cr, char **fields,
+                                   int nfields);
+static void process_vertex_row(csv_vertex_reader *cr, char **fields,
+                               int nfields);
 
 /*
- * Process a single vertex row from COPY's raw fields.
- * Vertex CSV format: [id,] [properties...]
+ * The header row.  Plain files carry property names; neo4j-import style
+ * files carry "name:TYPE" columns, with the "id" column giving the vertex id.
+ * File content is untrusted: every column is validated before use.
  */
-static void process_vertex_row(char **fields, int nfields,
-                               char **header, int header_count,
-                               int label_id, Oid label_seq_relid,
-                               bool id_field_exists, bool load_as_agtype,
-                               int64 *curr_seq_num,
-                               batch_insert_state *batch_state)
+static void parse_vertex_header(csv_vertex_reader *cr, char **fields,
+                                int nfields)
 {
-    graphid vertex_id;
-    int64 entry_id;
-    TupleTableSlot *slot;
-    agtype *vertex_properties;
+    int i;
 
-    /*
-     * Guard the header[i]/fields[i] pairing in create_agtype_from_list()
-     * against out-of-bounds reads on malformed rows that have more fields
-     * than the header. Rows with fewer fields than the header are allowed
-     * (matching existing behavior). Note: a file delimited by something
-     * other than comma is parsed as a single column throughout, so header
-     * and rows still match and the data lands in properties verbatim --
-     * specifying the delimiter is the separate fix for that.
-     */
-    if (nfields > header_count)
-    {
+    cr->header_num = nfields;
+    cr->header = (char **)palloc0(sizeof(char *) * nfields);
+    if (cr->with_neo4j_like_header) {
+        cr->col_type = (agtype_value_type *)palloc0(
+            sizeof(agtype_value_type) * nfields);
+        cr->id_col = -1;
+    }
+
+    for (i = 0; i < nfields; i++) {
+        char *field = trim_csv_value(fields[i]);
+
+        if (!cr->with_neo4j_like_header) {
+            cr->header[i] = field;
+            continue;
+        }
+
+        char *colon = strchr(field, ':');
+        if (colon == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("label file header column %d (\"%s\") "
+                            "must have the form name:TYPE",
+                            i + 1, field)));
+        }
+
+        *colon = '\0';
+        cr->header[i] = field;
+        const char *type = colon + 1;
+
+        if (strcmp(cr->header[i], "id") == 0) {
+            cr->id_col = i;
+            cr->col_type[i] = AGTV_NUMERIC;
+        }
+        else if (strcmp(type, "LONG") == 0) {
+            cr->col_type[i] = AGTV_NUMERIC;
+        }
+        else if (strcmp(type, "BOOL") == 0) {
+            cr->col_type[i] = AGTV_BOOL;
+        }
+        else {
+            /* STRING and any unknown type are loaded as strings */
+            cr->col_type[i] = AGTV_STRING;
+        }
+    }
+}
+
+/*
+ * Determine the vertex id for the current CSV row: either the id column
+ * supplied by the file (keeping the loader sequence ahead of it) or the next
+ * loader sequence value.
+ */
+static int64 resolve_vertex_row_id(csv_vertex_reader *cr, char **fields,
+                                   int nfields)
+{
+    int id_index;
+    const char *id_text;
+    int64 label_id_int;
+
+    if (!cr->id_field_exists) {
+        return next_loader_sequence_value(cr->sequence_id);
+    }
+
+    id_index = cr->id_col >= 0 ? cr->id_col : 0;
+    if (id_index >= nfields) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("label file row has %d columns and does not "
+                        "contain required id column %d",
+                        nfields, id_index + 1)));
+    }
+
+    id_text = fields[id_index] != NULL ? fields[id_index] : "";
+    label_id_int = strtol(id_text, NULL, DECIMAL_RADIX);
+    if (cr->adjust_id) {
+        label_id_int++;
+    }
+
+    if (label_id_int > cr->highest_explicit_id) {
+        cr->highest_explicit_id = label_id_int;
+    }
+
+    return label_id_int;
+}
+
+static void process_vertex_row(csv_vertex_reader *cr, char **fields,
+                               int nfields)
+{
+    int64 entry_id;
+    graphid vertex_id;
+    agtype *props;
+
+    if (nfields > cr->header_num) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("label file row has %d columns, more than the "
-                        "header's %d columns", nfields, header_count)));
+                        "header's %d columns",
+                        nfields, cr->header_num)));
     }
 
-    /* Generate or use provided entry_id */
-    if (id_field_exists)
-    {
-        entry_id = strtol(fields[0], NULL, 10);
-        if (entry_id > *curr_seq_num)
-        {
-            /* This is needed to ensure the sequence is up-to-date */
-            DirectFunctionCall2(setval_oid,
-                                ObjectIdGetDatum(label_seq_relid),
-                                Int64GetDatum(entry_id));
-            *curr_seq_num = entry_id;
-        }
-    }
-    else
-    {
-        entry_id = nextval_internal(label_seq_relid, true);
-    }
+    entry_id = resolve_vertex_row_id(cr, fields, nfields);
+    vertex_id = make_graphid(cr->object_id, entry_id);
 
-    vertex_id = make_graphid(label_id, entry_id);
-
-    /* Get the appropriate slot from the batch state */
-    slot = batch_state->slots[batch_state->num_tuples];
-
-    /* Clear the slots contents */
-    ExecClearTuple(slot);
-
-    /* Build the agtype properties */
-    vertex_properties = create_agtype_from_list(header, fields,
-                                                nfields, entry_id,
-                                                load_as_agtype);
-
-    /* Fill the values in the slot */
-    slot->tts_values[0] = GRAPHID_GET_DATUM(vertex_id);
-    slot->tts_values[1] = AGTYPE_P_GET_DATUM(vertex_properties);
-    slot->tts_isnull[0] = false;
-    slot->tts_isnull[1] = false;
-
-    /* Make the slot as containing virtual tuple */
-    ExecStoreVirtualTuple(slot);
-
-    batch_state->buffered_bytes += VARSIZE(vertex_properties);
-    batch_state->num_tuples++;
-
-    /* Insert the batch when tuple count OR byte threshold is reached */
-    if (batch_state->num_tuples >= BATCH_SIZE ||
-        batch_state->buffered_bytes >= MAX_BUFFERED_BYTES)
-    {
-        insert_batch(batch_state);
-        batch_state->num_tuples = 0;
-        batch_state->buffered_bytes = 0;
-    }
+    props = create_agtype_from_list(cr->header, fields, cr->col_type,
+                                    nfields, entry_id, cr->load_as_agtype);
+    insert_vertex_simple(cr->target, vertex_id, props);
 }
 
-/*
- * Create COPY options for csv parsing.
- * Returns a List of DefElem nodes.
- */
-static List *create_copy_options(char delimiter)
-{
-    List *options = NIL;
-
-    /* FORMAT csv */
-    options = lappend(options,
-                      makeDefElem("format",
-                                  (Node *) makeString("csv"),
-                                  -1));
-
-    /* HEADER false - we'll read the header ourselves */
-    options = lappend(options,
-                      makeDefElem("header",
-                                  (Node *) makeBoolean(false),
-                                  -1));
-
-    /* DELIMITER */
-    {
-        char delimiter_str[2];
-        delimiter_str[0] = delimiter;
-        delimiter_str[1] = '\0';
-        options = lappend(options,
-                          makeDefElem("delimiter",
-                                      (Node *) makeString(pstrdup(delimiter_str)),
-                                      -1));
-    }
-
-    return options;
-}
-
-/*
- * Load vertex labels from csv file using pg's COPY infrastructure.
- */
 int create_labels_from_csv_file(char *file_path,
                                 char *graph_name,
-                                Oid graph_oid,
-                                char *label_name,
-                                int label_id,
+                                Oid graph_id,
+                                char *object_name,
+                                int object_id,
                                 bool id_field_exists,
                                 bool load_as_agtype,
-                                char delimiter)
+                                char delimiter,
+                                bool with_header,
+                                bool adjust_id)
 {
-    Relation        label_rel;
-    Oid             label_relid;
-    CopyFromState   cstate;
-    List           *copy_options;
-    ParseState     *pstate;
-    char          **fields;
-    int             nfields;
-    char          **header = NULL;
-    int             header_count = 0;
-    bool            is_first_row = true;
-    char           *label_seq_name;
-    Oid             label_seq_relid;
-    int64           curr_seq_num = 0;
-    batch_insert_state *batch_state = NULL;
-    MemoryContext   batch_context;
-    MemoryContext   old_context;
+    csv_vertex_reader *reader;
+    ag_csv_reader *volatile csv = NULL;
+    char **fields;
+    int nfields;
+    bool is_header_row = true;
+    MemoryContext load_context;
+    MemoryContext row_context;
+    MemoryContext old_context;
 
-    /* Create a memory context for batch processing - reset after each batch */
-    batch_context = AllocSetContextCreate(CurrentMemoryContext,
-                                          "AGE CSV Load Batch Context",
-                                          ALLOCSET_DEFAULT_SIZES);
+    /*
+     * load_context holds the reader, the header and the CSV record buffers
+     * for the whole file; row_context holds one row's properties and SPI
+     * query text and is reset after every row.  The caller's context is never
+     * touched: it still owns the function arguments (label name, path).
+     */
+    load_context = AllocSetContextCreate(CurrentMemoryContext,
+                                         "AGE CSV label loader",
+                                         ALLOCSET_DEFAULT_SIZES);
+    row_context = AllocSetContextCreate(load_context,
+                                        "AGE CSV label loader row",
+                                        ALLOCSET_DEFAULT_SIZES);
+    old_context = MemoryContextSwitchTo(load_context);
 
-    /* Get the label relation */
-    label_relid = get_label_relation(label_name, graph_oid);
-    label_rel = table_open(label_relid, RowExclusiveLock);
+    reader = (csv_vertex_reader *)palloc0(sizeof(csv_vertex_reader));
+    reader->graph_id = graph_id;
+    reader->object_name = object_name;
+    reader->object_id = object_id;
+    reader->id_field_exists = id_field_exists;
+    reader->load_as_agtype = load_as_agtype;
+    reader->with_neo4j_like_header = with_header;
+    reader->adjust_id = adjust_id;
+    reader->id_col = -1;
+    reader->sequence_id = get_loader_label_sequence_oid(graph_id, object_name);
+    reader->current_sequence_value =
+        id_field_exists ? next_loader_sequence_value(reader->sequence_id) : 0;
+    reader->highest_explicit_id = reader->current_sequence_value;
 
-    /* Get sequence info */
-    label_seq_name = get_label_seq_relation_name(label_name);
-    label_seq_relid = get_relname_relid(label_seq_name, graph_oid);
-
-    if (id_field_exists)
+    /* neo4j-import style files are always '|' separated */
+    if (with_header)
     {
-        /*
-         * Set the curr_seq_num since we will need it to compare with
-         * incoming entry_id.
-         */
-        curr_seq_num = nextval_internal(label_seq_relid, true);
+        delimiter = '|';
     }
-
-    /* Initialize the batch insert state */
-    init_batch_insert(&batch_state, label_name, graph_oid);
-
-    /* Create COPY options for CSV parsing */
-    copy_options = create_copy_options(delimiter);
-
-    /* Create a minimal ParseState for BeginCopyFrom */
-    pstate = make_parsestate(NULL);
 
     PG_TRY();
     {
-        /*
-         * Initialize COPY FROM state.
-         * We pass the label relation but will only use NextCopyFromRawFields
-         * which returns raw parsed strings without type conversion.
-         */
-        cstate = BeginCopyFrom(pstate,
-                               label_rel,
-                               NULL,           /* whereClause */
-                               file_path,
-                               false,          /* is_program */
-                               NULL,           /* data_source_cb */
-                               NIL,            /* attnamelist - NULL means all columns */
-                               copy_options);
+        reader->target = open_loader_target(graph_id, graph_name, object_name);
 
-        /*
-         * Process rows using COPY's csv parsing.
-         * NextCopyFromRawFields uses 64KB buffers internally.
-         */
-        while (NextCopyFromRawFields(cstate, &fields, &nfields))
+        /* file_path was resolved and checked by build_safe_csv_path() */
+        csv = ag_csv_open(file_path, delimiter);
+
+        while (ag_csv_next_record(csv, &fields, &nfields))
         {
-            if (is_first_row)
-            {
-                int i;
-
-                /* First row is the header - save column names (in main context) */
-                header_count = nfields;
-                header = (char **) palloc(sizeof(char *) * nfields);
-
-                for (i = 0; i < nfields; i++)
-                {
-                    /* Trim whitespace from header fields */
-                    header[i] = trim_whitespace(fields[i]);
-                }
-
-                is_first_row = false;
+            if (is_header_row) {
+                parse_vertex_header(reader, fields, nfields);
+                is_header_row = false;
+                continue;
             }
-            else
-            {
-                /* Switch to batch context for row processing */
-                old_context = MemoryContextSwitchTo(batch_context);
 
-                /* Data row - process it */
-                process_vertex_row(fields, nfields,
-                                   header, header_count,
-                                   label_id, label_seq_relid,
-                                   id_field_exists, load_as_agtype,
-                                   &curr_seq_num,
-                                   batch_state);
-
-                /* Switch back to main context */
-                MemoryContextSwitchTo(old_context);
-
-                /* Reset batch context after each batch to free memory */
-                if (batch_state->num_tuples == 0)
-                {
-                    MemoryContextReset(batch_context);
-                }
-            }
+            MemoryContextSwitchTo(row_context);
+            process_vertex_row(reader, fields, nfields);
+            MemoryContextSwitchTo(load_context);
+            MemoryContextReset(row_context);
         }
 
-        /* Finish any remaining batch inserts */
-        finish_batch_insert(&batch_state);
-        MemoryContextReset(batch_context);
-
-        /* Clean up COPY state */
-        EndCopyFrom(cstate);
+        /* keep the label sequence ahead of the ids the file supplied */
+        if (reader->highest_explicit_id > reader->current_sequence_value)
+        {
+            advance_loader_sequence(reader->sequence_id,
+                                    reader->highest_explicit_id);
+        }
     }
-    PG_FINALLY();
+    PG_CATCH();
     {
-        /* Free header if allocated */
-        if (header != NULL)
+        /* the file handle and the relation are also released by the abort */
+        if (csv != NULL)
         {
-            int i;
-            for (i = 0; i < header_count; i++)
-            {
-                pfree(header[i]);
-            }
-            pfree(header);
+            ag_csv_close(csv);
         }
-
-        /* Close the relation */
-        table_close(label_rel, RowExclusiveLock);
-
-        /* Delete batch context */
-        MemoryContextDelete(batch_context);
-
-        /* Free parse state */
-        free_parsestate(pstate);
+        MemoryContextSwitchTo(old_context);
+        MemoryContextDelete(load_context);
+        PG_RE_THROW();
     }
     PG_END_TRY();
 
+    ag_csv_close(csv);
+    close_loader_target(reader->target);
+    MemoryContextSwitchTo(old_context);
+    MemoryContextDelete(load_context);
     return EXIT_SUCCESS;
 }

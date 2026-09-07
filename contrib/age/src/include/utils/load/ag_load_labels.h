@@ -17,29 +17,26 @@
  * under the License.
  */
 
+
 #ifndef AG_LOAD_LABELS_H
 #define AG_LOAD_LABELS_H
 
-#include "utils/load/age_load.h"
+#include "postgres.h"
+
+#include "utils/agtype.h"
+#include "utils/graphid.h"
 
 /*
- * Load vertex labels from a CSV file using pg's COPY infrastructure.
- * CSV format: [id,] [properties...]
- *
- * Parameters:
- *   file_path       - Path to the CSV file (must be in /tmp/age/)
- *   graph_name      - Name of the graph
- *   graph_oid       - OID of the graph
- *   label_name      - Name of the vertex label
- *   label_id        - ID of the label
- *   id_field_exists - If true, first CSV column contains the vertex ID
- *   load_as_agtype  - If true, parse CSV values as agtype (JSON-like)
- *
- * Returns EXIT_SUCCESS on success.
+ * Load vertices from a CSV file into a vertex label using the kernel COPY
+ * parser.  With with_header the first row is a neo4j-import style header
+ * ("name:TYPE" columns, '|' delimiter) and adjust_id adds one to every id.
  */
-int create_labels_from_csv_file(char *file_path, char *graph_name, Oid graph_oid,
-                                char *label_name, int label_id,
-                                bool id_field_exists, bool load_as_agtype,
-                                char delimiter);
+int create_labels_from_csv_file(char *file_path, char *graph_name,
+                                Oid graph_id, char *object_name,
+                                int object_id, bool id_field_exists,
+                                bool load_as_agtype = false,
+                                char delimiter = ',',
+                                bool with_header = false,
+                                bool adjust_id = false);
 
-#endif /* AG_LOAD_LABELS_H */
+#endif //AG_LOAD_LABELS_H

@@ -126,6 +126,7 @@ Datum create_complete_graph(PG_FUNCTION_ARGS)
     Oid edge_seq_id;
 
     char* graph_name_str;
+    loader_target *target;
     char* vtx_name_str;
     char* edge_name_str;
 
@@ -219,15 +220,18 @@ Datum create_complete_graph(PG_FUNCTION_ARGS)
     props = create_empty_agtype();
 
     /* Creating vertices*/
+    target = open_loader_target(graph_oid, graph_name_str, vtx_name_str);
     for (i=(int64)1; i<=no_vertices; i++) {
         vid = (int64)nextval_internal(vtx_seq_id, true, false);
         object_graph_id = make_graphid(vtx_label_id, vid);
-        insert_vertex_simple(graph_oid, vtx_name_str, object_graph_id, props);
+        insert_vertex_simple(target, object_graph_id, props);
     }
+    close_loader_target(target);
 
     lid = vid;
 
     /* Creating edges*/
+    target = open_loader_target(graph_oid, graph_name_str, edge_name_str);
     for (i = 1; i <= no_vertices - 1; i++) {
         start_vid = lid-no_vertices+i;
         for (j = i + 1; j <= no_vertices; j++) {
@@ -238,11 +242,12 @@ Datum create_complete_graph(PG_FUNCTION_ARGS)
             start_vertex_graph_id = make_graphid(vtx_label_id, start_vid);
             end_vertex_graph_id = make_graphid(vtx_label_id, end_vid);
 
-            insert_edge_simple(graph_oid, edge_name_str, object_graph_id,
+            insert_edge_simple(target, object_graph_id,
                                start_vertex_graph_id, end_vertex_graph_id,
                                props);
         }
     }
+    close_loader_target(target);
     PG_RETURN_VOID();
 }
 
@@ -299,6 +304,7 @@ Datum age_create_barbell_graph(PG_FUNCTION_ARGS)
     Oid graph_oid;
     Name graph_name;
     char* graph_name_str;
+    loader_target *target;
 
     int64 start_node_index;
     int64 end_node_index;
@@ -406,9 +412,10 @@ Datum age_create_barbell_graph(PG_FUNCTION_ARGS)
     properties = create_empty_agtype();
 
     /* connect two nodes */
-    insert_edge_simple(graph_oid, edge_label_str,
-                       object_graph_id, start_node_graph_id,
+    target = open_loader_target(graph_oid, graph_name_str, edge_label_str);
+    insert_edge_simple(target, object_graph_id, start_node_graph_id,
                        end_node_graph_id, properties);
+    close_loader_target(target);
 
     PG_RETURN_VOID();
 }

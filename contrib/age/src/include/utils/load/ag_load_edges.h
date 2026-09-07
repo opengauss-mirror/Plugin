@@ -20,25 +20,24 @@
 #ifndef AG_LOAD_EDGES_H
 #define AG_LOAD_EDGES_H
 
-#include "utils/load/age_load.h"
+#include "postgres.h"
+
+#include "utils/agtype.h"
+#include "utils/graphid.h"
 
 /*
- * Load edges from a CSV file using pg's COPY infrastructure.
- *
- * CSV format: start_id, start_vertex_type, end_id, end_vertex_type, [properties...]
- *
- * Parameters:
- *   file_path       - Path to the CSV file (must be in /tmp/age/)
- *   graph_name      - Name of the graph
- *   graph_oid       - OID of the graph
- *   label_name      - Name of the edge label
- *   label_id        - ID of the label
- *   load_as_agtype  - If true, parse CSV values as agtype (JSON-like)
- *
- * Returns EXIT_SUCCESS on success.
+ * Load edges from a CSV file into an edge label using the kernel COPY parser.
+ * Without with_header the first four columns are
+ * start_id, start_vertex_type, end_id, end_vertex_type; with with_header the
+ * first row is a neo4j-import style header (":START_ID(Label)",
+ * ":END_ID(Label)", "name:TYPE" columns, '|' delimiter) and adjust_id adds
+ * one to every endpoint id.
  */
-int create_edges_from_csv_file(char *file_path, char *graph_name, Oid graph_oid,
-                               char *label_name, int label_id,
-                               bool load_as_agtype, char delimiter);
+int create_edges_from_csv_file(char *file_path, char *graph_name,
+                               Oid graph_id, char *object_name,
+                               int object_id, bool load_as_agtype = false,
+                               char delimiter = ',',
+                               bool with_header = false,
+                               bool adjust_id = false);
 
-#endif /* AG_LOAD_EDGES_H */
+#endif //AG_LOAD_EDGES_H
