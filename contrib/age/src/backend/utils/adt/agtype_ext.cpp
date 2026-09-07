@@ -18,6 +18,8 @@
  */
 
 #include "utils/agtype_ext.h"
+#include "utils/agtype.h"
+#include "utils/graphid.h"
 
 /* define the type and size of the agt_header */
 #define AGT_HEADER_TYPE uint32
@@ -33,7 +35,7 @@ static short ag_serialize_header(StringInfo buffer, uint32 type)
 
     padlen = pad_buffer_to_int(buffer);
     offset = reserve_from_buffer(buffer, AGT_HEADER_SIZE);
-    *((AGT_HEADER_TYPE *)(buffer->data + offset)) = type;
+    memcpy(buffer->data + offset, &type, sizeof(type));
 
     return padlen;
 }
@@ -57,12 +59,6 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         /* copy in the int_value data */
         numlen = sizeof(int64);
         offset = reserve_from_buffer(buffer, numlen);
-        /*
-         * Use memcpy because the AGT_HEADER (4 bytes) leaves the buffer
-         * write position 4-byte-aligned but not necessarily 8-byte-aligned.
-         * Direct *((int64 *) ...) = ... is undefined behavior under strict
-         * alignment rules (UBSan flags it; works in practice on x86_64).
-         */
         memcpy(buffer->data + offset, &scalar_val->val.int_value,
                sizeof(int64));
 
@@ -156,15 +152,14 @@ void ag_deserialize_extended_type(char *base_addr, uint32 offset,
                                   agtype_value *result)
 {
     char *base = base_addr + INTALIGN(offset);
-    AGT_HEADER_TYPE agt_header = *((AGT_HEADER_TYPE *)base);
+    AGT_HEADER_TYPE agt_header;
+
+    memcpy(&agt_header, base, sizeof(agt_header));
 
     switch (agt_header)
     {
     case AGT_HEADER_INTEGER:
         result->type = AGTV_INTEGER;
-        /* See comment in ag_serialize_extended_type. The 4-byte AGT_HEADER
-         * leaves the int64 at a 4-byte-aligned but not 8-byte-aligned
-         * address, so a direct typed load is undefined behavior. */
         memcpy(&result->val.int_value, base + AGT_HEADER_SIZE,
                sizeof(int64));
         break;
@@ -188,7 +183,7 @@ void ag_deserialize_extended_type(char *base_addr, uint32 offset,
         break;
 
     default:
-        ereport(ERROR, (errmsg("Invalid AGT header value: 0x%08x", agt_header)));
+        elog(ERROR, "Invalid AGT header value.");
     }
 }
 
@@ -203,10 +198,9 @@ static void ag_deserialize_composite(char *base, enum agtype_value_type type,
     agtype_parse_state *parse_state = NULL;
     agtype_value *r = NULL;
     agtype_value *parsed_agtype_value = NULL;
-    /* offset container by the extended type header */
+    //offset container by the extended type header
     char *container_base = base + AGT_HEADER_SIZE;
-
-    r = palloc(sizeof(agtype_value));
+    r = (agtype_value *)palloc(sizeof(agtype_value));
 
     it = agtype_iterator_init((agtype_container *)container_base);
     while ((tok = agtype_iterator_next(&it, r, true)) != WAGT_DONE)

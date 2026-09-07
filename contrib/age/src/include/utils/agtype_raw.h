@@ -25,6 +25,8 @@
 #ifndef AG_AGTYPE_RAW_H
 #define AG_AGTYPE_RAW_H
 
+#include "postgres.h"
+#include "utils/agtype.h"
 #include "utils/agtype_ext.h"
 
 /*

@@ -20,14 +20,15 @@
 #ifndef AG_GRAPHID_H
 #define AG_GRAPHID_H
 
+#include "postgres.h"
+
+#include "fmgr.h"
 #include "utils/fmgroids.h"
 #include "utils/syscache.h"
 
 #include "catalog/ag_namespace.h"
-#include "catalog/pg_type.h"
 
 typedef int64 graphid;
-
 #define F_GRAPHIDEQ F_INT8EQ
 
 #define LABEL_ID_MIN 1
@@ -36,9 +37,9 @@ typedef int64 graphid;
 
 #define label_id_is_valid(id) (id >= LABEL_ID_MIN && id <= LABEL_ID_MAX)
 
+/* upstream allows entry id 0 since the loader revamp (apache/age#2044) */
 #define ENTRY_ID_MIN INT64CONST(0)
-/* 0x0000ffffffffffff */
-#define ENTRY_ID_MAX INT64CONST(281474976710655)
+#define ENTRY_ID_MAX INT64CONST(281474976710655) // 0x0000ffffffffffff
 #define INVALID_ENTRY_ID INT64CONST(0)
 
 #define entry_id_is_valid(id) (id >= ENTRY_ID_MIN && id <= ENTRY_ID_MAX)
@@ -52,9 +53,16 @@ typedef int64 graphid;
 #define AG_GETARG_GRAPHID(a) DATUM_GET_GRAPHID(PG_GETARG_DATUM(a))
 #define AG_RETURN_GRAPHID(x) return GRAPHID_GET_DATUM(x)
 
-/* Oid accessors for GRAPHID */
-#define GRAPHIDOID get_GRAPHIDOID()
-#define GRAPHIDARRAYOID get_GRAPHIDARRAYOID()
+// OID of graphid and _graphid
+#define GRAPHIDOIDSTR "ag_catalog.graphid"
+#define GRAPHIDARRAYOIDSTR "ag_catalog._graphid"
+
+Oid get_GRAPHIDOID(void);
+Oid get_GRAPHIDARRAYOID(void);
+void clear_global_Oids_GRAPHID(void);
+
+#define GRAPHIDOID (get_GRAPHIDOID())
+#define GRAPHIDARRAYOID (get_GRAPHIDARRAYOID())
 
 #define GET_LABEL_ID(id) \
        (((uint64)id) >> ENTRY_ID_BITS)
@@ -62,8 +70,5 @@ typedef int64 graphid;
 graphid make_graphid(const int32 label_id, const int64 entry_id);
 int32 get_graphid_label_id(const graphid gid);
 int64 get_graphid_entry_id(const graphid gid);
-Oid get_GRAPHIDOID(void);
-Oid get_GRAPHIDARRAYOID(void);
-void clear_global_Oids_GRAPHID(void);
 
 #endif

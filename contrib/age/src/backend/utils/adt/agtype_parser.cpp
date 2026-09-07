@@ -30,15 +30,13 @@
  */
 
 #include "postgres.h"
-#include "varatt.h"
+
 #include "catalog/pg_type.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
-#include "utils/varlena.h"
 
-#include "utils/agtype.h"
 #include "utils/agtype_parser.h"
 
 /*
@@ -74,14 +72,78 @@ static void parse_object(agtype_lex_context *lex, agtype_sem_action *sem);
 static void parse_array_element(agtype_lex_context *lex,
                                 agtype_sem_action *sem);
 static void parse_array(agtype_lex_context *lex, agtype_sem_action *sem);
-static pg_noreturn void report_parse_error(agtype_parse_context ctx,
-                               agtype_lex_context *lex);
-static pg_noreturn void report_invalid_token(agtype_lex_context *lex);
+static void report_parse_error(agtype_parse_context ctx,
+                               agtype_lex_context *lex)
+__attribute__((noreturn));
+static void report_invalid_token(agtype_lex_context *lex)
+__attribute__((noreturn));
+
 static int report_agtype_context(agtype_lex_context *lex);
 static char *extract_mb_char(char *s);
 
-/* Recursive Descent parser support routines */
+int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+{
+#ifdef HAVE_INT64_TIMESTAMP
+    tm->tm_hour = time / USECS_PER_HOUR;
+    time -= tm->tm_hour * USECS_PER_HOUR;
+    tm->tm_min = time / USECS_PER_MINUTE;
+    time -= tm->tm_min * USECS_PER_MINUTE;
+    tm->tm_sec = time / USECS_PER_SEC;
+    time -= tm->tm_sec * USECS_PER_SEC;
+    *fsec = time;
+#else
+    double trem;
 
+recalc:
+    trem = time;
+    TMODULO(trem, tm->tm_hour, (double)SECS_PER_HOUR);
+    TMODULO(trem, tm->tm_min, (double)SECS_PER_MINUTE);
+    TMODULO(trem, tm->tm_sec, 1.0);
+    trem = TIMEROUND(trem);
+    /* roundoff may need to propagate to higher-order fields */
+    if (trem >= 1.0) {
+        time = ceil(time);
+        goto recalc;
+    }
+    *fsec = trem;
+#endif
+
+    return 0;
+}
+int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+{
+    TimeOffset trem = time->time;
+
+#ifdef HAVE_INT64_TIMESTAMP
+    tm->tm_hour = trem / USECS_PER_HOUR;
+    trem -= tm->tm_hour * USECS_PER_HOUR;
+    tm->tm_min = trem / USECS_PER_MINUTE;
+    trem -= tm->tm_min * USECS_PER_MINUTE;
+    tm->tm_sec = trem / USECS_PER_SEC;
+    *fsec = trem - tm->tm_sec * USECS_PER_SEC;
+#else
+recalc:
+    TMODULO(trem, tm->tm_hour, (double)SECS_PER_HOUR);
+    TMODULO(trem, tm->tm_min, (double)SECS_PER_MINUTE);
+    TMODULO(trem, tm->tm_sec, 1.0);
+    trem = TIMEROUND(trem);
+    /* roundoff may need to propagate to higher-order fields */
+    if (trem >= 1.0) {
+        trem = ceil(time->time);
+        goto recalc;
+    }
+    *fsec = trem;
+#endif
+
+    if (tzp != NULL)
+        *tzp = time->zone;
+
+    return 0;
+}
+
+/* Recursive Descent parser support routines */
 /*
  * lex_peek
  *
@@ -116,7 +178,7 @@ static inline bool lex_accept(agtype_lex_context *lex, agtype_token_type token,
             else
             {
                 int len = (lex->token_terminator - lex->token_start);
-                char *tokstr = palloc(len + 1);
+                char *tokstr = (char *)palloc(len + 1);
 
                 memcpy(tokstr, lex->token_start, len);
                 tokstr[len] = '\0';
@@ -139,7 +201,9 @@ static inline void lex_expect(agtype_parse_context ctx,
                               agtype_lex_context *lex, agtype_token_type token)
 {
     if (!lex_accept(lex, token, NULL))
+    {
         report_parse_error(ctx, lex);
+    }
 }
 
 /* chars to consider as part of an alphanumeric token */
@@ -159,7 +223,9 @@ bool is_valid_agtype_number(const char *str, int len)
     agtype_lex_context dummy_lex;
 
     if (len <= 0)
+    {
         return false;
+    }
 
     /*
      * agtype_lex_number expects a leading  '-' to have been eaten already.
@@ -204,7 +270,7 @@ agtype_lex_context *make_agtype_lex_context(text *t, bool need_escapes)
 agtype_lex_context *make_agtype_lex_context_cstring_len(char *str, int len,
                                                         bool need_escapes)
 {
-    agtype_lex_context *lex = palloc0(sizeof(agtype_lex_context));
+    agtype_lex_context *lex = (agtype_lex_context *)palloc0(sizeof(agtype_lex_context));
 
     lex->input = lex->token_terminator = lex->line_start = str;
     lex->line_number = 1;
@@ -344,7 +410,7 @@ static inline void parse_scalar(agtype_lex_context *lex,
     }
 
     /* parse annotations (typecasts) */
-    parse_scalar_annotation(lex, sfunc, &annotation);
+    parse_scalar_annotation(lex, (void *)sfunc, &annotation);
 
     if (sfunc != NULL)
         (*sfunc)(sem->semstate, val, tok, annotation);
@@ -648,7 +714,13 @@ static inline void agtype_lex(agtype_lex_context *lex)
         case '7':
         case '8':
         case '9':
-            /* Positive number. */
+        case '.':
+            /*
+             * Positive number.  A leading '.' is accepted because openGauss
+             * float8out()/numeric_out() drop the leading zero of |x| < 1
+             * unless display_leading_zero is set, and agtype_out() relies on
+             * them; the output must remain readable by agtype_in().
+             */
             agtype_lex_number(lex, s, NULL, NULL);
             /* token is assigned in agtype_lex_number */
             break;
@@ -1062,8 +1134,9 @@ static inline void agtype_lex_number(agtype_lex_context *lex, char *s,
             len++;
         } while (len < lex->input_length && *s >= '0' && *s <= '9');
     }
-    else
+    else if (!(len < lex->input_length && *s == '.'))
     {
+        /* an empty integer part is only allowed before ".digits" */
         error = true;
     }
 
@@ -1165,7 +1238,7 @@ static void report_parse_error(agtype_parse_context ctx,
 
     /* Separate out the current token. */
     toklen = lex->token_terminator - lex->token_start;
-    token = palloc(toklen + 1);
+    token = (char *)palloc(toklen + 1);
     memcpy(token, lex->token_start, toklen);
     token[toklen] = '\0';
 
@@ -1248,6 +1321,8 @@ static void report_parse_error(agtype_parse_context ctx,
             elog(ERROR, "unexpected agtype parse state: %d", ctx);
         }
     }
+
+    pg_unreachable();
 }
 
 /*
@@ -1262,7 +1337,7 @@ static void report_invalid_token(agtype_lex_context *lex)
 
     /* Separate out the offending token. */
     toklen = lex->token_terminator - lex->token_start;
-    token = palloc(toklen + 1);
+    token = (char *)palloc(toklen + 1);
     memcpy(token, lex->token_start, toklen);
     token[toklen] = '\0';
 
@@ -1270,6 +1345,7 @@ static void report_invalid_token(agtype_lex_context *lex)
                     errmsg("invalid input syntax for type %s", "agtype"),
                     errdetail("Token \"%s\" is invalid.", token),
                     report_agtype_context(lex)));
+    pg_unreachable();
 }
 
 /*
@@ -1328,7 +1404,7 @@ static int report_agtype_context(agtype_lex_context *lex)
 
     /* Get a null-terminated copy of the data to present */
     ctxtlen = context_end - context_start;
-    ctxt = palloc(ctxtlen + 1);
+    ctxt = (char *)palloc(ctxtlen + 1);
     memcpy(ctxt, context_start, ctxtlen);
     ctxt[ctxtlen] = '\0';
 
@@ -1357,7 +1433,7 @@ static char *extract_mb_char(char *s)
     int len;
 
     len = pg_mblen(s);
-    res = palloc(len + 1);
+    res = (char *)palloc(len + 1);
     memcpy(res, s, len);
     res[len] = '\0';
 
@@ -1371,7 +1447,7 @@ static char *extract_mb_char(char *s)
 char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 {
     if (!buf)
-        buf = palloc(MAXDATELEN + 1);
+        buf = (char *)palloc(MAXDATELEN + 1);
 
     switch (typid)
     {
@@ -1381,11 +1457,14 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         struct pg_tm tm;
 
         date = DatumGetDateADT(value);
-
         /* Same as date_out(), but forcing DateStyle */
-        if (DATE_NOT_FINITE(date))
+        if (DATE_IS_NOBEGIN(date))
         {
-            EncodeSpecialDate(date, buf);
+            strcpy(buf, EARLY);
+        }
+        else if (DATE_IS_NOEND(date))
+        {
+            strcpy(buf, LATE);
         }
         else
         {
@@ -1426,8 +1505,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 
         timestamp = DatumGetTimestamp(value);
         /* Same as timestamp_out(), but forcing DateStyle */
-        if (TIMESTAMP_NOT_FINITE(timestamp))
-        {
+        if (TIMESTAMP_NOT_FINITE(timestamp)) {
             EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, NULL, &tm, &fsec, NULL, NULL) == 0)
@@ -1451,8 +1529,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 
         timestamp = DatumGetTimestampTz(value);
         /* Same as timestamptz_out(), but forcing DateStyle */
-        if (TIMESTAMP_NOT_FINITE(timestamp))
-        {
+        if (TIMESTAMP_NOT_FINITE(timestamp)) {
             EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, &tz, &tm, &fsec, &tzn, NULL) == 0)

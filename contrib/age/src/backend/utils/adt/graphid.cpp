@@ -19,44 +19,63 @@
 
 #include "postgres.h"
 
+#include "fmgr.h"
 #include "utils/builtins.h"
 #include "utils/sortsupport.h"
+
+
+#include <math.h>
+#include "access/htup.h"
+#include "catalog/namespace.h"
+#include "catalog/pg_type.h"
+#include "catalog/pg_aggregate.h"
+#include "catalog/pg_collation.h"
+#include "catalog/pg_operator.h"
+#include "executor/node/nodeAgg.h"
+
+#include "funcapi.h"
+#include "libpq/pqformat.h"
+#include "miscadmin.h"
+#include "parser/parse_coerce.h"
+#include "nodes/pg_list.h"
+#include "utils/builtins.h"
+#include "utils/fmgroids.h"
+#include "plugin_utils/int8.h"
+#include "utils/lsyscache.h"
+#include "utils/rel.h"
+#include "utils/snapmgr.h"
+#include "utils/typcache.h"
+
 
 #include "utils/graphid.h"
 
 static int graphid_btree_fast_cmp(Datum x, Datum y, SortSupport ssup);
 
-/* global storage of  OID for graphid and _graphid */
-static Oid g_GRAPHIDOID = InvalidOid;
-static Oid g_GRAPHIDARRAYOID = InvalidOid;
+static THR_LOCAL Oid g_GRAPHIDOID = InvalidOid;
+static THR_LOCAL Oid g_GRAPHIDARRAYOID = InvalidOid;
 
-/* helper function to quickly set, if necessary, and retrieve GRAPHIDOID */
 Oid get_GRAPHIDOID(void)
 {
-    if (g_GRAPHIDOID == InvalidOid)
-    {
-        g_GRAPHIDOID = GetSysCacheOid2(TYPENAMENSP, Anum_pg_type_oid,
-                                       CStringGetDatum("graphid"),
-                                       ObjectIdGetDatum(ag_catalog_namespace_id()));
+    if (!OidIsValid(g_GRAPHIDOID)) {
+        g_GRAPHIDOID = GetSysCacheOid2(
+            TYPENAMENSP, CStringGetDatum("graphid"),
+            ObjectIdGetDatum(ag_catalog_namespace_id()));
     }
 
     return g_GRAPHIDOID;
 }
 
-/* helper function to quickly set, if necessary, and retrieve GRAPHIDARRAYOID */
 Oid get_GRAPHIDARRAYOID(void)
 {
-    if (g_GRAPHIDARRAYOID == InvalidOid)
-    {
-        g_GRAPHIDARRAYOID = GetSysCacheOid2(TYPENAMENSP, Anum_pg_type_oid,
-                                            CStringGetDatum("_graphid"),
-                                            ObjectIdGetDatum(ag_catalog_namespace_id()));
+    if (!OidIsValid(g_GRAPHIDARRAYOID)) {
+        g_GRAPHIDARRAYOID = GetSysCacheOid2(
+            TYPENAMENSP, CStringGetDatum("_graphid"),
+            ObjectIdGetDatum(ag_catalog_namespace_id()));
     }
 
     return g_GRAPHIDARRAYOID;
 }
 
-/* helper function to clear the GRAPHOIDs after a drop extension */
 void clear_global_Oids_GRAPHID(void)
 {
     g_GRAPHIDOID = InvalidOid;
@@ -64,8 +83,8 @@ void clear_global_Oids_GRAPHID(void)
 }
 
 PG_FUNCTION_INFO_V1(graphid_in);
-
-/* graphid type input function */
+extern "C" Datum  graphid_in(PG_FUNCTION_ARGS);
+// graphid type input function
 Datum graphid_in(PG_FUNCTION_ARGS)
 {
     char *str = PG_GETARG_CSTRING(0);
@@ -85,12 +104,12 @@ Datum graphid_in(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_out);
-
-/* graphid type output function */
+extern "C" Datum  graphid_out(PG_FUNCTION_ARGS);
+// graphid type output function
 Datum graphid_out(PG_FUNCTION_ARGS)
 {
     graphid gid = AG_GETARG_GRAPHID(0);
-    char buf[32]; /* greater than MAXINT8LEN+1 */
+    char buf[32]; // greater than MAXINT8LEN+1
     char *out;
 
     pg_lltoa(gid, buf);
@@ -100,7 +119,7 @@ Datum graphid_out(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_eq);
-
+extern "C" Datum  graphid_eq(PG_FUNCTION_ARGS);
 Datum graphid_eq(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -110,7 +129,7 @@ Datum graphid_eq(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_ne);
-
+extern "C" Datum  graphid_ne(PG_FUNCTION_ARGS);
 Datum graphid_ne(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -120,7 +139,7 @@ Datum graphid_ne(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_lt);
-
+extern "C" Datum  graphid_lt(PG_FUNCTION_ARGS);
 Datum graphid_lt(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -130,7 +149,7 @@ Datum graphid_lt(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_gt);
-
+extern "C" Datum  graphid_gt(PG_FUNCTION_ARGS);
 Datum graphid_gt(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -140,7 +159,7 @@ Datum graphid_gt(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_le);
-
+extern "C" Datum  graphid_le(PG_FUNCTION_ARGS);
 Datum graphid_le(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -150,7 +169,7 @@ Datum graphid_le(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_ge);
-
+extern "C" Datum  graphid_ge(PG_FUNCTION_ARGS);
 Datum graphid_ge(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -160,7 +179,7 @@ Datum graphid_ge(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_btree_cmp);
-
+extern "C" Datum  graphid_btree_cmp(PG_FUNCTION_ARGS);
 Datum graphid_btree_cmp(PG_FUNCTION_ARGS)
 {
     graphid lgid = AG_GETARG_GRAPHID(0);
@@ -175,7 +194,7 @@ Datum graphid_btree_cmp(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(graphid_btree_sort);
-
+extern "C" Datum  graphid_btree_sort(PG_FUNCTION_ARGS);
 Datum graphid_btree_sort(PG_FUNCTION_ARGS)
 {
     SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
@@ -201,14 +220,17 @@ graphid make_graphid(const int32 label_id, const int64 entry_id)
 {
     uint64 tmp;
 
-    if (!label_id_is_valid(label_id))
-    {
+    /*
+     * Out-of-range ids would be silently truncated into another label's id
+     * space (e.g. the CSV loader turning an unknown vertex label, id 0, into a
+     * dangling edge), so reject them here as upstream does.
+     */
+    if (!label_id_is_valid(label_id)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("label_id must be %d .. %d",
                                LABEL_ID_MIN, LABEL_ID_MAX)));
     }
-    if (!entry_id_is_valid(entry_id))
-    {
+    if (!entry_id_is_valid(entry_id)) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("entry_id must be " INT64_FORMAT " .. " INT64_FORMAT,
@@ -232,7 +254,7 @@ int64 get_graphid_entry_id(const graphid gid)
 }
 
 PG_FUNCTION_INFO_V1(_graphid);
-
+extern "C" Datum  _graphid(PG_FUNCTION_ARGS);
 Datum _graphid(PG_FUNCTION_ARGS)
 {
     int32 label_id;
@@ -252,13 +274,13 @@ Datum _graphid(PG_FUNCTION_ARGS)
     AG_RETURN_GRAPHID(gid);
 }
 
-/* Hashing Function for Hash Indexes */
+//Hashing Function for Hash Indexes
 PG_FUNCTION_INFO_V1(graphid_hash_cmp);
-
+extern "C" Datum  graphid_hash_cmp(PG_FUNCTION_ARGS);
 Datum graphid_hash_cmp(PG_FUNCTION_ARGS)
 {
     graphid l = AG_GETARG_GRAPHID(0);
-    int hash = (int) ((l >> 32) ^ l);/* ^ seed; */
+    int hash = (int) ((l >> 32) ^ l);// ^ seed;
 
     PG_RETURN_INT32(hash);
 }
