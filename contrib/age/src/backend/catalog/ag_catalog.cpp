@@ -21,72 +21,73 @@
 
 #include "access/xact.h"
 #include "catalog/dependency.h"
-#include "catalog/namespace.h"
 #include "catalog/objectaccess.h"
-#include "catalog/pg_class_d.h"
-#include "catalog/pg_extension_d.h"
-#include "catalog/pg_namespace_d.h"
+#include "catalog/namespace.h"
+#include "catalog/pg_class.h"
+#include "catalog/pg_extension.h"
+#include "catalog/pg_namespace.h"
 #include "commands/defrem.h"
 #include "commands/extension.h"
-#include "nodes/parsenodes.h"
+#include "commands/trigger.h"
 #include "tcop/utility.h"
 #include "utils/inval.h"
 #include "utils/lsyscache.h"
 
+#include "catalog/ag_catalog.h"
 #include "catalog/ag_graph.h"
 #include "catalog/ag_label.h"
+#include "catalog/ag_namespace.h"
 #include "utils/ag_cache.h"
 #include "utils/age_global_graph.h"
+#include "utils/agtype.h"
+#include "utils/graphid.h"
 
-static bool extension_cache_is_valid = false;
-static bool age_extension_exists = false;
-static object_access_hook_type prev_object_access_hook;
-static ProcessUtility_hook_type prev_process_utility_hook;
-static bool prev_object_hook_is_set;
+static THR_LOCAL bool extension_cache_is_valid = false;
+static THR_LOCAL bool age_extension_exists = false;
+static THR_LOCAL object_access_hook_type prev_object_access_hook;
+static THR_LOCAL ProcessUtility_hook_type prev_process_utility_hook;
+static THR_LOCAL bool prev_object_hook_is_set;
+static THR_LOCAL bool age_drop_in_progress;
 
 static void object_access(ObjectAccessType access, Oid class_id, Oid object_id,
                           int sub_id, void *arg);
-void ag_ProcessUtility_hook(PlannedStmt *pstmt, const char *queryString, bool readOnlyTree,
-                            ProcessUtilityContext context, ParamListInfo params,
-                            QueryEnvironment *queryEnv, DestReceiver *dest,
-                            QueryCompletion *qc);
+
+static void ag_ProcessUtility_hook(processutility_context* processutility_cxt,
+                            DestReceiver *dest,
+#ifdef PGXC
+    bool sentToRemote,
+#endif /* PGXC */
+                            char *completionTag, ProcessUtilityContext context, bool isCTAS);
 
 static bool is_age_drop(DropStmt *drop_stmt);
+static List *collect_truncated_label_relids(TruncateStmt *stmt);
+static void restore_failed_age_drop(void);
+static void age_drop_xact_callback(XactEvent event, void *argument);
+static void age_drop_subxact_callback(SubXactEvent event,
+                                      SubTransactionId transaction_id,
+                                      SubTransactionId parent_transaction_id,
+                                      void *argument);
 
-static void
-invalidate_extension_cache_callback(Datum argument, Oid relationId)
+static void invalidate_extension_cache_callback(Datum argument, Oid relation_id)
 {
-    if (!OidIsValid(relationId) || relationId == ExtensionRelationId)
-    {
+    if (!OidIsValid(relation_id) || relation_id == ExtensionRelationId)
         extension_cache_is_valid = false;
-    }
 }
 
-/*
- * We don't want most of hooks to do anything if the "age" extension isn't
- * created. However, scanning pg_extension is a costly operation, therefore we
- * implement a caching mechanism and reset it with the help of the relcache
- * callback mechanism.
- *
- * Please also see ag_ProcessUtility_hook() function for more details.
- */
-bool
-is_age_extension_exists(void)
+bool is_age_extension_exists(void)
 {
-    static bool callback_registered = false;
+    static THR_LOCAL bool callback_registered = false;
 
     if (extension_cache_is_valid)
         return age_extension_exists;
 
-    if (!callback_registered)
-    {
-        CacheRegisterRelcacheCallback(invalidate_extension_cache_callback,
-                                      (Datum) 0);
+    if (!callback_registered) {
+        CacheRegisterSessionRelcacheCallback(
+            invalidate_extension_cache_callback, (Datum)0);
         callback_registered = true;
     }
 
     age_extension_exists = OidIsValid(get_extension_oid("age", true));
-
     extension_cache_is_valid = true;
 
     return age_extension_exists;
@@ -114,11 +115,71 @@ void process_utility_hook_init(void)
 {
     prev_process_utility_hook = ProcessUtility_hook;
     ProcessUtility_hook = ag_ProcessUtility_hook;
+    RegisterXactCallback(age_drop_xact_callback, NULL);
+    RegisterSubXactCallback(age_drop_subxact_callback, NULL);
 }
 
 void process_utility_hook_fini(void)
 {
+    UnregisterSubXactCallback(age_drop_subxact_callback, NULL);
+    UnregisterXactCallback(age_drop_xact_callback, NULL);
     ProcessUtility_hook = prev_process_utility_hook;
+}
+
+static void restore_failed_age_drop(void)
+{
+    if (!age_drop_in_progress) {
+        return;
+    }
+
+    if (!prev_object_hook_is_set) {
+        object_access_hook_init();
+    }
+
+    extension_cache_is_valid = false;
+    age_drop_in_progress = false;
+}
+
+static void age_drop_xact_callback(XactEvent event, void *argument)
+{
+    (void)argument;
+
+    if (event == XACT_EVENT_ABORT) {
+        restore_failed_age_drop();
+    }
+}
+
+static void age_drop_subxact_callback(SubXactEvent event,
+                                      SubTransactionId transaction_id,
+                                      SubTransactionId parent_transaction_id,
+                                      void *argument)
+{
+    (void)transaction_id;
+    (void)parent_transaction_id;
+    (void)argument;
+
+    if (event == SUBXACT_EVENT_ABORT_SUB) {
+        restore_failed_age_drop();
+    }
+}
+
+static List *collect_truncated_label_relids(TruncateStmt *stmt)
+{
+    List *relids = NIL;
+    ListCell *lc;
+
+    foreach (lc, stmt->relations)
+    {
+        RangeVar *rv = (RangeVar *)lfirst(lc);
+        Oid relid = RangeVarGetRelid(rv, AccessShareLock, true);
+        if (OidIsValid(relid) && search_label_relation_cache(relid) != NULL &&
+            !OidIsValid(get_trigger_oid(relid, "_age_cache_invalidate", true)) &&
+            !list_member_oid(relids, relid)) {
+            relids = lappend_oid(relids, relid);
+        }
+    }
+
+    return relids;
 }
 
 /*
@@ -130,164 +191,109 @@ void process_utility_hook_fini(void)
  * information in the indexes and tables being dropped. To prevent an error
  * from being thrown, we need to disable the object_access_hook before dropping
  * the extension.
- *
- * Besides that, we want to notify other backends about the fact that "age"
- * extension was probably created/dropped so that they can enable/disable
- * hooks.
  */
-void ag_ProcessUtility_hook(PlannedStmt *pstmt, const char *queryString,
-                            bool readOnlyTree, ProcessUtilityContext context,
-                            ParamListInfo params, QueryEnvironment *queryEnv,
-                            DestReceiver *dest, QueryCompletion *qc)
+static void ag_ProcessUtility_hook(processutility_context* processutility_cxt, DestReceiver *dest,
+#ifdef PGXC
+    bool sentToRemote,
+#endif /* PGXC */
+    char *completionTag, ProcessUtilityContext context, bool isCTAS = false)
 {
+    Node *parsetree = processutility_cxt->parse_tree;
     bool creating_age = false;
     bool dropping_age = false;
+    List *truncated_label_relids = NIL;
 
     if (!IsAbortedTransactionBlockState())
     {
-        Node *parsetree = pstmt->utilityStmt;
+        if (IsA(parsetree, TruncateStmt) && is_age_extension_exists()) {
+            truncated_label_relids = collect_truncated_label_relids(
+                (TruncateStmt *)parsetree);
+        } else if (IsA(parsetree, CreateExtensionStmt)) {
+            CreateExtensionStmt *stmt = (CreateExtensionStmt *)parsetree;
+            creating_age = strcmp(stmt->extname, "age") == 0;
+        } else if (IsA(parsetree, DropStmt)) {
+            DropStmt *stmt = (DropStmt *)parsetree;
 
-        switch (nodeTag(parsetree))
-        {
-            case T_CreateExtensionStmt:
-                {
-                    CreateExtensionStmt *stmt =
-                        (CreateExtensionStmt *) parsetree;
-                    creating_age = strcmp(stmt->extname, "age") == 0;
-                }
-                break;
-            case T_DropStmt:
-                {
-                    DropStmt *stmt = (DropStmt *) parsetree;
-
-                    if (stmt->removeType != OBJECT_EXTENSION)
-                        break;
-
-                    if (!is_age_drop(stmt))
-                        break;
-
-                    dropping_age = true;
-                }
-                break;
-            case T_TruncateStmt:
-                {
-                    /*
-                     * Check for TRUNCATE on graph label tables. If any
-                     * truncated table is a graph label table, increment the
-                     * version counter for that graph to invalidate VLE caches.
-                     * We do this before the truncate executes so the cache is
-                     * invalidated regardless.
-                     */
-                    TruncateStmt *tstmt = (TruncateStmt *) parsetree;
-                    ListCell *lc;
-
-                    foreach(lc, tstmt->relations)
-                    {
-                        RangeVar *rv = (RangeVar *) lfirst(lc);
-                        Oid rel_oid = RangeVarGetRelid(rv, AccessShareLock,
-                                                       true);
-
-                        if (OidIsValid(rel_oid))
-                        {
-                            Oid graph_oid =
-                                get_graph_oid_for_table(rel_oid);
-
-                            if (OidIsValid(graph_oid))
-                            {
-                                increment_graph_version(graph_oid);
-                            }
-                        }
-                    }
-                }
-                break;
-            default:
-                break;
+            if (stmt->removeType == OBJECT_EXTENSION)
+                dropping_age = is_age_drop(stmt);
         }
     }
 
     if (dropping_age)
     {
-        /* Remove all graphs */
+        age_drop_in_progress = true;
         drop_graphs(get_graphnames());
-
-        /* Remove the object access hook */
         object_access_hook_fini();
     }
 
     PG_TRY();
     {
-        if (prev_process_utility_hook)
-        {
-            (*prev_process_utility_hook) (pstmt, queryString, readOnlyTree,
-                                          context, params, queryEnv, dest,
-                                          qc);
-        }
-        else
-        {
-            Assert(IsA(pstmt, PlannedStmt));
-            Assert(pstmt->commandType == CMD_UTILITY);
-            Assert(queryString != NULL);
-            Assert(qc == NULL || qc->commandTag == CMDTAG_UNKNOWN);
-            standard_ProcessUtility(pstmt, queryString, readOnlyTree, context,
-                                    params, queryEnv, dest, qc);
+        if (prev_process_utility_hook) {
+            prev_process_utility_hook(processutility_cxt, dest,
+#ifdef PGXC
+                                      sentToRemote,
+#endif /* PGXC */
+                                      completionTag, context, isCTAS);
+        } else {
+            standard_ProcessUtility(processutility_cxt, dest,
+#ifdef PGXC
+                                    sentToRemote,
+#endif /* PGXC */
+                                    completionTag, context, isCTAS);
         }
     }
     PG_CATCH();
     {
-        if (dropping_age)
-        {
-            /*
-             * We have to restore the disabled object_access_hook if
-             * DROP EXTENSION age failed.
-             */
+        if (age_drop_in_progress && !prev_object_hook_is_set) {
             object_access_hook_init();
         }
+
         PG_RE_THROW();
     }
     PG_END_TRY();
 
+    if (truncated_label_relids != NIL)
+    {
+        ListCell *lc;
+
+        foreach (lc, truncated_label_relids)
+            notify_GRAPH_global_contexts_relation_modified(lfirst_oid(lc));
+        list_free(truncated_label_relids);
+    }
+
     if (dropping_age)
     {
-        /* reset global variables for OIDs */
+        clear_global_Oids_VERTEX_EDGE();
         clear_global_Oids_AGTYPE();
         clear_global_Oids_GRAPHID();
-        clear_global_Oids_VERTEX_EDGE();
-
-        /* Restore the object access hook */
         object_access_hook_init();
+        age_drop_in_progress = false;
     }
 
     if (creating_age || dropping_age)
     {
-        /* Notify all backends that pg_extension was modified. */
+        /* The local callback may run only when invalidations are consumed. */
+        extension_cache_is_valid = false;
         CacheInvalidateRelcacheByRelid(ExtensionRelationId);
     }
 }
 
-/* Check to see if the Utility Command is to drop the AGE Extension. */
+// Check to see if the Utility Command is to drop the AGE Extension.
 static bool is_age_drop(DropStmt *drop_stmt)
 {
     ListCell *lc;
 
-    if (!is_age_extension_exists())
-    {
+    if (!is_age_extension_exists()) {
         return false;
     }
 
     foreach(lc, drop_stmt->objects)
     {
-        Node *obj = lfirst(lc);
+        List* objname = (List*)lfirst(lc);
+        const char* str = strVal(linitial(objname));
 
-        if (IsA(obj, String))
-        {
-            String *val = (String *)obj;
-            char *str = val->sval;
-
-            if (strcmp(str, "age") == 0)
-            {
-                return true;
-            }
-        }
+        if (strcmp(str, "age") == 0)
+            return true;
     }
 
     return false;
@@ -307,18 +313,21 @@ static void object_access(ObjectAccessType access, Oid class_id, Oid object_id,
     if (prev_object_access_hook)
         prev_object_access_hook(access, class_id, object_id, sub_id, arg);
 
-    if (!is_age_extension_exists())
-    {
+    if (!is_age_extension_exists()) {
         return;
     }
 
-    /* We are interested in DROP SCHEMA and DROP TABLE commands. */
+    // We are interested in DROP SCHEMA and DROP TABLE commands.
     if (access != OAT_DROP)
+        return;
+
+    /* LOAD or shared preload can initialize hooks before CREATE EXTENSION. */
+    if (!OidIsValid(get_namespace_oid("ag_catalog", true)))
     {
         return;
     }
 
-    drop_arg = arg;
+    drop_arg = (ObjectAccessDrop *)arg;
 
     /*
      * PERFORM_DELETION_INTERNAL flag will be set when remove_schema() calls
@@ -356,9 +365,11 @@ static void object_access(ObjectAccessType access, Oid class_id, Oid object_id,
 
         cache_data = search_label_relation_cache(object_id);
 
-        /* We are interested in only tables that are labels. */
+        // We are interested in only tables that are labels.
         if (!cache_data)
+        {
             return;
+        }
 
         if (drop_arg->dropflags & PERFORM_DELETION_INTERNAL)
         {

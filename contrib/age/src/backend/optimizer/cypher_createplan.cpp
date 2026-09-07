@@ -19,26 +19,45 @@
 
 #include "postgres.h"
 
+#include "access/sysattr.h"
+#include "catalog/pg_type.h"
+#include "nodes/ag_extensible.h"
+#include "nodes/nodes.h"
+#include "nodes/pg_list.h"
+#include "nodes/plannodes.h"
+#include "nodes/relation.h"
+#include "optimizer/restrictinfo.h"
+
 #include "executor/cypher_executor.h"
 #include "optimizer/cypher_createplan.h"
 
-const CustomScanMethods cypher_create_plan_methods = {
+const ExtensiblePlanMethods cypher_create_plan_methods = {
     "Cypher Create", create_cypher_create_plan_state};
-const CustomScanMethods cypher_set_plan_methods = {
+const ExtensiblePlanMethods cypher_set_plan_methods = {
     "Cypher Set", create_cypher_set_plan_state};
-const CustomScanMethods cypher_delete_plan_methods = {
+const ExtensiblePlanMethods cypher_delete_plan_methods = {
     "Cypher Delete", create_cypher_delete_plan_state};
-const CustomScanMethods cypher_merge_plan_methods = {
+const ExtensiblePlanMethods cypher_merge_plan_methods = {
     "Cypher Merge", create_cypher_merge_plan_state};
+const ExtensiblePlanMethods cypher_vle_plan_methods = {
+    "Cypher VLE", create_cypher_vle_plan_state};
+
+static void initialize_cypher_plan_distribution(Plan *plan)
+{
+    plan->exec_type = EXEC_ON_COORDS;
+    plan->exec_nodes = NULL;
+    plan->distributed_keys = NIL;
+}
 
 Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
-                              CustomPath *best_path, List *tlist,
+                              ExtensiblePath *best_path, List *tlist,
                               List *clauses, List *custom_plans)
 {
-    CustomScan *cs;
-    Plan *subplan = linitial(custom_plans);
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
 
-    cs = makeNode(CustomScan);
+    cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -46,11 +65,7 @@ Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
     cs->scan.plan.plan_rows = best_path->path.rows;
     cs->scan.plan.plan_width = 0;
 
-    cs->scan.plan.parallel_aware = best_path->path.parallel_aware;
-    cs->scan.plan.parallel_safe = best_path->path.parallel_safe;
-
-    /* Set later in set_plan_refs */
-    cs->scan.plan.plan_node_id = 0;
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
     cs->scan.plan.targetlist = tlist;
     cs->scan.plan.qual = NIL;
     cs->scan.plan.lefttree = NULL;
@@ -64,24 +79,25 @@ Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
 
     cs->flags = best_path->flags;
 
-    cs->custom_plans = custom_plans;
-    cs->custom_exprs = NIL;
-    cs->custom_private = best_path->custom_private;
-    cs->custom_scan_tlist = subplan->targetlist;
-    cs->custom_relids = NULL;
-    cs->methods = &cypher_create_plan_methods;
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    cs->extensible_private = best_path->extensible_private;
+    cs->extensible_plan_tlist = subplan->targetlist;
+    cs->extensible_relids = NULL;
+    cs->methods = (ExtensiblePlanMethods *)&cypher_create_plan_methods;
 
-    return (Plan *)cs;
+    return &cs->scan.plan;
 }
 
 Plan *plan_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
-                           CustomPath *best_path, List *tlist,
+                           ExtensiblePath *best_path, List *tlist,
                            List *clauses, List *custom_plans)
 {
-    CustomScan *cs;
-    Plan *subplan = linitial(custom_plans);
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
 
-    cs = makeNode(CustomScan);
+    cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -89,10 +105,7 @@ Plan *plan_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
     cs->scan.plan.plan_rows = best_path->path.rows;
     cs->scan.plan.plan_width = 0;
 
-    cs->scan.plan.parallel_aware = best_path->path.parallel_aware;
-    cs->scan.plan.parallel_safe = best_path->path.parallel_safe;
-
-    cs->scan.plan.plan_node_id = 0; /* Set later in set_plan_refs */
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
     cs->scan.plan.targetlist = tlist;
     cs->scan.plan.qual = NIL;
     cs->scan.plan.lefttree = NULL;
@@ -106,29 +119,30 @@ Plan *plan_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
 
     cs->flags = best_path->flags;
 
-    cs->custom_plans = custom_plans;
-    cs->custom_exprs = NIL;
-    cs->custom_private = best_path->custom_private;
-    cs->custom_scan_tlist = subplan->targetlist;
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    cs->extensible_private = best_path->extensible_private;
+    cs->extensible_plan_tlist = subplan->targetlist;
 
-    cs->custom_relids = NULL;
-    cs->methods = &cypher_set_plan_methods;
+    cs->extensible_relids = NULL;
+    cs->methods = (ExtensiblePlanMethods *)&cypher_set_plan_methods;
 
     return (Plan *)cs;
 }
 
 /*
- * Coverts the Scan node representing the DELETE clause
+ * Coverts the Scan node representing the delete clause
  * to the delete Plan node
  */
 Plan *plan_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
-                           CustomPath *best_path, List *tlist,
-                           List *clauses, List *custom_plans)
+                              ExtensiblePath *best_path, List *tlist,
+                              List *clauses, List *custom_plans)
 {
-    CustomScan *cs;
-    Plan *subplan = linitial(custom_plans);
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
 
-    cs = makeNode(CustomScan);
+    cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -136,10 +150,7 @@ Plan *plan_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
     cs->scan.plan.plan_rows = best_path->path.rows;
     cs->scan.plan.plan_width = 0;
 
-    cs->scan.plan.parallel_aware = best_path->path.parallel_aware;
-    cs->scan.plan.parallel_safe = best_path->path.parallel_safe;
-
-    cs->scan.plan.plan_node_id = 0; /* Set later in set_plan_refs */
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
     /*
      * the scan list of the delete node, used for its ScanTupleSlot used
      * by its parent in the execution phase.
@@ -161,35 +172,40 @@ Plan *plan_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
 
     cs->flags = best_path->flags;
 
-    /* child plan nodes are here, Postgres processed them for us. */
-    cs->custom_plans = custom_plans;
-    cs->custom_exprs = NIL;
-    /* transfer delete metadata needed by the DELETE clause. */
-    cs->custom_private = best_path->custom_private;
+    // child plan nodes are here, Postgres processed them for us.
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    // transfer delete metadata needed by the delete clause.
+    cs->extensible_private = best_path->extensible_private;
     /*
      * the scan list of the delete node's children, used for ScanTupleSlot
      * in execution.
      */
-    cs->custom_scan_tlist = subplan->targetlist;
+    cs->extensible_plan_tlist = subplan->targetlist;
 
-    cs->custom_relids = NULL;
-    cs->methods = &cypher_delete_plan_methods;
+    cs->extensible_relids = NULL;
+
+    cs->methods = (ExtensiblePlanMethods *)&cypher_delete_plan_methods;
 
     return (Plan *)cs;
 }
 
 /*
- * Coverts the Scan node representing the MERGE clause
+ * Coverts the Scan node representing the delete clause
  * to the merge Plan node
  */
-Plan *plan_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
-                           CustomPath *best_path, List *tlist,
-                           List *clauses, List *custom_plans)
+Plan *plan_cypher_merge_path(PlannerInfo *root,
+                             RelOptInfo *rel,
+                             ExtensiblePath *best_path,
+                             List *tlist,
+                             List *clauses,
+                             List *custom_plans)
 {
-    CustomScan *cs;
-    Plan *subplan = linitial(custom_plans);
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
 
-    cs = makeNode(CustomScan);
+    cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -197,12 +213,9 @@ Plan *plan_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
     cs->scan.plan.plan_rows = best_path->path.rows;
     cs->scan.plan.plan_width = 0;
 
-    cs->scan.plan.parallel_aware = best_path->path.parallel_aware;
-    cs->scan.plan.parallel_safe = best_path->path.parallel_safe;
-
-    cs->scan.plan.plan_node_id = 0; /* Set later in set_plan_refs */
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
     /*
-     * the scan list of the merge node, used for its ScanTupleSlot used
+     * the scan list of the delete node, used for its ScanTupleSlot used
      * by its parent in the execution phase.
      */
     cs->scan.plan.targetlist = tlist;
@@ -222,19 +235,68 @@ Plan *plan_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
 
     cs->flags = best_path->flags;
 
-    /* child plan nodes are here, Postgres processed them for us. */
-    cs->custom_plans = custom_plans;
-    cs->custom_exprs = NIL;
-    /* transfer delete metadata needed by the MERGE clause. */
-    cs->custom_private = best_path->custom_private;
+    // child plan nodes are here, Postgres processed them for us.
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    // transfer delete metadata needed by the delete clause.
+    cs->extensible_private = best_path->extensible_private;
     /*
      * the scan list of the merge node's children, used for ScanTupleSlot
      * in execution.
      */
-    cs->custom_scan_tlist = subplan->targetlist;
+    cs->extensible_plan_tlist = subplan->targetlist;
 
-    cs->custom_relids = NULL;
-    cs->methods = &cypher_merge_plan_methods;
+    cs->extensible_relids = NULL;
+    cs->methods = (ExtensiblePlanMethods *)&cypher_merge_plan_methods;
+
+    return (Plan *)cs;
+}
+
+Plan *plan_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
+                              ExtensiblePath *best_path, List *tlist,
+                              List *clauses, List *custom_plans)
+{
+    ExtensiblePlan *cs;
+    Plan *subplan = (Plan *)linitial(custom_plans);
+
+    cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
+
+    cs->scan.plan.startup_cost = best_path->path.startup_cost;
+    cs->scan.plan.total_cost = best_path->path.total_cost;
+
+    cs->scan.plan.plan_rows = best_path->path.rows;
+    cs->scan.plan.plan_width = 0;
+
+    cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
+    cs->scan.plan.targetlist = tlist;
+
+    /*
+     * The child is the seed subquery. Its relation restrictions are planned
+     * before the Cypher VLE wrapper and would therefore inspect the empty seed
+     * arrays rather than the traversed edge/vertex arrays. Move those clauses
+     * onto the VLE plan so MATCH WHERE predicates are evaluated against each
+     * completed path.
+     */
+    cs->scan.plan.qual = extract_actual_clauses(clauses, false);
+    subplan->qual = NIL;
+    cs->scan.plan.lefttree = NULL;
+    cs->scan.plan.righttree = NULL;
+    cs->scan.plan.initPlan = NIL;
+
+    cs->scan.plan.extParam = subplan->extParam;
+    cs->scan.plan.allParam = subplan->allParam;
+
+    cs->scan.scanrelid = 0;
+
+    cs->flags = best_path->flags;
+
+    cs->extensible_plans = custom_plans;
+    cs->extensible_exprs = NIL;
+    cs->extensible_private = best_path->extensible_private;
+    cs->extensible_plan_tlist = subplan->targetlist;
+    cs->extensible_relids = NULL;
+    cs->methods = (ExtensiblePlanMethods *)&cypher_vle_plan_methods;
 
     return (Plan *)cs;
 }

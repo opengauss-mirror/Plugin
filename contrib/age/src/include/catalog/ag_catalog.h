@@ -22,8 +22,6 @@
 
 #include "postgres.h"
 
-#include "utils/agtype.h"
-
 bool is_age_extension_exists(void);
 
 void object_access_hook_init(void);
