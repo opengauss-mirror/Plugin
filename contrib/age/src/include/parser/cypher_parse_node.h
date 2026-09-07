@@ -20,7 +20,8 @@
 #ifndef AG_CYPHER_PARSE_NODE_H
 #define AG_CYPHER_PARSE_NODE_H
 
-#include "nodes/cypher_nodes.h"
+#include "nodes/primnodes.h"
+#include "parser/parse_node.h"
 
 /*
  * Every internal alias or variable name should be prefixed
@@ -35,12 +36,14 @@ typedef struct cypher_parsestate
 {
     ParseState pstate;
     char *graph_name;
-    uint32 graph_oid;
+    Oid graph_oid;
     Param *params;
     int default_alias_num;
     List *entities;
     List *property_constraint_quals;
-    bool subquery_where_flag; /* flag for knowing we are in a subquery where */
+    Node *p_vle_initial_vid;	/* initial vid for VLE */
+    ParseNamespaceItem* p_vle_initial_nsitem;
+    List	   *p_future_vertices;		/* vertices to be resolved */
     /*
      * To flag when an aggregate has been found in an expression during an
      * expression transform. This is used during the return_item list transform
@@ -50,13 +53,14 @@ typedef struct cypher_parsestate
      */
     bool exprHasAgg;
     bool p_opt_match;
+    bool subquery_where_flag;
 } cypher_parsestate;
 
 typedef struct errpos_ecb_state
 {
     ErrorContextCallback ecb;
-    ParseState *pstate; /* ParseState of query that has subquery being parsed */
-    int query_loc; /* location of subquery starting from p_sourcetext */
+    ParseState *pstate; // ParseState of query that has subquery being parsed
+    int query_loc; // location of subquery starting from p_sourcetext
 } errpos_ecb_state;
 
 cypher_parsestate *make_cypher_parsestate(cypher_parsestate *parent_cpstate);
@@ -66,6 +70,6 @@ void free_cypher_parsestate(cypher_parsestate *cpstate);
 void setup_errpos_ecb(errpos_ecb_state *ecb_state, ParseState *pstate,
                       int query_loc);
 void cancel_errpos_ecb(errpos_ecb_state *ecb_state);
-char *get_next_default_alias(cypher_parsestate *cpstate);
+RangeTblEntry *find_rte(cypher_parsestate *cpstate, char *varname);
 
 #endif

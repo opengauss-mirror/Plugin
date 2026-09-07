@@ -25,19 +25,20 @@
 #include "postgres.h"
 
 #include "mb/pg_wchar.h"
+#include "nodes/primnodes.h"
+#include "parser/parse_node.h"
 
 #include "parser/cypher_parse_node.h"
 
 static void errpos_ecb(void *arg);
 
-/* NOTE: sync the logic with make_parsestate() */
+// NOTE: sync the logic with make_parsestate()
 cypher_parsestate *make_cypher_parsestate(cypher_parsestate *parent_cpstate)
 {
     ParseState *parent_pstate = (ParseState *)parent_cpstate;
     cypher_parsestate *cpstate;
     ParseState *pstate;
-
-    cpstate = palloc0(sizeof(*cpstate));
+    cpstate = (cypher_parsestate*)palloc0(sizeof(*cpstate));
 
     pstate = (ParseState *)cpstate;
 
@@ -49,7 +50,14 @@ cypher_parsestate *make_cypher_parsestate(cypher_parsestate *parent_cpstate)
     if (parent_cpstate)
     {
         pstate->p_sourcetext = parent_pstate->p_sourcetext;
-        pstate->p_queryEnv = parent_pstate->p_queryEnv;
+        pstate->p_create_proc_operator_hook = parent_pstate->p_create_proc_operator_hook;
+        pstate->p_create_proc_insert_hook = parent_pstate->p_create_proc_insert_hook;
+        pstate->p_cl_hook_state = parent_pstate->p_cl_hook_state;
+        pstate->p_bind_variable_columnref_hook = parent_pstate->p_bind_variable_columnref_hook;
+        pstate->p_bind_hook_state = parent_pstate->p_bind_hook_state;
+        pstate->p_bind_describe_hook = parent_pstate->p_bind_describe_hook;
+        pstate->p_describeco_hook_state = parent_pstate->p_describeco_hook_state;
+
         pstate->p_pre_columnref_hook = parent_pstate->p_pre_columnref_hook;
         pstate->p_post_columnref_hook = parent_pstate->p_post_columnref_hook;
         pstate->p_paramref_hook = parent_pstate->p_paramref_hook;
@@ -59,6 +67,8 @@ cypher_parsestate *make_cypher_parsestate(cypher_parsestate *parent_cpstate)
         cpstate->graph_name = parent_cpstate->graph_name;
         cpstate->graph_oid = parent_cpstate->graph_oid;
         cpstate->params = parent_cpstate->params;
+
+        cpstate->p_vle_initial_vid = parent_cpstate->p_vle_initial_vid;
         cpstate->subquery_where_flag = parent_cpstate->subquery_where_flag;
     }
 
@@ -73,18 +83,17 @@ void free_cypher_parsestate(cypher_parsestate *cpstate)
 void setup_errpos_ecb(errpos_ecb_state *ecb_state, ParseState *pstate,
                       int query_loc)
 {
-    ecb_state->ecb.previous = error_context_stack;
+    ecb_state->ecb.previous=t_thrd.log_cxt.error_context_stack;
     ecb_state->ecb.callback = errpos_ecb;
     ecb_state->ecb.arg = ecb_state;
     ecb_state->pstate = pstate;
     ecb_state->query_loc = query_loc;
-
-    error_context_stack = &ecb_state->ecb;
+    t_thrd.log_cxt.error_context_stack=&ecb_state->ecb;
 }
 
 void cancel_errpos_ecb(errpos_ecb_state *ecb_state)
 {
-    error_context_stack = ecb_state->ecb.previous;
+    t_thrd.log_cxt.error_context_stack=ecb_state->ecb.previous;
 }
 
 /*
@@ -93,7 +102,7 @@ void cancel_errpos_ecb(errpos_ecb_state *ecb_state)
  */
 static void errpos_ecb(void *arg)
 {
-    errpos_ecb_state *ecb_state = arg;
+    errpos_ecb_state *ecb_state = (errpos_ecb_state*)arg;
     int query_pos;
 
     if (geterrcode() == ERRCODE_QUERY_CANCELED)
@@ -105,41 +114,21 @@ static void errpos_ecb(void *arg)
     errposition(query_pos + geterrposition());
 }
 
-/*
- * Generates a default alias name for when a query needs one and the parse
- * state does not provide one.
- */
-char *get_next_default_alias(cypher_parsestate *cpstate)
+RangeTblEntry *find_rte(cypher_parsestate *cpstate, char *varname)
 {
-    ParseState *pstate = (ParseState *)cpstate;
-    cypher_parsestate *parent_cpstate = (cypher_parsestate *)pstate->parentParseState;
-    char *alias_name;
-    int nlen = 0;
+    ParseState *pstate = (ParseState *) cpstate;
+    ListCell *lc;
 
-    /*
-     * Every clause transformed as a subquery has its own cpstate which is being
-     * freed after it is transformed. The root cpstate is the one that has the
-     * default alias number initialized. So we need to reach the root cpstate to
-     * get the next correct default alias number.
-     */
-    if (parent_cpstate)
+    foreach (lc, pstate->p_rtable)
     {
-        return get_next_default_alias(parent_cpstate);
+        RangeTblEntry *rte = (RangeTblEntry *)lfirst(lc);
+        Alias *alias = rte->alias;
+        if (!alias)
+            continue;
+
+        if (!strcmp(alias->aliasname, varname))
+            return rte;
     }
 
-    /* get the length of the combined string */
-    nlen = snprintf(NULL, 0, "%s%d", AGE_DEFAULT_ALIAS_PREFIX,
-                    cpstate->default_alias_num);
-
-    /* allocate the space */
-    alias_name = palloc0(nlen + 1);
-
-    /* create the name */
-    snprintf(alias_name, nlen + 1, "%s%d", AGE_DEFAULT_ALIAS_PREFIX,
-             cpstate->default_alias_num);
-
-    /* increment the default alias number */
-    cpstate->default_alias_num++;
-
-    return alias_name;
+    return NULL;
 }

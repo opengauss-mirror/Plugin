@@ -30,11 +30,10 @@
 
 #include "postgres.h"
 
-#include "common/string.h"
+#include "lib/string.h"
 #include "mb/pg_wchar.h"
 
 #include "parser/ag_scanner.h"
-#include "utils/agtype.h"
 }
 
 %option 8bit
@@ -230,15 +229,17 @@ param \${id}
  * These are tokens that are used as operators and language constructs in
  * Cypher, and some of them are structural characters in JSON.
  */
-lt_gt          "<>"
-lt_eq          "<="
-gt_eq          ">="
-dot_dot        ".."
-plus_eq        "+="
-typecast       "::"
-self           [%()*+,\-./:;<=>[\]^{|}]
-op_chars	   [\!\@\#\^\&\|\~\?\+\*\/\%\<\>\=]
-operator	   {op_chars}+
+lt_gt    "<>"
+lt_eq    "<="
+gt_eq    ">="
+dot_dot  ".."
+plus_eq  "+="
+eq_tilde "=~"
+typecast "::"
+vector_l2_op "<->"
+self     [%()*+,\-./:;<=>[\]^{|}]
+op_chars [\!\@\#\^\&\|\~\?\+\*\/\%\<\>\=]
+operator {op_chars}+
 
 other .
 
@@ -269,11 +270,11 @@ typedef struct ag_yy_extra
      */
     strbuf literal_buf;
 
-    /* for Unicode surrogate pair */
+    // for Unicode surrogate pair
     pg_wchar high_surrogate;
     int start_cond;
 
-    /* for the location of the current token and the actual position of it */
+    // for the location of the current token and the actual position of it
     const char *scan_buf;
     int last_loc;
 } ag_yy_extra;
@@ -288,6 +289,8 @@ static uint32 octdigit_value(const char c);
 
 static bool is_high_surrogate(const pg_wchar c);
 static bool is_low_surrogate(const pg_wchar c);
+static pg_wchar surrogate_pair_to_codepoint(const pg_wchar hi,
+                                            const pg_wchar lo);
 
 #define update_location() \
     do \
@@ -318,22 +321,21 @@ static int _scan_errposition(const int location, const ag_yy_extra *extra);
  * and is the same with "ag_scanner_t".
  */
 #define YY_DECL ag_token ag_scanner_next_token(yyscan_t yyscanner)
-#define NDIGITS_PER_REMAINDER 9
 %}
 
 %%
 
 %{
-/* This is used in the actions below. */
+// This is used in the actions below.
 ag_token token;
 %}
 
 {whitespace} {
-    /* ignore */
+    // ignore
 }
 
 {mlcstart} {
-    /* update location in case of unterminated comment */
+    // update location in case of unterminated comment
     update_location();
     BEGIN(mlcomment);
     yyless(2);
@@ -344,7 +346,7 @@ ag_token token;
 }
 
 <mlcomment>{mlcchars} {
-    /* ignore */
+    // ignore
 }
 
 <mlcomment>{mlcstop} {
@@ -358,7 +360,7 @@ ag_token token;
 }
 
 {slcomment} {
-    /* ignore */
+    // ignore
 }
 
 {digitseq} |
@@ -386,12 +388,12 @@ ag_token token;
 }
 
 {decimalfail} {
-    /* return dot_dot back to the input stream */
+    // return dot_dot back to the input stream
     yyless(yyleng - 2);
 
     update_location();
 
-    /* consume digitseq */
+    // consume digitseq
     integer_literal_to_token(yytext, &token, &yyextra);
     token.location = get_location();
     return token;
@@ -451,7 +453,7 @@ ag_token token;
         c = '\t';
         break;
     default:
-        /* '"', '\'', '/', and '\\' */
+        // '"', '\'', '/', and '\\'
         c = yytext[1];
         break;
     }
@@ -482,11 +484,11 @@ ag_token token;
 <dqstr,sqstr>{esunicode} {
     pg_wchar c;
 
-    /* It is unnecessary to check endptr and errno here. */
+    // It is unnecessary to check endptr and errno here.
     c = strtoul(yytext + 2, NULL, 16);
     if (c > 0x10FFFF)
     {
-        /* c is greater than the maximum value of a Unicode code point. */
+        // c is greater than the maximum value of a Unicode code point.
         update_location();
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_ESCAPE_SEQUENCE),
@@ -528,7 +530,7 @@ ag_token token;
     }
     else if (c > 0)
     {
-        /* c is an ASCII character. */
+        // c is an ASCII character.
         strbuf_append_char(&yyextra.literal_buf, (char)c);
     }
     else
@@ -553,7 +555,7 @@ ag_token token;
     if (is_low_surrogate(c))
     {
         c = surrogate_pair_to_codepoint(yyextra.high_surrogate, c);
-        /* 0x010000 <= c <= 0x10FFFF always holds for surrogate pairs. */
+        // 0x010000 <= c <= 0x10FFFF always holds for surrogate pairs.
         strbuf_append_codepoint(&yyextra.literal_buf, c);
         BEGIN(yyextra.start_cond);
     }
@@ -699,9 +701,25 @@ ag_token token;
     return token;
 }
 
+{eq_tilde} {
+    update_location();
+    token.type = AG_TOKEN_EQ_TILDE;
+    token.value.s = yytext;
+    token.location = get_location();
+    return token;
+}
+
 {typecast} {
     update_location();
     token.type = AG_TOKEN_TYPECAST;
+    token.value.s = yytext;
+    token.location = get_location();
+    return token;
+}
+
+{vector_l2_op} {
+    update_location();
+    token.type = AG_TOKEN_OP;
     token.value.s = yytext;
     token.location = get_location();
     return token;
@@ -724,21 +742,12 @@ ag_token token;
 }
 
 {operator} {
-    /* Borrowed from PG and adjusted for our scanner */
-
-    /*
-     * Check for embedded slash-star or slash-slash; those
-     * are comment starts, so operator must stop there.
-     * Note that slash-star or slash-slash at the first
-     * character will match a prior rule, not this one.
-     */
-    int			nchars = yyleng;
-    char	   *slashstar = strstr(yytext, "/*");
-    char	   *slashslash = strstr(yytext, "//");
+    int nchars = yyleng;
+    char *slashstar = strstr(yytext, "/*");
+    char *slashslash = strstr(yytext, "//");
 
     if (slashstar && slashslash)
     {
-        /* if both appear, take the first one */
         if (slashstar > slashslash)
             slashstar = slashslash;
     }
@@ -747,19 +756,11 @@ ag_token token;
     if (slashstar)
         nchars = slashstar - yytext;
 
-    /*
-     * For SQL compatibility, '+' and '-' cannot be the
-     * last char of a multi-char operator unless the operator
-     * contains chars that are not in SQL operators.
-     * The idea is to lex '=-' as two operators, but not
-     * to forbid operator names like '?-' that could not be
-     * sequences of SQL operators.
-     */
     if (nchars > 1 &&
         (yytext[nchars - 1] == '+' ||
          yytext[nchars - 1] == '-'))
     {
-        int			ic;
+        int ic;
 
         for (ic = nchars - 2; ic >= 0; ic--)
         {
@@ -772,15 +773,11 @@ ag_token token;
         }
         if (ic < 0)
         {
-            /*
-             * didn't find a qualifying character, so remove
-             * all trailing [+-]
-             */
             do {
                 nchars--;
             } while (nchars > 1 &&
-                    (yytext[nchars - 1] == '+' ||
-                    yytext[nchars - 1] == '-'));
+                     (yytext[nchars - 1] == '+' ||
+                      yytext[nchars - 1] == '-'));
         }
     }
 
@@ -788,14 +785,7 @@ ag_token token;
 
     if (nchars < yyleng)
     {
-        /* Strip the unwanted chars from the token */
         yyless(nchars);
-        /*
-         * If what we have left is only one char, and it's
-         * one of the characters matching "self", then
-         * return it as a character token the same way
-         * that the "self" rule would have.
-         */
         if (nchars == 1 &&
             strchr("%()*+,-./:;<=>[\\]^{|}", yytext[0]))
         {
@@ -805,12 +795,6 @@ ag_token token;
             return token;
         }
 
-        /*
-         * Likewise, if what we have left is two chars, and
-         * those match the tokens ">=", "<=", "=>", "<>" or
-         * "!=", then we must return the appropriate token
-         * rather than the generic Op.
-         */
         if (nchars == 2)
         {
             if (yytext[0] == '>' && yytext[1] == '=')
@@ -821,13 +805,6 @@ ag_token token;
                 token.type = AG_TOKEN_LT_GT;
             else if (yytext[0] == '+' && yytext[1] == '=')
                 token.type = AG_TOKEN_PLUS_EQ;
-            /*
-             * These operators (!=, =>) are not allowed as user-defined
-             * operators in PG because they are reserved as valid tokens
-             * with predefined semantics. As a result, we also reject
-             * them here. However, if a specific use case arises, we
-             * could allow them with custom handling.
-             */
             else if ((yytext[0] == '!' && yytext[1] == '=') ||
                      (yytext[0] == '=' && yytext[1] == '>'))
                 ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
@@ -843,16 +820,10 @@ ag_token token;
     }
 
 handle_generic_op:
-    /*
-     * Complain if operator is too long.  Unlike the case
-     * for identifiers, we make this an error not a notice-
-     * and-truncate, because the odds are we are looking at
-     * a syntactic mistake anyway.
-     */
     if (nchars >= NAMEDATALEN)
         ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
-                    scan_errmsg("operator too long"),
-                    scan_errposition()));
+                        scan_errmsg("operator too long"),
+                        scan_errposition()));
 
     token.type = AG_TOKEN_OP;
     token.value.s = yytext;
@@ -889,12 +860,12 @@ void *ag_yyalloc(yy_size_t size, yyscan_t yyscanner)
 
 void *ag_yyrealloc(void *ptr, yy_size_t size, yyscan_t yyscanner)
 {
-    /* see realloc(3) */
+    // see realloc(3)
     if (ptr)
     {
         if (size == 0)
         {
-            pfree_if_not_null(ptr);
+            pfree(ptr);
             return NULL;
         }
         else
@@ -911,12 +882,12 @@ void *ag_yyrealloc(void *ptr, yy_size_t size, yyscan_t yyscanner)
 void ag_yyfree(void *ptr, yyscan_t yyscanner)
 {
     if (ptr)
-        pfree_if_not_null(ptr);
+        pfree(ptr);
 }
 
 static void strbuf_init(strbuf *sb, int capacity)
 {
-    sb->buffer = palloc(capacity);
+    sb->buffer = (char*)palloc(capacity);
     sb->capacity = capacity;
     sb->length = 0;
 }
@@ -924,7 +895,7 @@ static void strbuf_init(strbuf *sb, int capacity)
 static void strbuf_cleanup(strbuf *sb)
 {
     if (sb->buffer)
-        pfree_if_not_null(sb->buffer);
+        pfree(sb->buffer);
 }
 
 static void strbuf_append_buf(strbuf *sb, const char *b, const int len)
@@ -955,7 +926,7 @@ static void strbuf_append_codepoint(strbuf *sb, const pg_wchar c)
  */
 static void strbuf_ensure_capacity(strbuf *sb, int len)
 {
-    /* consider additional 1 byte for the last '\0' character */
+    // consider additional 1 byte for the last '\0' character
     if (len < sb->capacity)
         return;
 
@@ -964,7 +935,7 @@ static void strbuf_ensure_capacity(strbuf *sb, int len)
         sb->capacity *= 2;
     } while (sb->capacity <= len);
 
-    sb->buffer = repalloc(sb->buffer, sb->capacity);
+    sb->buffer = (char*)repalloc(sb->buffer, sb->capacity);
 }
 
 static const char *strbuf_get_str(strbuf *sb)
@@ -976,6 +947,15 @@ static const char *strbuf_get_str(strbuf *sb)
 static void strbuf_reset(strbuf *sb)
 {
     sb->length = 0;
+}
+
+int strtoint(const char *pg_restrict 	str,char **pg_restrict 	endptr, int base)
+{
+    long val;
+    val = strtol(str, endptr, base);
+    if (val != (int) val)
+       errno = ERANGE;
+    return (int) val;
 }
 
 static void integer_literal_to_token(const char *s, ag_token *token,
@@ -998,7 +978,7 @@ static void integer_literal_to_token(const char *s, ag_token *token,
                         _scan_errposition(extra->last_loc, extra)));
     }
 
-    /* Treat it as a decimal if it is too large to be an "int" value. */
+    // Treat it as a decimal if it is too large to be an "int" value.
     if (errno == ERANGE)
     {
         /*
@@ -1039,7 +1019,7 @@ static void integer_literal_to_token(const char *s, ag_token *token,
  */
 static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
 {
-    /* constants for each base */
+    // constants for each base
     int ndigits_per_word;
     int nbits_per_digit;
     uint32 (*digit_value)(const char);
@@ -1055,6 +1035,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
      */
     const uint64 divisor = 1000000000;
     const int ndivisions = 3;
+    const int ndigits_per_remainder = 9;
 
     int ndigits;
     int nwords;
@@ -1067,7 +1048,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
     int nremainders;
     int i;
 
-    /* set constants for each base */
+    // set constants for each base
     switch (base)
     {
     case 16:
@@ -1119,27 +1100,27 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
         return;
     }
 
-    /* skip leading zeros */
+    // skip leading zeros
     while (*numstr == '0')
         numstr++;
 
-    /* number of digits in "numstr" */
+    // number of digits in "numstr"
     ndigits = strlen(numstr);
     Assert(ndigits > 0);
 
-    /* prepare "words" to store "numstr" in two's complement representation */
+    // prepare "words" to store "numstr" in two's complement representation
     nwords = (ndigits + (ndigits_per_word - 1)) / ndigits_per_word;
-    words = palloc(sizeof(*words) * nwords);
+    words = (uint32*)palloc(sizeof(*words) * nwords);
 
     digitp = numstr;
     word_i = 0;
 
-    /* number of digits for the first word */
+    // number of digits for the first word
     ndigits_word0 = ndigits % ndigits_per_word;
     if (ndigits_word0 == 0)
         ndigits_word0 = ndigits_per_word;
 
-    /* fill the first word */
+    // fill the first word
     word = digit_value(*digitp++);
     for (i = 1; i < ndigits_word0; i++)
     {
@@ -1148,7 +1129,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
     }
     words[word_i++] = word;
 
-    /* fill the rest of "words" */
+    // fill the rest of "words"
     while (word_i < nwords)
     {
         word = digit_value(*digitp++);
@@ -1160,18 +1141,18 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
         words[word_i++] = word;
     }
 
-    /* At most "ndivisions" divisions are needed to eliminate 1 word. */
-    remainders = palloc(sizeof(*remainders) * (ndivisions * nwords));
+    // At most "ndivisions" divisions are needed to eliminate 1 word.
+    remainders = (uint32*)palloc(sizeof(*remainders) * (ndivisions * nwords));
 
     nremainders = 0;
     word_i = 0;
-    /* repeat dividing "words" by "divisor" until the quotient becomes 0 */
+    // repeat dividing "words" by "divisor" until the quotient becomes 0
     while (word_i < nwords)
     {
         uint64 r;
 
         r = 0;
-        /* divide "words" by "divisor" */
+        // divide "words" by "divisor"
         for (i = word_i; i < nwords; i++)
         {
             uint64 d;
@@ -1186,7 +1167,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
             words[i] = (uint32)q;
         }
 
-        /* collect the remainder to build the result */
+        // collect the remainder to build the result
         remainders[nremainders++] = (uint32)r;
 
         /*
@@ -1197,30 +1178,30 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
             word_i++;
     }
 
-    /* convert the collected remainders to a string, starting from the last one */
+    // convert the collected remainders to a string, starting from the last one
     for (i = nremainders - 1; i >= 0; i--)
     {
-        char buf[NDIGITS_PER_REMAINDER];
+        char buf[ndigits_per_remainder];
         int buf_i;
         uint32 tmp;
 
-        buf_i = NDIGITS_PER_REMAINDER;
+        buf_i = ndigits_per_remainder;
 
         for (tmp = remainders[i]; tmp > 0; tmp /= 10)
             buf[--buf_i] = '0' + (char)(tmp % 10);
 
-        /* leading zeros for intermediate digits */
+        // leading zeros for intermediate digits
         if (i < nremainders - 1)
         {
             while (buf_i > 0)
                 buf[--buf_i] = '0';
         }
 
-        strbuf_append_buf(sb, &buf[buf_i], NDIGITS_PER_REMAINDER - buf_i);
+        strbuf_append_buf(sb, &buf[buf_i], ndigits_per_remainder - buf_i);
     }
 
-    pfree_if_not_null(remainders);
-    pfree_if_not_null(words);
+    pfree(remainders);
+    pfree(words);
 }
 
 static uint32 hexdigit_value(const char c)
@@ -1251,6 +1232,15 @@ static bool is_low_surrogate(const pg_wchar c)
     return (c >= 0xDC00 && c <= 0xDFFF);
 }
 
+// http://www.unicode.org/faq/utf_bom.html#utf16-4
+static pg_wchar surrogate_pair_to_codepoint(const pg_wchar hi,
+                                            const pg_wchar lo)
+{
+    const pg_wchar surrogate_offset = 0x10000 - (0xD800 << 10) - 0xDC00;
+
+    return (hi << 10) + lo + surrogate_offset;
+}
+
 static int _scan_errmsg(const char *msg, const ag_yy_extra *extra)
 {
     const char *t = extra->scan_buf + extra->last_loc;
@@ -1265,11 +1255,11 @@ static int _scan_errposition(const int location, const ag_yy_extra *extra)
 {
     int pos;
 
-    /* no-op if location is unknown */
+    // no-op if location is unknown
     if (location < 0)
         return 0;
 
-    /* convert byte offset to number of characters */
+    // convert byte offset to number of characters
     pos = pg_mbstrlen_with_len(extra->scan_buf, location) + 1;
 
     return errposition(pos);
@@ -1283,9 +1273,9 @@ ag_scanner_t ag_scanner_create(const char *s)
     ag_yy_extra extra;
     int ret;
 
-    /* The last two YY_END_OF_BUFFER_CHAR are required by flex. */
+    // The last two YY_END_OF_BUFFER_CHAR are required by flex.
     len = strlen(s);
-    buf = palloc(len + 2);
+    buf = (char*)palloc(len + 2);
     memcpy(buf, s, len);
     buf[len] = YY_END_OF_BUFFER_CHAR;
     buf[len + 1] = YY_END_OF_BUFFER_CHAR;

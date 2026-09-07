@@ -18,9 +18,11 @@
  */
 
 #include "postgres.h"
-
+#include "parser/keywords.h"
+#include "nodes/pg_list.h"
 #include "parser/scansup.h"
 
+#include "parser/ag_scanner.h"
 #include "parser/cypher_gram.h"
 #include "parser/cypher_keywords.h"
 #include "parser/cypher_parser.h"
@@ -37,6 +39,7 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
         DECIMAL,
         STRING,
         IDENTIFIER,
+        IDENTIFIER,
         PARAMETER,
         NOT_EQ,
         LT_EQ,
@@ -44,8 +47,8 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
         DOT_DOT,
         TYPECAST,
         PLUS_EQ,
+        EQ_TILDE,
         CHAR,
-        BQIDENT,
         OP
     };
 
@@ -55,71 +58,67 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
 
     switch (token.type)
     {
-    case AG_TOKEN_NULL:
-        break;
-    case AG_TOKEN_INTEGER:
-        lvalp->integer = token.value.i;
-        break;
-    case AG_TOKEN_DECIMAL:
-    case AG_TOKEN_STRING:
-    case AG_TOKEN_OP:
-        lvalp->string = pstrdup(token.value.s);
-        break;
-    case AG_TOKEN_IDENTIFIER:
-    {
-        int kwnum;
-        char *ident;
+        case AG_TOKEN_NULL:
+            break;
+        case AG_TOKEN_INTEGER:
+            lvalp->integer = token.value.i;
+            break;
+        case AG_TOKEN_DECIMAL:
+        case AG_TOKEN_STRING:
+        case AG_TOKEN_OP:
+            lvalp->string = pstrdup(token.value.s);
+            break;
+        case AG_TOKEN_IDENTIFIER: {
+            int kwnum;
+            char *ident;
 
-        kwnum = ScanKeywordLookup(token.value.s, &CypherKeyword);
-        if (kwnum >= 0)
-        {
-            /*
-             * use token.value.s instead of keyword->name to preserve
-             * case sensitivity
-             */
-            lvalp->keyword = GetScanKeyword(kwnum, &CypherKeyword);
+            kwnum = ScanKeywordLookup(token.value.s, &CypherKeyword);
+            if (kwnum >= 0)
+            {
+                /*
+                 * use token.value.s instead of keyword->name to preserve
+                 * case sensitivity
+                 */
+                lvalp->keyword = GetScanKeyword(kwnum, &CypherKeyword);
+                ident = pstrdup(token.value.s);
+                truncate_identifier(ident, strlen(ident), true);
+                lvalp->string = ident;
+                *llocp = token.location;
+                return CypherKeywordTokens[kwnum];
+            }
+
             ident = pstrdup(token.value.s);
             truncate_identifier(ident, strlen(ident), true);
             lvalp->string = ident;
-            *llocp = token.location;
-            return CypherKeywordTokens[kwnum];
+            break;
         }
+        case AG_TOKEN_BQIDENT: {
+            char *ident = pstrdup(token.value.s);
 
-        ident = pstrdup(token.value.s);
-        truncate_identifier(ident, strlen(ident), true);
-        lvalp->string = ident;
-        break;
+            /* Backtick-quoted names bypass keyword lookup. */
+            truncate_identifier(ident, strlen(ident), true);
+            lvalp->string = ident;
+            break;
+        }
+        case AG_TOKEN_PARAMETER:
+            lvalp->string = pstrdup(token.value.s);
+            break;
+        case AG_TOKEN_LT_GT:
+        case AG_TOKEN_LT_EQ:
+        case AG_TOKEN_GT_EQ:
+        case AG_TOKEN_DOT_DOT:
+        case AG_TOKEN_PLUS_EQ:
+        case AG_TOKEN_EQ_TILDE:
+            break;
+        case AG_TOKEN_TYPECAST:
+            break;
+        case AG_TOKEN_CHAR:
+            *llocp = token.location;
+            return token.value.c;
+        default:
+            ereport(ERROR, (errmsg("unexpected ag_token_type: %d", token.type)));
+            break;
     }
-    case AG_TOKEN_BQIDENT:
-    {
-        char *ident;
-
-        /* these are identifiers, just back ticked */
-        token.type = AG_TOKEN_IDENTIFIER;
-
-        ident = pstrdup(token.value.s);
-        truncate_identifier(ident, strlen(ident), true);
-        lvalp->string = ident;
-        break;
-    }
-    case AG_TOKEN_PARAMETER:
-        lvalp->string = pstrdup(token.value.s);
-        break;
-    case AG_TOKEN_LT_GT:
-    case AG_TOKEN_LT_EQ:
-    case AG_TOKEN_GT_EQ:
-    case AG_TOKEN_DOT_DOT:
-    case AG_TOKEN_PLUS_EQ:
-    case AG_TOKEN_TYPECAST:
-        break;
-    case AG_TOKEN_CHAR:
-        *llocp = token.location;
-        return token.value.c;
-    default:
-        ereport(ERROR, (errmsg("unexpected ag_token_type: %d", token.type)));
-        break;
-    }
-
     *llocp = token.location;
     return type_map[token.type];
 }
@@ -128,8 +127,8 @@ void cypher_yyerror(YYLTYPE *llocp, ag_scanner_t scanner,
                     cypher_yy_extra *extra, const char *msg)
 {
     ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
-                    ag_scanner_errmsg(msg, scanner),
-                    ag_scanner_errposition(*llocp, scanner)));
+                    ag_scanner_errmsg(msg, (void**) scanner),
+                    ag_scanner_errposition(*llocp, (void**)scanner)));
 }
 
 /* declaration to make mac os x compiler happy */
@@ -157,7 +156,7 @@ List *parse_cypher(const char *s)
         return NIL;
 
     /*
-     * Append the extra node regardless of its value. Currently the extra
+     * Append the extra node node regardless of its value. Currently the extra
      * node is only used by EXPLAIN
     */
     return lappend(extra.result, extra.extra);
