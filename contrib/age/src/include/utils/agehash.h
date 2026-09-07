@@ -49,6 +49,11 @@
 #include "utils/memutils.h"
 #include "utils/palloc.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* Sentinel probe distance marking an empty slot. */
 #define AGEHASH_EMPTY 0xFFFFu
 
@@ -83,8 +88,7 @@ typedef bool   (*agehash_keyeq_fn)(const void *a, const void *b, Size keysize);
  * Layout mode. Only INLINE is implemented in this revision; INDIRECT is
  * declared so the public enum values stay stable when it lands.
  */
-typedef enum AgeHashMode
-{
+typedef enum AgeHashMode {
     AGEHASH_INLINE = 0,
     AGEHASH_INDIRECT = 1
 } AgeHashMode;
@@ -195,8 +199,7 @@ extern uint32 agehash_capacity(const AgeHashTable *t);
  * Iteration order is unspecified. Modifying the table during iteration is
  * undefined behaviour.
  */
-typedef struct AgeHashIter
-{
+typedef struct AgeHashIter {
     AgeHashTable *t;
     uint32        idx;
     void         *key;
@@ -212,5 +215,9 @@ extern bool agehash_iter_next(AgeHashIter *it);
  * Used by the agehash regression test.
  */
 extern const char *agehash_self_test(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* AG_AGEHASH_H */

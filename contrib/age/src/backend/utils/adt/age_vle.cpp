@@ -28,51 +28,60 @@
  *
  * Semantics: edge-isomorphism (openCypher-mandated)
  *
- *   A path is valid iff no edge appears in it more than once. Vertices MAY
- *   recur. This is "edge-isomorphism" (a.k.a. relationship-uniqueness) per
- *   the openCypher specification; it is NOT vertex-isomorphism.
- *
- *   Example: in the triangle A-[e1]->B-[e2]->C-[e3]->A, the query
- *     MATCH (a)-[*3]->(b) WHERE id(a) = id(A)
- *   MUST return the path (A, e1, B, e2, C, e3, A) with b = A. Switching
- *   to vertex-isomorphism would silently drop this path and violate the
- *   spec. Any "optimization" that tracks visited vertices as a filter
- *   rather than visited edges is therefore incorrect, not merely faster.
+ * A path is valid iff no edge appears in it more than once. Vertices MAY
+ * recur. This is edge-isomorphism (relationship uniqueness), not vertex
+ * isomorphism. For example, traversing all three edges of a directed triangle
+ * back to the starting vertex is valid. Replacing edge tracking with a
+ * visited-vertex filter would silently discard such specification-valid paths.
  *
  * Cost model
  *
- *   With E total edges in the traversal-reachable subgraph and a bounded
- *   pattern [*min..max], the number of enumerated paths is bounded by
- *   sum_{k=min..max} P(E, k) where P(E, k) = E! / (E - k)! -- polynomial
- *   in E for fixed max, but factorial in the depth bound.
+ * With E total edges in the traversal-reachable subgraph and a bounded
+ * pattern [*min..max], the number of enumerated paths is bounded by
+ * sum(P(E, k), k=min..max), where P(E, k) = E! / (E - k)!. For a fixed upper
+ * bound this is polynomial in E, but factorial in the depth bound.
  *
- *   Unbounded patterns ([*], [*1..]) have no termination guarantee other
- *   than edge-uniqueness depletion. On a cycle-rich graph the worst case
- *   is O(E!). This is inherent to edge-isomorphic path enumeration and
- *   cannot be reduced by algorithm change without changing semantics.
- *   Users who want reachability (not full enumeration) should bound the
- *   upper length or use a dedicated function such as shortestPath().
+ * Unbounded patterns ([*], [*1..]) terminate only when edge uniqueness
+ * exhausts the reachable edges. On cycle-rich graphs the worst case is
+ * O(E!). This is inherent in enumerating edge-isomorphic paths; callers that
+ * need reachability rather than every path should set an upper bound or use a
+ * dedicated shortest-path function.
  *
  * Implementation pointer
  *
- *   Cycle prevention is enforced by edge_state_entry.used_in_path, set
- *   and cleared during DFS traversal in dfs_find_a_path_between() and
- *   dfs_find_a_path_from(). The helper is_edge_in_path() inspects the
- *   current path stack. See those functions for the enforcement site.
+ * edge_state_entry.used_in_path is set and cleared during DFS traversal in
+ * dfs_find_a_path_between() and dfs_find_a_path_from(). is_edge_in_path()
+ * inspects the current path stack. These are the semantic enforcement sites.
  */
 
 #include "postgres.h"
 
-#include "common/hashfn.h"
+#include "catalog/pg_type.h"
 #include "funcapi.h"
-#include "miscadmin.h"
-#include "nodes/pg_list.h"
-#include "utils/datum.h"
 #include "utils/lsyscache.h"
 
+#include "utils/builtins.h"
+
 #include "utils/age_vle.h"
+
+#define SHORTEST_PATH_QUEUE_INITIAL_CAPACITY 1024
+#define SHORTEST_PATH_QUEUE_GROWTH_FACTOR 2
+#define SHORTEST_PATH_VISITED_INITIAL_SIZE 1024
+#define EDGE_DIRECTION_OUTBOUND_PASS 0
+#define EDGE_DIRECTION_PASS_COUNT 2
+#define PATH_EDGE_POSITION_STEP 2
+#define PATH_RESULT_VERTEX_COUNT_MULTIPLIER 2
+#define SHORTEST_PATH_GRAPH_ARGUMENT_INDEX 0
+#define SHORTEST_PATH_START_ARGUMENT_INDEX 1
+#define SHORTEST_PATH_END_ARGUMENT_INDEX 2
+#define SHORTEST_PATH_LABEL_ARGUMENT_INDEX 3
+#define SHORTEST_PATH_DIRECTION_ARGUMENT_INDEX 4
+#define SHORTEST_PATH_MIN_HOPS_ARGUMENT_INDEX 5
+#define SHORTEST_PATH_MAX_HOPS_ARGUMENT_INDEX 6
 #include "catalog/ag_graph.h"
 #include "catalog/ag_label.h"
+#include "utils/graphid.h"
+#include "utils/age_graphid_ds.h"
 #include "nodes/cypher_nodes.h"
 
 /* defines */
@@ -100,6 +109,7 @@ typedef struct edge_state_entry
  */
 typedef enum
 {                                  /* Given a path (u)-[e]-(v)                */
+
     VLE_FUNCTION_PATHS_FROM,       /* Paths from a (u) without a provided (v) */
     VLE_FUNCTION_PATHS_TO,         /* Paths to a (v) without a provided (u)   */
     VLE_FUNCTION_PATHS_BETWEEN,    /* Paths between a (u) and a provided (v)  */
@@ -113,27 +123,26 @@ typedef struct VLE_local_context
     char *graph_name;              /* name of the graph */
     Oid graph_oid;                 /* graph oid for searching */
     GRAPH_global_context *ggctx;   /* global graph context pointer */
+    uint64 graph_generation;       /* identity of the referenced graph cache */
     graphid vsid;                  /* starting vertex id */
     graphid veid;                  /* ending vertex id */
     char *edge_label_name;         /* edge label name for match */
-    Oid edge_label_name_oid;       /* edge label name oid for match */
+    Oid edge_label_name_oid;       /* resolved edge label relation */
     agtype *edge_property_constraint; /* edge property constraint as agtype */
-    Datum edge_property_constraint_datum; /* edge property constraint as Datum */
-    uint32 edge_property_constraint_hash; /* edge property constraint hash */
     int64 lidx;                    /* lower (start) bound index */
     int64 uidx;                    /* upper (end) bound index */
     bool uidx_infinite;            /* flag if the upper bound is omitted */
     cypher_rel_dir edge_direction; /* the direction of the edge */
     HTAB *edge_state_hashtable;    /* local state hashtable for our edges */
-    GraphIdStack *dfs_vertex_stack; /* dfs stack for vertices (array-based) */
-    GraphIdStack *dfs_edge_stack;   /* dfs stack for edges (array-based) */
-    GraphIdStack *dfs_path_stack;   /* dfs stack containing the path (array-based) */
+    ListGraphId *dfs_vertex_stack; /* dfs stack for vertices */
+    ListGraphId *dfs_edge_stack;   /* dfs stack for edges */
+    ListGraphId *dfs_path_stack;   /* dfs stack containing the path */
     VLE_path_function path_function; /* which path function to use */
     GraphIdNode *next_vertex;      /* for VLE_FUNCTION_PATHS_TO */
     int64 vle_grammar_node_id;     /* the unique VLE grammar assigned node id */
     bool use_cache;                /* are we using VLE_local_context cache */
     struct VLE_local_context *next;  /* the next chained VLE_local_context */
-    bool is_dirty;                 /* is this VLE context reusable */
+    bool is_dirty;                 /* is this VLE context reusable */    
 } VLE_local_context;
 
 /*
@@ -142,36 +151,6 @@ typedef struct VLE_local_context
  * structure is set up to contains a BINARY container that can be accessed by
  * functions that need to process the path.
  */
-/*
- * Layout (offsets, with int64 alignment):
- *
- *     0:  vl_len_[4]              varlena length header (int32 + pad)
- *     4:  header                  AGT_FBINARY | AGT_FBINARY_TYPE_VLE_PATH
- *     8:  graph_oid               source graph oid
- *    12:  (4 bytes pad)           int64 alignment
- *    16:  graphid_array_size      number of graphids in the path
- *    24:  container_size_bytes    total bytes of this container
- *    32:  start_vid               redundant cache of graphid_array[0]
- *    40:  end_vid                 redundant cache of
- *                                 graphid_array[graphid_array_size - 1]
- *    48:  graphid_array_data      flexible array start
- *
- * start_vid / end_vid are populated whenever the container is built and let
- * downstream consumers (the age_vle SRF's start_id/end_id output columns)
- * read the join endpoints without traversing the (potentially toasted)
- * variadic payload.
- *
- * Persistence note: VLE_path_container is a transient SRF output. It is
- * consumed within the same query that produces it (by the planner-emitted
- * endpoint equalities and by age_materialize_vle_path / _vle_edges) and is
- * never written back to disk. Because no on-disk instance of this layout
- * can exist, adding fields to the struct does not require a binary
- * version bump or a backward-compatible decoder. If a future change ever
- * makes a VLE container persistable (e.g. by allowing it to be returned
- * directly as agtype and stored in a column), the AGT_FBINARY_TYPE_VLE_PATH
- * tag must be versioned and the readers (GET_GRAPHID_ARRAY_FROM_CONTAINER
- * etc.) must branch on the version.
- */
 typedef struct VLE_path_container
 {
     char vl_len_[4]; /* Do not touch this field! */
@@ -179,27 +158,23 @@ typedef struct VLE_path_container
     uint32 graph_oid;
     int64 graphid_array_size;
     int64 container_size_bytes;
-    graphid start_vid;
-    graphid end_vid;
     graphid graphid_array_data;
 } VLE_path_container;
 
 /* declarations */
 
 /* global variable to hold the per process global cached VLE_local contexts */
-static VLE_local_context *global_vle_local_contexts = NULL;
-
-/* agtype functions */
+THR_LOCAL static VLE_local_context *global_vle_local_contexts = NULL;
 static bool is_an_edge_match(VLE_local_context *vlelctx, edge_entry *ee);
-/* VLE local context functions */
 static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
                                                   FuncCallContext *funcctx);
+/* VLE local context functions */
+static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo);
 static void create_VLE_local_state_hashtable(VLE_local_context *vlelctx);
 static void free_VLE_local_context(VLE_local_context *vlelctx);
 /* VLE graph traversal functions */
-static edge_state_entry *get_edge_state_with_hash(VLE_local_context *vlelctx,
-                                                  graphid edge_id,
-                                                  uint32 hashvalue);
+static edge_state_entry *get_edge_state(VLE_local_context *vlelctx,
+                                        graphid edge_id);
 /* graphid data structures */
 static void load_initial_dfs_stacks(VLE_local_context *vlelctx);
 static bool dfs_find_a_path_between(VLE_local_context *vlelctx);
@@ -219,7 +194,152 @@ static agtype_value *build_edge_list(VLE_path_container *vpc);
 static VLE_local_context *get_cached_VLE_local_context(int64 vle_node_id);
 static void cache_VLE_local_context(VLE_local_context *vlelctx);
 
+
+static int extract_variadic_args(FunctionCallInfo fcinfo,
+                                 int variadic_start,
+                                 bool convert_unknown,
+                                 Datum **values,
+                                 Oid **types,
+                                 bool **nulls);
+int extract_variadic_args(FunctionCallInfo fcinfo, int variadic_start,
+                          bool convert_unknown, Datum **args, Oid **types,
+                          bool **nulls)
+{
+    bool		variadic = get_fn_expr_variadic(fcinfo->flinfo);
+    Datum	   *args_res;
+    bool	   *nulls_res;
+    Oid		   *types_res;
+    int			nargs;
+    int        i;
+
+    *args = NULL;
+    *types = NULL;
+    *nulls = NULL;
+
+    if (variadic)
+    {
+        ArrayType  *array_in;
+        Oid			element_type;
+        bool		typbyval;
+        char		typalign;
+        int16		typlen;
+
+        Assert(PG_NARGS() == variadic_start + 1);
+
+        if (PG_ARGISNULL(variadic_start)) {
+            return -1;
+        }
+
+        array_in = PG_GETARG_ARRAYTYPE_P(variadic_start);
+        element_type = ARR_ELEMTYPE(array_in);
+
+        get_typlenbyvalalign(element_type,
+                             &typlen, &typbyval, &typalign);
+        deconstruct_array(array_in, element_type, typlen, typbyval,
+                          typalign, &args_res, &nulls_res,
+                          &nargs);
+
+        /* All the elements of the array have the same type */
+        types_res = (Oid *) palloc0(nargs * sizeof(Oid));
+        for (i = 0; i < nargs; i++)
+            types_res[i] = element_type;
+    }
+    else
+    {
+        nargs = PG_NARGS() - variadic_start;
+        Assert(nargs > 0);
+        nulls_res = (bool *) palloc0(nargs * sizeof(bool));
+        args_res = (Datum *) palloc0(nargs * sizeof(Datum));
+        types_res = (Oid *) palloc0(nargs * sizeof(Oid));
+
+        for (i = 0; i < nargs; i++)
+        {
+            nulls_res[i] = PG_ARGISNULL(i + variadic_start);
+            types_res[i] = get_fn_expr_argtype(fcinfo->flinfo,
+                                               i + variadic_start);
+
+            /*
+             * Turn a constant (more or less literal) value that's of unknown
+             * type into text if required. Unknowns come in as a cstring
+             * pointer. Note: for functions declared as taking type "any", the
+             * parser will not do any type conversion on unknown-type literals
+             * (that is, undecorated strings or NULLs).
+             */
+            if (convert_unknown &&
+                types_res[i] == UNKNOWNOID &&
+                get_fn_expr_arg_stable(fcinfo->flinfo, i + variadic_start))
+            {
+                types_res[i] = TEXTOID;
+
+                if (PG_ARGISNULL(i + variadic_start))
+                    args_res[i] = (Datum) 0;
+                else
+                    args_res[i] =
+                            CStringGetTextDatum(PG_GETARG_POINTER(i + variadic_start));
+            }
+            else
+            {
+                /* no conversion needed, just take the datum as given */
+                args_res[i] = PG_GETARG_DATUM(i + variadic_start);
+            }
+
+            if (!OidIsValid(types_res[i]) ||
+                (convert_unknown && types_res[i] == UNKNOWNOID))
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("could not determine data type for argument %d",
+                                       i + 1)));
+        }
+    }
+
+    /* Fill in results */
+    *args = args_res;
+    *nulls = nulls_res;
+    *types = types_res;
+
+    return nargs;
+}
+
 /* definitions */
+
+/*
+ * Check that a clean cached VLE local context still belongs to the loaded
+ * graph and, if so, promote it (a very basic LRU) to the head of the cache
+ * list. Returns false when the graph cache has been rebuilt since the context
+ * was created, in which case the caller must discard it.
+ */
+static bool revalidate_cached_VLE_local_context(VLE_local_context *vlelctx,
+                                                VLE_local_context *prev)
+{
+    GRAPH_global_context *ggctx = NULL;
+
+    /*
+     * Get the GRAPH global context associated with this local VLE context. We
+     * need to verify it still exists and that the pointer is valid.
+     * Allocators may reuse the same address after a graph context rebuild, so
+     * pointer equality cannot prove that cached DFS state still belongs to the
+     * loaded graph. The generation is the stable identity of a particular
+     * graph-cache instance.
+     */
+    ggctx = find_GRAPH_global_context(vlelctx->graph_oid);
+    if (ggctx == NULL ||
+        vlelctx->graph_generation != get_GRAPH_global_context_generation(ggctx)) {
+        return false;
+    }
+
+    /* if the context isn't at the head of the cache, promote it to the head */
+    if (vlelctx != global_vle_local_contexts) {
+        Assert(prev != NULL);
+        /* adjust the links to cut out the node */
+        prev->next = vlelctx->next;
+        /* point the context to the old head of the list */
+        vlelctx->next = global_vle_local_contexts;
+        /* point the head to this context */
+        global_vle_local_contexts = vlelctx;
+    }
+
+    return true;
+}
 
 /*
  * Helper function to retrieve a cached VLE local context. It will also purge
@@ -244,12 +364,7 @@ static VLE_local_context *get_cached_VLE_local_context(int64 vle_grammar_node_id
             /* set the next pointer to the context that follows */
             next = vlelctx->next;
 
-            /*
-             * Clear (unlink) the previous context's next pointer, if needed.
-             * Also clear prev as we are at the end of available cached contexts
-             * and just purging them off. Remember, this forms a loop that will
-             * exit the while after purging.
-             */
+            /* clear (unlink) the previous context's next pointer, if needed */
             if (prev != NULL)
             {
                 prev->next = NULL;
@@ -269,57 +384,10 @@ static VLE_local_context *get_cached_VLE_local_context(int64 vle_grammar_node_id
         /* if this context belongs to this grammar node */
         if (vlelctx->vle_grammar_node_id == vle_grammar_node_id)
         {
-            /* and isn't dirty */
-            if (vlelctx->is_dirty == false)
-            {
-                GRAPH_global_context *ggctx = NULL;
-
-                /*
-                 * Get the GRAPH global context associated with this local VLE
-                 * context. We need to verify it still exists and that the
-                 * pointer is valid.
-                 */
-                ggctx = find_GRAPH_global_context(vlelctx->graph_oid);
-
-                /*
-                 * If ggctx == NULL, vlelctx is bad and vlelctx needs to be
-                 * removed.
-                 * If ggctx == vlelctx->ggctx, then vlelctx is good.
-                 * If ggctx != vlelctx->ggctx, then vlelctx needs to be updated.
-                 * In the end, vlelctx->ggctx will be set to ggctx.
-                 */
-
-                /*
-                 * If the returned ggctx isn't valid (there was some update to
-                 * the underlying graph), then set it to NULL. This will force a
-                 * rebuild of it.
-                 */
-                if (ggctx != NULL && is_ggctx_invalid(ggctx))
-                {
-                    ggctx = NULL;
-                }
-
-                vlelctx->ggctx = ggctx;
-
-                /*
-                 * If the context is good and isn't at the head of the cache,
-                 * promote it to the head.
-                 */
-                if (ggctx != NULL && vlelctx != global_vle_local_contexts)
-                {
-                    /* adjust the links to cut out the node */
-                    prev->next = vlelctx->next;
-                    /* point the context to the old head of the list */
-                    vlelctx->next = global_vle_local_contexts;
-                    /* point the head to this context */
-                    global_vle_local_contexts = vlelctx;
-                }
-
-                /* if we have a good one, return it. */
-                if (ggctx != NULL)
-                {
-                    return vlelctx;
-                }
+            /* a clean context whose graph is still loaded is good: return it */
+            if (!vlelctx->is_dirty &&
+                revalidate_cached_VLE_local_context(vlelctx, prev)) {
+                return vlelctx;
             }
 
             /* otherwise, clean and remove it, and return NULL */
@@ -367,7 +435,6 @@ static void cache_VLE_local_context(VLE_local_context *vlelctx)
     vlelctx->next = global_vle_local_contexts;
     global_vle_local_contexts = vlelctx;
 }
-
 /* helper function to create the local VLE edge state hashtable. */
 static void create_VLE_local_state_hashtable(VLE_local_context *vlelctx)
 {
@@ -383,7 +450,7 @@ static void create_VLE_local_state_hashtable(VLE_local_context *vlelctx)
     /* get the edge state htab name length */
     elen = strlen(EDGE_STATE_HTAB_NAME);
     /* allocate the space and build the name */
-    eshn = palloc0(elen + glen + 1);
+    eshn = (char *)palloc0(elen + glen + 1);
     /* copy in the name */
     strcpy(eshn, EDGE_STATE_HTAB_NAME);
     /* add in the graph name */
@@ -393,12 +460,13 @@ static void create_VLE_local_state_hashtable(VLE_local_context *vlelctx)
     MemSet(&edge_state_ctl, 0, sizeof(edge_state_ctl));
     edge_state_ctl.keysize = sizeof(int64);
     edge_state_ctl.entrysize = sizeof(edge_state_entry);
-    edge_state_ctl.hash = graphid_hash;
+    edge_state_ctl.hash = tag_hash;
     vlelctx->edge_state_hashtable = hash_create(eshn,
                                                 EDGE_STATE_HTAB_INITIAL_SIZE,
                                                 &edge_state_ctl,
                                                 HASH_ELEM | HASH_FUNCTION);
-    pfree_if_not_null(eshn);
+    pfree(eshn);
+
 }
 
 /*
@@ -420,107 +488,62 @@ static bool is_an_edge_match(VLE_local_context *vlelctx, edge_entry *ee)
     num_edge_property_constraints = AGT_ROOT_COUNT(vlelctx->edge_property_constraint);
 
     /*
-     * Issue #2382: If the user asked for a specific edge label but that label
-     * does not exist in the graph (edge_label_name_oid == InvalidOid while
-     * edge_label_name is non-NULL), no real edge can match. Returning false
-     * here ensures that for VLE patterns like [:NOEXIST*0..N] we do not
-     * traverse arbitrary other-label edges. Zero-hop self-binding is handled
-     * separately via build_VLE_zero_container() so this does not break it.
-     */
-    if (vlelctx->edge_label_name != NULL &&
-        vlelctx->edge_label_name_oid == InvalidOid)
-    {
-        return false;
-    }
-
-    /*
      * We only care about verifying that we have all of the property conditions.
      * We don't care about extra unmatched properties. If there aren't any edge
      * constraints, then the edge passes by default.
      */
-    if (vlelctx->edge_label_name_oid == InvalidOid &&
-        num_edge_property_constraints == 0)
+    if (vlelctx->edge_label_name == NULL && num_edge_property_constraints == 0)
     {
         return true;
     }
 
-    /* get the edge label oid */
-    edge_label_name_oid = get_edge_entry_label_table_oid(ee);
-
     /*
-     * Check for a label constraint. Remember, if the constraint label oid is
-     * InvalidOid, there isn't one. If there is one, they need to match.
+     * A requested label that does not exist can only match the independently
+     * produced zero-hop row. No real edge may satisfy the positive-hop part.
      */
-    if (vlelctx->edge_label_name_oid != InvalidOid &&
+    if (vlelctx->edge_label_name != NULL &&
+        !OidIsValid(vlelctx->edge_label_name_oid))
+    {
+        return false;
+    }
+
+    edge_label_name_oid = get_edge_entry_label_table_oid(ee);
+    if (OidIsValid(vlelctx->edge_label_name_oid) &&
         vlelctx->edge_label_name_oid != edge_label_name_oid)
     {
         return false;
     }
 
-    /*
-     * Fast path: if the label matched (or wasn't constrained) and there
-     * are no property constraints, the edge is a match. This avoids
-     * accessing edge properties entirely for label-only VLE patterns
-     * like [:KNOWS*1..3] which are the common case.
-     */
+    /* A label-only pattern does not need to fetch edge properties. */
     if (num_edge_property_constraints == 0)
     {
         return true;
     }
 
+    /* get our edge's properties */
+    edge_property = DATUM_GET_AGTYPE_P(get_edge_entry_properties(ee));
+    /* get the containers */
+    agtc_edge_property_constraint = &vlelctx->edge_property_constraint->root;
+    agtc_edge_property = &edge_property->root;
+    /* get the number of properties in the edge to be matched */
+    num_edge_properties = AGTYPE_CONTAINER_SIZE(agtc_edge_property);
+
     /*
-     * Fetch edge properties once and cache locally. With thin entries,
-     * get_edge_entry_properties() does a heap_fetch, so we avoid calling
-     * it multiple times for the same edge.
+     * Check to see if the edge_properties object has AT LEAST as many pairs
+     * to compare as the edge_property_constraint object has pairs. If not, it
+     * can't possibly match.
      */
+    if (num_edge_property_constraints > num_edge_properties)
     {
-        Datum edge_props_datum = get_edge_entry_properties(ee);
-
-        edge_property = DATUM_GET_AGTYPE_P(edge_props_datum);
-        agtc_edge_property_constraint = &vlelctx->edge_property_constraint->root;
-        agtc_edge_property = &edge_property->root;
-        num_edge_properties = AGTYPE_CONTAINER_SIZE(agtc_edge_property);
-
-        /*
-         * Check to see if the edge_properties object has AT LEAST as many
-         * pairs to compare as the edge_property_constraint object has pairs.
-         * If not, it can't possibly match.
-         */
-        if (num_edge_property_constraints > num_edge_properties)
-        {
-            return false;
-        }
-
-        /*
-         * If the number of constraints are the same as the number of
-         * properties, then the datums would be the same if they match.
-         */
-        if (num_edge_property_constraints == num_edge_properties)
-        {
-            uint32 edge_props_hash = datum_image_hash(edge_props_datum,
-                                                      false, -1);
-            /* check the hash first */
-            if (vlelctx->edge_property_constraint_hash == edge_props_hash)
-            {
-                /* if the hashes match, check the datum images */
-                if (datum_image_eq(vlelctx->edge_property_constraint_datum,
-                                   edge_props_datum, false, -1))
-                {
-                    return true;
-                }
-            }
-
-            /* if we got here they aren't the same */
-            return false;
-        }
-
-        /* get the iterators */
-        constraint_it = agtype_iterator_init(agtc_edge_property_constraint);
-        property_it = agtype_iterator_init(agtc_edge_property);
-
-        /* return the value of deep contains */
-        return agtype_deep_contains(&property_it, &constraint_it, false);
+        return false;
     }
+
+    /* get the iterators */
+    constraint_it = agtype_iterator_init(agtc_edge_property_constraint);
+    property_it = agtype_iterator_init(agtc_edge_property);
+
+    /* return the value of deep contains */
+    return agtype_deep_contains(&property_it, &constraint_it, false);
 }
 
 /*
@@ -533,7 +556,6 @@ static bool is_an_edge_match(VLE_local_context *vlelctx, edge_entry *ee)
  */
 static void free_VLE_local_context(VLE_local_context *vlelctx)
 {
-    /* if the VLE context is NULL, do nothing */
     if (vlelctx == NULL)
     {
         return;
@@ -542,14 +564,14 @@ static void free_VLE_local_context(VLE_local_context *vlelctx)
     /* free the stored graph name */
     if (vlelctx->graph_name != NULL)
     {
-        pfree_if_not_null(vlelctx->graph_name);
+        pfree(vlelctx->graph_name);
         vlelctx->graph_name = NULL;
     }
 
     /* free the stored edge label name */
     if (vlelctx->edge_label_name != NULL)
     {
-        pfree_if_not_null(vlelctx->edge_label_name);
+        pfree(vlelctx->edge_label_name);
         vlelctx->edge_label_name = NULL;
     }
 
@@ -558,29 +580,28 @@ static void free_VLE_local_context(VLE_local_context *vlelctx)
     vlelctx->edge_state_hashtable = NULL;
 
     /*
-     * Free the DFS stacks. When is_dirty is false, the stacks are in the
-     * current context and need explicit cleanup. When is_dirty is true
-     * (cached context), only free the containers — the contents were
-     * allocated in a volatile SRF context that was already cleaned up.
+     * We need to free the contents of our stacks if the context is not dirty.
+     * These stacks are created in a more volatile memory context. If the
+     * process was interupted, they will be garbage collected by PG. The only
+     * time we will ever clean them here is if the cache isn't being used.
      */
-    if (vlelctx->dfs_vertex_stack != NULL)
+    if (vlelctx->is_dirty == false)
     {
-        free_gid_stack(vlelctx->dfs_vertex_stack);
+        free_graphid_stack(vlelctx->dfs_vertex_stack);
+        free_graphid_stack(vlelctx->dfs_edge_stack);
+        free_graphid_stack(vlelctx->dfs_path_stack);
     }
-    if (vlelctx->dfs_edge_stack != NULL)
-    {
-        free_gid_stack(vlelctx->dfs_edge_stack);
-    }
-    if (vlelctx->dfs_path_stack != NULL)
-    {
-        free_gid_stack(vlelctx->dfs_path_stack);
-    }
+
+    /* free the containers */
+    pfree(vlelctx->dfs_vertex_stack);
+    pfree(vlelctx->dfs_edge_stack);
+    pfree(vlelctx->dfs_path_stack);
     vlelctx->dfs_vertex_stack = NULL;
     vlelctx->dfs_edge_stack = NULL;
     vlelctx->dfs_path_stack = NULL;
 
     /* and finally the context itself */
-    pfree_if_not_null(vlelctx);
+    pfree(vlelctx);
     vlelctx = NULL;
 }
 
@@ -633,8 +654,6 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     VLE_local_context *vlelctx = NULL;
     agtype_value *agtv_temp = NULL;
     agtype_value *agtv_object = NULL;
-    agtype *agt_edge_property_constraint = NULL;
-    Datum d_edge_property_constraint = 0;
     char *graph_name = NULL;
     Oid graph_oid = InvalidOid;
     int64 vle_grammar_node_id = 0;
@@ -642,7 +661,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
 
     /*
      * Get the VLE grammar node id, if it exists. Remember, we overload the
-     * age_vle function, for now, for backwards compatibility
+     * age_vle function, for now, for backwards compatability
      */
     if (PG_NARGS() == 8)
     {
@@ -664,18 +683,18 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
         /*
          * No context change is needed here as the cache entry is in the proper
          * context. Additionally, all of the modifications are either pointers
-         * to objects already in the proper context or primitive types that will
+         * to objects already in the proper context or primative types that will
          * be stored in that context since the memory is allocated there.
          */
 
         /* get and update the start vertex id */
         if (PG_ARGISNULL(1) || is_agtype_null(AG_GET_ARG_AGTYPE_P(1)))
         {
-            /* if there are no more vertices to process, return NULL */
             if (vlelctx->next_vertex == NULL)
             {
                 return NULL;
             }
+
             vlelctx->vsid = get_graphid(vlelctx->next_vertex);
             /* increment to the next vertex */
             vlelctx->next_vertex = next_GraphIdNode(vlelctx->next_vertex);
@@ -742,7 +761,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
      */
     if (use_cache == true)
     {
-        oldctx = MemoryContextSwitchTo(TopMemoryContext);
+        oldctx = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
     }
     else
     {
@@ -764,7 +783,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     ggctx = manage_GRAPH_global_contexts(graph_name, graph_oid);
 
     /* allocate and initialize local VLE context */
-    vlelctx = palloc0(sizeof(VLE_local_context));
+    vlelctx = (VLE_local_context *)palloc0(sizeof(VLE_local_context));
 
     /* store the cache usage */
     vlelctx->use_cache = use_cache;
@@ -778,6 +797,8 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
 
     /* set the global context referenced by this local VLE context */
     vlelctx->ggctx = ggctx;
+    vlelctx->graph_generation =
+        get_GRAPH_global_context_generation(ggctx);
 
     /* initialize the path function */
     vlelctx->path_function = VLE_FUNCTION_PATHS_BETWEEN;
@@ -789,6 +810,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     if (vlelctx->next_vertex == NULL)
     {
         elog(ERROR, "age_vle: empty graph");
+        return vlelctx; /* suppress the static check warmings */
     }
     /*
      * Get the start vertex id - this is an optional parameter and determines
@@ -818,6 +840,7 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("start vertex argument must be a vertex or the integer id")));
+            return vlelctx; /* suppress the static check warmings */
         }
         vlelctx->vsid = agtv_temp->val.int_value;
     }
@@ -862,14 +885,8 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
 
     /* get the edge prototype's property conditions */
     agtv_object = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv_temp, "properties");
-    agt_edge_property_constraint = agtype_value_to_agtype(agtv_object);
-
     /* store the properties as an agtype */
-    vlelctx->edge_property_constraint = agt_edge_property_constraint;
-
-    d_edge_property_constraint = AGTYPE_P_GET_DATUM(agt_edge_property_constraint);
-    vlelctx->edge_property_constraint_datum = d_edge_property_constraint;
-    vlelctx->edge_property_constraint_hash = datum_image_hash(d_edge_property_constraint, false, -1);
+    vlelctx->edge_property_constraint = agtype_value_to_agtype(agtv_object);
 
     /* get the edge prototype's label name */
     agtv_temp = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv_temp, "label");
@@ -878,9 +895,8 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     {
         vlelctx->edge_label_name = pnstrdup(agtv_temp->val.string.val,
                                             agtv_temp->val.string.len);
-
-        vlelctx->edge_label_name_oid = get_label_relation(vlelctx->edge_label_name,
-                                                          graph_oid);
+        vlelctx->edge_label_name_oid =
+            get_label_relation(vlelctx->edge_label_name, vlelctx->graph_oid);
     }
     else
     {
@@ -916,15 +932,15 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
     /* get edge direction */
     agtv_temp = get_agtype_value("age_vle", AG_GET_ARG_AGTYPE_P(6),
                                  AGTV_INTEGER, true);
-    vlelctx->edge_direction = agtv_temp->val.int_value;
+    vlelctx->edge_direction = (cypher_rel_dir)agtv_temp->val.int_value;
 
     /* create the local state hashtable */
     create_VLE_local_state_hashtable(vlelctx);
 
     /* initialize the dfs stacks */
-    vlelctx->dfs_vertex_stack = new_gid_stack();
-    vlelctx->dfs_edge_stack = new_gid_stack();
-    vlelctx->dfs_path_stack = new_gid_stack();
+    vlelctx->dfs_vertex_stack = new_graphid_stack();
+    vlelctx->dfs_edge_stack = new_graphid_stack();
+    vlelctx->dfs_path_stack = new_graphid_stack();
 
     /* load in the starting edge(s) */
     load_initial_dfs_stacks(vlelctx);
@@ -949,24 +965,23 @@ static VLE_local_context *build_local_vle_context(FunctionCallInfo fcinfo,
 }
 
 /*
- * Helper function to get the specified edge's state, using a precomputed hash
- * value. Callers can compute graphid_hash() once and reuse it for lookups in
- * both the dynahash edge_state_hashtable here and the agehash-backed
- * edge_table on the global-graph lookup path elsewhere.
+ * Helper function to get the specified edge's state. If it does not find it, it
+ * creates and initializes it.
  */
-static edge_state_entry *get_edge_state_with_hash(VLE_local_context *vlelctx,
-                                                  graphid edge_id,
-                                                  uint32 hashvalue)
+static edge_state_entry *get_edge_state(VLE_local_context *vlelctx,
+                                        graphid edge_id)
 {
     edge_state_entry *ese = NULL;
     bool found = false;
 
-    ese = (edge_state_entry *)hash_search_with_hash_value(
-                                            vlelctx->edge_state_hashtable,
-                                            (void *)&edge_id, hashvalue,
-                                            HASH_ENTER, &found);
+    /* retrieve the edge_state_entry from the edge state hashtable */
+    ese = (edge_state_entry *)hash_search(vlelctx->edge_state_hashtable,
+                                          (void *)&edge_id, HASH_ENTER, &found);
+
+    /* if it isn't found, it needs to be created and initialized */
     if (!found)
     {
+        /* the edge id is also the hash key for resolving collisions */
         ese->edge_id = edge_id;
         ese->used_in_path = false;
         ese->has_been_matched = false;
@@ -996,7 +1011,7 @@ static graphid get_next_vertex(VLE_local_context *vlelctx, edge_entry *ee)
 
         case CYPHER_REL_DIR_NONE:
         {
-            GraphIdStack *vertex_stack = NULL;
+            ListGraphId *vertex_stack = NULL;
             graphid parent_vertex_id;
 
             vertex_stack = vlelctx->dfs_vertex_stack;
@@ -1005,7 +1020,7 @@ static graphid get_next_vertex(VLE_local_context *vlelctx, edge_entry *ee)
              * as un-directional, where we go to next depends on where we came
              * from. This is because we can go against an edge.
              */
-            parent_vertex_id = gid_stack_peek(vertex_stack);
+            parent_vertex_id = PEEK_GRAPHID_STACK(vertex_stack);
             /* find the terminal vertex */
             if (get_edge_entry_start_vertex_id(ee) == parent_vertex_id)
             {
@@ -1018,6 +1033,7 @@ static graphid get_next_vertex(VLE_local_context *vlelctx, edge_entry *ee)
             else
             {
                 elog(ERROR, "get_next_vertex: no parent match");
+                pg_unreachable();
             }
 
             break;
@@ -1025,6 +1041,7 @@ static graphid get_next_vertex(VLE_local_context *vlelctx, edge_entry *ee)
 
         default:
             elog(ERROR, "get_next_vertex: unknown edge direction");
+            pg_unreachable();
     }
 
     return terminal_vertex_id;
@@ -1044,9 +1061,9 @@ static graphid get_next_vertex(VLE_local_context *vlelctx, edge_entry *ee)
  */
 static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
 {
-    GraphIdStack *vertex_stack = NULL;
-    GraphIdStack *edge_stack = NULL;
-    GraphIdStack *path_stack = NULL;
+    ListGraphId *vertex_stack = NULL;
+    ListGraphId *edge_stack = NULL;
+    ListGraphId *path_stack = NULL;
     graphid end_vertex_id;
 
     Assert(vlelctx != NULL);
@@ -1058,33 +1075,18 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
     end_vertex_id = vlelctx->veid;
 
     /* while we have edges to process */
-    while (!(gid_stack_is_empty(edge_stack)))
+    while (!(IS_GRAPHID_STACK_EMPTY(edge_stack)))
     {
         graphid edge_id;
         graphid next_vertex_id;
         edge_state_entry *ese = NULL;
         edge_entry *ee = NULL;
         bool found = false;
-        uint32 edge_hashvalue;
-
-        /*
-         * Allow this traversal to be cancelled (e.g. by a user Ctrl-C or a
-         * statement_timeout). On a large or densely connected graph this DFS
-         * can run for a long time, so we must yield to interrupt processing
-         * on every iteration.
-         */
-        CHECK_FOR_INTERRUPTS();
 
         /* get an edge, but leave it on the stack for now */
-        edge_id = gid_stack_peek(edge_stack);
-        /*
-         * Compute the hash for edge_id once and reuse it for both the
-         * edge_state_hashtable lookup and (later) the edge_hashtable lookup.
-         * Both tables key on graphid using graphid_hash().
-         */
-        edge_hashvalue = graphid_hash(&edge_id, sizeof(int64));
+        edge_id = PEEK_GRAPHID_STACK(edge_stack);
         /* get the edge's state */
-        ese = get_edge_state_with_hash(vlelctx, edge_id, edge_hashvalue);
+        ese = get_edge_state(vlelctx, edge_id);
         /*
          * If the edge is already in use, it means that the edge is in the path.
          * So, we need to see if it is the last path entry (we are backing up -
@@ -1098,18 +1100,18 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
             graphid path_edge_id;
 
             /* get the edge id on the top of the path stack (last edge) */
-            path_edge_id = gid_stack_peek(path_stack);
+            path_edge_id = PEEK_GRAPHID_STACK(path_stack);
             /*
              * If the ids are the same, we're backing up. So, remove it from the
              * path stack and reset used_in_path.
              */
             if (edge_id == path_edge_id)
             {
-                gid_stack_pop(path_stack);
+                pop_graphid_stack(path_stack);
                 ese->used_in_path = false;
             }
             /* now remove it from the edge stack */
-            gid_stack_pop(edge_stack);
+            pop_graphid_stack(edge_stack);
             /*
              * Remove its source vertex, if we are looking at edges as
              * un-directional. We only maintain the vertex stack when the
@@ -1118,7 +1120,7 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
              */
             if (vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
             {
-                gid_stack_pop(vertex_stack);
+                pop_graphid_stack(vertex_stack);
             }
             /* move to the next edge */
             continue;
@@ -1129,10 +1131,10 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
          * the edge stack as it is already there.
          */
         ese->used_in_path = true;
-        gid_stack_push(path_stack, edge_id);
+        push_graphid_stack(path_stack, edge_id);
 
         /* now get the edge entry so we can get the next vertex to move to */
-        ee = get_edge_entry_with_hash(vlelctx->ggctx, edge_id, edge_hashvalue);
+        ee = get_edge_entry(vlelctx->ggctx, edge_id);
         next_vertex_id = get_next_vertex(vlelctx, ee);
 
         /*
@@ -1140,9 +1142,9 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
          * within the bounds specified?
          */
         if (next_vertex_id == end_vertex_id &&
-            gid_stack_size(path_stack) >= vlelctx->lidx &&
+            get_stack_size(path_stack) >= vlelctx->lidx &&
             (vlelctx->uidx_infinite ||
-             gid_stack_size(path_stack) <= vlelctx->uidx))
+             get_stack_size(path_stack) <= vlelctx->uidx))
         {
             /* we found one */
             found = true;
@@ -1154,14 +1156,14 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
          */
         if (next_vertex_id == end_vertex_id &&
             !vlelctx->uidx_infinite &&
-            gid_stack_size(path_stack) > vlelctx->uidx)
+            get_stack_size(path_stack) > vlelctx->uidx)
         {
             continue;
         }
 
         /* add in the edges for the next vertex if we won't exceed the bounds */
         if (vlelctx->uidx_infinite ||
-            gid_stack_size(path_stack) < vlelctx->uidx)
+            get_stack_size(path_stack) < vlelctx->uidx)
         {
             add_valid_vertex_edges(vlelctx, next_vertex_id);
         }
@@ -1189,9 +1191,9 @@ static bool dfs_find_a_path_between(VLE_local_context *vlelctx)
  */
 static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
 {
-    GraphIdStack *vertex_stack = NULL;
-    GraphIdStack *edge_stack = NULL;
-    GraphIdStack *path_stack = NULL;
+    ListGraphId *vertex_stack = NULL;
+    ListGraphId *edge_stack = NULL;
+    ListGraphId *path_stack = NULL;
 
     Assert(vlelctx != NULL);
 
@@ -1201,33 +1203,18 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
     path_stack = vlelctx->dfs_path_stack;
 
     /* while we have edges to process */
-    while (!(gid_stack_is_empty(edge_stack)))
+    while (!(IS_GRAPHID_STACK_EMPTY(edge_stack)))
     {
         graphid edge_id;
         graphid next_vertex_id;
         edge_state_entry *ese = NULL;
         edge_entry *ee = NULL;
         bool found = false;
-        uint32 edge_hashvalue;
-
-        /*
-         * Allow this traversal to be cancelled (e.g. by a user Ctrl-C or a
-         * statement_timeout). On a large or densely connected graph this DFS
-         * can run for a long time, so we must yield to interrupt processing
-         * on every iteration.
-         */
-        CHECK_FOR_INTERRUPTS();
 
         /* get an edge, but leave it on the stack for now */
-        edge_id = gid_stack_peek(edge_stack);
-        /*
-         * Compute the hash for edge_id once and reuse it for both the
-         * edge_state_hashtable lookup and (later) the edge_hashtable lookup.
-         * Both tables key on graphid using graphid_hash().
-         */
-        edge_hashvalue = graphid_hash(&edge_id, sizeof(int64));
+        edge_id = PEEK_GRAPHID_STACK(edge_stack);
         /* get the edge's state */
-        ese = get_edge_state_with_hash(vlelctx, edge_id, edge_hashvalue);
+        ese = get_edge_state(vlelctx, edge_id);
         /*
          * If the edge is already in use, it means that the edge is in the path.
          * So, we need to see if it is the last path entry (we are backing up -
@@ -1241,18 +1228,18 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
             graphid path_edge_id;
 
             /* get the edge id on the top of the path stack (last edge) */
-            path_edge_id = gid_stack_peek(path_stack);
+            path_edge_id = PEEK_GRAPHID_STACK(path_stack);
             /*
              * If the ids are the same, we're backing up. So, remove it from the
              * path stack and reset used_in_path.
              */
             if (edge_id == path_edge_id)
             {
-                gid_stack_pop(path_stack);
+                pop_graphid_stack(path_stack);
                 ese->used_in_path = false;
             }
             /* now remove it from the edge stack */
-            gid_stack_pop(edge_stack);
+            pop_graphid_stack(edge_stack);
             /*
              * Remove its source vertex, if we are looking at edges as
              * un-directional. We only maintain the vertex stack when the
@@ -1261,7 +1248,7 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
              */
             if (vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
             {
-                gid_stack_pop(vertex_stack);
+                pop_graphid_stack(vertex_stack);
             }
             /* move to the next edge */
             continue;
@@ -1272,19 +1259,19 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
          * the edge stack as it is already there.
          */
         ese->used_in_path = true;
-        gid_stack_push(path_stack, edge_id);
+        push_graphid_stack(path_stack, edge_id);
 
         /* now get the edge entry so we can get the next vertex to move to */
-        ee = get_edge_entry_with_hash(vlelctx->ggctx, edge_id, edge_hashvalue);
+        ee = get_edge_entry(vlelctx->ggctx, edge_id);
         next_vertex_id = get_next_vertex(vlelctx, ee);
 
         /*
          * Is this a path that meets our requirements? Is its length within the
          * bounds specified?
          */
-        if (gid_stack_size(path_stack) >= vlelctx->lidx &&
+        if (get_stack_size(path_stack) >= vlelctx->lidx &&
             (vlelctx->uidx_infinite ||
-             gid_stack_size(path_stack) <= vlelctx->uidx))
+             get_stack_size(path_stack) <= vlelctx->uidx))
         {
             /* we found one */
             found = true;
@@ -1292,7 +1279,7 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
 
         /* add in the edges for the next vertex if we won't exceed the bounds */
         if (vlelctx->uidx_infinite ||
-            gid_stack_size(path_stack) < vlelctx->uidx)
+            get_stack_size(path_stack) < vlelctx->uidx)
         {
             add_valid_vertex_edges(vlelctx, next_vertex_id);
         }
@@ -1314,16 +1301,20 @@ static bool dfs_find_a_path_from(VLE_local_context *vlelctx)
  */
 static bool is_edge_in_path(VLE_local_context *vlelctx, graphid edge_id)
 {
-    GraphIdStack *stack = vlelctx->dfs_path_stack;
-    int64 i;
+    GraphIdNode *edge = NULL;
 
-    /* scan the array-based path stack */
-    for (i = 0; i < gid_stack_size(stack); i++)
+    /* start at the top of the stack */
+    edge = peek_stack_head(vlelctx->dfs_path_stack);
+
+    /* go through the path stack, return true if we find the edge */
+    while (edge != NULL)
     {
-        if (gid_stack_get(stack, i) == edge_id)
+        if (get_graphid(edge) == edge_id)
         {
             return true;
         }
+        /* get the next stack element */
+        edge = next_GraphIdNode(edge);
     }
     /* we didn't find it if we get here */
     return false;
@@ -1338,52 +1329,20 @@ static bool is_edge_in_path(VLE_local_context *vlelctx, graphid edge_id)
  *     3) Edge matches minimum edge properties specified.
  *
  * Note: The vertex must exist.
+  * Note: The vertex must exist.
  */
-/*
- * Batched candidate buffer size for the adjacency lookup pipeline below.
- * 8 was chosen because it comfortably fits within the OoO window and the
- * per-core L1 MSHR count of modern Xeons (12+), so the K back-to-back
- * hashtable misses overlap in a single MLP wave.
- */
-#define VLE_LOOKUP_BATCH 8
-
 static void add_valid_vertex_edges(VLE_local_context *vlelctx,
                                    graphid vertex_id)
 {
-    GraphIdStack *vertex_stack = NULL;
-    GraphIdStack *edge_stack = NULL;
+    ListGraphId *vertex_stack = NULL;
+    ListGraphId *edge_stack = NULL;
+    VertexEdgeArray *edges_out = NULL;
+    VertexEdgeArray *edges_in = NULL;
+    VertexEdgeArray *edges_self = NULL;
     vertex_entry *ve = NULL;
-    /*
-     * Three flat-array adjacency lists, walked in parallel via integer
-     * indices. An empty (or direction-disabled) list has size == 0 so its
-     * branch never fires. This replaces the previous GraphIdNode pointer
-     * walk with a contiguous-memory traversal — significantly better for
-     * cache and branch-predictor behaviour on the DFS hot path.
-     */
-    graphid *arr_out = NULL;
-    int32    sz_out = 0;
-    int32    idx_out = 0;
-    graphid *arr_in = NULL;
-    int32    sz_in = 0;
-    int32    idx_in = 0;
-    graphid *arr_self = NULL;
-    int32    sz_self = 0;
-    int32    idx_self = 0;
-    VertexEdgeArray *vea = NULL;
-
-    /*
-     * Per-batch scratch arrays for the MLP lookup pipeline. Each iteration
-     * gathers up to VLE_LOOKUP_BATCH not-already-in-path candidate edges,
-     * then issues their edge_table (agehash) and edge_state_hashtable
-     * (dynahash) lookups in two tight back-to-back loops. The CPU's
-     * out-of-order engine overlaps the K independent cache misses inside
-     * each loop, hiding memory latency that the original one-edge-at-a-time
-     * loop serialized.
-     */
-    graphid           batch_eids[VLE_LOOKUP_BATCH];
-    uint32            batch_hashes[VLE_LOOKUP_BATCH];
-    edge_entry       *batch_ee[VLE_LOOKUP_BATCH];
-    edge_state_entry *batch_ese[VLE_LOOKUP_BATCH];
+    int32 out_idx = 0;
+    int32 in_idx = 0;
+    int32 self_idx = 0;
 
     /* get the vertex entry */
     ve = get_vertex_entry(vlelctx->ggctx, vertex_id);
@@ -1391,134 +1350,82 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
     if (ve == NULL)
     {
         elog(ERROR, "add_valid_vertex_edges: no vertex found");
+        return; /* suppress the static check warmings */
     }
 
     /* point to stacks */
     vertex_stack = vlelctx->dfs_vertex_stack;
     edge_stack = vlelctx->dfs_edge_stack;
 
-    /* set up walked arrays for the requested direction(s) */
+    /*
+     * Point to the flat edge arrays for the specified direction. The arrays
+     * are walked by index below; an unused direction is left NULL so it
+     * contributes no edges.
+     */
     if (vlelctx->edge_direction == CYPHER_REL_DIR_RIGHT ||
         vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
     {
-        vea = get_vertex_entry_edges_out_array(ve);
-        arr_out = vea->array;
-        sz_out  = vea->size;
+        edges_out = get_vertex_entry_edges_out_array(ve);
     }
     if (vlelctx->edge_direction == CYPHER_REL_DIR_LEFT ||
         vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
     {
-        vea = get_vertex_entry_edges_in_array(ve);
-        arr_in = vea->array;
-        sz_in  = vea->size;
+        edges_in = get_vertex_entry_edges_in_array(ve);
     }
-    /* selfloops are always traversed */
-    vea = get_vertex_entry_edges_self_array(ve);
-    arr_self = vea->array;
-    sz_self  = vea->size;
+    /* self-loop edges are always traversed */
+    edges_self = get_vertex_entry_edges_self_array(ve);
 
-    /*
-     * Outer loop: drain the three flat arrays via a 5-phase pipeline.
-     *   1. Gather: pull up to VLE_LOOKUP_BATCH next edge_ids that survive
-     *      the cheap is_edge_in_path() early-skip.
-     *   2. Hash:   compute graphid_hash for the batch (pure compute).
-     *   3. Lookup: K back-to-back edge_table (agehash) lookups via
-     *      get_edge_entry_with_hash() — MLP window 1 (the CPU overlaps
-     *      the K slot misses).
-     *   4. State:  K back-to-back edge_state_hashtable (dynahash) HASH_ENTER
-     *      calls — MLP window 2 (different table, different bucket misses).
-     *   5. Apply:  per-edge match/state-update/stack-push, now operating
-     *      on cache-warm ee/ese pointers.
-     * Phase 5 preserves the exact processing order of the original loop
-     * (out direction first, then in, then self), so DFS stack ordering and
-     * therefore path enumeration are identical to the previous version.
-     */
-    while (idx_out < sz_out || idx_in < sz_in || idx_self < sz_self)
+    /* add in valid vertex edges, walking out, then in, then self arrays */
+    while ((edges_out != NULL && out_idx < edges_out->size) ||
+           (edges_in != NULL && in_idx < edges_in->size) ||
+           (edges_self != NULL && self_idx < edges_self->size))
     {
-        int batch_n = 0;
-        int i;
+        edge_entry *ee = NULL;
+        edge_state_entry *ese = NULL;
+        graphid edge_id;
 
-        /* Phase 1: gather */
-        while (batch_n < VLE_LOOKUP_BATCH &&
-               (idx_out < sz_out || idx_in < sz_in || idx_self < sz_self))
-        {
-            graphid edge_id;
-
-            if (idx_out < sz_out)
-            {
-                edge_id = arr_out[idx_out++];
-            }
-            else if (idx_in < sz_in)
-            {
-                edge_id = arr_in[idx_in++];
-            }
-            else
-            {
-                edge_id = arr_self[idx_self++];
-            }
-
-            /*
-             * Fast early-skip when the path stack is small: avoids two
-             * hashtable lookups for edges already on the path.
-             */
-            if (gid_stack_size(vlelctx->dfs_path_stack) < 10 &&
-                is_edge_in_path(vlelctx, edge_id))
-            {
-                continue;
-            }
-
-            batch_eids[batch_n++] = edge_id;
+        /* get the edge_id from the next available edge */
+        if (edges_out != NULL && out_idx < edges_out->size) {
+            edge_id = edges_out->array[out_idx];
+        } else if (edges_in != NULL && in_idx < edges_in->size) {
+            edge_id = edges_in->array[in_idx];
+        } else {
+            edge_id = edges_self->array[self_idx];
         }
 
-        if (batch_n == 0)
+        /*
+         * This is a fast existence check, relative to the hash search, for when
+         * the path stack is small. If the edge is in the path, we skip it.
+         */
+        if (get_stack_size(vlelctx->dfs_path_stack) < 10 &&
+            is_edge_in_path(vlelctx, edge_id))
         {
-            break;
-        }
-
-        /* Phase 2: compute hashes (pure compute, no misses) */
-        for (i = 0; i < batch_n; i++)
-        {
-            batch_hashes[i] = graphid_hash(&batch_eids[i], sizeof(int64));
-        }
-
-        /* Phase 3: K back-to-back edge_table (agehash) lookups (MLP wave 1) */
-        for (i = 0; i < batch_n; i++)
-        {
-            batch_ee[i] = get_edge_entry_with_hash(vlelctx->ggctx,
-                                                   batch_eids[i],
-                                                   batch_hashes[i]);
-        }
-
-        /* Phase 4: K back-to-back edge_state_hashtable lookups (MLP wave 2) */
-        for (i = 0; i < batch_n; i++)
-        {
-            batch_ese[i] = get_edge_state_with_hash(vlelctx,
-                                                    batch_eids[i],
-                                                    batch_hashes[i]);
-        }
-
-        /* Phase 5: process the batch sequentially */
-        for (i = 0; i < batch_n; i++)
-        {
-            edge_entry       *ee  = batch_ee[i];
-            edge_state_entry *ese = batch_ese[i];
-            graphid           edge_id = batch_eids[i];
-
-            /* it better exist */
-            if (ee == NULL)
-            {
-                elog(ERROR, "add_valid_vertex_edges: no edge found");
+            /* advance the next available edge cursor */
+            if (edges_out != NULL && out_idx < edges_out->size) {
+                out_idx = out_idx + 1;
+            } else if (edges_in != NULL && in_idx < edges_in->size) {
+                in_idx = in_idx + 1;
+            } else {
+                self_idx = self_idx + 1;
             }
+            continue;
+        }
 
-            /*
-             * Don't add any edges that we have already seen because they
-             * will cause a loop to form.
-             */
-            if (ese->used_in_path)
-            {
-                continue;
-            }
-
+        /* get the edge entry */
+        ee = get_edge_entry(vlelctx->ggctx, edge_id);
+        /* it better exist */
+        if (ee == NULL)
+        {
+            elog(ERROR, "add_valid_vertex_edges: no edge found");
+        }
+        /* get its state */
+        ese = get_edge_state(vlelctx, edge_id);
+        /*
+         * Don't add any edges that we have already seen because they will
+         * cause a loop to form.
+         */
+        if (!ese->used_in_path)
+        {
             /* validate the edge if it hasn't been already */
             if (!ese->has_been_matched && is_an_edge_match(vlelctx, ee))
             {
@@ -1530,27 +1437,35 @@ static void add_valid_vertex_edges(VLE_local_context *vlelctx,
                 ese->has_been_matched = true;
                 ese->matched = false;
             }
-
             /* if it is a match, add it */
             if (ese->has_been_matched && ese->matched)
             {
                 /*
-                 * We need to maintain our source vertex for each edge
-                 * added if the edge_direction is CYPHER_REL_DIR_NONE. This
-                 * is due to the edges having a fixed direction and the dfs
+                 * We need to maintain our source vertex for each edge added
+                 * if the edge_direction is CYPHER_REL_DIR_NONE. This is due
+                 * to the edges having a fixed direction and the dfs
                  * algorithm working strictly through edges. With an
                  * un-directional VLE edge, you don't know the vertex that
                  * you just came from. So, we need to store it.
                  */
-                if (vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
-                {
-                    gid_stack_push(vertex_stack, get_vertex_entry_id(ve));
-                }
-                gid_stack_push(edge_stack, edge_id);
+                 if (vlelctx->edge_direction == CYPHER_REL_DIR_NONE)
+                 {
+                     push_graphid_stack(vertex_stack, get_vertex_entry_id(ve));
+                 }
+                 push_graphid_stack(edge_stack, edge_id);
             }
+        }
+        /* advance to the next working edge */
+        if (edges_out != NULL && out_idx < edges_out->size) {
+            out_idx = out_idx + 1;
+        } else if (edges_in != NULL && in_idx < edges_in->size) {
+            in_idx = in_idx + 1;
+        } else {
+            self_idx = self_idx + 1;
         }
     }
 }
+
 
 /*
  * Helper function to create the VLE path container that holds the graphid array
@@ -1570,16 +1485,14 @@ static VLE_path_container *create_VLE_path_container(int64 path_size)
      *     One for both the header and graph oid (they are both 32 bits).
      *     One for the size of the graphid_array_size.
      *     One for the container_size_bytes.
-     *     One for start_vid (Stage 1: inline endpoint cache).
-     *     One for end_vid   (Stage 1: inline endpoint cache).
      *
      */
-    container_size_bytes = sizeof(graphid) * (path_size + 6);
+    container_size_bytes = sizeof(graphid) * (path_size + 4);
 
     /* allocate the container */
-    vpc = palloc0(container_size_bytes);
+    vpc = (VLE_path_container *) palloc0(container_size_bytes);
 
-    /* initialize the PG headers */
+    /* initialze the PG headers */
     SET_VARSIZE(vpc, container_size_bytes);
 
     /* initialize the container */
@@ -1620,13 +1533,13 @@ static VLE_path_container *create_VLE_path_container(int64 path_size)
 
 static VLE_path_container *build_VLE_path_container(VLE_local_context *vlelctx)
 {
-    GraphIdStack *stack = vlelctx->dfs_path_stack;
+    ListGraphId *stack = vlelctx->dfs_path_stack;
     VLE_path_container *vpc = NULL;
     graphid *graphid_array = NULL;
+    GraphIdNode *edge = NULL;
     graphid vid = 0;
     int index = 0;
     int ssize = 0;
-    int j = 0;
 
     if (stack == NULL)
     {
@@ -1634,7 +1547,7 @@ static VLE_path_container *build_VLE_path_container(VLE_local_context *vlelctx)
     }
 
     /* allocate the graphid array */
-    ssize = gid_stack_size(stack);
+    ssize = get_stack_size(stack);
 
     /*
      * Create the container. Note that the path size will always be 2 times the
@@ -1652,21 +1565,25 @@ static VLE_path_container *build_VLE_path_container(VLE_local_context *vlelctx)
     vid = vlelctx->vsid;
     graphid_array[0] = vid;
 
+    /* get the head of the stack */
+    edge = peek_stack_head(stack);
+
     /*
-     * Fill in edge entries from the back to the front. The path stack
-     * is array-based with index 0 = bottom (first pushed) and
-     * index size-1 = top (last pushed). We iterate from top to bottom
-     * to fill the graphid_array from back to front.
+     * We need to fill in the array from the back to the front. This is due
+     * to the order of the path stack - last in first out. Remember that the
+     * last entry is a vertex.
      */
     index = vpc->graphid_array_size - 2;
 
-    for (j = ssize - 1; j >= 0; j--)
+    /* copy while we have an edge to copy */
+    while (edge != NULL)
     {
         /* 0 is the vsid, we should never get here */
         Assert(index > 0);
 
-        /* store the edge from stack position j */
-        graphid_array[index] = gid_stack_get(stack, j);
+        /* store and set to the next edge */
+        graphid_array[index] = get_graphid(edge);
+        edge = next_GraphIdNode(edge);
 
         /* we need to skip over the interior vertices */
         index -= 2;
@@ -1684,13 +1601,6 @@ static VLE_path_container *build_VLE_path_container(VLE_local_context *vlelctx)
         graphid_array[index+1] = vid;
     }
 
-    /*
-     * Stage 1: cache endpoints in the fixed header so the join qual can read
-     * them without touching the (possibly toasted) graphid array.
-     */
-    vpc->start_vid = graphid_array[0];
-    vpc->end_vid = graphid_array[vpc->graphid_array_size - 1];
-
     /* return the container */
     return vpc;
 }
@@ -1698,14 +1608,12 @@ static VLE_path_container *build_VLE_path_container(VLE_local_context *vlelctx)
 /* helper function to build a VPC for just the start vertex */
 static VLE_path_container *build_VLE_zero_container(VLE_local_context *vlelctx)
 {
-    GraphIdStack *stack = vlelctx->dfs_path_stack;
+    ListGraphId *stack = vlelctx->dfs_path_stack;
     VLE_path_container *vpc = NULL;
     graphid *graphid_array = NULL;
     graphid vid = 0;
 
-    /* we should have an empty stack */
-    if (gid_stack_size(stack) != 0)
-    {
+    if (get_stack_size(stack) != 0) {
         ereport(ERROR,
                 (errcode(ERRCODE_DATA_EXCEPTION),
                  errmsg("build_VLE_zero_container: stack is not empty")));
@@ -1726,12 +1634,6 @@ static VLE_path_container *build_VLE_zero_container(VLE_local_context *vlelctx)
     /* get and store the start vertex */
     vid = vlelctx->vsid;
     graphid_array[0] = vid;
-
-    /*
-     * Stage 1: zero-edge container; start and end are both the start vertex.
-     */
-    vpc->start_vid = vid;
-    vpc->end_vid = vid;
 
     return vpc;
 }
@@ -1926,7 +1828,7 @@ static agtype_value *build_path(VLE_path_container *vpc)
  * structures that are not meant to last between SRFs.
  */
 PG_FUNCTION_INFO_V1(age_vle);
-
+extern "C" Datum  age_vle(PG_FUNCTION_ARGS);
 Datum age_vle(PG_FUNCTION_ARGS)
 {
     FuncCallContext *funcctx;
@@ -1952,34 +1854,8 @@ Datum age_vle(PG_FUNCTION_ARGS)
         /* create a function context for cross-call persistence */
         funcctx = SRF_FIRSTCALL_INIT();
 
-        /*
-         * S4: capture the result tuple descriptor.  age_vle now emits a
-         * composite (edges, start_id, end_id) row, so we need a blessed
-         * TupleDesc that survives across SRF calls.
-         */
-        {
-            TupleDesc      tupdesc;
-            MemoryContext  tdesc_oldctx;
-
-            tdesc_oldctx = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
-            if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
-            {
-                ereport(ERROR,
-                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                         errmsg("age_vle: function returning record called in context that cannot accept type record")));
-            }
-            funcctx->tuple_desc = BlessTupleDesc(tupdesc);
-            MemoryContextSwitchTo(tdesc_oldctx);
-        }
-
         /* build the local vle context */
         vlelctx = build_local_vle_context(fcinfo, funcctx);
-
-        /*
-         * If the context is NULL, there are no paths to find.
-         * This can happen when a cached VLE context has exhausted
-         * its vertex list (e.g., from a NULL OPTIONAL MATCH variable).
-         */
         if (vlelctx == NULL)
         {
             SRF_RETURN_DONE(funcctx);
@@ -2104,24 +1980,8 @@ Datum age_vle(PG_FUNCTION_ARGS)
             vpc = build_VLE_zero_container(vlelctx);
         }
 
-        /*
-         * S4: emit a composite (edges, start_id, end_id) row.  The
-         * scalar endpoint columns let the cypher transformer (S5)
-         * rewrite terminal-edge quals as integer equalities, removing
-         * the per-row age_match_vle_terminal_edge function call.
-         */
-        {
-            Datum     values[3];
-            bool      nulls[3] = {false, false, false};
-            HeapTuple tuple;
-
-            values[0] = PointerGetDatum(vpc);
-            values[1] = GRAPHID_GET_DATUM(vpc->start_vid);
-            values[2] = GRAPHID_GET_DATUM(vpc->end_vid);
-
-            tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
-            SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
-        }
+        /* return the result and signal that the function is not yet done */
+        SRF_RETURN_NEXT(funcctx, PointerGetDatum(vpc));
     }
     /* otherwise, we are done and we need to cleanup and signal done */
     else
@@ -2146,19 +2006,8 @@ Datum age_vle(PG_FUNCTION_ARGS)
  */
 agtype *agt_materialize_vle_path(agtype *agt_arg_vpc)
 {
-    agtype *agt_path = NULL;
-    agtype_value *agtv_path = NULL;
-
-    /* get the path */
-    agtv_path = agtv_materialize_vle_path(agt_arg_vpc);
-
-    /* convert  agtype_value to agtype */
-    agt_path = agtype_value_to_agtype(agtv_path);
-
-    /* free in memory path */
-    pfree_agtype_value(agtv_path);
-
-    return agt_path;
+    /* convert the agtype_value to agtype and return it */
+    return agtype_value_to_agtype(agtv_materialize_vle_path(agt_arg_vpc));
 }
 
 /*
@@ -2192,43 +2041,72 @@ agtype_value *agtv_materialize_vle_path(agtype *agt_arg_vpc)
     return agtv_path;
 }
 
-/*
- * age_match_two_vle_edges and age_match_vle_terminal_edge are retained as
- * stub C symbols only.  The cypher transformer no longer emits calls to
- * either function: terminal-edge match quals are now plain graphid
- * equalities on the age_vle SRF's start_id/end_id output columns
- * (Stages S4/S5/S6 of the VLE terminal-qual rewrite).
- *
- * The corresponding SQL declarations have been removed from fresh
- * installs (sql/agtype_typecast.sql) and are DROP'd by the upgrade
- * script (age--1.7.0--y.y.y.sql).  These C entry points exist solely so
- * the upgrade-test machinery, which loads an older "1.7.0_initial" SQL
- * snapshot against the current age.so, can resolve the symbols before
- * the immediate ALTER EXTENSION UPDATE drops them.  They should never
- * be reachable from any committed SQL path.
- */
+/* PG function to match 2 VLE edges */
 PG_FUNCTION_INFO_V1(age_match_two_vle_edges);
-
+extern "C" Datum  age_match_two_vle_edges(PG_FUNCTION_ARGS);
 Datum age_match_two_vle_edges(PG_FUNCTION_ARGS)
 {
-    ereport(ERROR,
-        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-         errmsg("age_match_two_vle_edges() is removed; "
-                "VLE endpoint matching is now handled by the planner via "
-                "the age_vle SRF's start_id/end_id output columns")));
-    PG_RETURN_BOOL(false);
+    agtype *agt_arg_vpc = NULL;
+    VLE_path_container *left_path = NULL, *right_path = NULL;
+    graphid *left_array, *right_array;
+    int left_array_size;
+
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    /* get the VLE_path_container argument */
+    agt_arg_vpc = AG_GET_ARG_AGTYPE_P(0);
+    if (!AGT_ROOT_IS_BINARY(agt_arg_vpc) ||
+        AGT_ROOT_BINARY_FLAGS(agt_arg_vpc) != AGT_FBINARY_TYPE_VLE_PATH)
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+            errmsg("argument 1 of age_match_two_vle_edges must be a VLE_Path_Container")));
+    }
+
+    /* cast argument as a VLE_Path_Container and extract graphid array */
+    left_path = (VLE_path_container *)agt_arg_vpc;
+    left_array_size = left_path->graphid_array_size;
+    left_array = GET_GRAPHID_ARRAY_FROM_CONTAINER(left_path);
+
+    agt_arg_vpc = AG_GET_ARG_AGTYPE_P(1);
+
+    if (!AGT_ROOT_IS_BINARY(agt_arg_vpc) ||
+        AGT_ROOT_BINARY_FLAGS(agt_arg_vpc) != AGT_FBINARY_TYPE_VLE_PATH)
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+            errmsg("argument 2 of age_match_two_vle_edges must be a VLE_Path_Container")));
+    }
+
+    /* cast argument as a VLE_Path_Container and extract graphid array */
+    right_path = (VLE_path_container *)agt_arg_vpc;
+    right_array = GET_GRAPHID_ARRAY_FROM_CONTAINER(right_path);
+
+    if (left_array[left_array_size - 1] != right_array[0])
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    PG_RETURN_BOOL(true);
 }
 
 /*
  * This function is used when we need to know if the passed in id is at the end
- * of a path. The first arg is the path, the second is the vertex id to check and
- * the last is a boolean that says whether to check the start or the end of the
+ * of a path. The first arg is the path the second is the vertex id to check and
+ * the last is a boolean that syas whether to check the start or the end of the
  * vle path.
  */
 PG_FUNCTION_INFO_V1(age_match_vle_edge_to_id_qual);
-
+extern "C" Datum  age_match_vle_edge_to_id_qual(PG_FUNCTION_ARGS);
 Datum age_match_vle_edge_to_id_qual(PG_FUNCTION_ARGS)
 {
+    int nargs = 0;
+    Datum *args = NULL;
+    bool *nulls = NULL;
+    Oid *types = NULL;
     agtype *agt_arg_vpc = NULL;
     agtype *edge_id = NULL;
     agtype *pos_agt = NULL;
@@ -2237,28 +2115,23 @@ Datum age_match_vle_edge_to_id_qual(PG_FUNCTION_ARGS)
     graphid *array = NULL;
     bool vle_is_on_left = false;
     graphid gid = 0;
-    Oid type1;
 
-    /* check argument count */
-    if (PG_NARGS() != 3)
+    /* extract argument values */
+    nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
+
+    if (nargs != 3)
     {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("age_match_vle_edge_to_id_qual() invalid number of arguments")));
     }
 
-    /*
-     * If any argument is NULL, return FALSE. This can occur in
-     * OPTIONAL MATCH (LEFT JOIN) contexts where a preceding clause
-     * produced no results.
-     */
-    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2))
+    if (nulls[0] || nulls[1] || nulls[2])
     {
         PG_RETURN_BOOL(false);
     }
 
     /* get the VLE_path_container argument */
-    agt_arg_vpc = DATUM_GET_AGTYPE_P(PG_GETARG_DATUM(0));
-
+    agt_arg_vpc = DATUM_GET_AGTYPE_P(args[0]);
     if (!AGT_ROOT_IS_BINARY(agt_arg_vpc) ||
         AGT_ROOT_BINARY_FLAGS(agt_arg_vpc) != AGT_FBINARY_TYPE_VLE_PATH)
     {
@@ -2271,23 +2144,11 @@ Datum age_match_vle_edge_to_id_qual(PG_FUNCTION_ARGS)
     vle_path = (VLE_path_container *)agt_arg_vpc;
     array = GET_GRAPHID_ARRAY_FROM_CONTAINER(vle_path);
 
-    /*
-     * Get arg type for argument 1 — cache in fn_extra to avoid
-     * repeated expression type resolution.
-     */
-    if (fcinfo->flinfo->fn_extra == NULL)
-    {
-        Oid *cached_type = MemoryContextAlloc(fcinfo->flinfo->fn_mcxt,
-                                               sizeof(Oid));
-        *cached_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
-        fcinfo->flinfo->fn_extra = cached_type;
-    }
-    type1 = *(Oid *)fcinfo->flinfo->fn_extra;
-
-    if (type1 == AGTYPEOID)
+    if (types[1] == AGTYPEOID)
     {
         /* Get the edge id we are checking the end of the list too */
         edge_id = AG_GET_ARG_AGTYPE_P(1);
+
         if (!AGT_ROOT_IS_SCALAR(edge_id))
         {
             ereport(ERROR,
@@ -2306,15 +2167,17 @@ Datum age_match_vle_edge_to_id_qual(PG_FUNCTION_ARGS)
 
         gid = id->val.int_value;
     }
-    else if (type1 == GRAPHIDOID)
+    else if (types[1] == GRAPHIDOID)
     {
-        gid = DATUM_GET_GRAPHID(PG_GETARG_DATUM(1));
+
+        gid = DATUM_GET_GRAPHID(args[1]);
+
     }
     else
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                 errmsg("match_vle_terminal_edge() argument 1 must be an agtype integer or a graphid")));
+                 errmsg("match_vle_terminal_edge() arguement 1 must be an agtype integer or a graphid")));
     }
 
     pos_agt = AG_GET_ARG_AGTYPE_P(2);
@@ -2397,13 +2260,14 @@ agtype_value *agtv_materialize_vle_edges(agtype *agt_arg_vpc)
     /* build the AGTV_ARRAY of edges from the VLE_path_container */
     agtv_array = build_edge_list(vpc);
 
+    /* convert the agtype_value to agtype and return it */
     return agtv_array;
-
 }
+
 
 /* PG wrapper function for agtv_materialize_vle_edges */
 PG_FUNCTION_INFO_V1(age_materialize_vle_edges);
-
+extern "C" Datum  age_materialize_vle_edges(PG_FUNCTION_ARGS);
 Datum age_materialize_vle_edges(PG_FUNCTION_ARGS)
 {
     agtype *agt_arg_vpc = NULL;
@@ -2425,13 +2289,84 @@ Datum age_materialize_vle_edges(PG_FUNCTION_ARGS)
     }
 
     agtv_array = agtv_materialize_vle_edges(agt_arg_vpc);
-
     PG_RETURN_POINTER(agtype_value_to_agtype(agtv_array));
 }
 
-/* PG wrapper function for age_materialize_vle_path */
-PG_FUNCTION_INFO_V1(age_materialize_vle_path);
+/* PG wrapper function for agtv_materialize_vle_edges */
+PG_FUNCTION_INFO_V1(age_materialize_vle_edges_arr);
+extern "C" Datum  age_materialize_vle_edges_arr(PG_FUNCTION_ARGS);
+Datum age_materialize_vle_edges_arr(PG_FUNCTION_ARGS)
+{
+    agtype *agt_arg_vpc = NULL;
+    agtype_value *agtv_array = NULL;
 
+    /* if we have a NULL VLE_path_container, return NULL */
+    if (PG_ARGISNULL(0))
+    {
+        PG_RETURN_NULL();
+    }
+
+    /* get the VLE_path_container argument */
+    agt_arg_vpc = AG_GET_ARG_AGTYPE_P(0);
+
+    /* if NULL, return NULL */
+    if (is_agtype_null(agt_arg_vpc))
+    {
+        PG_RETURN_NULL();
+    }
+
+    if((agt_arg_vpc->root.header & (AGT_FARRAY | AGT_FOBJECT)) != 0){
+
+        agtype_value *agtv_value = NULL;
+        agtype_parse_state *parse_state = NULL;
+        agtype_value elem = {};
+        agtype_iterator *it = NULL;
+        agtv_value = push_agtype_value(&parse_state, WAGT_BEGIN_ARRAY, NULL);
+
+        while ((it = get_next_list_element(it, &agt_arg_vpc->root, &elem)))
+        {
+            agtv_value = push_agtype_value(&parse_state, WAGT_ELEM, &elem);
+        }
+
+        agtv_value = push_agtype_value(&parse_state, WAGT_END_ARRAY, NULL);
+        agtv_value->type = AGTV_ARRAY;
+        PG_RETURN_POINTER(agtype_value_to_agtype(agtv_value));
+      
+    }else{
+        Datum	   *args_res;
+        bool	   *nulls_res;
+        Oid		   *types_res;
+        int			mynargs;
+
+        ArrayType  *array_in;
+        Oid			element_type;
+
+        agtype_value *agtv_value = NULL;
+
+        array_in = PG_GETARG_ARRAYTYPE_P(0);
+        element_type = ARR_ELEMTYPE(array_in);
+
+        deconstruct_array(array_in, element_type, -1, false,
+                        'i', &args_res, &nulls_res,
+                        &mynargs);
+
+        agtype_parse_state *parse_state = NULL;
+        push_agtype_value(&parse_state, WAGT_BEGIN_ARRAY, NULL);
+
+        for (int i = 0 ; i< mynargs; i ++)   {
+            agtype_value *   agtv_edge = get_ith_agtype_value_from_container(&(DATUM_GET_AGTYPE_P((args_res[i])))->root, 0);
+            push_agtype_value(&parse_state, WAGT_ELEM,agtv_edge);
+        }
+
+        agtv_value = push_agtype_value(&parse_state, WAGT_END_ARRAY, NULL);
+        agtv_value->type = AGTV_ARRAY;
+        PG_RETURN_POINTER(agtype_value_to_agtype(agtv_value));
+    }
+}
+
+/* PG wrapper function for agt_materialize_vle_path */
+PG_FUNCTION_INFO_V1(age_materialize_vle_path);
+extern "C" Datum  age_materialize_vle_path(PG_FUNCTION_ARGS);
 Datum age_materialize_vle_path(PG_FUNCTION_ARGS)
 {
     agtype *agt_arg_vpc = NULL;
@@ -2454,22 +2389,311 @@ Datum age_materialize_vle_path(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(agt_materialize_vle_path(agt_arg_vpc));
 }
 
-/* Stub: see comment on age_match_two_vle_edges above. */
+/*
+ * PG function to take a VLE_path_container and return whether the supplied end
+ * vertex (target/veid) matches against the last edge in the VLE path. The VLE
+ * path is encoded in a BINARY container.
+ */
 PG_FUNCTION_INFO_V1(age_match_vle_terminal_edge);
-
+extern "C" Datum  age_match_vle_terminal_edge(PG_FUNCTION_ARGS);
 Datum age_match_vle_terminal_edge(PG_FUNCTION_ARGS)
 {
-    ereport(ERROR,
-        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-         errmsg("age_match_vle_terminal_edge() is removed; "
-                "VLE endpoint matching is now handled by the planner via "
-                "the age_vle SRF's start_id/end_id output columns")));
-    PG_RETURN_BOOL(false);
+    int nargs = 0;
+    Datum *args = NULL;
+    bool *nulls = NULL;
+    Oid *types = NULL;
+    VLE_path_container *vpc = NULL;
+    agtype *agt_arg_vsid = NULL;
+    agtype *agt_arg_veid = NULL;
+    agtype *agt_arg_path = NULL;
+    agtype_value *agtv_temp = NULL;
+    graphid vsid = 0;
+    graphid veid = 0;
+    graphid *gida = NULL;
+    int gidasize = 0;
+/* extract argument values */
+    nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
+    if (nargs != 3)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("age_match_vle_terminal_edge() invalid number of arguments")));
+    }
+
+    if (nulls[0] || nulls[1] || nulls[2])
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    /* get the vpc */
+    agt_arg_path = DATUM_GET_AGTYPE_P(args[2]);
+    if (is_agtype_null(agt_arg_path))
+    {
+        PG_RETURN_BOOL(false);
+    }
+
+    /*
+     * The vpc (path) must be a binary container and the type of the object in
+     * the container must be an AGT_FBINARY_TYPE_VLE_PATH.
+     */
+    Assert(AGT_ROOT_IS_BINARY(agt_arg_path));
+    Assert(AGT_ROOT_BINARY_FLAGS(agt_arg_path) == AGT_FBINARY_TYPE_VLE_PATH);
+
+    /* get the container */
+    vpc = (VLE_path_container *)agt_arg_path;
+
+    /* get the graphid array from the container */
+    gida = GET_GRAPHID_ARRAY_FROM_CONTAINER(vpc);
+
+    /* get the gida array size */
+    gidasize = vpc->graphid_array_size;
+
+    /* verify the minimum size is 3 or 1 */
+    Assert(gidasize >= 3 || gidasize == 1);
+
+    /* get the vsid */
+    if (types[0] == AGTYPEOID)
+    {
+        agt_arg_vsid = DATUM_GET_AGTYPE_P(args[0]);
+
+        if (!is_agtype_null(agt_arg_vsid))
+        {
+
+            agtv_temp =
+               get_ith_agtype_value_from_container(&agt_arg_vsid->root, 0);
+
+            Assert(agtv_temp->type == AGTV_INTEGER);
+            vsid = agtv_temp->val.int_value;
+        }
+        else
+        {
+            PG_RETURN_BOOL(false);
+        }
+    }
+    else if (types[0] == GRAPHIDOID)
+    {
+        vsid = DATUM_GET_GRAPHID(args[0]);
+    }
+    else
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("match_vle_terminal_edge() arguement 1 must be an agtype integer or a graphid")));
+    }
+
+    /* get the veid */
+    if (types[1] == AGTYPEOID)
+    {
+        agt_arg_veid = DATUM_GET_AGTYPE_P(args[1]);
+
+        if (!is_agtype_null(agt_arg_veid))
+        {
+            agtv_temp = get_ith_agtype_value_from_container(&agt_arg_veid->root,
+                                                            0);
+            Assert(agtv_temp->type == AGTV_INTEGER);
+            veid = agtv_temp->val.int_value;
+        }
+        else
+        {
+            PG_RETURN_BOOL(false);
+        }
+    }
+    else if (types[1] == GRAPHIDOID)
+    {
+        veid = DATUM_GET_GRAPHID(args[1]);
+    }
+    else
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("match_vle_terminal_edge() arguement 2 must be an agtype integer or a graphid")));
+    }
+
+    /* compare the path beginning or end points */
+    PG_RETURN_BOOL(gida[0] == vsid && veid == gida[gidasize - 1]);
+    //  PG_RETURN_BOOL(true);
+}
+
+extern "C" Datum  agtype_access_operator(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1(age_match_vle_terminal_edge_arr);
+extern "C" Datum  age_match_vle_terminal_edge_arr(PG_FUNCTION_ARGS);
+Datum age_match_vle_terminal_edge_arr(PG_FUNCTION_ARGS)
+{
+     int nargs = 0;
+    Datum *args = NULL;
+    bool *nulls = NULL;
+    Oid *types = NULL;
+    VLE_path_container *vpc = NULL;
+    agtype *agt_arg_vsid = NULL;
+    agtype *agt_arg_veid = NULL;
+    agtype *agt_arg_path = NULL;
+    agtype_value *agtv_temp = NULL;
+    graphid vsid = 0;
+    graphid veid = 0;
+    graphid *gida = NULL;
+    int gidasize = 0;
+/* extract argument values */
+    nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
+
+    if (nargs != 3)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("age_match_terminal_edge() invalid number of arguments")));
+    }
+
+    /* the arguments cannot be NULL */
+    if (nulls[0] || nulls[1] || nulls[2])
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("match_vle_terminal_edge() arguments cannot be NULL")));
+    }
+
+    graphid   end;
+    graphid   start;
+
+    /* get the vpc */
+    agt_arg_path = DATUM_GET_AGTYPE_P(args[2]);
+    if((agt_arg_path->root.header & (AGT_FARRAY | AGT_FOBJECT)) != 0){
+
+        /* it cannot be NULL */
+        if (is_agtype_null(agt_arg_path))
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                    errmsg("match_vle_terminal_edge() argument 3 cannot be NULL")));
+        }
+
+        agtype_value *agtv_value = NULL;
+        agtype_parse_state *parse_state = NULL;
+        agtype_value elem = {};
+        agtype_iterator *it = NULL;
+        agtype_value tmp;
+        agtype_value *elems = NULL;
+        int num_elems;
+        int i;
+        agtv_value = push_agtype_value(&parse_state, WAGT_BEGIN_ARRAY, NULL);
+
+        while ((it = get_next_list_element(it, &agt_arg_path->root, &elem)))
+        {
+            agtv_value = push_agtype_value(&parse_state, WAGT_ELEM, &elem);
+        }
+
+        /* now reverse the list */
+        elems = parse_state->cont_val.val.array.elems;
+        num_elems = parse_state->cont_val.val.array.num_elems;
+
+        // 
+        start = elems[0].val.object.pairs[2].value.val.int_value;
+    
+        end = elems[num_elems-1].val.object.pairs[3].value.val.int_value;
+
+        /* get the gida array size */
+        gidasize = num_elems;
+    }else{
+        Datum	   *args_res;
+        bool	   *nulls_res;
+        Oid		   *types_res;
+        int			mynargs;
+
+        ArrayType  *array_in;
+        Oid			element_type;
+        bool		typbyval;
+        char		typalign;
+        int16		typlen;
+
+        agtype_value * agtv_start;
+        agtype_value * agtv_end;
+
+        array_in = PG_GETARG_ARRAYTYPE_P(2);
+        element_type = ARR_ELEMTYPE(array_in);
+
+        deconstruct_array(array_in, element_type, -1, false,
+                        'i', &args_res, &nulls_res,
+                        &mynargs);
+
+        agtv_start = get_ith_agtype_value_from_container(&(DATUM_GET_AGTYPE_P((args_res[0])))->root, 0);
+        agtv_end = get_ith_agtype_value_from_container(&(DATUM_GET_AGTYPE_P((args_res[mynargs-1])))->root, 0);
+        
+        start = agtv_start->val.object.pairs[2].value.val.int_value;
+        end = agtv_end->val.object.pairs[3].value.val.int_value;
+
+    }
+
+    /* get the vsid */
+    if (types[0] == AGTYPEOID)
+    {
+        agt_arg_vsid = DATUM_GET_AGTYPE_P(args[0]);
+
+        if (!is_agtype_null(agt_arg_vsid))
+        {
+            agtv_temp =
+               get_ith_agtype_value_from_container(&agt_arg_vsid->root, 0);
+
+            Assert(agtv_temp->type == AGTV_INTEGER);
+            vsid = agtv_temp->val.int_value;
+        }
+        else
+        {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("match_vle_terminal_edge() argument 1 must be non NULL")));
+        }
+    }
+    else if (types[0] == GRAPHIDOID)
+    {
+        vsid = DATUM_GET_GRAPHID(args[0]);
+    }
+    else
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("match_vle_terminal_edge() arguement 1 must be an agtype integer or a graphid")));
+    }
+
+    /* get the veid */
+    if (types[1] == AGTYPEOID)
+    {
+        agt_arg_veid = DATUM_GET_AGTYPE_P(args[1]);
+
+        if (!is_agtype_null(agt_arg_veid))
+        {
+            agtv_temp = get_ith_agtype_value_from_container(&agt_arg_veid->root,
+                                                            0);
+            Assert(agtv_temp->type == AGTV_INTEGER);
+            veid = agtv_temp->val.int_value;
+        }
+        else
+        {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("match_vle_terminal_edge() argument 2 must be non NULL")));
+        }
+    }
+    else if (types[1] == GRAPHIDOID)
+    {
+        veid = DATUM_GET_GRAPHID(args[1]);
+    }
+    else
+    {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("match_vle_terminal_edge() arguement 2 must be an agtype integer or a graphid")));
+    }
+  
+    if( start== vsid && veid == end ){
+        ereport(NOTICE,
+                (errmsg(" start: " INT64_FORMAT " end: " INT64_FORMAT
+                        "  vsid: " INT64_FORMAT ", vendid:" INT64_FORMAT,
+                        start, end, vsid, veid)));
+    }
+    /* compare the path beginning or end points */
+    PG_RETURN_BOOL( start== vsid && veid == end  );
 }
 
 /* PG helper function to build an agtype (Datum) edge for matching */
 PG_FUNCTION_INFO_V1(age_build_vle_match_edge);
-
+extern "C" Datum  age_build_vle_match_edge(PG_FUNCTION_ARGS);
 Datum age_build_vle_match_edge(PG_FUNCTION_ARGS)
 {
     agtype_in_state result;
@@ -2505,9 +2729,7 @@ Datum age_build_vle_match_edge(PG_FUNCTION_ARGS)
                                      AG_GET_ARG_AGTYPE_P(0), AGTV_STRING, true);
         result.res = push_agtype_value(&result.parse_state, WAGT_VALUE,
                                        agtv_temp);
-    }
-    else
-    {
+    } else {
         result.res = push_agtype_value(&result.parse_state, WAGT_VALUE,
                                        &agtv_nstr);
     }
@@ -2538,9 +2760,7 @@ Datum age_build_vle_match_edge(PG_FUNCTION_ARGS)
 
         add_agtype((Datum)properties, false, &result, AGTYPEOID, false);
 
-    }
-    else
-    {
+    } else {
         result.res = push_agtype_value(&result.parse_state, WAGT_BEGIN_OBJECT,
                                        NULL);
         result.res = push_agtype_value(&result.parse_state, WAGT_END_OBJECT,
@@ -2554,15 +2774,23 @@ Datum age_build_vle_match_edge(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(agtype_value_to_agtype(result.res));
 }
 
+/*
+ * This function checks the edges in a MATCH clause to see if they are unique or
+/*
+ * Fast, specialized edge-uniqueness checks for the common 2/3/4-edge cases.
+ * These take plain graphid arguments (not the variadic agtype path) and do a
+ * direct pairwise comparison, avoiding the hashtable setup of the general
+ * _ag_enforce_edge_uniqueness. transform_cypher chooses the specialized
+ * variant by edge count in prevent_duplicate_edges().
+ */
 PG_FUNCTION_INFO_V1(_ag_enforce_edge_uniqueness2);
+extern "C" Datum _ag_enforce_edge_uniqueness2(PG_FUNCTION_ARGS);
 
 Datum _ag_enforce_edge_uniqueness2(PG_FUNCTION_ARGS)
 {
     graphid gid1 = AG_GETARG_GRAPHID(0);
     graphid gid2 = AG_GETARG_GRAPHID(1);
-
-    if (gid1 == gid2)
-    {
+    if (gid1 == gid2) {
         PG_RETURN_BOOL(false);
     }
 
@@ -2570,15 +2798,14 @@ Datum _ag_enforce_edge_uniqueness2(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(_ag_enforce_edge_uniqueness3);
+extern "C" Datum _ag_enforce_edge_uniqueness3(PG_FUNCTION_ARGS);
 
 Datum _ag_enforce_edge_uniqueness3(PG_FUNCTION_ARGS)
 {
     graphid gid1 = AG_GETARG_GRAPHID(0);
     graphid gid2 = AG_GETARG_GRAPHID(1);
     graphid gid3 = AG_GETARG_GRAPHID(2);
-
-    if (gid1 == gid2 || gid1 == gid3 || gid2 == gid3)
-    {
+    if (gid1 == gid2 || gid1 == gid3 || gid2 == gid3) {
         PG_RETURN_BOOL(false);
     }
 
@@ -2586,6 +2813,7 @@ Datum _ag_enforce_edge_uniqueness3(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(_ag_enforce_edge_uniqueness4);
+extern "C" Datum _ag_enforce_edge_uniqueness4(PG_FUNCTION_ARGS);
 
 Datum _ag_enforce_edge_uniqueness4(PG_FUNCTION_ARGS)
 {
@@ -2593,10 +2821,8 @@ Datum _ag_enforce_edge_uniqueness4(PG_FUNCTION_ARGS)
     graphid gid2 = AG_GETARG_GRAPHID(1);
     graphid gid3 = AG_GETARG_GRAPHID(2);
     graphid gid4 = AG_GETARG_GRAPHID(3);
-
     if (gid1 == gid2 || gid1 == gid3 || gid1 == gid4 ||
-        gid2 == gid3 || gid2 == gid4 || gid3 == gid4)
-    {
+        gid2 == gid3 || gid2 == gid4 || gid3 == gid4) {
         PG_RETURN_BOOL(false);
     }
 
@@ -2604,12 +2830,11 @@ Datum _ag_enforce_edge_uniqueness4(PG_FUNCTION_ARGS)
 }
 
 /*
- * This function checks the edges in a MATCH clause to see if they are unique or
  * not. Filters out all the paths where the edge uniques rules are not met.
- * Arguments can be a combination of agtype ints and VLE_path_containers.
+ * Arguements can be a combination of agtype ints and VLE_path_containers.
  */
 PG_FUNCTION_INFO_V1(_ag_enforce_edge_uniqueness);
-
+extern "C" Datum  _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS);
 Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
 {
     HTAB *exists_hash = NULL;
@@ -2619,7 +2844,6 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
     Oid *types = NULL;
     int nargs = 0;
     int i = 0;
-
     /* extract our arguments */
     nargs = extract_variadic_args(fcinfo, 0, true, &args, &types, &nulls);
 
@@ -2635,7 +2859,8 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
         }
         if (types[i] != AGTYPEOID &&
             types[i] != INT8OID &&
-            types[i] != GRAPHIDOID)
+            types[i] != GRAPHIDOID &&
+            types[i] != AGTYPEARRAYOID)
         {
              ereport(ERROR,
                      (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2648,7 +2873,7 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
     MemSet(&exists_ctl, 0, sizeof(exists_ctl));
     exists_ctl.keysize = sizeof(int64);
     exists_ctl.entrysize = sizeof(int64);
-    exists_ctl.hash = graphid_hash;
+    exists_ctl.hash = tag_hash;
 
     /* create exists_hash table */
     exists_hash = hash_create(EXISTS_HTAB_NAME, EXISTS_HTAB_NAME_INITIAL_SIZE,
@@ -2777,6 +3002,50 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
                          errmsg("_ag_enforce_edge_uniqueness invalid parameter type %d",
                                 i)));
             }
+        }else if(types[i] == AGTYPEARRAYOID){
+            Datum	   *args_res;
+            bool	   *nulls_res;
+            Oid		   *types_res;
+            int			mynargs;
+
+            ArrayType  *array_in;
+            Oid			element_type;
+
+            agtype_value *agtv_value = NULL;
+
+            array_in = PG_GETARG_ARRAYTYPE_P(i);
+            element_type = ARR_ELEMTYPE(array_in);
+
+            deconstruct_array(array_in, element_type, -1, false,
+                        'i', &args_res, &nulls_res,
+                        &mynargs);
+
+            for (int i = 0 ; i< mynargs; i ++)   {
+                agtype_value *   agtv_edge = get_ith_agtype_value_from_container(&(DATUM_GET_AGTYPE_P((args_res[i])))->root, 0);
+            
+                int64 *value = NULL;
+                bool found = false;
+                graphid edge_id = 0;
+
+                /* get the edge id */
+                edge_id = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv_edge, "id")->val.int_value;
+
+                /* insert the edge id */
+                value = (int64 *)hash_search(exists_hash, (void *)&edge_id,
+                                                HASH_ENTER, &found);
+
+                /* if we found it, we're done, we have a duplicate */
+                if (found)
+                {
+                    hash_destroy(exists_hash);
+                    PG_RETURN_BOOL(false);
+                }
+                /* otherwise, add it to the returned bucket */
+                else
+                {
+                    *value = edge_id;
+                }
+            }
         }
         /* it is neither a VLE_path_container, AGTYPE, INT8, or a GRAPHIDOID */
         else
@@ -2800,9 +3069,9 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
  *
  * Plain (non-grammar) set-returning functions that compute the unweighted
  * (hop-count) shortest path between two vertices, built directly on top of the
- * cached global graph (GRAPH_global_context) and its flat-array adjacency
- * (VertexEdgeArray). These do NOT go through the VLE grammar/transform path;
- * they are user-callable helpers:
+ * cached global graph (GRAPH_global_context) and its linked-list adjacency
+ * (ListGraphId). These do NOT go through the VLE grammar/transform path; they
+ * are user-callable helpers:
  *
  *     ag_catalog.age_shortest_path(graph, start, end
  *         [, edge_types [, direction [, min_hops [, max_hops]]]])
@@ -2819,6 +3088,14 @@ Datum _ag_enforce_edge_uniqueness(PG_FUNCTION_ARGS)
  * repeated vertex and therefore no repeated edge), satisfying openCypher
  * edge-isomorphism for these fixed-length results.
  */
+
+/* small local helper: pfree only when the pointer is non-NULL */
+static void sp_pfree_if_not_null(void *ptr)
+{
+    if (ptr != NULL) {
+        pfree(ptr);
+    }
+}
 
 /* Simple FIFO queue of graphids for the BFS frontier. */
 typedef struct sp_queue
@@ -2839,7 +3116,7 @@ typedef struct sp_pred
 /* Per-vertex BFS bookkeeping, keyed by vertex_id in the visited hashtable. */
 typedef struct sp_visit_entry
 {
-    graphid vertex_id;     /* hash key — must be first */
+    graphid vertex_id;     /* hash key -- must be first */
     int64 depth;           /* BFS depth from the source vertex */
     graphid parent_edge;   /* single-path reconstruction */
     graphid parent_vertex; /* single-path reconstruction */
@@ -2854,20 +3131,29 @@ typedef struct sp_srf_state
     int64 next;
 } sp_srf_state;
 
+/* Per-search state shared by the BFS driver and its edge relaxation step. */
+typedef struct sp_bfs_context {
+    GRAPH_global_context *ggctx;
+    HTAB *visited;      /* graphid -> sp_visit_entry */
+    sp_queue *queue;    /* BFS frontier */
+    Oid *label_oids;    /* optional edge label filter */
+    int n_label_oids;
+    bool collect_all;   /* record every shortest-path predecessor */
+} sp_bfs_context;
+
 static void sp_queue_init(sp_queue *q)
 {
-    q->cap = 1024;
+    q->cap = SHORTEST_PATH_QUEUE_INITIAL_CAPACITY;
     q->head = 0;
     q->tail = 0;
-    q->data = palloc(sizeof(graphid) * q->cap);
+    q->data = (graphid *) palloc(sizeof(graphid) * q->cap);
 }
 
 static void sp_queue_push(sp_queue *q, graphid v)
 {
-    if (q->tail == q->cap)
-    {
-        q->cap = q->cap * 2;
-        q->data = repalloc(q->data, sizeof(graphid) * q->cap);
+    if (q->tail == q->cap) {
+        q->cap = q->cap * SHORTEST_PATH_QUEUE_GROWTH_FACTOR;
+        q->data = (graphid *) repalloc(q->data, sizeof(graphid) * q->cap);
     }
     q->data[q->tail] = v;
     q->tail = q->tail + 1;
@@ -2893,13 +3179,9 @@ static graphid sp_agtype_to_graphid(agtype *agt, char *fname,
     agtype_value *agtv = NULL;
 
     agtv = get_agtype_value(fname, agt, AGTV_VERTEX, false);
-
-    if (agtv != NULL && agtv->type == AGTV_VERTEX)
-    {
+    if (agtv != NULL && agtv->type == AGTV_VERTEX) {
         agtv = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv, "id");
-    }
-    else if (agtv == NULL || agtv->type != AGTV_INTEGER)
-    {
+    } else if (agtv == NULL || agtv->type != AGTV_INTEGER) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("%s argument must be a vertex or the integer id",
@@ -2916,35 +3198,26 @@ static cypher_rel_dir sp_agtype_to_direction(agtype *agt, char *fname)
     char *s = NULL;
     cypher_rel_dir dir = CYPHER_REL_DIR_NONE;
 
-    if (agt == NULL)
-    {
+    if (agt == NULL) {
         return CYPHER_REL_DIR_NONE;
     }
 
     agtv = get_agtype_value(fname, agt, AGTV_STRING, true);
     s = pnstrdup(agtv->val.string.val, agtv->val.string.len);
-
-    if (pg_strcasecmp(s, "out") == 0)
-    {
+    if (pg_strcasecmp(s, "out") == 0) {
         dir = CYPHER_REL_DIR_RIGHT;
-    }
-    else if (pg_strcasecmp(s, "in") == 0)
-    {
+    } else if (pg_strcasecmp(s, "in") == 0) {
         dir = CYPHER_REL_DIR_LEFT;
-    }
-    else if (pg_strcasecmp(s, "any") == 0)
-    {
+    } else if (pg_strcasecmp(s, "any") == 0) {
         dir = CYPHER_REL_DIR_NONE;
-    }
-    else
-    {
+    } else {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("%s: direction argument must be one of 'out', 'in', or 'any'",
                         fname)));
     }
 
-    pfree_if_not_null(s);
+    sp_pfree_if_not_null(s);
     return dir;
 }
 
@@ -2965,9 +3238,6 @@ static Datum sp_build_path_datum(Oid graph_oid, graphid *alt, int64 alt_len)
     arr = GET_GRAPHID_ARRAY_FROM_CONTAINER(vpc);
     memcpy(arr, alt, sizeof(graphid) * alt_len);
 
-    vpc->start_vid = alt[0];
-    vpc->end_vid = alt[alt_len - 1];
-
     agtv_path = build_path(vpc);
     agt = agtype_value_to_agtype(agtv_path);
 
@@ -2975,7 +3245,95 @@ static Datum sp_build_path_datum(Oid graph_oid, graphid *alt, int64 alt_len)
 }
 
 /*
- * Breadth-first search from source toward target over the flat-array
+ * Optional edge label filter. When a label filter is active (n_label_oids > 0)
+ * we keep only edges whose label table oid is one of the requested
+ * relationship types. A requested type that does not exist in this graph
+ * resolves to InvalidOid; since no real edge can have an InvalidOid label
+ * table, such a type contributes no matches and simply drops out of the set,
+ * while edges of any of the other (known) requested types still match. Only
+ * when every requested type is unknown does the filter match no edges, leaving
+ * just the zero-length (start == end) path -- matching the openCypher
+ * semantics that an unknown relationship type matches no relationships.
+ */
+static bool sp_edge_label_matches(const sp_bfs_context *bfs, edge_entry *ee)
+{
+    Oid ee_label_oid = InvalidOid;
+    int li = 0;
+
+    if (bfs->n_label_oids <= 0) {
+        return true;
+    }
+
+    ee_label_oid = get_edge_entry_label_table_oid(ee);
+    for (li = 0; li < bfs->n_label_oids; li++) {
+        if (bfs->label_oids[li] == ee_label_oid) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * Relax one edge incident to vertex u, which sits at BFS depth du. The
+ * neighbor is the edge's end vertex on the outbound pass and its start vertex
+ * on the inbound pass. A newly discovered neighbor is recorded and queued; in
+ * all-shortest-paths mode every equally short predecessor is recorded too.
+ */
+static void sp_bfs_visit_edge(sp_bfs_context *bfs, graphid eid, int pass,
+                              graphid u, int64 du)
+{
+    edge_entry *ee = NULL;
+    graphid v = 0;
+    sp_visit_entry *vse = NULL;
+    bool was_present = false;
+
+    ee = get_edge_entry(bfs->ggctx, eid);
+    if (ee == NULL || !sp_edge_label_matches(bfs, ee)) {
+        return;
+    }
+
+    /*
+     * The neighbor depends on which side of the edge u is on. Self loops never
+     * shorten a path to a different vertex.
+     */
+    v = (pass == EDGE_DIRECTION_OUTBOUND_PASS)
+        ? get_edge_entry_end_vertex_id(ee)
+        : get_edge_entry_start_vertex_id(ee);
+    if (v == u) {
+        return;
+    }
+
+    vse = (sp_visit_entry *) hash_search(bfs->visited, &v, HASH_ENTER,
+                                         &was_present);
+    if (!was_present) {
+        vse->vertex_id = v;
+        vse->depth = du + 1;
+        vse->parent_edge = eid;
+        vse->parent_vertex = u;
+        vse->preds = NIL;
+
+        if (bfs->collect_all) {
+            sp_pred *p = (sp_pred *) palloc(sizeof(sp_pred));
+
+            p->edge = eid;
+            p->parent_vertex = u;
+            vse->preds = lappend(vse->preds, p);
+        }
+
+        sp_queue_push(bfs->queue, v);
+    } else if (bfs->collect_all && vse->depth == du + 1) {
+        /* another equally-short predecessor of v */
+        sp_pred *p = (sp_pred *) palloc(sizeof(sp_pred));
+
+        p->edge = eid;
+        p->parent_vertex = u;
+        vse->preds = lappend(vse->preds, p);
+    }
+}
+
+/*
+ * Breadth-first search from source toward target over the linked-list
  * adjacency. Returns the visited hashtable; sets *out_found and (if found)
  * *out_target_depth (the shortest hop count). In all-shortest-paths mode
  * (collect_all) every shortest-path predecessor is recorded per vertex.
@@ -2988,6 +3346,7 @@ static HTAB *sp_run_bfs(GRAPH_global_context *ggctx, graphid source,
     HASHCTL ctl;
     HTAB *visited = NULL;
     sp_queue q;
+    sp_bfs_context bfs;
     sp_visit_entry *se = NULL;
     bool found = false;
     int64 target_depth = -1;
@@ -2998,9 +3357,17 @@ static HTAB *sp_run_bfs(GRAPH_global_context *ggctx, graphid source,
     MemSet(&ctl, 0, sizeof(ctl));
     ctl.keysize = sizeof(int64);
     ctl.entrysize = sizeof(sp_visit_entry);
-    ctl.hash = graphid_hash;
-    visited = hash_create("age shortest path visited", 1024, &ctl,
+    ctl.hash = tag_hash;
+    visited = hash_create("age shortest path visited",
+                          SHORTEST_PATH_VISITED_INITIAL_SIZE, &ctl,
                           HASH_ELEM | HASH_FUNCTION);
+
+    bfs.ggctx = ggctx;
+    bfs.visited = visited;
+    bfs.queue = &q;
+    bfs.label_oids = label_oids;
+    bfs.n_label_oids = n_label_oids;
+    bfs.collect_all = collect_all;
 
     /*
      * A path can only exist between vertices that actually exist in the graph.
@@ -3012,8 +3379,7 @@ static HTAB *sp_run_bfs(GRAPH_global_context *ggctx, graphid source,
      * and crashing the backend.
      */
     if (get_vertex_entry(ggctx, source) == NULL ||
-        get_vertex_entry(ggctx, target) == NULL)
-    {
+        get_vertex_entry(ggctx, target) == NULL) {
         *out_target_depth = -1;
         *out_found = false;
         return visited;
@@ -3030,8 +3396,7 @@ static HTAB *sp_run_bfs(GRAPH_global_context *ggctx, graphid source,
     se->preds = NIL;
     sp_queue_push(&q, source);
 
-    while (!sp_queue_is_empty(&q))
-    {
+    while (!sp_queue_is_empty(&q)) {
         graphid u = sp_queue_pop(&q);
         sp_visit_entry *ue = NULL;
         vertex_entry *ve = NULL;
@@ -3049,159 +3414,52 @@ static HTAB *sp_run_bfs(GRAPH_global_context *ggctx, graphid source,
         du = ue->depth;
 
         /* target reached: record its (shortest) depth */
-        if (u == target)
-        {
+        if (u == target) {
             found = true;
-            if (target_depth < 0)
-            {
+            if (target_depth < 0) {
                 target_depth = du;
             }
             /* single-path mode: the first discovery is sufficient */
-            if (!collect_all)
-            {
+            if (!collect_all) {
                 break;
             }
         }
 
         /* never expand at or beyond the shortest target depth */
-        if (target_depth >= 0 && du >= target_depth)
-        {
+        if (target_depth >= 0 && du >= target_depth) {
             continue;
         }
 
         /* respect the optional upper hop bound */
-        if (max_hops >= 0 && du >= max_hops)
-        {
+        if (max_hops >= 0 && du >= max_hops) {
             continue;
         }
 
         ve = get_vertex_entry(ggctx, u);
-        if (ve == NULL)
-        {
+        if (ve == NULL) {
             continue;
         }
 
         /* pass 0 = outgoing edges, pass 1 = incoming edges */
-        for (pass = 0; pass < 2; pass++)
-        {
+        for (pass = EDGE_DIRECTION_OUTBOUND_PASS;
+             pass < EDGE_DIRECTION_PASS_COUNT; pass++) {
+            bool outbound = (pass == EDGE_DIRECTION_OUTBOUND_PASS);
             VertexEdgeArray *edges = NULL;
-            int32 i = 0;
+            int32 ei = 0;
 
-            if (pass == 0)
-            {
-                if (!dir_out)
-                {
-                    continue;
-                }
-                edges = get_vertex_entry_edges_out_array(ve);
-            }
-            else
-            {
-                if (!dir_in)
-                {
-                    continue;
-                }
-                edges = get_vertex_entry_edges_in_array(ve);
-            }
-
-            if (edges == NULL || edges->array == NULL)
-            {
+            /* skip the pass whose direction the pattern does not traverse */
+            if (outbound ? !dir_out : !dir_in) {
                 continue;
             }
 
-            for (i = 0; i < edges->size; i++)
-            {
-                graphid eid = edges->array[i];
-                edge_entry *ee = NULL;
-                graphid v = 0;
-                sp_visit_entry *vse = NULL;
-                bool was_present = false;
+            edges = outbound ? get_vertex_entry_edges_out_array(ve)
+                             : get_vertex_entry_edges_in_array(ve);
+            if (edges == NULL || edges->array == NULL) {
+                continue;
+            }
 
-                ee = get_edge_entry(ggctx, eid);
-                if (ee == NULL)
-                {
-                    continue;
-                }
-
-                /*
-                 * Optional edge label filter. When a label filter is active
-                 * (n_label_oids > 0) we keep only edges whose label table oid
-                 * is one of the requested relationship types. A requested type
-                 * that does not exist in this graph resolves to InvalidOid;
-                 * since no real edge can have an InvalidOid label table, such a
-                 * type contributes no matches and simply drops out of the set,
-                 * while edges of any of the other (known) requested types still
-                 * match. Only when every requested type is unknown does the
-                 * filter match no edges, leaving just the zero-length
-                 * (start == end) path -- matching the openCypher semantics that
-                 * an unknown relationship type matches no relationships.
-                 */
-                if (n_label_oids > 0)
-                {
-                    Oid ee_label_oid = get_edge_entry_label_table_oid(ee);
-                    bool label_match = false;
-                    int li = 0;
-
-                    for (li = 0; li < n_label_oids; li++)
-                    {
-                        if (label_oids[li] == ee_label_oid)
-                        {
-                            label_match = true;
-                            break;
-                        }
-                    }
-                    if (!label_match)
-                    {
-                        continue;
-                    }
-                }
-
-                /* the neighbor depends on which side of the edge u is on */
-                if (pass == 0)
-                {
-                    v = get_edge_entry_end_vertex_id(ee);
-                }
-                else
-                {
-                    v = get_edge_entry_start_vertex_id(ee);
-                }
-
-                /* self loops never shorten a path to a different vertex */
-                if (v == u)
-                {
-                    continue;
-                }
-
-                vse = (sp_visit_entry *) hash_search(visited, &v, HASH_ENTER,
-                                                     &was_present);
-                if (!was_present)
-                {
-                    vse->vertex_id = v;
-                    vse->depth = du + 1;
-                    vse->parent_edge = eid;
-                    vse->parent_vertex = u;
-                    vse->preds = NIL;
-
-                    if (collect_all)
-                    {
-                        sp_pred *p = palloc(sizeof(sp_pred));
-
-                        p->edge = eid;
-                        p->parent_vertex = u;
-                        vse->preds = lappend(vse->preds, p);
-                    }
-
-                    sp_queue_push(&q, v);
-                }
-                else if (collect_all && vse->depth == du + 1)
-                {
-                    /* another equally-short predecessor of v */
-                    sp_pred *p = palloc(sizeof(sp_pred));
-
-                    p->edge = eid;
-                    p->parent_vertex = u;
-                    vse->preds = lappend(vse->preds, p);
-                }
+            for (ei = 0; ei < edges->size; ei++) {
+                sp_bfs_visit_edge(&bfs, edges->array[ei], pass, u, du);
             }
         }
     }
@@ -3242,12 +3500,10 @@ static void sp_enumerate(HTAB *visited, graphid source, graphid cur,
 
     alt[pos] = cur;
 
-    if (cur == source)
-    {
+    if (cur == source) {
         /* a complete path only when we have consumed the whole array */
-        if (pos == 0)
-        {
-            graphid *copy = palloc(sizeof(graphid) * alt_len);
+        if (pos == 0) {
+            graphid *copy = (graphid *) palloc(sizeof(graphid) * alt_len);
 
             memcpy(copy, alt, sizeof(graphid) * alt_len);
             *out = lappend(*out, copy);
@@ -3257,21 +3513,20 @@ static void sp_enumerate(HTAB *visited, graphid source, graphid cur,
              * combinatorial shortest-path DAG could exhaust memory before the
              * first row is returned.
              */
-            if (list_length(*out) > SP_MAX_RESULT_PATHS)
-            {
+            if (list_length(*out) > SP_MAX_RESULT_PATHS) {
                 ereport(ERROR,
                         (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                          errmsg("%s: shortest path count exceeded %d",
                                 fname, SP_MAX_RESULT_PATHS),
-                         errhint("Narrow the search with a relationship type or a maximum hop count, or use age_shortest_path for a single path.")));
+                         errhint("Narrow the search with a relationship type or a maximum hop count, "
+                                 "or use age_shortest_path for a single path.")));
             }
         }
         return;
     }
 
     e = (sp_visit_entry *) hash_search(visited, &cur, HASH_FIND, NULL);
-    if (e == NULL)
-    {
+    if (e == NULL) {
         return;
     }
 
@@ -3280,7 +3535,8 @@ static void sp_enumerate(HTAB *visited, graphid source, graphid cur,
         sp_pred *p = (sp_pred *) lfirst(lc);
 
         alt[pos - 1] = p->edge;
-        sp_enumerate(visited, source, p->parent_vertex, alt, alt_len, pos - 2,
+        sp_enumerate(visited, source, p->parent_vertex, alt, alt_len,
+                     pos - PATH_EDGE_POSITION_STEP,
                      fname, out);
     }
 }
@@ -3303,9 +3559,10 @@ static void sp_enumerate(HTAB *visited, graphid source, graphid cur,
  * all_shortest_paths every tie at that length is returned. Returns NULL with
  * *out_count == 0 when no qualifying path exists.
  *
- * The VLE engine matches a single edge label oid only, so a multi-type filter
+ * The VLE engine matches a single edge label only, so a multi-type filter
  * is rejected by the caller before reaching here. A single label_oid of
- * InvalidOid means "any edge label".
+ * InvalidOid means "any edge label"; otherwise it is resolved back to its
+ * relation name because this VLE engine matches by label name (string).
  */
 static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
                                   const char *graph_name, char *fname,
@@ -3319,6 +3576,7 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     VLE_local_context *vlelctx = NULL;
     agtype_value av_empty;
     agtype *empty_constraint = NULL;
+    char *label_name = NULL;
     List *best = NIL;
     ListCell *lc = NULL;
     int64 best_len = PG_INT64_MAX;
@@ -3341,8 +3599,22 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     av_empty.val.object.pairs = NULL;
     empty_constraint = agtype_value_to_agtype(&av_empty);
 
+    /*
+     * Resolve the requested label oid back to its relation name. This VLE
+     * engine matches edges by label name (a string), not by oid. InvalidOid
+     * (no type filter) leaves the name NULL, which the engine treats as "any
+     * edge label".
+     */
+    if (label_oid != InvalidOid) {
+        char *relname = get_rel_name(label_oid);
+
+        if (relname != NULL) {
+            label_name = pnstrdup(relname, strlen(relname));
+        }
+    }
+
     /* build the VLE local context by hand (no fcinfo, no caching) */
-    vlelctx = palloc0(sizeof(VLE_local_context));
+    vlelctx = (VLE_local_context *) palloc0(sizeof(VLE_local_context));
     vlelctx->graph_name = pnstrdup(graph_name, strlen(graph_name));
     vlelctx->graph_oid = graph_oid;
     vlelctx->ggctx = ggctx;
@@ -3351,20 +3623,13 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     vlelctx->vsid = source;
     vlelctx->veid = target;
     vlelctx->edge_property_constraint = empty_constraint;
-    vlelctx->edge_property_constraint_datum =
-        AGTYPE_P_GET_DATUM(empty_constraint);
-    vlelctx->edge_property_constraint_hash =
-        datum_image_hash(vlelctx->edge_property_constraint_datum, false, -1);
-    vlelctx->edge_label_name = NULL;
+    vlelctx->edge_label_name = label_name;
     vlelctx->edge_label_name_oid = label_oid;
     vlelctx->lidx = (min_hops > 0) ? min_hops : 1;
-    if (max_hops < 0)
-    {
+    if (max_hops < 0) {
         vlelctx->uidx_infinite = true;
         vlelctx->uidx = 0;
-    }
-    else
-    {
+    } else {
         vlelctx->uidx_infinite = false;
         vlelctx->uidx = max_hops;
     }
@@ -3372,12 +3637,12 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     vlelctx->use_cache = false;
     vlelctx->vle_grammar_node_id = 0;
     vlelctx->next = NULL;
-    vlelctx->is_dirty = true;
+    vlelctx->is_dirty = false;
 
     create_VLE_local_state_hashtable(vlelctx);
-    vlelctx->dfs_vertex_stack = new_gid_stack();
-    vlelctx->dfs_edge_stack = new_gid_stack();
-    vlelctx->dfs_path_stack = new_gid_stack();
+    vlelctx->dfs_vertex_stack = new_graphid_stack();
+    vlelctx->dfs_edge_stack = new_graphid_stack();
+    vlelctx->dfs_path_stack = new_graphid_stack();
     load_initial_dfs_stacks(vlelctx);
 
     /*
@@ -3385,15 +3650,13 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
      * seen. The DFS yields paths in no particular length order, so a strictly
      * shorter path resets the kept set.
      */
-    while (dfs_find_a_path_between(vlelctx))
-    {
-        int64 hops = gid_stack_size(vlelctx->dfs_path_stack);
+    while (dfs_find_a_path_between(vlelctx)) {
+        int64 hops = get_stack_size(vlelctx->dfs_path_stack);
         bool take = false;
         bool reset = false;
 
         examined = examined + 1;
-        if (examined > SP_MINHOPS_MAX_PATHS)
-        {
+        if (examined > SP_MINHOPS_MAX_PATHS) {
             ereport(ERROR,
                     (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                      errmsg("%s: minimum hop count search exceeded %d candidate paths",
@@ -3401,18 +3664,14 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
                      errhint("Provide a maximum hop count to bound the search.")));
         }
 
-        if (hops < best_len)
-        {
+        if (hops < best_len) {
             take = true;
             reset = true;
-        }
-        else if (hops == best_len && collect_all)
-        {
+        } else if (hops == best_len && collect_all) {
             take = true;
         }
 
-        if (take)
-        {
+        if (take) {
             VLE_path_container *vpc = NULL;
             graphid *garr = NULL;
             int64 arrlen = 0;
@@ -3423,14 +3682,13 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
 
             /* copy the path into the surviving context and record it */
             MemoryContextSwitchTo(oldctx);
-            if (reset)
-            {
+            if (reset) {
                 list_free_deep(best);
                 best = NIL;
                 best_len = hops;
             }
             {
-                graphid *copy = palloc(sizeof(graphid) * arrlen);
+                graphid *copy = (graphid *) palloc(sizeof(graphid) * arrlen);
 
                 memcpy(copy, garr, sizeof(graphid) * arrlen);
                 best = lappend(best, copy);
@@ -3447,14 +3705,13 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     MemoryContextDelete(tmpctx);
 
     n = list_length(best);
-    if (n == 0)
-    {
+    if (n == 0) {
         return NULL;
     }
 
     /* every kept path has the same (minimum qualifying) length */
-    result_len = (2 * best_len) + 1;
-    paths = palloc(sizeof(Datum) * n);
+    result_len = (PATH_RESULT_VERTEX_COUNT_MULTIPLIER * best_len) + 1;
+    paths = (Datum *) palloc(sizeof(Datum) * n);
     foreach(lc, best)
     {
         graphid *a = (graphid *) lfirst(lc);
@@ -3466,6 +3723,52 @@ static Datum *sp_minhops_fallback(GRAPH_global_context *ggctx, Oid graph_oid,
     list_free_deep(best);
     *out_count = n;
     return paths;
+}
+
+/*
+ * Resolve an array of relationship type names into edge label table oids.
+ * Empty type names impose no constraint and are skipped. Stores the palloc'd
+ * oid array (NULL for an empty input array) in *label_oids and returns the
+ * number of resolved oids.
+ */
+static int sp_resolve_label_array(agtype *label_agt, Oid graph_oid,
+                                  const char *fname, Oid **label_oids)
+{
+    int nelems = AGT_ROOT_COUNT(label_agt);
+    int n_label_oids = 0;
+    int i = 0;
+
+    *label_oids = NULL;
+    if (nelems > 0) {
+        *label_oids = (Oid *) palloc(sizeof(Oid) * nelems);
+    }
+
+    for (i = 0; i < nelems; i++) {
+        agtype_value *agtv_temp = NULL;
+        char *label_name = NULL;
+
+        agtv_temp = get_ith_agtype_value_from_container(&label_agt->root, i);
+        if (agtv_temp->type != AGTV_STRING) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("%s: relationship type must be a string",
+                            fname)));
+        }
+        /* skip empty type names; they impose no constraint */
+        if (agtv_temp->val.string.len == 0) {
+            continue;
+        }
+
+        label_name = pnstrdup(agtv_temp->val.string.val,
+                              agtv_temp->val.string.len);
+        (*label_oids)[n_label_oids] = get_label_relation(label_name, graph_oid);
+        n_label_oids = n_label_oids + 1;
+
+        /* the resolved oid is all we keep; free the type name */
+        pfree(label_name);
+    }
+
+    return n_label_oids;
 }
 
 /*
@@ -3487,6 +3790,7 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
     graphid target = 0;
     Oid *label_oids = NULL;
     int n_label_oids = 0;
+    List *wanted_edge_relids = NIL;
     cypher_rel_dir dir = CYPHER_REL_DIR_NONE;
     int64 min_hops = 0;
     int64 max_hops = -1;
@@ -3500,8 +3804,7 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
     *out_count = 0;
 
     /* the graph name is required */
-    if (graph_name_agt == NULL)
-    {
+    if (graph_name_agt == NULL) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("%s: graph name cannot be NULL", fname)));
@@ -3517,9 +3820,8 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
      * A NULL start or end vertex yields no rows, matching Cypher semantics
      * where a null endpoint simply produces no match (it is not an error).
      */
-    if (start_agt == NULL || end_agt == NULL)
-    {
-        pfree_if_not_null(graph_name);
+    if (start_agt == NULL || end_agt == NULL) {
+        sp_pfree_if_not_null(graph_name);
         return NULL;
     }
 
@@ -3535,55 +3837,19 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
      * traversed). An unknown type resolves to InvalidOid and so matches no
      * edges.
      */
-    if (label_agt != NULL)
-    {
+    if (label_agt != NULL) {
         char *label_name = NULL;
 
-        if (AGT_ROOT_IS_ARRAY(label_agt) && !AGT_ROOT_IS_SCALAR(label_agt))
-        {
-            int nelems = AGT_ROOT_COUNT(label_agt);
-            int i = 0;
-
-            if (nelems > 0)
-            {
-                label_oids = palloc(sizeof(Oid) * nelems);
-            }
-
-            for (i = 0; i < nelems; i++)
-            {
-                agtv_temp = get_ith_agtype_value_from_container(
-                    &label_agt->root, i);
-                if (agtv_temp->type != AGTV_STRING)
-                {
-                    ereport(ERROR,
-                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                             errmsg("%s: relationship type must be a string",
-                                    fname)));
-                }
-                /* skip empty type names; they impose no constraint */
-                if (agtv_temp->val.string.len != 0)
-                {
-                    label_name = pnstrdup(agtv_temp->val.string.val,
-                                          agtv_temp->val.string.len);
-                    label_oids[n_label_oids] =
-                        get_label_relation(label_name, graph_oid);
-                    n_label_oids = n_label_oids + 1;
-
-                    /* the resolved oid is all we keep; free the type name */
-                    pfree(label_name);
-                    label_name = NULL;
-                }
-            }
-        }
-        else
-        {
+        if (AGT_ROOT_IS_ARRAY(label_agt) && !AGT_ROOT_IS_SCALAR(label_agt)) {
+            n_label_oids = sp_resolve_label_array(label_agt, graph_oid, fname,
+                                                  &label_oids);
+        } else {
             agtv_temp = get_agtype_value(fname, label_agt,
                                          AGTV_STRING, true);
-            if (agtv_temp->val.string.len != 0)
-            {
+            if (agtv_temp->val.string.len != 0) {
                 label_name = pnstrdup(agtv_temp->val.string.val,
                                       agtv_temp->val.string.len);
-                label_oids = palloc(sizeof(Oid));
+                label_oids = (Oid *) palloc(sizeof(Oid));
                 label_oids[0] = get_label_relation(label_name, graph_oid);
                 n_label_oids = 1;
 
@@ -3605,35 +3871,50 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
      * vertex-revisiting paths, which plain BFS cannot do; that case falls
      * back to the VLE depth-first engine after the search (see below).
      */
-    if (minhops_agt != NULL)
-    {
+    if (minhops_agt != NULL) {
         agtv_temp = get_agtype_value(fname, minhops_agt,
                                      AGTV_INTEGER, true);
         min_hops = agtv_temp->val.int_value;
-        if (min_hops < 0)
-        {
+        if (min_hops < 0) {
             min_hops = 0;
         }
     }
 
     /* optional upper hop bound (NULL or negative means unbounded) */
-    if (maxhops_agt != NULL)
-    {
+    if (maxhops_agt != NULL) {
         agtv_temp = get_agtype_value(fname, maxhops_agt,
                                      AGTV_INTEGER, true);
         max_hops = agtv_temp->val.int_value;
-        if (max_hops < 0)
-        {
+        if (max_hops < 0) {
             max_hops = -1;
         }
     }
 
-    /* build / fetch the global graph cache for this graph */
-    ggctx = manage_GRAPH_global_contexts(graph_name, graph_oid);
-    if (ggctx == NULL)
-    {
-        pfree_if_not_null(graph_name);
-        pfree_if_not_null(label_oids);
+    /*
+     * Build / fetch the global graph cache for this graph. When the caller
+     * named its relationship types we only need those edge tables loaded;
+     * loading the rest dominates build cost on large graphs (on LDBC SF1 the
+     * knows edges are ~1% of all edges).
+     */
+    if (n_label_oids > 0) {
+        int i;
+
+        for (i = 0; i < n_label_oids; i++) {
+            if (OidIsValid(label_oids[i])) {
+                wanted_edge_relids = lappend_oid(wanted_edge_relids,
+                                                 label_oids[i]);
+            }
+        }
+    }
+
+    ggctx = manage_GRAPH_global_contexts_for_labels(graph_name, graph_oid,
+        wanted_edge_relids);
+    list_free(wanted_edge_relids);
+    wanted_edge_relids = NIL;
+
+    if (ggctx == NULL) {
+        sp_pfree_if_not_null(graph_name);
+        sp_pfree_if_not_null(label_oids);
         return NULL;
     }
 
@@ -3654,12 +3935,11 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
     visited = sp_run_bfs(ggctx, source, target, label_oids, n_label_oids,
                          dir, max_hops, collect_all, &target_depth, &found);
 
-    if (!found)
-    {
+    if (!found) {
         MemoryContextSwitchTo(oldctx);
         MemoryContextDelete(scratch);
-        pfree_if_not_null(graph_name);
-        pfree_if_not_null(label_oids);
+        sp_pfree_if_not_null(graph_name);
+        sp_pfree_if_not_null(label_oids);
         return NULL;
     }
 
@@ -3674,24 +3954,35 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
      * The VLE engine matches a single edge label only, so a multi-type filter
      * combined with this regime is still unsupported.
      */
-    if (min_hops > 0 && target_depth < min_hops)
-    {
+    if (min_hops > 0 && target_depth < min_hops) {
         Oid fallback_label_oid = InvalidOid;
 
         /* the BFS scratch is no longer needed; the fallback uses its own */
         MemoryContextSwitchTo(oldctx);
         MemoryContextDelete(scratch);
 
-        if (n_label_oids > 1)
-        {
+        if (n_label_oids > 1) {
             ereport(ERROR,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("%s: a minimum hop count greater than the shortest path length is not supported with multiple relationship types",
+                     errmsg("%s: a minimum hop count greater than the shortest path length is "
+                            "not supported with multiple relationship types",
                             fname)));
         }
 
-        if (n_label_oids == 1)
-        {
+        /*
+         * InvalidOid has two meanings in the surrounding code: no type filter
+         * when there are zero entries, and an explicitly requested but
+         * nonexistent relationship type when there is one entry. The VLE
+         * fallback uses InvalidOid for the former, so return no paths here for
+         * the latter instead of silently widening the search to every type.
+         */
+        if (n_label_oids == 1 && label_oids[0] == InvalidOid) {
+            sp_pfree_if_not_null(graph_name);
+            sp_pfree_if_not_null(label_oids);
+            return NULL;
+        }
+
+        if (n_label_oids == 1) {
             fallback_label_oid = label_oids[0];
         }
 
@@ -3707,24 +3998,22 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
                                            source, target, fallback_label_oid,
                                            dir, min_hops, max_hops, collect_all,
                                            out_count);
-            pfree_if_not_null(graph_name);
-            pfree_if_not_null(label_oids);
+            sp_pfree_if_not_null(graph_name);
+            sp_pfree_if_not_null(label_oids);
             return fb_paths;
         }
     }
 
-    if (!collect_all)
-    {
+    if (!collect_all) {
         /* reconstruct the single shortest path from the parent pointers */
         int64 alt_len = (2 * target_depth) + 1;
-        graphid *alt = palloc(sizeof(graphid) * alt_len);
+        graphid *alt = (graphid *) palloc(sizeof(graphid) * alt_len);
         int64 pos = alt_len - 1;
         graphid cur = target;
 
         alt[pos] = cur;
         pos = pos - 1;
-        while (cur != source)
-        {
+        while (cur != source) {
             sp_visit_entry *e = NULL;
 
             e = (sp_visit_entry *) hash_search(visited, &cur, HASH_FIND, NULL);
@@ -3737,15 +4026,13 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
 
         /* build the surviving result Datum in the caller's context */
         MemoryContextSwitchTo(oldctx);
-        paths = palloc(sizeof(Datum));
+        paths = (Datum *) palloc(sizeof(Datum));
         paths[0] = sp_build_path_datum(graph_oid, alt, alt_len);
         *out_count = 1;
-    }
-    else
-    {
+    } else {
         /* enumerate every equal-length shortest path */
         int64 alt_len = (2 * target_depth) + 1;
-        graphid *alt = palloc(sizeof(graphid) * alt_len);
+        graphid *alt = (graphid *) palloc(sizeof(graphid) * alt_len);
         List *arrays = NIL;
         ListCell *lc = NULL;
         int64 n = 0;
@@ -3758,7 +4045,7 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
 
         /* build the surviving result Datums in the caller's context */
         MemoryContextSwitchTo(oldctx);
-        paths = palloc(sizeof(Datum) * (n > 0 ? n : 1));
+        paths = (Datum *) palloc(sizeof(Datum) * (n > 0 ? n : 1));
         foreach(lc, arrays)
         {
             graphid *a = (graphid *) lfirst(lc);
@@ -3772,8 +4059,8 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
     /* results are copied out; drop the BFS/enumeration scratch */
     MemoryContextSwitchTo(oldctx);
     MemoryContextDelete(scratch);
-    pfree_if_not_null(graph_name);
-    pfree_if_not_null(label_oids);
+    sp_pfree_if_not_null(graph_name);
+    sp_pfree_if_not_null(label_oids);
     return paths;
 }
 
@@ -3787,8 +4074,7 @@ static Datum sp_srf_impl(FunctionCallInfo fcinfo, bool collect_all)
     FuncCallContext *funcctx = NULL;
     sp_srf_state *state = NULL;
 
-    if (SRF_IS_FIRSTCALL())
-    {
+    if (SRF_IS_FIRSTCALL()) {
         MemoryContext oldctx;
         agtype *a_graph = NULL;
         agtype *a_start = NULL;
@@ -3807,46 +4093,54 @@ static Datum sp_srf_impl(FunctionCallInfo fcinfo, bool collect_all)
          *   0 graph, 1 start, 2 end, 3 edge_types, 4 direction,
          *   5 min_hops, 6 max_hops
          */
-        a_graph = PG_ARGISNULL(0) ? NULL : AG_GET_ARG_AGTYPE_P(0);
-        a_start = PG_ARGISNULL(1) ? NULL : AG_GET_ARG_AGTYPE_P(1);
-        a_end = PG_ARGISNULL(2) ? NULL : AG_GET_ARG_AGTYPE_P(2);
-        a_label = PG_ARGISNULL(3) ? NULL : AG_GET_ARG_AGTYPE_P(3);
-        a_dir = PG_ARGISNULL(4) ? NULL : AG_GET_ARG_AGTYPE_P(4);
-        a_min = PG_ARGISNULL(5) ? NULL : AG_GET_ARG_AGTYPE_P(5);
-        a_max = PG_ARGISNULL(6) ? NULL : AG_GET_ARG_AGTYPE_P(6);
+        a_graph = PG_ARGISNULL(SHORTEST_PATH_GRAPH_ARGUMENT_INDEX)
+                      ? NULL
+                      : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_GRAPH_ARGUMENT_INDEX);
+        a_start = PG_ARGISNULL(SHORTEST_PATH_START_ARGUMENT_INDEX)
+                      ? NULL
+                      : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_START_ARGUMENT_INDEX);
+        a_end = PG_ARGISNULL(SHORTEST_PATH_END_ARGUMENT_INDEX)
+                    ? NULL
+                    : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_END_ARGUMENT_INDEX);
+        a_label = PG_ARGISNULL(SHORTEST_PATH_LABEL_ARGUMENT_INDEX)
+                      ? NULL
+                      : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_LABEL_ARGUMENT_INDEX);
+        a_dir = PG_ARGISNULL(SHORTEST_PATH_DIRECTION_ARGUMENT_INDEX)
+                    ? NULL
+                    : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_DIRECTION_ARGUMENT_INDEX);
+        a_min = PG_ARGISNULL(SHORTEST_PATH_MIN_HOPS_ARGUMENT_INDEX)
+                    ? NULL
+                    : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_MIN_HOPS_ARGUMENT_INDEX);
+        a_max = PG_ARGISNULL(SHORTEST_PATH_MAX_HOPS_ARGUMENT_INDEX)
+                    ? NULL
+                    : AG_GET_ARG_AGTYPE_P(SHORTEST_PATH_MAX_HOPS_ARGUMENT_INDEX);
 
         /* treat an explicit agtype null the same as a SQL NULL */
-        if (a_start != NULL && is_agtype_null(a_start))
-        {
+        if (a_start != NULL && is_agtype_null(a_start)) {
             a_start = NULL;
         }
-        if (a_end != NULL && is_agtype_null(a_end))
-        {
+        if (a_end != NULL && is_agtype_null(a_end)) {
             a_end = NULL;
         }
-        if (a_label != NULL && is_agtype_null(a_label))
-        {
+        if (a_label != NULL && is_agtype_null(a_label)) {
             a_label = NULL;
         }
-        if (a_dir != NULL && is_agtype_null(a_dir))
-        {
+        if (a_dir != NULL && is_agtype_null(a_dir)) {
             a_dir = NULL;
         }
-        if (a_min != NULL && is_agtype_null(a_min))
-        {
+        if (a_min != NULL && is_agtype_null(a_min)) {
             a_min = NULL;
         }
-        if (a_max != NULL && is_agtype_null(a_max))
-        {
+        if (a_max != NULL && is_agtype_null(a_max)) {
             a_max = NULL;
         }
 
-        state = palloc0(sizeof(sp_srf_state));
+        state = (sp_srf_state *) palloc0(sizeof(sp_srf_state));
         state->next = 0;
         state->paths = sp_compute_paths(a_graph, a_start, a_end, a_label,
                                         a_dir, a_min, a_max,
-                                        collect_all ? "age_all_shortest_paths"
-                                                    : "age_shortest_path",
+                                        collect_all ? (char *) "age_all_shortest_paths"
+                                                    : (char *) "age_shortest_path",
                                         collect_all, &state->npaths);
         funcctx->user_fctx = state;
 
@@ -3856,8 +4150,7 @@ static Datum sp_srf_impl(FunctionCallInfo fcinfo, bool collect_all)
     funcctx = SRF_PERCALL_SETUP();
     state = (sp_srf_state *) funcctx->user_fctx;
 
-    if (state->next < state->npaths)
-    {
+    if (state->next < state->npaths) {
         Datum d = state->paths[state->next];
 
         state->next = state->next + 1;
@@ -3875,6 +4168,7 @@ static Datum sp_srf_impl(FunctionCallInfo fcinfo, bool collect_all)
  * start and end vertices, or no rows if unreachable.
  */
 PG_FUNCTION_INFO_V1(age_shortest_path);
+extern "C" Datum age_shortest_path(PG_FUNCTION_ARGS);
 
 Datum age_shortest_path(PG_FUNCTION_ARGS)
 {
@@ -3890,6 +4184,7 @@ Datum age_shortest_path(PG_FUNCTION_ARGS)
  * count, or no rows if unreachable.
  */
 PG_FUNCTION_INFO_V1(age_all_shortest_paths);
+extern "C" Datum age_all_shortest_paths(PG_FUNCTION_ARGS);
 
 Datum age_all_shortest_paths(PG_FUNCTION_ARGS)
 {

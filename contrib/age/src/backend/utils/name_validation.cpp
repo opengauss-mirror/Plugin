@@ -19,7 +19,7 @@
 
 #include "postgres.h"
 
-#include "catalog/pg_collation_d.h"
+#include "catalog/pg_collation.h"
 #include "utils/builtins.h"
 
 #include "utils/name_validation.h"
@@ -35,9 +35,7 @@ static int regex_match(const char *string, const char *pattern);
 int is_valid_graph_name(const char *graph_name)
 {
     int len = strlen(graph_name);
-
-    if (len < MIN_GRAPH_NAME_LEN || len > MAX_GRAPH_NAME_LEN)
-    {
+    if (len < MIN_GRAPH_NAME_LEN || len > MAX_GRAPH_NAME_LEN) {
         return 0;
     }
 
@@ -58,9 +56,7 @@ int is_valid_graph_name(const char *graph_name)
 int is_valid_label_name(char *label_name, char label_type)
 {
     int len = strlen(label_name);
-
-    if (len < MIN_LABEL_NAME_LEN || len > MAX_LABEL_NAME_LEN)
-    {
+    if (len < MIN_LABEL_NAME_LEN || len > MAX_LABEL_NAME_LEN) {
         ereport(WARNING,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("label name length not in range (%d <= length <= %d) length = %d",

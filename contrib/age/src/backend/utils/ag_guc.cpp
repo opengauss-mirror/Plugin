@@ -20,27 +20,24 @@
 #include "postgres.h"
 
 #include "utils/guc.h"
+
 #include "utils/ag_guc.h"
 
-bool age_enable_containment = true;
+THR_LOCAL bool age_enable_containment = true;
 
-/*
- * Defines AGE's custom configuration parameters.
- *
- * The name of the parameter must be `age.*`. This name is used for setting
- * value to the parameter. For example, `SET age.enable_containment = on;`.
- */
 void define_config_params(void)
 {
-    DefineCustomBoolVariable("age.enable_containment",
-                             "Use @> operator to transform MATCH's filter. Otherwise, use -> operator.",
-                             NULL,
-                             &age_enable_containment,
-                             true,
-                             PGC_SUSET,
-                             0,
-                             NULL,
-                             NULL,
-                             NULL);
+    DefineCustomBoolVariable(
+        "age.enable_containment",
+        "Use containment operators to transform MATCH property filters.",
+        NULL,
+        &age_enable_containment,
+        true,
+        PGC_SUSET,
+        0,
+        NULL,
+        NULL,
+        NULL);
+
     EmitWarningsOnPlaceholders("age");
 }

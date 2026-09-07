@@ -37,14 +37,27 @@
 #include "postgres.h"
 
 #include "fmgr.h"
-#include "utils/agehash.h"
 #include "utils/builtins.h"
 #include "utils/memutils.h"
 
+#include "utils/agehash.h"
+
+#define AGEHASH_MAX_INLINE_KEY_SIZE 64
+#define AGEHASH_MAX_INLINE_PAYLOAD_SIZE 4096
+#define AGEHASH_MIN_CAPACITY 64
+#define MURMURHASH_FMIX_SHIFT 33
+
+/*
+ * Probe distance ceiling. With AGEHASH_MAX_LOAD = 0.85 and a non-degenerate
+ * hash function the maximum probe length stays far below this limit; it
+ * bounds every probe loop while leaving probe_dist well clear of the
+ * AGEHASH_EMPTY sentinel.
+ */
+#define AGEHASH_MAX_PROBE_DISTANCE 0xFE00
+
 /* ------------------------------------------------------------------------- */
 
-struct AgeHashTable
-{
+struct AgeHashTable {
     /* Slot array: capacity * slot_size bytes, palloc'd in mcxt. */
     char            *slots;
     uint32           capacity;       /* always a power of two */
@@ -65,35 +78,30 @@ struct AgeHashTable
 /* ------------------------------------------------------------------------- */
 /* Slot accessors. */
 
-static inline char *
-slot_at(AgeHashTable *t, uint32 idx)
+static inline char *slot_at(AgeHashTable *t, uint32 idx)
 {
     return t->slots + (Size) idx * t->slot_size;
 }
 
-static inline uint16
-slot_probe_dist(const char *slot)
+static inline uint16 slot_probe_dist(const char *slot)
 {
     uint16 d;
     memcpy(&d, slot, sizeof(uint16));
     return d;
 }
 
-static inline void
-slot_set_probe_dist(char *slot, uint16 d)
+static inline void slot_set_probe_dist(char *slot, uint16 d)
 {
     memcpy(slot, &d, sizeof(uint16));
 }
 
-static inline char *
-slot_key_ptr(AgeHashTable *t, char *slot)
+static inline char *slot_key_ptr(AgeHashTable *t, char *slot)
 {
     (void) t;
     return slot + AGEHASH_SLOT_KEY_OFFSET;
 }
 
-static inline char *
-slot_payload_ptr(AgeHashTable *t, char *slot)
+static inline char *slot_payload_ptr(AgeHashTable *t, char *slot)
 {
     return slot + t->payload_offset;
 }
@@ -101,8 +109,7 @@ slot_payload_ptr(AgeHashTable *t, char *slot)
 /* ------------------------------------------------------------------------- */
 /* Construction. */
 
-static uint32
-next_pow2(uint32 v)
+static uint32 next_pow2(uint32 v)
 {
     uint32 p = 1;
     while (p < v)
@@ -110,13 +117,12 @@ next_pow2(uint32 v)
     return p;
 }
 
-AgeHashTable *
-agehash_create_inline(MemoryContext mcxt,
-                      Size key_size,
-                      Size payload_size,
-                      uint32 capacity_hint,
-                      agehash_hash_fn hash_fn,
-                      agehash_keyeq_fn keyeq_fn)
+AgeHashTable *agehash_create_inline(MemoryContext mcxt,
+    Size key_size,
+    Size payload_size,
+    uint32 capacity_hint,
+    agehash_hash_fn hash_fn,
+    agehash_keyeq_fn keyeq_fn)
 {
     AgeHashTable  *t;
     MemoryContext  oldctx;
@@ -124,8 +130,9 @@ agehash_create_inline(MemoryContext mcxt,
     uint32         cap;
 
     Assert(mcxt != NULL);
-    Assert(key_size > 0 && key_size <= 64);
-    Assert(payload_size > 0 && payload_size <= 4096);
+    Assert(key_size > 0 && key_size <= AGEHASH_MAX_INLINE_KEY_SIZE);
+    Assert(payload_size > 0 &&
+           payload_size <= AGEHASH_MAX_INLINE_PAYLOAD_SIZE);
     Assert(hash_fn != NULL);
     Assert(keyeq_fn != NULL);
 
@@ -136,15 +143,13 @@ agehash_create_inline(MemoryContext mcxt,
      * builds where Asserts compile out and the same caller would otherwise
      * trigger a stack-buffer overflow during insert.
      */
-    if (key_size == 0 || key_size > 64)
-    {
+    if (key_size == 0 || key_size > AGEHASH_MAX_INLINE_KEY_SIZE) {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                  errmsg("agehash inline key size %zu out of range (must be 1..64)",
                         (size_t) key_size)));
     }
-    if (payload_size == 0 || payload_size > 4096)
-    {
+    if (payload_size == 0 || payload_size > AGEHASH_MAX_INLINE_PAYLOAD_SIZE) {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                  errmsg("agehash inline payload size %zu out of range (must be 1..4096)",
@@ -153,7 +158,7 @@ agehash_create_inline(MemoryContext mcxt,
 
     oldctx = MemoryContextSwitchTo(mcxt);
 
-    t = palloc0(sizeof(AgeHashTable));
+    t = (AgeHashTable *) palloc0(sizeof(AgeHashTable));
     t->mcxt = mcxt;
     t->mode = AGEHASH_INLINE;
     t->frozen = false;
@@ -179,8 +184,7 @@ agehash_create_inline(MemoryContext mcxt,
      * key trips in DEBUG builds rather than silently handing the macro a
      * wrong pointer.
      */
-    if (key_size % MAXIMUM_ALIGNOF != 0)
-    {
+    if (key_size % MAXIMUM_ALIGNOF != 0) {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                  errmsg("agehash inline key size %zu must be a multiple of %d for key recovery",
@@ -192,14 +196,13 @@ agehash_create_inline(MemoryContext mcxt,
      * Capacity floor of 64 keeps tiny tables out of degenerate-load territory
      * and avoids a flurry of grows on the first few inserts.
      */
-    if (capacity_hint == 0)
-        min_cap = 64;
-    else
-    {
+    if (capacity_hint == 0) {
+        min_cap = AGEHASH_MIN_CAPACITY;
+    } else {
         /* size capacity_hint at MAX_LOAD so we don't immediately grow */
         min_cap = (uint32) ((double) capacity_hint / AGEHASH_MAX_LOAD) + 1;
-        if (min_cap < 64)
-            min_cap = 64;
+        if (min_cap < AGEHASH_MIN_CAPACITY)
+            min_cap = AGEHASH_MIN_CAPACITY;
     }
     cap = next_pow2(min_cap);
     Assert((cap & (cap - 1)) == 0);
@@ -212,10 +215,10 @@ agehash_create_inline(MemoryContext mcxt,
      * The slot array can comfortably exceed 1 GiB on production graphs
      * (the SF3 ldbc_snb edge_table is multiple GiB at the 0.85 load
      * factor). Use the HUGE allocator to bypass the standard MaxAllocSize
-     * check.
+     * check. (openGauss spells the huge allocator palloc_huge.)
      */
-    t->slots = (char *) MemoryContextAllocHuge(mcxt,
-                                               (Size) cap * t->slot_size);
+    t->slots = (char *) palloc_huge(mcxt,
+                                    (Size) cap * t->slot_size);
 
     /* Mark every slot empty. */
     {
@@ -233,9 +236,16 @@ agehash_create_inline(MemoryContext mcxt,
 
 static void agehash_grow(AgeHashTable *t);
 
-static void *
-agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
-                        bool *found)
+/* Report whether the key already existed through the optional out-parameter. */
+static inline void agehash_report_found(bool *found, bool value)
+{
+    if (found != NULL) {
+        *found = value;
+    }
+}
+
+static void *agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
+    bool *found)
 {
     uint32 i;
     uint16 d;
@@ -256,8 +266,7 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
      * Asserts compile out, preventing silent slot reordering that would
      * invalidate any payload pointers callers consider stable post-freeze.
      */
-    if (t->frozen)
-    {
+    if (t->frozen) {
         elog(ERROR, "agehash: insert into frozen table");
     }
     Assert(!t->frozen);
@@ -265,8 +274,9 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
     Assert(t->payload_size <= sizeof(carry_payload));
 
     /* Grow before insert if at threshold. */
-    if (t->size >= t->max_size)
+    if (t->size >= t->max_size) {
         agehash_grow(t);
+    }
 
     /* Initialize carry buffers with the caller's key and an empty payload. */
     memcpy(carry_key, key, t->key_size);
@@ -275,23 +285,18 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
     i = hashvalue & t->capacity_mask;
     d = 0;
 
-    for (;;)
-    {
+    while (d < AGEHASH_MAX_PROBE_DISTANCE) {
         char  *slot = slot_at(t, i);
         uint16 sd   = slot_probe_dist(slot);
-
-        if (sd == AGEHASH_EMPTY)
-        {
+        if (sd == AGEHASH_EMPTY) {
             /* Place the carrier here and we're done. */
             slot_set_probe_dist(slot, d);
             memcpy(slot_key_ptr(t, slot), carry_key, t->key_size);
             memcpy(slot_payload_ptr(t, slot), carry_payload, t->payload_size);
             t->size++;
-            if (!placed_caller)
-            {
+            if (!placed_caller) {
                 /* The caller's slot landed here. */
-                if (found != NULL)
-                    *found = false;
+                agehash_report_found(found, false);
                 return slot_payload_ptr(t, slot);
             }
             /*
@@ -304,8 +309,7 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
 
         if (sd == d &&
             !placed_caller &&
-            t->keyeq_fn(slot_key_ptr(t, slot), carry_key, t->key_size))
-        {
+            t->keyeq_fn(slot_key_ptr(t, slot), carry_key, t->key_size)) {
             /*
              * Existing entry with the caller's key. Note: this match check
              * is only relevant before we've performed a swap; once we've
@@ -313,13 +317,11 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
              * displaced entry that, by RH invariant on insert from a fresh
              * key, cannot already exist in the table.
              */
-            if (found != NULL)
-                *found = true;
+            agehash_report_found(found, true);
             return slot_payload_ptr(t, slot);
         }
 
-        if (sd < d)
-        {
+        if (sd < d) {
             /*
              * Rich-poor swap: this slot's owner is closer to its ideal
              * bucket than we are. Take its place and continue with the
@@ -338,16 +340,12 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
             memcpy(slot_key_ptr(t, slot),     carry_key,     t->key_size);
             memcpy(slot_payload_ptr(t, slot), carry_payload, t->payload_size);
 
-            if (!placed_caller)
-            {
+            if (!placed_caller) {
                 placed_caller = true;
                 result_payload = slot_payload_ptr(t, slot);
                 /* Notify caller: this insert is a fresh entry. */
-                if (found != NULL)
-                {
-                    *found = false;
-                    found = NULL; /* don't write again */
-                }
+                agehash_report_found(found, false);
+                found = NULL; /* don't write again */
             }
 
             /* Continue with the displaced entry as the new carrier. */
@@ -358,30 +356,21 @@ agehash_insert_internal(AgeHashTable *t, const void *key, uint32 hashvalue,
 
         i = (i + 1) & t->capacity_mask;
         d++;
-
-        /*
-         * Probe distance overflow guard. With AGEHASH_MAX_LOAD = 0.85 and a
-         * non-degenerate hash function, max probe is expected to remain far
-         * below this limit in practice. The 0xFE00 ceiling reserves
-         * headroom while leaving probe_dist well clear of the AGEHASH_EMPTY
-         * sentinel.
-         */
-        Assert(d < 0xFE00);
-        if (unlikely(d >= 0xFE00))
-            elog(ERROR, "agehash: probe distance overflow (likely a bad hash function)");
     }
+
+    /* Only reachable when the probe sequence exceeds the ceiling. */
+    elog(ERROR, "agehash: probe distance overflow (likely a bad hash function)");
+    pg_unreachable();
 }
 
-void *
-agehash_insert(AgeHashTable *t, const void *key, bool *found)
+void *agehash_insert(AgeHashTable *t, const void *key, bool *found)
 {
     uint32 h = t->hash_fn(key, t->key_size);
     return agehash_insert_internal(t, key, h, found);
 }
 
-void *
-agehash_insert_with_hash(AgeHashTable *t, const void *key,
-                         uint32 hashvalue, bool *found)
+void *agehash_insert_with_hash(AgeHashTable *t, const void *key,
+    uint32 hashvalue, bool *found)
 {
     return agehash_insert_internal(t, key, hashvalue, found);
 }
@@ -389,8 +378,7 @@ agehash_insert_with_hash(AgeHashTable *t, const void *key,
 /* ------------------------------------------------------------------------- */
 /* Grow: double the capacity and rehash. */
 
-static void
-agehash_grow(AgeHashTable *t)
+static void agehash_grow(AgeHashTable *t)
 {
     char         *old_slots;
     uint32        old_cap;
@@ -403,13 +391,11 @@ agehash_grow(AgeHashTable *t)
     old_cap       = t->capacity;
     old_slot_size = t->slot_size;
 
-    if (t->frozen)
-    {
+    if (t->frozen) {
         elog(ERROR, "agehash: grow on frozen table");
     }
     Assert(!t->frozen);
-    if (old_cap > (UINT32_MAX >> 1))
-    {
+    if (old_cap > (UINT32_MAX >> 1)) {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                  errmsg("agehash capacity overflow: cannot grow beyond %u slots",
@@ -424,18 +410,16 @@ agehash_grow(AgeHashTable *t)
     t->capacity_mask = new_cap - 1;
     t->max_size = (uint32) ((double) new_cap * AGEHASH_MAX_LOAD);
     /* HUGE allocator: see agehash_create_inline for the rationale. */
-    t->slots = (char *) MemoryContextAllocHuge(t->mcxt,
-                                               (Size) new_cap * t->slot_size);
+    t->slots = (char *) palloc_huge(t->mcxt,
+                                    (Size) new_cap * t->slot_size);
     for (i = 0; i < new_cap; i++)
         slot_set_probe_dist(slot_at(t, i), AGEHASH_EMPTY);
 
     /* Reset size; we re-insert below (which will increment it). */
     t->size = 0;
-    for (i = 0; i < old_cap; i++)
-    {
+    for (i = 0; i < old_cap; i++) {
         char *src = old_slots + (Size) i * old_slot_size;
-        if (slot_probe_dist(src) != AGEHASH_EMPTY)
-        {
+        if (slot_probe_dist(src) != AGEHASH_EMPTY) {
             void  *src_key     = src + AGEHASH_SLOT_KEY_OFFSET;
             void  *src_payload = src + t->payload_offset;
             uint32 h = t->hash_fn(src_key, t->key_size);
@@ -451,17 +435,14 @@ agehash_grow(AgeHashTable *t)
 /* ------------------------------------------------------------------------- */
 /* Lookup. */
 
-void *
-agehash_lookup_with_hash(AgeHashTable *t, const void *key, uint32 hashvalue)
+void *agehash_lookup_with_hash(AgeHashTable *t, const void *key, uint32 hashvalue)
 {
     uint32 i = hashvalue & t->capacity_mask;
     uint16 d = 0;
 
-    for (;;)
-    {
+    while (d < AGEHASH_MAX_PROBE_DISTANCE) {
         char  *slot = slot_at(t, i);
         uint16 sd   = slot_probe_dist(slot);
-
         if (sd == AGEHASH_EMPTY)
             return NULL;
         /*
@@ -470,19 +451,25 @@ agehash_lookup_with_hash(AgeHashTable *t, const void *key, uint32 hashvalue)
          * slot we land on has a smaller probe_dist than ours, the key
          * we're looking for can't be anywhere later in the sequence.
          */
-        if (sd < d)
+        if (sd < d) {
             return NULL;
-        if (t->keyeq_fn(slot_key_ptr(t, slot), key, t->key_size))
+        }
+        if (t->keyeq_fn(slot_key_ptr(t, slot), key, t->key_size)) {
             return slot_payload_ptr(t, slot);
+        }
 
         i = (i + 1) & t->capacity_mask;
         d++;
-        Assert(d < 0xFE00);
     }
+
+    /*
+     * Every stored probe distance is below the ceiling, so a probe sequence
+     * that reaches it cannot contain the key.
+     */
+    return NULL;
 }
 
-void *
-agehash_lookup(AgeHashTable *t, const void *key)
+void *agehash_lookup(AgeHashTable *t, const void *key)
 {
     uint32 h = t->hash_fn(key, t->key_size);
     return agehash_lookup_with_hash(t, key, h);
@@ -491,32 +478,27 @@ agehash_lookup(AgeHashTable *t, const void *key)
 /* ------------------------------------------------------------------------- */
 /* Misc accessors. */
 
-void
-agehash_freeze(AgeHashTable *t)
+void agehash_freeze(AgeHashTable *t)
 {
     t->frozen = true;
 }
 
-bool
-agehash_is_frozen(const AgeHashTable *t)
+bool agehash_is_frozen(const AgeHashTable *t)
 {
     return t->frozen;
 }
 
-uint32
-agehash_size(const AgeHashTable *t)
+uint32 agehash_size(const AgeHashTable *t)
 {
     return t->size;
 }
 
-uint32
-agehash_capacity(const AgeHashTable *t)
+uint32 agehash_capacity(const AgeHashTable *t)
 {
     return t->capacity;
 }
 
-void
-agehash_iter_init(AgeHashTable *t, AgeHashIter *it)
+void agehash_iter_init(AgeHashTable *t, AgeHashIter *it)
 {
     it->t = t;
     it->idx = 0;
@@ -524,17 +506,14 @@ agehash_iter_init(AgeHashTable *t, AgeHashIter *it)
     it->payload = NULL;
 }
 
-bool
-agehash_iter_next(AgeHashIter *it)
+bool agehash_iter_next(AgeHashIter *it)
 {
     AgeHashTable *t = it->t;
-    while (it->idx < t->capacity)
-    {
+    while (it->idx < t->capacity) {
         char *slot = slot_at(t, it->idx);
         uint32 idx = it->idx++;
         (void) idx;
-        if (slot_probe_dist(slot) != AGEHASH_EMPTY)
-        {
+        if (slot_probe_dist(slot) != AGEHASH_EMPTY) {
             it->key     = slot_key_ptr(t, slot);
             it->payload = slot_payload_ptr(t, slot);
             return true;
@@ -550,34 +529,30 @@ agehash_iter_next(AgeHashIter *it)
  * sizes and verifies invariants. Returns a string in CurrentMemoryContext. */
 
 /* MurmurHash3 fmix64, identical to graphid_hash. */
-static uint32
-selftest_hash(const void *key, Size keysize)
+static uint32 selftest_hash(const void *key, Size keysize)
 {
     uint64 k;
     Assert(keysize == sizeof(uint64));
     memcpy(&k, key, sizeof(uint64));
-    k ^= k >> 33;
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
     k *= UINT64CONST(0xff51afd7ed558ccd);
-    k ^= k >> 33;
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
     k *= UINT64CONST(0xc4ceb9fe1a85ec53);
-    k ^= k >> 33;
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
     return (uint32) k;
 }
 
-static bool
-selftest_keyeq(const void *a, const void *b, Size keysize)
+static bool selftest_keyeq(const void *a, const void *b, Size keysize)
 {
     return memcmp(a, b, keysize) == 0;
 }
 
-typedef struct selftest_payload
-{
+typedef struct selftest_payload {
     uint64 mirror_key;
     uint64 marker;
 } selftest_payload;
 
-static const char *
-selftest_run_one(MemoryContext parent, uint32 n, uint32 hint)
+static const char *selftest_run_one(MemoryContext parent, uint32 n, uint32 hint)
 {
     MemoryContext     mcxt;
     AgeHashTable     *t;
@@ -592,73 +567,61 @@ selftest_run_one(MemoryContext parent, uint32 n, uint32 hint)
                               hint, selftest_hash, selftest_keyeq);
 
     /* Insert n keys. */
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         uint64 k = ((uint64) 0xa5a5 << 48) | (i + 1);
         p = (selftest_payload *) agehash_insert(t, &k, &found);
-        if (found)
-        {
+        if (found) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: duplicate insert at i=%u", i);
         }
         p->mirror_key = k;
         p->marker     = (uint64) 0xdeadbeef00000000ULL | i;
     }
-    if (agehash_size(t) != n)
-    {
+    if (agehash_size(t) != n) {
         MemoryContextDelete(mcxt);
         return psprintf("FAIL: size %u != %u after inserts",
                         agehash_size(t), n);
     }
 
     /* Lookup all n keys. */
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         uint64 k = ((uint64) 0xa5a5 << 48) | (i + 1);
         p = (selftest_payload *) agehash_lookup(t, &k);
-        if (p == NULL)
-        {
+        if (p == NULL) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: lookup miss at i=%u", i);
         }
         if (p->mirror_key != k ||
-            p->marker != ((uint64) 0xdeadbeef00000000ULL | i))
-        {
+            p->marker != ((uint64) 0xdeadbeef00000000ULL | i)) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: payload corruption at i=%u", i);
         }
     }
 
     /* Lookup n keys that should not exist. */
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         uint64 k = ((uint64) 0xb6b6 << 48) | (i + 1);
         p = (selftest_payload *) agehash_lookup(t, &k);
-        if (p != NULL)
-        {
+        if (p != NULL) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: phantom lookup hit at i=%u", i);
         }
     }
 
     /* Re-insert (HASH_ENTER semantics) — should report found = true. */
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         uint64 k = ((uint64) 0xa5a5 << 48) | (i + 1);
         p = (selftest_payload *) agehash_insert(t, &k, &found);
-        if (!found)
-        {
+        if (!found) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: re-insert reported !found at i=%u", i);
         }
-        if (p->mirror_key != k)
-        {
+        if (p->mirror_key != k) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: re-insert payload mismatch at i=%u", i);
         }
     }
-    if (agehash_size(t) != n)
-    {
+    if (agehash_size(t) != n) {
         MemoryContextDelete(mcxt);
         return psprintf("FAIL: size %u != %u after re-inserts",
                         agehash_size(t), n);
@@ -667,36 +630,31 @@ selftest_run_one(MemoryContext parent, uint32 n, uint32 hint)
     /* Iterate and count. */
     seen = 0;
     agehash_iter_init(t, &it);
-    while (agehash_iter_next(&it))
-    {
-        selftest_payload *pp = it.payload;
+    while (agehash_iter_next(&it)) {
+        selftest_payload *pp = (selftest_payload *) it.payload;
         uint64 k;
         memcpy(&k, it.key, sizeof(uint64));
-        if (pp->mirror_key != k)
-        {
+        if (pp->mirror_key != k) {
             MemoryContextDelete(mcxt);
             return psprintf("FAIL: iter payload mismatch at seen=%u", seen);
         }
         seen++;
     }
-    if (seen != n)
-    {
+    if (seen != n) {
         MemoryContextDelete(mcxt);
         return psprintf("FAIL: iter saw %u of %u", seen, n);
     }
 
     /* Freeze and confirm lookups still work. */
     agehash_freeze(t);
-    if (!agehash_is_frozen(t))
-    {
+    if (!agehash_is_frozen(t)) {
         MemoryContextDelete(mcxt);
         return "FAIL: agehash_is_frozen returned false after freeze";
     }
     {
         uint64 k = ((uint64) 0xa5a5 << 48) | 1;
         p = (selftest_payload *) agehash_lookup(t, &k);
-        if (p == NULL)
-        {
+        if (p == NULL) {
             MemoryContextDelete(mcxt);
             return "FAIL: lookup failed after freeze";
         }
@@ -706,8 +664,7 @@ selftest_run_one(MemoryContext parent, uint32 n, uint32 hint)
     return NULL; /* OK */
 }
 
-const char *
-agehash_self_test(void)
+const char *agehash_self_test(void)
 {
     static const struct { uint32 n; uint32 hint; } cases[] = {
         {     1,    0 },
@@ -733,8 +690,7 @@ agehash_self_test(void)
     const size_t ncases = sizeof(cases) / sizeof(cases[0]);
     size_t       i;
 
-    for (i = 0; i < ncases; i++)
-    {
+    for (i = 0; i < ncases; i++) {
         const char *r = selftest_run_one(CurrentMemoryContext,
                                          cases[i].n, cases[i].hint);
         if (r != NULL)
@@ -744,12 +700,12 @@ agehash_self_test(void)
 }
 
 /* ------------------------------------------------------------------------- */
-/* SQL-callable wrapper: SELECT ag_catalog._agehash_self_test();             */
+/* SQL-callable wrapper for the AGE hash self-test function.                 */
 
 PG_FUNCTION_INFO_V1(_agehash_self_test);
+extern "C" Datum _agehash_self_test(PG_FUNCTION_ARGS);
 
-Datum
-_agehash_self_test(PG_FUNCTION_ARGS)
+Datum _agehash_self_test(PG_FUNCTION_ARGS)
 {
     const char *r = agehash_self_test();
     PG_RETURN_TEXT_P(cstring_to_text(r));

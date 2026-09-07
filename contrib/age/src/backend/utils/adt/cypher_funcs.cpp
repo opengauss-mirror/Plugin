@@ -21,11 +21,17 @@
 
 #include "fmgr.h"
 
-PG_FUNCTION_INFO_V1(cypher);
+#define CYPHER_FUNCTION_MIN_ARGUMENTS 2
 
+PG_FUNCTION_INFO_V1(cypher);
+extern "C" Datum  cypher(PG_FUNCTION_ARGS);
 Datum cypher(PG_FUNCTION_ARGS)
 {
     const char *s;
+
+    if (PG_NARGS() < CYPHER_FUNCTION_MIN_ARGUMENTS)
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                        errmsg("cypher function requires a minimum of 2 arguments")));
 
     s = PG_ARGISNULL(0) ? "NULL" : PG_GETARG_CSTRING(0);
 
@@ -36,29 +42,36 @@ Datum cypher(PG_FUNCTION_ARGS)
 }
 
 PG_FUNCTION_INFO_V1(_cypher_create_clause);
-
+extern "C" Datum  _cypher_create_clause(PG_FUNCTION_ARGS);
 Datum _cypher_create_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_set_clause);
-
+extern "C" Datum  _cypher_set_clause(PG_FUNCTION_ARGS);
 Datum _cypher_set_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_delete_clause);
-
+extern "C" Datum  _cypher_delete_clause(PG_FUNCTION_ARGS);
 Datum _cypher_delete_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(_cypher_merge_clause);
-
+extern "C" Datum  _cypher_merge_clause(PG_FUNCTION_ARGS);
 Datum _cypher_merge_clause(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_NULL();
+}
+
+PG_FUNCTION_INFO_V1(_cypher_vle_clause);
+extern "C" Datum  _cypher_vle_clause(PG_FUNCTION_ARGS);
+Datum _cypher_vle_clause(PG_FUNCTION_ARGS)
 {
     PG_RETURN_NULL();
 }

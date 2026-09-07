@@ -21,85 +21,38 @@
 
 #include "access/heapam.h"
 #include "catalog/namespace.h"
-#include "commands/trigger.h"
-#include "common/hashfn.h"
-#include "commands/label_commands.h"
-#include "port/atomics.h"
-#include "storage/lwlock.h"
-#include "utils/datum.h"
+#include "storage/buf/bufmgr.h"
+#include "utils/inval.h"
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
+#include "utils/rel.h"
 #include "utils/snapmgr.h"
 #include "utils/builtins.h"
+#include "commands/label_commands.h"
+#include "commands/trigger.h"
+#include "executor/cypher_utils.h"
 
-#if PG_VERSION_NUM >= 170000
-#include "storage/dsm_registry.h"
-#else
-#include "storage/ipc.h"
-#include "storage/shmem.h"
-#endif
-
+#include "utils/ag_cache.h"
 #include "utils/age_global_graph.h"
 #include "utils/agehash.h"
+#include "utils/agtype.h"
 #include "catalog/ag_graph.h"
 #include "catalog/ag_label.h"
-#include "utils/ag_cache.h"
-
+#include "utils/graphid.h"
+#include "utils/age_graphid_ds.h"
 
 /* defines */
 #define VERTEX_HTAB_NAME "Vertex to edge lists " /* added a space at end for */
-#define VERTEX_HTAB_INITIAL_SIZE 10000
-#define EDGE_HTAB_INITIAL_SIZE 10000
-
-/* Maximum number of graphs tracked for version counting */
-#define AGE_MAX_GRAPHS 128
-
-/*
- * Graph version counter entry. Stored in shared memory (DSM or shmem)
- * so that all backends can see mutation events. The version counter is
- * incremented by Cypher mutations (CREATE/DELETE/SET/MERGE) and by
- * SQL triggers on label tables. VLE cache invalidation checks this
- * counter instead of snapshot xmin/xmax/curcid.
- */
-typedef struct GraphVersionEntry
-{
-    Oid graph_oid;                 /* graph identifier (0 = unused slot) */
-    pg_atomic_uint64 version;      /* monotonic change counter */
-} GraphVersionEntry;
-
-/*
- * Shared memory state for graph version tracking.
- * Contains a fixed-size array of per-graph version counters.
- */
-typedef struct GraphVersionState
-{
-    LWLock lock;                   /* protects slot allocation only */
-    int num_entries;               /* number of active entries */
-    GraphVersionEntry entries[AGE_MAX_GRAPHS];
-} GraphVersionState;
-
-/*
- * Version mode detection — determined once per backend on first use.
- * DSM:      PG 17+ GetNamedDSMSegment (no shared_preload_libraries needed)
- * SHMEM:    PG < 17 with shared_preload_libraries
- * SNAPSHOT: PG < 17 without shared_preload_libraries (current behavior)
- */
-typedef enum
-{
-    VERSION_MODE_UNKNOWN = 0,
-    VERSION_MODE_DSM,
-    VERSION_MODE_SHMEM,
-    VERSION_MODE_SNAPSHOT
-} VersionMode;
-
-static VersionMode version_mode = VERSION_MODE_UNKNOWN;
-
-/* For PG < 17 shmem path */
-static GraphVersionState *shmem_version_state = NULL;
+#define EDGE_HTAB_NAME "Edge to vertex mapping " /* the graph name to follow */
+#define VERTEX_HTAB_INITIAL_SIZE 1000000
+#define EDGE_HTAB_INITIAL_SIZE 1000000
+#define MURMURHASH_FMIX_SHIFT 33
+#define EDGE_RELATION_ATTRIBUTE_COUNT 4
+#define EDGE_ENDPOINT_FIRST_ATTRIBUTE 1
+#define EDGE_ENDPOINT_LAST_ATTRIBUTE 2
 
 /* internal data structures implementation */
-
-/* vertex entry for the vertex_hashtable */
+/* vertex entry for the vertex_hastable */
 typedef struct vertex_entry
 {
     graphid vertex_id;             /* vertex id, it is also the hash key */
@@ -111,15 +64,80 @@ typedef struct vertex_entry
 } vertex_entry;
 
 /*
- * edge entry for the edge_table.
+ * VertexEdgeArray helpers -- flat-array adjacency container used by
+ * vertex_entry's edges_in / edges_out / edges_self. Growth doubles the backing
+ * array; the first append allocates from the current memory context (the graph
+ * global context, matching where the linked-list nodes used to live).
+ */
+static inline void vea_append(VertexEdgeArray *vea, graphid edge_id)
+{
+    if (vea->size == vea->capacity) {
+        int32 new_capacity = (vea->capacity == 0) ? 4 : vea->capacity * 2;
+
+        if (vea->array == NULL) {
+            vea->array = (graphid *) palloc(new_capacity * sizeof(graphid));
+        } else {
+            vea->array = (graphid *) repalloc(vea->array,
+                                              new_capacity * sizeof(graphid));
+        }
+        vea->capacity = new_capacity;
+    }
+    vea->array[vea->size++] = edge_id;
+}
+
+static inline void vea_free(VertexEdgeArray *vea)
+{
+    if (vea->array != NULL) {
+        pfree(vea->array);
+        vea->array = NULL;
+    }
+    vea->size = 0;
+    vea->capacity = 0;
+}
+
+/*
+ * Fast hash function for graphid (int64) keys. Replaces dynahash's tag_hash
+ * (Jenkins lookup3) with the MurmurHash3 fmix64 finalizer for better
+ * distribution and a lower instruction count. Signature matches HashValueFunc
+ * so it can be dropped into HASHCTL.hash, and matches agehash_hash_fn so the
+ * same function feeds the agehash edge table.
+ */
+uint32 graphid_hash(const void *key, Size keysize)
+{
+    uint64 k;
+
+    /* keysize is always sizeof(int64) for every graphid hashtable */
+    Assert(keysize == sizeof(int64));
+    (void) keysize;
+
+    /* graphid keys are stored as int64; callers always pass &graphid */
+    memcpy(&k, key, sizeof(uint64));
+
+    /* MurmurHash3 fmix64 (Austin Appleby, public domain). */
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
+    k *= UINT64CONST(0xff51afd7ed558ccd);
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
+    k *= UINT64CONST(0xc4ceb9fe1a85ec53);
+    k ^= k >> MURMURHASH_FMIX_SHIFT;
+
+    return (uint32) k;
+}
+
+/* Equality predicate for graphid (int64) keys; agehash_keyeq_fn signature. */
+bool graphid_keyeq(const void *a, const void *b, Size keysize)
+{
+    Assert(keysize == sizeof(int64));
+    (void) keysize;
+    return memcmp(a, b, sizeof(int64)) == 0;
+}
+
+/*
+ * Edge entry for the edge_table (agehash, INLINE mode).
  *
- * The edge_id is the hash key and is stored in the agehash slot header
- * (immediately before the payload). It is intentionally NOT a field on this
- * payload struct: duplicating it would add 8 bytes per edge to the slot,
- * which on SF10 (~175M edges) is over a gigabyte of overhead. Use
- * get_edge_entry_id(ee) when you need the id of an entry returned by
- * get_edge_entry / get_edge_entry_with_hash; that helper recovers the key
- * from the slot via agehash_key_from_payload.
+ * The edge_id is NOT stored here: it is the hash key and lives in the agehash
+ * slot header, immediately preceding this payload. Recover it via
+ * agehash_key_from_payload(ee, sizeof(graphid)) (see get_edge_entry_id). This
+ * saves an 8-byte field on every edge (~400MB on SF3, ~1.4GB on SF10).
  */
 typedef struct edge_entry
 {
@@ -139,72 +157,46 @@ typedef struct GRAPH_global_context
     char *graph_name;              /* graph name */
     Oid graph_oid;                 /* graph oid for searching */
     HTAB *vertex_hashtable;        /* hashtable to hold vertex edge lists */
-    AgeHashTable *edge_table;      /* edge to vertex map (Robin Hood) */
+    AgeHashTable *edge_table;      /* edge to vertex map (Robin Hood agehash) */
     MemoryContext edge_table_mcxt; /* private context owning edge_table */
-    uint64 graph_version;          /* version counter for cache invalidation */
-    TransactionId xmin;            /* snapshot fallback: transaction xmin */
-    TransactionId xmax;            /* snapshot fallback: transaction xmax */
-    CommandId curcid;              /* snapshot fallback: command id */
+    TransactionId xmin;            /* transaction ids for this graph */
+    TransactionId xmax;
+    CommandId curcid;              /* currentCommandId graph was created with */
+    bool dirty;                    /* relation invalidation requires rebuild */
+    uint64 generation;             /* identity of this loaded graph instance */
+    List *loaded_relids;           /* label relations loaded into this graph */
+    /*
+     * Edge label relations this context was built for. NIL means "every edge
+     * label", which is what callers that need the whole graph ask for. A
+     * narrower set lets traversals that name their edge labels skip loading
+     * unrelated edge tables, which dominates build cost on large graphs.
+     */
+    List *edge_label_relids;
+    bool all_edge_labels_loaded;
     int64 num_loaded_vertices;     /* number of loaded vertices in this graph */
     int64 num_loaded_edges;        /* number of loaded edges in this graph */
     ListGraphId *vertices;         /* vertices for vertex hashtable cleanup */
     struct GRAPH_global_context *next; /* next graph */
 } GRAPH_global_context;
 
-/* global variable to hold the per process GRAPH global contexts */
-static GRAPH_global_context *global_graph_contexts = NULL;
-
-/*
- * VertexEdgeArray helpers — flat-array adjacency container used by
- * vertex_entry's edges_in / edges_out / edges_self.
- *
- * Growth policy: start at 4 slots on first append, then double on each
- * overflow. This keeps the average cost of n appends amortised O(n) and
- * keeps the memory waste bounded by 2x.
- */
-#define VEA_INITIAL_CAPACITY 4
-
-static inline void vea_append(VertexEdgeArray *vea, graphid edge_id)
-{
-    if (vea->size == vea->capacity)
-    {
-        int32 new_capacity = (vea->capacity == 0)
-                                 ? VEA_INITIAL_CAPACITY
-                                 : vea->capacity * 2;
-
-        if (vea->array == NULL)
-        {
-            vea->array = (graphid *) palloc(new_capacity * sizeof(graphid));
-        }
-        else
-        {
-            vea->array = (graphid *) repalloc(vea->array,
-                                              new_capacity * sizeof(graphid));
-        }
-
-        vea->capacity = new_capacity;
-    }
-    vea->array[vea->size++] = edge_id;
-}
-
-static inline void vea_free(VertexEdgeArray *vea)
-{
-    if (vea->array != NULL)
-    {
-        pfree(vea->array);
-        vea->array = NULL;
-    }
-    vea->size = 0;
-    vea->capacity = 0;
-}
+/* global variable to hold the per process GRAPH global context */
+static THR_LOCAL GRAPH_global_context *global_graph_contexts = NULL;
+static THR_LOCAL uint64 next_graph_context_generation = 1;
+static THR_LOCAL bool relcache_callback_registered = false;
+static THR_LOCAL Oid cached_ag_label_relid = InvalidOid;
 
 /* declarations */
 /* GRAPH global context functions */
-static bool free_specific_GRAPH_global_context(GRAPH_global_context *ggctx);
+static void invalidate_GRAPH_global_contexts_relcache_callback(Datum argument,
+                                                               Oid relid);
+static void register_loaded_relid(GRAPH_global_context *ggctx, Oid relid);
+static bool graph_context_loaded_relid(GRAPH_global_context *ggctx, Oid relid);
+static void free_specific_GRAPH_global_context(GRAPH_global_context *ggctx);
 static bool delete_specific_GRAPH_global_contexts(char *graph_name);
 static bool delete_GRAPH_global_contexts(void);
 static void create_GRAPH_global_hashtables(GRAPH_global_context *ggctx);
 static void load_GRAPH_global_hashtables(GRAPH_global_context *ggctx);
+static List *collect_endpoint_vertex_relids(GRAPH_global_context *ggctx);
 static void load_vertex_hashtable(GRAPH_global_context *ggctx);
 static void load_edge_hashtable(GRAPH_global_context *ggctx);
 static void freeze_GRAPH_global_hashtables(GRAPH_global_context *ggctx);
@@ -214,108 +206,110 @@ static bool insert_edge_entry(GRAPH_global_context *ggctx, graphid edge_id,
                               ItemPointerData tid, graphid start_vertex_id,
                               graphid end_vertex_id, Oid edge_label_table_oid);
 static bool insert_vertex_edge(GRAPH_global_context *ggctx,
-                               graphid start_vertex_id, graphid end_vertex_id,
-                               graphid edge_id, char *edge_label_name);
+    graphid start_vertex_id, graphid end_vertex_id,
+    graphid edge_id, char *edge_label_name);
 static bool insert_vertex_entry(GRAPH_global_context *ggctx, graphid vertex_id,
                                 Oid vertex_label_table_oid,
                                 ItemPointerData tid);
 /* definitions */
 
+static bool graph_context_loaded_relid(GRAPH_global_context *ggctx, Oid relid)
+{
+    ListCell *lc;
+
+    foreach (lc, ggctx->loaded_relids)
+    {
+        if (lfirst_oid(lc) == relid)
+            return true;
+    }
+
+    return false;
+}
+
+static void register_loaded_relid(GRAPH_global_context *ggctx, Oid relid)
+{
+    if (OidIsValid(relid) && !graph_context_loaded_relid(ggctx, relid))
+        ggctx->loaded_relids = lappend_oid(ggctx->loaded_relids, relid);
+}
+
+void invalidate_GRAPH_global_contexts_by_relid(Oid relid)
+{
+    GRAPH_global_context *ggctx;
+
+    for (ggctx = global_graph_contexts; ggctx != NULL; ggctx = ggctx->next) {
+        if (!OidIsValid(relid) || graph_context_loaded_relid(ggctx, relid))
+            ggctx->dirty = true;
+    }
+}
+
+void notify_GRAPH_global_contexts_relation_modified(Oid relid)
+{
+    Assert(OidIsValid(relid));
+
+    invalidate_GRAPH_global_contexts_by_relid(relid);
+    CacheInvalidateRelcacheByRelid(relid);
+}
+
+void notify_GRAPH_global_contexts_catalog_modified(void)
+{
+    Oid ag_label_relid = ag_label_relation_id();
+
+    cached_ag_label_relid = ag_label_relid;
+    invalidate_GRAPH_global_contexts_by_relid(InvalidOid);
+    CacheInvalidateRelcacheByRelid(ag_label_relid);
+}
+
+static void invalidate_GRAPH_global_contexts_relcache_callback(Datum argument,
+                                                               Oid relid)
+{
+    (void)argument;
+
+    if (!OidIsValid(relid) ||
+        (OidIsValid(cached_ag_label_relid) &&
+         relid == cached_ag_label_relid))
+        invalidate_GRAPH_global_contexts_by_relid(InvalidOid);
+    else
+        invalidate_GRAPH_global_contexts_by_relid(relid);
+}
+
+void register_GRAPH_global_context_relcache_callback(void)
+{
+    if (relcache_callback_registered) {
+        return;
+    }
+
+    CacheRegisterThreadRelcacheCallback(
+        invalidate_GRAPH_global_contexts_relcache_callback,
+        (Datum)0);
+    relcache_callback_registered = true;
+}
+
+uint64 get_GRAPH_global_context_generation(GRAPH_global_context *ggctx)
+{
+    Assert(ggctx != NULL);
+    return ggctx->generation;
+}
+
 /*
  * Helper function to determine validity of the passed GRAPH_global_context.
- *
- * Uses graph-specific version counters (via DSM or shmem) when available.
- * Falls back to snapshot-based invalidation when shared memory is not
- * initialized (PG < 17 without shared_preload_libraries).
- *
- * The version counter approach only invalidates when the specific graph
- * has been mutated (via Cypher operations or SQL triggers), avoiding false
- * invalidation from unrelated transactions on the server.
+ * This is based off of the current active snaphot, to see if the graph could
+ * have been modified. Ideally, we should find a way to more accurately know
+ * whether the particular graph was modified.
  */
 bool is_ggctx_invalid(GRAPH_global_context *ggctx)
 {
-    /* use version counter if DSM or SHMEM mode is active */
-    if (version_mode == VERSION_MODE_DSM || version_mode == VERSION_MODE_SHMEM)
-    {
-        uint64 current_version = get_graph_version(ggctx->graph_oid);
+    Snapshot snap = GetActiveSnapshot();
 
-        /*
-         * If current_version is 0, no mutations have been tracked through
-         * the version counter system yet. Fall through to snapshot-based
-         * checking for safety — the graph may have been mutated via paths
-         * that don't increment the counter (e.g., before executor hooks
-         * are in place, or via direct SQL without triggers).
-         *
-         * Once current_version > 0, we know the counter is actively
-         * tracking this graph and can rely on it exclusively.
-         */
-        if (current_version > 0)
-        {
-            return (ggctx->graph_version != current_version);
-        }
-        /* fall through to snapshot check */
-    }
-
-    /* SNAPSHOT fallback: original behavior — check snapshot ids */
-    {
-        Snapshot snap = GetActiveSnapshot();
-
-        return (ggctx->xmin != snap->xmin ||
-                ggctx->xmax != snap->xmax ||
-                ggctx->curcid != snap->curcid);
-    }
+    /*
+     * If the transaction ids (xmin or xmax) or currentCommandId (curcid) have
+     * changed, then we have a graph that was updated. This means that the
+     * global context for this graph is no longer valid.
+     */
+    return (ggctx->dirty ||
+            ggctx->xmin != snap->xmin ||
+            ggctx->xmax != snap->xmax ||
+            ggctx->curcid != snap->curcid);
 }
-/*
- * Fast hash function for graphid (int64) keys.
- *
- * Replaces dynahash's tag_hash (Jenkins lookup3 → ~17 mixing ops) with the
- * MurmurHash3 fmix64 finalizer (5 ops: 3 xorshifts + 2 multiplies).
- *
- * Quality: fmix64 is the avalanche stage of MurmurHash3 and passes all SMHasher
- * tests for 64-bit integer inputs. The output is truncated to uint32 to match
- * dynahash's HashValueFunc signature; bits 0..31 of fmix64 are well-mixed.
- *
- * Performance rationale: graphid lookups dominate hash_search_with_hash_value
- * time (≈41% IC1 on SF3). Reducing the per-call mixing cost cuts both insert
- * and lookup overhead in age_global_graph and age_vle hashtables.
- */
-uint32 graphid_hash(const void *key, Size keysize)
-{
-    uint64 k;
-
-    /* keysize is always sizeof(int64) for every graphid hashtable; assert in debug. */
-    Assert(keysize == sizeof(int64));
-    (void) keysize;
-
-    /* graphid keys are stored as int64; load aligned (callers pass &graphid). */
-    memcpy(&k, key, sizeof(uint64));
-
-    /* MurmurHash3 fmix64 (Austin Appleby, public domain). */
-    k ^= k >> 33;
-    k *= UINT64CONST(0xff51afd7ed558ccd);
-    k ^= k >> 33;
-    k *= UINT64CONST(0xc4ceb9fe1a85ec53);
-    k ^= k >> 33;
-
-    return (uint32) k;
-}
-
-/*
- * agehash key-equality callback for graphid (int64) keys.
- *
- * graphid_hash collisions are rare but real (32-bit hash space, billions of
- * possible keys), so the equality check has to compare the full 8 bytes.
- * memcmp on a fixed 8-byte length compiles to a single load + cmp on x86,
- * which is just as fast as an int64 cast and avoids any alignment risk on
- * other architectures.
- */
-bool graphid_keyeq(const void *a, const void *b, Size keysize)
-{
-    Assert(keysize == sizeof(int64));
-    (void) keysize;
-    return memcmp(a, b, sizeof(int64)) == 0;
-}
-
 /*
  * Helper function to create the global vertex and edge hashtables. One
  * hashtable will hold the vertex, its edges (both incoming and exiting) as a
@@ -325,40 +319,51 @@ bool graphid_keyeq(const void *a, const void *b, Size keysize)
 static void create_GRAPH_global_hashtables(GRAPH_global_context *ggctx)
 {
     HASHCTL vertex_ctl;
+    HASHCTL edge_ctl;
     char *graph_name = NULL;
     char *vhn = NULL;
+    char *ehn = NULL;
     int glen;
     int vlen;
+    int elen;
 
     /* get the graph name and length */
     graph_name = ggctx->graph_name;
     glen = strlen(graph_name);
     /* get the vertex htab name length */
     vlen = strlen(VERTEX_HTAB_NAME);
-    /* allocate the space and build the name */
-    vhn = palloc0(vlen + glen + 1);
+    /* get the edge htab name length */
+    elen = strlen(EDGE_HTAB_NAME);
+    /* allocate the space and build the names */
+    vhn = (char *) palloc0(vlen + glen + 1);
+    ehn = (char *) palloc0(elen + glen + 1);
+    /* copy in the names */
     strcpy(vhn, VERTEX_HTAB_NAME);
+    strcpy(ehn, EDGE_HTAB_NAME);
+    /* add in the graph name */
     vhn = strncat(vhn, graph_name, glen);
+    ehn = strncat(ehn, graph_name, glen);
 
     /* initialize the vertex hashtable */
     MemSet(&vertex_ctl, 0, sizeof(vertex_ctl));
     vertex_ctl.keysize = sizeof(int64);
     vertex_ctl.entrysize = sizeof(vertex_entry);
     vertex_ctl.hash = graphid_hash;
+    vertex_ctl.hcxt = CurrentMemoryContext;
     ggctx->vertex_hashtable = hash_create(vhn, VERTEX_HTAB_INITIAL_SIZE,
                                           &vertex_ctl,
                                           HASH_ELEM | HASH_FUNCTION);
-    pfree_if_not_null(vhn);
-
+    pfree(vhn);
     /*
-     * Initialize the edge_table (agehash, INLINE mode).
-     *
-     * Owns its own MemoryContext as a child of CurrentMemoryContext (which,
-     * at the call site, is TopMemoryContext for the lifetime of the cached
-     * GRAPH_global_context). Cleanup is a single MemoryContextDelete in
-     * free_specific_GRAPH_global_context, so an elog during build cannot
-     * leak slots.
+     * Initialize the edge_table (agehash, INLINE mode). It owns a private
+     * MemoryContext as a child of CurrentMemoryContext (TopMemoryContext for
+     * the lifetime of the cached GRAPH_global_context). Cleanup is a single
+     * MemoryContextDelete in free_specific_GRAPH_global_context, so an elog
+     * during build cannot leak slots. The edge_id key is stored in the slot
+     * header, so the payload is just edge_entry.
      */
+    (void) edge_ctl;
+    pfree(ehn);
     ggctx->edge_table_mcxt =
         AllocSetContextCreate(CurrentMemoryContext,
                               "AGE edge_table",
@@ -376,129 +381,46 @@ static List *get_ag_labels_names(Snapshot snapshot, Oid graph_oid,
                                  char label_type)
 {
     List *labels = NIL;
-    ScanKeyData scan_keys[2];
     Relation ag_label;
-    TableScanDesc scan_desc;
-    HeapTuple tuple;
+    Oid ag_label_relid;
     TupleDesc tupdesc;
-    Oid index_oid = InvalidOid;
+    AgeBtreeEqScan *scan;
+    HeapTuple tuple;
 
-    /* we need a valid snapshot */
     Assert(snapshot != NULL);
 
-    /* setup the table to be scanned, ag_label in this case */
-    ag_label = table_open(ag_label_relation_id(), AccessShareLock);
-
-    /* get the tupdesc - we don't need to release this one */
+    ag_label_relid = ag_label_relation_id();
+    cached_ag_label_relid = ag_label_relid;
+    ag_label = heap_open(ag_label_relid, AccessShareLock);
     tupdesc = RelationGetDescr(ag_label);
-    /* bail if the number of columns differs - this table has 5 */
     Assert(tupdesc->natts == Natts_ag_label);
 
-    /* 
-     * Find a usable index whose first key column is ag_label.graph 
-     * (Anum_ag_label_graph) 
-     */
-    index_oid = find_usable_btree_index_for_attr(ag_label, Anum_ag_label_graph);
+    scan = age_btree_eq_beginscan(
+        ag_label, snapshot, Anum_ag_label_graph, F_OIDEQ,
+        ObjectIdGetDatum(graph_oid), AccessShareLock);
 
-    if (OidIsValid(index_oid))
+    while (HeapTupleIsValid(tuple = age_btree_eq_getnext(scan)))
     {
-        Relation index_rel;
-        IndexScanDesc idx_scan_desc;
-        ScanKeyData key;
-        TupleTableSlot *slot;
-
-        index_rel = index_open(index_oid, AccessShareLock);
-        slot = table_slot_create(ag_label, NULL);
-
-        /* 
-         * Setup ScanKey: ag_label.graph = graph_oid 
-         * Note: We CANNOT filter by 'kind' here because it is not in the index.
-         */
-        ScanKeyInit(&key, 1, BTEqualStrategyNumber,
-                    F_OIDEQ, ObjectIdGetDatum(graph_oid));
-
-        idx_scan_desc = index_beginscan(ag_label, index_rel, snapshot, NULL, 1, 0);
-        index_rescan(idx_scan_desc, &key, 1, NULL, 0);
-
-        while (index_getnext_slot(idx_scan_desc, ForwardScanDirection, slot))
-        {
-            bool shouldFree;
-            
-            tuple = ExecFetchSlotHeapTuple(slot, true, &shouldFree);
-
-            if (HeapTupleIsValid(tuple))
-            {
-                bool is_null;
-                Datum kind_datum;
-
-                /* 
-                 * Since the index only gave us rows for the correct graph,
-                 * we must now check if the label 'kind' matches (vertex 'v' or edge 'e').
-                 */
-                kind_datum = heap_getattr(tuple, Anum_ag_label_kind, tupdesc, &is_null);
-
-                if (!is_null && DatumGetChar(kind_datum) == label_type)
-                {
-                    Datum name_datum = heap_getattr(tuple, Anum_ag_label_name, tupdesc, &is_null);
-                    if (!is_null)
-                    {
-                        Name label_name_ptr;
-                        Name lval;
-
-                        label_name_ptr = DatumGetName(name_datum);
-                        lval = (Name) palloc(NAMEDATALEN);
-                        namestrcpy(lval, NameStr(*label_name_ptr));
-                        labels = lappend(labels, lval);
-                    }
-                }
-            }
-
-            if (shouldFree)
-            {
-                heap_freetuple(tuple);
-            }
-            ExecClearTuple(slot);
+        bool is_null = false;
+        Datum kind = heap_getattr(tuple, Anum_ag_label_kind, tupdesc,
+                                  &is_null);
+        if (is_null || DatumGetChar(kind) != label_type) {
+            continue;
         }
 
-        ExecDropSingleTupleTableSlot(slot);
-        index_endscan(idx_scan_desc);
-        index_close(index_rel, AccessShareLock);
-    } 
-    else
-    {
-        /* setup scan keys to get all edges for the given graph oid */
-        ScanKeyInit(&scan_keys[1], Anum_ag_label_graph, BTEqualStrategyNumber,
-                    F_OIDEQ, ObjectIdGetDatum(graph_oid));
-        ScanKeyInit(&scan_keys[0], Anum_ag_label_kind, BTEqualStrategyNumber,
-                    F_CHAREQ, CharGetDatum(label_type));
+        Datum name = heap_getattr(tuple, Anum_ag_label_name, tupdesc,
+                                  &is_null);
+        if (!is_null) {
+            Name source = DatumGetName(name);
+            Name copy = (Name) palloc(NAMEDATALEN);
 
-        scan_desc = table_beginscan(ag_label, snapshot, 2, scan_keys);
-
-        /* get all of the label names */
-        while((tuple = heap_getnext(scan_desc, ForwardScanDirection)) != NULL)
-        {
-            Name label;
-            Name lval;
-            bool is_null = false;
-
-            /* something is wrong if this tuple isn't valid */
-            Assert(HeapTupleIsValid(tuple));
-            /* get the label name */
-            label = DatumGetName(heap_getattr(tuple, Anum_ag_label_name, tupdesc,
-                                            &is_null));
-
-            Assert(!is_null);
-            /* add it to our list */
-            lval = (Name) palloc(NAMEDATALEN);
-            namestrcpy(lval, NameStr(*label));
-            labels = lappend(labels, lval);
+            namestrcpy(copy, NameStr(*source));
+            labels = lappend(labels, copy);
         }
-
-        /* close up scan */
-        table_endscan(scan_desc);
     }
 
-    table_close(ag_label, AccessShareLock);
+    age_btree_eq_endscan(scan);
+    heap_close(ag_label, AccessShareLock);
 
     return labels;
 }
@@ -514,23 +436,21 @@ static bool insert_edge_entry(GRAPH_global_context *ggctx, graphid edge_id,
     edge_entry *ee = NULL;
     bool found = false;
 
-    /* search for the edge */
-    ee = (edge_entry *) agehash_insert(ggctx->edge_table,
-                                       (void *) &edge_id, &found);
-
+    /* search for / insert the edge in the agehash edge_table */
+    ee = (edge_entry *) agehash_insert(ggctx->edge_table, (void *)&edge_id,
+                                       &found);
     /* agehash never returns NULL on insert; a NULL would indicate a bug. */
-    if (ee == NULL)
-    {
+    if (ee == NULL) {
         elog(ERROR, "insert_edge_entry: hash table returned NULL for ee");
     }
 
     /*
      * If we found the key, either we have a duplicate, or we made a mistake and
-     * inserted it already. Either way, this isn't good so don't insert it and
-     * return false.
+     * inserted it already. Either way, this isn't good so warn and return
+     * false. This way the caller can decide what to do. The previous edge's id
+     * is the same edge_id (agehash key), so it is reported from the argument.
      */
-    if (found)
-    {
+    if (found) {
         ereport(WARNING,
                 (errcode(ERRCODE_DATA_EXCEPTION),
                  errmsg("edge: [id: %ld, start: %ld, end: %ld, label oid: %d] %s",
@@ -546,10 +466,11 @@ static bool insert_edge_entry(GRAPH_global_context *ggctx, graphid edge_id,
         return false;
     }
 
+    /* not sure if we really need to zero out the entry, as we set everything */
     /*
-     * agehash_insert zero-fills the payload on a fresh insert, so we can fill
-     * in only the fields we care about. The hash key (edge_id) lives in the
-     * slot header; recoverable via get_edge_entry_id() if needed.
+     * agehash_insert already zero-filled the payload on a fresh insert. The
+     * edge_id is the agehash slot key (recoverable via get_edge_entry_id), so
+     * it is not stored in the payload.
      */
     ee->tid = tid;
     ee->start_vertex_id = start_vertex_id;
@@ -576,8 +497,6 @@ static bool insert_vertex_entry(GRAPH_global_context *ggctx, graphid vertex_id,
     /* search for the vertex */
     ve = (vertex_entry *)hash_search(ggctx->vertex_hashtable,
                                      (void *)&vertex_id, HASH_ENTER, &found);
-
-    /* if the hash enter returned is NULL, error out */
     if (ve == NULL)
     {
         elog(ERROR, "insert_vertex_entry: hash table returned NULL for ve");
@@ -612,10 +531,16 @@ static bool insert_vertex_entry(GRAPH_global_context *ggctx, graphid vertex_id,
     ve->vertex_label_table_oid = vertex_label_table_oid;
     /* set the TID for lazy property fetch */
     ve->tid = tid;
-    /*
-     * MemSet above already zeroed the embedded VertexEdgeArray fields
-     * (array=NULL, size=0, capacity=0); no explicit NIL assignment needed.
-     */
+    /* start with empty edge arrays (array == NULL, size == capacity == 0) */
+    ve->edges_in.array = NULL;
+    ve->edges_in.size = 0;
+    ve->edges_in.capacity = 0;
+    ve->edges_out.array = NULL;
+    ve->edges_out.size = 0;
+    ve->edges_out.capacity = 0;
+    ve->edges_self.array = NULL;
+    ve->edges_self.size = 0;
+    ve->edges_self.capacity = 0;
 
     /* we also need to store the vertex id for clean up of vertex lists */
     ggctx->vertices = append_graphid(ggctx->vertices, vertex_id);
@@ -630,7 +555,7 @@ static bool insert_vertex_entry(GRAPH_global_context *ggctx, graphid vertex_id,
  * Helper function to append one edge to an existing vertex in the current
  * global vertex hashtable.
  */
-static bool insert_vertex_edge(GRAPH_global_context *ggctx,
+static bool insert_vertex_edge(GRAPH_global_context *ggctx, 
                                graphid start_vertex_id, graphid end_vertex_id,
                                graphid edge_id, char *edge_label_name)
 {
@@ -649,19 +574,13 @@ static bool insert_vertex_edge(GRAPH_global_context *ggctx,
 
     /*
      * If we found the start_vertex_id and it is a self loop, add the edge to
-     * edges_self and we're done
+     * edges_self and we're done.
      */
     if (start_found && is_selfloop)
     {
         vea_append(&value->edges_self, edge_id);
         return true;
-    }
-    /*
-     * Otherwise, if we found the start_vertex_id add the edge to the edges_out
-     * list of the start vertex
-     */
-    else if (start_found)
-    {
+    } else if (start_found) {
         vea_append(&value->edges_out, edge_id);
     }
 
@@ -670,37 +589,26 @@ static bool insert_vertex_edge(GRAPH_global_context *ggctx,
                                         (void *)&end_vertex_id, HASH_FIND,
                                         &end_found);
 
-    /*
-     * If we found the start_vertex_id and the end_vertex_id add the edge to the
-     * edges_in list of the end vertex
-     */
     if (start_found && end_found)
     {
         vea_append(&value->edges_in, edge_id);
         return true;
     }
-    /*
-     * Otherwise we need to generate the appropriate warning message about the
-     * dangling edge that we found.
-     */
-    else if (!start_found && end_found)
+
+    if (!start_found && end_found)
     {
         ereport(WARNING,
                 (errcode(ERRCODE_DATA_EXCEPTION),
                  errmsg("edge: [id: %ld, start: %ld, end: %ld, label: %s] %s",
                         edge_id, start_vertex_id, end_vertex_id,
                         edge_label_name, "start vertex not found")));
-    }
-    else if (start_found && !end_found)
-    {
+    } else if (start_found && !end_found) {
         ereport(WARNING,
                 (errcode(ERRCODE_DATA_EXCEPTION),
                  errmsg("edge: [id: %ld, start: %ld, end: %ld, label: %s] %s",
                         edge_id, start_vertex_id, end_vertex_id,
                         edge_label_name, "end vertex not found")));
-    }
-    else
-    {
+    } else {
         ereport(WARNING,
                 (errcode(ERRCODE_DATA_EXCEPTION),
                  errmsg("edge: [id: %ld, start: %ld, end: %ld, label: %s] %s",
@@ -711,6 +619,116 @@ static bool insert_vertex_edge(GRAPH_global_context *ggctx,
     return false;
 }
 
+/*
+ * Collects the vertex label relations reachable from the edge labels this
+ * context loads, by reading only the label id bits of each edge's endpoint
+ * graphids. Returns NIL when every edge label is loaded, meaning "no vertex
+ * filtering".
+ *
+ * This pre-pass is far cheaper than the vertex load it lets us skip: on LDBC
+ * SF1 scanning the knows endpoints costs tens of milliseconds while loading
+ * every vertex label costs ~1.7 s (comment and post alone are 96% of all
+ * vertices and no knows edge can reach them).
+ *
+ * insert_vertex_edge() looks endpoints up with HASH_FIND and warns when one is
+ * missing, so every label an edge can reach must be present. Deriving the set
+ * from the edges themselves guarantees that.
+ */
+static List *collect_endpoint_vertex_relids(GRAPH_global_context *ggctx)
+{
+    Oid graph_namespace_oid;
+    Snapshot snapshot;
+    List *edge_label_names = NIL;
+    List *label_ids = NIL;
+    List *vertex_relids = NIL;
+    ListCell *lc;
+
+    if (ggctx->all_edge_labels_loaded) {
+        return NIL;
+    }
+
+    graph_namespace_oid = get_namespace_oid(ggctx->graph_name, false);
+    snapshot = GetActiveSnapshot();
+    edge_label_names = get_ag_labels_names(snapshot, ggctx->graph_oid,
+        LABEL_TYPE_EDGE);
+
+    foreach (lc, edge_label_names)
+    {
+        char *edge_label_name = (char *) lfirst(lc);
+        Oid edge_relid = get_relname_relid(edge_label_name,
+                                           graph_namespace_oid);
+        Relation edge_rel;
+        TableScanDesc scan_desc;
+        TupleDesc tupdesc;
+        HeapTuple tuple;
+
+        if (!list_member_oid(ggctx->edge_label_relids, edge_relid)) {
+            continue;
+        }
+
+        edge_rel = heap_open(edge_relid, AccessShareLock);
+        ensure_age_relation_supports_raw_access(edge_rel);
+        tupdesc = RelationGetDescr(edge_rel);
+        if (tupdesc->natts != EDGE_RELATION_ATTRIBUTE_COUNT) {
+            heap_close(edge_rel, AccessShareLock);
+            ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_TABLE),
+                     errmsg("Invalid number of attributes for %s.%s",
+                            ggctx->graph_name, edge_label_name)));
+        }
+
+        scan_desc = heap_beginscan(edge_rel, snapshot, 0, NULL);
+        while ((tuple = heap_getnext(scan_desc, ForwardScanDirection)) != NULL) {
+            int i;
+
+            /* attnums 1 and 2 are start_id and end_id */
+            for (i = EDGE_ENDPOINT_FIRST_ATTRIBUTE;
+                 i <= EDGE_ENDPOINT_LAST_ATTRIBUTE; i++) {
+                graphid endpoint = DatumGetInt64(
+                    column_get_datum(tupdesc, tuple, i,
+                                     i == 1 ? "start_id" : "end_id",
+                                     GRAPHIDOID, true));
+                int32 label_id = get_graphid_label_id(endpoint);
+                if (!list_member_int(label_ids, label_id)) {
+                    label_ids = lappend_int(label_ids, label_id);
+                }
+            }
+        }
+        heap_endscan(scan_desc);
+        heap_close(edge_rel, AccessShareLock);
+    }
+
+    /* an edge label set that matched no relation constrains nothing */
+    if (label_ids == NIL) {
+        return NIL;
+    }
+
+    foreach (lc, label_ids)
+    {
+        int32 label_id = lfirst_int(lc);
+        label_cache_data *cached = search_label_graph_id_cache(ggctx->graph_oid,
+                                                               label_id);
+
+        /*
+         * A label id with no catalog entry cannot be resolved to a relation.
+         * Fall back to loading every vertex label rather than risk dropping
+         * one an edge needs.
+         */
+        if (cached == NULL || !OidIsValid(cached->relation)) {
+            list_free(vertex_relids);
+            return NIL;
+        }
+
+        if (!list_member_oid(vertex_relids, cached->relation)) {
+            vertex_relids = lappend_oid(vertex_relids, cached->relation);
+        }
+    }
+
+    list_free(label_ids);
+
+    return vertex_relids;
+}
+
 /* helper routine to load all vertices into the GRAPH global vertex hashtable */
 static void load_vertex_hashtable(GRAPH_global_context *ggctx)
 {
@@ -718,6 +736,7 @@ static void load_vertex_hashtable(GRAPH_global_context *ggctx)
     Oid graph_namespace_oid;
     Snapshot snapshot;
     List *vertex_label_names = NIL;
+    List *wanted_vertex_relids = NIL;
     ListCell *lc;
 
     /* get the specific graph OID and namespace (schema) OID */
@@ -728,6 +747,10 @@ static void load_vertex_hashtable(GRAPH_global_context *ggctx)
     /* get the names of all of the vertex label tables */
     vertex_label_names = get_ag_labels_names(snapshot, graph_oid,
                                              LABEL_TYPE_VERTEX);
+
+    /* NIL means load every vertex label */
+    wanted_vertex_relids = collect_endpoint_vertex_relids(ggctx);
+
     /* go through all vertex label tables in list */
     foreach (lc, vertex_label_names)
     {
@@ -739,13 +762,22 @@ static void load_vertex_hashtable(GRAPH_global_context *ggctx)
         TupleDesc tupdesc;
 
         /* get the vertex label name */
-        vertex_label_name = lfirst(lc);
+        vertex_label_name = (char *)lfirst(lc);
         /* get the vertex label name's OID */
         vertex_label_table_oid = get_relname_relid(vertex_label_name,
                                                    graph_namespace_oid);
+        /* skip vertex labels no loaded edge can reach */
+        if (wanted_vertex_relids != NIL &&
+            !list_member_oid(wanted_vertex_relids, vertex_label_table_oid))
+        {
+            continue;
+        }
+
+        register_loaded_relid(ggctx, vertex_label_table_oid);
         /* open the relation (table) and begin the scan */
-        graph_vertex_label = table_open(vertex_label_table_oid, AccessShareLock);
-        scan_desc = table_beginscan(graph_vertex_label, snapshot, 0, NULL);
+        graph_vertex_label = heap_open(vertex_label_table_oid, AccessShareLock);
+        ensure_age_relation_supports_raw_access(graph_vertex_label);
+        scan_desc = heap_beginscan(graph_vertex_label, snapshot, 0, NULL);
         /* get the tupdesc - we don't need to release this one */
         tupdesc = RelationGetDescr(graph_vertex_label);
         /* bail if the number of columns differs */
@@ -763,21 +795,14 @@ static void load_vertex_hashtable(GRAPH_global_context *ggctx)
             bool inserted = false;
 
             /* something is wrong if this isn't true */
-            if (!HeapTupleIsValid(tuple))
-            {
-                elog(ERROR, "load_vertex_hashtable: !HeapTupleIsValid");
-            }
             Assert(HeapTupleIsValid(tuple));
-
             /* get the vertex id */
             vertex_id = DatumGetInt64(column_get_datum(tupdesc, tuple, 0, "id",
                                                        GRAPHIDOID, true));
-
-            /* insert vertex into vertex hashtable with TID (no property copy) */
+            /* insert vertex into vertex hashtable with TID */
             inserted = insert_vertex_entry(ggctx, vertex_id,
                                            vertex_label_table_oid,
                                            tuple->t_self);
-
             /* warn if there is a duplicate */
             if (!inserted)
             {
@@ -788,8 +813,8 @@ static void load_vertex_hashtable(GRAPH_global_context *ggctx)
         }
 
         /* end the scan and close the relation */
-        table_endscan(scan_desc);
-        table_close(graph_vertex_label, AccessShareLock);
+        heap_endscan(scan_desc);
+        heap_close(graph_vertex_label, AccessShareLock);
     }
 }
 
@@ -841,13 +866,22 @@ static void load_edge_hashtable(GRAPH_global_context *ggctx)
         TupleDesc tupdesc;
 
         /* get the edge label name */
-        edge_label_name = lfirst(lc);
+        edge_label_name = (char *)lfirst(lc);
         /* get the edge label name's OID */
         edge_label_table_oid = get_relname_relid(edge_label_name,
                                                  graph_namespace_oid);
+        /* skip edge labels this context was not asked to load */
+        if (!ggctx->all_edge_labels_loaded &&
+            !list_member_oid(ggctx->edge_label_relids, edge_label_table_oid))
+        {
+            continue;
+        }
+
+        register_loaded_relid(ggctx, edge_label_table_oid);
         /* open the relation (table) and begin the scan */
-        graph_edge_label = table_open(edge_label_table_oid, AccessShareLock);
-        scan_desc = table_beginscan(graph_edge_label, snapshot, 0, NULL);
+        graph_edge_label = heap_open(edge_label_table_oid, AccessShareLock);
+        ensure_age_relation_supports_raw_access(graph_edge_label);
+        scan_desc = heap_beginscan(graph_edge_label, snapshot, 0, NULL);
         /* get the tupdesc - we don't need to release this one */
         tupdesc = RelationGetDescr(graph_edge_label);
         /* bail if the number of columns differs */
@@ -867,12 +901,7 @@ static void load_edge_hashtable(GRAPH_global_context *ggctx)
             bool inserted = false;
 
             /* something is wrong if this isn't true */
-            if (!HeapTupleIsValid(tuple))
-            {
-                elog(ERROR, "load_edge_hashtable: !HeapTupleIsValid");
-            }
             Assert(HeapTupleIsValid(tuple));
-
             /* get the edge id */
             edge_id = DatumGetInt64(column_get_datum(tupdesc, tuple, 0, "id",
                                                      GRAPHIDOID, true));
@@ -887,13 +916,11 @@ static void load_edge_hashtable(GRAPH_global_context *ggctx)
                                                                 2, "end_id",
                                                                 GRAPHIDOID,
                                                                 true));
-
-            /* insert edge into edge hashtable with TID (no property copy) */
+            /* insert edge into edge hashtable with TID */
             inserted = insert_edge_entry(ggctx, edge_id, tuple->t_self,
                                          edge_vertex_start_id,
                                          edge_vertex_end_id,
                                          edge_label_table_oid);
-
             /* warn if there is a duplicate */
             if (!inserted)
             {
@@ -902,7 +929,7 @@ static void load_edge_hashtable(GRAPH_global_context *ggctx)
                           errmsg("ignored duplicate edge")));
             }
 
-            /* insert the edge into the start and end vertices edge lists */
+             /* insert the edge into the start and end vertices edge lists */
             inserted = insert_vertex_edge(ggctx, edge_vertex_start_id,
                                           edge_vertex_end_id, edge_id,
                                           edge_label_name);
@@ -915,8 +942,8 @@ static void load_edge_hashtable(GRAPH_global_context *ggctx)
         }
 
         /* end the scan and close the relation */
-        table_endscan(scan_desc);
-        table_close(graph_edge_label, AccessShareLock);
+        heap_endscan(scan_desc);
+        heap_close(graph_edge_label, AccessShareLock);
     }
 }
 
@@ -935,24 +962,30 @@ static void freeze_GRAPH_global_hashtables(GRAPH_global_context *ggctx)
  * Helper function to free the entire specified GRAPH global context. After
  * running this you should not use the pointer in ggctx.
  */
-static bool free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
+static void free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
 {
     GraphIdNode *curr_vertex = NULL;
 
     /* don't do anything if NULL */
     if (ggctx == NULL)
     {
-        return true;
+        return;
     }
 
     /* free the graph name */
-    pfree_if_not_null(ggctx->graph_name);
+    pfree(ggctx->graph_name);
     ggctx->graph_name = NULL;
+
+    list_free(ggctx->loaded_relids);
+    ggctx->loaded_relids = NIL;
+
+    list_free(ggctx->edge_label_relids);
+    ggctx->edge_label_relids = NIL;
 
     ggctx->graph_oid = InvalidOid;
     ggctx->next = NULL;
 
-    /* free the vertex edge lists and properties, starting with the head */
+    /* free the vertex edge lists, starting with the head */
     curr_vertex = peek_stack_head(ggctx->vertices);
     while (curr_vertex != NULL)
     {
@@ -971,17 +1004,13 @@ static bool free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
         value = (vertex_entry *)hash_search(ggctx->vertex_hashtable,
                                             (void *)&vertex_id, HASH_FIND,
                                             &found);
-        /* this is bad if it isn't found, but leave that to the caller */
-        if (found == false)
-        {
-            return false;
-        }
+        /* this is bad if it isn't found */
+        Assert(found);
 
         /* free the edge arrays associated with this vertex */
         vea_free(&value->edges_in);
         vea_free(&value->edges_out);
         vea_free(&value->edges_self);
-
         /* move to the next vertex */
         curr_vertex = next_vertex;
     }
@@ -990,24 +1019,51 @@ static bool free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
     free_ListGraphId(ggctx->vertices);
     ggctx->vertices = NULL;
 
-    /* free the hashtables */
+    /* free the vertex hashtable (dynahash) */
     hash_destroy(ggctx->vertex_hashtable);
+    ggctx->vertex_hashtable = NULL;
+
     /*
-     * The edge_table and all of its slots live entirely inside
-     * edge_table_mcxt, so a single MemoryContextDelete reclaims them.
+     * Free the edge_table. All agehash slots live in edge_table_mcxt, so a
+     * single MemoryContextDelete reclaims the table and every slot.
      */
     if (ggctx->edge_table_mcxt != NULL)
     {
         MemoryContextDelete(ggctx->edge_table_mcxt);
     }
-
-    ggctx->vertex_hashtable = NULL;
     ggctx->edge_table = NULL;
     ggctx->edge_table_mcxt = NULL;
 
     /* free the context */
-    pfree_if_not_null(ggctx);
+    pfree(ggctx);
     ggctx = NULL;
+}
+
+/*
+ * True when a context built for loaded_relids can serve a request for
+ * wanted_relids. A context holding every edge label serves any request; a
+ * narrower one only serves requests contained in what it loaded.
+ */
+static bool edge_labels_satisfy(GRAPH_global_context *ggctx,
+                                List *wanted_relids)
+{
+    ListCell *lc;
+
+    if (ggctx->all_edge_labels_loaded) {
+        return true;
+    }
+
+    /* a request for everything cannot be served by a filtered context */
+    if (wanted_relids == NIL) {
+        return false;
+    }
+
+    foreach (lc, wanted_relids)
+    {
+        if (!list_member_oid(ggctx->edge_label_relids, lfirst_oid(lc))) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -1018,11 +1074,15 @@ static bool free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
  * During processing it will free (delete) all invalid GRAPH contexts. It
  * returns the GRAPH global context for the specified graph.
  *
- * NOTE: Function uses a MUTEX for global_graph_contexts
- *
+ * edge_label_relids restricts which edge label relations get loaded. Pass NIL
+ * to load every edge label. A context is reused only when what it already
+ * holds covers the request; otherwise it is rebuilt. Rebuilding rather than
+ * topping up matters because the hashtables are frozen after load, and callers
+ * rely on entry pointers staying valid, which an incremental insert (and the
+ * rehash it can trigger) would break.
  */
-GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
-                                                   Oid graph_oid)
+GRAPH_global_context *manage_GRAPH_global_contexts_for_labels(
+    char *graph_name, Oid graph_oid, List *edge_label_relids)
 {
     GRAPH_global_context *new_ggctx = NULL;
     GRAPH_global_context *curr_ggctx = NULL;
@@ -1030,7 +1090,7 @@ GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
     MemoryContext oldctx = NULL;
 
     /* we need a higher context, or one that isn't destroyed by SRF exit */
-    oldctx = MemoryContextSwitchTo(TopMemoryContext);
+    oldctx = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
 
     /*
      * We need to see if any GRAPH global contexts already exist and if any do
@@ -1043,46 +1103,28 @@ GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
      *     5) One or more other contexts do exist but, one or more are invalid.
      */
 
-
     /* free the invalidated GRAPH global contexts first */
     prev_ggctx = NULL;
     curr_ggctx = global_graph_contexts;
-    while (curr_ggctx != NULL)
-    {
+    while (curr_ggctx != NULL) {
         GRAPH_global_context *next_ggctx = curr_ggctx->next;
 
-        /* if the transaction ids have changed, we have an invalid graph */
-        if (is_ggctx_invalid(curr_ggctx))
-        {
-            bool success = false;
-
+        /* discard graph data invalidated by a snapshot or relcache event */
+        if (is_ggctx_invalid(curr_ggctx)) {
             /*
              * If prev_ggctx is NULL then we are freeing the top of the
-             * contexts. So, we need to point the contexts variable to the
+             * contexts. So, we need to point the global variable to the
              * new (next) top context, if there is one.
              */
-            if (prev_ggctx == NULL)
-            {
+            if (prev_ggctx == NULL) {
                 global_graph_contexts = next_ggctx;
-            }
-            else
-            {
+            } else {
                 prev_ggctx->next = curr_ggctx->next;
             }
 
             /* free the current graph context */
-            success = free_specific_GRAPH_global_context(curr_ggctx);
-
-            /* if it wasn't successfull, there was a missing vertex entry */
-            if (!success)
-            {
-
-                ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
-                                errmsg("missing vertex or edge entry during free")));
-            }
-        }
-        else
-        {
+            free_specific_GRAPH_global_context(curr_ggctx);
+        } else {
             prev_ggctx = curr_ggctx;
         }
 
@@ -1090,30 +1132,52 @@ GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
         curr_ggctx = next_ggctx;
     }
 
-    /* find our graph's context. if it exists, we are done */
+    /* find our graph's context. if it covers the request, we are done */
+    prev_ggctx = NULL;
     curr_ggctx = global_graph_contexts;
-    while (curr_ggctx != NULL)
-    {
-        if (curr_ggctx->graph_oid == graph_oid)
-        {
-            /* switch our context back */
-            MemoryContextSwitchTo(oldctx);
+    while (curr_ggctx != NULL) {
+        if (curr_ggctx->graph_oid == graph_oid) {
+            if (edge_labels_satisfy(curr_ggctx, edge_label_relids)) {
+                /* switch our context back */
+                MemoryContextSwitchTo(oldctx);
+                /* we are done */
+                return curr_ggctx;
+            }
 
+            /*
+             * Present but too narrow for this request. Detach and free it so
+             * the rebuild below covers both the old and the new labels.
+             */
+            if (prev_ggctx == NULL) {
+                global_graph_contexts = curr_ggctx->next;
+            } else {
+                prev_ggctx->next = curr_ggctx->next;
+            }
 
-            return curr_ggctx;
+            /*
+             * Widen the request to also cover what the discarded context held,
+             * so a caller that alternates between label sets converges instead
+             * of thrashing. A NIL request already means "all labels".
+             */
+            if (edge_label_relids != NIL) {
+                edge_label_relids =
+                    list_union_oid(curr_ggctx->edge_label_relids,
+                                   edge_label_relids);
+            }
+
+            free_specific_GRAPH_global_context(curr_ggctx);
+            break;
         }
+        prev_ggctx = curr_ggctx;
         curr_ggctx = curr_ggctx->next;
     }
 
     /* otherwise, we need to create one and possibly attach it */
-    new_ggctx = palloc0(sizeof(GRAPH_global_context));
+    new_ggctx = (GRAPH_global_context *)palloc0(sizeof(GRAPH_global_context));
 
-    if (global_graph_contexts != NULL)
-    {
+    if (global_graph_contexts != NULL) {
         new_ggctx->next = global_graph_contexts;
-    }
-    else
-    {
+    } else {
         new_ggctx->next = NULL;
     }
 
@@ -1123,11 +1187,15 @@ GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
     /* set the graph name and oid */
     new_ggctx->graph_name = pstrdup(graph_name);
     new_ggctx->graph_oid = graph_oid;
+    new_ggctx->dirty = false;
+    new_ggctx->loaded_relids = NIL;
+    new_ggctx->edge_label_relids = list_copy(edge_label_relids);
+    new_ggctx->all_edge_labels_loaded = (edge_label_relids == NIL);
+    if (next_graph_context_generation == 0)
+        next_graph_context_generation = 1;
+    new_ggctx->generation = next_graph_context_generation++;
 
-    /* set the graph version counter for cache invalidation */
-    new_ggctx->graph_version = get_graph_version(graph_oid);
-
-    /* set snapshot fields for SNAPSHOT fallback mode */
+    /* set the transaction ids */
     new_ggctx->xmin = GetActiveSnapshot()->xmin;
     new_ggctx->xmax = GetActiveSnapshot()->xmax;
     new_ggctx->curcid = GetActiveSnapshot()->curcid;
@@ -1140,24 +1208,26 @@ GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
     load_GRAPH_global_hashtables(new_ggctx);
     freeze_GRAPH_global_hashtables(new_ggctx);
 
-
     /* switch back to the previous memory context */
     MemoryContextSwitchTo(oldctx);
 
     return new_ggctx;
 }
 
+GRAPH_global_context *manage_GRAPH_global_contexts(char *graph_name,
+                                                   Oid graph_oid)
+{
+    return manage_GRAPH_global_contexts_for_labels(graph_name, graph_oid, NIL);
+}
+
 /*
  * Helper function to delete all of the global graph contexts used by the
  * process. When done the global global_graph_contexts will be NULL.
- *
- *
  */
 static bool delete_GRAPH_global_contexts(void)
 {
     GRAPH_global_context *curr_ggctx = NULL;
     bool retval = false;
-
 
     /* get the first context, if any */
     curr_ggctx = global_graph_contexts;
@@ -1166,18 +1236,9 @@ static bool delete_GRAPH_global_contexts(void)
     while (curr_ggctx != NULL)
     {
         GRAPH_global_context *next_ggctx = curr_ggctx->next;
-        bool success = false;
 
         /* free the current graph context */
-        success = free_specific_GRAPH_global_context(curr_ggctx);
-
-        /* if it wasn't successfull, there was a missing vertex entry */
-        if (!success)
-        {
-
-            ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
-                            errmsg("missing vertex or edge entry during free")));
-        }
+        free_specific_GRAPH_global_context(curr_ggctx);
 
         /* advance to the next context */
         curr_ggctx = next_ggctx;
@@ -1185,9 +1246,8 @@ static bool delete_GRAPH_global_contexts(void)
         retval = true;
     }
 
-    /* reset the head of the contexts to NULL */
+    /* clear the global variable */
     global_graph_contexts = NULL;
-
 
     return retval;
 }
@@ -1210,7 +1270,6 @@ static bool delete_specific_GRAPH_global_contexts(char *graph_name)
     /* get the graph oid */
     graph_oid = get_graph_oid(graph_name);
 
-
     /* get the first context, if any */
     curr_ggctx = global_graph_contexts;
 
@@ -1221,7 +1280,6 @@ static bool delete_specific_GRAPH_global_contexts(char *graph_name)
 
         if (curr_ggctx->graph_oid == graph_oid)
         {
-            bool success = false;
             /*
              * If prev_ggctx is NULL then we are freeing the top of the
              * contexts. So, we need to point the global variable to the
@@ -1237,25 +1295,16 @@ static bool delete_specific_GRAPH_global_contexts(char *graph_name)
             }
 
             /* free the current graph context */
-            success = free_specific_GRAPH_global_context(curr_ggctx);
-
-
-            /* if it wasn't successfull, there was a missing vertex entry */
-            if (!success)
-            {
-                ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
-                                errmsg("missing vertex_entry during free")));
-            }
+            free_specific_GRAPH_global_context(curr_ggctx);
 
             /* we found and freed it, return true */
             return true;
         }
 
-        /* save the current as previous and advance to the next one */
+        /* maintain the predecessor before advancing to the next one */
         prev_ggctx = curr_ggctx;
         curr_ggctx = next_ggctx;
     }
-
 
     /* we didn't find it, return false */
     return false;
@@ -1277,12 +1326,13 @@ vertex_entry *get_vertex_entry(GRAPH_global_context *ggctx, graphid vertex_id)
     return ve;
 }
 
-/* helper function to retrieve an edge_entry from the graph's edge table */
+/* helper function to retrieve an edge_entry from the graph's edge hash table */
 edge_entry *get_edge_entry(GRAPH_global_context *ggctx, graphid edge_id)
 {
-    edge_entry *ee;
+    edge_entry *ee = NULL;
 
-    ee = (edge_entry *) agehash_lookup(ggctx->edge_table, (void *) &edge_id);
+    /* retrieve the current edge entry from the agehash edge_table */
+    ee = (edge_entry *) agehash_lookup(ggctx->edge_table, (void *)&edge_id);
     /* it should be found, otherwise we have problems */
     Assert(ee != NULL);
 
@@ -1290,19 +1340,18 @@ edge_entry *get_edge_entry(GRAPH_global_context *ggctx, graphid edge_id)
 }
 
 /*
- * Variant of get_edge_entry that uses a precomputed hash value to skip the
- * agehash internal hash callback. The caller is responsible for ensuring
- * hashvalue == graphid_hash(&edge_id, sizeof(int64)). Used by the VLE DFS
- * hot loop where the same edge_id is also looked up in edge_state_hashtable.
+ * Variant of get_edge_entry accepting a precomputed hash value, so the same
+ * graphid_hash() result can be reused across paired lookups (e.g. the VLE DFS
+ * edge_state_hashtable + edge_table). Caller must ensure
+ * hashvalue == graphid_hash(&edge_id, sizeof(int64)).
  */
 edge_entry *get_edge_entry_with_hash(GRAPH_global_context *ggctx,
                                      graphid edge_id, uint32 hashvalue)
 {
-    edge_entry *ee;
+    edge_entry *ee = NULL;
 
     ee = (edge_entry *) agehash_lookup_with_hash(ggctx->edge_table,
-                                                 (void *) &edge_id,
-                                                 hashvalue);
+                                                 (void *)&edge_id, hashvalue);
     Assert(ee != NULL);
 
     return ee;
@@ -1316,7 +1365,6 @@ GRAPH_global_context *find_GRAPH_global_context(Oid graph_oid)
 {
     GRAPH_global_context *ggctx = NULL;
 
-
     /* get the root */
     ggctx = global_graph_contexts;
 
@@ -1325,14 +1373,12 @@ GRAPH_global_context *find_GRAPH_global_context(Oid graph_oid)
         /* if we found it return it */
         if (ggctx->graph_oid == graph_oid)
         {
-
             return ggctx;
         }
 
         /* advance to the next context */
         ggctx = ggctx->next;
     }
-
 
     /* we did not find it so return NULL */
     return NULL;
@@ -1365,25 +1411,11 @@ VertexEdgeArray *get_vertex_entry_edges_self_array(vertex_entry *ve)
     return &ve->edges_self;
 }
 
-
 Oid get_vertex_entry_label_table_oid(vertex_entry *ve)
 {
     return ve->vertex_label_table_oid;
 }
 
-/*
- * Fetch vertex properties on demand from the heap via stored TID.
- *
- * Returns a datumCopy of the properties in the current memory context.
- * The caller does not need to free the result explicitly — it will be
- * freed when the memory context is reset (typically the SRF multi-call
- * context for VLE, which is cleaned up when the SRF completes).
- *
- * If the tuple is no longer visible (e.g., concurrent mutation between
- * cache build and fetch), the version counter should have invalidated
- * the cache. If we get here with a stale TID, it indicates a bug in
- * the invalidation logic.
- */
 Datum get_vertex_entry_properties(vertex_entry *ve)
 {
     Relation rel;
@@ -1391,34 +1423,27 @@ Datum get_vertex_entry_properties(vertex_entry *ve)
     Buffer buffer;
     Datum result = (Datum) 0;
 
-    rel = table_open(ve->vertex_label_table_oid, AccessShareLock);
+    rel = heap_open(ve->vertex_label_table_oid, AccessShareLock);
+    ensure_age_relation_supports_raw_access(rel);
     tuple.t_self = ve->tid;
 
-    if (heap_fetch(rel, GetActiveSnapshot(), &tuple, &buffer, true))
-    {
+    if (heap_fetch(rel, GetActiveSnapshot(), &tuple, &buffer, true, NULL)) {
         TupleDesc tupdesc = RelationGetDescr(rel);
         bool isnull;
         Datum props;
 
-        /* properties is column 2 (1-indexed) */
-        props = heap_getattr(&tuple, 2, tupdesc, &isnull);
-        if (!isnull)
-        {
+        props = heap_getattr(&tuple, Anum_ag_label_vertex_table_properties,
+                             tupdesc, &isnull);
+        if (!isnull) {
             result = datumCopy(props, false, -1);
         }
 
         ReleaseBuffer(buffer);
     }
 
-    table_close(rel, AccessShareLock);
+    heap_close(rel, AccessShareLock);
 
-    /*
-     * If heap_fetch failed, the tuple is no longer visible. This should
-     * not happen under normal operation because the version counter
-     * invalidates the cache when the graph is mutated.
-     */
-    if (result == (Datum) 0)
-    {
+    if (result == (Datum) 0) {
         elog(ERROR, "get_vertex_entry_properties: stale TID - "
              "vertex entry references a tuple that is no longer visible");
     }
@@ -1430,12 +1455,12 @@ Datum get_vertex_entry_properties(vertex_entry *ve)
 graphid get_edge_entry_id(edge_entry *ee)
 {
     /*
-     * The edge_id is stored as the agehash slot key, immediately preceding
-     * the payload pointer we hand back as `edge_entry *`. Recover it via
-     * the public agehash_key_from_payload helper to avoid a redundant
-     * 8-byte field on every entry (saves ~400MB on SF3, ~1.4GB on SF10).
+     * The edge_id is stored as the agehash slot key, immediately preceding the
+     * payload pointer handed back as `edge_entry *`. Recover it via the public
+     * agehash_key_from_payload helper (no redundant per-entry field).
      */
     graphid k;
+
     memcpy(&k, agehash_key_from_payload(ee, sizeof(graphid)), sizeof(graphid));
     return k;
 }
@@ -1445,10 +1470,6 @@ Oid get_edge_entry_label_table_oid(edge_entry *ee)
     return ee->edge_label_table_oid;
 }
 
-/*
- * Fetch edge properties on demand from the heap via stored TID.
- * See get_vertex_entry_properties for memory and safety notes.
- */
 Datum get_edge_entry_properties(edge_entry *ee)
 {
     Relation rel;
@@ -1456,29 +1477,27 @@ Datum get_edge_entry_properties(edge_entry *ee)
     Buffer buffer;
     Datum result = (Datum) 0;
 
-    rel = table_open(ee->edge_label_table_oid, AccessShareLock);
+    rel = heap_open(ee->edge_label_table_oid, AccessShareLock);
+    ensure_age_relation_supports_raw_access(rel);
     tuple.t_self = ee->tid;
 
-    if (heap_fetch(rel, GetActiveSnapshot(), &tuple, &buffer, true))
-    {
+    if (heap_fetch(rel, GetActiveSnapshot(), &tuple, &buffer, true, NULL)) {
         TupleDesc tupdesc = RelationGetDescr(rel);
         bool isnull;
         Datum props;
 
-        /* properties is column 4 (1-indexed) */
-        props = heap_getattr(&tuple, 4, tupdesc, &isnull);
-        if (!isnull)
-        {
+        props = heap_getattr(&tuple, Anum_ag_label_edge_table_properties,
+                             tupdesc, &isnull);
+        if (!isnull) {
             result = datumCopy(props, false, -1);
         }
 
         ReleaseBuffer(buffer);
     }
 
-    table_close(rel, AccessShareLock);
+    heap_close(rel, AccessShareLock);
 
-    if (result == (Datum) 0)
-    {
+    if (result == (Datum) 0) {
         elog(ERROR, "get_edge_entry_properties: stale TID - "
              "edge entry references a tuple that is no longer visible");
     }
@@ -1498,9 +1517,29 @@ graphid get_edge_entry_end_vertex_id(edge_entry *ee)
 
 /* PostgreSQL SQL facing functions */
 
+PG_FUNCTION_INFO_V1(age_invalidate_graph_cache);
+extern "C" Datum age_invalidate_graph_cache(PG_FUNCTION_ARGS);
+Datum age_invalidate_graph_cache(PG_FUNCTION_ARGS)
+{
+    TriggerData *trigdata;
+    Oid relid;
+
+    if (!CALLED_AS_TRIGGER(fcinfo)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_E_R_I_E_TRIGGER_PROTOCOL_VIOLATED),
+                 errmsg("age_invalidate_graph_cache: not called as trigger")));
+    }
+
+    trigdata = (TriggerData *)fcinfo->context;
+    relid = RelationGetRelid(trigdata->tg_relation);
+    notify_GRAPH_global_contexts_relation_modified(relid);
+
+    PG_RETURN_POINTER(NULL);
+}
+
 /* PG wrapper function for age_delete_global_graphs */
 PG_FUNCTION_INFO_V1(age_delete_global_graphs);
-
+extern "C" Datum  age_delete_global_graphs(PG_FUNCTION_ARGS);
 Datum age_delete_global_graphs(PG_FUNCTION_ARGS)
 {
     agtype_value *agtv_temp = NULL;
@@ -1522,9 +1561,7 @@ Datum age_delete_global_graphs(PG_FUNCTION_ARGS)
     {
         char *graph_name = NULL;
 
-        graph_name = pnstrdup(agtv_temp->val.string.val,
-                              agtv_temp->val.string.len);
-
+        graph_name = agtv_temp->val.string.val;
         success = delete_specific_GRAPH_global_contexts(graph_name);
     }
     else
@@ -1539,7 +1576,7 @@ Datum age_delete_global_graphs(PG_FUNCTION_ARGS)
 
 /* PG wrapper function for age_vertex_degree */
 PG_FUNCTION_INFO_V1(age_vertex_stats);
-
+extern "C" Datum  age_vertex_stats(PG_FUNCTION_ARGS);
 Datum age_vertex_stats(PG_FUNCTION_ARGS)
 {
     GRAPH_global_context *ggctx = NULL;
@@ -1592,7 +1629,7 @@ Datum age_vertex_stats(PG_FUNCTION_ARGS)
     ggctx = manage_GRAPH_global_contexts(graph_name, graph_oid);
 
     /* free the graph name */
-    pfree_if_not_null(graph_name);
+    pfree(graph_name);
 
     /* get the id */
     agtv_temp = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv_vertex, "id");
@@ -1625,7 +1662,7 @@ Datum age_vertex_stats(PG_FUNCTION_ARGS)
 
     /* get and store the self_loops */
     edges = get_vertex_entry_edges_self_array(ve);
-    self_loops = edges->size;
+    self_loops = (edges != NULL) ? edges->size : 0;
     agtv_temp->val.int_value = self_loops;
     result.res = push_agtype_value(&result.parse_state, WAGT_KEY,
                                    string_to_agtype_value("self_loops"));
@@ -1633,7 +1670,7 @@ Datum age_vertex_stats(PG_FUNCTION_ARGS)
 
     /* get and store the in_degree */
     edges = get_vertex_entry_edges_in_array(ve);
-    degree = edges->size;
+    degree = (edges != NULL) ? edges->size : 0;
     agtv_temp->val.int_value = degree + self_loops;
     result.res = push_agtype_value(&result.parse_state, WAGT_KEY,
                                    string_to_agtype_value("in_degree"));
@@ -1641,7 +1678,7 @@ Datum age_vertex_stats(PG_FUNCTION_ARGS)
 
     /* get and store the out_degree */
     edges = get_vertex_entry_edges_out_array(ve);
-    degree = edges->size;
+    degree = (edges != NULL) ? edges->size : 0;
     agtv_temp->val.int_value = degree + self_loops;
     result.res = push_agtype_value(&result.parse_state, WAGT_KEY,
                                    string_to_agtype_value("out_degree"));
@@ -1657,7 +1694,7 @@ Datum age_vertex_stats(PG_FUNCTION_ARGS)
 
 /* PG wrapper function for age_graph_stats */
 PG_FUNCTION_INFO_V1(age_graph_stats);
-
+extern "C" Datum age_graph_stats(PG_FUNCTION_ARGS);
 Datum age_graph_stats(PG_FUNCTION_ARGS)
 {
     GRAPH_global_context *ggctx = NULL;
@@ -1665,11 +1702,11 @@ Datum age_graph_stats(PG_FUNCTION_ARGS)
     agtype_value agtv_integer;
     agtype_in_state result;
     char *graph_name = NULL;
+    char *graph_name_result = NULL;
     Oid graph_oid = InvalidOid;
 
     /* the graph name is required, but this generally isn't user supplied */
-    if (PG_ARGISNULL(0))
-    {
+    if (PG_ARGISNULL(0)) {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("graph_stats: graph name cannot be NULL")));
@@ -1681,6 +1718,7 @@ Datum age_graph_stats(PG_FUNCTION_ARGS)
 
     graph_name = pnstrdup(agtv_temp->val.string.val,
                           agtv_temp->val.string.len);
+    graph_name_result = pstrdup(graph_name);
 
     /*
      * Remove any context for this graph. This is done to allow graph_stats to
@@ -1698,7 +1736,7 @@ Datum age_graph_stats(PG_FUNCTION_ARGS)
     ggctx = manage_GRAPH_global_contexts(graph_name, graph_oid);
 
     /* free the graph name */
-    pfree_if_not_null(graph_name);
+    pfree(graph_name);
 
     /* zero the state */
     memset(&result, 0, sizeof(agtype_in_state));
@@ -1709,7 +1747,8 @@ Datum age_graph_stats(PG_FUNCTION_ARGS)
     /* store the graph name */
     result.res = push_agtype_value(&result.parse_state, WAGT_KEY,
                                    string_to_agtype_value("graph"));
-    result.res = push_agtype_value(&result.parse_state, WAGT_VALUE, agtv_temp);
+    result.res = push_agtype_value(&result.parse_state, WAGT_VALUE,
+                                   string_to_agtype_value(graph_name_result));
 
     /* set up an integer for returning values */
     agtv_temp = &agtv_integer;
@@ -1734,287 +1773,4 @@ Datum age_graph_stats(PG_FUNCTION_ARGS)
     result.res->type = AGTV_OBJECT;
 
     PG_RETURN_POINTER(agtype_value_to_agtype(result.res));
-}
-
-/*
- * ============================================================================
- * Graph Version Counter Implementation
- *
- * Provides per-graph monotonic version counters in shared memory for
- * cross-backend VLE cache invalidation. Three modes are supported:
- *
- * DSM (PG 17+):  Uses GetNamedDSMSegment — works without shared_preload_libs
- * SHMEM (PG <17): Uses shmem_request/startup hooks — needs shared_preload_libs
- * SNAPSHOT:       Falls back to original snapshot-based invalidation
- * ============================================================================
- */
-
-#if PG_VERSION_NUM >= 170000
-/*
- * DSM path: GetNamedDSMSegment init callback.
- * Called once when the DSM segment is first created.
- */
-static void age_dsm_init_callback(void *ptr)
-{
-    GraphVersionState *state = (GraphVersionState *) ptr;
-
-    LWLockInitialize(&state->lock,
-                     LWLockNewTrancheId());
-    LWLockRegisterTranche(state->lock.tranche, "age_graph_version");
-    state->num_entries = 0;
-    memset(state->entries, 0, sizeof(state->entries));
-}
-
-/*
- * Get the shared GraphVersionState via DSM registry.
- * The segment is created on first access and persists until server shutdown.
- */
-static GraphVersionState *get_version_state_dsm(void)
-{
-    bool found;
-
-    return (GraphVersionState *)
-        GetNamedDSMSegment("age_graph_versions",
-                           sizeof(GraphVersionState),
-                           age_dsm_init_callback,
-                           &found);
-}
-#endif /* PG_VERSION_NUM >= 170000 */
-
-/*
- * SHMEM path: request and startup hooks for PG < 17.
- * These are registered in _PG_init when shared_preload_libraries is used.
- * On PG 17+, DSM is used instead and these functions are not called.
- */
-#if PG_VERSION_NUM < 170000
-void age_graph_version_shmem_request(void)
-{
-    RequestAddinShmemSpace(MAXALIGN(sizeof(GraphVersionState)));
-}
-
-void age_graph_version_shmem_startup(void)
-{
-    bool found;
-
-    LWLockAcquire(AddinShmemInitLock, LW_EXCLUSIVE);
-
-    shmem_version_state =
-        (GraphVersionState *) ShmemInitStruct("AGE Graph Version State",
-                                              sizeof(GraphVersionState),
-                                              &found);
-    if (!found)
-    {
-        LWLockInitialize(&shmem_version_state->lock,
-                         LWLockNewTrancheId());
-        LWLockRegisterTranche(shmem_version_state->lock.tranche,
-                              "age_graph_version");
-        shmem_version_state->num_entries = 0;
-        memset(shmem_version_state->entries, 0,
-               sizeof(shmem_version_state->entries));
-    }
-
-    LWLockRelease(AddinShmemInitLock);
-}
-#endif /* PG_VERSION_NUM < 170000 */
-
-/*
- * Detect which version mode to use. Called once per backend on first access.
- * Emits a DEBUG1 log message indicating the chosen mode.
- */
-static void detect_version_mode(void)
-{
-#if PG_VERSION_NUM >= 170000
-    version_mode = VERSION_MODE_DSM;
-    elog(DEBUG1, "AGE: VLE cache using DSM version counter");
-#else
-    if (shmem_version_state != NULL)
-    {
-        version_mode = VERSION_MODE_SHMEM;
-        elog(DEBUG1, "AGE: VLE cache using SHMEM version counter");
-    }
-    else
-    {
-        version_mode = VERSION_MODE_SNAPSHOT;
-        elog(DEBUG1, "AGE: VLE cache using snapshot-based invalidation "
-             "(add AGE to shared_preload_libraries for better caching)");
-    }
-#endif
-}
-
-/*
- * Get a pointer to the GraphVersionState, regardless of mode.
- * Returns NULL only in SNAPSHOT mode (no shared memory available).
- */
-static GraphVersionState *get_version_state(void)
-{
-    if (version_mode == VERSION_MODE_UNKNOWN)
-    {
-        detect_version_mode();
-    }
-
-#if PG_VERSION_NUM >= 170000
-    if (version_mode == VERSION_MODE_DSM)
-    {
-        return get_version_state_dsm();
-    }
-#endif
-
-    if (version_mode == VERSION_MODE_SHMEM)
-    {
-        return shmem_version_state;
-    }
-
-    return NULL;
-}
-
-/*
- * Get the current version counter for a graph.
- * Returns 0 if the graph has never been tracked or if shared memory
- * is not available. Lock-free read via pg_atomic_read_u64.
- */
-uint64 get_graph_version(Oid graph_oid)
-{
-    GraphVersionState *state = get_version_state();
-    int i;
-
-    if (state == NULL)
-    {
-        return 0;
-    }
-
-    /* lock-free scan of the array */
-    for (i = 0; i < state->num_entries; i++)
-    {
-        if (state->entries[i].graph_oid == graph_oid)
-        {
-            return pg_atomic_read_u64(&state->entries[i].version);
-        }
-    }
-
-    return 0;
-}
-
-/*
- * Increment the version counter for a graph.
- * Called after any graph mutation (Cypher or SQL trigger).
- * Lock-free for existing entries; acquires LWLock only to allocate new slots.
- */
-void increment_graph_version(Oid graph_oid)
-{
-    GraphVersionState *state = get_version_state();
-    int i;
-
-    if (state == NULL)
-    {
-        return;
-    }
-
-    /* try to find existing entry (lock-free) */
-    for (i = 0; i < state->num_entries; i++)
-    {
-        if (state->entries[i].graph_oid == graph_oid)
-        {
-            pg_atomic_fetch_add_u64(&state->entries[i].version, 1);
-            return;
-        }
-    }
-
-    /* new graph — need lock to allocate slot */
-    LWLockAcquire(&state->lock, LW_EXCLUSIVE);
-
-    /* re-check after acquiring lock (another backend may have added it) */
-    for (i = 0; i < state->num_entries; i++)
-    {
-        if (state->entries[i].graph_oid == graph_oid)
-        {
-            LWLockRelease(&state->lock);
-            pg_atomic_fetch_add_u64(&state->entries[i].version, 1);
-            return;
-        }
-    }
-
-    /* add new entry */
-    if (state->num_entries < AGE_MAX_GRAPHS)
-    {
-        int idx = state->num_entries;
-
-        state->entries[idx].graph_oid = graph_oid;
-        pg_atomic_init_u64(&state->entries[idx].version, 1);
-
-        /*
-         * Write barrier ensures the entry fields are fully visible to
-         * other backends before num_entries is incremented. This prevents
-         * readers on weak memory-ordering architectures (e.g., ARM) from
-         * seeing the incremented count before the entry is initialized.
-         */
-        pg_write_barrier();
-        state->num_entries++;
-    }
-    else
-    {
-        elog(WARNING, "AGE: graph version counter table full (%d graphs)",
-             AGE_MAX_GRAPHS);
-    }
-
-    LWLockRelease(&state->lock);
-}
-
-/*
- * Helper function to look up the graph OID for a given label table OID.
- * Uses AGE's label relation cache for fast lookup.
- * Returns InvalidOid if the table is not a graph label table.
- */
-Oid get_graph_oid_for_table(Oid table_oid)
-{
-    label_cache_data *lcd = NULL;
-
-    lcd = search_label_relation_cache(table_oid);
-
-    if (lcd != NULL)
-    {
-        return lcd->graph;
-    }
-
-    return InvalidOid;
-}
-
-/*
- * SQL-callable trigger function for VLE cache invalidation.
- * Installed on graph label tables (AFTER INSERT/UPDATE/DELETE FOR EACH STATEMENT).
- * Looks up which graph the triggering table belongs to and increments
- * that graph's version counter.
- */
-PG_FUNCTION_INFO_V1(age_invalidate_graph_cache);
-
-Datum age_invalidate_graph_cache(PG_FUNCTION_ARGS)
-{
-    TriggerData *trigdata;
-    Oid table_oid;
-    Oid graph_oid;
-
-    /* verify called as trigger */
-    if (!CALLED_AS_TRIGGER(fcinfo))
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_E_R_I_E_TRIGGER_PROTOCOL_VIOLATED),
-                 errmsg("age_invalidate_graph_cache: not called as trigger")));
-    }
-
-    trigdata = (TriggerData *) fcinfo->context;
-    table_oid = RelationGetRelid(trigdata->tg_relation);
-
-    /* look up which graph this label table belongs to */
-    graph_oid = get_graph_oid_for_table(table_oid);
-
-    if (OidIsValid(graph_oid))
-    {
-        increment_graph_version(graph_oid);
-    }
-
-    /*
-     * Trigger protocol: return a null pointer without setting fcinfo->isnull.
-     * PG_RETURN_NULL() sets isnull=true, which violates the trigger protocol
-     * and causes "trigger function returned null value" errors during COPY.
-     */
-    PG_RETURN_POINTER(NULL);
 }
