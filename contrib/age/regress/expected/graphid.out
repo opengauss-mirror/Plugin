@@ -86,3 +86,29 @@ EXPLAIN (COSTS FALSE) SELECT * FROM graphid_table WHERE gid > '0';
 
 SET enable_seqscan = ON;
 DROP TABLE graphid_table;
+-- make_graphid() range validation: out-of-range ids would otherwise be
+-- truncated into another label's id space
+SELECT _graphid(1, 0);
+    _graphid     
+-----------------
+ 281474976710656
+(1 row)
+
+SELECT _graphid(65535, 281474976710655);
+ _graphid 
+----------
+ -1
+(1 row)
+
+SELECT _graphid(0, 1);
+ERROR:  label_id must be 1 .. 65535
+CONTEXT:  referenced column: _graphid
+SELECT _graphid(70000, 1);
+ERROR:  label_id must be 1 .. 65535
+CONTEXT:  referenced column: _graphid
+SELECT _graphid(1, -1);
+ERROR:  entry_id must be 0 .. 281474976710655
+CONTEXT:  referenced column: _graphid
+SELECT _graphid(1, 281474976710656);
+ERROR:  entry_id must be 0 .. 281474976710655
+CONTEXT:  referenced column: _graphid

@@ -18,17 +18,151 @@
  */
 LOAD 'age';
 SET search_path TO ag_catalog;
+--
+-- Load data
+--
 SELECT create_graph('cypher_with');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_with" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
 (1 row)
+
+SELECT * FROM cypher('cypher_with', $$
+    CREATE (andres {name : 'Andres', age : 36})
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    CREATE (caesar {name : 'Caesar', age : 25})
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    CREATE (bossman {name : 'Bossman', age : 55})
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    CREATE (david {name : 'David', age : 35})
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    CREATE (george {name : 'George', age : 37})
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (andres {name : 'Andres'}), (caesar {name : 'Caesar'})
+    CREATE (andres)-[:BLOCKS]->(caesar)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (andres {name : 'Andres'}), (bossman {name : 'Bossman'})
+    CREATE (andres)-[:KNOWS]->(bossman)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (caesar {name : 'Caesar'}), (george {name : 'George'})
+    CREATE (caesar)-[:KNOWS]->(george)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (bossman {name : 'Bossman'}), (david {name : 'David'})
+    CREATE (bossman)-[:BLOCKS]->(david)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (bossman {name : 'Bossman'}), (george {name : 'George'})
+    CREATE (bossman)-[:KNOWS]->(george)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (david {name : 'David'}), (andres {name : 'Andres'})
+    CREATE (david)-[:KNOWS]->(andres)
+$$) AS (a agtype);
+ a 
+---
+(0 rows)
+
+--
+-- Test WITH clause
+--
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n)-[e]->(m)
+    WITH n, e, m
+    RETURN n.name, type(e), m.name
+    ORDER BY id(n) ASC, id(e) ASC, id(m) ASC
+$$) AS (start_node agtype, edge agtype, end_node agtype);
+ start_node |   edge   | end_node  
+------------+----------+-----------
+ "Andres"   | "BLOCKS" | "Caesar"
+ "Andres"   | "KNOWS"  | "Bossman"
+ "Caesar"   | "KNOWS"  | "George"
+ "Bossman"  | "BLOCKS" | "David"
+ "Bossman"  | "KNOWS"  | "George"
+ "David"    | "KNOWS"  | "Andres"
+(6 rows)
+
+-- WITH/AS
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n)-[e]->(m)
+    WITH n.name AS n1, e AS edge, m.name AS n2
+    RETURN n1, type(edge), n2
+    ORDER BY id(edge) ASC
+$$) AS (start_node agtype, edge agtype, end_node agtype);
+ start_node |   edge   | end_node  
+------------+----------+-----------
+ "Andres"   | "BLOCKS" | "Caesar"
+ "Bossman"  | "BLOCKS" | "David"
+ "Andres"   | "KNOWS"  | "Bossman"
+ "Caesar"   | "KNOWS"  | "George"
+ "Bossman"  | "KNOWS"  | "George"
+ "David"    | "KNOWS"  | "Andres"
+(6 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (person)-[r]->(otherPerson)
+    WITH *, type(r) AS connectionType
+    RETURN person.name, connectionType, otherPerson.name
+    ORDER BY id(person) ASC, id(r) ASC, id(otherPerson) ASC
+$$) AS (start_node agtype, connection agtype, end_node agtype);
+ start_node | connection | end_node  
+------------+------------+-----------
+ "Andres"   | "BLOCKS"   | "Caesar"
+ "Andres"   | "KNOWS"    | "Bossman"
+ "Caesar"   | "KNOWS"    | "George"
+ "Bossman"  | "BLOCKS"   | "David"
+ "Bossman"  | "KNOWS"    | "George"
+ "David"    | "KNOWS"    | "Andres"
+(6 rows)
 
 SELECT * FROM cypher('cypher_with', $$
 WITH true AS b
@@ -39,6 +173,137 @@ $$) AS (b bool);
  t
 (1 row)
 
+-- WITH/WHERE
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (george {name: 'George'})<-[]-(otherPerson)
+    WITH otherPerson, toUpper(otherPerson.name) AS upperCaseName
+    WHERE upperCaseName STARTS WITH 'C'
+    RETURN otherPerson.name
+    ORDER BY id(otherPerson) ASC
+$$) AS (name agtype);
+   name   
+----------
+ "Caesar"
+(1 row)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (david {name: 'David'})-[]-(otherPerson)-[]->()
+    WITH otherPerson, count(*) AS foaf
+    WHERE foaf > 1
+    RETURN otherPerson.name
+    ORDER BY id(otherPerson) ASC
+$$) AS (name agtype);
+   name   
+----------
+ "Andres"
+(1 row)
+
+-- MATCH/WHERE with WITH/WHERE
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (m)-[e]->(b)
+    WHERE type(e) = 'KNOWS'
+    WITH *
+    WHERE m.name = 'Andres'
+    RETURN m.name, type(e), b.name
+    ORDER BY id(m) ASC, id(e) ASC, id(b) ASC
+$$) AS (start_node agtype, edge agtype, end_node agtype);
+ start_node |  edge   | end_node  
+------------+---------+-----------
+ "Andres"   | "KNOWS" | "Bossman"
+(1 row)
+
+-- WITH/ORDER BY
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n)
+    WITH n
+    ORDER BY id(n) ASC
+    RETURN n.name
+$$) AS (name agtype);
+   name    
+-----------
+ "Andres"
+ "Caesar"
+ "Bossman"
+ "David"
+ "George"
+(5 rows)
+
+-- WITH/ORDER BY/DESC
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n)
+    WITH n
+    ORDER BY n.name DESC
+    LIMIT 3
+    RETURN collect(n.name)
+$$) AS (names agtype);
+             names             
+-------------------------------
+ ["George", "David", "Caesar"]
+(1 row)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n {name: 'Andres'})-[]-(m)
+    WITH m
+    ORDER BY m.name DESC
+    LIMIT 1
+    MATCH (m)-[]-(o)
+    RETURN o.name
+    ORDER BY o.name ASC
+$$) AS (name agtype);
+   name    
+-----------
+ "Andres"
+ "Bossman"
+(2 rows)
+
+-- multiple WITH clauses
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (n)-[e]->(m)
+    WITH n, e, m
+    WHERE type(e) = 'KNOWS'
+    WITH id(e) AS eid, n.name AS n1, type(e) AS edge, m.name AS n2
+    WHERE n1 = 'Andres'
+    RETURN n1, edge, n2
+    ORDER BY eid ASC
+$$) AS (start_node agtype, edge agtype, end_node agtype);
+ start_node |  edge   | end_node  
+------------+---------+-----------
+ "Andres"   | "KNOWS" | "Bossman"
+(1 row)
+
+SELECT * FROM cypher('cypher_with', $$
+    UNWIND [1, 2, 3, 4, 5, 6] AS x
+    WITH x
+    WHERE x > 2
+    WITH x
+    LIMIT 5
+    RETURN x
+    ORDER BY x ASC
+$$) AS (value agtype);
+ value 
+-------
+ 3
+ 4
+ 5
+ 6
+(4 rows)
+
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (m)-[]->(b)
+    WITH m, b
+    ORDER BY id(m) DESC
+    LIMIT 5
+    WITH m AS start_node, b AS end_node
+    WHERE end_node.name = 'George'
+    RETURN id(start_node), start_node.name, id(end_node), end_node.name
+    ORDER BY id(start_node) ASC, id(end_node) ASC
+$$) AS (id1 agtype, name1 agtype, id2 agtype, name2 agtype);
+       id1       |   name1   |       id2       |  name2   
+-----------------+-----------+-----------------+----------
+ 281474976710658 | "Caesar"  | 281474976710661 | "George"
+ 281474976710659 | "Bossman" | 281474976710661 | "George"
+(2 rows)
+
 -- Expression item must be aliased.
 SELECT * FROM cypher('cypher_with', $$
 WITH 1 + 1
@@ -48,10 +313,33 @@ ERROR:  expression item must be aliased
 LINE 2: WITH 1 + 1
              ^
 HINT:  Items can be aliased by using AS.
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (m)-[]->(b)
+    WITH id(m)
+    RETURN m
+$$) AS (id agtype);
+ERROR:  expression item must be aliased
+LINE 3:     WITH id(m)
+                 ^
+HINT:  Items can be aliased by using AS.
+SELECT * FROM cypher('cypher_with', $$
+    MATCH (m)-[]->(b)
+    WITH m AS start_node, b AS end_node
+    WHERE start_node.name = 'Andres'
+    WITH start_node
+    WHERE start_node.name = 'George'
+    RETURN id(start_node), end_node.name
+$$) AS (id agtype, node agtype);
+ERROR:  could not find rte for end_node
+LINE 7:     RETURN id(start_node), end_node.name
+                                   ^
+HINT:  variable end_node does not exist within scope of usage
 SELECT drop_graph('cypher_with', true);
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table cypher_with._ag_label_vertex
 drop cascades to table cypher_with._ag_label_edge
+drop cascades to table cypher_with."BLOCKS"
+drop cascades to table cypher_with."KNOWS"
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_with" has been dropped
 CONTEXT:  referenced column: drop_graph

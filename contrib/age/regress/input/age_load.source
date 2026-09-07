@@ -1,0 +1,393 @@
+\! "@abs_srcdir@/age_load/setup_fixtures.sh" setup "@abs_srcdir@/age_load/data" "@abs_bindir@/gsql" @portstring@
+LOAD 'age';
+\pset format unaligned
+
+SET search_path TO ag_catalog;
+SELECT create_graph('agload_test_graph');
+
+SELECT create_vlabel('agload_test_graph','Country');
+SELECT load_labels_from_file('agload_test_graph', 'Country',
+                             'age_load/countries.csv');
+
+SELECT create_vlabel('agload_test_graph','City');
+SELECT load_labels_from_file('agload_test_graph', 'City',
+                             'age_load/cities.csv');
+
+SELECT create_elabel('agload_test_graph','has_city');
+SELECT load_edges_from_file('agload_test_graph', 'has_city',
+                            'age_load/edges.csv');
+
+SELECT table_schema, lower(table_name) as table_name, table_type
+FROM information_schema.tables
+WHERE table_schema = 'agload_test_graph' ORDER BY table_name ASC;
+
+SELECT COUNT(*) FROM agload_test_graph."Country";
+SELECT COUNT(*) FROM agload_test_graph."City";
+SELECT COUNT(*) FROM agload_test_graph."has_city";
+
+SELECT COUNT(*) FROM cypher('agload_test_graph', $$MATCH(n) RETURN n$$) as (n agtype);
+
+SELECT COUNT(*) FROM cypher('agload_test_graph', $$MATCH (a)-[e]->(b) RETURN e$$) as (n agtype);
+
+
+SELECT create_vlabel('agload_test_graph','Country2');
+SELECT load_labels_from_file('agload_test_graph', 'Country2',
+                             'age_load/countries.csv', false);
+
+SELECT create_vlabel('agload_test_graph','City2');
+SELECT load_labels_from_file('agload_test_graph', 'City2',
+                             'age_load/cities.csv', false);
+
+SELECT COUNT(*) FROM agload_test_graph."Country2";
+SELECT COUNT(*) FROM agload_test_graph."City2";
+
+SELECT id FROM agload_test_graph."Country" LIMIT 10;
+SELECT id FROM agload_test_graph."Country2" LIMIT 10;
+
+SELECT * FROM cypher('agload_test_graph', $$MATCH(n:Country {iso2 : 'BE'})
+    RETURN id(n), n.name, n.iso2 $$) as ("id(n)" agtype, "n.name" agtype, "n.iso2" agtype);
+SELECT * FROM cypher('agload_test_graph', $$MATCH(n:Country2 {iso2 : 'BE'})
+    RETURN id(n), n.name, n.iso2 $$) as ("id(n)" agtype, "n.name" agtype, "n.iso2" agtype);
+
+SELECT * FROM cypher('agload_test_graph', $$MATCH(n:Country {iso2 : 'AT'})
+    RETURN id(n), n.name, n.iso2 $$) as ("id(n)" agtype, "n.name" agtype, "n.iso2" agtype);
+SELECT * FROM cypher('agload_test_graph', $$MATCH(n:Country2 {iso2 : 'AT'})
+    RETURN id(n), n.name, n.iso2 $$) as ("id(n)" agtype, "n.name" agtype, "n.iso2" agtype);
+
+SELECT create_elabel('agload_test_graph', 'one_property_edge');
+SELECT load_edges_from_file('agload_test_graph', 'one_property_edge',
+                            'age_load/edge_one_property.csv');
+SELECT properties FROM agload_test_graph.one_property_edge ORDER BY id;
+
+SELECT drop_graph('agload_test_graph', true);
+
+-- Malformed rows must fail before loader callbacks index outside parsed fields.
+SELECT create_graph('agload_malformed');
+SELECT create_vlabel('agload_malformed', 'V');
+SELECT create_elabel('agload_malformed', 'E');
+
+-- Loader paths must remain relative CSV files inside the data directory.
+SELECT load_labels_from_file('agload_malformed', 'V', '/etc/passwd.csv');
+SELECT load_edges_from_file('agload_malformed', 'E', 'age_load/edges.txt');
+SELECT load_labels_from_file('agload_malformed', 'V', 'age_load/escaped.csv');
+SELECT load_edges_from_file_with_analysefile(
+    'agload_malformed', 'E', 'age_load/escaped.csv');
+SELECT load_labels_from_file_with_analysefile(
+    'agload_malformed', 'V', '/etc/passwd.csv');
+SELECT load_labels_from_file('agload_malformed', 'V',
+                             'age_load/../postgresql.conf.csv');
+
+-- A non-comma edge file parses as a one-column header.
+SELECT load_edges_from_file('agload_malformed', 'E',
+                            'age_load/bad_delim_edges.csv');
+
+-- Data rows cannot omit fixed edge columns or exceed the parsed header width.
+SELECT load_edges_from_file('agload_malformed', 'E',
+                            'age_load/edges_short_row.csv');
+SELECT load_edges_from_file('agload_malformed', 'E',
+                            'age_load/edges_long_row.csv');
+
+-- 129 parsed fields force callback storage growth before width validation.
+SELECT load_edges_from_file('agload_malformed', 'E',
+                            'age_load/edges_wide_row.csv');
+
+-- Label rows may omit trailing properties but cannot exceed their header.
+SELECT load_labels_from_file('agload_malformed', 'V',
+                             'age_load/labels_long_row.csv');
+
+SELECT COUNT(*) FROM agload_malformed."V";
+SELECT COUNT(*) FROM agload_malformed."E";
+SELECT drop_graph('agload_malformed', true);
+
+-- Loader follows the kernel RLS bypass rule: the label owner (and superuser /
+-- sysadmin) may load into an RLS-enabled label; a role the policies apply to
+-- is rejected before any row is inserted.
+SELECT create_graph('agload_rls');
+SELECT create_vlabel('agload_rls', 'Country');
+ALTER TABLE agload_rls."Country" ENABLE ROW LEVEL SECURITY;
+CREATE ROW LEVEL SECURITY POLICY agload_rls_country_insert
+    ON agload_rls."Country" AS RESTRICTIVE
+    TO PUBLIC USING (false);
+SELECT load_labels_from_file('agload_rls', 'Country',
+                             'age_load/countries.csv');
+SELECT count(*) AS rls_loader_owner_row_count FROM agload_rls."Country";
+CREATE ROLE agload_rls_loader PASSWORD 'Gauss_123';
+GRANT gs_role_copy_files TO agload_rls_loader;
+GRANT USAGE ON SCHEMA ag_catalog TO agload_rls_loader;
+GRANT USAGE ON SCHEMA agload_rls TO agload_rls_loader;
+GRANT INSERT ON agload_rls."Country" TO agload_rls_loader;
+GRANT EXECUTE ON FUNCTION
+    ag_catalog.load_labels_from_file(name, name, text, bool, bool, text)
+    TO agload_rls_loader;
+SET ROLE agload_rls_loader PASSWORD 'Gauss_123';
+SELECT load_labels_from_file('agload_rls', 'Country',
+                             'age_load/countries.csv');
+RESET ROLE;
+SELECT count(*) AS rls_loader_row_count FROM agload_rls."Country";
+REVOKE EXECUTE ON FUNCTION
+    ag_catalog.load_labels_from_file(name, name, text, bool, bool, text)
+    FROM agload_rls_loader;
+REVOKE INSERT ON agload_rls."Country" FROM agload_rls_loader;
+REVOKE USAGE ON SCHEMA agload_rls FROM agload_rls_loader;
+REVOKE USAGE ON SCHEMA ag_catalog FROM agload_rls_loader;
+REVOKE gs_role_copy_files FROM agload_rls_loader;
+DROP ROLE agload_rls_loader;
+DROP ROW LEVEL SECURITY POLICY agload_rls_country_insert
+    ON agload_rls."Country";
+ALTER TABLE agload_rls."Country" DISABLE ROW LEVEL SECURITY;
+SELECT drop_graph('agload_rls', true);
+
+-- Apache AGE current loader parity: auto-create, typed values, delimiter,
+-- sequence maintenance, duplicate protection, and label-kind validation.
+SELECT load_labels_from_file(
+    'agload_parity', 'Person1', 'age_load/conversion_vertices.csv',
+    true, true);
+SELECT load_labels_from_file(
+    'agload_parity', 'Person2', 'age_load/conversion_vertices.csv',
+    true, false);
+SELECT load_edges_from_file(
+    'agload_parity', 'Knows', 'age_load/conversion_edges.csv', true);
+
+SELECT name, kind FROM ag_catalog.ag_label
+WHERE graph = (SELECT oid FROM ag_catalog.ag_graph
+               WHERE name = 'agload_parity')
+  AND name IN ('Person1', 'Person2', 'Knows')
+ORDER BY name;
+SELECT properties FROM agload_parity."Person1" ORDER BY id;
+SELECT properties FROM agload_parity."Person2" ORDER BY id;
+SELECT properties FROM agload_parity."Knows" ORDER BY id;
+SELECT load_labels_from_file(
+    'agload_parity', 'InvalidStructured',
+    'age_load/invalid_structured.csv', true, true);
+SELECT properties FROM agload_parity."InvalidStructured" ORDER BY id;
+SELECT nextval('agload_parity."Person1_id_seq"') = 7
+    AS explicit_id_sequence_advanced;
+
+-- Reloading explicit ids must fail atomically on the primary key.
+SELECT load_labels_from_file(
+    'agload_parity', 'Person1', 'age_load/conversion_vertices.csv',
+    true, true);
+SELECT count(*) AS person1_count FROM agload_parity."Person1";
+
+-- Existing labels of the wrong kind must be rejected.
+SELECT load_edges_from_file(
+    'agload_parity', 'Person1', 'age_load/conversion_edges.csv');
+
+SELECT load_labels_from_file(
+    'agload_pipe', 'City', 'age_load/pipe_vertices.csv',
+    true, false, '|');
+SELECT load_edges_from_file(
+    'agload_pipe', 'Connected', 'age_load/pipe_edges.csv',
+    true, '|');
+SELECT properties FROM agload_pipe."City" ORDER BY id;
+SELECT properties FROM agload_pipe."Connected" ORDER BY id;
+
+SELECT load_labels_from_file(
+    'agload_pipe', 'BadDelimiter', 'age_load/pipe_vertices.csv',
+    true, false, '||');
+SELECT count(*) AS bad_delimiter_label_count
+FROM ag_catalog.ag_label
+WHERE graph = (SELECT oid FROM ag_catalog.ag_graph
+               WHERE name = 'agload_pipe')
+  AND name = 'BadDelimiter';
+
+-- Typed loader empty-field parity (#2310): empty, quoted-empty, and
+-- whitespace-only fields must load as agtype null; string mode keeps
+-- empty strings.
+SELECT load_labels_from_file(
+    'agload_empty', 'TypedV', 'age_load/typed_empty_vertices.csv',
+    true, true);
+SELECT load_labels_from_file(
+    'agload_empty', 'StringV', 'age_load/typed_empty_vertices.csv',
+    true, false);
+SELECT load_edges_from_file(
+    'agload_empty', 'TypedE', 'age_load/typed_empty_edges.csv', true);
+SELECT load_edges_from_file(
+    'agload_empty', 'StringE', 'age_load/typed_empty_edges.csv', false);
+SELECT properties FROM agload_empty."TypedV" ORDER BY id;
+SELECT properties FROM agload_empty."StringV" ORDER BY id;
+SELECT properties FROM agload_empty."TypedE" ORDER BY id;
+SELECT properties FROM agload_empty."StringE" ORDER BY id;
+
+SELECT * FROM cypher('agload_empty', $$
+    MATCH (n:TypedV {id: 1})
+    RETURN size(n.padded_value)
+$$) AS (typed_padded_length agtype);
+SELECT * FROM cypher('agload_empty', $$
+    MATCH (n:StringV {id: '1'})
+    RETURN size(n.spaces_value), size(n.padded_value)
+$$) AS (string_spaces_length agtype, string_padded_length agtype);
+SELECT * FROM cypher('agload_empty', $$
+    MATCH ()-[e:TypedE]->()
+    RETURN size(e.padded_value)
+$$) AS (typed_edge_padded_length agtype);
+SELECT * FROM cypher('agload_empty', $$
+    MATCH ()-[e:StringE]->()
+    RETURN size(e.spaces_value), size(e.padded_value)
+$$) AS (string_edge_spaces_length agtype,
+       string_edge_padded_length agtype);
+
+-- IS NULL must observe typed empty fields as null values.
+SELECT count(*) AS typed_null_vertices
+FROM cypher('agload_empty', $$
+    MATCH (n:TypedV)
+    WHERE n.empty_value IS NULL AND n.quoted_empty IS NULL
+          AND n.spaces_value IS NULL
+    RETURN n
+$$) AS (n agtype);
+SELECT count(*) AS string_null_vertices
+FROM cypher('agload_empty', $$
+    MATCH (n:StringV)
+    WHERE n.empty_value IS NULL OR n.quoted_empty IS NULL
+          OR n.spaces_value IS NULL
+    RETURN n
+$$) AS (n agtype);
+SELECT drop_graph('agload_empty', true);
+
+-- An unauthorized caller must not be able to distinguish existing from
+-- missing server files: authorization fails before any path resolution.
+-- The disposable regression postmaster enables enable_copy_server_files in
+-- age_regress.conf, so the observable failure is the role gate; both files
+-- must raise the same path-independent error.
+CREATE ROLE agload_secrecy_role PASSWORD 'Gauss_123';
+GRANT USAGE ON SCHEMA ag_catalog TO agload_secrecy_role;
+GRANT EXECUTE ON FUNCTION
+    ag_catalog.load_labels_from_file(name, name, text, bool, bool, text)
+    TO agload_secrecy_role;
+SET ROLE agload_secrecy_role PASSWORD 'Gauss_123';
+SELECT load_labels_from_file('agload_secrecy', 'V',
+                             'age_load/countries.csv');
+SELECT load_labels_from_file('agload_secrecy', 'V',
+                             'age_load/no_such_file.csv');
+RESET ROLE;
+REVOKE EXECUTE ON FUNCTION
+    ag_catalog.load_labels_from_file(name, name, text, bool, bool, text)
+    FROM agload_secrecy_role;
+REVOKE USAGE ON SCHEMA ag_catalog FROM agload_secrecy_role;
+DROP ROLE agload_secrecy_role;
+SELECT count(*) AS secrecy_graph_count
+FROM ag_catalog.ag_graph WHERE name = 'agload_secrecy';
+
+SELECT drop_graph('agload_parity', true);
+SELECT drop_graph('agload_pipe', true);
+
+-- Indexes that already exist while the loader runs must receive entries for
+-- every loaded row: a stale index silently makes parameterized index scans
+-- (the plan shape behind cypher MATCH joins) return empty results without
+-- any error. Force index-driven and index-free plans and compare counts,
+-- exercise the agtype expression index, then repeat after TRUNCATE + reload.
+SELECT create_graph('agload_idx');
+SELECT create_vlabel('agload_idx', 'Country');
+SELECT create_vlabel('agload_idx', 'City');
+SELECT create_elabel('agload_idx', 'has_city');
+CREATE INDEX agload_idx_has_city_end ON agload_idx.has_city ("end_id");
+CREATE INDEX agload_idx_country_iso2 ON agload_idx."Country"
+    (ag_catalog.agtype_access_operator(properties, '"iso2"'::agtype));
+SELECT load_labels_from_file('agload_idx', 'Country',
+                             'age_load/countries.csv', true);
+SELECT load_labels_from_file('agload_idx', 'City',
+                             'age_load/cities.csv', true);
+SELECT load_edges_from_file('agload_idx', 'has_city',
+                            'age_load/edges.csv');
+SET enable_seqscan = off;
+SET enable_hashjoin = off;
+SET enable_mergejoin = off;
+SELECT count(*) AS indexed_join_count
+FROM (SELECT id FROM agload_idx."Country" ORDER BY id LIMIT 10) c
+JOIN agload_idx.has_city e ON e.end_id = c.id;
+RESET enable_seqscan;
+RESET enable_hashjoin;
+RESET enable_mergejoin;
+SET enable_indexscan = off;
+SET enable_indexonlyscan = off;
+SET enable_bitmapscan = off;
+SELECT count(*) AS unindexed_join_count
+FROM (SELECT id FROM agload_idx."Country" ORDER BY id LIMIT 10) c
+JOIN agload_idx.has_city e ON e.end_id = c.id;
+RESET enable_indexscan;
+RESET enable_indexonlyscan;
+RESET enable_bitmapscan;
+SET enable_seqscan = off;
+SELECT count(*) AS expression_index_count
+FROM agload_idx."Country"
+WHERE ag_catalog.agtype_access_operator(properties, '"iso2"'::agtype)
+      = '"BE"'::agtype;
+RESET enable_seqscan;
+SELECT count(*) AS match_count
+FROM cypher('agload_idx', $$ MATCH (:City)-[:has_city]->(:Country) RETURN 1 $$)
+    AS (n agtype);
+TRUNCATE agload_idx."Country";
+TRUNCATE agload_idx."City";
+TRUNCATE agload_idx.has_city;
+SELECT load_labels_from_file('agload_idx', 'Country',
+                             'age_load/countries.csv', true);
+SELECT load_labels_from_file('agload_idx', 'City',
+                             'age_load/cities.csv', true);
+SELECT load_edges_from_file('agload_idx', 'has_city',
+                            'age_load/edges.csv');
+SET enable_seqscan = off;
+SET enable_hashjoin = off;
+SET enable_mergejoin = off;
+SELECT count(*) AS reloaded_indexed_join_count
+FROM (SELECT id FROM agload_idx."Country" ORDER BY id LIMIT 10) c
+JOIN agload_idx.has_city e ON e.end_id = c.id;
+RESET enable_seqscan;
+RESET enable_hashjoin;
+RESET enable_mergejoin;
+SELECT count(*) AS reloaded_expression_index_count
+FROM agload_idx."Country"
+WHERE ag_catalog.agtype_access_operator(properties, '"iso2"'::agtype)
+      = '"BE"'::agtype;
+SELECT count(*) AS reloaded_match_count
+FROM cypher('agload_idx', $$ MATCH (:City)-[:has_city]->(:Country) RETURN 1 $$)
+    AS (n agtype);
+SELECT drop_graph('agload_idx', true);
+
+-- CSV quoting rules of the loader's record reader: delimiters, newlines and
+-- escaped quotes inside quoted fields, CRLF terminators, blank lines, a last
+-- record without trailing newline; unquoted padding is trimmed, quoted kept.
+SELECT load_labels_from_file('agload_quoting', 'Q', 'age_load/quoting.csv',
+                             true, false);
+SELECT properties FROM agload_quoting."Q" ORDER BY id;
+SELECT * FROM cypher('agload_quoting', $$
+    MATCH (n:Q) RETURN n.id, size(n.name), size(n.note) ORDER BY n.id
+$$) AS (id agtype, name_len agtype, note_len agtype);
+SELECT drop_graph('agload_quoting', true);
+
+-- The loader resets its own row context after every row, never the caller's
+-- per-tuple context: a label name computed per input row must stay valid.
+SELECT load_labels_from_file('agload_rowctx', lower(v.n)::name,
+                             'age_load/countries.csv')
+FROM (VALUES ('Country')) v(n);
+SELECT count(*) AS rowctx_country_count FROM agload_rowctx.country;
+SELECT drop_graph('agload_rowctx', true);
+
+-- neo4j-style header loaders (name:TYPE columns, START_ID(Label)/END_ID(Label)).
+SELECT create_graph('agload_neo4j');
+SELECT create_vlabel('agload_neo4j', 'person');
+SELECT create_elabel('agload_neo4j', 'knows');
+SELECT load_labels_from_file_with_analysefile('agload_neo4j', 'person',
+                                              'age_load/neo4j_vertices.csv');
+SELECT load_edges_from_file_with_analysefile('agload_neo4j', 'knows',
+                                             'age_load/neo4j_edges.csv');
+SELECT id, properties FROM agload_neo4j.person ORDER BY id;
+SELECT start_id, end_id, properties FROM agload_neo4j.knows ORDER BY id;
+SELECT * FROM cypher('agload_neo4j', $$
+    MATCH (a:person)-[e:knows]->(b:person) RETURN a.name, e.since, b.name
+$$) AS (a agtype, since agtype, b agtype);
+-- an endpoint label that does not exist must be rejected instead of being
+-- written as a dangling edge with label id 0
+SELECT create_elabel('agload_neo4j', 'dangling');
+SELECT load_edges_from_file_with_analysefile(
+    'agload_neo4j', 'dangling', 'age_load/neo4j_edges_unknown_label.csv');
+SELECT count(*) AS dangling_edge_count FROM agload_neo4j.dangling;
+-- header columns must have the form name:TYPE; duplicate endpoint columns
+-- are rejected
+SELECT load_labels_from_file_with_analysefile('agload_neo4j', 'person',
+                                              'age_load/neo4j_bad_header.csv');
+SELECT load_edges_from_file_with_analysefile(
+    'agload_neo4j', 'knows', 'age_load/neo4j_edges_dup_start.csv');
+SELECT count(*) AS person_count FROM agload_neo4j.person;
+SELECT count(*) AS knows_count FROM agload_neo4j.knows;
+SELECT drop_graph('agload_neo4j', true);
+\! "@abs_srcdir@/age_load/setup_fixtures.sh" cleanup "@abs_srcdir@/age_load/data" "@abs_bindir@/gsql" @portstring@

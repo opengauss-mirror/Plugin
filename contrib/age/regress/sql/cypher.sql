@@ -68,4 +68,38 @@ SELECT (SELECT * FROM cypher('cypher', $$RETURN 0$$) AS r(c agtype));
 SELECT * FROM cypher('cypher', $$RETURN true$$) AS (c bool);
 SELECT * FROM cypher('cypher', $$RETURN 0$$) AS (c oid);
 
+-- Apache AGE #1799: CREATE TABLE AS must preserve transformed Cypher
+-- columns and named graph entity types through openGauss CTAS rewriting.
+SELECT * FROM cypher('cypher', $$
+    CREATE ()-[:knows]->()
+$$) AS (result agtype);
+
+CREATE TABLE cypher_ctas_vertices AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH (u) RETURN u ORDER BY u.id
+    $$) AS (u agtype);
+
+CREATE TABLE cypher_ctas_edges AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH ()-[e]->() RETURN e
+    $$) AS (e agtype);
+
+CREATE TABLE cypher_ctas_paths AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH p=(u)-[e]->(v) RETURN u, e, v, p
+    $$) AS (u agtype, e agtype, v agtype, p agtype);
+
+SELECT count(*) AS vertex_count FROM cypher_ctas_vertices;
+SELECT count(*) AS edge_count FROM cypher_ctas_edges;
+SELECT count(*) AS path_count FROM cypher_ctas_paths;
+SELECT age_id(u) IS NOT NULL AS vertex_ok,
+       age_id(e) IS NOT NULL AS edge_ok,
+       age_id(v) IS NOT NULL AS end_vertex_ok,
+       age_size(age_nodes(p)) = '2'::agtype AS path_ok
+FROM cypher_ctas_paths;
+
+DROP TABLE cypher_ctas_vertices;
+DROP TABLE cypher_ctas_edges;
+DROP TABLE cypher_ctas_paths;
+
 SELECT drop_graph('cypher', true);

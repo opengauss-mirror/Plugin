@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_vle');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_vle" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -202,7 +198,7 @@ SELECT * FROM cypher('cypher_vle', $$MATCH ()-[*]->(v) RETURN count(*) $$) AS (e
 (1 row)
 
 -- Should find 2
-SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)<-[e*]-(v:end) RETURN e $$) AS (e agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)<-[e*]-(v:end) RETURN e ORDER BY e ASC $$) AS (e agtype);
                                                                                                                                                                                                                                                                                                                                                                                                                                     e                                                                                                                                                                                                                                                                                                                                                                                                                                    
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  [{"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge]
@@ -210,7 +206,7 @@ SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)<-[e*]-(v:end) RETURN e $$) 
 (2 rows)
 
 -- Should find 5
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(:begin)<-[*1..1]-()-[]-() RETURN p ORDER BY p $$) AS (e agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(:begin)<-[*1..1]-()-[]-() RETURN p ORDER BY p ASC $$) AS (e agtype);
                                                                                                                                                                                                                                                                                                                                                                 e                                                                                                                                                                                                                                                                                                                                                                
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
@@ -228,58 +224,58 @@ SELECT * FROM cypher('cypher_vle', $$MATCH p=()-[*]->(v) RETURN count(*) $$) AS 
 (1 row)
 
 -- Should find 2
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[*3..3]->(v:end) RETURN p $$) AS (e agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                   e                                                                                                                                                                                                                                                                                                                                                                                                                   
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[*3..3]->(v:end) RETURN p ORDER BY p ASC $$) AS (e agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
 (2 rows)
 
 -- Should find 12
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[*3..3]-(v:end) RETURN p $$) AS (e agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                     e                                                                                                                                                                                                                                                                                                                                                                                                                                                      
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[*3..3]-(v:end) RETURN p ORDER BY p ASC $$) AS (e agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
 (12 rows)
 
 -- Each should find 2
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[*]-(v:end) RETURN p $$) AS (e agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[*]-(v:end) RETURN p ORDER BY p ASC $$) AS (e agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
 (2 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[e*]-(v:end) RETURN p $$) AS (e agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[e*]-(v:end) RETURN p ORDER BY p ASC $$) AS (e agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
 (2 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[e*]-(v:end) RETURN e $$) AS (e agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)<-[e*]-(v:end) RETURN e ORDER BY e ASC $$) AS (e agtype);
                                                                                                                                                                                                                                                                                                                                                                                                                                     e                                                                                                                                                                                                                                                                                                                                                                                                                                    
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  [{"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge]
  [{"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge]
 (2 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(:begin)<-[*]-()<-[]-(:end) RETURN p $$) AS (e agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(:begin)<-[*]-()<-[]-(:end) RETURN p ORDER BY p ASC $$) AS (e agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
 (2 rows)
 
 -- Each should return 31
@@ -371,14 +367,14 @@ $$) AS (e1 agtype);
 (1 row)
 
 -- Should return 1 path
-SELECT * FROM cypher('cypher_vle', $$ MATCH p=()<-[e1*]-(:end)-[e2*]->(:begin) RETURN p $$) AS (result agtype);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$ MATCH p=()<-[e1*]-(:end)-[e2*]->(:begin) RETURN p ORDER BY p ASC $$) AS (result agtype);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
 (1 row)
 
 -- Each should return 3
-SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)-[e*0..1]->(v) RETURN id(u), e, id(v) $$) AS (u agtype, e agtype, v agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)-[e*0..1]->(v) RETURN id(u), e, id(v) ORDER BY id(u) ASC, e ASC, id(v) ASC $$) AS (u agtype, e agtype, v agtype);
         u        |                                                                                                                          e                                                                                                                           |        v         
 -----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------
  844424930131969 | []                                                                                                                                                                                                                                                   | 844424930131969
@@ -386,16 +382,16 @@ SELECT * FROM cypher('cypher_vle', $$MATCH (u:begin)-[e*0..1]->(v) RETURN id(u),
  844424930131969 | [{"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge] | 1407374883553281
 (3 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[e*0..1]->(v) RETURN p $$) AS (p agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u:begin)-[e*0..1]->(v) RETURN p ORDER BY p ASC $$) AS (p agtype);
                                                                                                                                                                                                    p                                                                                                                                                                                                    
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
  [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
  [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
 (3 rows)
 
 -- Each should return 5
-SELECT * FROM cypher('cypher_vle', $$MATCH (u)-[e*0..0]->(v) RETURN id(u), e, id(v) $$) AS (u agtype, e agtype, v agtype);
+SELECT * FROM cypher('cypher_vle', $$MATCH (u)-[e*0..0]->(v) RETURN id(u), e, id(v) ORDER BY id(u) ASC, e ASC, id(v) ASC $$) AS (u agtype, e agtype, v agtype);
         u         | e  |        v         
 ------------------+----+------------------
  844424930131969  | [] | 844424930131969
@@ -405,52 +401,752 @@ SELECT * FROM cypher('cypher_vle', $$MATCH (u)-[e*0..0]->(v) RETURN id(u), e, id
  1688849860263937 | [] | 1688849860263937
 (5 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=(u)-[e*0..0]->(v) RETURN id(u), p, id(v) $$) AS (u agtype, p agtype, v agtype);
-        u         |                                                                          p                                                                           |        v         
-------------------+------------------------------------------------------------------------------------------------------------------------------------------------------+------------------
- 844424930131969  | [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path     | 844424930131969
- 1407374883553281 | [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path | 1407374883553281
- 1407374883553282 | [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path | 1407374883553282
- 1407374883553283 | [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path | 1407374883553283
- 1688849860263937 | [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path       | 1688849860263937
+SELECT * FROM cypher('cypher_vle', $$MATCH p=(u)-[e*0..0]->(v) RETURN id(u), p, id(v) ORDER BY id(u) ASC, p ASC, id(v) ASC $$) AS (u agtype, p agtype, v agtype);
+        u         |                                       p                                       |        v         
+------------------+-------------------------------------------------------------------------------+------------------
+ 844424930131969  | [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path   | 844424930131969
+ 1407374883553281 | [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path | 1407374883553281
+ 1407374883553282 | [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path | 1407374883553282
+ 1407374883553283 | [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path | 1407374883553283
+ 1688849860263937 | [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path    | 1688849860263937
 (5 rows)
 
 -- Each should return 13 and will be the same
-SELECT * FROM cypher('cypher_vle', $$MATCH p=()-[*0..0]->()-[]->() RETURN p $$) AS (p agtype);
-                                                                                                                                                                                                                                        p                                                                                                                                                                                                                                         
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1970324836974593, "label": "self_loop", "end_id": 1407374883553281, "start_id": 1407374883553281, "properties": {"name": "self loop", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=()-[*0..0]->()-[]->() RETURN p ORDER BY p ASC $$) AS (p agtype);
+                                                                                                                                                                                                     p                                                                                                                                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1970324836974593, "label": "self_loop", "end_id": 1407374883553281, "start_id": 1407374883553281, "properties": {"name": "self loop", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
 (13 rows)
 
-SELECT * FROM cypher('cypher_vle', $$MATCH p=()-[]->()-[*0..0]->() RETURN p $$) AS (p agtype);
-                                                                                                                                                                                                                                        p                                                                                                                                                                                                                                         
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1970324836974593, "label": "self_loop", "end_id": 1407374883553281, "start_id": 1407374883553281, "properties": {"name": "self loop", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
- [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
- [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+SELECT * FROM cypher('cypher_vle', $$MATCH p=()-[]->()-[*0..0]->() RETURN p ORDER BY p ASC $$) AS (p agtype);
+                                                                                                                                                                                                     p                                                                                                                                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 1125899906842628, "label": "edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "main edge", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 844424930131969, "label": "begin", "properties": {}}::vertex, {"id": 2251799813685249, "label": "alternate_edge", "end_id": 1407374883553281, "start_id": 844424930131969, "properties": {"name": "alternate edge", "number": 1, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842627, "label": "edge", "end_id": 1407374883553282, "start_id": 1407374883553281, "properties": {"name": "main edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553281, "label": "middle", "properties": {}}::vertex, {"id": 1970324836974593, "label": "self_loop", "end_id": 1407374883553281, "start_id": 1407374883553281, "properties": {"name": "self loop", "number": 1, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553281, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842626, "label": "edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "main edge", "number": 3, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685250, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1407374883553282, "properties": {"name": "alternate edge", "number": 2, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395905, "label": "bypass_edge", "end_id": 1688849860263937, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553282, "label": "middle", "properties": {}}::vertex, {"id": 2533274790395906, "label": "bypass_edge", "end_id": 844424930131969, "start_id": 1407374883553282, "properties": {"name": "bypass edge", "number": 2, "packages": [1, 3, 5, 7], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 844424930131969, "label": "begin", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 1125899906842625, "label": "edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "main edge", "number": 4, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685251, "label": "alternate_edge", "end_id": 1688849860263937, "start_id": 1407374883553283, "properties": {"name": "alternate edge", "number": 3, "packages": [2, 4, 6], "dangerous": {"type": "poisons", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1407374883553283, "label": "middle", "properties": {}}::vertex, {"id": 2251799813685253, "label": "alternate_edge", "end_id": 1407374883553282, "start_id": 1407374883553283, "properties": {"name": "backup edge", "number": 2, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553282, "label": "middle", "properties": {}}::vertex]::path
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 1970324836974594, "label": "self_loop", "end_id": 1688849860263937, "start_id": 1688849860263937, "properties": {"name": "self loop", "number": 2, "dangerous": {"type": "all", "level": "all"}}}::edge, {"id": 1688849860263937, "label": "end", "properties": {}}::vertex]::path
+ [{"id": 1688849860263937, "label": "end", "properties": {}}::vertex, {"id": 2251799813685252, "label": "alternate_edge", "end_id": 1407374883553283, "start_id": 1688849860263937, "properties": {"name": "backup edge", "number": 1, "packages": [1, 3, 5, 7]}}::edge, {"id": 1407374883553283, "label": "middle", "properties": {}}::vertex]::path
 (13 rows)
+
+-- A missing edge label still permits the zero-hop self-binding, but it must
+-- never traverse an edge of another label for a positive hop.
+SELECT create_graph('vle_missing_edge_label');
+NOTICE:  graph "vle_missing_edge_label" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('vle_missing_edge_label', $$
+    CREATE (:Person {name: 'Alice'})-[:KNOWS]->(:Person {name: 'Bob'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('vle_missing_edge_label', $$
+    MATCH (a:Person {name: 'Alice'})-[:NOEXIST*0..1]->(b)
+    RETURN a.name, b.name
+    ORDER BY b.name
+$$) AS (start_name agtype, end_name agtype);
+ start_name | end_name 
+------------+----------
+ "Alice"    | "Alice"
+(1 row)
+
+SELECT * FROM cypher('vle_missing_edge_label', $$
+    MATCH (:Person {name: 'Alice'})-[:NOEXIST*1..1]->()
+    RETURN count(*)
+$$) AS (positive_hops agtype);
+ positive_hops 
+---------------
+ 0
+(1 row)
+
+SELECT drop_graph('vle_missing_edge_label', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table vle_missing_edge_label._ag_label_vertex
+drop cascades to table vle_missing_edge_label._ag_label_edge
+drop cascades to table vle_missing_edge_label."Person"
+drop cascades to table vle_missing_edge_label."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_missing_edge_label" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- An upper LIMIT can make openGauss choose an IndexOnlyScan-backed physical
+-- slot for an anonymous VLE seed.  The executor must deform that slot before
+-- replacing its empty seed arrays, otherwise projection restores a zero-hop
+-- result even when the minimum depth is two.
+SELECT create_graph('vle_limit_slot');
+NOTICE:  graph "vle_limit_slot" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('vle_limit_slot', $$
+    CREATE (:d), (:d), (:d),
+           (:v1)-[:e]->(:v1)-[:e]->(:v1)
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('vle_limit_slot', $$
+    MATCH ()-[edges *2..2]->()
+    RETURN size(edges), edges[0] IS NOT NULL, edges[1] IS NOT NULL
+    LIMIT 1
+$$) AS (path_size agtype, first_edge_present boolean,
+        second_edge_present boolean);
+ path_size | first_edge_present | second_edge_present 
+-----------+--------------------+---------------------
+ 2         | t                  | t
+(1 row)
+
+SELECT drop_graph('vle_limit_slot', true);
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table vle_limit_slot._ag_label_vertex
+drop cascades to table vle_limit_slot._ag_label_edge
+drop cascades to table vle_limit_slot.d
+drop cascades to table vle_limit_slot.v1
+drop cascades to table vle_limit_slot.e
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_limit_slot" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- A prepared VLE plan must discard its local DFS cache after the graph cache
+-- is rebuilt, even if the allocator reuses the same address.
+SELECT create_graph('vle_generation');
+NOTICE:  graph "vle_generation" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('vle_generation', $$
+    CREATE (:Person {name: 'Alice'})-[:KNOWS {weight: 1}]->(:Person {name: 'Bob'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+PREPARE vle_generation_probe AS
+SELECT count(*) AS reachable
+FROM cypher('vle_generation', $$
+    MATCH (:Person {name: 'Alice'})-[:KNOWS*1..2]->(f:Person)
+    RETURN f.name
+$$) AS (friend agtype);
+EXECUTE vle_generation_probe;
+ reachable 
+-----------
+         1
+(1 row)
+
+SELECT * FROM cypher('vle_generation', $$
+    MATCH (b:Person {name: 'Bob'})
+    CREATE (b)-[:KNOWS {weight: 2}]->(:Person {name: 'Carol'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+EXECUTE vle_generation_probe;
+ reachable 
+-----------
+         2
+(1 row)
+
+EXECUTE vle_generation_probe;
+ reachable 
+-----------
+         2
+(1 row)
+
+DEALLOCATE vle_generation_probe;
+PREPARE vle_property_probe(agtype) AS
+SELECT count(*) AS matched
+FROM cypher('vle_generation', $$
+    MATCH (:Person {name: 'Alice'})-[r:KNOWS*1..1 {weight: $weight}]->()
+    RETURN r
+$$, $1) AS (edges agtype);
+EXECUTE vle_property_probe('{"weight": 1}');
+ matched 
+---------
+       1
+(1 row)
+
+EXECUTE vle_property_probe('{"weight": 2}');
+ matched 
+---------
+       0
+(1 row)
+
+DEALLOCATE vle_property_probe;
+SELECT drop_graph('vle_generation', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table vle_generation._ag_label_vertex
+drop cascades to table vle_generation._ag_label_edge
+drop cascades to table vle_generation."Person"
+drop cascades to table vle_generation."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_generation" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
+-- #2420: VLE endpoints are ordinary graphid columns in the ExtensiblePlan.
+-- Terminal and adjacent VLE joins must not depend on legacy path-inspection
+-- helper functions, and prepared plans must preserve the same endpoint quals.
+--
+SELECT create_graph('vle_endpoint_quals');
+NOTICE:  graph "vle_endpoint_quals" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('vle_endpoint_quals', $$
+    CREATE (:Node {name: 'A'})-[:E]->(:Node {name: 'B'})-
+           [:E]->(:Node {name: 'C'})-[:E]->(:Node {name: 'D'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT count(*) AS terminal_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E*1..3]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+ terminal_paths 
+----------------
+              1
+(1 row)
+
+SELECT count(*) AS chained_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E*1..2]->()-[:E*1..2]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+ chained_paths 
+---------------
+             2
+(1 row)
+
+SELECT count(*) AS vle_then_edge_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E*1..2]->()-[:E]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+ vle_then_edge_paths 
+---------------------
+                   1
+(1 row)
+
+SELECT count(*) AS edge_then_vle_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E]->()-[:E*1..2]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+ edge_then_vle_paths 
+---------------------
+                   1
+(1 row)
+
+PREPARE vle_endpoint_qual_probe AS
+SELECT count(*) AS chained_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E*1..2]->()-[:E*1..2]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+EXECUTE vle_endpoint_qual_probe;
+ chained_paths 
+---------------
+             2
+(1 row)
+
+EXECUTE vle_endpoint_qual_probe;
+ chained_paths 
+---------------
+             2
+(1 row)
+
+DEALLOCATE vle_endpoint_qual_probe;
+PREPARE vle_regular_edge_qual_probe AS
+SELECT count(*) AS mixed_paths
+FROM cypher('vle_endpoint_quals', $$
+    MATCH (:Node {name: 'A'})-[:E*1..2]->()-[:E]->(:Node {name: 'D'})
+    RETURN 1
+$$) AS (result agtype);
+EXECUTE vle_regular_edge_qual_probe;
+ mixed_paths 
+-------------
+           1
+(1 row)
+
+EXECUTE vle_regular_edge_qual_probe;
+ mixed_paths 
+-------------
+           1
+(1 row)
+
+DEALLOCATE vle_regular_edge_qual_probe;
+SELECT drop_graph('vle_endpoint_quals', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table vle_endpoint_quals._ag_label_vertex
+drop cascades to table vle_endpoint_quals._ag_label_edge
+drop cascades to table vle_endpoint_quals."Node"
+drop cascades to table vle_endpoint_quals."E"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_endpoint_quals" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- A single-segment VLE path variable should source anonymous endpoints from
+-- the VLE itself instead of adding vertex scans or terminal joins.
+\pset format unaligned
+SELECT create_graph('vle_path_endpoint_plan');
+NOTICE:  graph "vle_path_endpoint_plan" has been created
+CONTEXT:  referenced column: create_graph
+create_graph
+
+(1 row)
+SELECT * FROM cypher('vle_path_endpoint_plan', $$
+    CREATE (:Node {name: 'A'})-[:E]->(:Node {name: 'B'})
+$$) AS (result agtype);
+result
+(0 rows)
+SELECT * FROM cypher('vle_path_endpoint_plan', $$
+    EXPLAIN (costs off) MATCH p=()-[*]-() RETURN p
+$$) AS (plan agtype);
+QUERY PLAN
+Result
+  ->  Cypher VLE
+        ->  HashAggregate
+              Group By Key: vle_path_endpoint_plan._ag_label_edge.start_id, vle_path_endpoint_plan._ag_label_edge.start_id, '{}'::graphid[], '{}'::agtype[], '{}'::agtype[]
+              ->  Result
+                    ->  Append
+                          ->  Seq Scan on _ag_label_edge
+                          ->  Seq Scan on "E" _ag_label_edge
+                          ->  Seq Scan on _ag_label_edge
+                          ->  Seq Scan on "E" _ag_label_edge
+(10 rows)
+SELECT * FROM cypher('vle_path_endpoint_plan', $$
+    EXPLAIN (costs off) MATCH p=(u)-[*]-() RETURN p
+$$) AS (plan agtype);
+QUERY PLAN
+Nested Loop
+  ->  Append
+        ->  Seq Scan on _ag_label_vertex u
+        ->  Seq Scan on "Node" u
+  ->  Cypher VLE
+        ->  Values Scan on "*VALUES*"
+(6 rows)
+SELECT drop_graph('vle_path_endpoint_plan', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table vle_path_endpoint_plan._ag_label_vertex
+drop cascades to table vle_path_endpoint_plan._ag_label_edge
+drop cascades to table vle_path_endpoint_plan."Node"
+drop cascades to table vle_path_endpoint_plan."E"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_path_endpoint_plan" has been dropped
+CONTEXT:  referenced column: drop_graph
+drop_graph
+
+(1 row)
+\pset format aligned
+-- Exercise VLE local-context cache eviction, rebuild, and LRU promotion.
+PREPARE vle_cache_probe_1 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+PREPARE vle_cache_probe_2 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+PREPARE vle_cache_probe_3 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+PREPARE vle_cache_probe_4 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+PREPARE vle_cache_probe_5 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+PREPARE vle_cache_probe_6 AS
+SELECT count(*) AS cached_paths
+FROM cypher('cypher_vle', $$
+    MATCH (:begin)-[:edge*1..1]->()
+    RETURN 1
+$$) AS (result agtype);
+EXECUTE vle_cache_probe_1;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_2;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_3;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_4;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_5;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_6;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_1;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+EXECUTE vle_cache_probe_3;
+ cached_paths 
+--------------
+            1
+(1 row)
+
+DEALLOCATE vle_cache_probe_1;
+DEALLOCATE vle_cache_probe_2;
+DEALLOCATE vle_cache_probe_3;
+DEALLOCATE vle_cache_probe_4;
+DEALLOCATE vle_cache_probe_5;
+DEALLOCATE vle_cache_probe_6;
+-- Apache AGE #1037: chained access must materialize a VLE edge container and
+-- continue through nested edge properties.
+SELECT create_graph('vle_access_operator');
+NOTICE:  graph "vle_access_operator" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('vle_access_operator', $$
+    CREATE (:AccessNode {name: 'a'})-
+           [:AccessEdge {id: 0, nested: {value: 10}}]->
+           (:AccessNode {name: 'b'})-
+           [:AccessEdge {id: 1, nested: {value: 20}}]->
+           (:AccessNode {name: 'c'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('vle_access_operator', $$
+    MATCH ()-[edges:AccessEdge*2..2]->()
+    RETURN edges[0].id,
+           edges[1].nested.value,
+           properties(edges[0]).nested.value
+$$) AS (first_id agtype, second_nested agtype,
+       first_properties_nested agtype);
+ first_id | second_nested | first_properties_nested 
+----------+---------------+-------------------------
+ 0        | 20            | 10
+(1 row)
+
+SELECT drop_graph('vle_access_operator', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table vle_access_operator._ag_label_vertex
+drop cascades to table vle_access_operator._ag_label_edge
+drop cascades to table vle_access_operator."AccessNode"
+drop cascades to table vle_access_operator."AccessEdge"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_access_operator" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- Apache AGE #1924 plus the openGauss native-VLE rescan boundary: EXISTS
+-- short-circuits after its first path, so every correlated outer tuple must
+-- restart the DFS stack from its own seed vertex.
+SELECT create_graph('vle_exists_rescan');
+NOTICE:  graph "vle_exists_rescan" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT count(*) AS empty_fixed_vle
+FROM cypher('vle_exists_rescan', $$
+    MATCH (n)
+    WHERE EXISTS((n)-[*1]-({name: 'Willem Defoe'}))
+    RETURN n
+$$) AS (n agtype);
+ empty_fixed_vle 
+-----------------
+               0
+(1 row)
+
+SELECT * FROM cypher('vle_exists_rescan', $$
+    CREATE ({name: 'Jane Doe'})-[:KNOWS]->({name: 'John Doe'}),
+           ({name: 'Donald Defoe'})-[:KNOWS]->({name: 'Willem Defoe'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('vle_exists_rescan', $$
+    MATCH (u {name: 'John Doe'})
+    MERGE (u)-[:KNOWS]->({name: 'Willem Defoe'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT count(*) AS unbounded_vle
+FROM cypher('vle_exists_rescan', $$
+    MATCH (n)
+    WHERE EXISTS((n)-[*]-({name: 'Willem Defoe'}))
+    RETURN n.name
+$$) AS (name agtype);
+ unbounded_vle 
+---------------
+             3
+(1 row)
+
+SELECT count(*) AS fixed_one_vle
+FROM cypher('vle_exists_rescan', $$
+    MATCH (n)
+    WHERE EXISTS((n)-[*1]-({name: 'Willem Defoe'}))
+    RETURN n.name
+$$) AS (name agtype);
+ fixed_one_vle 
+---------------
+             2
+(1 row)
+
+SELECT count(*) AS fixed_two_vle
+FROM cypher('vle_exists_rescan', $$
+    MATCH (n)
+    WHERE EXISTS((n)-[*2..2]-({name: 'Willem Defoe'}))
+    RETURN n.name
+$$) AS (name agtype);
+ fixed_two_vle 
+---------------
+             1
+(1 row)
+
+SELECT drop_graph('vle_exists_rescan', true);
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table vle_exists_rescan._ag_label_vertex
+drop cascades to table vle_exists_rescan._ag_label_edge
+drop cascades to table vle_exists_rescan."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "vle_exists_rescan" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- Apache AGE #2337: chained OPTIONAL MATCH VLE predicates must return false
+-- for NULL-extended rows instead of raising errors or exhausting cached state.
+SELECT create_graph('issue_2092');
+NOTICE:  graph "issue_2092" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('issue_2092', $$
+    CREATE (a:Person {name: 'Alice'}),
+           (b:Person {name: 'Bob'}),
+           (c:City {name: 'NYC'}),
+           (d:City {name: 'LA'}),
+           (e:Place {name: 'Central Park'}),
+           (a)-[:LIVES_IN]->(c),
+           (c)-[:HAS_PLACE]->(e),
+           (b)-[:LIVES_IN]->(d)
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('issue_2092', $$
+    MATCH (p:Person)-[:LIVES_IN*]->(c:City)
+    OPTIONAL MATCH (c)-[:HAS_PLACE*]->(place)
+    OPTIONAL MATCH (place)-[:NEARBY*]->(other)
+    WHERE place IS NOT NULL
+    RETURN p.name, place.name, other
+    ORDER BY p.name
+$$) AS (person agtype, place agtype, other agtype);
+ person  |     place      | other 
+---------+----------------+-------
+ "Alice" | "Central Park" | 
+ "Bob"   |                | 
+(2 rows)
+
+SELECT * FROM cypher('issue_2092', $$
+    MATCH (p:Person)-[:LIVES_IN*]->(c:City)
+    OPTIONAL MATCH (c)-[:HAS_PLACE*]->(place)
+    OPTIONAL MATCH (place)-[:NEARBY*]->(other)
+    RETURN p.name, place.name, other
+    ORDER BY p.name
+$$) AS (person agtype, place agtype, other agtype);
+ person  |     place      | other 
+---------+----------------+-------
+ "Alice" | "Central Park" | 
+ "Bob"   |                | 
+(2 rows)
+
+SELECT * FROM cypher('issue_2092', $$
+    MATCH (p:Person)-[:LIVES_IN*]->(c:City)
+    OPTIONAL MATCH (c)-[:HAS_PLACE*]->(place)
+    WHERE place IS NOT NULL
+    RETURN p.name, c.name, place.name
+    ORDER BY p.name
+$$) AS (person agtype, city agtype, place agtype);
+ person  | city  |     place      
+---------+-------+----------------
+ "Alice" | "NYC" | "Central Park"
+ "Bob"   | "LA"  | 
+(2 rows)
+
+SELECT drop_graph('issue_2092', true);
+NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table issue_2092._ag_label_vertex
+drop cascades to table issue_2092._ag_label_edge
+drop cascades to table issue_2092."Person"
+drop cascades to table issue_2092."City"
+drop cascades to table issue_2092."Place"
+drop cascades to table issue_2092."LIVES_IN"
+drop cascades to table issue_2092."HAS_PLACE"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "issue_2092" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
+-- openGauss: a float edge property constraint is an agtype constant inside
+-- the serialized VLE clause data; it must round trip without going through
+-- float8out()/agtype_in().
+--
+SELECT create_graph('cypher_vle_float');
+NOTICE:  graph "cypher_vle_float" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('cypher_vle_float', $$
+    CREATE (:N {name: 'a'})-[:E {w: 0.5}]->(:N {name: 'b'})-[:E {w: 0.5}]->(:N {name: 'c'}),
+           (:N {name: 'x'})-[:E {w: 1.5}]->(:N {name: 'y'})
+$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_vle_float', $$
+    MATCH (a:N {name: 'a'})-[e*1..2 {w: 0.5}]->(b) RETURN b.name ORDER BY b.name
+$$) AS (name agtype);
+ name 
+------
+ "b"
+ "c"
+(2 rows)
+
+SELECT * FROM cypher('cypher_vle_float', $$
+    MATCH (a:N)-[e*1..2 {w: 1.5}]->(b) RETURN a.name, b.name
+$$) AS (a agtype, b agtype);
+  a  |  b  
+-----+-----
+ "x" | "y"
+(1 row)
+
+SELECT drop_graph('cypher_vle_float', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table cypher_vle_float._ag_label_vertex
+drop cascades to table cypher_vle_float._ag_label_edge
+drop cascades to table cypher_vle_float."N"
+drop cascades to table cypher_vle_float."E"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "cypher_vle_float" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
 
 --
 -- Clean up

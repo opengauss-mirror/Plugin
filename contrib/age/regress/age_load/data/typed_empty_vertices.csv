@@ -1,0 +1,3 @@
+id,empty_value,quoted_empty,spaces_value,text_value,padded_value
+1,,"","   ",plain," padded "
+2,x,y,z,end,compact

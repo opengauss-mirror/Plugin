@@ -1,0 +1,2 @@
+start_id,start_vertex_type,end_id,end_vertex_type,empty_value,quoted_empty,spaces_value,text_value,padded_value
+1,TypedV,2,TypedV,,"","   ",plain," padded "

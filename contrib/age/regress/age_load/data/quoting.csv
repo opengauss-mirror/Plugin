@@ -1,0 +1,7 @@
+id,name,note
+1,"Smith, John","says ""hi"""
+
+2,"multi
+line",  spaced  
+   
+3,  unquoted padded  ,"  quoted padded  "

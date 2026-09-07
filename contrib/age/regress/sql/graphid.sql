@@ -45,3 +45,12 @@ EXPLAIN (COSTS FALSE) SELECT * FROM graphid_table WHERE gid = '1';
 EXPLAIN (COSTS FALSE) SELECT * FROM graphid_table WHERE gid > '0';
 SET enable_seqscan = ON;
 DROP TABLE graphid_table;
+
+-- make_graphid() range validation: out-of-range ids would otherwise be
+-- truncated into another label's id space
+SELECT _graphid(1, 0);
+SELECT _graphid(65535, 281474976710655);
+SELECT _graphid(0, 1);
+SELECT _graphid(70000, 1);
+SELECT _graphid(1, -1);
+SELECT _graphid(1, 281474976710656);

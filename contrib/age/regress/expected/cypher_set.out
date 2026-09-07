@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_set');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_set" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -202,30 +198,37 @@ $$) AS (a agtype);
  {"id": 1125899906842630, "label": "e", "end_id": 281474976710659, "start_id": 281474976710658, "properties": {"j": 34, "y": 99}}::edge
 (1 row)
 
+CREATE TEMP TABLE cypher_set_return_rows (a agtype);
+INSERT INTO cypher_set_return_rows
 SELECT * FROM cypher('cypher_set', $$
         MATCH (n)
         MATCH (n)-[e:e {j:34}]->()
         SET n.y = 1
         RETURN n
 $$) AS (a agtype);
+SELECT a FROM cypher_set_return_rows ORDER BY age_id(a);
                                                     a                                                    
 ---------------------------------------------------------------------------------------------------------
  {"id": 281474976710658, "label": "", "properties": {"y": 1}}::vertex
  {"id": 844424930131970, "label": "v", "properties": {"a": 0, "i": 50, "j": 5, "y": 1, "z": 99}}::vertex
 (2 rows)
 
+TRUNCATE cypher_set_return_rows;
+INSERT INTO cypher_set_return_rows
 SELECT * FROM cypher('cypher_set', $$
         MATCH (n)
         MATCH ()-[e:e {j:34}]->(n)
         SET n.y = 2
         RETURN n
 $$) AS (a agtype);
+SELECT a FROM cypher_set_return_rows ORDER BY age_id(a);
                                                     a                                                    
 ---------------------------------------------------------------------------------------------------------
  {"id": 281474976710659, "label": "", "properties": {"y": 2}}::vertex
  {"id": 844424930131970, "label": "v", "properties": {"a": 0, "i": 50, "j": 5, "y": 2, "z": 99}}::vertex
 (2 rows)
 
+DROP TABLE cypher_set_return_rows;
 SELECT * FROM cypher('cypher_set', $$MATCH (n)-[]->(n) SET n.y = 99 RETURN n$$) AS (a agtype);
                                                     a                                                     
 ----------------------------------------------------------------------------------------------------------
@@ -379,7 +382,7 @@ ERROR:  undefined reference to variable wrong_var in SET clause
 LINE 1: ...ELECT * FROM cypher('cypher_set', $$MATCH (n) SET wrong_var....
                                                              ^
 SELECT * FROM cypher('cypher_set', $$MATCH (n) SET i = 3$$) AS (a agtype);
-ERROR:  SET clause expects a variable name
+ERROR:  SET clause expects a map
 LINE 1: ...ELECT * FROM cypher('cypher_set', $$MATCH (n) SET i = 3$$) A...
                                                              ^
 --
@@ -498,13 +501,277 @@ SELECT * FROM cypher('cypher_set', $$MATCH (u:begin)-[:edge]->(v:end) return u, 
  {"id": 1970324836974593, "label": "begin", "properties": {"i": 2, "j": 4}}::vertex | {"id": 2533274790395905, "label": "end", "properties": {"i": 1, "j": 3}}::vertex
 (1 row)
 
+-- Preserve null-valued keys in expression maps, but not top-level properties.
+SELECT * FROM cypher('cypher_set', $$
+    RETURN size(keys({keep: 1, missing: null})) = 2
+$$) AS (map_keeps_null agtype);
+ map_keeps_null 
+----------------
+ true
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    WITH {outer: {inner: null}} AS m
+    RETURN size(keys(m.outer)) = 1
+$$) AS (nested_map_keeps_null agtype);
+ nested_map_keeps_null 
+-----------------------
+ true
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    CREATE (:null_map_contract {
+        marker: 2391,
+        old_property: true,
+        create_drop: null,
+        nested: {inner: null}
+    })
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:null_map_contract)
+    RETURN size(keys(properties(n))) = 3,
+           size(keys(n.nested)) = 1
+$$) AS (create_drops_top_level_null agtype,
+       create_keeps_nested_null agtype);
+ create_drops_top_level_null | create_keeps_nested_null 
+-----------------------------+--------------------------
+ true                        | true
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:null_map_contract)
+    SET n = {marker: 2391, set_drop: null, nested: {inner: null}}
+    RETURN size(keys(properties(n))) = 2,
+           size(keys(n.nested)) = 1
+$$) AS (set_replaces_and_drops_top_level_null agtype,
+       set_keeps_nested_null agtype);
+ set_replaces_and_drops_top_level_null | set_keeps_nested_null 
+---------------------------------------+-----------------------
+ true                                  | true
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:null_map_contract)
+    SET n.payload = {inner: null}
+    RETURN size(keys(properties(n))) = 3,
+           size(keys(n.payload)) = 1
+$$) AS (single_property_set_adds_map agtype,
+       single_property_set_keeps_nested_null agtype);
+ single_property_set_adds_map | single_property_set_keeps_nested_null 
+------------------------------+---------------------------------------
+ true                         | true
+(1 row)
+
+-- Complete map SET support: merge maps and accept map-valued expressions.
+SELECT * FROM cypher('cypher_set', $$
+    CREATE (:map_set_contract {marker: 468, old: 1, gone: 2}),
+           (:map_set_source {copied: 3, retained: 4})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:map_set_contract)
+    SET n += {old: 7, gone: null, added: 9}
+    RETURN n.old, n.gone, n.added
+$$) AS (old agtype, gone agtype, added agtype);
+ old | gone | added 
+-----+------+-------
+ 7   |      | 9
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:map_set_contract), (source:map_set_source)
+    SET n = source
+    RETURN n.copied, n.retained, n.old
+$$) AS (copied agtype, retained agtype, old agtype);
+ copied | retained | old 
+--------+----------+-----
+ 3      | 4        | 
+(1 row)
+
+-- Apache AGE #1160/#1637: preserve nested values during += and accept a
+-- map-valued WITH alias as the complete property replacement.
+SELECT * FROM cypher('cypher_set', $$
+    CREATE (:nested_map_set_contract {
+        marker: 1160,
+        map: {a: 1, b: {c: 2, d: []}, c: [{d: -100, e: []}]},
+        list: [1, 'string', [{a: []}, [[1, 2]]]]
+    })
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('cypher_set', $$
+    MATCH (n:nested_map_set_contract {marker: 1160})
+    SET n += {added: {x: [1, {y: 2}]}}
+    RETURN n.map.b.c, n.map.c[0].d, n.list[2][1][0], n.added.x[1].y
+$$) AS (map_value agtype, nested_list_value agtype,
+       original_list_value agtype, added_value agtype);
+ map_value | nested_list_value | original_list_value | added_value 
+-----------+-------------------+---------------------+-------------
+ 2         | -100              | [1, 2]              | 2
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    WITH {first: 'jon', last: 'snow'} AS map
+    MERGE (n:dynamic_map_set_contract {id: '1'})
+    SET n = map
+    RETURN n.first, n.last, n.id, map.first
+$$) AS (first agtype, last agtype, removed_id agtype, source_first agtype);
+ first |  last  | removed_id | source_first 
+-------+--------+------------+--------------
+ "jon" | "snow" |            | "jon"
+(1 row)
+
+-- Apache AGE #2306: SET RHS variables use an internal target name, and nested
+-- graph values remain accessible after serialization.
+SELECT * FROM cypher('cypher_set', $$
+    CREATE (n:self_reference_contract {name: 'self'})
+    SET n.copy = n
+    RETURN label(n.copy), n.copy.name
+$$) AS (copy_label agtype, copy_name agtype);
+        copy_label         | copy_name 
+---------------------------+-----------
+ "self_reference_contract" | "self"
+(1 row)
+
+SELECT * FROM cypher('cypher_set', $$
+    CREATE (a:edge_reference_contract {name: 'a'})-
+           [e:stored_edge_contract {weight: 1}]->
+           (b:edge_reference_contract {name: 'b'})
+    SET a.edge_copy = e, b.source_copy = a
+    RETURN type(a.edge_copy), a.edge_copy.weight,
+           label(b.source_copy), b.source_copy.name
+$$) AS (edge_type agtype, edge_weight agtype,
+       source_label agtype, source_name agtype);
+       edge_type        | edge_weight |       source_label        | source_name 
+------------------------+-------------+---------------------------+-------------
+ "stored_edge_contract" | 1           | "edge_reference_contract" | "a"
+(1 row)
+
+--
+-- openGauss: SET must be applied when the same query level sorts, limits or
+-- de-duplicates its output (see cypher_create.sql for the planner background).
+--
+SELECT create_graph('cypher_set_sorted');
+NOTICE:  graph "cypher_set_sorted" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    CREATE (:P {name: 'a'}), (:P {name: 'b'}), (:P {name: 'c'})
+$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) SET n.seen = true RETURN n.name ORDER BY n.name LIMIT 2
+$$) AS (name agtype);
+ name 
+------
+ "a"
+ "b"
+(2 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) SET n.twice = 1 RETURN DISTINCT n.twice
+$$) AS (twice agtype);
+ twice 
+-------
+ 1
+(1 row)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) SET n.tag = 'x' RETURN n.name
+$$) AS (name agtype) ORDER BY name;
+ name 
+------
+ "a"
+ "b"
+ "c"
+(3 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) RETURN n.name, n.seen, n.twice, n.tag ORDER BY n.name
+$$) AS (name agtype, seen agtype, twice agtype, tag agtype);
+ name | seen | twice | tag 
+------+------+-------+-----
+ "a"  | true | 1     | "x"
+ "b"  | true | 1     | "x"
+ "c"  | true | 1     | "x"
+(3 rows)
+
+-- every SubLink-producing expression is allowed on the right-hand side, not
+-- only list comprehensions
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) SET n.all_pos = all(x IN [1, 2] WHERE x > 0) RETURN n.all_pos
+$$) AS (all_pos agtype);
+ all_pos 
+---------
+ true
+ true
+ true
+(3 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    CREATE (:P {name: 'y'})-[:E]->(:P {name: 'z'})
+$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P) SET n.has_out = EXISTS((n)-->()) RETURN n.name, n.has_out ORDER BY n.name
+$$) AS (name agtype, has_out agtype);
+ name | has_out 
+------+---------
+ "a"  | false
+ "b"  | false
+ "c"  | false
+ "y"  | true
+ "z"  | false
+(5 rows)
+
+SELECT * FROM cypher('cypher_set_sorted', $$
+    MATCH (n:P {name: 'z'}) SET n.doubled = [x IN [1, 2, 3] WHERE x > 1 | x * 2] RETURN n.doubled
+$$) AS (doubled agtype);
+ doubled 
+---------
+ [4, 6]
+(1 row)
+
+SELECT drop_graph('cypher_set_sorted', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table cypher_set_sorted._ag_label_vertex
+drop cascades to table cypher_set_sorted._ag_label_edge
+drop cascades to table cypher_set_sorted."P"
+drop cascades to table cypher_set_sorted."E"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "cypher_set_sorted" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
 --
 -- Clean up
 --
 DROP TABLE tbl;
 DROP FUNCTION set_test;
 SELECT drop_graph('cypher_set', true);
-NOTICE:  drop cascades to 9 other objects
+NOTICE:  drop cascades to 17 other objects
 DETAIL:  drop cascades to table cypher_set._ag_label_vertex
 drop cascades to table cypher_set._ag_label_edge
 drop cascades to table cypher_set.v
@@ -514,6 +781,14 @@ drop cascades to table cypher_set.vertices
 drop cascades to table cypher_set.begin
 drop cascades to table cypher_set.edge
 drop cascades to table cypher_set."end"
+drop cascades to table cypher_set.null_map_contract
+drop cascades to table cypher_set.map_set_contract
+drop cascades to table cypher_set.map_set_source
+drop cascades to table cypher_set.nested_map_set_contract
+drop cascades to table cypher_set.dynamic_map_set_contract
+drop cascades to table cypher_set.self_reference_contract
+drop cascades to table cypher_set.edge_reference_contract
+drop cascades to table cypher_set.stored_edge_contract
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_set" has been dropped
 CONTEXT:  referenced column: drop_graph

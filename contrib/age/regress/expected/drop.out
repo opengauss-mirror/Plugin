@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('drop');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "drop" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -45,13 +41,21 @@ SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'ag_catalog';
 -----------
 (0 rows)
 
+-- A loaded library must leave parser, planner, and object hooks idle while the
+-- extension catalog entry and ag_catalog schema are absent.
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = 'pg_catalog'
+) AS hooks_are_idle;
+ hooks_are_idle 
+----------------
+ t
+(1 row)
+
+CREATE SCHEMA _regress_drop;
+DROP SCHEMA _regress_drop;
 -- Recreate the extension and validate we can recreate a graph
 CREATE EXTENSION age;
 SELECT create_graph('drop');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "drop" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -78,6 +82,9 @@ SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname = 'drop';
  drop
 (1 row)
 
+-- A failed extension drop must restore the graph-protection object hook.
+DROP TABLE drop._ag_label_vertex;
+ERROR:  table "_ag_label_vertex" is for label "_ag_label_vertex"
 -- Should succeed, delete the 'drop' schema and leave 'other_schema'
 DROP EXTENSION age CASCADE;
 NOTICE:  drop cascades to 2 other objects
