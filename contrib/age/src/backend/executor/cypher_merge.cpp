@@ -19,110 +19,200 @@
 
 #include "postgres.h"
 
-#include "executor/executor.h"
+#include "access/hbindex_am.h"
+#include "access/htup.h"
+#include "access/tableam.h"
+#include "access/xact.h"
+#include "executor/tuptable.h"
+#include "nodes/execnodes.h"
+#include "nodes/ag_extensible.h"
+#include "nodes/nodeFuncs.h"
+#include "nodes/nodes.h"
+#include "nodes/plannodes.h"
+#include "parser/parse_relation.h"
+#include "rewrite/rewriteHandler.h"
 #include "utils/datum.h"
-#include "utils/rls.h"
+#include "utils/rel.h"
+#include "executor/executor.h"
 
 #include "catalog/ag_label.h"
 #include "executor/cypher_executor.h"
 #include "executor/cypher_utils.h"
-#include "utils/age_global_graph.h"
+#include "nodes/cypher_nodes.h"
+#include "utils/agtype.h"
+#include "utils/ag_cache.h"
+#include "utils/graphid.h"
+
+#include "executor/node/nodeMemoize.h"
 
 /*
- * The following structure is used to hold a single vertex or edge component
- * of a path. The smallest path is just a single vertex.
- *
- * Note: This structure is only useful for paths when stored in a dynamic
- *       array.
+ * MERGE keeps a compact representation of paths created by this executor.
+ * The child join cannot see tuples added after it was materialized, so later
+ * input rows must be able to reuse an equivalent path without reinserting it.
  */
-typedef struct path_entry
-{
-    bool actual;                /* actual tuple passed in for a vertex */
-    cypher_rel_dir direction;   /* the direction for the edge */
-    graphid id;                 /* id of the vertex or edge */
-    bool id_isNull;             /* id isNull */
-    graphid start_id;           /* edge start id */
-    graphid end_id;             /* edge end id */
-    Oid label;                  /* label oid */
-    Datum prop;                 /* properties datum */
-    bool prop_isNull;           /* properties isNull */
-    uint32 dih;                 /* datum_image_hash of properties datum */
+typedef struct path_entry {
+    bool actual;
+    cypher_rel_dir direction;
+    graphid id;
+    bool id_is_null;
+    graphid start_id;
+    graphid end_id;
+    Oid label;
+    Datum properties;
+    bool properties_is_null;
+    Datum entity_properties;
+    bool entity_properties_is_null;
+    uint32 properties_hash;
 } path_entry;
 
-/*
- * The following structure is used to hold a path_entry in a linked list.
- *
- * Note: The path_entry is stored as a pointer to a pointer. In this case
- *       the **path_entry is a dynamic array of path_entry elements.
- */
-typedef struct created_path
-{
-    struct created_path *next;  /* next link in linked list of path_entrys */
-    struct path_entry **entry;  /* path_entry array for this link */
+typedef struct created_path {
+    struct created_path *next;
+    path_entry **entries;
 } created_path;
 
-static void begin_cypher_merge(CustomScanState *node, EState *estate,
+static THR_LOCAL cypher_merge_custom_scan_state *initializing_merge = NULL;
+
+static void begin_cypher_merge(ExtensiblePlanState *node, EState *estate,
                                int eflags);
-static TupleTableSlot *exec_cypher_merge(CustomScanState *node);
-static void end_cypher_merge(CustomScanState *node);
-static void rescan_cypher_merge(CustomScanState *node);
+static TupleTableSlot *exec_cypher_merge(ExtensiblePlanState *node);
+static void end_cypher_merge(ExtensiblePlanState *node);
+static void rescan_cypher_merge(ExtensiblePlanState *node);
 static Datum merge_vertex(cypher_merge_custom_scan_state *css,
-                          cypher_target_node *node, ListCell *next, List* list,
+                          cypher_target_node *node, ListCell *next,
                           path_entry **path_array, int path_index,
                           bool should_insert);
 static void merge_edge(cypher_merge_custom_scan_state *css,
                        cypher_target_node *node, Datum prev_vertex_id,
-                       ListCell *next, List *list,
-                       path_entry **path_array, int path_index,
+                       ListCell *next, path_entry **path_array, int path_index,
                        bool should_insert);
-static void process_simple_merge(CustomScanState *node);
+static void process_simple_merge(ExtensiblePlanState *node);
 static bool check_path(cypher_merge_custom_scan_state *css,
                        TupleTableSlot *slot);
 static void process_path(cypher_merge_custom_scan_state *css,
                          path_entry **path_array, bool should_insert);
+static bool process_merge_input(ExtensiblePlanState *node,
+                                TupleTableSlot *slot);
+static TupleTableSlot *fetch_merge_input(ExtensiblePlanState *node,
+                                         EState *estate);
+static void store_merge_variable(TupleTableSlot *scantuple,
+                                 int variable_position, Datum value,
+                                 const char *caller);
 static void mark_tts_isnull(TupleTableSlot *slot);
 static void mark_scan_slot_valid(TupleTableSlot *slot);
-
-const CustomExecMethods cypher_merge_exec_methods = {MERGE_SCAN_STATE_NAME,
-                                                     begin_cypher_merge,
-                                                     exec_cypher_merge,
-                                                     end_cypher_merge,
-                                                     rescan_cypher_merge,
-                                                     NULL, NULL, NULL, NULL,
-                                                     NULL, NULL, NULL, NULL};
-
-static path_entry **prebuild_path(CustomScanState *node);
-static bool compare_2_paths(path_entry **lhs, path_entry **rhs,
-                            int path_length);
-static path_entry **find_duplicate_path(CustomScanState *node,
+static path_entry **prebuild_path(ExtensiblePlanState *node);
+static bool compare_paths(path_entry **left, path_entry **right,
+                          int path_length);
+static path_entry **find_duplicate_path(ExtensiblePlanState *node,
                                         path_entry **path_array);
-static void free_path_entry_array(path_entry **path_array, int length);
+static void free_path_entries(path_entry **path_array, int path_length);
+static void sync_created_path_entities(
+    cypher_merge_custom_scan_state *css, path_entry **path_array,
+    cypher_update_information *set_info);
+static bool refresh_merge_scan(PlanState *planstate, void *context);
+static void refresh_parent_merge_scans(cypher_merge_custom_scan_state *parent);
+
+const ExtensibleExecMethods cypher_merge_exec_methods = {MERGE_SCAN_STATE_NAME,
+    begin_cypher_merge,
+    exec_cypher_merge,
+    end_cypher_merge,
+    rescan_cypher_merge,
+    NULL};
+
+static bool refresh_merge_scan(PlanState *planstate, void *context)
+{
+    (void)context;
+
+    if (IsA(planstate, ExtensiblePlanState)) {
+        ExtensiblePlanState *extensible_state =
+            (ExtensiblePlanState *)planstate;
+
+        if (extensible_state->methods == &cypher_merge_exec_methods) {
+            return false;
+        }
+    }
+
+    if (IsA(planstate, SeqScanState)) {
+        SeqScanState *seq_state = (SeqScanState *)planstate;
+
+        if (seq_state->ss_currentScanDesc != NULL)
+            ExecReScan(planstate);
+
+        return false;
+    }
+
+    if (IsA(planstate, IndexScanState)) {
+        IndexScanState *index_state = (IndexScanState *)planstate;
+
+        if (index_state->iss_ScanDesc != NULL &&
+            index_state->iss_NumRuntimeKeys == 0) {
+            scan_handler_idx_rescan(index_state->iss_ScanDesc,
+                                    index_state->iss_ScanKeys,
+                                    index_state->iss_NumScanKeys,
+                                    index_state->iss_OrderByKeys,
+                                    index_state->iss_NumOrderByKeys);
+            scan_handler_idx_rescan_parallel(index_state->iss_ScanDesc);
+            index_state->iss_ReachedEnd = false;
+            ExecScanReScan(&index_state->ss);
+        }
+
+        return false;
+    }
+
+    return planstate_tree_walker(planstate, refresh_merge_scan, context);
+}
+
+static void refresh_parent_merge_scans(cypher_merge_custom_scan_state *parent)
+{
+    PlanState *subplan = parent->css.ss.ps.lefttree;
+
+    if (subplan != NULL)
+        refresh_merge_scan(subplan, NULL);
+}
 
 /*
  * Initializes the MERGE Execution Node at the beginning of the execution
  * phase.
  */
-static void begin_cypher_merge(CustomScanState *node, EState *estate,
+static void begin_cypher_merge(ExtensiblePlanState *node, EState *estate,
                                int eflags)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
-    ListCell *lc = NULL;
-    Plan *subplan = NULL;
+    ListCell *lc;
+    Plan *subplan;
+
     css->created_paths_list = NULL;
+    css->eager_tuples = NIL;
+    css->eager_tuples_index = 0;
+    css->eager_buffer_filled = false;
 
-    Assert(list_length(css->cs->custom_plans) == 1);
+    Assert(list_length(css->cs->extensible_plans) == 1);
 
-    /* initialize the subplan */
-    subplan = linitial(css->cs->custom_plans);
-    node->ss.ps.lefttree = ExecInitNode(subplan, estate, eflags);
+    // initialize the subplan
+    subplan = (Plan*)linitial(css->cs->extensible_plans);
+    css->parent_merge = initializing_merge;
+    initializing_merge = css;
 
-    /* TODO is this necessary? Removing it seems to not have an impact */
+    PG_TRY();
+    {
+        node->ss.ps.lefttree = ExecInitNode(subplan, estate, eflags);
+    }
+    PG_CATCH();
+    {
+        initializing_merge = css->parent_merge;
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    initializing_merge = css->parent_merge;
+
+    ResultState* rs = (ResultState *)node->ss.ps.lefttree;
+    TupleTableSlot* slot = rs->ps.ps_ResultTupleSlot;
+    ExecStoreAllNullTuple(slot);
+
     ExecAssignExprContext(estate, &node->ss.ps);
 
-    ExecInitScanTupleSlot(estate, &node->ss,
-                          ExecGetResultType(node->ss.ps.lefttree),
-                          &TTSOpsVirtual);
+    ExecInitScanTupleSlot(estate, &node->ss);
 
     /*
      * When MERGE is not the last clause in a cypher query. Setup projection
@@ -143,10 +233,10 @@ static void begin_cypher_merge(CustomScanState *node, EState *estate,
     {
         cypher_target_node *cypher_node =
             (cypher_target_node *)lfirst(lc);
-        Relation rel = NULL;
+        Relation rel;
 
         /*
-         * This entity is references an entity that is already declared. Either
+         * This entity references an entity that is already declared. Either
          * by a previous clause or an entity earlier in the MERGE path. In both
          * cases, this target_entry will not create data, only reference data
          * that already exists.
@@ -156,23 +246,23 @@ static void begin_cypher_merge(CustomScanState *node, EState *estate,
             continue;
         }
 
-        /* Open relation and acquire a row exclusive lock. */
-        rel = table_open(cypher_node->relid, RowExclusiveLock);
+        // Open relation and aquire a row exclusive lock.
+        rel = heap_open(cypher_node->relid, RowExclusiveLock);
 
-        /* Initialize resultRelInfo for the vertex */
+        // Initialize resultRelInfo for the vertex
         cypher_node->resultRelInfo = makeNode(ResultRelInfo);
         InitResultRelInfo(cypher_node->resultRelInfo, rel,
-                          list_length(estate->es_range_table), NULL,
+                          list_length(estate->es_range_table),
                           estate->es_instrument);
 
-        /* Open all indexes for the relation */
+        // Open all indexes for the relation
         ExecOpenIndices(cypher_node->resultRelInfo, false);
 
-        /* Setup the relation's tuple slot */
-        cypher_node->elemTupleSlot = ExecInitExtraTupleSlot(
-            estate,
-            RelationGetDescr(cypher_node->resultRelInfo->ri_RelationDesc),
-            &TTSOpsHeapTuple);
+        // Setup the relation's tuple slot
+        cypher_node->elemTupleSlot = ExecInitExtraTupleSlot(estate);
+
+        ExecSetSlotDescriptor(cypher_node->elemTupleSlot,
+            RelationGetDescr(cypher_node->resultRelInfo->ri_RelationDesc));
 
         if (cypher_node->id_expr != NULL)
         {
@@ -182,40 +272,32 @@ static void begin_cypher_merge(CustomScanState *node, EState *estate,
 
         if (cypher_node->prop_expr != NULL)
         {
-            cypher_node->prop_expr_state = ExecInitExpr(cypher_node->prop_expr,
-                                                        (PlanState *)node);
-        }
-
-        /* Setup RLS WITH CHECK policies if RLS is enabled */
-        if (check_enable_rls(rel->rd_id, InvalidOid, true) == RLS_ENABLED)
-        {
-            setup_wcos(cypher_node->resultRelInfo, estate, node, CMD_INSERT);
+            cypher_node->prop_expr_state =
+                ExecInitExpr(cypher_node->prop_expr, (PlanState *)node);
         }
     }
 
-    /*
-     * Pre-initialize ExprStates for ON CREATE SET / ON MATCH SET items.
-     * This must happen once at plan init time, not per-row.
-     */
+    /* Initialize ON CREATE/MATCH SET expressions once per plan. */
     if (css->on_create_set_info != NULL)
     {
-        foreach(lc, css->on_create_set_info->set_items)
+        foreach (lc, css->on_create_set_info->set_items)
         {
             cypher_update_item *item = (cypher_update_item *)lfirst(lc);
-            if (item->prop_expr != NULL)
-            {
+
+            if (item->prop_expr != NULL) {
                 item->prop_expr_state = ExecInitExpr(
                     (Expr *)item->prop_expr, (PlanState *)node);
             }
         }
     }
+
     if (css->on_match_set_info != NULL)
     {
-        foreach(lc, css->on_match_set_info->set_items)
+        foreach (lc, css->on_match_set_info->set_items)
         {
             cypher_update_item *item = (cypher_update_item *)lfirst(lc);
-            if (item->prop_expr != NULL)
-            {
+
+            if (item->prop_expr != NULL) {
                 item->prop_expr_state = ExecInitExpr(
                     (Expr *)item->prop_expr, (PlanState *)node);
             }
@@ -230,12 +312,13 @@ static void begin_cypher_merge(CustomScanState *node, EState *estate,
      * that have modified the command id.
      */
     if (estate->es_output_cid == 0)
-    {
         estate->es_output_cid = estate->es_snapshot->curcid;
-    }
 
     /* store the currentCommandId for this instance */
     css->base_currentCommandId = GetCurrentCommandId(false);
+
+    /* the child subtree must keep seeing the state before this clause */
+    css->child_curcid = estate->es_snapshot->curcid;
 
     Increment_Estate_CommandId(estate);
 }
@@ -249,11 +332,11 @@ static bool check_path(cypher_merge_custom_scan_state *css,
                        TupleTableSlot *slot)
 {
     cypher_create_path *path = css->path;
-    ListCell *lc = NULL;
+    ListCell *lc;
 
     foreach(lc, path->target_nodes)
     {
-        cypher_target_node *node = lfirst(lc);
+        cypher_target_node *node = (cypher_target_node*)lfirst(lc);
 
         /*
          * If target_node as a valid attribute number and is a node not
@@ -271,11 +354,12 @@ static bool check_path(cypher_merge_custom_scan_state *css,
              */
             if (slot->tts_isnull[node->tuple_position - 1])
             {
-
                 return true;
             }
         }
+
     }
+
     return false;
 }
 
@@ -283,14 +367,17 @@ static void process_path(cypher_merge_custom_scan_state *css,
                          path_entry **path_array, bool should_insert)
 {
     cypher_create_path *path = css->path;
-    List *list = path->target_nodes;
-    ListCell *lc = list_head(list);
+    ListCell *lc = list_head(path->target_nodes);
+
+    if (css->path_values != NIL)
+        list_free(css->path_values);
+    css->path_values = NIL;
 
     /*
      * Create the first vertex. The create_vertex function will
      * create the rest of the path, if necessary.
      */
-    merge_vertex(css, lfirst(lc), lnext(list, lc), list,
+    merge_vertex(css, (cypher_target_node *)lfirst(lc), lnext(lc),
                  path_array, 0, should_insert);
 
     /*
@@ -303,96 +390,49 @@ static void process_path(cypher_merge_custom_scan_state *css,
         ExprContext *econtext = css->css.ss.ps.ps_ExprContext;
         TupleTableSlot *scantuple = econtext->ecxt_scantuple;
         Datum result;
-        int tuple_position = path->path_attr_num - 1;
-        bool debug_flag = false;
 
-        /*
-         * We need to make sure that the tuple_position is within the
-         * boundaries of the tuple's number of attributes. Otherwise, it
-         * will corrupt memory. The cases where it doesn't fit within are
-         * usually due to a variable that is specified but there isn't a RETURN
-         * clause. In these cases we just don't bother to store the
-         * value.
-         */
-         if (!debug_flag &&
-             (tuple_position < scantuple->tts_tupleDescriptor->natts ||
-              scantuple->tts_tupleDescriptor->natts != 1))
-        {
-            result = make_path(css->path_values);
+        result = make_path(css->path_values);
 
-            /* store the result */
-            scantuple->tts_values[tuple_position] = result;
-            scantuple->tts_isnull[tuple_position] = false;
-        }
+        scantuple->tts_values[path->path_attr_num - 1] = result;
+        scantuple->tts_isnull[path->path_attr_num - 1] = false;
     }
 }
 
 /*
  * Function that handles the case where MERGE is the only clause in the query.
  */
-static void process_simple_merge(CustomScanState *node)
+static void process_simple_merge(ExtensiblePlanState *node)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
     EState *estate = css->css.ss.ps.state;
-    TupleTableSlot *slot = NULL;
+    TupleTableSlot *slot;
 
     /*Process the subtree first */
-    Decrement_Estate_CommandId(estate)
+    age_enter_child_scan(estate, css->child_curcid);
     slot = ExecProcNode(node->ss.ps.lefttree);
-    Increment_Estate_CommandId(estate)
+    age_leave_child_scan(estate, css->child_curcid);
 
     if (TupIsNull(slot))
     {
         ExprContext *econtext = node->ss.ps.ps_ExprContext;
-        SubqueryScanState *sss = (SubqueryScanState *)node->ss.ps.lefttree;
-
-        /* our child execution node should be a subquery */
-        Assert(IsA(sss, SubqueryScanState));
 
         /* setup the scantuple that the process_path needs */
-        econtext->ecxt_scantuple = sss->ss.ss_ScanTupleSlot;
+        econtext->ecxt_scantuple = node->ss.ps.lefttree->ps_ResultTupleSlot;
         mark_tts_isnull(econtext->ecxt_scantuple);
 
         process_path(css, NULL, true);
+        mark_scan_slot_valid(econtext->ecxt_scantuple);
 
-        /* ON CREATE SET: path was just created */
-        if (css->on_create_set_info)
-        {
-            mark_scan_slot_valid(econtext->ecxt_scantuple);
-            apply_update_list(&css->css, css->on_create_set_info);
+        if (css->on_create_set_info != NULL) {
+            apply_update_list(node, css->on_create_set_info, true,
+                              &css->modified_relids, NULL);
         }
+    } else if (css->on_match_set_info != NULL) {
+        node->ss.ps.ps_ExprContext->ecxt_scantuple = slot;
+        apply_update_list(node, css->on_match_set_info, true,
+            &css->modified_relids, NULL);
     }
-    else
-    {
-        /* ON MATCH SET: path already exists */
-        if (css->on_match_set_info)
-        {
-            ExprContext *econtext = node->ss.ps.ps_ExprContext;
-
-            econtext->ecxt_scantuple =
-                node->ss.ps.lefttree->ps_ProjInfo->pi_exprContext->ecxt_scantuple;
-
-            apply_update_list(&css->css, css->on_match_set_info);
-        }
-    }
-}
-
-/*
- * mark_scan_slot_valid - mark a scan slot as populated after direct writes
- * to tts_values[] by process_path.
- *
- * This does the same bookkeeping as ExecStoreVirtualTuple (clear TTS_EMPTY,
- * set tts_nvalid = natts) but without the TTS_EMPTY precondition assertion.
- * We cannot use ExecStoreVirtualTuple here because process_path writes into
- * a scan slot that already holds the subquery's output tuple -- the slot is
- * NOT empty, and asserting it is would fire under --enable-cassert while
- * silently clearing the flag on release builds.
- */
-static void mark_scan_slot_valid(TupleTableSlot *slot)
-{
-    slot->tts_flags &= ~TTS_FLAG_EMPTY;
-    slot->tts_nvalid = slot->tts_tupleDescriptor->natts;
 }
 
 /*
@@ -417,233 +457,334 @@ static void mark_tts_isnull(TupleTableSlot *slot)
     }
 }
 
-/* helper function to free a path_entry array given its length */
-static void free_path_entry_array(path_entry **path_array, int length)
+static void mark_scan_slot_valid(TupleTableSlot *slot)
+{
+    slot->tts_flags &= ~TTS_FLAG_EMPTY;
+    slot->tts_nvalid = slot->tts_tupleDescriptor->natts;
+}
+
+static void free_path_entries(path_entry **path_array, int path_length)
 {
     int index;
 
-    for (index = 0; index < length; index++)
-    {
-        pfree_if_not_null(path_array[index]);
+    if (path_array == NULL)
+        return;
+
+    for (index = 0; index < path_length; index++) {
+        path_entry *entry = path_array[index];
+
+        if (entry == NULL)
+            continue;
+
+        if (!entry->actual && !entry->entity_properties_is_null &&
+            (entry->properties_is_null ||
+             entry->entity_properties != entry->properties)) {
+            pfree(DatumGetPointer(entry->entity_properties));
+        }
+
+        if (!entry->actual && !entry->properties_is_null)
+            pfree(DatumGetPointer(entry->properties));
+
+        pfree(entry);
     }
+
+    pfree(path_array);
 }
 
 /*
- * Helper function to prebuild a path. The user needs to free the returned
- * path_entry when done.
- *
- * Note: The prebuilt path and its components are not filled out completely by
- *       this function. merge_vertex and merge_edge will/should fill out the
- *       rest. This is because the ID fields autoincrement the next available ID
- *       when evaluated AND the generated prebuilt path might not be used.
+ * Evaluate the input-dependent part of a MERGE path without consuming graph
+ * identifiers. Later rows can compare this representation with paths created
+ * by this executor even when the child join cannot see those new tuples.
  */
-static path_entry **prebuild_path(CustomScanState *node)
+static path_entry **prebuild_path(ExtensiblePlanState *node)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
-    List *nodes = css->path->target_nodes;
-    int path_length = list_length(nodes);
-    ListCell *lc = NULL;
     ExprContext *econtext = css->css.ss.ps.ps_ExprContext;
-    int counter = 0;
+    TupleTableSlot *scan_slot = econtext->ecxt_scantuple;
+    ListCell *lc;
+    int path_length = list_length(css->path->target_nodes);
+    int index = 0;
+    path_entry **path_array =
+        (path_entry **)palloc0(sizeof(path_entry *) * path_length);
 
-    path_entry **path_array = NULL;
-    path_array = palloc0(sizeof(path_entry *) * path_length);
-
-    /* iterate through the path, partially prebuilding it */
-    foreach (lc, nodes)
+    foreach (lc, css->path->target_nodes)
     {
-        /* get the node/edge and allocate the memory needed */
-        cypher_target_node *node = lfirst(lc);
-        path_entry *entry = palloc0(sizeof(path_entry));
+        cypher_target_node *target = (cypher_target_node *)lfirst(lc);
+        path_entry *entry = (path_entry *)palloc0(sizeof(path_entry));
 
-        /* if this isn't an actual passed in tuple */
-        if (CYPHER_TARGET_NODE_INSERT_ENTITY(node->flags))
-        {
-            bool isNull = false;
+        entry->direction = target->dir;
+        entry->label = target->relid;
+
+        if (CYPHER_TARGET_NODE_INSERT_ENTITY(target->flags)) {
+            bool is_null = false;
+            Datum properties = ExecEvalExpr(target->prop_expr_state, econtext,
+                                            &is_null, NULL);
 
             entry->actual = false;
-            entry->id = 0;
-            entry->id_isNull = true;
-            entry->direction = node->dir;
-            entry->label = node->relid;
-            entry->prop = ExecEvalExprSwitchContext(node->prop_expr_state,
-                                                          econtext, &isNull);
-            entry->prop_isNull = isNull;
-            entry->dih = datum_image_hash(entry->prop, false, -1);
-        }
-        /* otherwise, it is */
-        else
-        {
-            EState *estate = css->css.ss.ps.state;
-            TupleTableSlot *scanTupleSlot = econtext->ecxt_scantuple;
+            entry->id_is_null = true;
+            entry->properties_is_null = is_null;
+            entry->entity_properties_is_null = is_null;
 
-            agtype *agt = NULL;
-            Datum d;
-            agtype_value *agtv_vertex = NULL;
-            agtype_value *agtv_id = NULL;
+            if (!is_null) {
+                entry->properties = datumCopy(properties, false, -1);
+                entry->entity_properties = entry->properties;
+                entry->properties_hash =
+                    datum_image_hash(entry->properties, false, -1);
+            }
+        } else {
+            agtype *entity;
+            agtype_value *entity_value;
+            agtype_value *id_value;
+            Datum value;
 
-            /* check that the variable isn't NULL */
-            if (scanTupleSlot->tts_isnull[node->tuple_position - 1])
-            {
+            if (target->tuple_position == InvalidAttrNumber ||
+                scan_slot->tts_isnull[target->tuple_position - 1]) {
                 ereport(ERROR,
                         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                          errmsg("Existing variable %s cannot be NULL in MERGE clause",
-                                node->variable_name)));
+                                target->variable_name)));
             }
 
-            /* get the vertex agtype in the scanTupleSlot */
-            d = scanTupleSlot->tts_values[node->tuple_position - 1];
-            agt = DATUM_GET_AGTYPE_P(d);
+            value = scan_slot->tts_values[target->tuple_position - 1];
+            entity = DATUM_GET_AGTYPE_P(value);
 
-            /* Convert to an agtype value */
-            agtv_vertex = get_ith_agtype_value_from_container(&agt->root, 0);
-
-            if (agtv_vertex->type != AGTV_VERTEX)
-            {
+            entity_value =
+                get_ith_agtype_value_from_container(&entity->root, 0);
+            if (entity_value->type != AGTV_VERTEX) {
                 ereport(ERROR,
                         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                          errmsg("agtype must resolve to a vertex")));
             }
 
-            /* extract the id agtype field */
-            agtv_id = GET_AGTYPE_VALUE_OBJECT_VALUE(agtv_vertex, "id");
+            id_value = GET_AGTYPE_VALUE_OBJECT_VALUE(entity_value, "id");
 
-            /* set the necessary entry fields - actual & id */
             entry->actual = true;
-            entry->id = (graphid) agtv_id->val.int_value;
-            entry->id_isNull = false;
-            entry->prop = 0;
-            entry->prop_isNull = true;
-            entry->dih = 0;
+            entry->id = id_value->val.int_value;
+            entry->id_is_null = false;
+            entry->properties_is_null = true;
 
-            if (!SAFE_TO_SKIP_EXISTENCE_CHECK(node->flags))
-            {
-                if (!entity_exists(estate, css->graph_oid, entry->id))
-                {
-                    ereport(ERROR,
-                            (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
-                             errmsg("vertex assigned to variable %s was deleted",
-                                    node->variable_name)));
-                }
+            if (!SAFE_TO_SKIP_EXISTENCE_CHECK(target->flags) &&
+                !entity_exists(css->css.ss.ps.state, css->graph_oid,
+                               entry->id)) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+                         errmsg("vertex assigned to variable %s was deleted",
+                                target->variable_name)));
             }
         }
 
-        /* save the pointer and move to the next */
-        path_array[counter++] = entry;
+        path_array[index++] = entry;
     }
 
     return path_array;
 }
 
-/*
- * Helper function to compare 2 paths. By definition, paths don't know
- * specifics, so this comparison is somewhat generic.
- */
-static bool compare_2_paths(path_entry **lhs, path_entry **rhs, int path_length)
+static void sync_created_path_entities(
+    cypher_merge_custom_scan_state *css, path_entry **path_array,
+    cypher_update_information *set_info)
 {
-    int i;
+    TupleTableSlot *scan_slot =
+        css->css.ss.ps.ps_ExprContext->ecxt_scantuple;
+    ListCell *lc;
+    int path_length = list_length(css->path->target_nodes);
 
-    /* iterate through the entire path, returning false for any mismatch */
-    for (i = 0; i < path_length; i++)
+    foreach (lc, set_info->set_items)
     {
-        /* if these are actual vertices (passed in from a variable) */
-        if (lhs[i]->actual == rhs[i]->actual &&
-            lhs[i]->actual == true)
-        {
-            /* just check the IDs */
-            if (lhs[i]->id != rhs[i]->id)
-            {
-                return false;
-            }
-            else
-            {
+        cypher_update_item *item = (cypher_update_item *)lfirst(lc);
+        agtype *entity;
+        agtype *properties;
+        agtype_value *entity_value;
+        agtype_value *id_value;
+        agtype_value *properties_value;
+        int index;
+
+        if (scan_slot->tts_isnull[item->entity_position - 1])
+            continue;
+
+        entity = DATUM_GET_AGTYPE_P(
+            scan_slot->tts_values[item->entity_position - 1]);
+        entity_value =
+            get_ith_agtype_value_from_container(&entity->root, 0);
+        id_value = GET_AGTYPE_VALUE_OBJECT_VALUE(entity_value, "id");
+        properties_value =
+            GET_AGTYPE_VALUE_OBJECT_VALUE(entity_value, "properties");
+        properties = agtype_value_to_agtype(properties_value);
+
+        for (index = 0; index < path_length; index++) {
+            path_entry *entry = path_array[index];
+
+            if (entry == NULL || entry->actual || entry->id_is_null ||
+                entry->id != id_value->val.int_value) {
                 continue;
             }
+
+            if (!entry->entity_properties_is_null &&
+                (entry->properties_is_null ||
+                 entry->entity_properties != entry->properties)) {
+                pfree(DatumGetPointer(entry->entity_properties));
+            }
+
+            entry->entity_properties = AGTYPE_P_GET_DATUM(properties);
+            entry->entity_properties_is_null = false;
+            properties = NULL;
+            break;
         }
 
-        /* are the labels the same */
-        if (lhs[i]->label != rhs[i]->label)
-        {
+        if (properties != NULL)
+            pfree(properties);
+    }
+}
+
+static bool compare_paths(path_entry **left, path_entry **right,
+                          int path_length)
+{
+    int index;
+
+    for (index = 0; index < path_length; index++) {
+        path_entry *left_entry = left[index];
+        path_entry *right_entry = right[index];
+
+        if (left_entry->actual != right_entry->actual)
+            return false;
+
+        if (left_entry->actual) {
+            if (left_entry->id != right_entry->id)
+                return false;
+
+            continue;
+        }
+
+        if (left_entry->label != right_entry->label ||
+            left_entry->direction != right_entry->direction ||
+            left_entry->properties_is_null !=
+                right_entry->properties_is_null) {
             return false;
         }
 
-        /* are the directions the same */
-        if (lhs[i]->direction != rhs[i]->direction)
-        {
-            return false;
-        }
+        if (left_entry->properties_is_null)
+            continue;
 
-        /* are the properties datum hashes the same */
-        if (lhs[i]->dih != rhs[i]->dih)
-        {
-            return false;
-        }
-
-        /* are the properties datum images the same */
-        if (!datum_image_eq(lhs[i]->prop, rhs[i]->prop, false, -1))
-        {
+        if (left_entry->properties_hash != right_entry->properties_hash ||
+            !DatumImageEq(left_entry->properties, right_entry->properties,
+                          false, -1)) {
             return false;
         }
     }
 
-    /* no mismatches so it must match */
     return true;
 }
 
-/* helper function to find a duplicate path in the created_paths_list */
-static path_entry **find_duplicate_path(CustomScanState *node,
-                                         path_entry **path_array)
+static path_entry **find_duplicate_path(ExtensiblePlanState *node,
+                                        path_entry **path_array)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
     int path_length = list_length(css->path->target_nodes);
+    created_path *current =
+        (created_path *)css->created_paths_list;
 
-    /* if the list is NULL just return NULL */
-    if (css->created_paths_list == NULL)
-    {
-        return NULL;
+    while (current != NULL) {
+        if (compare_paths(path_array, current->entries, path_length))
+            return current->entries;
+
+        current = current->next;
     }
-    /* otherwise, check to see if the path already exists */
-    else
-    {
-        /* set to the top of the list */
-        created_path *curr_path = css->created_paths_list;
 
-        /* iterate through our list of created paths */
-        while (curr_path != NULL)
-        {
-            /* if we have found the entry, return it */
-            if (compare_2_paths(path_array, curr_path->entry, path_length))
-            {
-                return curr_path->entry;
+    return NULL;
+}
+
+static bool process_merge_input(ExtensiblePlanState *node,
+                                TupleTableSlot *slot)
+{
+    cypher_merge_custom_scan_state *css =
+        (cypher_merge_custom_scan_state *)node;
+    ExprContext *econtext = css->css.ss.ps.ps_ExprContext;
+    bool path_missing;
+
+    tableam_tslot_getallattrs(slot);
+    econtext->ecxt_scantuple = slot;
+    path_missing = check_path(css, slot);
+    if (path_missing) {
+        int path_length = list_length(css->path->target_nodes);
+        path_entry **prebuilt_path = prebuild_path(node);
+        path_entry **duplicate_path =
+            find_duplicate_path(node, prebuilt_path);
+
+        if (duplicate_path != NULL) {
+            free_path_entries(prebuilt_path, path_length);
+            process_path(css, duplicate_path, false);
+            mark_scan_slot_valid(slot);
+
+            if (css->on_match_set_info != NULL) {
+                apply_update_list(node, css->on_match_set_info, true,
+                    &css->modified_relids, NULL);
+                sync_created_path_entities(css, duplicate_path,
+                    css->on_match_set_info);
+            }
+        } else {
+            created_path *new_path =
+                (created_path *)palloc0(sizeof(created_path));
+
+            new_path->next =
+                (created_path *)css->created_paths_list;
+            new_path->entries = prebuilt_path;
+            css->created_paths_list = new_path;
+
+            process_path(css, prebuilt_path, true);
+            mark_scan_slot_valid(slot);
+
+            if (css->on_create_set_info != NULL) {
+                apply_update_list(node, css->on_create_set_info, true,
+                    &css->modified_relids, NULL);
+                sync_created_path_entities(css, prebuilt_path,
+                    css->on_create_set_info);
             }
 
-            /* otherwise, get the next path */
-            curr_path = curr_path->next;
+            return true;
         }
+    } else if (css->on_match_set_info != NULL) {
+        apply_update_list(node, css->on_match_set_info, true,
+            &css->modified_relids, NULL);
     }
 
-    /* if we didn't find it, return NULL */
-    return NULL;
+    return false;
+}
+
+/*
+ * Pull the next input tuple from the child plan. The command id is stepped
+ * back while the child runs so that it does not see entities created by this
+ * MERGE, then restored for our own writes.
+ */
+static TupleTableSlot *fetch_merge_input(ExtensiblePlanState *node,
+                                         EState *estate)
+{
+    cypher_merge_custom_scan_state *css =
+        (cypher_merge_custom_scan_state *)node;
+    TupleTableSlot *slot = NULL;
+
+    age_enter_child_scan(estate, css->child_curcid);
+    slot = ExecProcNode(node->ss.ps.lefttree);
+    age_leave_child_scan(estate, css->child_curcid);
+
+    return slot;
 }
 
 /*
  * Function that is called mid-execution. This function will call
  * its subtree in the execution tree, and depending on the results
- * create the new path, and depending on the context of the MERGE
+ * create the new path, and depending on the the context of the MERGE
  * within the query pass data to the parent execution node.
  *
  * Returns a TupleTableSlot with the next tuple to it parent or
  * Returns NULL when MERGE has no more tuples to emit.
  */
-static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
+static TupleTableSlot *exec_cypher_merge(ExtensiblePlanState *node)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
     EState *estate = css->css.ss.ps.state;
-    ExprContext *econtext = css->css.ss.ps.ps_ExprContext;
-    TupleTableSlot *slot = NULL;
+    TupleTableSlot *slot;
     bool terminal = CYPHER_CLAUSE_IS_TERMINAL(css->flags);
 
     /*
@@ -657,209 +798,64 @@ static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
     if (CYPHER_CLAUSE_HAS_PREVIOUS_CLAUSE(css->flags))
     {
         /*
-         * Case 1: MERGE is not the first clause in the cypher query.
-         *
-         * For this case, we need to process all tuples given to us by the
-         * previous clause. When we receive a tuple from the previous clause:
-         * check to see if the left lateral join found the pattern already. If
-         * it did, we don't need to create the pattern. If the lateral join did
-         * not find the whole path, create the whole path.
-         *
-         * For non-terminal MERGE, we eagerly process ALL input rows before
-         * returning any results. This ensures that all entities created by
-         * this MERGE are committed to the database before any parent plan
-         * node (such as another MERGE's lateral join) scans the tables.
-         * Without eager processing, chained MERGEs cannot see each other's
-         * changes because the parent's join scan is materialized before the
-         * child MERGE finishes all its iterations.
-         *
-         * For terminal MERGE, all tuples are processed in a single pass
-         * and NULL is returned.
-         */
-
-        /*
-         * Non-terminal: eagerly process all rows and buffer the results.
+         * A non-terminal MERGE is an eager pipeline breaker. All child rows
+         * must be consumed before a parent MERGE starts reading them.
          */
         if (!terminal && !css->eager_buffer_filled)
         {
+            MemoryContext old_context;
+
+            old_context = MemoryContextSwitchTo(estate->es_query_cxt);
             css->eager_tuples = NIL;
             css->eager_tuples_index = 0;
+            MemoryContextSwitchTo(old_context);
 
-            while (true)
-            {
+            slot = fetch_merge_input(node, estate);
+            while (!TupIsNull(slot)) {
                 TupleTableSlot *projected;
-                HeapTuple htup;
+                HeapTuple buffered_tuple;
 
-                /* Process the subtree first */
-                Decrement_Estate_CommandId(estate)
-                slot = ExecProcNode(node->ss.ps.lefttree);
-                Increment_Estate_CommandId(estate)
+                process_merge_input(node, slot);
+                projected = ExecProject(node->ss.ps.ps_ProjInfo, NULL);
 
-                if (TupIsNull(slot))
-                {
-                    break;
-                }
-
-                /* setup the scantuple that the process_path needs */
-                econtext->ecxt_scantuple =
-                    node->ss.ps.lefttree->ps_ProjInfo->pi_exprContext->ecxt_scantuple;
-
-                /*
-                 * Check the subtree to see if the lateral join
-                 * representing the MERGE path found results. If not,
-                 * we need to create the path.
-                 */
-                if (check_path(css, econtext->ecxt_scantuple))
-                {
-                    path_entry **prebuilt_path_array = NULL;
-                    path_entry **found_path_array = NULL;
-                    int path_length =
-                        list_length(css->path->target_nodes);
-
-                    prebuilt_path_array = prebuild_path(node);
-
-                    found_path_array =
-                        find_duplicate_path(node, prebuilt_path_array);
-
-                    if (found_path_array)
-                    {
-                        free_path_entry_array(prebuilt_path_array,
-                                              path_length);
-                        process_path(css, found_path_array, false);
-
-                        /* ON MATCH SET: path was found as duplicate */
-                        if (css->on_match_set_info)
-                            apply_update_list(&css->css,
-                                              css->on_match_set_info);
-                    }
-                    else
-                    {
-                        created_path *new_path =
-                            palloc0(sizeof(created_path));
-
-                        new_path->next = css->created_paths_list;
-                        new_path->entry = prebuilt_path_array;
-                        css->created_paths_list = new_path;
-
-                        process_path(css, prebuilt_path_array, true);
-                        mark_scan_slot_valid(econtext->ecxt_scantuple);
-
-                        /* ON CREATE SET: path was just created */
-                        if (css->on_create_set_info)
-                            apply_update_list(&css->css,
-                                              css->on_create_set_info);
-                    }
-                }
-                else
-                {
-                    /* ON MATCH SET: path already existed from lateral join */
-                    if (css->on_match_set_info)
-                        apply_update_list(&css->css, css->on_match_set_info);
-                }
-
-                /* Project the result and save a copy */
-                econtext->ecxt_scantuple =
-                    ExecProject(node->ss.ps.lefttree->ps_ProjInfo);
-                projected = ExecProject(node->ss.ps.ps_ProjInfo);
-
-                htup = ExecCopySlotHeapTuple(projected);
+                old_context = MemoryContextSwitchTo(estate->es_query_cxt);
+                buffered_tuple = ExecCopySlotTuple(projected);
                 css->eager_tuples =
-                    lappend(css->eager_tuples, htup);
+                    lappend(css->eager_tuples, buffered_tuple);
+                MemoryContextSwitchTo(old_context);
+
+                slot = fetch_merge_input(node, estate);
             }
 
             css->eager_buffer_filled = true;
+
+            if (css->parent_merge != NULL)
+                refresh_parent_merge_scans(css->parent_merge);
         }
 
-        /* Non-terminal: return the next buffered row (or NULL if empty) */
-        if (!terminal && css->eager_buffer_filled)
+        if (!terminal)
         {
             if (css->eager_tuples_index < list_length(css->eager_tuples))
             {
-                HeapTuple htup;
-                TupleTableSlot *result_slot =
-                    node->ss.ps.ps_ResultTupleSlot;
+                HeapTuple buffered_tuple =
+                    (HeapTuple)list_nth(css->eager_tuples,
+                                        css->eager_tuples_index++);
 
-                htup = (HeapTuple)
-                    list_nth(css->eager_tuples, css->eager_tuples_index);
-                css->eager_tuples_index++;
-
-                ExecForceStoreHeapTuple(htup, result_slot, false);
-                return result_slot;
+                return ExecStoreTuple(buffered_tuple,
+                                      node->ss.ps.ps_ResultTupleSlot,
+                                      InvalidBuffer, false);
             }
 
             return NULL;
         }
 
-        /*
-         * Terminal: process all tuples and return NULL.
-         */
-        do
-        {
-            /* Process the subtree first */
-            Decrement_Estate_CommandId(estate)
-            slot = ExecProcNode(node->ss.ps.lefttree);
-            Increment_Estate_CommandId(estate)
-
-            if (TupIsNull(slot))
-            {
-                break;
-            }
-
-            /* setup the scantuple that the process_path needs */
-            econtext->ecxt_scantuple =
-                node->ss.ps.lefttree->ps_ProjInfo->pi_exprContext->ecxt_scantuple;
-
-            /*
-             * Check the subtree to see if the lateral join representing the
-             * MERGE path found results. If not, we need to create the path.
-             */
-            if (check_path(css, econtext->ecxt_scantuple))
-            {
-                path_entry **prebuilt_path_array = NULL;
-                path_entry **found_path_array = NULL;
-                int path_length = list_length(css->path->target_nodes);
-
-                prebuilt_path_array = prebuild_path(node);
-
-                found_path_array = find_duplicate_path(node,
-                                                       prebuilt_path_array);
-
-                if (found_path_array)
-                {
-                    free_path_entry_array(prebuilt_path_array, path_length);
-                    process_path(css, found_path_array, false);
-
-                    /* ON MATCH SET: path was found as duplicate */
-                    if (css->on_match_set_info)
-                        apply_update_list(&css->css, css->on_match_set_info);
-                }
-                else
-                {
-                    created_path *new_path = palloc0(sizeof(created_path));
-
-                    new_path->next = css->created_paths_list;
-                    new_path->entry = prebuilt_path_array;
-                    css->created_paths_list = new_path;
-
-                    process_path(css, prebuilt_path_array, true);
-                    mark_scan_slot_valid(econtext->ecxt_scantuple);
-
-                    /* ON CREATE SET: path was just created */
-                    if (css->on_create_set_info)
-                        apply_update_list(&css->css, css->on_create_set_info);
-                }
-            }
-            else
-            {
-                /* ON MATCH SET: path already existed from lateral join */
-                if (css->on_match_set_info)
-                    apply_update_list(&css->css, css->on_match_set_info);
-            }
-
-        } while (true);
+        slot = fetch_merge_input(node, estate);
+        while (!TupIsNull(slot)) {
+            process_merge_input(node, slot);
+            slot = fetch_merge_input(node, estate);
+        }
 
         return NULL;
-
     }
     else if (terminal)
     {
@@ -912,9 +908,9 @@ static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
          * Process the subtree. The subtree will only consist of the MERGE
          * path.
          */
-        Decrement_Estate_CommandId(estate)
+        age_enter_child_scan(estate, css->child_curcid);
         slot = ExecProcNode(node->ss.ps.lefttree);
-        Increment_Estate_CommandId(estate)
+        age_leave_child_scan(estate, css->child_curcid);
 
         if (!TupIsNull(slot))
         {
@@ -927,16 +923,14 @@ static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
              */
             css->found_a_path = true;
 
-            /* ON MATCH SET: path already exists */
-            if (css->on_match_set_info)
+            if (css->on_match_set_info != NULL)
             {
-                econtext->ecxt_scantuple =
-                    node->ss.ps.lefttree->ps_ProjInfo->pi_exprContext->ecxt_scantuple;
-                apply_update_list(&css->css, css->on_match_set_info);
+                node->ss.ps.ps_ExprContext->ecxt_scantuple = slot;
+                apply_update_list(node, css->on_match_set_info, true,
+                    &css->modified_relids, NULL);
             }
 
-            econtext->ecxt_scantuple = ExecProject(node->ss.ps.lefttree->ps_ProjInfo);
-            return ExecProject(node->ss.ps.ps_ProjInfo);
+            return slot;
         }
         else if (TupIsNull(slot) && css->found_a_path)
         {
@@ -960,15 +954,14 @@ static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
              * So we will need to create a TupleTableSlot and populate with the
              * information from the newly created path that the query needs.
              */
-            SubqueryScanState *sss = NULL;
-            econtext = node->ss.ps.ps_ExprContext;
-            sss = (SubqueryScanState *)node->ss.ps.lefttree;
+            ExprContext *econtext = node->ss.ps.ps_ExprContext;
+            ResultState *sss = (ResultState *)node->ss.ps.lefttree;
+            HeapTuple heap_tuple;
 
             /*
              * Our child execution node is always a subquery. If not there
              * is an issue.
              */
-            Assert(IsA(sss, SubqueryScanState));
 
             /*
              * found_a_path should only be set to true if MERGE is following
@@ -988,123 +981,109 @@ static TupleTableSlot *exec_cypher_merge(CustomScanState *node)
              *  Postgres cleared the child tuple table slot, we need to remake
              *  it.
              */
-            ExecInitScanTupleSlot(estate, &sss->ss,
-                                  ExecGetResultType(sss->subplan),
-                                  &TTSOpsVirtual);
 
             /* setup the scantuple that the process_path needs */
-            econtext->ecxt_scantuple = sss->ss.ss_ScanTupleSlot;
+            econtext->ecxt_scantuple = sss->ps.ps_ResultTupleSlot;
+            mark_tts_isnull(econtext->ecxt_scantuple);
+
+            // create the path
+            process_path(css, NULL, true);
+            mark_scan_slot_valid(econtext->ecxt_scantuple);
+
+            if (css->on_create_set_info != NULL)
+            {
+                apply_update_list(node, css->on_create_set_info, true,
+                    &css->modified_relids, NULL);
+            }
+
+            // mark the create_new_path flag to true.
+            css->created_new_path = true;
 
             /*
-             * Initialize the scan tuple slot as all-null before process_path
-             * populates it with the created entities. This ensures the slot
-             * is properly set up for apply_update_list.
+             *  find the tts_values that process_path did not populate and
+             *  mark as null.
              */
             mark_tts_isnull(econtext->ecxt_scantuple);
 
-            /* create the path */
-            process_path(css, NULL, true);
+            // create the physical heap tuple
+            heap_tuple = heap_form_tuple(
+                                econtext->ecxt_scantuple->tts_tupleDescriptor,
+                                econtext->ecxt_scantuple->tts_values,
+                                econtext->ecxt_scantuple->tts_isnull);
 
-            /* mark the slot as valid so tts_nvalid reflects natts */
-            mark_scan_slot_valid(econtext->ecxt_scantuple);
-
-            /* ON CREATE SET: path was just created */
-            if (css->on_create_set_info)
-                apply_update_list(&css->css, css->on_create_set_info);
-
-            /* mark the create_new_path flag to true. */
-            css->created_new_path = true;
+            // store the heap tuple
+            ExecStoreTuple(heap_tuple, econtext->ecxt_scantuple, InvalidBuffer, false);
 
             /*
              * make the subquery's projection scan slot be the tuple table we
              * created and run the projection logic.
              */
-            sss->ss.ps.ps_ProjInfo->pi_exprContext->ecxt_scantuple =
-                                                        econtext->ecxt_scantuple;
+            sss->ps.ps_ProjInfo->pi_exprContext->ecxt_scantuple = econtext->ecxt_scantuple;
 
-            /* assign this to be our scantuple */
-            econtext->ecxt_scantuple = ExecProject(node->ss.ps.lefttree->ps_ProjInfo);
+            // assign this to be our scantuple
+            econtext->ecxt_scantuple = ExecProject(node->ss.ps.ps_ProjInfo, NULL);
 
             /*
              *  run the merge's projection logic and pass to its parent
              *  execution node
              */
-            return ExecProject(node->ss.ps.ps_ProjInfo);
+            return econtext->ecxt_scantuple;
         }
     }
 }
-
-
 /*
  * Function called at the end of the execution phase to cleanup
  * MERGE.
  */
-static void end_cypher_merge(CustomScanState *node)
+static void end_cypher_merge(ExtensiblePlanState *node)
 {
     cypher_merge_custom_scan_state *css =
         (cypher_merge_custom_scan_state *)node;
     cypher_create_path *path = css->path;
-    ListCell *lc = NULL;
+    ListCell *lc;
     int path_length = list_length(path->target_nodes);
 
-    /* increment the command counter */
+    // increment the command counter
     CommandCounterIncrement();
-
-    /* invalidate VLE cache if merge created anything */
-    if (css->created_new_path)
-    {
-        increment_graph_version(css->graph_oid);
-    }
 
     ExecEndNode(node->ss.ps.lefttree);
 
     foreach (lc, path->target_nodes)
     {
-        cypher_target_node *cypher_node = (cypher_target_node *)lfirst(lc);
+        cypher_target_node *cypher_node =
+            (cypher_target_node *)lfirst(lc);
 
         if (!CYPHER_TARGET_NODE_INSERT_ENTITY(cypher_node->flags))
-        {
             continue;
-        }
 
-        /* close all indices for the node */
+        // close all indices for the node
         ExecCloseIndices(cypher_node->resultRelInfo);
 
-        /* close the relation itself */
-        table_close(cypher_node->resultRelInfo->ri_RelationDesc,
-                    RowExclusiveLock);
+        // close the relation itself
+        heap_close(cypher_node->resultRelInfo->ri_RelationDesc,
+                   RowExclusiveLock);
     }
 
-    /* free up our created paths lists */
-    while (css->created_paths_list != NULL)
-    {
-        created_path *next = css->created_paths_list->next;
-        path_entry **entry = css->created_paths_list->entry;
+    while (css->created_paths_list != NULL) {
+        created_path *current =
+            (created_path *)css->created_paths_list;
 
-        /* free up the path array elements */
-        free_path_entry_array(entry, path_length);
-
-        /* free up the array container */
-        pfree_if_not_null(entry);
-
-        /* free up the created_path container */
-        pfree_if_not_null(css->created_paths_list);
-
-        css->created_paths_list = next;
+        css->created_paths_list = current->next;
+        free_path_entries(current->entries, path_length);
+        pfree(current);
     }
 
-    /* free the eager buffer if it was used */
-    if (css->eager_tuples != NIL)
-    {
-        ListCell *lc2;
+    foreach (lc, css->eager_tuples)
+        heap_freetuple((HeapTuple)lfirst(lc));
+    list_free(css->eager_tuples);
+    css->eager_tuples = NIL;
 
-        foreach(lc2, css->eager_tuples)
-        {
-            heap_freetuple((HeapTuple) lfirst(lc2));
-        }
-        list_free(css->eager_tuples);
-        css->eager_tuples = NIL;
+    if (css->path_values != NIL) {
+        list_free(css->path_values);
+        css->path_values = NIL;
     }
+
+    notify_modified_entity_relations(&css->modified_relids);
 }
 
 /*
@@ -1112,12 +1091,11 @@ static void end_cypher_merge(CustomScanState *node)
  * Since we are creating data here its not safe to rescan the node. Throw
  * an error and try to help the uer understand what went wrong.
  */
-static void rescan_cypher_merge(CustomScanState *node)
+static void rescan_cypher_merge(ExtensiblePlanState *node)
 {
-    ereport(ERROR,
-            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("cypher merge clause cannot be rescanned"),
-                     errhint("its unsafe to use joins in a query with a Cypher MERGE clause")));
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("cypher merge clause cannot be rescanned"),
+                    errhint("its unsafe to use joins in a query with a Cypher MERGE clause")));
 }
 
 /*
@@ -1125,20 +1103,20 @@ static void rescan_cypher_merge(CustomScanState *node)
  * merge_custom_scan node and creates the cypher_merge_custom_scan_state
  * for the execution phase.
  */
-Node *create_cypher_merge_plan_state(CustomScan *cscan)
+Node *create_cypher_merge_plan_state(ExtensiblePlan *cscan)
 {
     cypher_merge_custom_scan_state *cypher_css =
-        palloc0(sizeof(cypher_merge_custom_scan_state));
+       (cypher_merge_custom_scan_state*)palloc0(sizeof(cypher_merge_custom_scan_state));
     cypher_merge_information *merge_information;
-    char *serialized_data = NULL;
-    Const *c = NULL;
+    char *serialized_data;
+    Const *c;
 
     cypher_css->cs = cscan;
 
-    /* get the serialized data structure from the Const and deserialize it. */
-    c = linitial(cscan->custom_private);
+    // get the serialized data structure from the Const and deserialize it.
+    c = (Const*)linitial(cscan->extensible_private);
     serialized_data = (char *)c->constvalue;
-    merge_information = stringToNode(serialized_data);
+    merge_information = (cypher_merge_information*)stringToAGNode(serialized_data);
 
     Assert(is_ag_node(merge_information, cypher_merge_information));
 
@@ -1152,10 +1130,31 @@ Node *create_cypher_merge_plan_state(CustomScan *cscan)
     cypher_css->on_match_set_info = merge_information->on_match_set_info;
     cypher_css->on_create_set_info = merge_information->on_create_set_info;
 
-    cypher_css->css.ss.ps.type = T_CustomScanState;
+    cypher_css->css.ss.ps.type = T_ExtensiblePlanState;
     cypher_css->css.methods = &cypher_merge_exec_methods;
 
     return (Node *)cypher_css;
+}
+
+/*
+ * Put a newly created entity into the scan tuple at the (1-based) position
+ * assigned to its variable so parent execution nodes can reference it.
+ */
+static void store_merge_variable(TupleTableSlot *scantuple,
+                                 int variable_position, Datum value,
+                                 const char *caller)
+{
+    int tuple_position = variable_position - 1;
+
+    if (tuple_position < 0 ||
+        tuple_position >= scantuple->tts_tupleDescriptor->natts) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("%s: invalid tuple position", caller)));
+    }
+
+    scantuple->tts_values[tuple_position] = value;
+    scantuple->tts_isnull[tuple_position] = false;
 }
 
 /*
@@ -1163,7 +1162,7 @@ Node *create_cypher_merge_plan_state(CustomScan *cscan)
  * the create_edge function.
  */
 static Datum merge_vertex(cypher_merge_custom_scan_state *css,
-                          cypher_target_node *node, ListCell *next, List *list,
+                          cypher_target_node *node, ListCell *next,
                           path_entry **path_array, int path_index,
                           bool should_insert)
 {
@@ -1184,9 +1183,8 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
      */
     if (CYPHER_TARGET_NODE_INSERT_ENTITY(node->flags))
     {
-        ResultRelInfo **old_estate_es_result_relations = NULL;
+        ResultRelInfo *old_estate_es_result_relation_info = NULL;
         Datum prop;
-
         /*
          * Set estate's result relation to the vertex's result
          * relation.
@@ -1195,85 +1193,46 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
          */
 
         /* save the old result relation info */
-        old_estate_es_result_relations = estate->es_result_relations;
+        old_estate_es_result_relation_info = estate->es_result_relation_info;
 
-        estate->es_result_relations = &resultRelInfo;
+        estate->es_result_relation_info = resultRelInfo;
 
-        /*
-         * Only clear and null-init the slot when we will actually insert. On a
-         * matched MERGE the slot is never materialized (the output is built from
-         * id/prop directly), so the null-init memset would be wasted work that
-         * scales with any user-added columns (issue #2450 review follow-up).
-         */
-        if (should_insert)
-        {
-            clear_entity_slot(elemTupleSlot);
-        }
+        /* Null-init every attribute before AGE fills id/properties (issue #2450). */
+        clear_entity_slot(elemTupleSlot);
 
-        /* if we not are going to insert, we need our structure pointers */
-        if (should_insert == false &&
-            (path_array == NULL || path_array[path_index] == NULL))
+        if (!should_insert)
         {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                             errmsg("invalid input parameter combination")));
-        }
+            if (path_array == NULL || path_array[path_index] == NULL)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("invalid MERGE path reuse state")));
+            }
 
-        /*
-         * If we shouldn't insert the vertex, we need to retrieve it from the
-         * storage structure.
-         */
-        if (should_insert == false &&
-            path_array != NULL &&
-            path_array[path_index] != NULL)
-        {
-            id = path_array[path_index]->id;
-            isNull = path_array[path_index]->id_isNull;
-        }
-        /*
-         * Otherwise, we need to retrieve the vertex normally and store its
-         * unique values if the storage structure exists.
-         */
-        else if (should_insert == true)
-        {
-            /* get the next graphid for this vertex */
-            id = ExecEvalExpr(node->id_expr_state, econtext, &isNull);
+            id = GRAPHID_GET_DATUM(path_array[path_index]->id);
+            isNull = path_array[path_index]->id_is_null;
+        } else {
+            id = ExecEvalExpr(node->id_expr_state, econtext, &isNull, NULL);
 
             if (path_array != NULL && path_array[path_index] != NULL)
             {
-                /* store it */
-                path_array[path_index]->id = id;
-                path_array[path_index]->id_isNull = isNull;
+                path_array[path_index]->id = DATUM_GET_GRAPHID(id);
+                path_array[path_index]->id_is_null = isNull;
             }
         }
-        else
-        {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                             errmsg("invalid input parameter combination")));
-        }
 
-        /* put the id values into the tuple slot */
         elemTupleSlot->tts_values[vertex_tuple_id] = id;
         elemTupleSlot->tts_isnull[vertex_tuple_id] = isNull;
 
-        /*
-         * Retrieve the properties and isNull values if the storage structure
-         * exists.
-         */
         if (path_array != NULL && path_array[path_index] != NULL)
         {
-            prop = path_array[path_index]->prop;
-            isNull = path_array[path_index]->prop_isNull;
-        }
-        /* otherwise, get them normally */
-        else
-        {
-            /* get the properties for this vertex */
-            prop = ExecEvalExpr(node->prop_expr_state, econtext, &isNull);
+            prop = path_array[path_index]->entity_properties;
+            isNull = path_array[path_index]->entity_properties_is_null;
+        } else {
+            prop = ExecEvalExpr(node->prop_expr_state, econtext, &isNull,
+                                NULL);
         }
 
-        /* put the prop values into the tuple slot */
         elemTupleSlot->tts_values[vertex_tuple_properties] = prop;
         elemTupleSlot->tts_isnull[vertex_tuple_properties] = isNull;
 
@@ -1283,45 +1242,47 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
          * Depending on the currentCommandId, we need to do this one of two
          * different ways -
          *
-         * 1) If they are equal, the currentCommandId hasn't been used for an
-         *    update, or it hasn't been incremented after being used. In either
-         *    case, we need to use the current one and then increment it so that
-         *    the following commands will have visibility of this update. Note,
-         *    it isn't our job to update the currentCommandId first and then do
-         *    this check.
+         * 1) If the base_currentCommandId and the currentCommandId are equal,
+         *    the currentCommandId hasn't been used for an update, or it hasn't
+         *    been incremented after being used. In either case, we need to use
+         *    the current one and then increment it so that the following
+         *    commands (SET, specifically) will have visibility of this update.
          *
          * 2) If they are not equal, the currentCommandId has been used and/or
-         *    updated. In this case, we can't use it. Otherwise our update won't
-         *    be visible to anything that follows, until the currentCommandId is
-         *    updated again. Remember, visibility is, greater than but not equal
-         *    to, the currentCommandID used for the update. So, in this case we
-         *    need to use the original currentCommandId when begin_cypher_merge
-         *    was initiated as everything under this instance of merge needs to
-         *    be based off of that initial currentCommandId. This allows the
-         *    following command to see the updates generated by this instance of
-         *    merge.
+         *    updated. In this case, we can't use it. Otherwise our update
+         *    won't be visible to anything that follows until the
+         *    currentCommandId is updated again. Remember, a tuple is visible
+         *    only to commands whose commandId is strictly greater than the
+         *    tuple's cmin. So, in this case, we need to use the original
+         *    currentCommandId from when begin_cypher_merge was initiated, as
+         *    everything under this instance of MERGE needs to be based off of
+         *    that initial currentCommandId.
          */
-        if (should_insert &&
-            css->base_currentCommandId == GetCurrentCommandId(false))
+        if (should_insert)
         {
-            insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
+            if (css->base_currentCommandId == GetCurrentCommandId(false))
+            {
+                insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
 
-            /*
-             * Increment the currentCommandId since we processed an update. We
-             * don't want to do this outside of this block because we don't want
-             * to inadvertently or unnecessarily update the commandCounterId of
-             * another command.
-             */
-            CommandCounterIncrement();
-        }
-        else if (should_insert)
-        {
-            insert_entity_tuple_cid(resultRelInfo, elemTupleSlot, estate,
-                                    css->base_currentCommandId);
+                /*
+                 * Increment the currentCommandId since we processed an
+                 * update. We don't want to do this outside of this block
+                 * because we don't want to inadvertently or unnecessarily
+                 * update the commandCounterId of another command.
+                 */
+                CommandCounterIncrement();
+            } else {
+                insert_entity_tuple_cid(resultRelInfo, elemTupleSlot, estate,
+                                        css->base_currentCommandId);
+            }
+
+            mark_entity_relation_modified(
+                &css->modified_relids,
+                RelationGetRelid(resultRelInfo->ri_RelationDesc));
         }
 
         /* restore the old result relation info */
-        estate->es_result_relations = old_estate_es_result_relations;
+        estate->es_result_relation_info = old_estate_es_result_relation_info;
 
         /*
          * When the vertex is used by clauses higher in the execution tree
@@ -1333,10 +1294,11 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
         {
             Datum result;
 
-            /* make the vertex agtype */
-            result = make_vertex(id, string_to_agtype(node->label_name), prop);
+            // make the vertex agtype
+            result = make_vertex(
+                id, string_to_agtype(node->label_name), prop);
 
-            /* append to the path list */
+            // append to the path list
             if (CYPHER_TARGET_NODE_IN_PATH(node->flags))
             {
                 css->path_values = lappend(css->path_values,
@@ -1349,82 +1311,57 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
              */
             if (CYPHER_TARGET_NODE_IS_VARIABLE(node->flags))
             {
-                bool debug_flag = false;
-                int tuple_position = node->tuple_position - 1;
-
-                /*
-                 * We need to make sure that the tuple_position is within the
-                 * boundaries of the tuple's number of attributes. Otherwise, it
-                 * will corrupt memory. The cases where it doesn't fall within
-                 * are usually due to a variable that is specified but there
-                 * isn't a RETURN clause. In these cases we just don't bother to
-                 * store the value.
-                 */
-                if (!debug_flag &&
-                    (tuple_position < scanTupleSlot->tts_tupleDescriptor->natts ||
-                     scanTupleSlot->tts_tupleDescriptor->natts != 1))
-                {
-                    /* store the result */
-                    scanTupleSlot->tts_values[tuple_position] = result;
-                    scanTupleSlot->tts_isnull[tuple_position] = false;
-                }
+                store_merge_variable(scanTupleSlot, node->tuple_position,
+                                     result, "merge_vertex");
             }
         }
     }
-    /*
-     * If we have the storage structure pointers, we have already retrieved the
-     * ID from the datum in the scan tuple, so just retrieve it from the
-     * structure.
-     */
     else if (path_array != NULL && path_array[path_index] != NULL)
     {
-        /* retrieve the id of the vertex */
-        id = path_array[path_index]->id;
+        id = GRAPHID_GET_DATUM(path_array[path_index]->id);
 
-        /*
-         * Add the Datum to the list of entities for creating the path variable
-         */
         if (CYPHER_TARGET_NODE_IN_PATH(node->flags))
         {
-            Datum vertex = scanTupleSlot->tts_values[node->tuple_position - 1];
+            Datum vertex =
+                scanTupleSlot->tts_values[node->tuple_position - 1];
             css->path_values = lappend(css->path_values,
                                        DatumGetPointer(vertex));
         }
     }
     else
     {
-        agtype *a = NULL;
+        agtype *a;
         Datum d;
-        agtype_value *v = NULL;
-        agtype_value *id_value = NULL;
+        agtype_value *v;
+        agtype_value *id_value;
+        TupleTableSlot *scantuple;
 
-        /* check that the variable isn't NULL */
-        if (scanTupleSlot->tts_isnull[node->tuple_position - 1])
+        scantuple = econtext->ecxt_scantuple;
+
+        if (scantuple->tts_isnull[node->tuple_position - 1])
         {
             ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("Existing variable %s cannot be NULL in MERGE clause",
-                            node->variable_name)));
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("Existing variable %s cannot be NULL in MERGE clause",
+                 node->variable_name)));
         }
 
-        /* get the vertex agtype in the scanTupleSlot */
-        d = scanTupleSlot->tts_values[node->tuple_position - 1];
+        // get the vertex agtype in the scanTupleSlot
+        d = scantuple->tts_values[node->tuple_position - 1];
         a = DATUM_GET_AGTYPE_P(d);
 
-        /* Convert to an agtype value */
+        // Convert to an agtype value
         v = get_ith_agtype_value_from_container(&a->root, 0);
 
         if (v->type != AGTV_VERTEX)
-        {
             ereport(ERROR,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                      errmsg("agtype must resolve to a vertex")));
-        }
 
-        /* extract the id agtype field */
+        // extract the id agtype field
         id_value = GET_AGTYPE_VALUE_OBJECT_VALUE(v, "id");
 
-        /* extract the graphid and cast to a Datum */
+        // extract the graphid and cast to a Datum
         id = GRAPHID_GET_DATUM(id_value->val.int_value);
 
         /*
@@ -1449,9 +1386,7 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
             }
         }
 
-        /*
-         * Add the Datum to the list of entities for creating the path variable
-         */
+        // add the Datum to the list of entities for creating the path variable
         if (CYPHER_TARGET_NODE_IN_PATH(node->flags))
         {
             Datum vertex = scanTupleSlot->tts_values[node->tuple_position - 1];
@@ -1460,11 +1395,11 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
         }
     }
 
-    /* If the path continues, create the next edge, passing the vertex's id. */
+    // If the path continues, create the next edge, passing the vertex's id.
     if (next != NULL)
     {
-        merge_edge(css, lfirst(next), id, lnext(list, next), list,
-                   path_array, path_index+1, should_insert);
+        merge_edge(css, (cypher_target_node *)lfirst(next), id, lnext(next),
+                   path_array, path_index + 1, should_insert);
     }
 
     return id;
@@ -1475,18 +1410,19 @@ static Datum merge_vertex(cypher_merge_custom_scan_state *css,
  */
 static void merge_edge(cypher_merge_custom_scan_state *css,
                        cypher_target_node *node, Datum prev_vertex_id,
-                       ListCell *next, List *list,
-                       path_entry **path_array, int path_index,
+                       ListCell *next, path_entry **path_array, int path_index,
                        bool should_insert)
 {
     bool isNull;
     EState *estate = css->css.ss.ps.state;
     ExprContext *econtext = css->css.ss.ps.ps_ExprContext;
     ResultRelInfo *resultRelInfo = node->resultRelInfo;
-    ResultRelInfo **old_estate_es_result_relations = NULL;
+    ResultRelInfo *old_estate_es_result_relation_info = NULL;
     TupleTableSlot *elemTupleSlot = node->elemTupleSlot;
     Datum id;
-    Datum start_id, end_id, next_vertex_id;
+    Datum start_id = (Datum)0;
+    Datum end_id = (Datum)0;
+    Datum next_vertex_id;
     List *prev_path = css->path_values;
     Datum prop;
 
@@ -1498,21 +1434,23 @@ static void merge_edge(cypher_merge_custom_scan_state *css,
      * next vertex's id.
      */
     css->path_values = NIL;
-    next_vertex_id = merge_vertex(css, lfirst(next), lnext(list, next), list,
-                                  path_array, path_index+1, should_insert);
+    next_vertex_id = merge_vertex(css,
+                                  (cypher_target_node *)lfirst(next),
+                                  lnext(next), path_array, path_index + 1,
+                                  should_insert);
 
     /*
      * Set the start and end vertex ids
      */
     if (node->dir == CYPHER_REL_DIR_RIGHT || node->dir == CYPHER_REL_DIR_NONE)
     {
-        /* create pattern (prev_vertex)-[edge]->(next_vertex) */
+        // create pattern (prev_vertex)-[edge]->(next_vertex)
         start_id = prev_vertex_id;
         end_id = next_vertex_id;
     }
     else if (node->dir == CYPHER_REL_DIR_LEFT)
     {
-        /* create pattern (prev_vertex)<-[edge]-(next_vertex) */
+        // create pattern (prev_vertex)<-[edge]-(next_vertex)
         start_id = next_vertex_id;
         end_id = prev_vertex_id;
     }
@@ -1531,145 +1469,92 @@ static void merge_edge(cypher_merge_custom_scan_state *css,
      */
 
     /* save the old result relation info */
-    old_estate_es_result_relations = estate->es_result_relations;
+    old_estate_es_result_relation_info = estate->es_result_relation_info;
 
-    estate->es_result_relations = &resultRelInfo;
+    estate->es_result_relation_info = resultRelInfo;
 
-    /*
-     * Only clear and null-init the slot when we will actually insert. On a
-     * matched MERGE the slot is never materialized (the output is built from
-     * id/prop directly), so the null-init memset would be wasted work that
-     * scales with any user-added columns (issue #2450 review follow-up).
-     */
-    if (should_insert)
+    /* Null-init every attribute before AGE fills the edge columns (issue #2450). */
+    clear_entity_slot(elemTupleSlot);
+
+    if (!should_insert)
     {
-        clear_entity_slot(elemTupleSlot);
+        if (path_array == NULL || path_array[path_index] == NULL)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("invalid MERGE path reuse state")));
+        }
+
+        id = GRAPHID_GET_DATUM(path_array[path_index]->id);
+        isNull = path_array[path_index]->id_is_null;
+        start_id = GRAPHID_GET_DATUM(path_array[path_index]->start_id);
+        end_id = GRAPHID_GET_DATUM(path_array[path_index]->end_id);
     }
-
-    /* if we not are going to insert, we need our structure pointers */
-    if (should_insert == false &&
-        (path_array == NULL || path_array[path_index] == NULL))
+    else
     {
-        ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                         errmsg("invalid input parameter combination")));
-    }
-
-    /*
-     * If we shouldn't insert the edge, we need to retrieve the entire edge from
-     * the storage structure.
-     */
-    if (should_insert == false &&
-        path_array != NULL &&
-        path_array[path_index] != NULL)
-    {
-        id = path_array[path_index]->id;
-        isNull = path_array[path_index]->id_isNull;
-        start_id = path_array[path_index]->start_id;
-        end_id = path_array[path_index]->end_id;
-    }
-    /*
-     * Otherwise, we need to get the edge's ID and store its unique values if
-     * the storage structure exists
-     */
-    else if (should_insert == true)
-    {
-        /* get the next graphid for this edge */
-        id = ExecEvalExpr(node->id_expr_state, econtext, &isNull);
+        id = ExecEvalExpr(node->id_expr_state, econtext, &isNull, NULL);
 
         if (path_array != NULL && path_array[path_index] != NULL)
         {
-            /* store it */
-            path_array[path_index]->id = id;
-            path_array[path_index]->id_isNull = isNull;
-            path_array[path_index]->start_id = start_id;
-            path_array[path_index]->end_id = end_id;
+            path_array[path_index]->id = DATUM_GET_GRAPHID(id);
+            path_array[path_index]->id_is_null = isNull;
+            path_array[path_index]->start_id = DATUM_GET_GRAPHID(start_id);
+            path_array[path_index]->end_id = DATUM_GET_GRAPHID(end_id);
         }
     }
-    else
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                         errmsg("invalid input parameter combination")));
-    }
 
-    /* put the id values into the tuple slot */
     elemTupleSlot->tts_values[edge_tuple_id] = id;
     elemTupleSlot->tts_isnull[edge_tuple_id] = isNull;
 
-    /* Graph id for the starting vertex */
     elemTupleSlot->tts_values[edge_tuple_start_id] = start_id;
     elemTupleSlot->tts_isnull[edge_tuple_start_id] = false;
-
-    /* Graph id for the ending vertex */
     elemTupleSlot->tts_values[edge_tuple_end_id] = end_id;
     elemTupleSlot->tts_isnull[edge_tuple_end_id] = false;
 
-    /*
-     * Retrieve the properties and isNull values if the storage structure
-     * exists.
-     */
     if (path_array != NULL && path_array[path_index] != NULL)
     {
-        prop = path_array[path_index]->prop;
-        isNull = path_array[path_index]->prop_isNull;
+        prop = path_array[path_index]->entity_properties;
+        isNull = path_array[path_index]->entity_properties_is_null;
     }
-    /* otherwise, get them normally */
     else
     {
-        /* get the properties for this edge */
-        prop = ExecEvalExpr(node->prop_expr_state, econtext, &isNull);
+        prop = ExecEvalExpr(node->prop_expr_state, econtext, &isNull, NULL);
     }
 
-    /* store the properties in the tuple slot */
     elemTupleSlot->tts_values[edge_tuple_properties] = prop;
     elemTupleSlot->tts_isnull[edge_tuple_properties] = isNull;
 
     /*
-     * Insert the new edge.
-     *
-     * Depending on the currentCommandId, we need to do this one of two
-     * different ways -
-     *
-     * 1) If they are equal, the currentCommandId hasn't been used for an
-     *    update, or it hasn't been incremented after being used. In either
-     *    case, we need to use the current one and then increment it so that
-     *    the following commands will have visibility of this update. Note,
-     *    it isn't our job to update the currentCommandId first and then do
-     *    this check.
-     *
-     * 2) If they are not equal, the currentCommandId has been used and/or
-     *    updated. In this case, we can't use it. Otherwise our update won't
-     *    be visible to anything that follows, until the currentCommandId is
-     *    updated again. Remember, visibility is, greater than but not equal
-     *    to, the currentCommandID used for the update. So, in this case we
-     *    need to use the original currentCommandId when begin_cypher_merge
-     *    was initiated as everything under this instance of merge needs to
-     *    be based off of that initial currentCommandId. This allows the
-     *    following command to see the updates generated by this instance of
-     *    merge.
+     * Insert the new edge. See the comment in merge_vertex for why the cid
+     * used for the insert depends on the base_currentCommandId (upstream
+     * commits 99e7c625d9 and e481556ee1: MERGE visibility in chained
+     * commands, SET specifically).
      */
-    if (should_insert &&
-        css->base_currentCommandId == GetCurrentCommandId(false))
+    if (should_insert)
     {
-        insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
+        if (css->base_currentCommandId == GetCurrentCommandId(false))
+        {
+            insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
 
-        /*
-         * Increment the currentCommandId since we processed an update. We
-         * don't want to do this outside of this block because we don't want
-         * to inadvertently or unnecessarily update the commandCounterId of
-         * another command.
-         */
-        CommandCounterIncrement();
-    }
-    else if (should_insert)
-    {
-        insert_entity_tuple_cid(resultRelInfo, elemTupleSlot, estate,
+            /*
+             * Increment the currentCommandId since we processed an update.
+             * We don't want to do this outside of this block because we
+             * don't want to inadvertently or unnecessarily update the
+             * commandCounterId of another command.
+             */
+            CommandCounterIncrement();
+        } else {
+            insert_entity_tuple_cid(resultRelInfo, elemTupleSlot, estate,
                                     css->base_currentCommandId);
+        }
+
+        mark_entity_relation_modified(
+            &css->modified_relids,
+            RelationGetRelid(resultRelInfo->ri_RelationDesc));
     }
 
     /* restore the old result relation info */
-    estate->es_result_relations = old_estate_es_result_relations;
+    estate->es_result_relation_info = old_estate_es_result_relation_info;
 
     /*
      * When the edge is used by clauses higher in the execution tree
@@ -1681,39 +1566,21 @@ static void merge_edge(cypher_merge_custom_scan_state *css,
     {
         Datum result;
 
-        result = make_edge(id, start_id, end_id,
-                           string_to_agtype(node->label_name), prop);
+        result = make_edge(
+            id, start_id, end_id, string_to_agtype(node->label_name), prop);
 
-        /* add the Datum to the list of entities for creating the path variable */
+        // add the Datum to the list of entities for creating the path variable
         if (CYPHER_TARGET_NODE_IN_PATH(node->flags))
         {
             prev_path = lappend(prev_path, DatumGetPointer(result));
             css->path_values = list_concat(prev_path, css->path_values);
         }
 
-        /* Add the entity to the TupleTableSlot if necessary */
+        // Add the entity to the TupleTableSlot if necessary
         if (CYPHER_TARGET_NODE_IS_VARIABLE(node->flags))
         {
-            TupleTableSlot *scantuple = econtext->ecxt_scantuple;
-            bool debug_flag = false;
-            int tuple_position = node->tuple_position - 1;
-
-            /*
-             * We need to make sure that the tuple_position is within the
-             * boundaries of the tuple's number of attributes. Otherwise, it
-             * will corrupt memory. The cases where it doesn't fall within are
-             * usually due to a variable that is specified but there isn't a
-             * RETURN clause. In these cases we just don't bother to store the
-             * value.
-             */
-             if (!debug_flag &&
-                 (tuple_position < scantuple->tts_tupleDescriptor->natts ||
-                  scantuple->tts_tupleDescriptor->natts != 1))
-            {
-                /* store the result */
-                scantuple->tts_values[tuple_position] = result;
-                scantuple->tts_isnull[tuple_position] = false;
-            }
+            store_merge_variable(econtext->ecxt_scantuple, node->tuple_position,
+                                 result, "merge_edge");
         }
     }
 }

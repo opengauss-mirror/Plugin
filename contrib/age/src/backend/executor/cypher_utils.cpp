@@ -24,55 +24,194 @@
 
 #include "postgres.h"
 
-#include "executor/executor.h"
-#include "executor/nodeModifyTable.h"
+#include "access/genam.h"
+#include "access/heapam.h"
+#include "access/htup.h"
+#include "access/sysattr.h"
+#include "access/xact.h"
+#include "access/multixact.h"
+#include "catalog/heap.h"
+#include "catalog/pg_am.h"
+#include "catalog/pg_index.h"
 #include "miscadmin.h"
+#include "nodes/ag_extensible.h"
 #include "nodes/makefuncs.h"
+#include "nodes/nodes.h"
+#include "nodes/nodeFuncs.h"
+#include "nodes/plannodes.h"
+#include "parser/parsetree.h"
 #include "parser/parse_relation.h"
-#include "rewrite/rewriteManip.h"
-#include "rewrite/rowsecurity.h"
-#include "utils/acl.h"
-#include "utils/rls.h"
+#include "storage/procarray.h"
+#include "utils/rel.h"
+#include "utils/relcache.h"
+#include "utils/sec_rls_utils.h"
+#include "utils/snapmgr.h"
+#include "executor/executor.h"
+#include "executor/node/nodeModifyTable.h"
 
 #include "catalog/ag_label.h"
 #include "commands/label_commands.h"
+#include "executor/cypher_executor.h"
 #include "executor/cypher_utils.h"
+#include "utils/agtype.h"
 #include "utils/ag_cache.h"
+#include "utils/age_global_graph.h"
+#include "utils/graphid.h"
 
-/* RLS helper function declarations */
-static void get_policies_for_relation(Relation relation, CmdType cmd,
-                                      Oid user_id, List **permissive_policies,
-                                      List **restrictive_policies);
-static void add_with_check_options(Relation rel, int rt_index, WCOKind kind,
-                                   List *permissive_policies,
-                                   List *restrictive_policies,
-                                   List **withCheckOptions, bool *hasSubLinks,
-                                   bool force_using);
-static void add_security_quals(int rt_index, List *permissive_policies,
-                               List *restrictive_policies,
-                               List **securityQuals, bool *hasSubLinks);
-static void sort_policies_by_name(List *policies);
-static int row_security_policy_cmp(const ListCell *a, const ListCell *b);
-static bool check_role_for_policy(ArrayType *policy_roles, Oid user_id);
+typedef struct AgeBtreeEqScan {
+    Relation index_relation;
+    TableScanDesc heap_scan;
+    IndexScanDesc index_scan;
+    ScanKeyData key;
+    LOCKMODE index_lockmode;
+} AgeBtreeEqScan;
 
-/*
- * Given the graph name and the label name, create a ResultRelInfo for the table
- * those two variables represent. Open the Indices too.
- */
-ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name,
-                                             char *label_name)
+void mark_entity_relation_modified(List **modified_relids, Oid relid)
 {
-    RangeVar *rv = NULL;
-    Relation label_relation = NULL;
-    ResultRelInfo *resultRelInfo = NULL;
-    ParseState *pstate = NULL;
-    RangeTblEntry *rte = NULL;
-    int pii = 0;
+    Assert(modified_relids != NULL);
+    Assert(OidIsValid(relid));
 
-    /* create a new parse state for this operation */
-    pstate = make_parsestate(NULL);
+    if (!list_member_oid(*modified_relids, relid)) {
+        *modified_relids = lappend_oid(*modified_relids, relid);
+        invalidate_GRAPH_global_contexts_by_relid(relid);
+    }
+}
 
-    resultRelInfo = palloc(sizeof(ResultRelInfo));
+void notify_modified_entity_relations(List **modified_relids)
+{
+    ListCell *lc;
+
+    Assert(modified_relids != NULL);
+
+    foreach (lc, *modified_relids)
+        notify_GRAPH_global_contexts_relation_modified(lfirst_oid(lc));
+
+    list_free(*modified_relids);
+    *modified_relids = NIL;
+}
+
+Oid find_usable_btree_index_for_attr(Relation relation,
+                                     AttrNumber heap_attnum)
+{
+    List *index_oids;
+    ListCell *cell;
+    Oid result = InvalidOid;
+
+    Assert(relation != NULL);
+    Assert(heap_attnum > 0);
+
+    index_oids = RelationGetIndexList(relation);
+    foreach (cell, index_oids)
+    {
+        Oid index_oid = lfirst_oid(cell);
+        Relation index_relation = index_open(index_oid, AccessShareLock);
+        Form_pg_index index_form = index_relation->rd_index;
+
+        /*
+         * This executor-local lookup cannot reproduce the planner's transient
+         * plan invalidation contract, so indcheckxmin indexes are not used.
+         */
+        if (index_form != NULL && IndexIsValid(index_form) &&
+            !index_form->indcheckxmin &&
+            GetIndexVisibleStateByTuple(index_relation->rd_indextuple) &&
+            GetIndexEnableStateByTuple(index_relation->rd_indextuple) &&
+            IndexRelationGetNumberOfKeyAttributes(index_relation) >= 1 &&
+            index_form->indkey.values[0] == heap_attnum &&
+            index_relation->rd_rel->relam == BTREE_AM_OID &&
+            RelationGetIndexExpressions(index_relation) == NIL &&
+            RelationGetIndexPredicate(index_relation) == NIL) {
+            result = index_oid;
+            index_close(index_relation, AccessShareLock);
+            break;
+        }
+
+        index_close(index_relation, AccessShareLock);
+    }
+    list_free(index_oids);
+
+    return result;
+}
+
+AgeBtreeEqScan *age_btree_eq_beginscan(Relation relation, Snapshot snapshot,
+                                       AttrNumber heap_attnum,
+                                       RegProcedure equality_function,
+                                       Datum value, LOCKMODE index_lockmode)
+{
+    Oid index_oid = find_usable_btree_index_for_attr(relation, heap_attnum);
+
+    return age_btree_eq_beginscan_with_index(
+        relation, snapshot, heap_attnum, equality_function, value,
+        index_lockmode, index_oid);
+}
+
+AgeBtreeEqScan *age_btree_eq_beginscan_with_index(
+    Relation relation, Snapshot snapshot, AttrNumber heap_attnum,
+    RegProcedure equality_function, Datum value, LOCKMODE index_lockmode,
+    Oid index_oid)
+{
+    AgeBtreeEqScan *scan;
+
+    Assert(relation != NULL);
+    Assert(snapshot != NULL);
+    Assert(heap_attnum > 0);
+
+    scan = (AgeBtreeEqScan *)palloc0(sizeof(AgeBtreeEqScan));
+    scan->index_lockmode = index_lockmode;
+
+    if (OidIsValid(index_oid)) {
+        /* Index scan keys address index-key positions, not heap attributes. */
+        ScanKeyInit(&scan->key, 1, BTEqualStrategyNumber,
+                    equality_function, value);
+        scan->index_relation = index_open(index_oid, index_lockmode);
+        scan->index_scan = index_beginscan(relation, scan->index_relation,
+                                           snapshot, 1, 0);
+        index_rescan(scan->index_scan, &scan->key, 1, NULL, 0);
+    } else {
+        ScanKeyInit(&scan->key, heap_attnum, BTEqualStrategyNumber,
+                    equality_function, value);
+        scan->heap_scan = heap_beginscan(relation, snapshot, 1, &scan->key);
+    }
+
+    return scan;
+}
+
+HeapTuple age_btree_eq_getnext(AgeBtreeEqScan *scan)
+{
+    Assert(scan != NULL);
+
+    if (scan->index_scan != NULL) {
+        return (HeapTuple)index_getnext(scan->index_scan,
+                                        ForwardScanDirection);
+    }
+
+    return heap_getnext(scan->heap_scan, ForwardScanDirection);
+}
+
+void age_btree_eq_endscan(AgeBtreeEqScan *scan)
+{
+    if (scan == NULL) {
+        return;
+    }
+
+    if (scan->index_scan != NULL) {
+        index_endscan(scan->index_scan);
+        index_close(scan->index_relation, scan->index_lockmode);
+    } else if (scan->heap_scan != NULL) {
+        heap_endscan(scan->heap_scan);
+    }
+
+    pfree(scan);
+}
+
+ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name, char *label_name)
+{
+    RangeVar *rv;
+    Relation label_relation;
+    ResultRelInfo *resultRelInfo;
+
+    ParseState *pstate = make_parsestate(NULL);
+
+    resultRelInfo = (ResultRelInfo*)palloc(sizeof(ResultRelInfo));
 
     if (strlen(label_name) == 0)
     {
@@ -85,48 +224,24 @@ ResultRelInfo *create_entity_result_rel_info(EState *estate, char *graph_name,
 
     label_relation = parserOpenTable(pstate, rv, RowExclusiveLock);
 
-    /*
-     * Get the rte to determine the correct perminfoindex value. Some rtes
-     * may have it set up, some created here (executor) may not.
-     *
-     * Note: The RTEPermissionInfo structure was added in PostgreSQL version 16.
-     *
-     * Note: We use the list_length because exec_rt_fetch starts at 1, not 0.
-     *       Doing this gives us the last rte in the es_range_table list, which
-     *       is the rte in question.
-     *
-     *       If the rte is created here and doesn't have a perminfoindex, we
-     *       need to pass on a 0. Otherwise, later on GetResultRTEPermissionInfo
-     *       will attempt to get the rte's RTEPermissionInfo data, which doesn't
-     *       exist.
-     *
-     * TODO: Ideally, we should consider creating the RTEPermissionInfo data,
-     *       but as this is just a read of the label relation, it is likely
-     *       unnecessary.
-     */
-    rte = exec_rt_fetch(list_length(estate->es_range_table), estate);
-    pii = (rte->perminfoindex == 0) ? 0 : list_length(estate->es_range_table);
-
-    /* initialize the resultRelInfo */
-    InitResultRelInfo(resultRelInfo, label_relation, pii, NULL,
+    InitResultRelInfo(resultRelInfo, label_relation,
+                      list_length(estate->es_range_table),
                       estate->es_instrument);
-
-    /* open the indices */
+    // open the parse state
     ExecOpenIndices(resultRelInfo, false);
-
     free_parsestate(pstate);
 
     return resultRelInfo;
 }
 
-/* close the result_rel_info and close all the indices */
+// close the result_rel_info and close all the indices
 void destroy_entity_result_rel_info(ResultRelInfo *result_rel_info)
 {
-    /* close the indices */
+    // close the indices
     ExecCloseIndices(result_rel_info);
 
-    /* close the rel */
-    table_close(result_rel_info->ri_RelationDesc, RowExclusiveLock);
+    // close the rel
+    heap_close(result_rel_info->ri_RelationDesc, RowExclusiveLock);
 }
 
 /*
@@ -136,16 +251,64 @@ void destroy_entity_result_rel_info(ResultRelInfo *result_rel_info)
  * The slot's tuple descriptor is the full label-table descriptor, which may
  * contain columns AGE does not populate -- e.g. a user-added plain column, or a
  * GENERATED ALWAYS ... STORED column. Without this, those attributes keep stale
- * slot memory and heap_form_tuple() segfaults dereferencing the garbage
+ * slot memory and materializing the tuple segfaults dereferencing the garbage
  * (issue #2450). Plain columns then default to NULL; generated columns are
- * recomputed via ExecComputeStoredGenerated() before the tuple is materialized.
+ * recomputed via compute_stored_generated() before the tuple is materialized.
  */
 void clear_entity_slot(TupleTableSlot *elemTupleSlot)
 {
+    int natts = elemTupleSlot->tts_tupleDescriptor->natts;
+
     ExecClearTuple(elemTupleSlot);
-    memset(elemTupleSlot->tts_isnull, true,
-           elemTupleSlot->tts_tupleDescriptor->natts * sizeof(bool));
+    for (int attno = 0; attno < natts; attno++) {
+        elemTupleSlot->tts_isnull[attno] = true;
+    }
 }
+
+/*
+ * Recompute stored generated columns on an entity slot before the heap tuple is
+ * materialized. AGE's create/merge/set paths only populate id/properties, so a
+ * GENERATED ALWAYS ... STORED column added to the label table would otherwise
+ * be left uninitialized (issue #2450). This mirrors the generated-column step
+ * of openGauss's own ExecInsert/ExecUpdate paths.
+ */
+void compute_stored_generated(ResultRelInfo *resultRelInfo,
+                              TupleTableSlot *elemTupleSlot, EState *estate,
+                              CmdType cmdtype)
+{
+    TupleConstr *constr = resultRelInfo->ri_RelationDesc->rd_att->constr;
+
+    if (constr != NULL && constr->has_generated_stored) {
+        HeapTuple tuple = (HeapTuple)elemTupleSlot->tts_tuple;
+        CmdType generated_cmdtype = cmdtype;
+
+        Assert(tuple != NULL);
+
+        /*
+         * openGauss has no TupleTableSlot::tts_tableOid. System-column
+         * expressions read the OID from the physical tuple instead.
+         */
+        tuple->t_tableOid = RelationGetRelid(resultRelInfo->ri_RelationDesc);
+
+        /*
+         * AGE's custom SET executor does not have the planner-maintained
+         * extraUpdatedCols bitmap used by openGauss to select affected
+         * generated columns. AGE always rebuilds properties, so recompute all
+         * stored generated expressions on SET.
+         */
+        if (generated_cmdtype == CMD_UPDATE) {
+            generated_cmdtype = CMD_INSERT;
+        }
+
+        ExecComputeStoredGenerated(resultRelInfo, estate, elemTupleSlot,
+                                   elemTupleSlot->tts_tuple,
+                                   generated_cmdtype);
+
+        tuple = (HeapTuple)elemTupleSlot->tts_tuple;
+        tuple->t_tableOid = RelationGetRelid(resultRelInfo->ri_RelationDesc);
+    }
+}
+
 
 TupleTableSlot *populate_vertex_tts(
     TupleTableSlot *elemTupleSlot, agtype_value *id, agtype_value *properties)
@@ -182,17 +345,20 @@ TupleTableSlot *populate_edge_tts(
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
     if (startid == NULL)
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge start_id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
 
     if (endid == NULL)
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("edge end_id field cannot be NULL")));
+        return elemTupleSlot; /* suppress the static check warmings */
     }
 
     clear_entity_slot(elemTupleSlot);
@@ -226,90 +392,44 @@ TupleTableSlot *populate_edge_tts(
 bool entity_exists(EState *estate, Oid graph_oid, graphid id)
 {
     label_cache_data *label;
-    ScanKeyData scan_keys[1];
-    TableScanDesc scan_desc;
-    HeapTuple tuple;
     Relation rel;
-    bool result = true;
-    TupleTableSlot *slot;
-    Oid index_oid = InvalidOid;
+    AgeBtreeEqScan *scan;
+    HeapTuple tuple;
     CommandId saved_curcid;
 
     /*
      * Extract the label id from the graph id and get the table name
      * the entity is part of.
      */
-    label = search_label_graph_oid_cache(graph_oid, GET_LABEL_ID(id));
+    label = search_label_graph_id_cache(graph_oid, GET_LABEL_ID(id));
+    if (label == NULL)
+    {
+        return false;
+    }
 
-    /* Setup the scan key to be the graphid */
-    ScanKeyInit(&scan_keys[0], 1, BTEqualStrategyNumber,
-                F_GRAPHIDEQ, GRAPHID_GET_DATUM(id));
-
-    /*
-     * Temporarily advance the snapshot's curcid so that entities inserted
-     * by preceding clauses (e.g., CREATE) in the same query are visible.
-     * CREATE calls CommandCounterIncrement() which advances the global
-     * CID, but does not update es_snapshot->curcid. The Decrement/Increment
-     * CID macros used by the executors can leave curcid behind the global
-     * CID, making recently created entities invisible to this scan.
-     *
-     * Use Max to ensure we never decrease curcid. The executor macros
-     * (Increment_Estate_CommandId) can push curcid above the global CID,
-     * and blindly assigning GetCurrentCommandId could make tuples that
-     * are visible at the current curcid become invisible.
-     */
     saved_curcid = estate->es_snapshot->curcid;
     estate->es_snapshot->curcid = Max(saved_curcid,
                                       GetCurrentCommandId(false));
 
-    rel = table_open(label->relation, RowExclusiveLock);
-
-    index_oid = find_usable_btree_index_for_attr(rel, 1);
-
-    if (OidIsValid(index_oid))
+    PG_TRY();
     {
-        IndexScanDesc index_scan_desc;
-        Relation index_rel;
+        rel = heap_open(label->relation, RowExclusiveLock);
+        scan = age_btree_eq_beginscan(rel, SnapshotSelf, 1, F_GRAPHIDEQ,
+                                      GRAPHID_GET_DATUM(id), AccessShareLock);
+        tuple = age_btree_eq_getnext(scan);
 
-        slot = table_slot_create(rel, NULL);
-
-        index_rel = index_open(index_oid, AccessShareLock);
-
-        index_scan_desc = index_beginscan(rel, index_rel, estate->es_snapshot, NULL, 1, 0);
-        index_rescan(index_scan_desc, scan_keys, 1, NULL, 0);
-
-        if (!index_getnext_slot(index_scan_desc, ForwardScanDirection, slot))
-        {
-            result = false;
-        } 
-
-        index_endscan(index_scan_desc);
-        index_close(index_rel, AccessShareLock);
-        ExecDropSingleTupleTableSlot(slot);
-    } 
-    else
-    {        
-        scan_desc = table_beginscan(rel, estate->es_snapshot, 1, scan_keys);
-        tuple = heap_getnext(scan_desc, ForwardScanDirection);
-
-        /*
-        * If a single tuple was returned, the tuple is still valid, otherwise'
-        * set to false.
-        */
-        if (!HeapTupleIsValid(tuple))
-        {
-            result = false;
-        }
-
-        table_endscan(scan_desc);
+        age_btree_eq_endscan(scan);
+        heap_close(rel, RowExclusiveLock);
+        estate->es_snapshot->curcid = saved_curcid;
     }
+    PG_CATCH();
+    {
+        estate->es_snapshot->curcid = saved_curcid;
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
 
-    table_close(rel, RowExclusiveLock);
-
-    /* Restore the original curcid */
-    estate->es_snapshot->curcid = saved_curcid;
-
-    return result;
+    return HeapTupleIsValid(tuple);
 }
 
 /*
@@ -329,819 +449,83 @@ HeapTuple insert_entity_tuple(ResultRelInfo *resultRelInfo,
 }
 
 /*
+ * The heap-level graph access paths (CREATE, MERGE, VLE and the global graph
+ * scans) bypass the planner and therefore never see row-level-security
+ * policies.  They are only allowed when no policy would apply to the current
+ * user: RLS is disabled on the label, or the user may bypass it (superuser,
+ * a role with BYPASSRLS, or the label owner unless FORCE ROW LEVEL SECURITY
+ * is set) - the same rule the kernel uses for ordinary DML.
+ */
+void ensure_age_relation_supports_raw_access(Relation relation)
+{
+    if (CheckEnableRlsPolicies(relation, GetUserId()) == RLS_ENABLED)
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("AGE raw graph access is not supported for RLS-enabled label \"%s\"",
+                        RelationGetRelationName(relation)),
+                 errhint("Disable row-level security for this label or use a supported executor path.")));
+}
+
+/*
+ * The heap write paths (CREATE/MERGE inserts, SET updates, DELETE) bypass the
+ * SQL executor, so the checks it would have made are done here: the table
+ * privilege for the operation, the row-level-security bypass rule and the
+ * read-only transaction state.
+ */
+void check_entity_write_allowed(Relation relation, AclMode mode,
+                                const char *clause_name)
+{
+    AclResult acl_result;
+
+    PreventCommandIfReadOnly(clause_name);
+
+    acl_result = pg_class_aclcheck(RelationGetRelid(relation), GetUserId(),
+                                   mode);
+    if (acl_result != ACLCHECK_OK)
+        aclcheck_error(acl_result, ACL_KIND_CLASS,
+                       RelationGetRelationName(relation));
+
+    ensure_age_relation_supports_raw_access(relation);
+}
+
+/*
  * Insert the edge/vertex tuple into the table and indices. Check that the
  * table's constraints have not been violated.
  *
- * This function uses the passed cid for updates.
+ * This function uses the passed cid for the insert.
  */
+
 HeapTuple insert_entity_tuple_cid(ResultRelInfo *resultRelInfo,
                                   TupleTableSlot *elemTupleSlot,
                                   EState *estate, CommandId cid)
 {
-    HeapTuple tuple = NULL;
+    HeapTuple tuple;
+
+    ensure_age_relation_supports_raw_access(resultRelInfo->ri_RelationDesc);
 
     ExecStoreVirtualTuple(elemTupleSlot);
+    tuple = ExecMaterializeSlot(elemTupleSlot);
 
     /*
-     * The slot's tuple descriptor is the full relation descriptor, which may
-     * contain columns AGE does not populate itself -- most notably a
-     * GENERATED ALWAYS ... STORED column added to the label table. Those slot
-     * entries are left uninitialized by the create/merge/set paths, so we must
-     * compute the stored generated columns here before materializing the heap
-     * tuple. Otherwise heap_form_tuple() reads the uninitialized slot values
-     * and segfaults dereferencing garbage (issue #2450).
+     * compute_stored_generated() applies the openGauss physical-tuple OID
+     * contract, builds a new tuple, and stores it back on the slot.
      */
-    if (resultRelInfo->ri_RelationDesc->rd_att->constr != NULL &&
-        resultRelInfo->ri_RelationDesc->rd_att->constr->has_generated_stored)
-    {
-        /*
-         * A generation expression may reference the tableoid system column, so
-         * the slot must carry the relation's OID before we compute the stored
-         * generated columns (mirrors PostgreSQL's own ExecInsert path).
-         */
-        elemTupleSlot->tts_tableOid =
-            RelationGetRelid(resultRelInfo->ri_RelationDesc);
-        ExecComputeStoredGenerated(resultRelInfo, estate, elemTupleSlot,
-                                   CMD_INSERT);
-    }
+    compute_stored_generated(resultRelInfo, elemTupleSlot, estate, CMD_INSERT);
+    tuple = (HeapTuple) elemTupleSlot->tts_tuple;
 
-    tuple = ExecFetchSlotHeapTuple(elemTupleSlot, true, NULL);
-
-    /* Check the constraints of the tuple */
+    // Check the constraints of the tuple
     tuple->t_tableOid = RelationGetRelid(resultRelInfo->ri_RelationDesc);
-    if (resultRelInfo->ri_RelationDesc->rd_att->constr != NULL)
-    {
+    if (resultRelInfo->ri_RelationDesc->rd_att->constr != NULL) {
         ExecConstraints(resultRelInfo, elemTupleSlot, estate);
     }
 
-    /* Check RLS WITH CHECK policies if configured */
-    if (resultRelInfo->ri_WithCheckOptions != NIL)
-    {
-        ExecWithCheckOptions(WCO_RLS_INSERT_CHECK, resultRelInfo,
-                             elemTupleSlot, estate);
-    }
+    // Insert the tuple using the passed in cid
+    heap_insert(resultRelInfo->ri_RelationDesc, tuple, cid, 0, NULL);
 
-    /* Insert the tuple normally */
-    table_tuple_insert(resultRelInfo->ri_RelationDesc, elemTupleSlot, cid, 0,
-                       NULL);
-
-    /* Insert index entries for the tuple */
+    // Insert index entries for the tuple
     if (resultRelInfo->ri_NumIndices > 0)
-    {
-        ExecInsertIndexTuples(resultRelInfo, elemTupleSlot, estate,
-                              false, false, NULL, NIL, false);
-    }
+        ExecInsertIndexTuples(elemTupleSlot, &(tuple->t_self), estate,
+            NULL, NULL, InvalidBktId, NULL, NULL);
 
     return tuple;
-}
-
-/*
- * setup_wcos
- *
- * WithCheckOptions are added during the rewrite phase, but since AGE uses
- * CMD_SELECT for all queries, WCOs don't get added for CREATE/SET/MERGE
- * operations. This function compensates by adding WCOs at execution time.
- *
- * Based on PostgreSQL's row security implementation in rowsecurity.c
- */
-void setup_wcos(ResultRelInfo *resultRelInfo, EState *estate,
-                CustomScanState *node, CmdType cmd)
-{
-    List *permissive_policies;
-    List *restrictive_policies;
-    List *withCheckOptions = NIL;
-    List *wcoExprs = NIL;
-    ListCell *lc;
-    Relation rel;
-    Oid user_id;
-    int rt_index;
-    WCOKind wco_kind;
-    bool hasSubLinks = false;
-
-    /* Determine the WCO kind based on command type */
-    if (cmd == CMD_INSERT)
-    {
-        wco_kind = WCO_RLS_INSERT_CHECK;
-    }
-    else if (cmd == CMD_UPDATE)
-    {
-        wco_kind = WCO_RLS_UPDATE_CHECK;
-    }
-    else
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_INTERNAL_ERROR),
-                 errmsg_internal("unexpected command type for setup_wcos")));
-    }
-
-    rel = resultRelInfo->ri_RelationDesc;
-
-    /*
-     * Use rt_index=1 since we're evaluating policies against a single relation.
-     * Policy quals are stored with varno=1, and we set ecxt_scantuple to the
-     * tuple we want to check, so keeping varno=1 is correct.
-     */
-    rt_index = 1;
-    user_id = GetUserId();
-
-    /* Get the policies for the specified command type */
-    get_policies_for_relation(rel, cmd, user_id,
-                              &permissive_policies,
-                              &restrictive_policies);
-
-    /* Build WithCheckOptions from the policies */
-    add_with_check_options(rel, rt_index, wco_kind,
-                           permissive_policies,
-                           restrictive_policies,
-                           &withCheckOptions,
-                           &hasSubLinks,
-                           false);
-
-    /* Compile the WCO expressions */
-    foreach(lc, withCheckOptions)
-    {
-        WithCheckOption *wco = lfirst_node(WithCheckOption, lc);
-        ExprState *wcoExpr;
-
-        /* Ensure qual is a List for ExecInitQual */
-        if (!IsA(wco->qual, List))
-        {
-            wco->qual = (Node *) list_make1(wco->qual);
-        }
-
-        wcoExpr = ExecInitQual((List *) wco->qual, (PlanState *) node);
-        wcoExprs = lappend(wcoExprs, wcoExpr);
-    }
-
-    /* Set up the ResultRelInfo with WCOs */
-    resultRelInfo->ri_WithCheckOptions = withCheckOptions;
-    resultRelInfo->ri_WithCheckOptionExprs = wcoExprs;
-}
-
-/*
- * get_policies_for_relation
- *
- * Returns lists of permissive and restrictive policies to be applied to the
- * specified relation, based on the command type and role.
- *
- * This includes any policies added by extensions.
- *
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static void
-get_policies_for_relation(Relation relation, CmdType cmd, Oid user_id,
-                          List **permissive_policies,
-                          List **restrictive_policies)
-{
-    ListCell *item;
-
-    *permissive_policies = NIL;
-    *restrictive_policies = NIL;
-
-    /* No policies if RLS descriptor is not present */
-    if (relation->rd_rsdesc == NULL)
-    {
-        return;
-    }
-
-    /* First find all internal policies for the relation. */
-    foreach(item, relation->rd_rsdesc->policies)
-    {
-        bool cmd_matches = false;
-        RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-
-        /* Always add ALL policies, if they exist. */
-        if (policy->polcmd == '*')
-        {
-            cmd_matches = true;
-        }
-        else
-        {
-            /* Check whether the policy applies to the specified command type */
-            switch (cmd)
-            {
-                case CMD_SELECT:
-                    if (policy->polcmd == ACL_SELECT_CHR)
-                    {
-                        cmd_matches = true;
-                    }
-                    break;
-                case CMD_INSERT:
-                    if (policy->polcmd == ACL_INSERT_CHR)
-                    {
-                        cmd_matches = true;
-                    }
-                    break;
-                case CMD_UPDATE:
-                    if (policy->polcmd == ACL_UPDATE_CHR)
-                    {
-                        cmd_matches = true;
-                    }
-                    break;
-                case CMD_DELETE:
-                    if (policy->polcmd == ACL_DELETE_CHR)
-                    {
-                        cmd_matches = true;
-                    }
-                    break;
-                case CMD_MERGE:
-                    /*
-                     * We do not support a separate policy for MERGE command.
-                     * Instead it derives from the policies defined for other
-                     * commands.
-                     */
-                    break;
-                default:
-                    elog(ERROR, "unrecognized policy command type %d",
-                         (int) cmd);
-                    break;
-            }
-        }
-
-        /*
-         * Add this policy to the relevant list of policies if it applies to
-         * the specified role.
-         */
-        if (cmd_matches && check_role_for_policy(policy->roles, user_id))
-        {
-            if (policy->permissive)
-            {
-                *permissive_policies = lappend(*permissive_policies, policy);
-            }
-            else
-            {
-                *restrictive_policies = lappend(*restrictive_policies, policy);
-            }
-        }
-    }
-
-    /*
-     * We sort restrictive policies by name so that any WCOs they generate are
-     * checked in a well-defined order.
-     */
-    sort_policies_by_name(*restrictive_policies);
-
-    /*
-     * Then add any permissive or restrictive policies defined by extensions.
-     * These are simply appended to the lists of internal policies, if they
-     * apply to the specified role.
-     */
-    if (row_security_policy_hook_restrictive)
-    {
-        List *hook_policies =
-            (*row_security_policy_hook_restrictive) (cmd, relation);
-
-        /*
-         * As with built-in restrictive policies, we sort any hook-provided
-         * restrictive policies by name also.  Note that we also intentionally
-         * always check all built-in restrictive policies, in name order,
-         * before checking restrictive policies added by hooks, in name order.
-         */
-        sort_policies_by_name(hook_policies);
-
-        foreach(item, hook_policies)
-        {
-            RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-
-            if (check_role_for_policy(policy->roles, user_id))
-            {
-                *restrictive_policies = lappend(*restrictive_policies, policy);
-            }
-        }
-    }
-
-    if (row_security_policy_hook_permissive)
-    {
-        List *hook_policies =
-            (*row_security_policy_hook_permissive) (cmd, relation);
-
-        foreach(item, hook_policies)
-        {
-            RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-
-            if (check_role_for_policy(policy->roles, user_id))
-            {
-                *permissive_policies = lappend(*permissive_policies, policy);
-            }
-        }
-    }
-}
-
-/*
- * add_with_check_options
- *
- * Add WithCheckOptions of the specified kind to check that new records
- * added by an INSERT or UPDATE are consistent with the specified RLS
- * policies.  Normally new data must satisfy the WITH CHECK clauses from the
- * policies.  If a policy has no explicit WITH CHECK clause, its USING clause
- * is used instead.  In the special case of an UPDATE arising from an
- * INSERT ... ON CONFLICT DO UPDATE, existing records are first checked using
- * a WCO_RLS_CONFLICT_CHECK WithCheckOption, which always uses the USING
- * clauses from RLS policies.
- *
- * New WCOs are added to withCheckOptions, and hasSubLinks is set to true if
- * any of the check clauses added contain sublink subqueries.
- * 
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static void
-add_with_check_options(Relation rel,
-                       int rt_index,
-                       WCOKind kind,
-                       List *permissive_policies,
-                       List *restrictive_policies,
-                       List **withCheckOptions,
-                       bool *hasSubLinks,
-                       bool force_using)
-{
-    ListCell *item;
-    List *permissive_quals = NIL;
-
-#define QUAL_FOR_WCO(policy) \
-    ( !force_using && \
-      (policy)->with_check_qual != NULL ? \
-      (policy)->with_check_qual : (policy)->qual )
-
-    /*
-     * First collect up the permissive policy clauses, similar to
-     * add_security_quals.
-     */
-    foreach(item, permissive_policies)
-    {
-        RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-        Expr *qual = QUAL_FOR_WCO(policy);
-
-        if (qual != NULL)
-        {
-            permissive_quals = lappend(permissive_quals, copyObject(qual));
-            *hasSubLinks |= policy->hassublinks;
-        }
-    }
-
-    /*
-     * There must be at least one permissive qual found or no rows are allowed
-     * to be added.  This is the same as in add_security_quals.
-     *
-     * If there are no permissive_quals then we fall through and return a
-     * single 'false' WCO, preventing all new rows.
-     */
-    if (permissive_quals != NIL)
-    {
-        /*
-         * Add a single WithCheckOption for all the permissive policy clauses,
-         * combining them together using OR.  This check has no policy name,
-         * since if the check fails it means that no policy granted permission
-         * to perform the update, rather than any particular policy being
-         * violated.
-         */
-        WithCheckOption *wco;
-
-        wco = makeNode(WithCheckOption);
-        wco->kind = kind;
-        wco->relname = pstrdup(RelationGetRelationName(rel));
-        wco->polname = NULL;
-        wco->cascaded = false;
-
-        if (list_length(permissive_quals) == 1)
-        {
-            wco->qual = (Node *) linitial(permissive_quals);
-        }
-        else
-        {
-            wco->qual = (Node *) makeBoolExpr(OR_EXPR, permissive_quals, -1);
-        }
-
-        ChangeVarNodes(wco->qual, 1, rt_index, 0);
-
-        *withCheckOptions = list_append_unique(*withCheckOptions, wco);
-
-        /*
-         * Now add WithCheckOptions for each of the restrictive policy clauses
-         * (which will be combined together using AND).  We use a separate
-         * WithCheckOption for each restrictive policy to allow the policy
-         * name to be included in error reports if the policy is violated.
-         */
-        foreach(item, restrictive_policies)
-        {
-            RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-            Expr *qual = QUAL_FOR_WCO(policy);
-
-            if (qual != NULL)
-            {
-                qual = copyObject(qual);
-                ChangeVarNodes((Node *) qual, 1, rt_index, 0);
-
-                wco = makeNode(WithCheckOption);
-                wco->kind = kind;
-                wco->relname = pstrdup(RelationGetRelationName(rel));
-                wco->polname = pstrdup(policy->policy_name);
-                wco->qual = (Node *) qual;
-                wco->cascaded = false;
-
-                *withCheckOptions = list_append_unique(*withCheckOptions, wco);
-                *hasSubLinks |= policy->hassublinks;
-            }
-        }
-    }
-    else
-    {
-        /*
-         * If there were no policy clauses to check new data, add a single
-         * always-false WCO (a default-deny policy).
-         */
-        WithCheckOption *wco;
-
-        wco = makeNode(WithCheckOption);
-        wco->kind = kind;
-        wco->relname = pstrdup(RelationGetRelationName(rel));
-        wco->polname = NULL;
-        wco->qual = (Node *) makeConst(BOOLOID, -1, InvalidOid,
-                                       sizeof(bool), BoolGetDatum(false),
-                                       false, true);
-        wco->cascaded = false;
-
-        *withCheckOptions = lappend(*withCheckOptions, wco);
-    }
-}
-
-/*
- * sort_policies_by_name
- *
- * This is only used for restrictive policies, ensuring that any
- * WithCheckOptions they generate are applied in a well-defined order.
- * This is not necessary for permissive policies, since they are all combined
- * together using OR into a single WithCheckOption check.
- * 
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static void
-sort_policies_by_name(List *policies)
-{
-    list_sort(policies, row_security_policy_cmp);
-}
-
-/*
- * list_sort comparator to sort RowSecurityPolicy entries by name
- *
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static int
-row_security_policy_cmp(const ListCell *a, const ListCell *b)
-{
-    const RowSecurityPolicy *pa = (const RowSecurityPolicy *) lfirst(a);
-    const RowSecurityPolicy *pb = (const RowSecurityPolicy *) lfirst(b);
-
-    /* Guard against NULL policy names from extensions */
-    if (pa->policy_name == NULL)
-    {
-        return pb->policy_name == NULL ? 0 : 1;
-    }
-    if (pb->policy_name == NULL)
-    {
-        return -1;
-    }
-
-    return strcmp(pa->policy_name, pb->policy_name);
-}
-
-/*
- * check_role_for_policy -
- *   determines if the policy should be applied for the current role
- *
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static bool
-check_role_for_policy(ArrayType *policy_roles, Oid user_id)
-{
-    int i;
-    Oid *roles = (Oid *) ARR_DATA_PTR(policy_roles);
-
-    /* Quick fall-thru for policies applied to all roles */
-    if (roles[0] == ACL_ID_PUBLIC)
-    {
-        return true;
-    }
-
-    for (i = 0; i < ARR_DIMS(policy_roles)[0]; i++)
-    {
-        if (has_privs_of_role(user_id, roles[i]))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/*
- * add_security_quals
- *
- * Add security quals to enforce the specified RLS policies, restricting
- * access to existing data in a table.  If there are no policies controlling
- * access to the table, then all access is prohibited --- i.e., an implicit
- * default-deny policy is used.
- *
- * New security quals are added to securityQuals, and hasSubLinks is set to
- * true if any of the quals added contain sublink subqueries.
- *
- * Copied from PostgreSQL's src/backend/rewrite/rowsecurity.c
- */
-static void
-add_security_quals(int rt_index,
-                   List *permissive_policies,
-                   List *restrictive_policies,
-                   List **securityQuals,
-                   bool *hasSubLinks)
-{
-    ListCell *item;
-    List *permissive_quals = NIL;
-    Expr *rowsec_expr;
-
-    /*
-     * First collect up the permissive quals.  If we do not find any
-     * permissive policies then no rows are visible (this is handled below).
-     */
-    foreach(item, permissive_policies)
-    {
-        RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-
-        if (policy->qual != NULL)
-        {
-            permissive_quals = lappend(permissive_quals,
-                                       copyObject(policy->qual));
-            *hasSubLinks |= policy->hassublinks;
-        }
-    }
-
-    /*
-     * We must have permissive quals, always, or no rows are visible.
-     *
-     * If we do not, then we simply return a single 'false' qual which results
-     * in no rows being visible.
-     */
-    if (permissive_quals != NIL)
-    {
-        /*
-         * We now know that permissive policies exist, so we can now add
-         * security quals based on the USING clauses from the restrictive
-         * policies.  Since these need to be combined together using AND, we
-         * can just add them one at a time.
-         */
-        foreach(item, restrictive_policies)
-        {
-            RowSecurityPolicy *policy = (RowSecurityPolicy *) lfirst(item);
-            Expr *qual;
-
-            if (policy->qual != NULL)
-            {
-                qual = copyObject(policy->qual);
-                ChangeVarNodes((Node *) qual, 1, rt_index, 0);
-
-                *securityQuals = list_append_unique(*securityQuals, qual);
-                *hasSubLinks |= policy->hassublinks;
-            }
-        }
-
-        /*
-         * Then add a single security qual combining together the USING
-         * clauses from all the permissive policies using OR.
-         */
-        if (list_length(permissive_quals) == 1)
-        {
-            rowsec_expr = (Expr *) linitial(permissive_quals);
-        }
-        else
-        {
-            rowsec_expr = makeBoolExpr(OR_EXPR, permissive_quals, -1);
-        }
-
-        ChangeVarNodes((Node *) rowsec_expr, 1, rt_index, 0);
-        *securityQuals = list_append_unique(*securityQuals, rowsec_expr);
-    }
-    else
-    {
-        /*
-         * A permissive policy must exist for rows to be visible at all.
-         * Therefore, if there were no permissive policies found, return a
-         * single always-false clause.
-         */
-        *securityQuals = lappend(*securityQuals,
-                                 makeConst(BOOLOID, -1, InvalidOid,
-                                           sizeof(bool), BoolGetDatum(false),
-                                           false, true));
-    }
-}
-
-/*
- * setup_security_quals
- *
- * Security quals (USING policies) are added during the rewrite phase, but
- * since AGE uses CMD_SELECT for all queries, they don't get added for
- * UPDATE/DELETE operations. This function sets up security quals at
- * execution time to be evaluated against each tuple before modification.
- *
- * Returns a list of compiled ExprState for the security quals.
- */
-List *
-setup_security_quals(ResultRelInfo *resultRelInfo, EState *estate,
-                     CustomScanState *node, CmdType cmd)
-{
-    List *permissive_policies;
-    List *restrictive_policies;
-    List *securityQuals = NIL;
-    List *qualExprs = NIL;
-    ListCell *lc;
-    Relation rel;
-    Oid user_id;
-    int rt_index;
-    bool hasSubLinks = false;
-
-    /* Only UPDATE and DELETE have security quals */
-    if (cmd != CMD_UPDATE && cmd != CMD_DELETE)
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_INTERNAL_ERROR),
-                 errmsg_internal("unexpected command type for setup_security_quals")));
-    }
-
-    rel = resultRelInfo->ri_RelationDesc;
-
-    /* If no RLS policies exist, return empty list */
-    if (rel->rd_rsdesc == NULL)
-    {
-        return NIL;
-    }
-
-    /*
-     * Use rt_index=1 since we're evaluating policies against a single relation.
-     * Policy quals are stored with varno=1, and we set ecxt_scantuple to the
-     * tuple we want to check, so keeping varno=1 is correct.
-     */
-    rt_index = 1;
-    user_id = GetUserId();
-
-    /* Get the policies for the specified command type */
-    get_policies_for_relation(rel, cmd, user_id,
-                              &permissive_policies,
-                              &restrictive_policies);
-
-    /* Build security quals from the policies */
-    add_security_quals(rt_index, permissive_policies, restrictive_policies,
-                       &securityQuals, &hasSubLinks);
-
-    /* Compile the security qual expressions */
-    foreach(lc, securityQuals)
-    {
-        Expr *qual = (Expr *) lfirst(lc);
-        ExprState *qualExpr;
-
-        /* Ensure qual is a List for ExecInitQual */
-        if (!IsA(qual, List))
-        {
-            qual = (Expr *) list_make1(qual);
-        }
-
-        qualExpr = ExecInitQual((List *) qual, (PlanState *) node);
-        qualExprs = lappend(qualExprs, qualExpr);
-    }
-
-    return qualExprs;
-}
-
-/*
- * check_security_quals
- *
- * Evaluate security quals against a tuple. Returns true if all quals pass
- * (row can be modified), false if any qual fails (row should be silently
- * skipped).
- *
- * This matches PostgreSQL's behavior where USING expressions for UPDATE/DELETE
- * silently filter rows rather than raising errors.
- */
-bool
-check_security_quals(List *qualExprs, TupleTableSlot *slot,
-                     ExprContext *econtext)
-{
-    ListCell *lc;
-    TupleTableSlot *saved_scantuple;
-    bool result = true;
-
-    if (qualExprs == NIL)
-    {
-        return true;
-    }
-
-    /* Save and set up the scan tuple for expression evaluation */
-    saved_scantuple = econtext->ecxt_scantuple;
-    econtext->ecxt_scantuple = slot;
-
-    foreach(lc, qualExprs)
-    {
-        ExprState *qualExpr = (ExprState *) lfirst(lc);
-
-        if (!ExecQual(qualExpr, econtext))
-        {
-            result = false;
-            break;
-        }
-    }
-
-    econtext->ecxt_scantuple = saved_scantuple;
-    return result;
-}
-
-/*
- * check_rls_for_tuple
- *
- * Check RLS policies for a tuple without needing full executor context.
- * Used by standalone functions like startNode()/endNode() that access
- * tables directly.
- *
- * Returns true if the tuple passes RLS checks (or if RLS is not enabled),
- * false if the tuple should be filtered out.
- */
-bool
-check_rls_for_tuple(Relation rel, HeapTuple tuple, CmdType cmd)
-{
-    List *permissive_policies;
-    List *restrictive_policies;
-    List *securityQuals = NIL;
-    ListCell *lc;
-    Oid user_id;
-    bool hasSubLinks = false;
-    bool result = true;
-    EState *estate;
-    ExprContext *econtext;
-    TupleTableSlot *slot;
-
-    /* If RLS is not enabled, tuple passes */
-    if (check_enable_rls(RelationGetRelid(rel), InvalidOid, true) != RLS_ENABLED)
-    {
-        return true;
-    }
-
-    /* If no RLS policies exist on the relation, tuple passes */
-    if (rel->rd_rsdesc == NULL)
-    {
-        return true;
-    }
-
-    /* Get the policies for the specified command type */
-    user_id = GetUserId();
-    get_policies_for_relation(rel, cmd, user_id,
-                              &permissive_policies,
-                              &restrictive_policies);
-
-    /* Build security quals from the policies (use rt_index=1) */
-    add_security_quals(1, permissive_policies, restrictive_policies,
-                       &securityQuals, &hasSubLinks);
-
-    /* If no quals, tuple passes */
-    if (securityQuals == NIL)
-    {
-        return true;
-    }
-
-    /* Create minimal execution environment */
-    estate = CreateExecutorState();
-    econtext = CreateExprContext(estate);
-
-    /* Create tuple slot and store the tuple */
-    slot = MakeSingleTupleTableSlot(RelationGetDescr(rel), &TTSOpsHeapTuple);
-    ExecStoreHeapTuple(tuple, slot, false);
-    econtext->ecxt_scantuple = slot;
-
-    /* Compile and evaluate each qual */
-    foreach(lc, securityQuals)
-    {
-        Expr *qual = (Expr *) lfirst(lc);
-        ExprState *qualExpr;
-        List *qualList;
-
-        /* ExecPrepareQual expects a List */
-        if (!IsA(qual, List))
-        {
-            qualList = list_make1(qual);
-        }
-        else
-        {
-            qualList = (List *) qual;
-        }
-
-        /* Use ExecPrepareQual for standalone expression evaluation */
-        qualExpr = ExecPrepareQual(qualList, estate);
-
-        if (!ExecQual(qualExpr, econtext))
-        {
-            result = false;
-            break;
-        }
-    }
-
-    /* Clean up */
-    ExecDropSingleTupleTableSlot(slot);
-    FreeExprContext(econtext, true);
-    FreeExecutorState(estate);
-
-    return result;
 }

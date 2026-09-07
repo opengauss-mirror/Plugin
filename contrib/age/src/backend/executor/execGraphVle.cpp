@@ -11,6 +11,7 @@
 #include "postgres.h"
 
 #include "access/htup.h"
+#include "access/tableam.h"
 #include "access/xact.h"
 #include "executor/tuptable.h"
 #include "nodes/execnodes.h"
@@ -41,8 +42,6 @@
 #define VAR_VERTICES	4
 #define F_GRAPHID_EQ \
     (get_ag_func_oid("graphid_eq",2,GRAPHIDOID,GRAPHIDOID ))
-#define F_GRAPHID_NOTEQ \
-    (get_ag_func_oid("graphid_ne",2,GRAPHIDOID,GRAPHIDOID ))
 
 #define VLERel(vleplan) ((cypher_relationship *) ((vleplan)->vle_rel))
 
@@ -52,7 +51,7 @@
 									(slot)->tts_values[Anum_ag_label_edge_table_id - 1], \
 									(slot)->tts_values[Anum_ag_label_edge_table_start_id - 1], \
 									(slot)->tts_values[Anum_ag_label_edge_table_end_id - 1], \
-									CStringGetDatum(labelname), \
+									string_to_agtype(labelname), \
 									((slot)->tts_values[Anum_ag_label_edge_table_properties - 1]) \
 									)))
 
@@ -214,11 +213,19 @@ static void ExecInitGraphVLE(ExtensiblePlanState *pstate, EState *estate,
 
 	label_rel_id = get_label_relation(
 		label_name, vle_state->graph_oid);
-	scan_label_oids = lappend_oid(scan_label_oids, label_rel_id);
-	scan_label_oids = list_concat_unique_oid(scan_label_oids,
-												find_all_inheritors(label_rel_id,
-																	AccessShareLock,
-																	NULL));
+	/*
+	 * An unknown relationship type has no physical relation to scan. Keep an
+	 * empty scan set so a *0..N pattern can still emit its zero-hop row while
+	 * every positive-hop attempt returns no match.
+	 */
+	if (OidIsValid(label_rel_id))
+	{
+		scan_label_oids = lappend_oid(scan_label_oids, label_rel_id);
+		scan_label_oids = list_concat_unique_oid(scan_label_oids,
+									 find_all_inheritors(label_rel_id,
+              AccessShareLock,
+              NULL));
+	}
 	/*
 	 * Fill ResultRelInfos.
 	 */
@@ -226,14 +233,21 @@ static void ExecInitGraphVLE(ExtensiblePlanState *pstate, EState *estate,
 												list_length(scan_label_oids) * sizeof(ResultRelInfo));
 	vle_state->target_rel_infos = target_rel_infos;
 	vle_state->num_target_rel_info = list_length(scan_label_oids);
+	vle_state->start_id_index_oids = (Oid *)palloc0(
+     sizeof(Oid) * vle_state->num_target_rel_info);
+	vle_state->end_id_index_oids = (Oid *)palloc0(
+     sizeof(Oid) * vle_state->num_target_rel_info);
 
 	/* Will be filled by below logic. */
 	vle_state->current_scan_tuple = NULL;
 
+	int relation_index = 0;
 	foreach(list_cell, scan_label_oids)
 	{
 		Oid			label_oid = lfirst_oid(list_cell);
 		Relation	relation = heap_open(label_oid, AccessShareLock);
+
+		ensure_age_relation_supports_raw_access(relation);
 
 		if (vle_state->current_scan_tuple == NULL)
 		{
@@ -249,8 +263,14 @@ static void ExecInitGraphVLE(ExtensiblePlanState *pstate, EState *estate,
 						  relation,
 						  0,	/* dummy rangetable index */
 						  0);
-		ExecOpenIndices(target_rel_infos, false);
+		vle_state->start_id_index_oids[relation_index] =
+			find_usable_btree_index_for_attr(
+       relation, Anum_ag_label_edge_table_start_id);
+		vle_state->end_id_index_oids[relation_index] =
+			find_usable_btree_index_for_attr(
+       relation, Anum_ag_label_edge_table_end_id);
 		target_rel_infos++;
+		relation_index++;
 	}
 
 	list_free(scan_label_oids);
@@ -315,8 +335,7 @@ static inline bool array_has(ArrayBuildState *astate, graphid edge_id);
 
 typedef struct VLEDepthCtx
 {
-	TableScanDesc desc;
-	IndexScanDesc indexDesc;
+	AgeBtreeEqScan *scan;
 	int			rel_index;
 	graphid		start_id;
 	graphid		end_id;
@@ -340,8 +359,7 @@ get_vertex_from_graphid(graphid vertex_id,Oid graph_oid)
 	Oid			graph_path_oid = graph_oid;
 	Relation	vertex_rel;
 	char *label_name;
-	TableScanDesc scan_desc;
-	ScanKeyData scan_key_data;
+	AgeBtreeEqScan *scan;
 	TupleTableSlot *slot;
 	label_cache_data *label_cache;
 	HeapTuple tuple;
@@ -354,6 +372,7 @@ get_vertex_from_graphid(graphid vertex_id,Oid graph_oid)
     label_name = NameStr(label_cache->name);
 	vertex_label_relid =  get_label_relation(label_name,graph_path_oid);
 	vertex_rel = heap_open(vertex_label_relid, AccessShareLock);
+	ensure_age_relation_supports_raw_access(vertex_rel);
 	
 	TupleDesc tupleDescriptor = RelationGetDescr(vertex_rel);
 
@@ -361,17 +380,16 @@ get_vertex_from_graphid(graphid vertex_id,Oid graph_oid)
     ExecSetSlotDescriptor(slot, /* slot to change */
         tupleDescriptor) ;
 
-	ScanKeyInit(&scan_key_data,
-				Anum_ag_label_vertex_table_id,
-				BTEqualStrategyNumber, F_GRAPHID_EQ,
-				GRAPHID_GET_DATUM(vertex_id));
-
-	scan_desc = heap_beginscan(vertex_rel,
-								GetActiveSnapshot(),
-								1, &scan_key_data);
+    scan = age_btree_eq_beginscan(
+        vertex_rel,
+        GetActiveSnapshot(),
+        Anum_ag_label_vertex_table_id,
+        F_GRAPHID_EQ,
+        GRAPHID_GET_DATUM(vertex_id),
+        AccessShareLock);
 	for (;;)
     {
-        tuple = heap_getnext(scan_desc, ForwardScanDirection );
+		tuple = age_btree_eq_getnext(scan);
         if (!HeapTupleIsValid(tuple))
             break;
 
@@ -380,17 +398,35 @@ get_vertex_from_graphid(graphid vertex_id,Oid graph_oid)
 
         heap_slot_getallattrs(slot);
 		ret = make_vertex(GRAPHID_GET_DATUM((slot)->tts_values[Anum_ag_label_vertex_table_id - 1]),
-							CStringGetDatum(label_name),
+      string_to_agtype(label_name),
 							AGTYPE_P_GET_DATUM((slot)->tts_values[Anum_ag_label_vertex_table_properties - 1]));
 		break;
-
     }							
 
-	heap_endscan(scan_desc);
-	heap_close(vertex_rel, NoLock);
+	age_btree_eq_endscan(scan);
+	heap_close(vertex_rel, AccessShareLock);
 	ExecDropSingleTupleTableSlot(slot);
 
 	return ret;
+}
+
+/*
+ * Project the zero-length path for the seed tuple just fetched. Returns the
+ * projected slot, or NULL when the node's qual rejects it.
+ */
+static TupleTableSlot *
+ProjectZeroLengthPath(cypher_vle_custom_scan_state *vle_state, ExprContext *econtext)
+{
+    List *qual = vle_state->css.ss.ps.qual;
+
+    econtext->ecxt_scantuple = vle_state->subplan_tuple;
+    econtext->ecxt_scantuple = ExecProject(vle_state->css.ss.ps.ps_ProjInfo, NULL);
+
+    if (qual == NIL || ExecQual(qual, econtext, false)) {
+        return econtext->ecxt_scantuple;
+    }
+
+    return NULL;
 }
 
 static TupleTableSlot *
@@ -423,6 +459,8 @@ ExecGraphVLE(ExtensiblePlanState *pstate)
 
 	for (;;)
 	{
+		TupleTableSlot *zero_length_path = NULL;
+
 		/* fetch new subplan tuple. */
 		if (vle_state->need_new_sp_tuple)
 		{
@@ -434,6 +472,17 @@ ExecGraphVLE(ExtensiblePlanState *pstate)
 			/* no more exists.. */
 			if (TupIsNull(vle_state->subplan_tuple))
 				return NULL;
+
+			/*
+			 * VLE updates the seed slot's end vertex and array columns in place.
+			 * An openGauss index path can return a physical slot with none of its
+			 * attributes deformed yet (tts_nvalid == 0).  If we update that slot
+			 * directly, ExecProject() later deforms the original tuple and
+			 * overwrites the traversed arrays with the empty seed arrays.  This is
+			 * observable when an upper LIMIT makes the anonymous VLE seed choose
+			 * Unique/MergeAppend/IndexOnlyScan instead of HashAggregate.
+			 */
+			tableam_tslot_getallattrs(vle_state->subplan_tuple);
 
 			array_clear(vle_state->edges);
 			array_clear(vle_state->edge_ids);
@@ -455,12 +504,15 @@ ExecGraphVLE(ExtensiblePlanState *pstate)
 			if (0 >= vle_state->minimum_output_depth &&
 				0 <= vle_state->maximum_output_depth)
 			{
-                // return  vle_state->subplan_tuple ;
-					econtext->ecxt_scantuple = vle_state->subplan_tuple;
-			econtext->ecxt_scantuple = ExecProject(vle_state->css.ss.ps.ps_ProjInfo, NULL);
-            return  econtext->ecxt_scantuple;
+				zero_length_path = ProjectZeroLengthPath(vle_state, econtext);
 			}
 		}
+
+		/* emit the zero-length path first; a rejected one falls through to DFS */
+		if (zero_length_path != NULL) {
+			return zero_length_path;
+		}
+
 		/* Do DFS. */
 		if (!ExecGraphVLEDFS(vle_state,
 							 vle_state->first_start_id))
@@ -502,9 +554,16 @@ ExecGraphVLE(ExtensiblePlanState *pstate)
 																					   false);
 			}
 			econtext->ecxt_scantuple = vle_state->subplan_tuple;
-			econtext->ecxt_scantuple = ExecProject(vle_state->css.ss.ps.ps_ProjInfo, NULL);
-            return  econtext->ecxt_scantuple;
-			// return vle_state->subplan_tuple;
+			econtext->ecxt_scantuple =
+				ExecProject(vle_state->css.ss.ps.ps_ProjInfo, NULL);
+
+			if (vle_state->css.ss.ps.qual == NIL ||
+				ExecQual(vle_state->css.ss.ps.qual, econtext, false))
+			{
+				return econtext->ecxt_scantuple;
+			}
+
+			continue;
 		}
 	}
 
@@ -526,14 +585,12 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 {
 	VLEDepthCtx *vle_depth_ctx = NULL;
 	graphid		edge_id;
-	ExprContext *econtext = vle_state->css.ss.ps.ps_ExprContext;
 
 	/* is first time? */
 	if (vle_state->table_scan_desc_list == NIL)
 	{
 		vle_depth_ctx = (VLEDepthCtx *) palloc(sizeof(VLEDepthCtx));
-		vle_depth_ctx->desc = NULL;
-		vle_depth_ctx->indexDesc = NULL;
+		vle_depth_ctx->scan = NULL;
 		vle_depth_ctx->rel_index = 0;
 		vle_depth_ctx->start_id = start_id;
 		vle_depth_ctx->end_id = start_id;
@@ -542,7 +599,11 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 		vle_depth_ctx->direction_rotate = 0;
 		vle_depth_ctx->prev_end_id = start_id;
 
-		create_scan_desc(vle_state, vle_depth_ctx); /* never not failing */
+		if (!create_scan_desc(vle_state, vle_depth_ctx))
+		{
+			pfree(vle_depth_ctx);
+			return false;
+		}
 		vle_state->table_scan_desc_list = lappend(vle_state->table_scan_desc_list,
 												  vle_depth_ctx);
 	}
@@ -556,16 +617,7 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 
 		vle_depth_ctx = (VLEDepthCtx*)llast(vle_state->table_scan_desc_list);
 
-		HeapTuple tuple ;
-		if(vle_depth_ctx->indexDesc){
-			tuple =  (HeapTuple)index_getnext(vle_depth_ctx->indexDesc,
-									ForwardScanDirection);
-		}else{
-			tuple = heap_getnext(vle_depth_ctx->desc,
-									ForwardScanDirection);
-		}
-		
-
+		HeapTuple tuple = age_btree_eq_getnext(vle_depth_ctx->scan);
 		if (!HeapTupleIsValid(tuple))
 		{
 			/* find next target relation */
@@ -583,6 +635,21 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 			continue;
 		}else{
  			ExecStoreTuple(tuple, vle_state->current_scan_tuple, InvalidBuffer, false);
+		}
+
+		if (vle_state->cypher_rel_direction == CYPHER_REL_DIR_NONE &&
+			vle_depth_ctx->direction_rotate != 0)
+		{
+			bool is_null = false;
+            Datum edge_start_id = heap_slot_getattr(
+                vle_state->current_scan_tuple,
+                Anum_ag_label_edge_table_start_id,
+                &is_null);
+			if (!is_null &&
+				DATUM_GET_GRAPHID(edge_start_id) == vle_depth_ctx->prev_end_id)
+			{
+				continue;
+			}
 		}
 
 				/* Property filtering. */
@@ -613,8 +680,10 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 			agtype_iterator * constraint_it = agtype_iterator_init(agtc_edge_property_constraint);
 			agtype_iterator * property_it = agtype_iterator_init(agtc_edge_property);
 
-			if (!agtype_deep_contains(&property_it, &constraint_it))
+			if (!agtype_deep_contains(&property_it, &constraint_it, false))
+			{
 				continue;
+			}
 		}
 
 		/*
@@ -701,8 +770,7 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 			VLEDepthCtx *top_vle_depth_ctx = vle_depth_ctx;
 
 			vle_depth_ctx = (VLEDepthCtx *) palloc(sizeof(VLEDepthCtx));
-			vle_depth_ctx->desc = NULL;
-			vle_depth_ctx->indexDesc = NULL;
+			vle_depth_ctx->scan = NULL;
 			vle_depth_ctx->rel_index = 0;
 			vle_depth_ctx->start_id = new_start_id;
 			vle_depth_ctx->end_id = new_end_id;
@@ -729,13 +797,10 @@ ExecGraphVLEDFS(cypher_vle_custom_scan_state *vle_state, graphid start_id)
 static void
 free_scan_desc(VLEDepthCtx *vle_depth_ctx)
 {
-	if (vle_depth_ctx->desc)
+	if (vle_depth_ctx->scan != NULL)
 	{
-		heap_endscan(vle_depth_ctx->desc);
-	}
-	if (vle_depth_ctx->indexDesc)
-	{
-		index_endscan(vle_depth_ctx->indexDesc);
+		age_btree_eq_endscan(vle_depth_ctx->scan);
+		vle_depth_ctx->scan = NULL;
 	}
 	pfree(vle_depth_ctx);
 }
@@ -744,97 +809,59 @@ static bool
 create_scan_desc(cypher_vle_custom_scan_state *vle_state,
 				 VLEDepthCtx *vle_depth_ctx)
 {
-	ScanKeyData scan_key_data;
-	ResultRelInfo *result_rel_info = vle_state->target_rel_infos + vle_depth_ctx->rel_index;
-	cypher_rel_dir		cypher_rel_direction = vle_state->cypher_rel_direction;
+	ResultRelInfo *result_rel_info;
+	AttrNumber endpoint_attribute;
+	graphid endpoint_value;
+	Oid index_oid;
+
+	if (vle_state->num_target_rel_info == 0)
+	{
+		return false;
+	}
+
+	result_rel_info = vle_state->target_rel_infos + vle_depth_ctx->rel_index;
 
 	if (vle_state->cypher_rel_direction == CYPHER_REL_DIR_NONE)
 	{
 		return create_none_direction_scan_desc(vle_state, vle_depth_ctx);
 	}
 
-	if (vle_depth_ctx->desc != NULL)
+	if (vle_depth_ctx->scan != NULL)
 	{
-		heap_endscan(vle_depth_ctx->desc);
-		vle_depth_ctx->desc = NULL;
-
-		result_rel_info++;
+		age_btree_eq_endscan(vle_depth_ctx->scan);
+		vle_depth_ctx->scan = NULL;
 		vle_depth_ctx->rel_index++;
 
 		if (vle_depth_ctx->rel_index >= vle_state->num_target_rel_info)
 		{
 			return false;
 		}
+		result_rel_info = vle_state->target_rel_infos + vle_depth_ctx->rel_index;
 	}
-		if (vle_depth_ctx->indexDesc != NULL)
+
+	if (vle_state->cypher_rel_direction == CYPHER_REL_DIR_RIGHT)
 	{
-		index_endscan(vle_depth_ctx->indexDesc);
-		vle_depth_ctx->indexDesc = NULL;
-
-		result_rel_info++;
-		vle_depth_ctx->rel_index++;
-
-		if (vle_depth_ctx->rel_index >= vle_state->num_target_rel_info)
-		{
-			return false;
-		}
+		endpoint_attribute = Anum_ag_label_edge_table_start_id;
+		endpoint_value = vle_depth_ctx->end_id;
+		index_oid = vle_state->start_id_index_oids[vle_depth_ctx->rel_index];
 	}
-
-	Assert(cypher_rel_direction != CYPHER_REL_DIR_NONE);
-
-    AttrNumber attno = -1;
-	if (cypher_rel_direction == CYPHER_REL_DIR_RIGHT)
+	else
 	{
-		attno = Anum_ag_label_edge_table_start_id;
-		/* CYPHER_REL_DIR_RIGHT, CYPHER_REL_DIR_NONE */
-		ScanKeyInit(&scan_key_data,
-					Anum_ag_label_edge_table_start_id,
-					BTEqualStrategyNumber,
-					F_GRAPHID_EQ,
-					vle_depth_ctx->end_id);
+		Assert(vle_state->cypher_rel_direction == CYPHER_REL_DIR_LEFT);
+		endpoint_attribute = Anum_ag_label_edge_table_end_id;
+		endpoint_value = vle_depth_ctx->start_id;
+		index_oid = vle_state->end_id_index_oids[vle_depth_ctx->rel_index];
 	}
-	else if (cypher_rel_direction == CYPHER_REL_DIR_LEFT)
-	{
-		attno = Anum_ag_label_edge_table_end_id;
-		/* CYPHER_REL_DIR_LEFT, CYPHER_REL_DIR_NONE */
-		ScanKeyInit(&scan_key_data,
-					Anum_ag_label_edge_table_end_id,
-					BTEqualStrategyNumber,
-					F_GRAPHID_EQ,
-					vle_depth_ctx->start_id);
-	}
-	bool useIndex = false;
-	for (int i = 0; i < result_rel_info->ri_NumIndices; i++) {
-        IndexInfo *ii = result_rel_info->ri_IndexRelationInfo[i];
-        Relation idxrel;
-        Oid idxoid = InvalidOid;
 
-		if( ii->ii_NumIndexAttrs ==1 && ii->ii_KeyAttrNumbers[0] ==attno ){
-			useIndex = true;
-			idxrel = result_rel_info->ri_IndexRelationDescs[i];
-			idxoid = RelationGetRelid(idxrel);
-			IndexScanDesc indexScan = index_beginscan(result_rel_info->ri_RelationDesc, idxrel, vle_state->css.ss.ps.state->es_snapshot, 1, 0);
-			ScanKeyData index_scan_key_data;
-			ScanKeyInit(&index_scan_key_data,
-					1,
-					BTEqualStrategyNumber,
-					F_GRAPHID_EQ,
-					vle_depth_ctx->end_id);
-			
-			index_rescan(indexScan, &index_scan_key_data, 1, NULL, 0);
-			vle_depth_ctx->indexDesc = indexScan;
-			vle_depth_ctx->desc = NULL; 
-		}
+    vle_depth_ctx->scan = age_btree_eq_beginscan_with_index(
+        result_rel_info->ri_RelationDesc,
+        vle_state->css.ss.ps.state->es_snapshot,
+        endpoint_attribute,
+        F_GRAPHID_EQ,
+        GRAPHID_GET_DATUM(endpoint_value),
+        AccessShareLock,
+        index_oid);
 
-    }
-	if(!useIndex){
-		/* Create TableScanDesc */
-		vle_depth_ctx->desc = heap_beginscan(result_rel_info->ri_RelationDesc,
-											vle_state->css.ss.ps.state->es_snapshot,
-											1,
-											&scan_key_data);
-											vle_depth_ctx->indexDesc =NULL;
-	}
 	return true;
 }
 
@@ -842,65 +869,58 @@ static bool
 create_none_direction_scan_desc(cypher_vle_custom_scan_state *vle_state,
 								VLEDepthCtx *vle_depth_ctx)
 {
-	ScanKeyData scan_key_data;
-	ResultRelInfo *result_rel_info = vle_state->target_rel_infos + vle_depth_ctx->rel_index;
+	ResultRelInfo *result_rel_info;
+	AttrNumber endpoint_attribute;
+	Oid index_oid;
 
-	if (vle_depth_ctx->desc != NULL)
+	if (vle_state->num_target_rel_info == 0)
 	{
-		heap_endscan(vle_depth_ctx->desc);
-		vle_depth_ctx->desc = NULL;
+		return false;
+	}
+
+	result_rel_info = vle_state->target_rel_infos + vle_depth_ctx->rel_index;
+
+	if (vle_depth_ctx->scan != NULL)
+	{
+		age_btree_eq_endscan(vle_depth_ctx->scan);
+		vle_depth_ctx->scan = NULL;
 
 		if (vle_depth_ctx->direction_rotate > 0)
 		{
-			vle_depth_ctx->direction_rotate = -1;
-			result_rel_info++;
 			vle_depth_ctx->rel_index++;
 
 			if (vle_depth_ctx->rel_index >= vle_state->num_target_rel_info)
 			{
 				return false;
 			}
-		}
 
-		vle_depth_ctx->direction_rotate++;
+			result_rel_info = vle_state->target_rel_infos +
+				vle_depth_ctx->rel_index;
+			vle_depth_ctx->direction_rotate = 0;
+		} else {
+			vle_depth_ctx->direction_rotate = 1;
+		}
 	}
 
 	if (vle_depth_ctx->direction_rotate == 0)
 	{
-		/* CYPHER_REL_DIR_RIGHT, CYPHER_REL_DIR_NONE */
-		ScanKeyInit(&scan_key_data,
-					Anum_ag_label_edge_table_start_id,
-					BTEqualStrategyNumber,
-					F_GRAPHID_EQ,
-					vle_depth_ctx->prev_end_id);
-		
-		/* Create TableScanDesc */
-		vle_depth_ctx->desc = heap_beginscan(result_rel_info->ri_RelationDesc,
-											vle_state->css.ss.ps.state->es_snapshot,
-											1,
-											&scan_key_data);				
+		endpoint_attribute = Anum_ag_label_edge_table_start_id;
+		index_oid = vle_state->start_id_index_oids[vle_depth_ctx->rel_index];
 	}
 	else
 	{
-		ScanKeyData scan_keys[2];
-		/* CYPHER_REL_DIR_LEFT, CYPHER_REL_DIR_NONE */
-		ScanKeyInit(&scan_keys[0],
-					Anum_ag_label_edge_table_end_id,
-					BTEqualStrategyNumber,
-					F_GRAPHID_EQ,
-					vle_depth_ctx->prev_end_id);
-		// 能否只搜比当前id大的
-		ScanKeyInit(&scan_keys[1],
-					Anum_ag_label_edge_table_start_id,
-					BTEqualStrategyNumber,
-					F_GRAPHID_NOTEQ,
-					vle_depth_ctx->prev_end_id);
-						/* Create TableScanDesc */
-		vle_depth_ctx->desc = heap_beginscan(result_rel_info->ri_RelationDesc,
-											vle_state->css.ss.ps.state->es_snapshot,
-											2,
-											scan_keys);	
+		endpoint_attribute = Anum_ag_label_edge_table_end_id;
+		index_oid = vle_state->end_id_index_oids[vle_depth_ctx->rel_index];
 	}
+
+    vle_depth_ctx->scan = age_btree_eq_beginscan_with_index(
+        result_rel_info->ri_RelationDesc,
+        vle_state->css.ss.ps.state->es_snapshot,
+        endpoint_attribute,
+        F_GRAPHID_EQ,
+        GRAPHID_GET_DATUM(vle_depth_ctx->prev_end_id),
+        AccessShareLock,
+        index_oid);
 
 	return true;
 }
@@ -915,7 +935,31 @@ static void
 ExecReScanGraphVLE(ExtensiblePlanState *pstate)
 {
 	cypher_vle_custom_scan_state *vle_state = castNode(cypher_vle_custom_scan_state, pstate);
+	ListCell *lc;
+
+	/*
+	 * A correlated EXISTS subquery can stop as soon as the first path is
+	 * produced.  In that case the DFS stack still contains live heap/index
+	 * scans.  Reusing it for the next outer tuple continues the previous
+	 * traversal instead of starting from the new seed vertex, which silently
+	 * drops matches in other connected components (Apache AGE #1924).
+	 */
+	foreach (lc, vle_state->table_scan_desc_list)
+	{
+		VLEDepthCtx *vle_depth_ctx = (VLEDepthCtx *)lfirst(lc);
+
+		free_scan_desc(vle_depth_ctx);
+	}
+	list_free(vle_state->table_scan_desc_list);
+	vle_state->table_scan_desc_list = NIL;
+
+	array_clear(vle_state->edge_ids);
+	array_clear(vle_state->edges);
+	if (vle_state->vertices != NULL)
+		array_clear(vle_state->vertices);
+
 	vle_state->need_new_sp_tuple = true;
+	vle_state->subplan_tuple = NULL;
 	ExecReScan(vle_state->subplan);
 }
 
@@ -935,15 +979,28 @@ ExecEndGraphVLE(ExtensiblePlanState  *pstate)
 	}
 	list_free(vle_state->table_scan_desc_list);
 
-	ExecDropSingleTupleTableSlot(vle_state->current_scan_tuple);
+	if (vle_state->current_scan_tuple != NULL)
+	{
+		ExecDropSingleTupleTableSlot(vle_state->current_scan_tuple);
+	}
 
 	for (i = 0; i < vle_state->num_target_rel_info; i++)
 	{
-		ExecCloseIndices(result_rel_info);
 		heap_close(result_rel_info->ri_RelationDesc, AccessShareLock);
 		result_rel_info++;
 	}
-	pfree(vle_state->target_rel_infos);
+	if (vle_state->target_rel_infos != NULL)
+	{
+		pfree(vle_state->target_rel_infos);
+	}
+	if (vle_state->start_id_index_oids != NULL)
+	{
+		pfree(vle_state->start_id_index_oids);
+	}
+	if (vle_state->end_id_index_oids != NULL)
+	{
+		pfree(vle_state->end_id_index_oids);
+	}
 
 	/*
 	 * clean out the tuple table
