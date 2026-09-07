@@ -20,30 +20,34 @@
 #ifndef AG_AG_NODES_H
 #define AG_AG_NODES_H
 
-#include "nodes/extensible.h"
+#include "postgres.h"
 
-/* This list must match node_names and node_methods. */
+#include "nodes/ag_extensible.h"
+#include "nodes/nodes.h"
+
+// This list must match node_names and node_methods.
 typedef enum ag_node_tag
 {
     ag_node_invalid_t = 0,
 
-    /* projection */
+    // projection
     cypher_return_t,
     cypher_with_t,
-    /* reading clause */
+    // reading clause
     cypher_match_t,
-    /* updating clause */
+    // updating clause
     cypher_create_t,
     cypher_set_t,
     cypher_set_item_t,
     cypher_delete_t,
+    cypher_union_t,
     cypher_unwind_t,
     cypher_merge_t,
-    /* pattern */
+    // pattern
     cypher_path_t,
     cypher_node_t,
     cypher_relationship_t,
-    /* expression */
+    // expression
     cypher_bool_const_t,
     cypher_param_t,
     cypher_map_t,
@@ -51,39 +55,37 @@ typedef enum ag_node_tag
     cypher_map_projection_element_t,
     cypher_list_t,
     cypher_list_comprehension_t,
-    /* comparison expression */
+    cypher_reduce_t,
+    // comparison expression
     cypher_comparison_aexpr_t,
     cypher_comparison_boolexpr_t,
-    /* string match */
+    // string match
     cypher_string_match_t,
-    /* typecast */
+    // typecast
     cypher_typecast_t,
-    /* integer constant */
+    // integer constant
     cypher_integer_const_t,
-    /* sub patterns/queries */
+    // sub patterns
     cypher_sub_pattern_t,
     cypher_sub_query_t,
-    /* procedure calls */
+    // procedure calls
     cypher_call_t,
-    /* create data structures */
+    // create data structures
     cypher_create_target_nodes_t,
     cypher_create_path_t,
     cypher_target_node_t,
-    /* set/remove data structures */
+    // set/remove data structures
     cypher_update_information_t,
     cypher_update_item_t,
-    /* delete data structures */
+    // delete data structures
     cypher_delete_information_t,
     cypher_delete_item_t,
     cypher_merge_information_t,
-    /* predicate functions */
-    cypher_predicate_function_t,
-    /* reduce */
-    cypher_reduce_t
+    // vle
+    cypher_vle_target_nodes_t,
+    // predicate functions
+    cypher_predicate_function_t
 } ag_node_tag;
-
-extern const char *node_names[];
-extern const ExtensibleNodeMethods node_methods[];
 
 void register_ag_nodes(void);
 
@@ -98,12 +100,14 @@ ExtensibleNode *_new_ag_node(Size size, ag_node_tag tag);
 
 #define make_ag_node(type) \
     ((type *)new_ag_node(sizeof(type), CppConcat(type, _t)))
+#define make_ag_extensible_node(type) \
+    ((type *)new_ag_node(sizeof(type), CppConcat(type, _t)))
 
 static inline bool _is_ag_node(Node *node, const char *extnodename)
 {
     ExtensibleNode *extnode;
 
-    if (!IsA(node, ExtensibleNode))
+    if (!IsA(node, EXTENSIBLE_NODE))
         return false;
 
     extnode = (ExtensibleNode *)node;

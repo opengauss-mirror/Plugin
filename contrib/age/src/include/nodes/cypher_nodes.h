@@ -20,9 +20,15 @@
 #ifndef AG_CYPHER_NODE_H
 #define AG_CYPHER_NODE_H
 
+#include "postgres.h"
+
+#include "nodes/ag_extensible.h"
+#include "nodes/parsenodes.h"
+#include "nodes/pg_list.h"
+
 #include "nodes/ag_nodes.h"
 
-/* cypher sub patterns/queries */
+/* cypher sub patterns */
 typedef enum csp_kind
 {
         CSP_EXISTS,
@@ -44,6 +50,15 @@ typedef struct cypher_sub_query
         List *query;
 } cypher_sub_query;
 
+typedef struct cypher_call
+{
+    ExtensibleNode extensible;
+    FuncCall *funccall;
+    FuncExpr *funcexpr;
+    Node *where;
+    List *yield_items;
+} cypher_call;
+
 /*
  * clauses
  */
@@ -52,23 +67,17 @@ typedef struct cypher_return
 {
     ExtensibleNode extensible;
     bool distinct;
-    List *items; /* a list of ResTarget's */
+    List *items; // a list of ResTarget's
     List *order_by;
     Node *skip;
     Node *limit;
-
-    bool all_or_distinct;
-    bool returnless_union;
-    SetOperation op;
-    List *larg; /* lefthand argument of the unions */
-    List *rarg; /*righthand argument of the unions */
 } cypher_return;
 
 typedef struct cypher_with
 {
     ExtensibleNode extensible;
     bool distinct;
-    List *items; /* a list of ResTarget's */
+    List *items; // a list of ResTarget's
     List *order_by;
     Node *skip;
     Node *limit;
@@ -78,41 +87,55 @@ typedef struct cypher_with
 typedef struct cypher_match
 {
     ExtensibleNode extensible;
-    List *pattern; /* a list of cypher_paths */
-    Node *where; /* optional WHERE subclause (expression) */
-    bool optional; /* OPTIONAL MATCH */
+    List *pattern; // a list of cypher_paths
+    Node *where; // optional WHERE subclause (expression)
+    bool optional; // OPTIONAL MATCH
 } cypher_match;
 
 typedef struct cypher_create
 {
     ExtensibleNode extensible;
-    List *pattern; /* a list of cypher_paths */
+    List *pattern; // a list of cypher_paths
 } cypher_create;
+
+typedef struct cypher_vle
+{
+    ExtensibleNode extensible;
+} cypher_vle;
 
 typedef struct cypher_set
 {
     ExtensibleNode extensible;
-    List *items; /* a list of cypher_set_items */
-    bool is_remove; /* true if this is REMOVE clause */
+    List *items; // a list of cypher_set_items
+    bool is_remove; // true if this is REMOVE clause
     int location;
 } cypher_set;
 
 typedef struct cypher_set_item
 {
     ExtensibleNode extensible;
-    Node *prop; /* LHS */
-    Node *expr; /* RHS */
-    bool is_add; /* true if this is += */
+    Node *prop; // LHS
+    Node *expr; // RHS
+    bool is_add; // true if this is +=
     int location;
 } cypher_set_item;
 
 typedef struct cypher_delete
 {
     ExtensibleNode extensible;
-    bool detach; /* true if DETACH is specified */
-    List *exprs; /* targets of this deletion */
+    bool detach; // true if DETACH is specified
+    List *exprs; // targets of this deletion
     int location;
 } cypher_delete;
+
+typedef struct cypher_union
+{
+    ExtensibleNode extensible;
+    bool all_or_distinct;
+    SetOperation op;
+    List *larg; /* lefthand argument of the unions */
+    List *rarg; /*righthand argument of the unions */
+} cypher_union;
 
 typedef struct cypher_unwind
 {
@@ -124,8 +147,8 @@ typedef struct cypher_merge
 {
     ExtensibleNode extensible;
     Node *path;
-    List *on_match;   /* List of cypher_set_item, or NIL */
-    List *on_create;  /* List of cypher_set_item, or NIL */
+    List *on_match;  // List of cypher_set_item, or NIL
+    List *on_create; // List of cypher_set_item, or NIL
 } cypher_merge;
 
 /*
@@ -135,23 +158,21 @@ typedef struct cypher_merge
 typedef struct cypher_path
 {
     ExtensibleNode extensible;
-    List *path; /* [ node ( , relationship , node , ... ) ] */
+    List *path; // [ node ( , relationship , node , ... ) ]
     char *var_name;
-    char *parsed_var_name;
     int location;
 } cypher_path;
 
-/* ( name :label props ) */
+// ( name :label props )
 typedef struct cypher_node
 {
     ExtensibleNode extensible;
     char *name;
-    char *parsed_name;
     char *label;
-    char *parsed_label;
     bool use_equals;
-    Node *props; /* map or parameter */
+    Node *props; // map or parameter
     int location;
+    char * parsed_label;
 } cypher_node;
 
 typedef enum
@@ -161,19 +182,18 @@ typedef enum
     CYPHER_REL_DIR_RIGHT = 1
 } cypher_rel_dir;
 
-/* -[ name :label props ]- */
+// -[ name :label props ]-
 typedef struct cypher_relationship
 {
     ExtensibleNode extensible;
     char *name;
-    char *parsed_name;
     char *label;
-    char *parsed_label;
     bool use_equals;
-    Node *props; /* map or parameter */
-    Node *varlen; /* variable length relationships (A_Indices) */
+    Node *props; // map or parameter
+    Node *varlen; // variable length relationships (A_Indices)
     cypher_rel_dir dir;
     int location;
+    char * parsed_label;
 } cypher_relationship;
 
 /*
@@ -206,30 +226,61 @@ typedef struct cypher_map
     ExtensibleNode extensible;
     List *keyvals;
     int location;
-    bool keep_null; /* if false, keyvals with null value are removed */
+    bool keep_null;
 } cypher_map;
 
 typedef struct cypher_map_projection
 {
     ExtensibleNode extensible;
-    ColumnRef *map_var; /* must be a map, vertex or an edge */
-    List *map_elements; /* list of cypher_map_projection_element */
+    ColumnRef *map_var;
+    List *map_elements;
     int location;
 } cypher_map_projection;
 
- typedef struct cypher_list_comprehension
- {
+typedef enum cypher_map_projection_element_type
+{
+    PROPERTY_SELECTOR = 0,
+    VARIABLE_SELECTOR,
+    LITERAL_ENTRY,
+    ALL_PROPERTIES_SELECTOR
+} cypher_map_projection_element_type;
+
+typedef struct cypher_map_projection_element
+{
+    ExtensibleNode extensible;
+    cypher_map_projection_element_type type;
+    char *key;
+    Node *value;
+    int location;
+} cypher_map_projection_element;
+
+typedef struct cypher_list
+{
+    ExtensibleNode extensible;
+    List *elems;
+    int location;
+} cypher_list;
+
+typedef struct cypher_list_comprehension
+{
     ExtensibleNode extensible;
     char *varname;
     Node *expr;
     Node *where;
     Node *mapping_expr;
- } cypher_list_comprehension;
+} cypher_list_comprehension;
 
-/*
- * Predicate function kinds for all(), any(), none(), single().
- * These take the form: func(variable IN list WHERE predicate)
- */
+typedef struct cypher_reduce
+{
+    ExtensibleNode extensible;
+    char *accumname;
+    Node *initial;
+    char *varname;
+    Node *expr;
+    Node *mapping_expr;
+} cypher_reduce;
+
+// Predicate function kinds for all(), any(), none(), single().
 typedef enum cypher_predicate_function_kind
 {
     CPFK_ALL = 0,
@@ -243,60 +294,36 @@ typedef struct cypher_predicate_function
     ExtensibleNode extensible;
     cypher_predicate_function_kind kind;
     char *varname;
-    Node *expr;     /* the list to iterate over */
-    Node *where;    /* the predicate to test */
+    Node *expr;
+    Node *where;
 } cypher_predicate_function;
 
 /*
- * reduce(acc = init, var IN list | body)
+ * comparison expressions
  *
- * Folds `body` over `list`, threading an accumulator `acc` (seeded with
- * `init`) across the elements in list order, binding each element to `var`.
- * Transformed into a correlated scalar subquery over an ordered aggregate
- * by transform_cypher_reduce() in cypher_clause.c.
+ * These nodes wrap comparison operations at parse time so the grammar can
+ * detect chained comparisons (e.g. 1 < 2 < 3) while still letting
+ * parenthesized groups evaluate in order of operations. They are unwrapped
+ * to regular A_Expr/BoolExpr nodes during transform.
  */
-typedef struct cypher_reduce
+
+typedef struct cypher_comparison_aexpr
 {
     ExtensibleNode extensible;
-    char *acc_varname;  /* accumulator variable name */
-    Node *init_expr;    /* initial accumulator value */
-    char *elem_varname; /* per-element variable name */
-    Node *list_expr;    /* the list to fold over */
-    Node *body_expr;    /* the fold expression evaluated per element */
-} cypher_reduce;
+    A_Expr_Kind kind; /* see A_Expr */
+    List *name; /* possibly-qualified name of operator */
+    Node *lexpr; /* left argument, or NULL if none */
+    Node *rexpr; /* right argument, or NULL if none */
+    int location; /* token location, or -1 if unknown */
+} cypher_comparison_aexpr;
 
-typedef enum cypher_map_projection_element_type
-{
-    PROPERTY_SELECTOR = 0,  /* map_var { .key } */
-    VARIABLE_SELECTOR,      /* map_var { value } */
-    LITERAL_ENTRY,          /* map_var { key: value } */
-    ALL_PROPERTIES_SELECTOR /* map_var { .* } */
-} cypher_map_projection_element_type;
-
-typedef struct cypher_map_projection_element
+typedef struct cypher_comparison_boolexpr
 {
     ExtensibleNode extensible;
-    cypher_map_projection_element_type type;
-
-    /*
-     * key and/or value can be null depending on the type
-     *
-     * For PROPERTY_SELECTOR, value is null.
-     * For VARIABLE_SELECTOR, key is null, and value is a ColumnRef.
-     * For LITERAL_ENTRY, none is null (value is an Expr).
-     * For ALL_PROPERTIES_SELECTOR, both are null.
-     */
-    char *key;
-    Node *value;
-    int location;
-} cypher_map_projection_element;
-
-typedef struct cypher_list
-{
-    ExtensibleNode extensible;
-    List *elems;
-    int location;
-} cypher_list;
+    BoolExprType boolop;
+    List *args; /* arguments to this expression */
+    int location; /* token location, or -1 if unknown */
+} cypher_comparison_boolexpr;
 
 enum cypher_string_match_op
 {
@@ -319,7 +346,7 @@ typedef struct cypher_create_target_nodes
     ExtensibleNode extensible;
     List *paths;
     uint32 flags;
-    uint32 graph_oid;
+    Oid graph_oid;
 } cypher_create_target_nodes;
 
 typedef struct cypher_create_path
@@ -330,42 +357,16 @@ typedef struct cypher_create_path
     char *var_name;
 } cypher_create_path;
 
-/*
- * comparison expressions
- */
-
-typedef struct cypher_comparison_aexpr
+typedef struct cypher_vle_target_nodes
 {
     ExtensibleNode extensible;
-    A_Expr_Kind kind; /* see above */
-    List *name; /* possibly-qualified name of operator */
-    Node *lexpr; /* left argument, or NULL if none */
-    Node *rexpr; /* right argument, or NULL if none */
-    int location; /* token location, or -1 if unknown */
-} cypher_comparison_aexpr;
-
-typedef struct cypher_comparison_boolexpr
-{
-    ExtensibleNode extensible;
-    BoolExprType boolop;
-    List       *args;           /* arguments to this expression */
-    int         location;       /* token location, or -1 if unknown */
-} cypher_comparison_boolexpr;
-
-
-/*
- * procedure call
- */
-
-typedef struct cypher_call
-{
-    ExtensibleNode extensible;
-    FuncCall *funccall; /*from the parser */
-    FuncExpr *funcexpr; /*transformed */
-
-    Node *where;
-    List *yield_items; /* optional yield subclause */
-} cypher_call;
+	int minimum_output_depth;
+	int maximum_output_depth;
+	cypher_rel_dir  cypher_rel_direction;
+	char* label_name;
+    Oid graph_oid;
+    Node* edge_property_constraint;
+} cypher_vle_target_nodes;
 
 #define CYPHER_CLAUSE_FLAG_NONE 0x0000
 #define CYPHER_CLAUSE_FLAG_TERMINAL 0x0001
@@ -388,11 +389,11 @@ typedef struct cypher_call
 typedef struct cypher_target_node
 {
     ExtensibleNode extensible;
-    /* 'v' for vertex or 'e' for edge */
+    // 'v' for vertex or 'e' for edge
     char type;
-    /* flags defined below, prefaced with CYPHER_TARGET_NODE_FLAG_* */
+    // flags defined below, prefaced with CYPHER_TARGET_NODE_FLAG_*
     uint32 flags;
-    /* if an edge, denotes direction */
+    // if an edge, denotes direction
     cypher_rel_dir dir;
     /*
      * Used to create the id for the vertex/edge,
@@ -414,37 +415,37 @@ typedef struct cypher_target_node
      * are stored in the CustomScanState's child TupleTableSlot
      */
     AttrNumber prop_attr_num;
-    /* RelInfo for the table this entity will be stored in */
+    // RelInfo for the table this entity will be stored in
     ResultRelInfo *resultRelInfo;
-    /* elemTupleSlot used to insert the entity into its table */
+    // elemTupleSlot used to insert the entity into its table
     TupleTableSlot *elemTupleSlot;
-    /* relid that the label stores its entity */
+    // relid that the label stores its entity
     Oid relid;
-    /* label this entity belongs to. */
+    // label this entity belongs to.
     char *label_name;
-    /* variable name for this entity */
+    // variable name for this entity
     char *variable_name;
     /*
      * Attribute number this entity needs to be stored in
      * for parent execution nodes to reference it. If the
-     * entity is a variable (CYPHER_TARGET_NODE_IS_VAR).
+     * entity is a varaible (CYPHER_TARGET_NODE_IS_VAR).
      */
     AttrNumber tuple_position;
 } cypher_target_node;
 
 #define CYPHER_TARGET_NODE_FLAG_NONE 0x0000
-/* node must insert data */
+// node must insert data
 #define CYPHER_TARGET_NODE_FLAG_INSERT 0x0001
 /*
  * Flag that denotes if this target node is referencing
  * a variable that was already created AND created in the
  * same clause.
  */
-#define EXISTING_VARIABLE_DECLARED_SAME_CLAUSE 0x0002
+#define EXISTING_VARAIBLE_DECLARED_SAME_CLAUSE 0x0002
 
-/* node is the first instance of a declared variable */
+//node is the first instance of a declared variable
 #define CYPHER_TARGET_NODE_IS_VAR 0x0004
-/* node is an element in a path variable */
+// node is an element in a path variable
 #define CYPHER_TARGET_NODE_IN_PATH_VAR 0x0008
 
 #define CYPHER_TARGET_NODE_MERGE_EXISTS 0x0010
@@ -463,7 +464,7 @@ typedef struct cypher_target_node
  * later. We don't need to check to see if the vertex still exists.
  */
 #define SAFE_TO_SKIP_EXISTENCE_CHECK(flags) \
-    (flags & EXISTING_VARIABLE_DECLARED_SAME_CLAUSE)
+    (flags & EXISTING_VARAIBLE_DECLARED_SAME_CLAUSE)
 
 #define CYPHER_TARGET_NODE_INSERT_ENTITY(flags) \
     (flags & CYPHER_TARGET_NODE_FLAG_INSERT)
@@ -476,7 +477,7 @@ typedef struct cypher_update_information
 {
     ExtensibleNode extensible;
     List *set_items;
-    uint32 flags;
+    int flags;
     AttrNumber tuple_position;
     char *graph_name;
     char *clause_name;
@@ -491,38 +492,38 @@ typedef struct cypher_update_item
     char *prop_name;
     List *qualified_name;
     bool remove_item;
+    bool replace_properties;
     bool is_add;
-    Node *prop_expr;    /* SET value expression, used by MERGE ON CREATE/MATCH SET
-                         * where the expression is not in the plan's target list */
-    ExprState *prop_expr_state;  /* initialized at plan init, not per-row */
+    Node *prop_expr;
+    ExprState *prop_expr_state;
 } cypher_update_item;
 
 typedef struct cypher_delete_information
 {
     ExtensibleNode extensible;
     List *delete_items;
-    uint32 flags;
+    int flags;
     char *graph_name;
-    uint32 graph_oid;
+    Oid graph_oid;
     bool detach;
 } cypher_delete_information;
 
 typedef struct cypher_delete_item
 {
     ExtensibleNode extensible;
-    Integer *entity_position;
+    Value *entity_position;
     char *var_name;
 } cypher_delete_item;
 
 typedef struct cypher_merge_information
 {
     ExtensibleNode extensible;
-    uint32 flags;
-    uint32 graph_oid;
+    int flags;
+    Oid graph_oid;
     AttrNumber merge_function_attr;
     cypher_create_path *path;
-    cypher_update_information *on_match_set_info;  /* NULL if no ON MATCH SET */
-    cypher_update_information *on_create_set_info;  /* NULL if no ON CREATE SET */
+    cypher_update_information *on_match_set_info;
+    cypher_update_information *on_create_set_info;
 } cypher_merge_information;
 
 /* grammar node for typecasts */

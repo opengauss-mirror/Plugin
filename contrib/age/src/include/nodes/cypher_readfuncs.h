@@ -20,41 +20,59 @@
 #ifndef AG_CYPHER_READFUNCS_H
 #define AG_CYPHER_READFUNCS_H
 
-#include "nodes/extensible.h"
+#include "postgres.h"
+
+#include "nodes/ag_extensible.h"
+#include "nodes/nodes.h"
 
 /*
  * Deserialization functions for AGE's ExtensibleNodes. We assign
- * each node to its deserialization function in the DEFINE_NODE_METHODS
+ * each node to its deserialization functionin the DEFINE_NODE_METHODS
  * and DEFINE_NODE_METHODS_EXTENDED macros in ag_nodes.c.
 
  *
  * All functions are dependent on the pg_strtok function. We do not
- * setup pg_strtok. That is for the caller to do. By default that
+ * setup pg_strtok. That is for the the caller to do. By default that
  * is the responsibility of Postgres' nodeRead function. We assume
  * that was setup correctly.
  */
 
 void read_ag_node(ExtensibleNode *node);
 
-/* create data structures */
+// clause and pattern data structures
+void read_cypher_create(struct ExtensibleNode *node);
+void read_cypher_path(struct ExtensibleNode *node);
+void read_cypher_node(struct ExtensibleNode *node);
+void read_cypher_relationship(struct ExtensibleNode *node);
+
+// create data structures
 void read_cypher_create_target_nodes(struct ExtensibleNode *node);
 void read_cypher_create_path(struct ExtensibleNode *node);
 void read_cypher_target_node(struct ExtensibleNode *node);
 
-/* set/remove data structures */
+// set/remove data structures
 void read_cypher_update_information(struct ExtensibleNode *node);
 void read_cypher_update_item(struct ExtensibleNode *node);
 
-/* delete data structures */
+// delete data structures
 void read_cypher_delete_information(struct ExtensibleNode *node);
 void read_cypher_delete_item(struct ExtensibleNode *node);
 
 void read_cypher_merge_information(struct ExtensibleNode *node);
 
-/* predicate function data structure */
-void read_cypher_predicate_function(struct ExtensibleNode *node);
+// vle data structures
+void read_cypher_vle_target_nodes(struct ExtensibleNode *node);
 
-/* reduce data structure */
+// list comprehension
+void read_cypher_map(struct ExtensibleNode *node);
+void read_cypher_map_projection(struct ExtensibleNode *node);
+void read_cypher_map_projection_element(struct ExtensibleNode *node);
+void read_cypher_integer_const(struct ExtensibleNode *node);
+void read_cypher_list_comprehension(struct ExtensibleNode *node);
+
+// reduce
 void read_cypher_reduce(struct ExtensibleNode *node);
 
+// predicate functions
+void read_cypher_predicate_function(struct ExtensibleNode *node);
 #endif
