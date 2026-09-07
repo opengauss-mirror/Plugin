@@ -1,0 +1,229 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+LOAD 'age';
+SET search_path TO ag_catalog;
+SELECT create_graph('list_comprehension');
+NOTICE:  graph "list_comprehension" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN [1, 2, 3]] $$) AS (result agtype);
+  result   
+-----------
+ [1, 2, 3]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN [1, 2, 3] WHERE u > 1] $$) AS (result agtype);
+ result 
+--------
+ [2, 3]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN [1, 2, 3] WHERE u > 1 | u * 2] $$) AS (result agtype);
+ result 
+--------
+ [4, 6]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN []] $$) AS (result agtype);
+ result 
+--------
+ []
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN null] $$) AS (result agtype);
+ result 
+--------
+ 
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [{n: 1}, {n: 2}, {n: 3}] WHERE x.n > 1 | x.n] $$) AS (result agtype);
+ result 
+--------
+ [2, 3]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [u IN [u IN [1, 2, 3] WHERE u > 1] WHERE u > 2 | u * 10] $$) AS (result agtype);
+ result 
+--------
+ [30]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ CREATE ({name: 'even', vals: [2, 4, 6]}) $$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('list_comprehension', $$ CREATE ({name: 'mixed', vals: [1, 2, 3]}) $$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('list_comprehension', $$ MATCH (u) RETURN u.name, [x IN u.vals WHERE x > 2 | x * 10] ORDER BY u.name $$) AS (name agtype, result agtype);
+  name   |  result  
+---------+----------
+ "even"  | [40, 60]
+ "mixed" | [30]
+(2 rows)
+
+SELECT * FROM cypher('list_comprehension', $$ MATCH (u) WITH collect(u) AS ns RETURN [x IN ns WHERE x.name = 'even' | x.vals] $$) AS (result agtype);
+   result    
+-------------
+ [[2, 4, 6]]
+(1 row)
+
+-- Null elements remain list elements after mapping and participate in
+-- openCypher's three-valued WHERE filtering.
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [null] | x + 1] $$) AS (result agtype);
+ result 
+--------
+ [null]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x + 1] $$) AS (result agtype);
+    result    
+--------------
+ [2, null, 3]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | 1 + x] $$) AS (result agtype);
+    result    
+--------------
+ [2, null, 3]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x] $$) AS (result agtype);
+    result    
+--------------
+ [1, null, 2]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x - 1] $$) AS (result agtype);
+    result    
+--------------
+ [0, null, 1]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x * 2] $$) AS (result agtype);
+    result    
+--------------
+ [2, null, 4]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x / 1] $$) AS (result agtype);
+    result    
+--------------
+ [1, null, 2]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x % 2] $$) AS (result agtype);
+    result    
+--------------
+ [1, null, 0]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | x ^ 2] $$) AS (result agtype);
+      result      
+------------------
+ [1.0, null, 4.0]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, null, 2] | -x] $$) AS (result agtype);
+     result     
+----------------
+ [-1, null, -2]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [null, 1] WHERE x IS NULL] $$) AS (result agtype);
+ result 
+--------
+ [null]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [null, 1, null] WHERE x IS NULL] $$) AS (result agtype);
+    result    
+--------------
+ [null, null]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [null, 1] WHERE x IS NOT NULL] $$) AS (result agtype);
+ result 
+--------
+ [1]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ RETURN [x IN [1, 2, 3] WHERE x IS NULL] $$) AS (result agtype);
+ result 
+--------
+ []
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$ UNWIND [null, 1] AS x RETURN x, x IS NULL, x IS NOT NULL $$) AS (x agtype, a agtype, b agtype);
+ x |   a   |   b   
+---+-------+-------
+   | true  | false
+ 1 | false | true
+(2 rows)
+
+-- SET must propagate sublink metadata so the planner replaces the list
+-- comprehension SubLink before costing the custom scan target list.
+SELECT * FROM cypher('list_comprehension', $$
+    CREATE (n:ListComprehensionSet {values: [1, 2, 3]})
+    SET n.mapped = [x IN n.values WHERE x > 1 | x * 10]
+    RETURN n.mapped
+$$) AS (result agtype);
+  result  
+----------
+ [20, 30]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$
+    MATCH (n:ListComprehensionSet)
+    RETURN n.mapped
+$$) AS (result agtype);
+  result  
+----------
+ [20, 30]
+(1 row)
+
+SELECT * FROM cypher('list_comprehension', $$
+    UNWIND [x IN [1, 2, 3] WHERE x > 1 | x * 10] AS value
+    RETURN collect(value)
+$$) AS (result agtype);
+  result  
+----------
+ [20, 30]
+(1 row)
+
+SELECT drop_graph('list_comprehension', true);
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table list_comprehension._ag_label_vertex
+drop cascades to table list_comprehension._ag_label_edge
+drop cascades to table list_comprehension."ListComprehensionSet"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "list_comprehension" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+

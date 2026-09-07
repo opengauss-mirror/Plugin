@@ -1,0 +1,78 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+LOAD 'age';
+SET search_path TO ag_catalog;
+SELECT create_graph('tail');
+NOTICE:  graph "tail" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail([1, 2, 3, 4, 5]) $$) AS (tail agtype);
+     tail     
+--------------
+ [2, 3, 4, 5]
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail(["a", "b", "c", "d", "e"]) $$) AS (tail agtype);
+         tail         
+----------------------
+ ["b", "c", "d", "e"]
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail([1]) $$) AS (tail agtype);
+ tail 
+------
+ []
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail([]) $$) AS (tail agtype);
+ tail 
+------
+ []
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail(null) $$) AS (tail agtype);
+ tail 
+------
+ 
+(1 row)
+
+SELECT * FROM cypher('tail', $$ RETURN tail(123) $$) AS (tail agtype);
+ERROR:  tail() argument must resolve to a list or null
+CONTEXT:  referenced column: tail
+SELECT * FROM cypher('tail', $$ RETURN tail() $$) AS (tail agtype);
+ERROR:  function ag_catalog.age_tail() does not exist
+LINE 1: SELECT * FROM cypher('tail', $$ RETURN tail() $$) AS (tail a...
+                                               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+SELECT drop_graph('tail', true);
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table tail._ag_label_vertex
+drop cascades to table tail._ag_label_edge
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "tail" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
