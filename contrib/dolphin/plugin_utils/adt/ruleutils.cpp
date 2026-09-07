@@ -116,6 +116,69 @@
 #include "plugin_commands/mysqlmode.h"
 #endif
 
+/*
+ * Invalid Dolphin views retain their original Vars while the base table's
+ * column order may continue to change. Restore saved TargetEntry names before
+ * deparsing each query level, including nested CTEs and subqueries.
+ */
+static void restore_invalid_view_column_names_one(Query* query)
+{
+    ListCell* lc = NULL;
+    foreach (lc, query->targetList) {
+        TargetEntry* tle = (TargetEntry*)lfirst(lc);
+        if (tle->resjunk || tle->resname == NULL || !IsA(tle->expr, Var)) {
+            continue;
+        }
+
+        Var* var = (Var*)tle->expr;
+        if (var->varlevelsup != 0 || var->varattno <= 0 || var->varno <= 0 ||
+            var->varno > list_length(query->rtable)) {
+            continue;
+        }
+
+        RangeTblEntry* rte = (RangeTblEntry*)list_nth(query->rtable, var->varno - 1);
+        if (rte->rtekind != RTE_RELATION || rte->eref == NULL) {
+            continue;
+        }
+
+        while (list_length(rte->eref->colnames) < var->varattno) {
+            rte->eref->colnames = lappend(rte->eref->colnames, makeString(pstrdup("")));
+        }
+        ListCell* colname = list_nth_cell(rte->eref->colnames, var->varattno - 1);
+        lfirst(colname) = makeString(pstrdup(tle->resname));
+    }
+
+    query->starStart = NIL;
+    query->starEnd = NIL;
+    query->starOnly = NIL;
+}
+
+/* Recursively restore nested CTE and subquery definitions as well. */
+static void restore_invalid_view_column_names_recursive(Query* query)
+{
+    ListCell* lc = NULL;
+    restore_invalid_view_column_names_one(query);
+
+    foreach (lc, query->cteList) {
+        CommonTableExpr* cte = (CommonTableExpr*)lfirst(lc);
+        if (cte->ctequery != NULL && IsA(cte->ctequery, Query)) {
+            restore_invalid_view_column_names_recursive((Query*)cte->ctequery);
+        }
+    }
+
+    foreach (lc, query->rtable) {
+        RangeTblEntry* rte = (RangeTblEntry*)lfirst(lc);
+        if (rte->rtekind == RTE_SUBQUERY && rte->subquery != NULL) {
+            restore_invalid_view_column_names_recursive(rte->subquery);
+        }
+    }
+}
+
+static void restore_invalid_view_column_names(Query* query)
+{
+    restore_invalid_view_column_names_recursive(query);
+}
+
 /* ----------
  * Pretty formatting constants
  * ----------
@@ -6150,54 +6213,6 @@ static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
     heap_close(ev_relation, AccessShareLock);
 }
 
-/*
- * An invalid Dolphin view can outlive additional FIRST/AFTER column
- * reordering on its base table.  Its saved Vars still use the old attnums,
- * while the RTE column-name list may have been refreshed to the table's new
- * physical order.  Restore names for directly selected columns from the
- * TargetEntry names before deparsing, otherwise pg_get_viewdef can display
- * unrelated columns such as "f2 AS f1".
- */
-static void restore_invalid_view_column_names(Query* query)
-{
-    ListCell* lc = NULL;
-    foreach (lc, query->targetList) {
-        TargetEntry* tle = (TargetEntry*)lfirst(lc);
-        if (tle->resjunk || tle->resname == NULL || !IsA(tle->expr, Var)) {
-            continue;
-        }
-
-        Var* var = (Var*)tle->expr;
-        if (var->varlevelsup != 0 || var->varattno <= 0 || var->varno <= 0 ||
-            var->varno > list_length(query->rtable)) {
-            continue;
-        }
-
-        RangeTblEntry* rte = (RangeTblEntry*)list_nth(query->rtable, var->varno - 1);
-        if (rte->rtekind != RTE_RELATION || rte->eref == NULL) {
-            continue;
-        }
-
-        while (list_length(rte->eref->colnames) < var->varattno) {
-            rte->eref->colnames = lappend(rte->eref->colnames, makeString(pstrdup("")));
-        }
-        ListCell* colname = list_nth_cell(rte->eref->colnames, var->varattno - 1);
-        lfirst(colname) = makeString(pstrdup(tle->resname));
-    }
-
-    /*
-     * The parser records target-entry ranges expanded from '*' so that a valid
-     * view can be deparsed with the original compact notation. For an invalid
-     * view, this notation does not identify the missing columns and may reflect
-     * the base table's current column layout. Clear only the top-level star
-     * metadata so get_target_list emits each saved TargetEntry explicitly.
-     * Nested queries retain their own star metadata.
-     */
-    query->starStart = NIL;
-    query->starEnd = NIL;
-    query->starOnly = NIL;
-}
-
 /* ----------
  * make_viewdef			- reconstruct the SELECT part of a
  *				  view rewrite rule
@@ -9308,14 +9323,15 @@ static char* get_variable(
         }
     }
 
-    if (attnum == InvalidAttrNumber)
+    if (attnum == InvalidAttrNumber) {
         attname = NULL;
-    else if (context->viewdef && context->skip_lock && rte->rtekind == RTE_RELATION && attnum > 0 &&
-             attnum <= list_length(rte->eref->colnames)) {
+    } else if (context->viewdef && context->skip_lock && rte->rtekind == RTE_RELATION && attnum > 0 &&
+                attnum <= list_length(rte->eref->colnames)) {
         Node* colname = (Node*)list_nth(rte->eref->colnames, attnum - 1);
         attname = (colname != NULL && IsA(colname, String)) ? pstrdup(strVal(colname)) : NULL;
-    } else
+    } else {
         attname = get_rte_attribute_name(rte, attnum, true);
+    }
 
     if (refname && (context->varprefix || attname == NULL)) {
         if (schemaname != NULL)
