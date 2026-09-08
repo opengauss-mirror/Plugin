@@ -23,6 +23,7 @@
 #include "knl/knl_session.h"
 #include "libpq/libpq.h"
 #include "utils/builtins.h"
+#include "utils/guc.h"
 #include "utils/date.h"
 #include "utils/geo_decls.h"
 #include "utils/varbit.h"
@@ -64,6 +65,8 @@ static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *
 static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
                                 "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+uint16 get_current_server_status();   /* forward decl — defined in this file */
+
 network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
 {
     network_mysqld_auth_challenge *challenge =
@@ -72,7 +75,12 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
     challenge->auth_plugin_name = pstrdup("caching_sha2_password");
     challenge->server_version_str = pstrdup("8.0.28-dophin-server");
     challenge->charset = 0x21;  /* utf8_general_ci */
-    challenge->server_status = SERVER_STATUS_AUTOCOMMIT;
+    // Keep in sync with sendServerStatus()/set_ok_packet_sql_mode_status():
+    // the initial handshake's status_flags must reflect the same
+    // NO_BACKSLASH_ESCAPES (and autocommit) computation as the OK/EOF
+    // packets, otherwise a client that issues its first query without any
+    // SET/init_command starts with a stale or incorrect escaping assumption.
+    challenge->server_status = get_current_server_status();
     challenge->thread_id = gs_atomic_add_32(&g_proto_ctx.connect_id, 1);
 
     // generate a random challenge
@@ -199,6 +207,40 @@ network_mysqld_auth_request* read_login_request(StringInfo buf, Port* port)
     return auth;
 }
 
+static uint16 get_sql_mode_server_status()
+{
+    uint16 server_status = 0;
+    // Align with the GUC actually consulted by the SQL lexer (scan.l /
+    // hint_scan.l) for backslash-escape parsing, instead of re-parsing the
+    // sql_mode string. Keeps the reported status in sync even if
+    // standard_conforming_strings is changed directly, or the sql_mode <->
+    // standard_conforming_strings sync logic drifts in the future.
+    if (u_sess->attr.attr_sql.standard_conforming_strings) {
+        server_status |= SERVER_STATUS_NO_BACKSLASH_ESCAPES;
+    }
+    return server_status;
+}
+/*
+ * get_current_server_status - unified server-status helper.
+ * Returns the combined SERVER_STATUS flags that must appear in every
+ * protocol packet: HandshakeV10, auth-success OK, normal OK and EOF.
+ * All callers must use this function so the client always sees a
+ * consistent view of autocommit and sql_mode state.
+ */
+uint16 get_current_server_status()
+{
+    return ((u_sess->attr.attr_storage.phony_autocommit ? SERVER_STATUS_AUTOCOMMIT : 0) |
+            get_sql_mode_server_status());
+}
+
+
+void set_ok_packet_sql_mode_status(network_mysqld_ok_packet_t* ok_packet)
+{
+    if (ok_packet != NULL) {
+        ok_packet->server_status |= get_sql_mode_server_status();
+    }
+}
+
 void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet)
 {
     char okPacket[MAX_OK_PACKET_LEN];
@@ -232,20 +274,27 @@ void send_general_ok_packet()
 {
     network_mysqld_ok_packet_t ok_packet;
     make_ok_packet(0, 0, "", &ok_packet);
+    set_ok_packet_sql_mode_status(&ok_packet);
     send_network_ok_packet(&ok_packet);
 }
 
 /* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
 static inline void sendServerStatus(char* buf)
 {
-    uint16 server_status = SERVER_STATUS_AUTOCOMMIT;
+    uint16 serverStatus =
+        u_sess->attr.attr_storage.phony_autocommit ? SERVER_STATUS_AUTOCOMMIT : 0;
+
+    serverStatus |= get_sql_mode_server_status();
+
     if (u_sess->proc_cxt.nextQuery) {
-        server_status |= SERVER_MORE_RESULTS_EXISTS;
+        serverStatus |= SERVER_MORE_RESULTS_EXISTS;
     }
+
     if (IsTransactionBlock()) {
-        server_status |= SERVER_STATUS_IN_TRANS;
+        serverStatus |= SERVER_STATUS_IN_TRANS;
     }
-    dq_store_int2(buf, server_status);
+
+    dq_store_int2(buf, serverStatus);
 }
 
 void send_network_eof_packet()
