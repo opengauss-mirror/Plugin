@@ -170,6 +170,9 @@ typedef struct BSqlPluginContext {
     int query_cache_type;
     char* system_time_zone;
     char* time_zone;
+    /* Compatibility stubs for frameworks (e.g. Django MySQL backend) that probe MySQL vars. */
+    char* default_storage_engine;
+    int sql_auto_is_null;
     int wait_timeout;
     int single_line_trigger_begin;
     char* do_sconst;

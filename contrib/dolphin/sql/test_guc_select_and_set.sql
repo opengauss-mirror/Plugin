@@ -169,4 +169,16 @@ show collation_connection;
 
 reset b_format_behavior_compat_options;
 
+-- Django mysql backend probe stubs (fixed compatibility values)
+select @@default_storage_engine as default_storage_engine,
+       @@sql_auto_is_null as sql_auto_is_null;
+set default_storage_engine = 'InnoDB';
+set @@sql_auto_is_null = 0;
+select @@default_storage_engine as default_storage_engine,
+       @@sql_auto_is_null as sql_auto_is_null;
+set default_storage_engine = 'MyISAM';
+select @@default_storage_engine as default_storage_engine;
+set default_storage_engine = 'ArbitraryEngine';
+select @@default_storage_engine as default_storage_engine;
+
 drop schema test_guc_select_and_set cascade;

@@ -197,6 +197,8 @@ static bool check_query_cache_size(long int* newval, void** extra, GucSource sou
 static bool check_query_cache_type(int* newval, void** extra, GucSource source);
 static bool check_system_time_zone(char** newval, void** extra, GucSource source);
 static bool check_time_zone(char** newval, void** extra, GucSource source);
+static bool check_default_storage_engine(char** newval, void** extra, GucSource source);
+static bool check_sql_auto_is_null(int* newval, void** extra, GucSource source);
 static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
     PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
@@ -895,6 +897,26 @@ static bool check_time_zone(char** newval, void** extra, GucSource source)
     return true;
 }
 
+static bool check_default_storage_engine(char** newval, void** extra, GucSource source)
+{
+    if (*newval != NULL && pg_strcasecmp(*newval, "InnoDB") != 0) {
+        GUC_check_errmsg("Variable 'default_storage_engine' only accepts InnoDB.");
+        return false;
+    }
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'default_storage_engine' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_sql_auto_is_null(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'sql_auto_is_null' has no actual meaning.")));
+    }
+    return true;
+}
+
 static bool check_wait_timeout(int* newval, void** extra, GucSource source)
 {
     if (source == PGC_S_SESSION) {
@@ -1402,6 +1424,40 @@ void init_session_vars(void)
                                check_time_zone,
                                NULL,
                                NULL);
+    /*
+     * openGauss has no MySQL storage engines; return a fixed InnoDB-compatible
+     * value so clients (e.g. Django django.db.backends.mysql) that probe
+     * @@default_storage_engine can initialize normally.
+     */
+    DefineCustomStringVariable("default_storage_engine",
+                               gettext_noop("The default storage engine (compatibility stub for MySQL clients)."),
+                               NULL,
+                               &GetSessionContext()->default_storage_engine,
+                               "InnoDB",
+                               PGC_USERSET,
+                               0,
+                               check_default_storage_engine,
+                               NULL,
+                               NULL);
+    /*
+     * Compatibility stub: Django disables SQL_AUTO_IS_NULL on connect.
+     * openGauss has no AUTO_INCREMENT NULL semantics; accept SET and return 0 by default.
+     */
+    DefineCustomIntVariable("sql_auto_is_null",
+                            gettext_noop("If set to 1, then after a statement that inserts "
+                            "an AUTO_INCREMENT value, you can find that value by "
+                            "issuing a statement of the form SELECT * FROM t WHERE c IS NULL "
+                            "(compatibility stub for MySQL clients)."),
+                            NULL,
+                            &GetSessionContext()->sql_auto_is_null,
+                            0,
+                            0,
+                            1,
+                            PGC_USERSET,
+                            0,
+                            check_sql_auto_is_null,
+                            NULL,
+                            NULL);
     DefineCustomIntVariable("wait_timeout",
                             gettext_noop("After this number of seconds of inactivity, "
                             "the server will close the noninteractive connection."),

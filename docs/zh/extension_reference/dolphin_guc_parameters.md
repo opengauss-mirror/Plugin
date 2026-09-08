@@ -663,6 +663,28 @@ openGauss=# set collation_server = default;
 SET
 ```
 
+## default_storage_engine<a name="section203671436833"></a>
+
+**参数说明**：该参数目前未实现其具体意义。参数值为字符串类型，表示默认存储引擎。openGauss 无 MySQL 存储引擎语义，固定返回兼容值 `InnoDB`，供 Django 等 MySQL 客户端探测 `@@default_storage_engine`；仅允许设置为 `InnoDB`，其他值（如 MyISAM）会被拒绝。
+
+该参数目前属于USERSET类型参数，请参考[表1](dolphin_resetting_parameters.md#zh-cn_topic_0283137176_zh-cn_topic_0237121562_zh-cn_topic_0059777490_t91a6f212010f4503b24d7943aed6d837)中对应设置方法进行设置。
+
+**取值范围**：字符串
+
+**默认值**：InnoDB
+
+**示例**：
+
+```sql
+--设置default_storage_engine为InnoDB
+openGauss=# set default_storage_engine = InnoDB;
+WARNING:  Variable 'default_storage_engine' has no actual meaning.
+SET
+--设置default_storage_engine为default
+openGauss=# set default_storage_engine = default;
+SET
+```
+
 ## init_connect<a name="section203671436834"></a>
 
 **参数说明**：该参数目前未实现其具体意义。参数值为字符串类型，表示连接初始化时执行的SQL语句。
@@ -835,6 +857,28 @@ WARNING:  Variable 'query_cache_type' has no actual meaning.
 SET
 --设置query_cache_type为default
 openGauss=# set query_cache_type = default;
+SET
+```
+
+## sql_auto_is_null<a name="section203671436841a"></a>
+
+**参数说明**：该参数目前未实现其具体意义。参数值为整数类型，表示是否启用 `SELECT ... WHERE auto_increment_column IS NULL` 获取最近一次 AUTO_INCREMENT 值的行为。openGauss 无该语义，接受 SET 并默认返回 0，供 Django 等 MySQL 客户端在连接时执行 `SET SQL_AUTO_IS_NULL = 0`。
+
+该参数目前属于USERSET类型参数，请参考[表1](dolphin_resetting_parameters.md#zh-cn_topic_0283137176_zh-cn_topic_0237121562_zh-cn_topic_0059777490_t91a6f212010f4503b24d7943aed6d837)中对应设置方法进行设置。
+
+**取值范围**：[0, 1]
+
+**默认值**：0
+
+**示例**：
+
+```sql
+--设置sql_auto_is_null为0
+openGauss=# set sql_auto_is_null = 0;
+WARNING:  Variable 'sql_auto_is_null' has no actual meaning.
+SET
+--设置sql_auto_is_null为default
+openGauss=# set sql_auto_is_null = default;
 SET
 ```
 
