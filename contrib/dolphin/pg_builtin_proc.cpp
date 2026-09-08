@@ -73,14 +73,6 @@ typedef struct HashEntryOidToBuiltinFunc {
     const Builtin_func* func;
 } HashEntryOidToBuiltinFunc;
 
-static int cmp_func_by_oid(const void* a, const void* b)
-{
-    const Builtin_func* fa = *(const Builtin_func**)a;
-    const Builtin_func* fb = *(const Builtin_func**)b;
-
-    return (int)fa->foid - (int)fb->foid;
-}
-
 static int FuncGroupCmp(const void* a, const void* b)
 {
     return pg_strcasecmp(((FuncGroup*)a)->funcName, ((FuncGroup*)b)->funcName);
@@ -90,8 +82,6 @@ static void SortBuiltinFuncGroups(FuncGroup* funcGroups)
 {
     qsort(funcGroups, b_nfuncgroups, sizeof(FuncGroup), FuncGroupCmp);
 }
-
-const Builtin_func* g_sorted_funcs[nBuiltinFuncs];
 
 static void InitHashTable(int size)
 {
@@ -179,7 +169,7 @@ void initBSQLBuiltinFuncs()
         for (int j = 0; j < fg->fnums; j++) {
             CheckNameLength(fg->funcs[j].funcName);
             OidHashTableAccess(HASH_ENTER, fg->funcs[j].foid, &fg->funcs[j], g_tmp_b_oidHash);
-            g_sorted_funcs[nfunc++] = &fg->funcs[j];
+            nfunc++;
         }
     }
 
@@ -188,7 +178,6 @@ void initBSQLBuiltinFuncs()
             (errmsg("initialize the built-in function failed: %s",
                 "the number of functions in is mismatch with the declaration")));
     }
-    qsort(g_sorted_funcs, nBuiltinFuncs, sizeof(g_sorted_funcs[0]), cmp_func_by_oid);
     /* all have beed inited, assign value to real b_nameHash/b_oidHash */
     b_nameHash = g_tmp_b_nameHash;
     b_oidHash = g_tmp_b_oidHash;

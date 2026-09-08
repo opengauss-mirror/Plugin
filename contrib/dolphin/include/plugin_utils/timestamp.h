@@ -222,6 +222,7 @@ extern Datum timestamptz_extract_zone(PG_FUNCTION_ARGS);
 extern Datum timetz_extract_zone(PG_FUNCTION_ARGS);
 
 extern Datum new_time(PG_FUNCTION_ARGS);
+extern TimestampTz GetCurrentStatTime(void);
 
 
 #endif // !FRONTEND_PARSER
