@@ -5268,12 +5268,12 @@ void ExecuteTruncateGuts(
     foreach (cell, seq_relids) {
         Oid seq_relid = lfirst_oid(cell);
 
-        ResetSequence(seq_relid, true);
+        ResetSequence(seq_relid, true, false);
     }
     foreach (cell, autoinc_seqoids) {
         Oid seq_relid = lfirst_oid(cell);
 
-        ResetSequence(seq_relid, true);
+        ResetSequence(seq_relid, true, true);
     }
 
     /*
@@ -19260,7 +19260,18 @@ static void AlterColumnToFirstAfter(AlteredTableInfo* tab, Relation rel, AlterTa
     CommandCounterIncrement();
 
     /* create or replace view */
-    ReplaceViewQueryFirstAfter(query_str);
+    ListCell* viewinfo = NULL;
+    bool isViewValid = true;
+    foreach (viewinfo, query_str) {
+        ViewInfoForAdd *info = (ViewInfoForAdd *)lfirst(viewinfo);
+        isViewValid &= GetPgObjectValid(info->ev_class, get_rel_relkind(info->ev_class));
+        if (!isViewValid) {
+            break;
+        }
+    }
+    if (isViewValid) {
+        ReplaceViewQueryFirstAfter(query_str);
+    }
 }
 
 static bool CheckIndexIsConstraint(Relation dep_rel, Oid objid, Oid *refobjid)
