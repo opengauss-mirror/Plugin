@@ -432,6 +432,19 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
     dq_putmessage(buf->data, buf->len);
 }
 
+static void read_param_blob_data(uint32 stmt_id, int param_idx, com_stmt_param *param, StringInfo buf)
+{
+    /* Long-data sent via COM_STMT_SEND_LONG_DATA wins over the inline
+       COM_STMT_EXECUTE payload (the client omits the bytes there). */
+    if (!GetCachedParamBlob(stmt_id, param_idx, &param->value.text, &param->length)) {
+        param->value.text = dq_get_string_with_len(buf, &param->length);
+        if (param->value.text == NULL) {
+            param->value.text = pstrdup("");
+        }
+    }
+    param->has_length = true;
+}
+
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSource *psrc,
     com_stmt_exec_request *req, StringInfo buf, const InputStmtParam *stmt_param)
 {
@@ -481,7 +494,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSo
             case DOLPHIN_TYPE_MEDIUM_BLOB:
             case DOLPHIN_TYPE_BLOB:
             case DOLPHIN_TYPE_TINY_BLOB: {
-                parameters[i].value.text = GetCachedParamBlob(req->statement_id);
+                read_param_blob_data(req->statement_id, i, &parameters[i], buf);
                 parameters[i].type = TYPE_STRING;
                 break;
             }
@@ -505,7 +518,11 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSo
                         break;
                     }
                 }
-                parameters[i].value.text = dq_get_string_lenenc(buf);
+                /* Long-data (COM_STMT_SEND_LONG_DATA) wins over the inline payload.
+                   The mysql crate declares oversized Bytes params as VAR_STRING and
+                   omits their bytes from COM_STMT_EXECUTE, so the cache must be
+                   consulted here too (not only in the BLOB branch). */
+                read_param_blob_data(req->statement_id, i, &parameters[i], buf);
                 break;
             }
             case DOLPHIN_TYPE_DATE:
@@ -650,6 +667,18 @@ static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *
 
 void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf, PrinttupAttrInfo *thisState)
 {
+    /* Binary columns: send raw bytes (detoast first), decided by BINARY_FLAG (OID-independent)
+       before the type switch so blob/bytea/binary and text all route consistently. */
+    if (dolphin_type_is_binary(item)) {
+        struct varlena *original = (struct varlena *)DatumGetPointer(binval);
+        struct varlena *value = (struct varlena *)PG_DETOAST_DATUM(binval);
+        dq_append_string_lenenc(buf, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value));
+        if (value != original) {
+            pfree_ext(value);
+        }
+        return;
+    }
+
     switch (item->dolphin_type_id) {
         case DOLPHIN_TYPE_LONG:
         case DOLPHIN_TYPE_INT24: {
@@ -721,8 +750,8 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         case DOLPHIN_TYPE_MEDIUM_BLOB:
         case DOLPHIN_TYPE_BLOB:
         case DOLPHIN_TYPE_TINY_BLOB: {
-            u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
-            char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
+            /* Non-binary blob-family types are text (e.g. "text") -> output as text. */
+            char *val = TextDatumGetCString(binval);
             dq_append_string_lenenc(buf, val);
             pfree_ext(val);
             break;
@@ -879,8 +908,32 @@ void read_send_long_data_request(StringInfo buf)
 
     dq_get_int4(buf, &statement_id);
     dq_get_int2(buf, &param_id);
-    char *payload = dq_get_string_eof(buf);
-    SaveCachedParamBlob(statement_id, payload);
+
+    char stmt_name[NAMEDATALEN] = DOLPHIN_PROTOCOL_STMT_NAME_PREFIX;
+    char statement_id_str[MAX_INT32_LEN + 1];
+    pg_lltoa((int64)statement_id, statement_id_str);
+    int rc = strcat_s(stmt_name, NAMEDATALEN, statement_id_str);
+    if (rc != EOK) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+                        errmsg("failed to build prepared statement name")));
+    }
+
+    PreparedStatement *pstmt = NULL;
+    CachedPlanSource *psrc = NULL;
+    get_prepared_statement(stmt_name, &pstmt, &psrc);
+    if (psrc == NULL || param_id >= (uint16)psrc->num_params) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("parameter %u is out of range for prepared statement %u", param_id, statement_id)));
+    }
+
+    /* Read the payload as raw bytes with its exact length. 0x00 is data, not a
+       string terminator, so no length-encoded / C-string read is used here. */
+    int payload_len = buf->len - buf->cursor;
+    char *payload = dq_get_string_len(buf, payload_len);
+    if (payload == NULL) {
+        payload = pstrdup("");
+    }
+    SaveCachedParamBlob(statement_id, param_id, payload, payload_len);
 }
 
 void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)

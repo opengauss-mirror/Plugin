@@ -367,4 +367,18 @@ static inline char* dq_get_string_lenenc(StringInfo msg)
     return dq_get_string_len(msg, len);
 }
 
+/* Read a protocol STRING param (length-encoded) + return its byte length.
+   Uses the exact byte count so 0x00 bytes are preserved (not cut by strlen). */
+static inline char* dq_get_string_with_len(StringInfo msg, int *out_len)
+{
+    uint64 len;
+
+    uint8 first = dq_get_int_lenenc(msg, (void *)&len);
+    if (first != 0xfe) {
+        len = len & 0xffffffff;
+    }
+    *out_len = (int)len;
+    return dq_get_string_len(msg, (int)len);
+}
+
 #endif /* BYTE_STREAM_H */

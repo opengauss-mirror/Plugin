@@ -256,6 +256,12 @@ typedef struct TypeItem {
     uint charset_flag;            // charset
 } TypeItem;
 
+/* True if the type is a raw-binary type (dolphin's BINARY_FLAG), OID-independent. */
+static inline bool dolphin_type_is_binary(const TypeItem *item)
+{
+    return item != NULL && (item->flags & BINARY_FLAG) != 0;
+}
+
 typedef struct b_typoidHashKey {
     Oid db_oid;
     Oid type_oid;
@@ -278,10 +284,16 @@ typedef struct HashEntryStmtParamType {
     char status;
 } HashEntryStmtParamType;
 
+typedef struct BlobParam {
+    char* data;      /* accumulated long-data bytes for one param (0x00 safe, no pstrdup) */
+    Size len;        /* bytes accumulated so far */
+    Size capacity;   /* allocated size of data[] */
+    bool present;    /* distinguish "0 bytes were sent" from "nothing sent yet" */
+} BlobParam;
+
 typedef struct BlobParams {
-    const char** data;
-    uint32 count;
-    uint32 cursor;
+    BlobParam* params;   /* indexed by param_id */
+    uint32 count;        /* number of BlobParam slots allocated */
 } BlobParams;
 
 typedef struct HashEntryBlob {
@@ -295,7 +307,12 @@ extern const TypeItem* GetItemByTypeOid(Oid oid);
 extern const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id);
 extern void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value);
 
-extern const char* GetCachedParamBlob(uint32 stmt_id);
-extern void SaveCachedParamBlob(uint32 stmt_id, char *data);
+/* SEND_LONG_DATA cache: one buffer per (statement_id, param_id), appendable.
+   GetCachedParamBlob is a non-consuming lookup (returns false if no long data
+   was sent for the param); SaveCachedParamBlob appends a chunk; the cache is
+   cleared by RemoveCachedParamBlob after each COM_STMT_EXECUTE / RESET. */
+extern bool GetCachedParamBlob(uint32 stmt_id, uint32 param_id, const char** data, int* len);
+extern void SaveCachedParamBlob(uint32 stmt_id, uint32 param_id, const char* data, int len);
+extern void RemoveCachedParamBlob(uint32 stmt_id);
 
 #endif /* proto_com.h */

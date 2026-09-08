@@ -588,19 +588,24 @@ static void InitSendBlobHashTable()
                                                       HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-const char* GetCachedParamBlob(uint32 stmt_id)
+bool GetCachedParamBlob(uint32 stmt_id, uint32 param_id, const char** data, int* len)
 {
     if (GetSessionContext()->b_sendBlobHash == NULL) {
-        InitSendBlobHashTable();
+        return false;
     }
 
     bool found = false;
     HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
                                                         &stmt_id, HASH_FIND, &found);
-    return found ? entry->value->data[entry->value->cursor++] : NULL;
+    if (!found || param_id >= entry->value->count || !entry->value->params[param_id].present) {
+        return false;
+    }
+    *data = entry->value->params[param_id].data;
+    *len = (int)entry->value->params[param_id].len;
+    return true;
 }
 
-void SaveCachedParamBlob(uint32 stmt_id, char *data)
+void SaveCachedParamBlob(uint32 stmt_id, uint32 param_id, const char* data, int len)
 {
     if (GetSessionContext()->b_sendBlobHash == NULL) {
         InitSendBlobHashTable();
@@ -612,18 +617,58 @@ void SaveCachedParamBlob(uint32 stmt_id, char *data)
 
     MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
     if (!found) {
-        BlobParams *blob = (BlobParams *)palloc0(sizeof(BlobParams));
-        entry->value = blob;
+        entry->value = (BlobParams *)palloc0(sizeof(BlobParams));
     }
 
-    entry->value->count++;
-    if (entry->value->data) {
-        entry->value->data = (const char **)repalloc(entry->value->data, entry->value->count * sizeof(char **));
-    } else {
-        entry->value->data = (const char **)palloc0(entry->value->count * sizeof(char **));
+    BlobParams *blob = entry->value;
+    if (param_id >= blob->count) {
+        uint32 old_count = blob->count;
+        blob->count = param_id + 1;
+        if (blob->params) {
+            blob->params = (BlobParam *)repalloc(blob->params, blob->count * sizeof(BlobParam));
+            errno_t rc = memset_s(blob->params + old_count, (blob->count - old_count) * sizeof(BlobParam), 0,
+                                  (blob->count - old_count) * sizeof(BlobParam));
+            securec_check(rc, "\0", "\0");
+        } else {
+            blob->params = (BlobParam *)palloc0(blob->count * sizeof(BlobParam));
+        }
     }
-    
-    entry->value->data[entry->value->count - 1] = pstrdup(data);
 
+    BlobParam *param = &blob->params[param_id];
+    Size new_len = param->len + (Size)len;
+    if (param->capacity < new_len + 1) {
+        param->capacity = new_len + 1;
+        if (param->data) {
+            param->data = (char *)repalloc(param->data, param->capacity);
+        } else {
+            param->data = (char *)palloc(param->capacity);
+        }
+    }
+    if (len > 0) {
+        errno_t rc = memcpy_s(param->data + param->len, param->capacity - param->len, data, len);
+        if (rc != EOK) {
+            ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("memcpy_s failed")));
+        }
+    }
+    param->len = new_len;
+    param->data[param->len] = '\0';
+    param->present = true;
     MemoryContextSwitchTo(oldcontext);
+}
+
+void RemoveCachedParamBlob(uint32 stmt_id)
+{
+    if (GetSessionContext()->b_sendBlobHash == NULL) {
+        return;
+    }
+
+    HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash, &stmt_id,
+                                                        HASH_REMOVE, NULL);
+    if (entry != NULL) {
+        for (uint32 i = 0; i < entry->value->count; i++) {
+            pfree_ext(entry->value->params[i].data);
+        }
+        pfree_ext(entry->value->params);
+        pfree_ext(entry->value);
+    }
 }
