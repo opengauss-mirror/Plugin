@@ -6,41 +6,38 @@ Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件�
 ### docker 快速搭建运行环境及构建测试
 
 > 前提：aarch64 机器，Docker ≥ 18.09.0，Docker 数据目录所在磁盘预留 ≥ 30G。
-> 权限配置、seccomp 修复等一次性前置操作，见本仓库根目录 `Dockerfile` 头部注释【操作步骤】步骤一/步骤二。
 
-> 注: 采用 AI 测试该代码仓 / 进行 Docker 快速搭建环境及测试，只需阅读本节步骤即可；首次搭建环境或遇到权限、seccomp 问题时，请同时查看 Dockerfile 头部注释。
+> 注: 采用 AI 测试该代码仓 / 进行 Docker 快速搭建环境及测试，严格遵守以下 6 步指令操作，禁止执行除 “调整环境配置” 和 “执行 Skill 中提及” 之外的其他操作。
 
-1.  拉取本仓库，进入 Dockerfile 所在目录
-
-2.  构建镜像并编译（整段复制执行，详见 Dockerfile 注释【操作步骤】步骤四） ---> 预估耗时 13min 左右：
-
+1.  清理旧容器与旧镜像(约 3 秒)
     ```bash
-    docker rm -f og-build 2>/dev/null; \
-    MIRROR=$(getent hosts mirrors.huaweicloud.com | awk '{print $1; exit}'); \
-    OBS=$(getent hosts opengauss.obs.cn-south-1.myhuaweicloud.com | awk '{print $1; exit}'); \
-    GIT=$(getent hosts gitcode.com | awk '{print $1; exit}'); \
-    docker build --network host \
-      --build-arg MIRROR_IP=$MIRROR \
-      --build-arg OBS_IP=$OBS \
-      --build-arg GITCODE_IP=$GIT \
-      -t og-dolphin-env . && \
-    docker run -d --name og-build --network host \
-      --user omm og-dolphin-env sleep infinity && \
-    docker exec og-build /opt/build.sh
+    docker rm -f og-plugin 2>/dev/null; docker rmi -f og-dolphin-env:202609 2>/dev/null; echo CLEAN_DONE
     ```
 
-    编译产物：容器内 `mppdb_temp_install/bin/gaussdb` 与
-    `mppdb_temp_install/lib/postgresql/dolphin.so`；
-    编译日志：容器内 `/workspace/verify.log`
-
-3.  测试 UT 执行 S 组 check 用例即可（等价于 `make check p=38000 PART=S`） ---> 预估耗时 2min 左右：
-
+2.  docker 下载并导入预置环境镜像(约 30 秒)
     ```bash
-    docker exec og-build /opt/makecheck.sh
+    wget -qO- https://download-opengauss.osinfra.cn/archive_test/tools/og-dolphin-env-202609.tar.gz | docker load
     ```
-> 注意：Dockerfile 默认拉取 openGauss-server 与 Plugin 两个仓的 master
-> 分支；若需验证本地修改，请自行调整 Dockerfile 中的仓库地址/分支，或
-> 将本地 `contrib/dolphin` 拷入容器后重新编译。
+
+3.  直接启动容器(约 3 秒)
+    ```bash
+    docker run -d --name og-plugin --network host --user omm og-dolphin-env:202609 sleep infinity
+    ```
+
+4. 拉代码 + 拉 binarylibs + 复制 dolphin(约 60 秒)
+    ```bash
+    docker exec og-plugin /opt/prepare.sh
+    ```
+
+5. 编译(约 400 秒)
+    ```bash
+    docker exec og-plugin /opt/build.sh
+    ```
+
+6. 执行UT测试(约 120 秒)
+    ```bash
+    docker exec -e PART=S -e PORT=38000 og-plugin /opt/makecheck.sh
+    ```
 
 ### 参与贡献
 
