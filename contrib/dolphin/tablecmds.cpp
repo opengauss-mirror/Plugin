@@ -5268,12 +5268,12 @@ void ExecuteTruncateGuts(
     foreach (cell, seq_relids) {
         Oid seq_relid = lfirst_oid(cell);
 
-        ResetSequence(seq_relid, true);
+        ResetSequence(seq_relid, true, false);
     }
     foreach (cell, autoinc_seqoids) {
         Oid seq_relid = lfirst_oid(cell);
 
-        ResetSequence(seq_relid, true);
+        ResetSequence(seq_relid, true, true);
     }
 
     /*
@@ -8567,6 +8567,18 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
 
             if (RelationIsSubPartitioned(rel) && cmd->subtype == AT_ClusterOn) {
                 ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot cluster a subpartition table")));
+            }
+
+            if ((cmd->subtype == AT_AlterColumnType || cmd->subtype == AT_ModifyColumn) &&
+                (cmd->is_first || cmd->after_name != NULL) &&
+                (RelationIsCUFormat(rel) ||
+                    (RELATION_IS_PARTITIONED(rel) &&
+                        pg_strcasecmp(RelationGetOrientation(rel), ORIENTATION_COLUMN) == 0))) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-supported feature"),
+                        errdetail("column orientated table is not supported for modify column "
+                            "first|after columnName")));
             }
 
             if (RelationIsCUFormat(rel) && !CStoreSupportATCmd(cmd->subtype)) {
