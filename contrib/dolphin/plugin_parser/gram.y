@@ -4887,6 +4887,7 @@ AlterTableStmt:
 						n->kind = OBJECT_INDEX;
 						n->relation = $3;
 						n->name = NULL;
+						n->is_alter_index_rebuild = true;
 						$$ = (Node *)n;
 					}
 					else if ($4->length == 1 && ((AlterTableCmd*)lfirst($4->head))->subtype == AT_RebuildIndexPartition)
@@ -4895,6 +4896,7 @@ AlterTableStmt:
 						n->kind = OBJECT_INDEX_PARTITION;
 						n->relation = $3;
 						n->name = ((AlterTableCmd*)lfirst($4->head))->name;
+						n->is_alter_index_rebuild = true;
 						$$ = (Node *)n;
 					}
 					else
