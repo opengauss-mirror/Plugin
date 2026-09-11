@@ -1491,3 +1491,28 @@ openGauss=# explain (costs off) execute s1 using 1;
 openGauss=# explain (costs off) execute s1 using 10000;
 ERROR:  tinyint out of range
 ```
+
+## dolphin.type_name_map_in_protocol
+
+**参数说明**：该参数作用于 SQL 函数 `format_type()` 返回的类型名，控制 openGauss 经 MySQL 协议（dolphin 插件）访问时，通过 `format_type()` 获取列类型名的功能（如 `information_schema.columns`、`SHOW COLUMNS`、`DESCRIBE` 等元数据接口）所返回的类型名。参数为 ON 时，上述元数据接口会将 openGauss 类型名映射为 MySQL 兼容的类型名（例如 `character varying` → `varchar`、`double precision` → `double`、`timestamp without time zone` → `datetime`），便于 MySQL 生态的工具（如 ORM 框架 Diesel）识别列类型；参数为 OFF 时，元数据接口返回 openGauss 原生类型名。凡是调用 `format_type()` 获取类型名的视图、命令与工具（`information_schema`、`SHOW COLUMNS`/`DESCRIBE`、JDBC 等）均受本参数影响。
+
+该参数仅对 MySQL 协议会话生效，openGauss 原生协议（gsql）会话始终返回 openGauss 原生类型名，不受本参数影响。
+
+> 说明：元数据（metadata）即客户端读取数据库中表/列的类型名等信息，用于生成自身的类型映射或 ORM 的 schema，不涉及数据增删改查。openGauss B 兼容库允许原生协议与 MySQL 协议同时访问同一个库，本参数让 MySQL 协议会话读取到的列类型名与 MySQL 语义对齐（如 `character varying` → `varchar`、`double precision` → `double`、`nvarchar2` → `varchar`），使 MySQL 客户端看到自洽的 MySQL 类型名。元数据中的类型名与其在 MySQL 协议下的数据类型码保持一致。
+
+该参数目前属于USERSET类型参数，请参考[表1](dolphin_resetting_parameters.md#zh-cn_topic_0283137176_zh-cn_topic_0237121562_zh-cn_topic_0059777490_t91a6f212010f4503b24d7943aed6d837)中对应设置方法进行设置。
+
+**取值范围**：布尔型
+
+- on表示MySQL协议会话返回MySQL兼容的类型名。
+- off表示MySQL协议会话返回openGauss原生类型名。
+
+**默认值**：on
+
+**示例**：
+
+```sql
+--关闭类型名映射，MySQL协议会话读取元数据时返回openGauss原生类型名
+openGauss=# set dolphin.type_name_map_in_protocol = off;
+SET
+```
