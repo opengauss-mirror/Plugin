@@ -222,7 +222,7 @@ drop table pg_vector_collection;
 
     ```sql
     -- 加入一个新的DN节点
-    select spq_add_node('127.0.01', 5432);
+    select spq_add_node('127.0.0.1', 5432);
     -- 重分布
     openGauss=# select rebalance_table_shards();
     ```
@@ -239,7 +239,7 @@ drop table pg_vector_collection;
 
     ```sql
     -- 加入一个新的DN节点
-    select spq_add_node('127.0.01', 5432);
+    select spq_add_node('127.0.0.1', 5432);
     -- 重分布
     openGauss=# select spq_rebalance_start();
     ```
@@ -259,7 +259,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_set_coordinator_host('127.0.01', 5432);
+    openGauss=# select spq_set_coordinator_host('127.0.0.1', 5432);
     ```
 
 - spq_add_node(nodename text, nodeport integer)
@@ -275,7 +275,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_add_node('127.0.01', 5432);
+    openGauss=# select spq_add_node('127.0.0.1', 5432);
     ```   
  
 - spq_add_inactive_node(nodename text, nodeport integer)
@@ -291,7 +291,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_add_inactive_node('127.0.01', 5432);
+    openGauss=# select spq_add_inactive_node('127.0.0.1', 5432);
     ```
 
 - spq_activate_node(nodename text, nodeport integer)
@@ -307,7 +307,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_activate_node('127.0.01', 5432);
+    openGauss=# select spq_activate_node('127.0.0.1', 5432);
     ```
 
 - spq_disable_node(nodename text, nodeport integer)
@@ -323,7 +323,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_disable_node('127.0.01', 5432);
+    openGauss=# select spq_disable_node('127.0.0.1', 5432);
     ```
 
 - spq_update_node(node_id int, new_node_name text, new_node_port integer)
@@ -340,7 +340,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_update_node(1, '127.0.01', 5432);
+    openGauss=# select spq_update_node(1, '127.0.0.1', 5432);
     ```
 
 - spq_remove_node(nodename text, nodeport integer)
@@ -356,7 +356,7 @@ drop table pg_vector_collection;
     示例：
 
     ```sql
-    openGauss=# select spq_remove_node('127.0.01', 5432);
+    openGauss=# select spq_remove_node('127.0.0.1', 5432);
     ```
 
 - spq_is_coordinator()
