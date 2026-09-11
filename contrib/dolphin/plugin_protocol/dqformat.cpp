@@ -28,6 +28,7 @@
 #include "utils/varbit.h"
 #include "utils/bytea.h"
 #include "access/printtup.h"
+#include "access/xact.h"
 
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
@@ -207,8 +208,14 @@ void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet)
     offset += dq_store_int_lenenc(&okPacket[offset], ok_packet->insert_id);
     /* Set SERVER_MORE_RESULTS_EXISTS flag for multi-statement intermediate results.
      * Required to prevent libmysqlclient connection desync. */
-    dq_store_int2(&okPacket[offset],
-        ok_packet->server_status | (u_sess->proc_cxt.nextQuery ? SERVER_MORE_RESULTS_EXISTS : 0));
+    uint16 server_status = ok_packet->server_status;
+    if (u_sess->proc_cxt.nextQuery) {
+        server_status |= SERVER_MORE_RESULTS_EXISTS;
+    }
+    if (IsTransactionBlock()) {
+        server_status |= SERVER_STATUS_IN_TRANS;
+    }
+    dq_store_int2(&okPacket[offset], server_status);
     offset += BYTE_2_LEN;
     dq_store_int2(&okPacket[offset], ok_packet->warnings);
     offset += BYTE_2_LEN;
@@ -231,11 +238,14 @@ void send_general_ok_packet()
 /* status flags * int<2>	status_flags	SERVER_STATUS_flags_enum*/
 static inline void sendServerStatus(char* buf)
 {
+    uint16 server_status = SERVER_STATUS_AUTOCOMMIT;
     if (u_sess->proc_cxt.nextQuery) {
-        dq_store_int2(buf, SERVER_STATUS_AUTOCOMMIT | SERVER_MORE_RESULTS_EXISTS);
-    } else {
-        dq_store_int2(buf, SERVER_STATUS_AUTOCOMMIT);
+        server_status |= SERVER_MORE_RESULTS_EXISTS;
     }
+    if (IsTransactionBlock()) {
+        server_status |= SERVER_STATUS_IN_TRANS;
+    }
+    dq_store_int2(buf, server_status);
 }
 
 void send_network_eof_packet()
