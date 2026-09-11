@@ -29,16 +29,15 @@
 #include "plugin_postgres.h"
 #include "pgstat.h"
 
-int dq_putmessage(const char *packet, size_t len)
+/*
+ * Write one physical MySQL packet: 3-byte little-endian payload length and
+ * one sequence id, followed by the payload bytes.
+ */
+static int put_packet(const char *packet, size_t len)
 {
-    if (t_thrd.libpq_cxt.DoingCopyOut || t_thrd.libpq_cxt.PqCommBusy) {
-        return 0;
-    }
-    t_thrd.libpq_cxt.PqCommBusy = true;
-
-    // put header size
+    /* header: 3-byte little-endian payload length + 1-byte sequence id */
     char header[BYTE_4_LEN];
-    uint32 num = len;
+    uint32 num = (uint32)len;
     int i = 0;
     for (; i < BYTE_3_LEN; i++) {
         uint8 ni = num & 0xff;
@@ -49,18 +48,57 @@ int dq_putmessage(const char *packet, size_t len)
     header[i] = u_sess->proc_cxt.nextSeqid++;
 
     if (internal_putbytes(header, BYTE_4_LEN)) {
-        goto fail;
+        return EOF;
     }
-
-    if (internal_putbytes(packet, len)) {
-        goto fail;
+    if (len > 0 && internal_putbytes(packet, len)) {
+        return EOF;
     }
-    t_thrd.libpq_cxt.PqCommBusy = false;
     return 0;
+}
 
-fail:
+/* Reset the busy flag and return rc, the common exit of dq_putmessage(). */
+static int finish_putmessage(int rc)
+{
     t_thrd.libpq_cxt.PqCommBusy = false;
-    return EOF;
+    return rc;
+}
+
+int dq_putmessage(const char *packet, size_t len)
+{
+    if (t_thrd.libpq_cxt.DoingCopyOut || t_thrd.libpq_cxt.PqCommBusy) {
+        return 0;
+    }
+    t_thrd.libpq_cxt.PqCommBusy = true;
+
+    /*
+     * Payload length field is only 3 bytes (max 0xFFFFFF), so split longer
+     * messages into 0xFFFFFF-sized packets with one sequence id each, and
+     * append a zero-length packet when the length is a multiple of 0xFFFFFF.
+     * Outbound counterpart of the reassembly in dq_getmessage().
+     */
+    const size_t maxPayloadLength = 0xFFFFFF;
+    size_t remaining = len;
+    const char *packetCursor = packet;
+
+    while (remaining > maxPayloadLength) {
+        if (put_packet(packetCursor, maxPayloadLength)) {
+            return finish_putmessage(EOF);
+        }
+        packetCursor += maxPayloadLength;
+        remaining -= maxPayloadLength;
+    }
+
+    /* tail packet (or exact multiple of 0xFFFFFF) */
+    if (put_packet(packetCursor, remaining)) {
+        return finish_putmessage(EOF);
+    }
+    if (remaining == maxPayloadLength) {
+        /* exact multiple of 0xFFFFFF: terminate with a zero-length packet */
+        if (put_packet(NULL, 0)) {
+            return finish_putmessage(EOF);
+        }
+    }
+    return finish_putmessage(0);
 }
 
 /* In contrast to pq_recvbuf, receive messages of a specific length and do not read more data */
