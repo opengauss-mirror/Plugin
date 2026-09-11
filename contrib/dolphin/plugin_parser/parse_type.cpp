@@ -803,13 +803,13 @@ Oid transform_bin_collation(ColumnDef* coldef, Oid cur_col_oid)
 {
     Oid result = InvalidOid;
     bool has_binary = false;
-    List *columnOptions = coldef->columnOptions;
-    ListCell *ColumnOption = NULL;
-    foreach (ColumnOption, columnOptions) {
-        void *pointer = lfirst(ColumnOption);
+    List* columnOptions = coldef->columnOptions;
+    ListCell* columnOption = NULL;
+    foreach (columnOption, columnOptions) {
+        void* pointer = lfirst(columnOption);
         if (IsA(pointer, String)) {
-            Value *v = (Value*)pointer;
-            if (strcmp(v->val.str, "binary") == 0) {
+            Value* value = (Value*)pointer;
+            if (strcmp(value->val.str, "binary") == 0) {
                 has_binary = true;
                 break;
             }
@@ -836,13 +836,13 @@ Oid transform_bin_collation(ColumnDef* coldef, Oid cur_col_oid)
 
     /* if the charset is ascii, no need to change(a text charset binary binary) */
     if (column_charset != PG_SQL_ASCII) {
-        const char *encode_name = pg_encoding_to_char(column_charset);
+        const char* encode_name = pg_encoding_to_char(column_charset);
         if (encode_name[0] != 0) {
             Size coll_name_len = strlen(encode_name) + strlen(COL_BINARY_ATTR) + 1;
-            char *coll_name = (char*)palloc(coll_name_len);
+            char* coll_name = (char*)palloc(coll_name_len);
             int ret = sprintf_s(coll_name, coll_name_len, "%s%s", encode_name, COL_BINARY_ATTR);
             securec_check_ss(ret, "", "");
-            List *coll_name_list = list_make2(makeString("pg_catalog"), makeString(pg_strtolower(coll_name)));
+            List* coll_name_list = list_make2(makeString("pg_catalog"), makeString(pg_strtolower(coll_name)));
             result = get_collation_oid(coll_name_list, true);
             if (!OidIsValid(result)) {
                 ereport(WARNING, (errmsg("invalid collation name: %s, use default collation", coll_name)));
@@ -877,15 +877,23 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
     bool is_bin_type, Oid rel_coll_oid)
 {
 #ifdef DOLPHIN
-    if (coldef->typname->charset != PG_INVALID_ENCODING && !IsBSupportCharsetType(typeOid) &&
+    if (DB_IS_CMPT(D_FORMAT)) {
+        if (coldef->typname->charset != PG_INVALID_ENCODING && !IsDSupportCharsetType(typeOid)) {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("type %s not support set charset", format_type_be(typeOid))));
+        }
+    } else if (coldef->typname->charset != PG_INVALID_ENCODING && !IsBSupportCharsetType(typeOid) &&
         !targetissqlvariant(typeOid)) {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("type %s not support set charset", format_type_be(typeOid))));
+    }
 #else
     if (coldef->typname->charset != PG_INVALID_ENCODING && !IsSupportCharsetType(typeOid) &&
         !targetissqlvariant(typeOid) && !type_is_enum(typeOid) && !type_is_set(typeOid)) {
-#endif
         ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
-                errmsg("type %s not support set charset", format_type_be(typeOid))));
+            errmsg("type %s not support set charset", format_type_be(typeOid))));
     }
+#endif
 
     Oid result = InvalidOid;
 #ifdef DOLPHIN
@@ -2039,6 +2047,21 @@ bool IsBinaryType(Oid typid)
             (typid) == BYTEAOID);
 }
 #endif
+
+bool IsBinaryTypeWithCollation(Oid typid)
+{
+    /* Keep this check local: IsBinaryType() can be overridden by an extension
+     * hook and must not broaden the D-format compatibility exception. */
+    if (typid == BLOBOID || typid == BYTEAOID) {
+        return true;
+    }
+
+    if (u_sess->attr.attr_sql.shark && u_sess->hook_cxt.getVarbinaryOidHook != NULL) {
+        Oid varbinaryOid = ((GetVarbinaryOidHookType)u_sess->hook_cxt.getVarbinaryOidHook)();
+        return OidIsValid(varbinaryOid) && typid == varbinaryOid;
+    }
+    return false;
+}
 
 void check_type_supports_multi_charset(Oid typid, bool allow_array)
 {
