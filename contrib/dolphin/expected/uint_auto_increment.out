@@ -25,10 +25,14 @@ NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_
 ERROR:  check constraint cannot refer to an auto_increment column
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key DEFAULT 100, name varchar(200),a int unsigned);
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
-ERROR:  multiple default values specified for column "id" of table "test_create_autoinc_err"
+ERROR:  both default and AUTO INCREMENT specified for column "id" of table "test_create_autoinc_err"
+LINE 1: ...nc_err(id int unsigned auto_increment primary key DEFAULT 10...
+                                                               ^
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key GENERATED ALWAYS AS (a+1) STORED, name varchar(200),a int unsigned);
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
-ERROR:  both default and generation expression specified for column "id" of table "test_create_autoinc_err"
+ERROR:  both generation expression and AUTO INCREMENT specified for column "id" of table "test_create_autoinc_err"
+LINE 1: ...nc_err(id int unsigned auto_increment primary key GENERATED ...
+                                                               ^
 --auto_increment value error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=1;
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
