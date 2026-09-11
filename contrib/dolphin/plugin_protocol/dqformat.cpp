@@ -454,7 +454,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, CachedPlanSo
             continue;
         }
         Assert(stmt_param->itypes != NULL);
-        switch (stmt_param->itypes[i]) {
+        switch (stmt_param->itypes[i] & 0xff) {
             case DOLPHIN_TYPE_LONG:
             case DOLPHIN_TYPE_INT24: {
                 parameters[i].type = TYPE_INT4;
