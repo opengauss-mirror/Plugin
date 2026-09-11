@@ -354,4 +354,39 @@ show collation_connection;
 (1 row)
 
 reset b_format_behavior_compat_options;
+-- Django mysql backend probe stubs (fixed compatibility values)
+select @@default_storage_engine as default_storage_engine,
+       @@sql_auto_is_null as sql_auto_is_null;
+ default_storage_engine | sql_auto_is_null 
+------------------------+------------------
+ InnoDB                 |                0
+(1 row)
+
+set default_storage_engine = 'InnoDB';
+WARNING:  Variable 'default_storage_engine' has no actual meaning.
+set @@sql_auto_is_null = 0;
+WARNING:  Variable 'sql_auto_is_null' has no actual meaning.
+select @@default_storage_engine as default_storage_engine,
+       @@sql_auto_is_null as sql_auto_is_null;
+ default_storage_engine | sql_auto_is_null 
+------------------------+------------------
+ InnoDB                 |                0
+(1 row)
+
+set default_storage_engine = 'MyISAM';
+ERROR:  Variable 'default_storage_engine' only accepts InnoDB.
+select @@default_storage_engine as default_storage_engine;
+ default_storage_engine 
+------------------------
+ InnoDB
+(1 row)
+
+set default_storage_engine = 'ArbitraryEngine';
+ERROR:  Variable 'default_storage_engine' only accepts InnoDB.
+select @@default_storage_engine as default_storage_engine;
+ default_storage_engine 
+------------------------
+ InnoDB
+(1 row)
+
 drop schema test_guc_select_and_set cascade;
