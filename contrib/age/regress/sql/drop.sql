@@ -28,6 +28,14 @@ SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname = 'drop';
 
 SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'ag_catalog';
 
+-- A loaded library must leave parser, planner, and object hooks idle while the
+-- extension catalog entry and ag_catalog schema are absent.
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = 'pg_catalog'
+) AS hooks_are_idle;
+CREATE SCHEMA _regress_drop;
+DROP SCHEMA _regress_drop;
+
 -- Recreate the extension and validate we can recreate a graph
 CREATE EXTENSION age;
 
@@ -43,6 +51,9 @@ DROP EXTENSION age;
 
 -- Check the graph still exist, because the DROP command failed
 SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname = 'drop';
+
+-- A failed extension drop must restore the graph-protection object hook.
+DROP TABLE drop._ag_label_vertex;
 
 -- Should succeed, delete the 'drop' schema and leave 'other_schema'
 DROP EXTENSION age CASCADE;

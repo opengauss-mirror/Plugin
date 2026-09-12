@@ -26,6 +26,7 @@
 
 #include "access/sysattr.h"
 #include "catalog/pg_type.h"
+#include "catalog/pg_proc.h"
 #include "catalog/pg_inherits_fn.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
@@ -35,6 +36,7 @@
 #include "nodes/pg_list.h"
 #include "nodes/primnodes.h"
 #include "nodes/ag_extensible.h"
+
 #include "optimizer/var.h"
 #include "optimizer/clauses.h"
 #include "parser/parse_clause.h"
@@ -46,11 +48,14 @@
 #include "parser/parse_node.h"
 #include "parser/parse_oper.h"
 #include "parser/parse_relation.h"
+#include "parser/analyze.h"
 #include "parser/parse_target.h"
 #include "parser/parsetree.h"
 #include "rewrite/rewriteHandler.h"
+#include "rewrite/rewriteManip.h"
 #include "utils/typcache.h"
 #include "utils/lsyscache.h"
+#include "utils/builtins.h"
 #include "utils/rel.h"
 
 #include "catalog/ag_graph.h"
@@ -65,8 +70,37 @@
 #include "parser/cypher_parse_node.h"
 #include "utils/ag_cache.h"
 #include "utils/ag_func.h"
+#include "utils/ag_guc.h"
 #include "utils/agtype.h"
 #include "utils/graphid.h"
+
+#define VLE_FUNCTION_MIN_ARGUMENTS 5
+#define VLE_LOWER_BOUND_ARGUMENT_INDEX 3
+#define PATH_NODE_EDGE_POSITION_MODULUS 2
+#define OPTIONAL_PATH_SECURITY_BARRIER_MIN_ELEMENTS 7
+#define REDUCE_ACCUMULATOR_ATTRIBUTE_NUMBER 1
+#define REDUCE_ELEMENT_ATTRIBUTE_NUMBER 2
+#define REDUCE_CAPTURE_FIRST_SLOT 2
+#define REDUCE_ORDINALITY_TARGET_ATTRIBUTE_NUMBER 5
+#define REDUCE_AGGREGATE_ARGUMENT_COUNT 4
+#define REDUCE_INIT_ARGUMENT_INDEX 0
+#define REDUCE_BODY_ARGUMENT_INDEX 1
+#define REDUCE_ELEMENT_ARGUMENT_INDEX 2
+#define REDUCE_EXTRAS_ARGUMENT_INDEX 3
+#define REDUCE_INIT_TARGET_ENTRY_NUMBER 1
+#define REDUCE_BODY_TARGET_ENTRY_NUMBER 2
+#define REDUCE_ELEMENT_TARGET_ENTRY_NUMBER 3
+#define REDUCE_EXTRAS_TARGET_ENTRY_NUMBER 4
+#define EDGE_UNIQUENESS_MIN_EDGE_COUNT 2
+#define EDGE_UNIQUENESS_MAX_EDGE_COUNT 4
+#define MAX_PARENT_PARSE_LEVEL 2
+#define VERTEX_ID_FIELD_NUMBER 1
+#define VERTEX_LABEL_FIELD_NUMBER 2
+#define VERTEX_PROPERTIES_FIELD_NUMBER 3
+#define EDGE_LABEL_FIELD_NUMBER 2
+#define EDGE_END_ID_FIELD_NUMBER 3
+#define EDGE_START_ID_FIELD_NUMBER 4
+#define EDGE_PROPERTIES_FIELD_NUMBER 5
 
 /*
  * Variable string names for makeTargetEntry. As they are going to be variable
@@ -88,6 +122,7 @@
 #define AGE_VARNAME_MERGE_CLAUSE AGE_DEFAULT_VARNAME_PREFIX"merge_clause"
 #define AGE_VARNAME_ID AGE_DEFAULT_VARNAME_PREFIX"id"
 #define AGE_VARNAME_SET_CLAUSE AGE_DEFAULT_VARNAME_PREFIX"set_clause"
+#define AGE_VARNAME_SET_VALUE AGE_DEFAULT_VARNAME_PREFIX"set_value"
 
 #define VLE_LEFT_ALIAS			"l"
 #define VLE_VERTEX_ALIAS		"vtx"
@@ -97,10 +132,6 @@
 #define VLE_COLNAME_NEXT		"next"
 #define VLE_COLNAME_EDGE		"edge"
 #define VLE_COLNAME_VERTEX		"vertex"
-
-
-
-
 
 /*
  * Rules to determine if a node must be included:
@@ -118,6 +149,9 @@ typedef Query *(*transform_method)(cypher_parsestate *cpstate,
 // projection
 static Query *transform_cypher_return(cypher_parsestate *cpstate,
                                       cypher_clause *clause);
+static List *transform_cypher_distinct_clause(cypher_parsestate *cpstate,
+                                              List **target_list,
+                                              List *sort_clause);
 static List *transform_cypher_order_by(cypher_parsestate *cpstate,
                                        List *sort_items, List **target_list,
                                        ParseExprKind expr_kind);
@@ -146,15 +180,17 @@ static List *transform_match_path(cypher_parsestate *cpstate, Query *query,
                                   cypher_path *path);
 static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
                                    cypher_relationship *rel,
-                                   List **target_list);
+                                   List **target_list, bool valid_label);
 static Expr *transform_cypher_node(cypher_parsestate *cpstate,
                                    cypher_node *node, List **target_list,
-                                   bool output_node,bool pathout);
-static Node *make_vertex_expr(cypher_parsestate *cpstate, RangeTblEntry *rte,
-                              char *label);
-static Node *make_edge_expr(cypher_parsestate *cpstate,
-                            RangeTblEntry *rte,
-                            char *label);
+                                   bool output_node, bool valid_label);
+static bool is_zero_lower_bound_vle(Node *varlen);
+static bool match_check_valid_label(cypher_match *match,
+                                    cypher_parsestate *cpstate);
+static bool path_check_valid_label(cypher_path *path,
+                                   cypher_parsestate *cpstate);
+static Node *make_vertex_expr(cypher_parsestate *cpstate, RangeTblEntry *rte);
+static Node *make_edge_expr(cypher_parsestate *cpstate, RangeTblEntry *rte);
 static Node *make_qual(cypher_parsestate *cpstate,
                            transform_entity *entity, char *name);
 static TargetEntry* transform_match_create_path_variable(cypher_parsestate *cpstate,
@@ -171,6 +207,10 @@ static List *make_directed_edge_join_conditions(cypher_parsestate *cpstate,
 static List *join_to_entity(cypher_parsestate *cpstate,
                             transform_entity *entity, Node *qual,
                             enum transform_entity_join_side side);
+static Expr *make_undirected_endpoint_prefilter(cypher_parsestate *cpstate,
+                                                transform_entity *entity,
+                                                Node *start_id_expr,
+                                                Node *end_id_expr);
 static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
                                           transform_entity *prev_edge,
                                           transform_entity *prev_node,
@@ -185,15 +225,23 @@ static A_Expr *filter_vertices_on_label_id(cypher_parsestate *cpstate,
 static transform_entity* make_transform_entity(cypher_parsestate *cpstate,
                                                enum transform_entity_type type,
                                                Node *node, Expr *expr);
+static transform_entity *find_parent_variable(cypher_parsestate *cpstate,
+                                              char *name, Index *levelsup);
+static bool has_list_comp_or_subquery(Node *expr);
+static bool has_list_comp_or_subquery_walker(Node *expr, void *context);
+static Node *coerce_cypher_expr_to_boolean(ParseState *pstate, Node *expr,
+                                           const char *construct_name);
 
+static bool is_nonempty_static_cypher_map(Node *property_constraints);
+static List *create_property_constraint_quals(cypher_parsestate *cpstate,
+                                              transform_entity *entity,
+                                              cypher_map *property_map,
+                                              List *parent_fields);
 static Node *create_property_constraint_function(cypher_parsestate *cpstate,
                                                  transform_entity *entity,
                                                  Node *property_constraints,
                                                  Node *prop_expr);
 static TargetEntry *findTarget(List *targetList, char *resname);
-static transform_entity *transform_VLE_edge_entity(cypher_parsestate *cpstate,
-                                                   cypher_relationship *rel,
-                                                   Query *query);
 // create clause
 static Query *transform_cypher_create(cypher_parsestate *cpstate,
                                       cypher_clause *clause);
@@ -204,7 +252,8 @@ static cypher_create_path* transform_cypher_create_path(cypher_parsestate *cpsta
                                                         cypher_path *cp);
 static cypher_target_node* transform_create_cypher_node(cypher_parsestate *cpstate,
                                                         List **target_list,
-                                                        cypher_node *node);
+                                                        cypher_node *node,
+                                                        bool has_edge);
 static cypher_target_node* transform_create_cypher_new_node(cypher_parsestate *cpstate,
                                                             List **target_list, cypher_node *node);
 static cypher_target_node *transform_create_cypher_existing_node(cypher_parsestate *cpstate,
@@ -216,15 +265,18 @@ static Expr *cypher_create_properties(cypher_parsestate *cpstate,
                                       cypher_target_node *rel,
                                       Relation label_relation, Node *props,
                                       enum transform_entity_type type);
-static Expr *add_volatile_wrapper(Expr *node);
+static Expr *add_volatile_wrapper(ParseState *pstate, Expr *node);
 static bool variable_exists(cypher_parsestate *cpstate, char *name);
-static int get_target_entry_resno(List *target_list, char *name);
+static int get_target_entry_resno(ParseState *pstate, List *target_list,
+                                  char *name);
 static void handle_prev_clause(cypher_parsestate *cpstate, Query *query,
                                cypher_clause *clause, bool first_rte);
 static TargetEntry *placeholder_target_entry(cypher_parsestate *cpstate,
                                              char *name);
 static Query *transform_cypher_sub_pattern(cypher_parsestate *cpstate,
                                            cypher_clause *clause);
+static Query *transform_cypher_sub_query(cypher_parsestate *cpstate,
+                                         cypher_clause *clause);
 // set and remove clause
 static Query *transform_cypher_set(cypher_parsestate *cpstate,
                                    cypher_clause *clause);
@@ -260,6 +312,25 @@ static void get_res_cols(ParseState *pstate, RangeTblEntry *l_rte,
 // unwind
 static Query *transform_cypher_unwind(cypher_parsestate *cpstate,
                                       cypher_clause *clause);
+// call
+static Query *transform_cypher_call_stmt(cypher_parsestate *cpstate,
+                                         cypher_clause *clause);
+static Query *transform_cypher_call_subquery(cypher_parsestate *cpstate,
+                                             cypher_clause *clause);
+// list comprehension
+static Query *transform_cypher_list_comprehension(cypher_parsestate *cpstate,
+                                                  cypher_clause *clause);
+// predicate functions
+static Query *transform_cypher_predicate_function(cypher_parsestate *cpstate,
+                                                  cypher_clause *clause);
+// reduce
+static Query *transform_cypher_reduce(cypher_parsestate *cpstate,
+                                      cypher_clause *clause);
+static Node *make_boolean_test(Node *arg, BoolTestType booltesttype);
+static Node *make_bool_or_agg(ParseState *pstate, Node *arg);
+static Node *make_count_star_filter_agg(ParseState *pstate, Node *filter);
+static Node *make_predicate_case_expr(ParseState *pstate, Node *pred,
+                                      cypher_predicate_function_kind kind);
 // merge
 static Query *transform_cypher_merge(cypher_parsestate *cpstate,
                                      cypher_clause *clause);
@@ -271,15 +342,16 @@ static cypher_create_path* transform_cypher_merge_path(cypher_parsestate *cpstat
 static cypher_target_node* transform_merge_cypher_edge(cypher_parsestate *cpstate, List **target_list,
                                                        cypher_relationship *edge);
 static cypher_target_node* transform_merge_cypher_node(cypher_parsestate *cpstate, List **target_list,
-                                                       cypher_node *node);
+                                                       cypher_node *node,
+                                                       bool has_edge);
 static Node *transform_clause_for_join(cypher_parsestate *cpstate,
                                        cypher_clause *clause,
                                        RangeTblEntry **rte,
                                        ParseNamespaceItem **nsitem,
                                        Alias* alias);
 static cypher_clause *convert_merge_to_match(cypher_merge *merge);
-static void transform_cypher_merge_mark_tuple_position(List *target_list,
-                                                       cypher_create_path *path);
+static void transform_cypher_merge_mark_tuple_position(
+    ParseState *pstate, List *target_list, cypher_create_path *path);
 
 static List *makeTargetListFromRTE(ParseState *pstate, RangeTblEntry *rte);
 // transform
@@ -289,9 +361,6 @@ static List *makeTargetListFromRTE(ParseState *pstate, RangeTblEntry *rte);
     transform_cypher_clause_as_subquery(cpstate, transform_cypher_clause, \
                                         prev_clause, NULL, add_rte_to_query)
 static char *get_next_default_alias(cypher_parsestate *cpstate);
-static transform_entity *find_transform_entity(cypher_parsestate *cpstate,
-                                               char *name,
-                                               enum transform_entity_type type);
 
 static RangeTblEntry *transform_cypher_clause_as_subquery(cypher_parsestate *cpstate,
                                                           transform_method transform,
@@ -324,19 +393,15 @@ static ParseNamespaceItem *create_namespace_item(RangeTblEntry *rte, bool p_rel_
                                              bool p_lateral_ok);
 static List *make_target_list_from_join(ParseState *pstate,
                                     RangeTblEntry *rte);
-static Expr *add_volatile_wrapper(Expr *node);
+static Expr *add_volatile_wrapper(ParseState *pstate, Expr *node);
 static FuncExpr *make_clause_func_expr(char *function_name,
                                        Node *clause_information);
 static char *get_entity_name(transform_entity *entity);
 /* for VLE support */
-static RangeTblEntry *transform_RangeFunction(cypher_parsestate *cpstate,
-                                              RangeFunction *r);
-static Node *transform_VLE_Function(cypher_parsestate *cpstate, Node *n,
-                                    RangeTblEntry **top_rte, int *top_rti,
-                                    List **namespaceoid);
-static RangeTblEntry *append_VLE_Func_to_FromClause(cypher_parsestate *cpstate,
-                                                    Node *n);
 static bool isa_special_VLE_case(cypher_path *path);
+static bool clause_is_dml(cypher_clause *clause);
+static bool clause_chain_has_dml(cypher_clause *clause);
+static Node *make_false_where_clause(bool volatile_needed);
 
 /* new logic for VLE */
 static RangeTblEntry *
@@ -352,8 +417,6 @@ static Node *genVLELeftChild(cypher_parsestate *pstate, cypher_relationship *cre
 							 bool out, bool pathout);
 static char *get_accessor_function_name(enum transform_entity_type type,
                                         char *name);
-static void addRTEtoJoinlist(ParseState* pstate, RangeTblEntry* rte, bool visible);
-static RangeTblEntry* findRTEfromNamespace(ParseState* pstate, char* refname);
 
 /*
  * transform a cypher_clause
@@ -397,6 +460,10 @@ Query *transform_cypher_clause(cypher_parsestate *cpstate,
     {
         result = transform_cypher_sub_pattern(cpstate, clause);
     }
+    else if (is_ag_node(self, cypher_sub_query))
+    {
+        result = transform_cypher_sub_query(cpstate, clause);
+    }
     else if (is_ag_node(self, cypher_union))
     {
         result = transform_cypher_union(cpstate, clause);
@@ -404,10 +471,32 @@ Query *transform_cypher_clause(cypher_parsestate *cpstate,
     else if (is_ag_node(self, cypher_unwind))
     {
         result = transform_cypher_unwind(cpstate, clause);
+    }
+    else if (is_ag_node(self, cypher_call))
+    {
+        result = transform_cypher_call_stmt(cpstate, clause);
+    }
+    else if (is_ag_node(self, cypher_list_comprehension))
+    {
+        result = transform_cypher_list_comprehension(cpstate, clause);
+    }
+    else if (is_ag_node(self, cypher_predicate_function))
+    {
+        result = transform_cypher_predicate_function(cpstate, clause);
+    }
+    else if (is_ag_node(self, cypher_reduce))
+    {
+        result = transform_cypher_reduce(cpstate, clause);
     }else
     {
         ereport(ERROR, (errmsg_internal("unexpected Node for cypher_clause")));
         return NULL; /* suppress the static check warmings */
+    }
+
+    if (clause->next == NULL && clause_is_dml(clause))
+    {
+        coerce_target_entities_to_agtype((ParseState *)cpstate,
+                                         result->targetList);
     }
 
     result->querySource = QSRC_ORIGINAL;
@@ -841,6 +930,14 @@ static Node* transform_cypher_union_tree(cypher_parsestate *cpstate, cypher_clau
             int32 rescoltypmod;
             Oid rescolcoll;
 
+            lcolnode = coerce_entity_to_agtype(pstate, lcolnode);
+            ltle->expr = (Expr *)lcolnode;
+            lcoltype = exprType(lcolnode);
+
+            rcolnode = coerce_entity_to_agtype(pstate, rcolnode);
+            rtle->expr = (Expr *)rcolnode;
+            rcoltype = exprType(rcolnode);
+
             /* select common type, same as CASE et al */
             rescoltype = select_common_type(pstate,
                                             list_make2(lcolnode, rcolnode),
@@ -1083,6 +1180,11 @@ static Query *transform_cypher_unwind(cypher_parsestate *cpstate,
         rte = transform_prev_cypher_clause(cpstate, clause->prev, true);
         rtindex = list_length(pstate->p_rtable);
         Assert(rtindex == 1); // rte is the first RangeTblEntry in pstate
+        if (rtindex != 1) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                     errmsg("invalid value for rtindex")));
+        }
         query->targetList = expandRelAttrs(pstate, rte, rtindex, 0, -1);
     }
 
@@ -1100,14 +1202,13 @@ static Query *transform_cypher_unwind(cypher_parsestate *cpstate,
 
     unwind = makeFuncCall(list_make1(makeString("age_unnest")), NIL, -1);
 
-
     old_expr_kind = pstate->p_expr_kind;
     pstate->p_expr_kind = EXPR_KIND_SELECT_TARGET;
 
     funcexpr = ParseFuncOrColumn(pstate, unwind->funcname,
-                                 list_make2(expr, makeBoolConst(true, false)),
-                                 pstate->p_last_srf, unwind, false,
-                                 target_syntax_loc);
+                                 list_make1(expr),
+                                 pstate->p_last_srf, unwind,
+                                 target_syntax_loc, false);
     pstate->p_expr_kind = old_expr_kind;
 
     te = makeTargetEntry((Expr *) funcexpr,
@@ -1117,6 +1218,8 @@ static Query *transform_cypher_unwind(cypher_parsestate *cpstate,
     query->targetList = lappend(query->targetList, te);
     query->rtable = pstate->p_rtable;
     query->jointree = makeFromExpr(pstate->p_joinlist, NULL);
+    query->hasSubLinks = pstate->p_hasSubLinks;
+    query->hasTargetSRFs = pstate->p_hasTargetSRFs;
 
     assign_query_collations(pstate, query);
 
@@ -1165,8 +1268,8 @@ static List *transform_cypher_delete_item_list(cypher_parsestate *cpstate,
                     (errmsg_internal("unexpected Node for cypher_clause")));
         }
 
-        resno = get_target_entry_resno(query->targetList, val->val.str);
-
+        resno = get_target_entry_resno(pstate, query->targetList,
+            val->val.str);
         if (resno == -1)
         {
             ereport(ERROR,
@@ -1255,6 +1358,10 @@ static Query *transform_cypher_set(cypher_parsestate *cpstate,
 
     query->rtable = pstate->p_rtable;
     query->jointree = makeFromExpr(pstate->p_joinlist, NULL);
+    query->hasSubLinks = pstate->p_hasSubLinks;
+    query->hasTargetSRFs = pstate->p_hasTargetSRFs;
+
+    assign_query_collations(pstate, query);
 
     return query;
 }
@@ -1291,12 +1398,12 @@ cypher_update_information *transform_cypher_remove_item_list(
         {
             ereport(ERROR,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("REMOVE clause does not support adding propereties from maps"),
+                     errmsg("REMOVE clause does not support adding properties from maps"),
                      parser_errposition(pstate, set_item->location)));
         }
 
         item->remove_item = true;
-
+        item->replace_properties = false;
 
         if (!IsA(set_item->prop, A_Indirection))
         {
@@ -1322,7 +1429,8 @@ cypher_update_information *transform_cypher_remove_item_list(
 
         variable_name = variable_node->val.str;
         item->var_name = variable_name;
-        item->entity_position = get_target_entry_resno(query->targetList,
+        item->entity_position = get_target_entry_resno(pstate,
+                                                       query->targetList,
                                                        variable_name);
 
         if (item->entity_position == -1)
@@ -1361,7 +1469,6 @@ cypher_update_information *transform_cypher_remove_item_list(
     return info;
 }
 
-
 cypher_update_information *transform_cypher_set_item_list(
     cypher_parsestate *cpstate, List *set_item_list, Query *query)
 {
@@ -1375,24 +1482,14 @@ cypher_update_information *transform_cypher_set_item_list(
     foreach (li, set_item_list)
     {
         cypher_set_item *set_item = (cypher_set_item*)lfirst(li);
+        bool rhs_is_map = nodeTag(set_item->expr) == T_EXTENSIBLE_NODE &&
+                          is_ag_node(set_item->expr, cypher_map);
         TargetEntry *target_item;
         cypher_update_item *item;
-        ColumnRef *ref;
-        A_Indirection *ind;
-        char *variable_name, *property_name;
-        Value *property_node, *variable_node;
-
-        // ColumnRef may come according to the Parser rule.
-        if (!IsA(set_item->prop, A_Indirection))
-        {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
-                            errmsg("SET clause expects a variable name"),
-                            parser_errposition(pstate, set_item->location)));
-        }
-
-        ind = (A_Indirection *)set_item->prop;
-        item = make_ag_node(cypher_update_item);
+        ColumnRef *ref = NULL;
+        A_Indirection *ind = NULL;
+        char *variable_name;
+        Value *variable_node;
 
         if (!is_ag_node(lfirst(li), cypher_set_item))
         {
@@ -1401,20 +1498,87 @@ cypher_update_information *transform_cypher_set_item_list(
                      errmsg("unexpected node in cypher update list")));
         }
 
-        if (set_item->is_add)
+        item = make_ag_node(cypher_update_item);
+        item->remove_item = false;
+
+        if (IsA(set_item->prop, ColumnRef))
         {
+            if (!rhs_is_map &&
+                !IsA(set_item->expr, FuncCall) &&
+                !IsA(set_item->expr, ColumnRef)) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("SET clause expects a map"),
+                         parser_errposition(pstate, set_item->location)));
+            }
+
+            ref = (ColumnRef *)set_item->prop;
+            item->prop_name = NULL;
+            item->replace_properties = true;
+            item->is_add = set_item->is_add;
+
+            if (IsA(set_item->expr, ColumnRef)) {
+                set_item->expr = (Node *)makeFuncCall(
+                    list_make1(makeString("properties")),
+                    list_make1(set_item->expr), -1);
+            }
+
+            if (rhs_is_map)
+                ((cypher_map *)set_item->expr)->keep_null = set_item->is_add;
+        } else if (IsA(set_item->prop, A_Indirection)) {
+            Value *property_node;
+
+            ind = (A_Indirection *)set_item->prop;
+            if (!IsA(ind->arg, ColumnRef)) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                         errmsg("SET clause expects a variable name"),
+                         parser_errposition(pstate, set_item->location)));
+            }
+
+            ref = (ColumnRef *)ind->arg;
+            item->replace_properties = false;
+            item->is_add = false;
+
+            if (set_item->is_add) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("SET clause does not yet support incrementing a specific property"),
+                         parser_errposition(pstate, set_item->location)));
+            }
+
+            if (list_length(ind->indirection) != 1) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("SET clause does not support updating maps or lists in a property"),
+                         parser_errposition(pstate, set_item->location)));
+            }
+
+            property_node = (Value *)linitial(ind->indirection);
+            if (!IsA(property_node, String)) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                         errmsg("SET clause expects a property name"),
+                         parser_errposition(pstate, set_item->location)));
+            }
+
+            item->prop_name = property_node->val.str;
+        } else {
             ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("SET clause does not yet support adding propereties from maps"),
+                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                     errmsg("SET clause expects a variable name"),
                      parser_errposition(pstate, set_item->location)));
         }
 
-        item->remove_item = false;
+        if (list_length(ref->fields) != 1)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                     errmsg("SET clause expects a variable name"),
+                     parser_errposition(pstate, set_item->location)));
+        }
 
-        // extract variable name
-        ref = (ColumnRef *)ind->arg;
-
-        variable_node = (Value*)linitial(ref->fields);
+        variable_node = (Value *)linitial(ref->fields);
         if (!IsA(variable_node, String))
         {
             ereport(ERROR,
@@ -1425,7 +1589,8 @@ cypher_update_information *transform_cypher_set_item_list(
 
         variable_name = variable_node->val.str;
         item->var_name = variable_name;
-        item->entity_position = get_target_entry_resno(query->targetList,
+        item->entity_position = get_target_entry_resno(pstate,
+                                                       query->targetList,
                                                        variable_name);
 
         if (item->entity_position == -1)
@@ -1434,36 +1599,23 @@ cypher_update_information *transform_cypher_set_item_list(
                     (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
                      errmsg("undefined reference to variable %s in SET clause",
                             variable_name),
-                            parser_errposition(pstate, set_item->location)));
-        }
-
-        // extract property name
-        if (list_length(ind->indirection) != 1)
-        {
-            ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                     errmsg("SET clause doesnt not support updating maps or lists in a property"),
                      parser_errposition(pstate, set_item->location)));
         }
 
-        property_node = (Value*)linitial(ind->indirection);
-        if (!IsA(property_node, String))
-        {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
-                     errmsg("SET clause expects a property name"),
-                     parser_errposition(pstate, set_item->location)));
-        }
-
-        property_name = property_node->val.str;
-        item->prop_name = property_name;
-
-        // create target entry for the new property value
+        /*
+         * Keep the SET RHS under an internal name.  FigureColname() would use
+         * the referenced variable name for expressions such as SET n.copy = n,
+         * producing a second column named "n" and making a following RETURN n
+         * ambiguous.  AGE_DEFAULT_VARNAME_PREFIX also keeps this executor-only
+         * value out of later user-visible projections.
+         */
         item->prop_position = (AttrNumber)pstate->p_next_resno;
         target_item = transform_cypher_item(cpstate, set_item->expr, NULL,
-                                            EXPR_KIND_SELECT_TARGET, NULL,
+                                            EXPR_KIND_SELECT_TARGET,
+                                            AGE_VARNAME_SET_VALUE,
                                             false);
-        target_item->expr = add_volatile_wrapper(target_item->expr);
+
+        target_item->expr = add_volatile_wrapper(pstate, target_item->expr);
 
         query->targetList = lappend(query->targetList, target_item);
         info->set_items = lappend(info->set_items, item);
@@ -1637,7 +1789,6 @@ static Index transform_group_clause_expr(List **flatresult,
          * planner's problem.
          */
 
-
          foreach(sl, sortClause)
          {
              SortGroupClause *sc = (SortGroupClause *) lfirst(sl);
@@ -1731,6 +1882,61 @@ static List * transform_group_clause(cypher_parsestate *cpstate,
     return result;
 }
 
+static List *transform_cypher_distinct_clause(cypher_parsestate *cpstate,
+                                              List **target_list,
+                                              List *sort_clause)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    List *entity_entries = NIL;
+    List *entity_id_entries = NIL;
+    List *distinct_clause;
+    ListCell *target_cell;
+    ListCell *entity_cell;
+    ListCell *entity_id_cell;
+
+    if (sort_clause != NIL) {
+        return transformDistinctClause(pstate, target_list, sort_clause, false);
+    }
+
+    foreach (target_cell, *target_list)
+    {
+        TargetEntry *target_entry = (TargetEntry *)lfirst(target_cell);
+        Oid target_type = exprType((Node *)target_entry->expr);
+        FieldSelect *entity_id;
+        TargetEntry *entity_id_entry;
+
+        if (target_entry->resjunk ||
+            (target_type != VERTEXOID && target_type != EDGEOID)) {
+            continue;
+        }
+
+        entity_id = make_field_select((Expr *)copyObject(target_entry->expr),
+                                      1, GRAPHIDOID);
+        entity_id_entry = makeTargetEntry(
+            (Expr *)entity_id, (AttrNumber)pstate->p_next_resno++,
+            AGE_DEFAULT_VARNAME_PREFIX"distinct_entity_id", false);
+
+        target_entry->resjunk = true;
+        *target_list = lappend(*target_list, entity_id_entry);
+        entity_entries = lappend(entity_entries, target_entry);
+        entity_id_entries = lappend(entity_id_entries, entity_id_entry);
+    }
+
+    distinct_clause = transformDistinctClause(pstate, target_list, NIL, false);
+
+    forboth (entity_cell, entity_entries,
+             entity_id_cell, entity_id_entries)
+    {
+        TargetEntry *entity_entry = (TargetEntry *)lfirst(entity_cell);
+        TargetEntry *entity_id_entry = (TargetEntry *)lfirst(entity_id_cell);
+
+        entity_entry->resjunk = false;
+        entity_id_entry->resjunk = true;
+    }
+
+    return distinct_clause;
+}
+
 static Query *transform_cypher_return(cypher_parsestate *cpstate,
                                       cypher_clause *clause)
 {
@@ -1767,15 +1973,13 @@ static Query *transform_cypher_return(cypher_parsestate *cpstate,
         // ORDER BY
         query->sortClause = transform_cypher_order_by(cpstate, self->order_by,
                                                     &query->targetList,
-                                                    EXPR_KIND_ORDER_BY);
-
-       
+        EXPR_KIND_ORDER_BY);
 
         // DISTINCT
         if (self->distinct)
         {
-            query->distinctClause = transformDistinctClause(
-                pstate, &query->targetList, query->sortClause, false);
+            query->distinctClause = transform_cypher_distinct_clause(
+                cpstate, &query->targetList, query->sortClause);
             query->hasDistinctOn = false;
         }
         else
@@ -1807,13 +2011,14 @@ static Query *transform_cypher_return(cypher_parsestate *cpstate,
                                                     &query->targetList,
                                                     query->sortClause,
                                                     EXPR_KIND_GROUP_BY);
-	}
-
+            }
 
     markTargetListOrigins(pstate, query->targetList);
     query->rtable = pstate->p_rtable;
     query->jointree = makeFromExpr(pstate->p_joinlist, NULL);
     query->hasAggs = pstate->p_hasAggs;
+    query->hasSubLinks = pstate->p_hasSubLinks;
+    query->hasTargetSRFs = pstate->p_hasTargetSRFs;
 
     assign_query_collations(pstate, query);
 
@@ -1868,7 +2073,8 @@ static TargetEntry *find_target_list_entry(cypher_parsestate *cpstate,
             char*  col = strVal(field1);
             foreach (lt, *target_list) {
                 te = (TargetEntry*)lfirst(lt);
-                if (strcmp(col, te->resname) == 0) {
+                /* resjunk entries (e.g. earlier ORDER BY items) have no name */
+                if (te->resname != NULL && strcmp(col, te->resname) == 0) {
                     return te;
                 }
             }
@@ -1958,7 +2164,6 @@ static Query *transform_cypher_clause_with_where(cypher_parsestate *cpstate,
 {
     ParseState *pstate = (ParseState *)cpstate;
     Query *query;
-    Node *self = clause->self;
     Node *where_qual = NULL;
 
     if (where)
@@ -1973,6 +2178,12 @@ static Query *transform_cypher_clause_with_where(cypher_parsestate *cpstate,
 
         rtindex = list_length(pstate->p_rtable);
         Assert(rtindex == 1); // rte is the only RangeTblEntry in pstate
+        if (rtindex != 1)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                     errmsg("invalid value for rtindex")));
+        }
 
         /*
          * add all the target entries in rte to the current target list to pass
@@ -1985,14 +2196,11 @@ static Query *transform_cypher_clause_with_where(cypher_parsestate *cpstate,
 
         query->rtable = pstate->p_rtable;
 
-        if (!is_ag_node(self, cypher_match))
-        {
-            where_qual = transform_cypher_expr(cpstate, where,
-                                                        EXPR_KIND_WHERE);
+        where_qual = transform_cypher_expr(cpstate, where,
+                                           EXPR_KIND_WHERE);
 
-            where_qual = coerce_to_boolean(pstate, where_qual,
-                                            "WHERE");
-        }
+        where_qual = coerce_cypher_expr_to_boolean(pstate, where_qual,
+                                                   "WHERE");
         
         query->jointree = makeFromExpr(pstate->p_joinlist, where_qual);
         assign_query_collations(pstate, query);
@@ -2009,12 +2217,116 @@ static Query *transform_cypher_clause_with_where(cypher_parsestate *cpstate,
     return query;
 }
 
+static bool is_zero_lower_bound_vle(Node *varlen)
+{
+    FuncCall *func;
+    Node *lower_node;
+    A_Const *lower;
+
+    if (varlen == NULL || !IsA(varlen, FuncCall)) {
+        return false;
+    }
+
+    func = (FuncCall *)varlen;
+    if (list_length(func->args) < VLE_FUNCTION_MIN_ARGUMENTS) {
+        return false;
+    }
+
+    lower_node = (Node *)list_nth(func->args, VLE_LOWER_BOUND_ARGUMENT_INDEX);
+    if (lower_node == NULL || !IsA(lower_node, A_Const)) {
+        return false;
+    }
+
+    lower = (A_Const *)lower_node;
+    return lower->val.type == T_Integer && lower->val.val.ival == 0;
+}
+
+static bool path_check_valid_label(cypher_path *path,
+                                   cypher_parsestate *cpstate)
+{
+    ListCell *lc;
+    int index = 0;
+
+    foreach (lc, path->path)
+    {
+        label_cache_data *label;
+
+        if (index % PATH_NODE_EDGE_POSITION_MODULUS == 0) {
+            cypher_node *node = (cypher_node *)lfirst(lc);
+
+            if (node->label != NULL) {
+                label = search_label_name_graph_cache(node->label,
+                                                      cpstate->graph_oid);
+                if (label == NULL || label->kind != LABEL_KIND_VERTEX) {
+                    return false;
+                }
+            }
+        } else {
+            cypher_relationship *rel =
+                (cypher_relationship *)lfirst(lc);
+
+            if (rel->label != NULL) {
+                label = search_label_name_graph_cache(rel->label,
+                                                      cpstate->graph_oid);
+                /*
+                 * A zero-hop VLE does not consume an edge. Preserve its
+                 * self-binding even when the requested edge label does
+                 * not exist; positive-hop traversal still compares the
+                 * requested label and rejects every real edge.
+                 */
+                if ((label == NULL || label->kind != LABEL_KIND_EDGE) &&
+                    !is_zero_lower_bound_vle(rel->varlen)) {
+                    return false;
+                }
+            }
+        }
+
+        index++;
+    }
+
+    return true;
+}
+
+static bool match_check_valid_label(cypher_match *match,
+                                    cypher_parsestate *cpstate)
+{
+    ListCell *lc;
+
+    foreach (lc, match->pattern)
+    {
+        if (!path_check_valid_label((cypher_path *)lfirst(lc), cpstate)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static Query *transform_cypher_match(cypher_parsestate *cpstate,
                                      cypher_clause *clause)
 {
-        cypher_match *match_self = (cypher_match*) clause->self;
-   return transform_cypher_clause_with_where(
-        cpstate, transform_cypher_match_pattern, clause, match_self->where);
+    cypher_match *match_self = (cypher_match*) clause->self;
+    Node *where;
+
+    /*
+     * A preceding write may create labels while its clause is transformed.
+     * Defer validation until that transformation has completed.
+     */
+    if (!clause_chain_has_dml(clause->prev) &&
+        !match_check_valid_label(match_self, cpstate)) {
+        match_self->where = make_false_where_clause(false);
+    }
+
+    where = match_self->where;
+
+    if (!match_self->optional && has_list_comp_or_subquery(where)) {
+        match_self->where = NULL;
+        return transform_cypher_clause_with_where(cpstate,
+                                                  transform_cypher_match_pattern,
+                                                  clause, where);
+    }
+
+    return transform_cypher_match_pattern(cpstate, clause);
 }
 
 /*
@@ -2117,9 +2429,17 @@ static RangeTblEntry *transform_cypher_optional_match_clause(cypher_parsestate *
     List *res_colnames = NIL, *res_colvars = NIL;
     Alias *l_alias, *r_alias;
     ParseNamespaceItem *nsitem;
+    cypher_match *match_self = (cypher_match *)clause->self;
+    Node *saved_where = match_self->where;
     int i = 0;
 
     j->jointype = JOIN_LEFT;
+
+    /*
+     * OPTIONAL MATCH WHERE is a LEFT JOIN predicate. Detach it while the
+     * right-side subquery is transformed, then resolve it against both sides.
+     */
+    match_self->where = NULL;
 
     l_alias = makeAlias(PREV_CYPHER_CLAUSE_ALIAS, NIL);
     r_alias = makeAlias(CYPHER_OPT_RIGHT_ALIAS, NIL);
@@ -2142,6 +2462,48 @@ static RangeTblEntry *transform_cypher_optional_match_clause(cypher_parsestate *
 
     j->rarg = transform_clause_for_join(cpstate, clause, &r_rte,
                                         &r_nsitem, r_alias);
+
+    /*
+     * Keep long correlated OPTIONAL MATCH patterns as parameterized lateral
+     * subqueries. If openGauss pulls one up, endpoint predicates that reference
+     * the left side are postponed until after the right-side path has been
+     * expanded, which can turn a selective traversal into full edge-table
+     * joins. A security barrier preserves the LEFT JOIN boundary and lets the
+     * bound outer vertices drive endpoint index scans inside the pattern.
+     *
+     * Short optional patterns are intentionally left flattenable: preserving
+     * their subquery boundary adds measurable overhead without avoiding a
+     * costly intermediate path. Three relationships are the first case where
+     * delaying both bound endpoints can materialize a large multi-edge join.
+     */
+    if (contain_vars_of_level((Node *)r_rte->subquery, 1))
+    {
+        ListCell *path_cell;
+
+        foreach (path_cell, match_self->pattern)
+        {
+            cypher_path *path = (cypher_path *)lfirst(path_cell);
+
+            if (list_length(path->path) >=
+                OPTIONAL_PATH_SECURITY_BARRIER_MIN_ELEMENTS) {
+                r_rte->security_barrier = true;
+                break;
+            }
+        }
+    }
+
+    pstate->p_relnamespace = lappend(pstate->p_relnamespace, r_nsitem);
+    pstate->p_varnamespace = lappend(pstate->p_varnamespace, r_nsitem);
+
+    if (saved_where != NULL)
+    {
+        Node *where_qual = transform_cypher_expr(cpstate, saved_where,
+                                                 EXPR_KIND_WHERE);
+
+        j->quals = coerce_cypher_expr_to_boolean(pstate, where_qual, "WHERE");
+    }
+
+    match_self->where = saved_where;
 
     // we are done transform the lateral left join
     pstate->p_lateral_active = false;
@@ -2189,6 +2551,24 @@ static Query *transform_cypher_match_pattern(cypher_parsestate *cpstate,
     query = makeNode(Query);
     query->commandType = CMD_SELECT;
 
+    if (self->optional == true && clause->next)
+    {
+        cypher_clause *next = clause->next;
+
+        if (is_ag_node(next->self, cypher_match))
+        {
+            cypher_match *next_self = (cypher_match *)next->self;
+
+            if (!next_self->optional) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_SYNTAX_ERROR),
+                         errmsg("MATCH cannot follow OPTIONAL MATCH"),
+                         parser_errposition(pstate,
+                                            exprLocation((Node *)next_self))));
+            }
+        }
+    }
+
     // If there is no previous clause, transform to a general MATCH clause.
     if (self->optional == true && clause->prev != NULL)
     {
@@ -2204,10 +2584,22 @@ static Query *transform_cypher_match_pattern(cypher_parsestate *cpstate,
         {
             RangeTblEntry *rte;
             int rtindex;
+            bool has_dml;
 
             rte = transform_prev_cypher_clause(cpstate, clause->prev, true);
+            has_dml = clause_chain_has_dml(clause->prev);
+            if (has_dml) {
+                /* MATCH quals must not run before the preceding write chain. */
+                rte->security_barrier = true;
+            }
+
             rtindex = list_length(pstate->p_rtable);
             Assert(rtindex == 1); // rte is the first RangeTblEntry in pstate
+            if (rtindex != 1) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_DATATYPE_MISMATCH),
+                         errmsg("invalid value for rtindex")));
+            }
 
             /*
              * add all the target entries in rte to the current target list to pass
@@ -2215,6 +2607,16 @@ static Query *transform_cypher_match_pattern(cypher_parsestate *cpstate,
              * next clause
              */
             query->targetList = expandRelAttrs(pstate, rte, rtindex, 0, -1);
+
+            /*
+             * CREATE can introduce labels while the predecessor is transformed.
+             * Recheck now, after those catalog and cache changes are visible.
+             * Keep the false predicate volatile so planning cannot discard the
+             * predecessor write before execution.
+             */
+            if (has_dml && !match_check_valid_label(self, cpstate)) {
+                where = make_false_where_clause(true);
+            }
         }
 
         transform_match_pattern(cpstate, query, self->pattern, where);
@@ -2226,6 +2628,8 @@ static Query *transform_cypher_match_pattern(cypher_parsestate *cpstate,
     query->hasWindowFuncs = pstate->p_hasWindowFuncs;
     query->hasTargetSRFs = pstate->p_hasTargetSRFs;
     query->hasAggs = pstate->p_hasAggs;
+    query->hasSubLinks = pstate->p_hasSubLinks;
+    query->hasTargetSRFs = pstate->p_hasTargetSRFs;
 
     assign_query_collations(pstate, query);
 
@@ -2369,134 +2773,1053 @@ static Query *transform_cypher_sub_pattern(cypher_parsestate *cpstate,
     return qry;
 }
 
+static Query *transform_cypher_sub_query(cypher_parsestate *cpstate,
+                                         cypher_clause *clause)
+{
+    cypher_clause *c;
+    Query *qry;
+    RangeTblEntry *rte;
+    ParseState *pstate = (ParseState *)cpstate;
+    cypher_sub_query *sub_query = (cypher_sub_query*)clause->self;
+    cypher_parsestate *child_parse_state = make_cypher_parsestate(cpstate);
+    ParseState *p_child_parse_state = (ParseState *)child_parse_state;
+
+    p_child_parse_state->p_expr_kind = pstate->p_expr_kind;
+    child_parse_state->subquery_where_flag = true;
+
+    c = make_cypher_clause((List *)sub_query->query);
+
+    qry = makeNode(Query);
+    qry->commandType = CMD_SELECT;
+
+    rte = transform_cypher_clause_as_subquery(child_parse_state,
+                                              transform_cypher_clause, c,
+                                              NULL, true);
+
+    qry->targetList = makeTargetListFromRTE(p_child_parse_state, rte);
+
+    markTargetListOrigins(p_child_parse_state, qry->targetList);
+
+    qry->rtable = p_child_parse_state->p_rtable;
+    qry->jointree = makeFromExpr(p_child_parse_state->p_joinlist, NULL);
+
+    qry->hasSubLinks = p_child_parse_state->p_hasSubLinks;
+    qry->hasAggs = p_child_parse_state->p_hasAggs;
+
+    if (qry->hasAggs) {
+        parse_check_aggregates(p_child_parse_state, qry);
+    }
+
+    assign_query_collations(p_child_parse_state, qry);
+
+    free_cypher_parsestate(child_parse_state);
+
+    return qry;
+}
+
+static Node *make_boolean_test(Node *arg, BoolTestType booltesttype)
+{
+    BooleanTest *bt = makeNode(BooleanTest);
+
+    bt->arg = (Expr *)arg;
+    bt->booltesttype = booltesttype;
+
+    return (Node *)bt;
+}
+
+static Node *make_bool_or_agg(ParseState *pstate, Node *arg)
+{
+    Aggref *agg = makeNode(Aggref);
+    TargetEntry *te = makeTargetEntry((Expr *)arg, 1, NULL, false);
+    Oid argtypes[1] = {BOOLOID};
+
+    agg->aggfnoid = LookupFuncName(list_make1(makeString("bool_or")), 1,
+                                   argtypes, false);
+    agg->aggtype = BOOLOID;
+    agg->aggcollid = InvalidOid;
+    agg->inputcollid = InvalidOid;
+    agg->aggtranstype = InvalidOid;
+    agg->aggargtypes = list_make1_oid(BOOLOID);
+    agg->aggdirectargs = NIL;
+    agg->args = list_make1(te);
+    agg->aggorder = NIL;
+    agg->aggdistinct = NIL;
+    agg->aggfilter = NULL;
+    agg->aggstar = false;
+    agg->aggvariadic = false;
+    agg->aggkind = 'n';
+    agg->agglevelsup = 0;
+    agg->location = -1;
+
+    pstate->p_hasAggs = true;
+    return (Node *)agg;
+}
+
+static Node *make_count_star_filter_agg(ParseState *pstate, Node *filter)
+{
+    Aggref *agg = makeNode(Aggref);
+
+    agg->aggfnoid = LookupFuncName(list_make1(makeString("count")), 0, NULL,
+                                   false);
+    agg->aggtype = INT8OID;
+    agg->aggcollid = InvalidOid;
+    agg->inputcollid = InvalidOid;
+    agg->aggtranstype = InvalidOid;
+    agg->aggargtypes = NIL;
+    agg->aggdirectargs = NIL;
+    agg->args = NIL;
+    agg->aggorder = NIL;
+    agg->aggdistinct = NIL;
+    agg->aggfilter = (Expr *)filter;
+    agg->aggstar = true;
+    agg->aggvariadic = false;
+    agg->aggkind = 'n';
+    agg->agglevelsup = 0;
+    agg->location = -1;
+
+    pstate->p_hasAggs = true;
+    return (Node *)agg;
+}
+
+static Node *make_predicate_case_expr(ParseState *pstate, Node *pred,
+                                      cypher_predicate_function_kind kind)
+{
+    CaseExpr *cexpr = makeNode(CaseExpr);
+    CaseWhen *when1 = makeNode(CaseWhen);
+    CaseWhen *when2 = makeNode(CaseWhen);
+    Node *true_const = (Node *)makeBoolConst(true, false);
+    Node *false_const = (Node *)makeBoolConst(false, false);
+    Node *null_const = (Node *)makeBoolConst(false, true);
+
+    when2->expr = (Expr *)make_bool_or_agg(pstate,
+                                           make_boolean_test(pred, IS_UNKNOWN));
+    when2->result = (Expr *)null_const;
+    when2->location = -1;
+
+    if (kind == CPFK_ALL) {
+        when1->expr = (Expr *)make_bool_or_agg(pstate,
+                                               make_boolean_test(pred, IS_FALSE));
+        when1->result = (Expr *)false_const;
+        cexpr->defresult = (Expr *)true_const;
+    } else if (kind == CPFK_ANY) {
+        when1->expr = (Expr *)make_bool_or_agg(pstate,
+                                               make_boolean_test(pred, IS_TRUE));
+        when1->result = (Expr *)true_const;
+        cexpr->defresult = (Expr *)false_const;
+    } else if (kind == CPFK_NONE) {
+        when1->expr = (Expr *)make_bool_or_agg(pstate,
+                                               make_boolean_test(pred, IS_TRUE));
+        when1->result = (Expr *)false_const;
+        cexpr->defresult = (Expr *)true_const;
+    } else {
+        CaseWhen *when3 = makeNode(CaseWhen);
+        Node *count_true_ge_two;
+        Node *count_true_eq_one;
+        Node *last_srf = pstate->p_last_srf;
+        Const *two = makeConst(INT8OID, -1, InvalidOid, sizeof(int64),
+                               Int64GetDatum(2), false, FLOAT8PASSBYVAL);
+        Const *one = makeConst(INT8OID, -1, InvalidOid, sizeof(int64),
+                               Int64GetDatum(1), false, FLOAT8PASSBYVAL);
+
+        count_true_ge_two = (Node *)make_op(
+            pstate, list_make1(makeString(">=")),
+            make_count_star_filter_agg(pstate,
+                                       make_boolean_test(pred, IS_TRUE)),
+            (Node *)two, last_srf, -1);
+        count_true_eq_one = (Node *)make_op(
+            pstate, list_make1(makeString("=")),
+            make_count_star_filter_agg(pstate,
+                                       make_boolean_test(pred, IS_TRUE)),
+            (Node *)one, last_srf, -1);
+
+        when1->expr = (Expr *)count_true_ge_two;
+        when1->result = (Expr *)false_const;
+        when3->expr = (Expr *)count_true_eq_one;
+        when3->result = (Expr *)true_const;
+        when3->location = -1;
+
+        cexpr->defresult = (Expr *)false_const;
+        cexpr->args = list_make3(when1, when2, when3);
+    }
+
+    when1->location = -1;
+    cexpr->casetype = BOOLOID;
+    cexpr->arg = NULL;
+    if (cexpr->args == NIL)
+        cexpr->args = list_make2(when1, when2);
+    cexpr->location = -1;
+
+    return (Node *)cexpr;
+}
+
+static Query *transform_cypher_list_comprehension(cypher_parsestate *cpstate,
+                                                  cypher_clause *clause)
+{
+    cypher_list_comprehension *list_comp;
+    cypher_parsestate *child_cpstate;
+    ParseState *child_pstate;
+    Query *query;
+    RangeFunction *rf;
+    FuncCall *unwind;
+    Node *list_expr;
+    Node *funcexpr;
+    RangeTblEntry *rte;
+    RangeTblRef *rtr;
+    List *namespaceoid;
+    Node *pred;
+    Node *result_expr;
+    TargetEntry *te;
+    int rtindex;
+    ParseExprKind old_expr_kind;
+    FuncCall *count_call;
+    Node *count_expr;
+    Node *count_eq_zero;
+    Node *last_srf;
+    Const *zero;
+    CaseExpr *empty_case;
+    CaseWhen *empty_when;
+    FuncCall *empty_list_func;
+
+    list_comp = (cypher_list_comprehension *)clause->self;
+    child_cpstate = make_cypher_parsestate(cpstate);
+    child_pstate = (ParseState *)child_cpstate;
+    child_pstate->p_expr_kind = ((ParseState *)cpstate)->p_expr_kind;
+
+    query = makeNode(Query);
+    query->commandType = CMD_SELECT;
+
+    list_expr = transform_cypher_expr(child_cpstate, list_comp->expr,
+                                      EXPR_KIND_SELECT_TARGET);
+    unwind = makeFuncCall(list_make1(makeString("age_unnest")), NIL, -1);
+
+    old_expr_kind = child_pstate->p_expr_kind;
+    child_pstate->p_expr_kind = EXPR_KIND_SELECT_TARGET;
+    funcexpr = ParseFuncOrColumn(child_pstate, unwind->funcname,
+                                 list_make1(list_expr),
+                                 child_pstate->p_last_srf, unwind,
+                                 exprLocation(list_comp->expr), false);
+    child_pstate->p_expr_kind = old_expr_kind;
+
+    rf = makeNode(RangeFunction);
+    rf->lateral = contain_vars_of_level(funcexpr, 0);
+    rf->ordinality = false;
+    rf->funccallnode = (Node *)unwind;
+    rf->alias = makeAlias(list_comp->varname, NIL);
+    rf->coldeflist = NIL;
+
+    rte = addRangeTableEntryForFunction(child_pstate, list_comp->varname,
+                                        funcexpr, rf, rf->lateral, true);
+    rtindex = list_length(child_pstate->p_rtable);
+    Assert(rte == rt_fetch(rtindex, child_pstate->p_rtable));
+
+    rtr = makeNode(RangeTblRef);
+    rtr->rtindex = rtindex;
+    namespaceoid = list_make1(create_namespace_item(rte, true, true, false, true));
+    checkNameSpaceConflicts(child_pstate, child_pstate->p_relnamespace, namespaceoid);
+    child_pstate->p_joinlist = lappend(child_pstate->p_joinlist, rtr);
+    child_pstate->p_relnamespace = list_concat(child_pstate->p_relnamespace, namespaceoid);
+    child_pstate->p_varnamespace = lappend(child_pstate->p_varnamespace,
+                                           makeNamespaceItem(rte, true, true));
+    setNamespaceLateralState(child_pstate->p_relnamespace, false, true);
+    setNamespaceLateralState(child_pstate->p_varnamespace, false, true);
+
+    if (list_comp->where != NULL) {
+        pred = transform_cypher_expr(child_cpstate, list_comp->where, EXPR_KIND_WHERE);
+        pred = coerce_cypher_expr_to_boolean(child_pstate, pred, "WHERE");
+    } else {
+        pred = NULL;
+    }
+
+    result_expr = transform_cypher_expr(child_cpstate, list_comp->mapping_expr,
+                                        EXPR_KIND_SELECT_TARGET);
+
+    count_call = makeFuncCall(list_make1(makeString("count")), NIL, -1);
+    count_call->agg_star = true;
+    count_expr = transformExpr(child_pstate, (Node *)count_call, EXPR_KIND_SELECT_TARGET);
+    zero = makeConst(INT8OID, -1, InvalidOid, sizeof(int64), Int64GetDatum(0), false, FLOAT8PASSBYVAL);
+    last_srf = child_pstate->p_last_srf;
+    count_eq_zero = (Node *)make_op(child_pstate, list_make1(makeString("=")),
+                                    count_expr, (Node *)zero, last_srf, -1);
+
+    empty_list_func = makeFuncCall(list_make2(makeString("ag_catalog"),
+                                              makeString("agtype_build_list")),
+                                   NIL, -1);
+
+    empty_when = makeNode(CaseWhen);
+    empty_when->expr = (Expr *)count_eq_zero;
+    empty_when->result = (Expr *)transformExpr(child_pstate, (Node *)empty_list_func,
+                                               EXPR_KIND_SELECT_TARGET);
+    empty_when->location = -1;
+
+    empty_case = makeNode(CaseExpr);
+    empty_case->casetype = AGTYPEOID;
+    empty_case->arg = NULL;
+    empty_case->args = list_make1(empty_when);
+    {
+        Aggref *array_agg = makeNode(Aggref);
+        TargetEntry *array_te = makeTargetEntry((Expr *)result_expr, 1, NULL,
+                                                false);
+        Oid array_to_agtype_oid = get_ag_func_oid("agtype_array_to_agtype", 1,
+                                                  AGTYPEARRAYOID);
+
+        /*
+         * list comprehensions preserve null elements, unlike collect(). Build
+         * an agtype[] first so SQL NULL rows survive, then convert the array
+         * back to an agtype list at this expression boundary. Bypass function
+         * name lookup because openGauss exposes the built-in polymorphic
+         * aggregate through a fixed catalog OID; the Aggref below carries the
+         * resolved agtype input and agtype[] result types.
+         */
+        array_agg->aggfnoid = ARRAYAGGFUNCOID;
+        array_agg->aggtype = AGTYPEARRAYOID;
+        array_agg->aggcollid = InvalidOid;
+        array_agg->inputcollid = InvalidOid;
+        array_agg->aggtranstype = InvalidOid;
+        array_agg->aggargtypes = list_make1_oid(AGTYPEOID);
+        array_agg->aggdirectargs = NIL;
+        array_agg->args = list_make1(array_te);
+        array_agg->aggorder = NIL;
+        array_agg->aggdistinct = NIL;
+        array_agg->aggfilter = NULL;
+        array_agg->aggstar = false;
+        array_agg->aggvariadic = false;
+        array_agg->aggkind = 'n';
+        array_agg->agglevelsup = 0;
+        array_agg->location = -1;
+        child_pstate->p_hasAggs = true;
+
+        empty_case->defresult = (Expr *)makeFuncExpr(
+            array_to_agtype_oid, AGTYPEOID, list_make1(array_agg), InvalidOid,
+            InvalidOid, COERCE_EXPLICIT_CALL);
+    }
+    empty_case->location = -1;
+
+    te = makeTargetEntry((Expr *)empty_case,
+                         (AttrNumber)child_pstate->p_next_resno++,
+                         "result", false);
+    query->targetList = lappend(query->targetList, te);
+    query->jointree = makeFromExpr(child_pstate->p_joinlist, pred);
+
+    markTargetListOrigins(child_pstate, query->targetList);
+    query->rtable = child_pstate->p_rtable;
+    query->hasSubLinks = child_pstate->p_hasSubLinks;
+    query->hasTargetSRFs = child_pstate->p_hasTargetSRFs;
+    query->hasAggs = true;
+
+    assign_query_collations(child_pstate, query);
+    parse_check_aggregates(child_pstate, query);
+
+    free_cypher_parsestate(child_cpstate);
+    return query;
+}
+
+/*
+ * Mutator context for rewriting the fold body's accumulator/element Vars
+ * (columns 1 and 2 of the throwaway namespace RTE) into PARAM_EXEC params.
+ */
+typedef struct reduce_var_param_context {
+    int varno; /* rangetable index of the dummy (acc, elem) RTE */
+} reduce_var_param_context;
+
+/*
+ * Rewrite Var(varno, 1) -> Param(PARAM_EXEC, 0) [accumulator] and
+ * Var(varno, 2) -> Param(PARAM_EXEC, 1) [element]. Other Vars and Params are
+ * left in place for the capture pass, which assigns them slots 2 ... N.
+ */
+static Node *reduce_var_to_param_mutator(Node *node, reduce_var_param_context *ctx)
+{
+    if (node == NULL) {
+        return NULL;
+    }
+
+    if (IsA(node, Var)) {
+        Var *var = (Var *) node;
+
+        /*
+         * An outer RTE can share this varno, so only rewrite Vars at the body
+         * level. Without the level check an outer column 1/2 could silently
+         * become the accumulator or element.
+         */
+        if (var->varno == ctx->varno && var->varlevelsup == 0 &&
+            (var->varattno == REDUCE_ACCUMULATOR_ATTRIBUTE_NUMBER ||
+             var->varattno == REDUCE_ELEMENT_ATTRIBUTE_NUMBER)) {
+            Param *param = makeNode(Param);
+
+            param->paramkind = PARAM_EXEC;
+            param->paramid = var->varattno - 1;
+            param->paramtype = AGTYPEOID;
+            param->paramtypmod = -1;
+            param->paramcollid = InvalidOid;
+            param->location = -1;
+
+            return (Node *) param;
+        }
+    }
+
+    return expression_tree_mutator(node, (Node *(*)(Node *, void *))
+                                   reduce_var_to_param_mutator, (void *) ctx);
+}
+
+/* A captured subtree must not depend on the per-element fold slots. */
+static bool reduce_expr_has_acc_elem(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, Param)) {
+        Param *param = (Param *) node;
+
+        if (param->paramkind == PARAM_EXEC &&
+            (param->paramid == 0 || param->paramid == 1)) {
+            return true;
+        }
+    }
+
+    return expression_tree_walker(node, (bool (*)()) reduce_expr_has_acc_elem,
+                                  context);
+}
+
+/* Aggregates and windows cannot be evaluated by the standalone fold body. */
+static bool reduce_expr_has_aggregate(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, Aggref) || IsA(node, GroupingFunc) || IsA(node, WindowFunc)) {
+        return true;
+    }
+
+    return expression_tree_walker(node, (bool (*)()) reduce_expr_has_aggregate,
+                                  context);
+}
+
+/* Outer Vars and non-executor Params require an aggregate-argument capture. */
+static bool reduce_expr_needs_capture(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, Var)) {
+        return true;
+    }
+
+    if (IsA(node, Param) && ((Param *) node)->paramkind != PARAM_EXEC) {
+        return true;
+    }
+
+    return expression_tree_walker(node, (bool (*)()) reduce_expr_needs_capture,
+                                  context);
+}
+
+static bool reduce_expr_has_sublink(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, SubLink)) {
+        return true;
+    }
+
+    return expression_tree_walker(node, (bool (*)()) reduce_expr_has_sublink,
+                                  context);
+}
+
+/*
+ * A graph entity can contain graphid or other non-agtype leaves. Such leaves
+ * cannot be elements of agtype[], so capture their smallest agtype wrapper.
+ */
+static bool reduce_expr_has_nonagtype_outer(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, Var) && ((Var *) node)->vartype != AGTYPEOID) {
+        return true;
+    }
+
+    if (IsA(node, Param)) {
+        Param *param = (Param *) node;
+
+        if (param->paramkind != PARAM_EXEC && param->paramtype != AGTYPEOID) {
+            return true;
+        }
+    }
+
+    return expression_tree_walker(node,
+                                  (bool (*)()) reduce_expr_has_nonagtype_outer,
+                                  context);
+}
+
+typedef struct reduce_capture_context {
+    int next_slot;  /* PARAM_EXEC 0/1 are accumulator and element */
+    List *captured; /* aggregate arguments in slot order */
+} reduce_capture_context;
+
+/*
+ * Capture only outer leaves so CASE/AND/OR/coalesce and operators remain in the
+ * fold body and preserve short-circuit behavior. A subtree containing a
+ * non-agtype outer leaf is captured at its smallest agtype-typed wrapper.
+ */
+static Node *reduce_capture_mutator(Node *node, void *context)
+{
+    reduce_capture_context *ctx = (reduce_capture_context *) context;
+
+    if (node == NULL) {
+        return NULL;
+    }
+
+    if (IsA(node, List) || IsA(node, CaseWhen)) {
+        return expression_tree_mutator(node,
+                                       (Node *(*)(Node *, void *))
+                                       reduce_capture_mutator, context);
+    }
+
+    if (IsA(node, Aggref) || IsA(node, GroupingFunc) || IsA(node, WindowFunc)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("aggregate functions are not supported in a reduce() expression")));
+    }
+
+    if (exprType(node) == AGTYPEOID &&
+        !reduce_expr_has_acc_elem(node, NULL) &&
+        !reduce_expr_has_aggregate(node, NULL) &&
+        !reduce_expr_has_sublink(node, NULL) &&
+        reduce_expr_needs_capture(node, NULL)) {
+        if (IsA(node, Var) ||
+            (IsA(node, Param) &&
+             ((Param *) node)->paramkind != PARAM_EXEC) ||
+            reduce_expr_has_nonagtype_outer(node, NULL)) {
+            Param *param = makeNode(Param);
+
+            param->paramkind = PARAM_EXEC;
+            param->paramid = ctx->next_slot++;
+            param->paramtype = AGTYPEOID;
+            param->paramtypmod = -1;
+            param->paramcollid = InvalidOid;
+            param->location = -1;
+
+            ctx->captured = lappend(ctx->captured, copyObject(node));
+            return (Node *) param;
+        }
+
+        return expression_tree_mutator(node,
+                                       (Node *(*)(Node *, void *))
+                                       reduce_capture_mutator, context);
+    }
+
+    if (IsA(node, SubLink)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("subqueries (including a nested reduce()) are not supported in a reduce() expression")));
+    }
+
+    return expression_tree_mutator(node, (Node *(*)(Node *, void *))
+                                   reduce_capture_mutator, context);
+}
+
+/*
+ * After capture, the standalone body may contain only PARAM_EXEC references.
+ * Residual Vars or external Params indicate a value that cannot cross the
+ * agtype[] capture boundary.
+ */
+static bool reduce_body_check_walker(Node *node, void *context)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, Var)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("a reduce() expression references a value that cannot be used in the fold body")));
+    }
+
+    if (IsA(node, Param) && ((Param *) node)->paramkind != PARAM_EXEC) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("a reduce() expression references a value that cannot be used in the fold body")));
+    }
+
+    if (IsA(node, Aggref) || IsA(node, GroupingFunc) || IsA(node, WindowFunc)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("aggregate functions are not supported in a reduce() expression")));
+    }
+
+    if (IsA(node, SubLink)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("subqueries (including a nested reduce()) are not supported in a reduce() expression")));
+    }
+
+    return expression_tree_walker(node, (bool (*)())reduce_body_check_walker,
+                                  context);
+}
+
+/*
+ * Build a throwaway subquery "SELECT NULL::agtype AS <acc>, NULL::agtype AS
+ * <elem>" used only to give the fold body a namespace in which the accumulator
+ * and element variables resolve to agtype columns. Those references are later
+ * rewritten to PARAM_EXEC params and the subquery is discarded.
+ */
+static Query *make_reduce_var_subquery(char *acc_name, char *elem_name)
+{
+    Query *subquery = makeNode(Query);
+    Const *acc_const;
+    Const *elem_const;
+    TargetEntry *acc_te;
+    TargetEntry *elem_te;
+
+    acc_const = makeConst(AGTYPEOID, -1, InvalidOid, -1, (Datum) 0, true, false);
+    elem_const = makeConst(AGTYPEOID, -1, InvalidOid, -1, (Datum) 0, true, false);
+
+    acc_te = makeTargetEntry((Expr *) acc_const,
+                             REDUCE_INIT_TARGET_ENTRY_NUMBER,
+                             acc_name, false);
+    elem_te = makeTargetEntry((Expr *) elem_const,
+                              REDUCE_BODY_TARGET_ENTRY_NUMBER,
+                              elem_name, false);
+
+    subquery->commandType = CMD_SELECT;
+    subquery->targetList = list_make2(acc_te, elem_te);
+    subquery->jointree = makeFromExpr(NIL, NULL);
+    subquery->rtable = NIL;
+
+    return subquery;
+}
+
+/*
+ * Transform a cypher_reduce node into a query tree.
+ *
+ * reduce(acc = init, var IN list | body) is rewritten into a scalar subquery
+ * over the age_reduce aggregate, with the list unnested WITH ORDINALITY and the
+ * aggregate ordered by that ordinality so the fold runs in list order:
+ *
+ *     SELECT ag_catalog.age_reduce(<init>, '<serialized-body>'::text,
+ *                                  r.elem, <captured-outer-values>
+ *                                  ORDER BY r.ord)
+ *     FROM   ag_catalog.age_unnest(<list>) WITH ORDINALITY AS r(elem, ord)
+ *
+ * The fold body is transformed separately with the accumulator and element
+ * rewritten to PARAM_EXEC params 0 and 1 (and any loop-invariant outer
+ * reference to params 2 ..), serialized into the text argument, and evaluated
+ * per element inside age_reduce_transfn.
+ *
+ * The null/empty-list guard is built at the grammar/expr level; here we build
+ * the aggregate query proper.
+ */
+static Query *transform_cypher_reduce(cypher_parsestate *cpstate,
+                                      cypher_clause *clause)
+{
+    cypher_reduce *reduce = (cypher_reduce *) clause->self;
+    cypher_parsestate *body_cpstate;
+    ParseState *body_pstate;
+    RangeTblEntry *body_rte;
+    int body_rtindex;
+    Node *body_node;
+    char *body_serialized;
+    reduce_var_param_context mutator_ctx;
+    reduce_capture_context capture_ctx;
+    List *extras_exprs;
+    cypher_parsestate *child_cpstate;
+    ParseState *child_pstate;
+    Query *query = makeNode(Query);
+    FuncCall *unwind;
+    Node *funcexpr;
+    RangeFunction *rf;
+    RangeTblEntry *rte;
+    RangeTblRef *rtr;
+    int rtindex;
+    List *namespaceoid;
+    Node *list_expr;
+    Node *init_node;
+    Node *elem_var;
+    Node *ord_var;
+    TargetEntry *ord_te;
+    SortGroupClause *sortcl;
+    Oid sort_ltop;
+    Oid sort_eqop;
+    bool sort_hashable;
+    Const *body_const;
+    Aggref *agg;
+    Oid agg_oid;
+    Oid agg_argtypes[4];
+    TargetEntry *result_te;
+    Node *extras_arg;
+    ParseExprKind old_expr_kind;
+
+    /*
+     * 1. Resolve the fold body's accumulator and element variables against a
+     *    throwaway 2-column agtype subquery, rewrite those Vars to PARAM_EXEC
+     *    params 0/1 (and captured outer references to params 2 ..), validate,
+     *    and serialize the body for age_reduce_transfn.
+     */
+    body_cpstate = make_cypher_parsestate(cpstate);
+    body_pstate = (ParseState *) body_cpstate;
+    body_pstate->p_expr_kind = ((ParseState *) cpstate)->p_expr_kind;
+
+    body_rte = addRangeTableEntryForSubquery(body_pstate,
+                                             make_reduce_var_subquery(reduce->accumname,
+                                                                      reduce->varname),
+                                             makeAlias("reduce_vars",
+                                                       list_make2(makeString(reduce->accumname),
+                                                                  makeString(reduce->varname))),
+                                             false, true);
+    body_rtindex = list_length(body_pstate->p_rtable);
+    namespaceoid = list_make1(create_namespace_item(body_rte, true, true, false,
+                                                    true));
+    body_pstate->p_relnamespace = list_concat(body_pstate->p_relnamespace,
+                                              namespaceoid);
+    body_pstate->p_varnamespace = lappend(body_pstate->p_varnamespace,
+                                          makeNamespaceItem(body_rte, false, true));
+
+    body_node = transform_cypher_expr(body_cpstate, reduce->mapping_expr,
+                                      EXPR_KIND_SELECT_TARGET);
+    /*
+     * The accumulator is always an agtype value (the aggregate's stype is
+     * agtype). A fold body can legitimately produce a non-agtype scalar (e.g.
+     * "s AND x" yields a boolean), so normalize the body to agtype here. A
+     * boolean is wrapped in ag_catalog.bool_to_agtype(); any other non-agtype
+     * type is coerced through the normal cast machinery.
+     */
+    if (exprType(body_node) != AGTYPEOID) {
+        if (exprType(body_node) == BOOLOID) {
+            Oid bool_to_agtype_oid = get_ag_func_oid("bool_to_agtype", 1,
+                                                     BOOLOID);
+
+            body_node = (Node *) makeFuncExpr(bool_to_agtype_oid, AGTYPEOID,
+                                              list_make1(body_node),
+                                              InvalidOid, InvalidOid,
+                                              COERCE_EXPLICIT_CALL);
+        } else {
+            body_node = coerce_to_common_type(body_pstate, body_node,
+                                              AGTYPEOID, "reduce");
+        }
+    }
+
+    mutator_ctx.varno = body_rtindex;
+    body_node = reduce_var_to_param_mutator(body_node, &mutator_ctx);
+
+    capture_ctx.next_slot = REDUCE_CAPTURE_FIRST_SLOT;
+    capture_ctx.captured = NIL;
+    body_node = reduce_capture_mutator(body_node, &capture_ctx);
+    extras_exprs = capture_ctx.captured;
+
+    reduce_body_check_walker(body_node, NULL);
+
+    body_serialized = age_node_to_string(body_node);
+
+    /*
+     * 2. Build the outer aggregate query:
+     *    SELECT age_reduce(<init>, '<body>'::text, r.elem, <extras>
+     *                      ORDER BY r.ord)
+     *    FROM ag_catalog.age_unnest(<list>) WITH ORDINALITY AS r(elem, ord)
+     */
+    child_cpstate = make_cypher_parsestate(cpstate);
+    child_pstate = (ParseState *) child_cpstate;
+    child_pstate->p_expr_kind = ((ParseState *) cpstate)->p_expr_kind;
+
+    query->commandType = CMD_SELECT;
+
+    /* the list expression is evaluated in the child (outer) context */
+    list_expr = transform_cypher_expr(child_cpstate, reduce->expr,
+                                      EXPR_KIND_SELECT_TARGET);
+
+    unwind = makeFuncCall(list_make2(makeString("ag_catalog"),
+        makeString("age_unnest")), NIL, -1);
+
+    old_expr_kind = child_pstate->p_expr_kind;
+    child_pstate->p_expr_kind = EXPR_KIND_SELECT_TARGET;
+    funcexpr = ParseFuncOrColumn(child_pstate, unwind->funcname,
+                                 list_make1(list_expr),
+                                 child_pstate->p_last_srf, unwind,
+                                 exprLocation(reduce->expr), false);
+    child_pstate->p_expr_kind = old_expr_kind;
+
+    rf = makeNode(RangeFunction);
+    rf->lateral = contain_vars_of_level(funcexpr, 0);
+    rf->ordinality = true;
+    rf->funccallnode = (Node *) unwind;
+    rf->alias = makeAlias(reduce->varname, NIL);
+    rf->coldeflist = NIL;
+
+    rte = addRangeTableEntryForFunction(child_pstate, reduce->varname,
+                                        funcexpr, rf, rf->lateral, true);
+    rtindex = list_length(child_pstate->p_rtable);
+    Assert(rte == rt_fetch(rtindex, child_pstate->p_rtable));
+
+    rtr = makeNode(RangeTblRef);
+    rtr->rtindex = rtindex;
+    namespaceoid = list_make1(create_namespace_item(rte, true, true, false,
+                                                    true));
+    checkNameSpaceConflicts(child_pstate, child_pstate->p_relnamespace,
+                            namespaceoid);
+    child_pstate->p_joinlist = lappend(child_pstate->p_joinlist, rtr);
+    child_pstate->p_relnamespace = list_concat(child_pstate->p_relnamespace,
+                                               namespaceoid);
+    child_pstate->p_varnamespace = lappend(child_pstate->p_varnamespace,
+                                           makeNamespaceItem(rte, true, true));
+    setNamespaceLateralState(child_pstate->p_relnamespace, false, true);
+    setNamespaceLateralState(child_pstate->p_varnamespace, false, true);
+
+    /* argument 1: init, evaluated once (in the outer/child context) */
+    init_node = transform_cypher_expr(child_cpstate, reduce->initial,
+                                      EXPR_KIND_SELECT_TARGET);
+
+    /* argument 3: the per-element value column from the WITH ORDINALITY RTE */
+    elem_var = colNameToVar(child_pstate, reduce->varname, false, -1);
+
+    /* argument 2: serialized fold body */
+    body_const = makeConst(TEXTOID, -1, InvalidOid, -1,
+                           CStringGetTextDatum(body_serialized), false, false);
+
+    /*
+     * The WITH ORDINALITY column (bigint), column 2 of the function RTE, used
+     * only to order the fold.
+     */
+    ord_var = (Node *) makeVar(rtindex, REDUCE_ELEMENT_ATTRIBUTE_NUMBER,
+                               INT8OID, -1, InvalidOid, 0);
+    get_sort_group_operators(INT8OID, true, true, false,
+                             &sort_ltop, &sort_eqop, NULL, &sort_hashable);
+
+    ord_te = makeTargetEntry((Expr *) ord_var,
+                             REDUCE_ORDINALITY_TARGET_ATTRIBUTE_NUMBER,
+                             NULL, true);
+    ord_te->ressortgroupref = 1;
+
+    sortcl = makeNode(SortGroupClause);
+    sortcl->tleSortGroupRef = 1;
+    sortcl->eqop = sort_eqop;
+    sortcl->sortop = sort_ltop;
+    sortcl->nulls_first = false;
+    sortcl->hashable = sort_hashable;
+
+    /*
+     * Aggregate arguments are evaluated for every input row, while the
+     * transition function only consumes init on its first call. Gate init by
+     * ordinality so volatile or expensive expressions run exactly once.
+     */
+    {
+        OpExpr *ord_is_first = makeNode(OpExpr);
+        Const *one_const = makeConst(INT8OID, -1, InvalidOid, sizeof(int64),
+                                     Int64GetDatum(1), false,
+                                     FLOAT8PASSBYVAL);
+        CaseWhen *init_when = makeNode(CaseWhen);
+        CaseExpr *init_case = makeNode(CaseExpr);
+        Const *null_init = makeConst(AGTYPEOID, -1, InvalidOid, -1,
+                                     (Datum) 0, true, false);
+
+        ord_is_first->opno = sort_eqop;
+        ord_is_first->opfuncid = get_opcode(sort_eqop);
+        ord_is_first->opresulttype = BOOLOID;
+        ord_is_first->opretset = false;
+        ord_is_first->opcollid = InvalidOid;
+        ord_is_first->inputcollid = InvalidOid;
+        ord_is_first->args = list_make2(copyObject(ord_var), one_const);
+        ord_is_first->location = -1;
+
+        init_when->expr = (Expr *) ord_is_first;
+        init_when->result = (Expr *) init_node;
+        init_when->location = -1;
+
+        init_case->casetype = AGTYPEOID;
+        init_case->casecollid = InvalidOid;
+        init_case->arg = NULL;
+        init_case->args = list_make1(init_when);
+        init_case->defresult = (Expr *) null_init;
+        init_case->location = -1;
+
+        init_node = (Node *) init_case;
+    }
+
+    /*
+     * Captures are aggregate arguments in the same order as PARAM_EXEC slots
+     * 2..N. An empty ArrayExpr represents a body with no outer references.
+     */
+    {
+        ArrayExpr *arr = makeNode(ArrayExpr);
+
+        arr->array_typeid = AGTYPEARRAYOID;
+        arr->element_typeid = AGTYPEOID;
+        arr->elements = extras_exprs;
+        arr->multidims = false;
+        arr->location = -1;
+        extras_arg = (Node *) arr;
+    }
+
+    /* look up the age_reduce(agtype, text, agtype, agtype[]) aggregate */
+    agg_argtypes[REDUCE_INIT_ARGUMENT_INDEX] = AGTYPEOID;
+    agg_argtypes[REDUCE_BODY_ARGUMENT_INDEX] = TEXTOID;
+    agg_argtypes[REDUCE_ELEMENT_ARGUMENT_INDEX] = AGTYPEOID;
+    agg_argtypes[REDUCE_EXTRAS_ARGUMENT_INDEX] = get_array_type(AGTYPEOID);
+    agg_oid = LookupFuncName(list_make2(makeString("ag_catalog"),
+                                        makeString("age_reduce")),
+                             REDUCE_AGGREGATE_ARGUMENT_COUNT, agg_argtypes,
+                             false);
+
+    agg = makeNode(Aggref);
+    agg->aggfnoid = agg_oid;
+    agg->aggtype = AGTYPEOID;
+    agg->aggcollid = InvalidOid;
+    agg->inputcollid = InvalidOid;
+    agg->aggtranstype = InvalidOid;     /* filled by the planner */
+    agg->aggargtypes = list_make4_oid(AGTYPEOID, TEXTOID, AGTYPEOID,
+                                      get_array_type(AGTYPEOID));
+    agg->aggdirectargs = NIL;
+    agg->args = list_make4(
+        makeTargetEntry((Expr *) init_node, REDUCE_INIT_TARGET_ENTRY_NUMBER,
+                        NULL, false),
+        makeTargetEntry((Expr *) body_const, REDUCE_BODY_TARGET_ENTRY_NUMBER,
+                        NULL, false),
+        makeTargetEntry((Expr *) elem_var,
+                        REDUCE_ELEMENT_TARGET_ENTRY_NUMBER,
+                        NULL, false),
+        makeTargetEntry((Expr *) extras_arg,
+                        REDUCE_EXTRAS_TARGET_ENTRY_NUMBER,
+                        NULL, false));
+    agg->args = lappend(agg->args, ord_te);
+    agg->aggorder = list_make1(sortcl);
+    agg->aggdistinct = NIL;
+    agg->aggfilter = NULL;
+    agg->aggstar = false;
+    agg->aggvariadic = false;
+    agg->aggkind = 'n';
+    agg->agglevelsup = 0;
+    agg->location = -1;
+
+    child_pstate->p_hasAggs = true;
+
+    result_te = makeTargetEntry((Expr *) agg,
+                                (AttrNumber) child_pstate->p_next_resno++,
+                                "reduce", false);
+
+    query->targetList = list_make1(result_te);
+    query->jointree = makeFromExpr(child_pstate->p_joinlist, NULL);
+    query->rtable = child_pstate->p_rtable;
+    query->hasAggs = true;
+    query->hasSubLinks = child_pstate->p_hasSubLinks;
+    query->hasTargetSRFs = child_pstate->p_hasTargetSRFs;
+
+    assign_query_collations(child_pstate, query);
+    parse_check_aggregates(child_pstate, query);
+
+    free_cypher_parsestate(body_cpstate);
+    free_cypher_parsestate(child_cpstate);
+
+    return query;
+}
+
+static Query *transform_cypher_predicate_function(cypher_parsestate *cpstate,
+                                                  cypher_clause *clause)
+{
+    cypher_predicate_function *pred_func;
+    cypher_parsestate *child_cpstate;
+    ParseState *child_pstate;
+    Query *query;
+    RangeFunction *rf;
+    FuncCall *unwind;
+    Node *list_expr;
+    Node *funcexpr;
+    RangeTblEntry *rte;
+    RangeTblRef *rtr;
+    List *namespaceoid;
+    Node *pred;
+    TargetEntry *te;
+    int rtindex;
+    ParseExprKind old_expr_kind;
+
+    pred_func = (cypher_predicate_function *)clause->self;
+    child_cpstate = make_cypher_parsestate(cpstate);
+    child_pstate = (ParseState *)child_cpstate;
+    child_pstate->p_expr_kind = ((ParseState *)cpstate)->p_expr_kind;
+
+    query = makeNode(Query);
+    query->commandType = CMD_SELECT;
+
+    list_expr = transform_cypher_expr(cpstate, pred_func->expr,
+                                      EXPR_KIND_SELECT_TARGET);
+    IncrementVarSublevelsUp(list_expr, 1, 0);
+    unwind = makeFuncCall(list_make1(makeString("age_unnest")), NIL, -1);
+
+    old_expr_kind = child_pstate->p_expr_kind;
+    child_pstate->p_expr_kind = EXPR_KIND_SELECT_TARGET;
+    funcexpr = ParseFuncOrColumn(child_pstate, unwind->funcname,
+                                 list_make1(list_expr),
+                                 child_pstate->p_last_srf, unwind,
+                                 exprLocation(pred_func->expr), false);
+    child_pstate->p_expr_kind = old_expr_kind;
+
+    rf = makeNode(RangeFunction);
+    rf->lateral = true;
+    rf->ordinality = false;
+    rf->funccallnode = (Node *)unwind;
+    rf->alias = makeAlias(pred_func->varname, NIL);
+    rf->coldeflist = NIL;
+
+    rte = addRangeTableEntryForFunction(child_pstate, pred_func->varname,
+                                        funcexpr, rf, rf->lateral, true);
+    rtindex = list_length(child_pstate->p_rtable);
+    Assert(rte == rt_fetch(rtindex, child_pstate->p_rtable));
+
+    rtr = makeNode(RangeTblRef);
+    rtr->rtindex = rtindex;
+    namespaceoid = list_make1(create_namespace_item(rte, true, true, false,
+                                                    true));
+    checkNameSpaceConflicts(child_pstate, child_pstate->p_relnamespace,
+                            namespaceoid);
+    child_pstate->p_joinlist = lappend(child_pstate->p_joinlist, rtr);
+    child_pstate->p_relnamespace = list_concat(child_pstate->p_relnamespace,
+                                               namespaceoid);
+    child_pstate->p_varnamespace = lappend(child_pstate->p_varnamespace,
+                                           makeNamespaceItem(rte, true, true));
+    setNamespaceLateralState(child_pstate->p_relnamespace, false, true);
+    setNamespaceLateralState(child_pstate->p_varnamespace, false, true);
+
+    pred = transform_cypher_expr(child_cpstate, pred_func->where,
+                                 EXPR_KIND_WHERE);
+    pred = coerce_cypher_expr_to_boolean(child_pstate, pred, "WHERE");
+
+    {
+        Node *case_expr = make_predicate_case_expr(child_pstate, pred,
+                                                   pred_func->kind);
+        te = makeTargetEntry((Expr *)case_expr,
+                             (AttrNumber)child_pstate->p_next_resno++,
+                             "result", false);
+        query->targetList = lappend(query->targetList, te);
+        query->jointree = makeFromExpr(child_pstate->p_joinlist, NULL);
+    }
+
+    markTargetListOrigins(child_pstate, query->targetList);
+    query->rtable = child_pstate->p_rtable;
+    query->hasSubLinks = child_pstate->p_hasSubLinks;
+    query->hasTargetSRFs = child_pstate->p_hasTargetSRFs;
+    query->hasAggs = child_pstate->p_hasAggs;
+
+    assign_query_collations(child_pstate, query);
+    if (child_pstate->p_hasAggs || query->groupClause || query->groupingSets ||
+        query->havingQual) {
+        parse_check_aggregates(child_pstate, query);
+    }
+
+    free_cypher_parsestate(child_cpstate);
+    return query;
+}
+
 /*
  * Code borrowed and inspired by PG's transformFromClauseItem. This function
  * will transform the VLE function, depending on type. Currently, only
  * RangeFunctions are supported. But, others may be in the future.
  */
-static Node *transform_VLE_Function(cypher_parsestate *cpstate, Node *n,
-                                    RangeTblEntry **top_rte, int *top_rti,
-                                    List **namespaceoid)
-{
-    ParseState *pstate = &cpstate->pstate;
-
-    /* we only care about RangeFunctions at this time */
-    Assert(IsA(n, RangeFunction));
-
-    if (IsA(n, RangeFunction))
-    {
-        /* function is like a plain relation */
-        RangeTblRef *rtr;
-        RangeTblEntry *rte;
-        int rtindex;
-
-        rte = transform_RangeFunction(cpstate, (RangeFunction *) n);
-
-        /* assume new rte is at end */
-        rtindex = list_length(pstate->p_rtable);
-        Assert(rte == rt_fetch(rtindex, pstate->p_rtable));
-        *top_rte = rte;
-        *top_rti = rtindex;
-        *namespaceoid = list_make1(create_namespace_item(rte, true, true, true,
-                                                      true));
-        rtr = makeNode(RangeTblRef);
-        rtr->rtindex = rtindex;
-        return (Node *) rtr;
-    }
-
-    /* if it isn't a RangeFunction, return NULL */
-    return NULL;
-}
 
 /*
  * Code borrowed and inspired by PG's transformFromClauseItem. Static function
  * to add in the VLE function as a FROM clause entry.
  */
-static RangeTblEntry *append_VLE_Func_to_FromClause(cypher_parsestate *cpstate,
-                                                    Node *n)
-{
-    ParseState *pstate = &cpstate->pstate;
-    RangeTblEntry *rte = NULL;
-    List *namespaceoid = NULL;
-    int rtindex;
-
-    /*
-     * Following PG's FROM clause logic, just in case we need to expand it in
-     * the future, we process the items in another function.
-     */
-    n = transform_VLE_Function(cpstate, n, &rte, &rtindex, &namespaceoid);
-
-    /* this should not happen */
-    Assert(n != NULL);
-    /* verify there aren't any conflicts */
-    checkNameSpaceConflicts(pstate, pstate->p_relnamespace, namespaceoid);
-
-    /* mark the new namespace items as visible only to LATERAL */
-    setNamespaceLateralState(namespaceoid, true, true);
-
-    /* add the entry to the joinlist and namespace */
-    pstate->p_joinlist = lappend(pstate->p_joinlist, n);
-    pstate->p_relnamespace = list_concat(pstate->p_relnamespace, namespaceoid);
-    pstate->p_varnamespace = lappend(pstate->p_varnamespace, makeNamespaceItem(rte, true, true));
-    /* make all namespace items unconditionally visible */
-    setNamespaceLateralState(pstate->p_relnamespace, false, true);
-    setNamespaceLateralState(pstate->p_varnamespace, false, true);
-
-    return rte;
-}
-
-
-static RangeTblEntry* transform_RangeFunction(cypher_parsestate* cpstate, RangeFunction* r)
-{
-    Node* funcexpr = NULL;
-    char* funcname = NULL;
-    bool is_lateral = false;
-    ParseState* pstate = NULL;
-    RangeTblEntry* rte = NULL;
-    /*
-     * Get function name for possible use as alias.  We use the same
-     * transformation rules as for a SELECT output expression.	For a FuncCall
-     * node, the result will be the function name, but it is possible for the
-     * grammar to hand back other node types.
-     */
-    funcname = FigureColname(r->funccallnode);
-    /*
-    * If the function is LATERAL, make lateral_only names of this level
-    * visible to it.  (LATERAL can't nest within a single pstate level, so we
-    * don't need save/restore logic here.)
-    */
-    pstate = &cpstate->pstate;
-    Assert(!pstate->p_lateral_active);
-    pstate->p_lateral_active = true;
-    /*
-     * Transform the raw expression.
-     */
-    List *coldeflist;
-    Node *newfexpr;
-    Node *last_srf;
-    newfexpr = transform_cypher_expr(cpstate,
-                                     r->funccallnode,
-                                     EXPR_KIND_FROM_FUNCTION);
-
-    pstate->p_lateral_active = false;
-
-    /*
-    * We must assign collations now so that we can fill funccolcollations.
-    */
-    assign_expr_collations(pstate, newfexpr);
-
-     /* currently this is not used by the VLE */
-    Assert(r->coldeflist == NULL);
-
-
-    /* mark the RTE as LATERAL */
-    is_lateral = r->lateral || contain_vars_of_level((Node *) newfexpr, 0);
-    /*
-     * OK, build an RTE for the function.
-     */
-    rte = addRangeTableEntryForFunction(pstate, funcname, newfexpr, r, is_lateral, true);
-    return rte;
-}
 
 static void transform_match_pattern(cypher_parsestate *cpstate, Query *query,
                                     List *pattern, Node *where)
@@ -2557,8 +3880,9 @@ static void transform_match_pattern(cypher_parsestate *cpstate, Query *query,
         }
         else
         {
-            where_qual = (Expr *)coerce_to_boolean(pstate, (Node *)where_qual,
-                                                   "WHERE");
+            where_qual = (Expr *)coerce_cypher_expr_to_boolean(pstate,
+                                                               (Node *)where_qual,
+                                                               "WHERE");
             expr = makeBoolExpr(AND_EXPR, list_make2(expr, where_qual), -1);
         }
     }
@@ -2569,7 +3893,8 @@ static void transform_match_pattern(cypher_parsestate *cpstate, Query *query,
      */
     if (expr != NULL)
     {
-        expr = (Expr *)coerce_to_boolean(pstate, (Node *)expr, "WHERE");
+        expr = (Expr *)coerce_cypher_expr_to_boolean(pstate, (Node *)expr,
+                                                     "WHERE");
     }
 
     query->rtable = cpstate->pstate.p_rtable;
@@ -2578,8 +3903,16 @@ static void transform_match_pattern(cypher_parsestate *cpstate, Query *query,
 
 static char *get_next_default_alias(cypher_parsestate *cpstate)
 {
+    ParseState *pstate = (ParseState *)cpstate;
+    cypher_parsestate *parent_cpstate =
+        (cypher_parsestate *)pstate->parentParseState;
     char *alias_name;
     int nlen = 0;
+
+    /* Anonymous names must be unique across clause subqueries. */
+    if (parent_cpstate != NULL) {
+        return get_next_default_alias(parent_cpstate);
+    }
 
     /* get the length of the combinded string */
     nlen = snprintf(NULL, 0, "%s%d", AGE_DEFAULT_ALIAS_PREFIX,
@@ -2610,10 +3943,9 @@ static FuncCall *prevent_duplicate_edges(cypher_parsestate *cpstate,
     List *qualified_function_name;
     Value *ag_catalog, *edge_fn;
 
-    ag_catalog = makeString("ag_catalog");
-    edge_fn = makeString("_ag_enforce_edge_uniqueness");
+    bool is_vle_edge = false;
 
-    qualified_function_name = list_make2(ag_catalog, edge_fn);
+    ag_catalog = makeString("ag_catalog");
 
     // iterate through each entity, collecting the access node for each edge
     foreach (lc, entities)
@@ -2629,9 +3961,35 @@ static FuncCall *prevent_duplicate_edges(cypher_parsestate *cpstate,
         }
         else if (entity->type == ENT_VLE_EDGE)
         {
+            is_vle_edge = true;
             edges = lappend(edges, entity->expr); 
         }
     }
+
+    /*
+     * Fast path: for a fixed 2/3/4 non-VLE edge count, use the specialized
+     * pairwise-comparison functions which take plain graphid arguments and
+     * skip the general variadic-agtype hashtable path. A VLE edge or any other
+     * count falls back to the general _ag_enforce_edge_uniqueness.
+     */
+    if (!is_vle_edge &&
+        list_length(edges) >= EDGE_UNIQUENESS_MIN_EDGE_COUNT &&
+        list_length(edges) <= EDGE_UNIQUENESS_MAX_EDGE_COUNT) {
+        if (list_length(edges) == EDGE_UNIQUENESS_MIN_EDGE_COUNT)
+        {
+            edge_fn = makeString("_ag_enforce_edge_uniqueness2");
+        }
+        else if (list_length(edges) == EDGE_UNIQUENESS_MIN_EDGE_COUNT + 1)
+        {
+            edge_fn = makeString("_ag_enforce_edge_uniqueness3");
+        } else {
+            edge_fn = makeString("_ag_enforce_edge_uniqueness4");
+        }
+    } else {
+        edge_fn = makeString("_ag_enforce_edge_uniqueness");
+    }
+
+    qualified_function_name = list_make2(ag_catalog, edge_fn);
 
     return makeFuncCall(qualified_function_name, edges, -1);
 }
@@ -2686,28 +4044,6 @@ static List *make_directed_edge_join_conditions(
 
     return quals;
 }
-static Node *
-qualAndExpr(Node *qual, Node *expr)
-{
-	if (qual == NULL)
-		return expr;
-
-	if (expr == NULL)
-		return qual;
-
-	if (IsA(qual, BoolExpr))
-	{
-		BoolExpr   *bexpr = (BoolExpr *) qual;
-
-		if (bexpr->boolop == AND_EXPR)
-		{
-			bexpr->args = lappend(bexpr->args, expr);
-			return qual;
-		}
-	}
-
-	return (Node *) makeBoolExpr(AND_EXPR, list_make2(qual, expr), -1);
-}
 /*
  * The joins are driven by edges. Under specific conditions, it becomes
  * necessary to have knowledge about the previous edge and vertex and
@@ -2721,42 +4057,49 @@ qualAndExpr(Node *qual, Node *expr)
 static Node *
 getColumnVar(cypher_parsestate *cpstate, transform_entity *edge, char *colname)
 {
-    ParseState* pstate = (ParseState*)cpstate;
+    ParseState *pstate = (ParseState *)cpstate;
 	
     if (edge->expr != NULL && IsA(edge->expr, Var))
     {
-        if(edge->type == ENT_VLE_EDGE){
-            ListCell   *lcn;
-            AttrNumber	attrno;
-            Var		   *var;
-            Var * edgesVar = (Var *) edge->expr;
+        if (edge->type == ENT_VLE_EDGE)
+        {
+            ListCell *lcn;
+            AttrNumber attrno;
+            Var *var;
+            Var *edgesVar = (Var *)edge->expr;
             Index rtindex = edgesVar->varno;
-
-            RangeTblEntry *rte =rt_fetch(rtindex, pstate->p_rtable);
+            RangeTblEntry *rte = rt_fetch(rtindex, pstate->p_rtable);
 
             attrno = 1;
-            foreach(lcn, rte->eref->colnames)
+            foreach (lcn, rte->eref->colnames)
             {
                 const char *tmp = strVal(lfirst(lcn));
 
                 if (strcmp(tmp, colname) == 0)
                 {
                     /*
-                    * NOTE: no ambiguous reference check here since all column names
-                    * in `rte` are unique
-                    */
+                     * No ambiguous reference check is needed because the VLE
+                     * subquery target names are unique.
+                     */
                     var = make_var(pstate, rte, attrno, -1);
-                    /* require read access to the column */
-                    markVarForSelectPriv(pstate, var,rte);
+                    markVarForSelectPriv(pstate, var, rte);
 
-                    return (Node *) var;
+                    return (Node *)var;
                 }
 
                 attrno++;
             }
 
-        }else{
-
+            ereport(ERROR,
+                    (errcode(ERRCODE_INTERNAL_ERROR),
+                     errmsg("VLE endpoint column \"%s\" is missing from subquery \"%s\"",
+                            colname,
+                            rte->eref != NULL &&
+                                    rte->eref->aliasname != NULL ?
+                                rte->eref->aliasname : "<unnamed>")));
+        }
+        else
+        {
             List *qualified_name, *args;
             Node *node;
             char *function_name;
@@ -2766,22 +4109,22 @@ getColumnVar(cypher_parsestate *cpstate, transform_entity *edge, char *colname)
             qualified_name = list_make2(makeString("ag_catalog"),
                                         makeString(function_name));
             ColumnRef *cr = makeNode(ColumnRef);
-                cr->fields = list_make1(makeString(edge->entity.rel->name));
+            cr->fields = list_make1(makeString(edge->entity.rel->name));
         
             args = list_make1(cr);
-            node = (Node *)makeFuncCall(qualified_name, args,-1);
+            node = (Node *)makeFuncCall(qualified_name, args, -1);
 
-            Node* graphId = (Node *)makeFuncCall(list_make2(makeString("ag_catalog"),
-                                        makeString("agtype_to_graphid")) , list_make1(node),-1);
-            return  graphId;
+            Node *graphId = (Node *)makeFuncCall(
+                list_make2(makeString("ag_catalog"),
+                           makeString("agtype_to_graphid")),
+                list_make1(node), -1);
+            return graphId;
         }
-        
-        elog(ERROR, "column \"%s\" not found (internal error)", colname);
     }
     else
     {
         Node * node;
-        char *entity_name;
+        char *entity_name = NULL;
         ColumnRef *cr = makeNode(ColumnRef);
 
         if (edge->type == ENT_EDGE || edge->type == ENT_VLE_EDGE)
@@ -2802,9 +4145,41 @@ getColumnVar(cypher_parsestate *cpstate, transform_entity *edge, char *colname)
         return node;
     }
 
-   
-  
+    return NULL;
 }
+/*
+ * Builds "vertex.id = edge.start_id OR vertex.id = edge.end_id" for an
+ * undirected relationship, or returns NULL when the entity is not a vertex
+ * that is already bound in the join tree.
+ *
+ * Restricting this to ENT_VERTEX matters: in a multi-edge path the adjacent
+ * entity can be the neighbouring edge, and reading a vertex "id" column off an
+ * edge would be wrong.
+ */
+static Expr *make_undirected_endpoint_prefilter(cypher_parsestate *cpstate,
+                                                transform_entity *entity,
+                                                Node *start_id_expr,
+                                                Node *end_id_expr)
+{
+    Node *vertex_id;
+    A_Expr *matches_start;
+    A_Expr *matches_end;
+
+    if (entity == NULL || entity->type != ENT_VERTEX || !entity->in_join_tree) {
+        return NULL;
+    }
+
+    vertex_id = make_qual(cpstate, entity, AG_VERTEX_COLNAME_ID);
+
+    matches_start = makeSimpleA_Expr(AEXPR_OP, "=",
+                                     (Node *)copyObject(vertex_id),
+                                     (Node *)copyObject(start_id_expr), -1);
+    matches_end = makeSimpleA_Expr(AEXPR_OP, "=", vertex_id,
+                                   (Node *)copyObject(end_id_expr), -1);
+
+    return makeBoolExpr(OR_EXPR, list_make2(matches_start, matches_end), -1);
+}
+
 static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
                                           transform_entity *prev_edge,
                                           transform_entity *prev_node,
@@ -2818,39 +4193,48 @@ static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
     transform_entity *prev_entity;
 
     /*
-     * When this edge is a vle edge, pass the prev and next
-     * node to the match_vle_terminal_edge function to process
-     * which rows match.
+     * VLE execution exposes logical start/end graphid columns directly.
+     * Join them with adjacent vertices, or with the previous VLE endpoint,
+     * using ordinary equality quals. This avoids per-row path
+     * materialization and the legacy terminal/two-VLE helper functions.
      */
     if (entity->type == ENT_VLE_EDGE) 
     {
-        
         List *quals = NIL;
-        ParseState *pstate = (ParseState *)cpstate;
-        if(prev_node && cpstate->p_vle_initial_vid == NULL){
-            Node *id = make_qual(cpstate, prev_node,AG_VERTEX_COLNAME_ID);
-            Node * vid = getColumnVar(cpstate, entity, getEdgeColname(entity->entity.rel, false));
-	        A_Expr *expr = makeSimpleA_Expr(AEXPR_OP, "=",
-										id, vid,-1);
-            quals = lappend(quals, expr);
-       }      
 
-       if(next_node)   {
-            Node *id = make_qual(cpstate, next_node,AG_VERTEX_COLNAME_ID);
-            Node * vid = getColumnVar(cpstate, entity, getEdgeColname(entity->entity.rel, true));
-	        A_Expr *expr = makeSimpleA_Expr(AEXPR_OP, "=",id, vid,-1);
-            quals = lappend(quals, expr);
-       }  
+        if (!next_node->in_join_tree) {
+            return NIL;
+        }
 
-       if(prev_edge){
+        if (prev_node && cpstate->p_vle_initial_vid == NULL) {
+            Node *id = make_qual(cpstate, prev_node, AG_VERTEX_COLNAME_ID);
+            Node *vid = getColumnVar(
+                cpstate, entity, getEdgeColname(entity->entity.rel, false));
+            A_Expr *expr = makeSimpleA_Expr(AEXPR_OP, "=", id, vid, -1);
+            quals = lappend(quals, expr);
+        }
+
+        if (next_node) {
+            Node *id = make_qual(cpstate, next_node, AG_VERTEX_COLNAME_ID);
+            Node *vid = getColumnVar(
+                cpstate, entity, getEdgeColname(entity->entity.rel, true));
+            A_Expr *expr = makeSimpleA_Expr(AEXPR_OP, "=", id, vid, -1);
+            quals = lappend(quals, expr);
+        }
+
+        if (prev_edge) {
             Node *prev_vid = NULL;
-            prev_vid = getColumnVar(cpstate, prev_edge, getEdgeColname(prev_edge->entity.rel, true));
-            Node * vid = getColumnVar(cpstate, entity, getEdgeColname(entity->entity.rel, false));
-            A_Expr *expr = makeSimpleA_Expr(AEXPR_OP, "=",prev_vid, vid,-1);
+            prev_vid = getColumnVar(
+                cpstate, prev_edge,
+                getEdgeColname(prev_edge->entity.rel, true));
+            Node *vid = getColumnVar(
+                cpstate, entity, getEdgeColname(entity->entity.rel, false));
+            A_Expr *expr =
+                makeSimpleA_Expr(AEXPR_OP, "=", prev_vid, vid, -1);
             quals = lappend(quals, expr);
-       }
+        }
 
-       return quals;
+        return quals;
     }
     /*
      *  If the previous node is not in the join tree, set the previous
@@ -2939,8 +4323,11 @@ static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
             Node *end_id_expr = make_qual(cpstate, entity,
                                               AG_EDGE_COLNAME_END_ID);
             List *first_join_quals = NIL, *second_join_quals = NIL;
+            List *quals = NIL;
             Expr *first_qual, *second_qual;
             Expr *or_qual;
+            Expr *prev_prefilter;
+            Expr *next_prefilter;
 
             first_join_quals = make_directed_edge_join_conditions(cpstate,
                                                                   prev_entity,
@@ -2964,7 +4351,39 @@ static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
             or_qual = makeBoolExpr(OR_EXPR, list_make2(first_qual, second_qual),
                                -1);
 
-            return list_make1(or_qual);
+            quals = list_make1(or_qual);
+
+            /*
+             * The OR above spans both endpoint columns, so when only one side
+             * of the relationship is bound the optimizer cannot turn it into an
+             * index access on start_id/end_id and scans the whole edge table.
+             * Adding the redundant (but indexable) "this vertex is one of the
+             * two endpoints" filter recovers the index path. It is implied by
+             * the OR, so results are unchanged.
+             *
+             * Restrict this to single-relationship patterns. In a longer path
+             * the surrounding relationships already constrain both endpoints,
+             * so the extra OR qual adds no index path and measurably degrades
+             * the chosen plan (LDBC SQ7).
+             */
+            if (prev_edge == NULL && next_edge == NULL) {
+                prev_prefilter = make_undirected_endpoint_prefilter(
+                    cpstate, prev_entity, start_id_expr, end_id_expr);
+                if (prev_prefilter != NULL) {
+                    quals = lappend(quals, prev_prefilter);
+                }
+
+                next_prefilter = next_entity != prev_entity ?
+                    make_undirected_endpoint_prefilter(cpstate, next_entity,
+                                                       start_id_expr,
+                                                       end_id_expr) :
+                    NULL;
+                if (next_prefilter != NULL) {
+                    quals = lappend(quals, next_prefilter);
+                }
+            }
+
+            return quals;
         }
         default:
             return NULL;
@@ -2972,34 +4391,11 @@ static List *make_join_condition_for_edge(cypher_parsestate *cpstate,
 }
 
 // creates a type cast node to agtype
-static Node *make_type_cast_to_agtype(Node *arg)
-{
-    TypeCast *n = makeNode(TypeCast);
-    Value *ag_catalog = makeString("ag_catalog");
-    Value *agtype_str = makeString("agtype");
-    List *qualified_name = list_make2(ag_catalog, agtype_str);
-
-    n->arg = arg;
-    n->typname = makeTypeNameFromNameList(qualified_name);
-    n->location = -1;
-    return (Node *) n;
-}
 
 /*
  * Makes an agtype bool node that Postgres' transform expression logic
  * can handle. Used when contructed the join quals for building the paths
  */
-static Node *make_bool_a_const(bool state)
-{
-    A_Const *n = makeNode(A_Const);
-
-    n->val.type = T_String;
-    n->val.val.str = (char*)(state ? "true" : "false");
-    n->location = -1;
-
-    // typecast to agtype
-    return make_type_cast_to_agtype((Node *)n);
-}
 
 /*
  * For the given entity, join it to the current edge, via the passed
@@ -3043,27 +4439,19 @@ static List *join_to_entity(cypher_parsestate *cpstate,
     }
     else if (entity->type == ENT_VLE_EDGE)
     {
-        List *qualified_name, *args;
-        Value *ag_catalog, *match_qual;
-        bool is_left_side;
-        FuncCall *fc;
+        Node *endpoint;
 
-        ag_catalog = makeString("ag_catalog");
-        match_qual = makeString("age_match_vle_edge_to_id_qual");
-
-        /*
-         *  tells the function the location of the vle relative to the
-         * edge we are joining it against.
-         */
         if (side == JOIN_SIDE_LEFT)
         {
-            // [vle_edge]-()-[regular_edge]
-            is_left_side = true;
+            /* [vle_edge]-()-[regular_edge]: join the VLE end endpoint. */
+            endpoint = getColumnVar(
+                cpstate, entity, getEdgeColname(entity->entity.rel, true));
         }
         else if (side == JOIN_SIDE_RIGHT)
         {
-            // [edge]-()-[vle_edge]
-            is_left_side = false;
+            /* [regular_edge]-()-[vle_edge]: join the VLE start endpoint. */
+            endpoint = getColumnVar(
+                cpstate, entity, getEdgeColname(entity->entity.rel, false));
         }
         else
         {
@@ -3073,17 +4461,8 @@ static List *join_to_entity(cypher_parsestate *cpstate,
                      parser_errposition(pstate, entity->entity.rel->location)));
         }
 
-        // make the qualified function name
-        qualified_name = list_make2(ag_catalog, match_qual);
-
-        // make the args
-        args = list_make3(entity->expr, qual, make_bool_a_const(is_left_side));
-
-        // create the function call
-        fc = makeFuncCall(qualified_name, args, -1);
-
-        quals = lappend(quals, fc);
-
+        expr = makeSimpleA_Expr(AEXPR_OP, "=", (Node *)qual, endpoint, -1);
+        quals = lappend(quals, expr);
     }
     else
     {
@@ -3199,6 +4578,10 @@ static transform_entity *make_transform_entity(cypher_parsestate *cpstate,
     {
         entity->entity.rel = (cypher_relationship *)node;
     }
+    else if (entity->type == ENT_PATH)
+    {
+        entity->entity.path = (cypher_path *)node;
+    }
     else
     {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -3207,6 +4590,7 @@ static transform_entity *make_transform_entity(cypher_parsestate *cpstate,
 
     entity->declared_in_current_clause = true;
     entity->expr = expr;
+    entity->vle_vertices = NULL;
     entity->in_join_tree = expr != NULL;
 
     return entity;
@@ -3229,6 +4613,10 @@ transform_entity *find_variable(cypher_parsestate *cpstate, char *name)
         {
             entity_name = entity->entity.rel->name;
         }
+        else if (entity->type == ENT_PATH)
+        {
+            entity_name = entity->entity.path->var_name;
+        }
         else
         {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -3244,6 +4632,115 @@ transform_entity *find_variable(cypher_parsestate *cpstate, char *name)
     return NULL;
 }
 
+static transform_entity *find_parent_variable(cypher_parsestate *cpstate,
+                                              char *name, Index *levelsup)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    ParseState *parent_pstate = pstate->parentParseState;
+    Index level = 1;
+
+    while (parent_pstate != NULL && level <= MAX_PARENT_PARSE_LEVEL) {
+        cypher_parsestate *parent_cpstate =
+            (cypher_parsestate *)parent_pstate;
+        transform_entity *entity = find_variable(parent_cpstate, name);
+
+        if (entity != NULL) {
+            *levelsup = level;
+            return entity;
+        }
+
+        parent_pstate = parent_pstate->parentParseState;
+        level++;
+    }
+
+    return NULL;
+}
+
+static bool has_list_comp_or_subquery_walker(Node *expr, void *context)
+{
+    ListCell *lc;
+
+    if (expr == NULL) {
+        return false;
+    }
+
+    if (IsA(expr, List)) {
+        foreach (lc, (List *)expr)
+        {
+            if (has_list_comp_or_subquery((Node *)lfirst(lc))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (IsA(expr, BoolExpr)) {
+        BoolExpr *bexpr = (BoolExpr *)expr;
+
+        return has_list_comp_or_subquery((Node *)bexpr->args);
+    }
+
+    if (IsA(expr, EXTENSIBLE_NODE)) {
+        if (is_ag_node(expr, cypher_list_comprehension) ||
+            is_ag_node(expr, cypher_sub_query)) {
+            return true;
+        }
+
+        if (is_ag_node(expr, cypher_map)) {
+            return has_list_comp_or_subquery(
+                (Node *)((cypher_map *)expr)->keyvals);
+        }
+
+        if (is_ag_node(expr, cypher_list)) {
+            return has_list_comp_or_subquery(
+                (Node *)((cypher_list *)expr)->elems);
+        }
+
+        if (is_ag_node(expr, cypher_map_projection)) {
+            cypher_map_projection *projection = (cypher_map_projection *)expr;
+
+            return has_list_comp_or_subquery((Node *)projection->map_var) ||
+                   has_list_comp_or_subquery((Node *)projection->map_elements);
+        }
+
+        if (is_ag_node(expr, cypher_comparison_aexpr)) {
+            cypher_comparison_aexpr *aexpr = (cypher_comparison_aexpr *)expr;
+
+            return has_list_comp_or_subquery(aexpr->lexpr) ||
+                   has_list_comp_or_subquery(aexpr->rexpr);
+        }
+
+        if (is_ag_node(expr, cypher_comparison_boolexpr)) {
+            cypher_comparison_boolexpr *bexpr =
+                (cypher_comparison_boolexpr *)expr;
+
+            return has_list_comp_or_subquery((Node *)bexpr->args);
+        }
+
+        return false;
+    }
+
+    return raw_expression_tree_walker(expr,
+                                      (bool (*)())has_list_comp_or_subquery_walker,
+                                      context);
+}
+
+static bool has_list_comp_or_subquery(Node *expr)
+{
+    return has_list_comp_or_subquery_walker(expr, NULL);
+}
+
+static Node *coerce_cypher_expr_to_boolean(ParseState *pstate, Node *expr,
+                                           const char *construct_name)
+{
+    if (expr != NULL && IsA(expr, BoolExpr)) {
+        return expr;
+    }
+
+    return coerce_to_boolean(pstate, expr, construct_name);
+}
+
 static char *get_entity_name(transform_entity *entity)
 {
     if (entity->type == ENT_EDGE || entity->type == ENT_VLE_EDGE)
@@ -3253,6 +4750,10 @@ static char *get_entity_name(transform_entity *entity)
     else if (entity->type == ENT_VERTEX)
     {
         return entity->entity.node->name;
+    }
+    else if (entity->type == ENT_PATH)
+    {
+        return entity->entity.path->var_name;
     }
     else
     {
@@ -3264,10 +4765,106 @@ static char *get_entity_name(transform_entity *entity)
     return NULL;
 }
 /*
+ * Return true when a property constraint can be decomposed at parse time.
+ */
+static bool is_nonempty_static_cypher_map(Node *property_constraints)
+{
+    cypher_map *property_map;
+
+    if (property_constraints == NULL ||
+        nodeTag(property_constraints) != T_EXTENSIBLE_NODE ||
+        !is_ag_node(property_constraints, cypher_map)) {
+        return false;
+    }
+
+    property_map = (cypher_map *)property_constraints;
+    return property_map->keyvals != NIL;
+}
+
+/*
+ * Recursively decompose a static property map into scalar equality and
+ * collection containment conditions.
+ */
+static List *create_property_constraint_quals(cypher_parsestate *cpstate,
+                                              transform_entity *entity,
+                                              cypher_map *property_map,
+                                              List *parent_fields)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    List *quals = NIL;
+    ListCell *key_cell;
+
+    check_stack_depth();
+    Assert(property_map->keyvals != NIL);
+
+    key_cell = list_head(property_map->keyvals);
+    while (key_cell != NULL) {
+        ListCell *value_cell = lnext(key_cell);
+        Node *key = (Node *)lfirst(key_cell);
+        Node *value;
+        char *property_name;
+
+        Assert(value_cell != NULL);
+        if (value_cell == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INTERNAL_ERROR),
+                     errmsg("property map contains an unmatched key")));
+        }
+
+        value = (Node *)lfirst(value_cell);
+        Assert(IsA(key, String));
+        property_name = strVal(key);
+
+        if (is_nonempty_static_cypher_map(value)) {
+            List *nested_parent_fields;
+            List *nested_quals;
+
+            nested_parent_fields = lappend(list_copy(parent_fields),
+                                           makeString(property_name));
+            nested_quals = create_property_constraint_quals(
+                cpstate, entity, (cypher_map *)value, nested_parent_fields);
+            quals = list_concat(quals, nested_quals);
+        } else {
+            ColumnRef *entity_ref = makeNode(ColumnRef);
+            A_Indirection *property_ref = makeNode(A_Indirection);
+            Node *lhs;
+            Node *rhs;
+            Node *qual;
+            Node *last_srf = pstate->p_last_srf;
+            char *operator_name;
+
+            entity_ref->fields =
+                list_make1(makeString(get_entity_name(entity)));
+            entity_ref->location = -1;
+
+            property_ref->arg = (Node *)entity_ref;
+            property_ref->indirection =
+                lappend(list_copy(parent_fields), makeString(property_name));
+
+            lhs = transform_cypher_expr(cpstate, (Node *)property_ref,
+                                        EXPR_KIND_WHERE);
+            rhs = transform_cypher_expr(cpstate, value, EXPR_KIND_WHERE);
+            operator_name =
+                nodeTag(value) == T_EXTENSIBLE_NODE &&
+                        (is_ag_node(value, cypher_list) ||
+                         is_ag_node(value, cypher_map))
+                    ? (char *)"@>"
+                    : (char *)"=";
+
+            qual = (Node *)make_op(pstate,
+                                   list_make1(makeString(operator_name)),
+                                   lhs, rhs, last_srf, -1);
+            quals = lappend(quals, qual);
+        }
+
+        key_cell = lnext(value_cell);
+    }
+
+    return quals;
+}
+
+/*
  * Create a function to handle property constraints on an edge/vertex.
- * Since the property constraints might be a parameter, we cannot split
- * the property map into indvidual quals, this will be slightly inefficient,
- * but necessary to cover all possible situations.
  */
 static Node *create_property_constraint_function(cypher_parsestate *cpstate,
                                                  transform_entity *entity,
@@ -3276,24 +4873,25 @@ static Node *create_property_constraint_function(cypher_parsestate *cpstate,
 {
     ParseState *pstate = (ParseState *)cpstate;
     char *entity_name;
-    
+    bool use_equals;
     Node *const_expr;
     RangeTblEntry *rte;
     Node *last_srf = pstate->p_last_srf;
+    char *operator_name;
 
-    if(prop_expr == NULL){
-       ColumnRef *cr;
-       cr = makeNode(ColumnRef);
+    if (prop_expr == NULL) {
+        ColumnRef *cr = makeNode(ColumnRef);
 
         entity_name = get_entity_name(entity);
-
-        cr->fields = list_make2(makeString(entity_name), makeString("properties"));
+        cr->fields = list_make2(makeString(entity_name),
+                                makeString("properties"));
 
         // use Postgres to get the properties' transform node
         if ((rte = find_rte(cpstate, entity_name)))
         {
-            prop_expr = scanRTEForColumn(pstate, rte, AG_VERTEX_COLNAME_PROPERTIES,
-                                        -1, false);
+            prop_expr = scanRTEForColumn(pstate, rte,
+                                         AG_VERTEX_COLNAME_PROPERTIES,
+                                         -1, false);
         }
         else
         {
@@ -3301,13 +4899,35 @@ static Node *create_property_constraint_function(cypher_parsestate *cpstate,
         }
     }
 
+    use_equals =
+        (entity->type == ENT_VERTEX && entity->entity.node->use_equals) ||
+        ((entity->type == ENT_EDGE || entity->type == ENT_VLE_EDGE) &&
+         entity->entity.rel->use_equals);
+
+    if (!age_enable_containment && !use_equals &&
+        is_nonempty_static_cypher_map(property_constraints)) {
+        List *quals = create_property_constraint_quals(
+            cpstate, entity, (cypher_map *)property_constraints, NIL);
+
+        Assert(quals != NIL);
+        if (list_length(quals) == 1)
+        {
+            return (Node *)linitial(quals);
+        }
+
+        return (Node *)makeBoolExpr(AND_EXPR, quals, -1);
+    }
+
     // use cypher to get the constraints' transform node
     const_expr = transform_cypher_expr(cpstate, property_constraints,
                                        EXPR_KIND_WHERE);
+    operator_name = use_equals ? (char *)"@>>" : (char *)"@>";
 
-    return (Node *)make_op(pstate, list_make1(makeString("@>")), prop_expr,
+    return (Node *)make_op(pstate,
+                           list_make1(makeString(operator_name)),
+                           prop_expr,
                            const_expr, last_srf, -1);
-}                                            
+}
 
 /*
  * For the given path, transform each entity within the path, create
@@ -3359,7 +4979,6 @@ transformVLEtoRTE(cypher_parsestate *cpstate, SelectStmt *vle, Alias *alias)
 	ParseState *pstate = NULL;
     /* set the pstate */
     pstate = &cpstate->pstate;
-    ParseNamespaceItem *nsitem = NULL;
 	Query	   *qry;
 	RangeTblEntry *rte;
 
@@ -3385,7 +5004,6 @@ transformVLEtoRTE(cypher_parsestate *cpstate, SelectStmt *vle, Alias *alias)
 		cpstate->p_vle_initial_nsitem->p_lateral_ok = true;
 
 	rte = addRangeTableEntryForSubquery(pstate, qry, alias, true, true);
-
 
      /* function is like a plain relation */
     RangeTblRef* rtr = makeNodeFast(RangeTblRef);
@@ -3675,7 +5293,6 @@ genEdgeSimple(char *aliasname,cypher_parsestate *cpstate)
     FuncCall *func_expr;
     FuncCall *label_name_func_expr;
     Const *graph_oid_const;
-    Oid label_name_func_oid;
     Oid func_oid;
 
 	id = makeColumnRef(genQualifiedName(aliasname, AG_EDGE_COLNAME_ID));
@@ -3684,7 +5301,7 @@ genEdgeSimple(char *aliasname,cypher_parsestate *cpstate)
 	prop_map = makeColumnRef(genQualifiedName(aliasname, AG_EDGE_COLNAME_PROPERTIES));
 
     func_oid = get_ag_func_oid("_agtype_build_edge", 5, GRAPHIDOID, GRAPHIDOID,
-                               GRAPHIDOID, CSTRINGOID, AGTYPEOID);
+                               GRAPHIDOID, AGTYPEOID, AGTYPEOID);
 
     graph_oid_const = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid),
                                 ObjectIdGetDatum(cpstate->graph_oid), false,
@@ -3747,6 +5364,17 @@ genVLESubselect(cypher_parsestate *cpstate, cypher_relationship *crel,bool patho
 		edges = makeResTarget(edges_col, VLE_COLNAME_EDGES);
 
 		tlist = lappend(tlist, edges);
+	}
+
+	if (pathout)
+	{
+		Node       *vertices_col;
+		ResTarget  *vertices;
+
+		vertices_col = makeColumnRef(genQualifiedName(VLE_LEFT_ALIAS,
+      VLE_COLNAME_VERTICES));
+		vertices = makeResTarget(vertices_col, VLE_COLNAME_VERTICES);
+		tlist = lappend(tlist, vertices);
 	}
 
 	left = genVLELeftChild(cpstate, crel, out,pathout);
@@ -3890,8 +5518,6 @@ genVLELeftChild(cypher_parsestate *cpstate, cypher_relationship *crel, bool out,
     /* set the pstate */
     pstate = &cpstate->pstate;
     Node	   *vid;
-	A_ArrayExpr *idarr;
-	A_ArrayExpr *edgearr;
 	List	   *colnames = NIL;
 	SelectStmt *sel;
 	RangeSubselect *sub;
@@ -3953,37 +5579,63 @@ genVLELeftChild(cypher_parsestate *cpstate, cypher_relationship *crel, bool out,
 		prev_colname = genQualifiedName(NULL, getEdgeColname(crel, false));
 		prev_col = makeColumnRef(prev_colname);
 		prev = makeResTarget(prev_col, NULL);
-		curr = makeSimpleResTarget(getEdgeColname(crel, true), NULL);
-
-		id = makeColumnRef(genQualifiedName(NULL, "id"));
-
-		id_array = makeAArrayExpr(list_make1(id));
-		ids = makeResTarget((Node *) id_array, VLE_COLNAME_IDS);
-
-		tlist = list_make3(prev, curr, ids);
-
 		from = genVLEEdgeSubselect(cpstate, crel, VLE_LEFT_ALIAS);
 
-		if (out)
+		if (vid == NULL)
 		{
+			Node *curr_from_start = makeColumnRef(
+       genQualifiedName(NULL, getEdgeColname(crel, false)));
+			Node *empty_ids = makeAArrayExpr(NIL, GRAPHIDARRAYOID);
 
-	        Node	   *edge_arr = makeAArrayExpr(
-												  list_make1(genEdgeSimple(VLE_LEFT_ALIAS,cpstate)));
-			ResTarget  *edges = makeResTarget(edge_arr, VLE_COLNAME_EDGES);
+			curr = makeResTarget(curr_from_start,
+       getEdgeColname(crel, true));
+			ids = makeResTarget(empty_ids, VLE_COLNAME_IDS);
+			tlist = list_make3(prev, curr, ids);
 
-			tlist = lappend(tlist, edges);
+			if (out) {
+				Node *empty_edges = makeAArrayExpr(NIL, AGTYPEARRAYOID);
+				ResTarget *edges = makeResTarget(empty_edges,
+        VLE_COLNAME_EDGES);
 
-		}
+				tlist = lappend(tlist, edges);
+			}
 
+			if (pathout) {
+				Node *empty_vertices = makeAArrayExpr(NIL, AGTYPEARRAYOID);
+				ResTarget *vertices = makeResTarget(
+        empty_vertices, VLE_COLNAME_VERTICES);
 
-        if (vid != NULL)
-		{
-			A_Expr	   *vidcond;
+				tlist = lappend(tlist, vertices);
+			}
+		} else {
+			A_Expr *vidcond;
+
+			curr = makeSimpleResTarget(getEdgeColname(crel, true), NULL);
+			id = makeColumnRef(genQualifiedName(NULL, "id"));
+			id_array = makeAArrayExpr(list_make1(id));
+			ids = makeResTarget((Node *) id_array, VLE_COLNAME_IDS);
+			tlist = list_make3(prev, curr, ids);
+
+			if (out) {
+				Node *edge_arr = makeAArrayExpr(
+        list_make1(genEdgeSimple(VLE_LEFT_ALIAS, cpstate)));
+				ResTarget *edges = makeResTarget(edge_arr,
+        VLE_COLNAME_EDGES);
+
+				tlist = lappend(tlist, edges);
+			}
+
+			if (pathout) {
+				Node *empty_vertices = makeAArrayExpr(NIL, AGTYPEARRAYOID);
+				ResTarget *vertices = makeResTarget(
+        empty_vertices, VLE_COLNAME_VERTICES);
+
+				tlist = lappend(tlist, vertices);
+			}
 
 			vidcond = makeSimpleA_Expr(AEXPR_OP, "=", vid, prev_col, -1);
 			where_args = lappend(where_args, vidcond);
 		}
-
 		/* TODO: cannot see properties of future vertices */
 		if (crel->props != NULL)
 			where_args = lappend(where_args, genVLEQual(VLE_LEFT_ALIAS,
@@ -3992,7 +5644,17 @@ genVLELeftChild(cypher_parsestate *cpstate, cypher_relationship *crel, bool out,
 		sel = makeNode(SelectStmt);
 		sel->targetList = tlist;
 		sel->fromClause = list_make1(from);
-		sel->whereClause = (Node *) makeBoolExpr(AND_EXPR, where_args, -1);
+		if (vid == NULL)
+			sel->distinctClause = list_make1(NIL);
+		if (where_args == NIL)
+		{
+			sel->whereClause = NULL;
+		} else if (list_length(where_args) == 1) {
+			sel->whereClause = (Node *) linitial(where_args);
+		} else {
+			sel->whereClause =
+				(Node *) makeBoolExpr(AND_EXPR, where_args, -1);
+		}
 	}
 
 	sub = makeNode(RangeSubselect);
@@ -4001,8 +5663,6 @@ genVLELeftChild(cypher_parsestate *cpstate, cypher_relationship *crel, bool out,
 
 	return (Node *) sub;
 }
-
-
 
 static transform_entity *transform_VLE_edge_entity_newlogic(cypher_parsestate *cpstate,
                                                    cypher_relationship *rel,
@@ -4026,12 +5686,26 @@ static transform_entity *transform_VLE_edge_entity_newlogic(cypher_parsestate *c
 
 	rte = transformVLEtoRTE(cpstate, sel, alias);
 
+    /*
+     * Keep outer restrictions on the immediate SubqueryScan. The VLE plan
+     * builder relocates that qual above the custom traversal; without this
+     * barrier openGauss pushes it further into the seed's label scans before
+     * the plan builder can detach it.
+     */
+    rte->security_barrier = pathout;
+
     Node	   *var;
+    Node       *vertices_var = NULL;
     /* Get the var node for the VLE functions column name. */
     var = scanRTEForColumn(pstate, rte, "edges", -1, false);
+    if (pathout)
+    {
+        vertices_var = scanRTEForColumn(pstate, rte,
+                                        VLE_COLNAME_VERTICES, -1, false);
+        Assert(vertices_var != NULL);
+    }
     if (out)
     {	
-
         FuncExpr *fexpr;
         List *args = list_make1(var);
         Oid func_oid = InvalidOid;
@@ -4095,96 +5769,7 @@ static transform_entity *transform_VLE_edge_entity_newlogic(cypher_parsestate *c
     /* Make a transform entity for the vle. */
     vle_entity = make_transform_entity(cpstate, ENT_VLE_EDGE, (Node *)rel,
                                        (Expr *)var);
-
-    /* return the vle entity */
-    return vle_entity;
-}
-
-static transform_entity *transform_VLE_edge_entity(cypher_parsestate *cpstate,
-                                                   cypher_relationship *rel,
-                                                   Query *query)
-{
-    ParseState *pstate = NULL;
-    TargetEntry *te = NULL;
-    RangeFunction *rf = NULL;
-    RangeTblEntry *rte = NULL;
-    FuncCall *func = NULL;
-    Alias *alias = NULL;
-    Node *var = NULL;
-    transform_entity *vle_entity = NULL;
-
-    /* it better be a function call node */
-    Assert(IsA(rel->varlen, FuncCall));
-
-    /* get the function */
-    func = (FuncCall*)rel->varlen;
-
-    /* only our functions are supported here */
-    if (list_length(func->funcname) != 1)
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                 errmsg("only AGE functions are supported here")));
-    }
-
-    /* set the pstate */
-    pstate = &cpstate->pstate;
-
-    /* make a RangeFunction node */
-    rf = makeNode(RangeFunction);
-    rf->lateral = false;
-    rf->funccallnode=(Node*)rel->varlen;
-
-    /*
-     * Build an alias for the RangeFunction. This is needed so we
-     * can chain VLEs together
-     */
-    alias = makeNode(Alias);
-    alias->aliasname = get_next_default_alias(cpstate);
-    alias->colnames = NIL;
-    rf->alias = alias;
-
-    /*
-     * Add the RangeFunction to the FROM clause
-     */
-    rte = append_VLE_Func_to_FromClause(cpstate, (Node*)rf);
-    Assert(rte != NULL);
-
-    /* Get the var node for the VLE functions column name. */
-    var = scanRTEForColumn(pstate, rte, "edges", -1, false);
-    Assert(var != NULL);
-
-    /*
-     * If we have a variable name (rel name), make the target entry. Otherwise,
-     * there isn't a reason to create one.
-     */
-    if (rel->name != NULL)
-    {
-        FuncExpr *fexpr;
-        List *args = list_make1(var);
-        Oid func_oid = InvalidOid;
-
-        /*
-         * Get the oid for the materialize function that returns a list of
-         * edges. For a VLE edge variable we need to return a list of edges,
-         * not a path.
-         */
-        func_oid = get_ag_func_oid("age_materialize_vle_edges", 1, AGTYPEOID);
-
-        /* build the expr node for the function */
-        fexpr = makeFuncExpr(func_oid, AGTYPEOID, args, InvalidOid, InvalidOid,
-                             COERCE_EXPLICIT_CALL);
-
-        /* make the target entry and apply the provided variable */
-        te = makeTargetEntry((Expr*)fexpr, pstate->p_next_resno++, rel->name,
-                             false);
-        /* add it to the query */
-        query->targetList = lappend(query->targetList, te);
-    }
-
-    /* Make a transform entity for the vle. */
-    vle_entity = make_transform_entity(cpstate, ENT_VLE_EDGE, (Node *)rel,
-                                       (Expr *)var);
+    vle_entity->vle_vertices = (Expr *)vertices_var;
 
     /* return the vle entity */
     return vle_entity;
@@ -4218,8 +5803,13 @@ static bool isa_special_VLE_case(cypher_path *path)
 static void
 setInitialVidForVLE(cypher_parsestate *cpstate, cypher_relationship *crel, transform_entity *vertex)
 {
-    Node * vid = getColumnVar(cpstate, vertex, AG_VERTEX_COLNAME_ID);
-    cpstate->p_vle_initial_vid = vid;
+    if (!vertex->in_join_tree) {
+        cpstate->p_vle_initial_vid = NULL;
+        return;
+    }
+
+    cpstate->p_vle_initial_vid = getColumnVar(cpstate, vertex,
+                                              AG_VERTEX_COLNAME_ID);
 }
 
 /*
@@ -4236,8 +5826,10 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
 
     transform_entity *prev_entity = NULL;
     bool special_VLE_case = false;
+    bool valid_label;
 
     special_VLE_case = isa_special_VLE_case(path);
+    valid_label = path_check_valid_label(path, cpstate);
 
     /*
      * Iterate through every node in the path, construct the expr node
@@ -4249,13 +5841,22 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
         Expr *expr = NULL;
         transform_entity *entity = NULL;
 
-
         /* even increments of i are vertices */
         if (i % 2 == 0)
         {
             cypher_node *node = NULL;
             bool output_node = false;
+            bool adjacent_to_regular_edge = false;
+            bool adjacent_to_vle_edge = false;
             node = (cypher_node*)lfirst(lc);
+            if (path->var_name != NULL && node->name != NULL &&
+                strcmp(path->var_name, node->name) == 0)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_DUPLICATE_ALIAS),
+                         errmsg("variable '%s' is for a path", node->name),
+                         parser_errposition(pstate, node->location)));
+            }
 
             /*
              * The vle needs to know if the start vertex was
@@ -4277,14 +5878,47 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
                 }
             }
 
-             /* should we make the node available */
-            output_node = (special_VLE_case && !node->name && !node->props) ?
-                          false :
+            if (i > 0)
+            {
+                cypher_relationship *previous_relationship =
+                    (cypher_relationship *)list_nth(path->path, i - 1);
+
+                if (previous_relationship->varlen == NULL)
+                    adjacent_to_regular_edge = true;
+                else
+                    adjacent_to_vle_edge = true;
+            }
+
+            if (i + 1 < list_length(path->path))
+            {
+                cypher_relationship *next_relationship =
+                    (cypher_relationship *)list_nth(path->path, i + 1);
+
+                if (next_relationship->varlen == NULL)
+                    adjacent_to_regular_edge = true;
+                else
+                    adjacent_to_vle_edge = true;
+            }
+
+            /*
+             * A standalone anonymous MATCH still has cardinality: its scan
+             * must feed one tuple per matched vertex to later clauses and
+             * aggregates (Apache AGE #1288). A regular-only endpoint must
+             * also scan its vertex relation so a dangling edge cannot satisfy
+             * the pattern. Keep endpoint elision at a VLE boundary, whose
+             * executor already supplies the logical endpoint.
+             */
+            output_node = list_length(path->path) == 1 ||
+                          (adjacent_to_regular_edge &&
+                           !adjacent_to_vle_edge) ||
                           INCLUDE_NODE_IN_JOIN_TREE(path, node);
-            output_node = true;
+            if (special_VLE_case && !adjacent_to_regular_edge &&
+                !node->name && !node->props)
+                output_node = false;
+
             /* transform vertex */
             expr = transform_cypher_node(cpstate, node, &query->targetList,
-                                         output_node,path->var_name!=NULL);
+                                         output_node, valid_label);
 
             entity = make_transform_entity(cpstate, ENT_VERTEX, (Node *)node,
                                            expr);
@@ -4330,26 +5964,7 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
                  */
                 else if (prop_var != NULL)
                 {
-                    /*
-                     * Remember that prop_var is already transformed. We need
-                     * to built the transform manually.
-                     */
-                    FuncCall *fc = NULL;
-                    List *targs = NIL;
-                    List *fname = NIL;
-
-                    targs = lappend(targs, prop_var);
-                    fname = list_make2(makeString("ag_catalog"),
-                                       makeString("age_properties"));
-                    fc = makeFuncCall(fname, targs, -1);
-
-                    /*
-                     * Hand off to ParseFuncOrColumn to create the function
-                     * expression for properties(prop_var)
-                     */
-                    prop_expr = ParseFuncOrColumn(pstate, fname, targs,
-                                                  pstate->p_last_srf, fc, false,
-                                                  -1);
+                    prop_expr = make_properties_expr(prop_var);
                 }
 
                  
@@ -4367,6 +5982,14 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
             cypher_relationship *rel = NULL;
 
             rel = (cypher_relationship*)lfirst(lc);
+            if (path->var_name != NULL && rel->name != NULL &&
+                strcmp(path->var_name, rel->name) == 0)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_DUPLICATE_ALIAS),
+                         errmsg("variable '%s' is for a path", rel->name),
+                         parser_errposition(pstate, rel->location)));
+            }
 
             /*
              * There are 2 edge cases - 1) a regular edge and 2) a VLE edge.
@@ -4394,7 +6017,8 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
                     }
                 }
 
-                expr = transform_cypher_edge(cpstate, rel, &query->targetList);
+                expr = transform_cypher_edge(cpstate, rel,
+                                             &query->targetList, valid_label);
 
                 entity = make_transform_entity(cpstate, ENT_EDGE, (Node *)rel,
                                                expr);
@@ -4442,26 +6066,7 @@ static List *transform_match_entities(cypher_parsestate *cpstate, Query *query,
                      */
                     else if (prop_var != NULL)
                     {
-                        /*
-                         * Remember that prop_var is already transformed. We need
-                         * to built the transform manually.
-                         */
-                        FuncCall *fc = NULL;
-                        List *targs = NIL;
-                        List *fname = NIL;
-
-                        targs = lappend(targs, prop_var);
-                        fname = list_make2(makeString("ag_catalog"),
-                                           makeString("age_properties"));
-                        fc = makeFuncCall(fname, targs, -1);
-
-                        /*
-                         * Hand off to ParseFuncOrColumn to create the function
-                         * expression for properties(prop_var)
-                         */
-                        prop_expr = ParseFuncOrColumn(pstate, fname, targs,
-                                                      pstate->p_last_srf, fc,
-                                                      false, -1);
+                        prop_expr = make_properties_expr(prop_var);
                     }
 
                     r = create_property_constraint_function(cpstate, entity, rel->props,
@@ -4530,10 +6135,59 @@ static List *make_path_join_quals(cypher_parsestate *cpstate, List *entities)
     List *quals = NIL;
     List *join_quals;
 
-    // for vertex only queries, there is no work to do
+    /*
+     * Vertex-only patterns have no edges, so the edge-driven correlation and
+     * label-filter logic below never runs. That is correct for a freshly
+     * scanned vertex -- its label comes from its label-table scan. But a
+     * vertex that refers to a variable from an ENCLOSING query -- e.g. the
+     * (a:Person) in MATCH (a) WHERE (a:Person) / EXISTS((a:Person)) -- is not
+     * scanned from its label table here. Without an explicit filter such a
+     * sub-pattern is uncorrelated and trivially true (the label is never
+     * tested). If the vertex carries a non-default label and its variable
+     * exists in an ancestor parse state, emit a label-id filter: make_qual
+     * builds a name-based id reference that resolves to the outer variable,
+     * which both correlates the sub-pattern to it and enforces the label.
+     */
     if (list_length(entities) < 3)
     {
-        return NIL;
+        ListCell *vlc;
+
+        foreach (vlc, entities)
+        {
+            transform_entity *ent = (transform_entity *) lfirst(vlc);
+            char *label;
+            char *name;
+            Index levelsup = 0;
+
+            if (ent->type != ENT_VERTEX)
+            {
+                continue;
+            }
+
+            label = ent->entity.node->label;
+            name = ent->entity.node->name;
+
+            /*
+             * find_parent_variable walks the ancestor parse-state chain (the
+             * plugin nests one extra sub-query level for EXISTS sub-patterns,
+             * so the outer variable is not necessarily in the immediate
+             * parent). A match means the vertex is a correlated reference to
+             * an enclosing-query variable, so emit a label-id filter.
+             */
+            if (label != NULL && !IS_DEFAULT_LABEL_VERTEX(label) &&
+                name != NULL &&
+                find_parent_variable(cpstate, name, &levelsup) != NULL)
+            {
+                Node *id_field = make_qual(cpstate, ent, "id");
+
+                quals = lappend(quals,
+                                filter_vertices_on_label_id(cpstate,
+                                                            id_field,
+                                                            label));
+            }
+        }
+
+        return quals;
     }
 
     lc = list_head(entities);
@@ -4600,6 +6254,7 @@ static TargetEntry* transform_match_create_path_variable(cypher_parsestate *cpst
     int resno;
     List *entity_exprs = NIL;
     ListCell *lc;
+    int entity_index = 0;
 
     if (list_length(entities) < 1)
     {
@@ -4613,11 +6268,58 @@ static TargetEntry* transform_match_create_path_variable(cypher_parsestate *cpst
     foreach (lc, entities)
     {
         transform_entity *entity = (transform_entity*)lfirst(lc);
+        transform_entity *next_entity = NULL;
 
-        if (entity->expr != NULL)
+        if (entity_index + 1 < list_length(entities))
         {
-            entity_exprs = lappend(entity_exprs, entity->expr);
+            next_entity = (transform_entity *)list_nth(entities,
+                                                       entity_index + 1);
         }
+
+        /*
+         * The custom openGauss VLE returns parallel agtype[] arrays.  The
+         * vertex array contains the segment's start and intermediate
+         * vertices; expr contains its ordered edges. Replace the vertex
+         * immediately before every VLE with that array. _agtype_build_path
+         * interleaves each pair at execution time, including paths that mix
+         * regular and multiple VLE segments.
+         */
+        if (entity->type == ENT_VERTEX && next_entity != NULL &&
+            next_entity->type == ENT_VLE_EDGE)
+        {
+            Assert(next_entity->vle_vertices != NULL);
+            entity_exprs = lappend(entity_exprs,
+                                   next_entity->vle_vertices);
+        } else if (entity->expr != NULL) {
+            Node *entity_expr = (Node *)entity->expr;
+
+            entity_expr = coerce_entity_to_agtype(pstate, entity_expr);
+            entity_exprs = lappend(entity_exprs, entity_expr);
+        } else if (entity->type == ENT_VERTEX && entity_index > 0) {
+            transform_entity *previous_entity =
+                (transform_entity *)list_nth(entities, entity_index - 1);
+            cypher_relationship *relationship;
+            Node *endpoint_id;
+            Const *graph_name = makeConst(
+                TEXTOID, -1, InvalidOid, -1,
+                CStringGetTextDatum(cpstate->graph_name), false, false);
+            Oid get_vertex_oid = get_ag_func_oid(
+                "_get_vertex_by_graphid", 2, TEXTOID, GRAPHIDOID);
+            FuncExpr *endpoint_expr;
+
+            Assert(previous_entity->type == ENT_VLE_EDGE);
+            relationship = previous_entity->entity.rel;
+            endpoint_id = getColumnVar(
+                cpstate, previous_entity,
+                getEdgeColname(relationship, true));
+            endpoint_expr = makeFuncExpr(
+                get_vertex_oid, AGTYPEOID, list_make2(graph_name, endpoint_id),
+                InvalidOid, InvalidOid, COERCE_EXPLICIT_CALL);
+
+            entity_exprs = lappend(entity_exprs, endpoint_expr);
+        }
+
+        entity_index++;
     }
 
     // get the oid for the path creation function
@@ -4626,6 +6328,11 @@ static TargetEntry* transform_match_create_path_variable(cypher_parsestate *cpst
     // build the expr node for the function
     fexpr = makeFuncExpr(build_path_oid, AGTYPEOID, entity_exprs, InvalidOid,
                          InvalidOid, COERCE_EXPLICIT_CALL);
+
+    /* Make path variables available while this MATCH's WHERE is transformed. */
+    cpstate->entities = lappend(
+        cpstate->entities,
+        make_transform_entity(cpstate, ENT_PATH, (Node *)path, (Expr *)fexpr));
 
     resno = cpstate->pstate.p_next_resno++;
 
@@ -4654,7 +6361,7 @@ static char *get_accessor_function_name(enum transform_entity_type type,
             return AG_VERTEX_ACCESS_FUNCTION_PROPERTIES;
         }
     }
-    if (type == ENT_EDGE || ENT_VLE_EDGE)
+    if (type == ENT_EDGE || type == ENT_VLE_EDGE)
     {
         // id
         if (!strcmp(AG_EDGE_COLNAME_ID, name))
@@ -4690,27 +6397,29 @@ static char *get_accessor_function_name(enum transform_entity_type type,
  * For the given entity and column name, construct an expression that will
  * access the column or get the access function if the entity is a variable.
  */
-static Node * make_qual(cypher_parsestate *cpstate,
-                           transform_entity *entity, char *col_name)
+static Node *make_qual(cypher_parsestate *cpstate,
+                       transform_entity *entity, char *col_name)
 {
     List *qualified_name, *args;
     Node *node;
 
-    if (entity->expr != NULL &&  IsA(entity->expr, Var))
+    if (is_vertex_or_edge((Node *)entity->expr))
+    {
+        node = extract_field_from_record((Node *)entity->expr, col_name);
+    }
+    else if (entity->expr != NULL && IsA(entity->expr, Var))
     {
         char *function_name;
 
         function_name = get_accessor_function_name(entity->type, col_name);
-
         qualified_name = list_make2(makeString("ag_catalog"),
                                     makeString(function_name));
-
         args = list_make1(entity->expr);
-        node = (Node *)makeFuncCall(qualified_name, args,-1);
+        node = (Node *)makeFuncCall(qualified_name, args, -1);
     }
     else
     {
-        char *entity_name;
+        char *entity_name = NULL;
         ColumnRef *cr = makeNode(ColumnRef);
 
         if (entity->type == ENT_EDGE)
@@ -4728,35 +6437,88 @@ static Node * make_qual(cypher_parsestate *cpstate,
         }
 
         cr->fields = list_make2(makeString(entity_name), makeString(col_name));
-
         node = (Node *)cr;
     }
 
     return node;
 }
+
+void get_record_field_info(const char *field_name, Oid entity_type,
+                           AttrNumber *fieldnum, Oid *fieldtype)
+{
+    bool is_vertex = entity_type == VERTEXOID;
+    bool is_edge = entity_type == EDGEOID;
+
+    Assert(field_name != NULL);
+    Assert(fieldnum != NULL);
+    Assert(fieldtype != NULL);
+    Assert(is_vertex || is_edge);
+
+    *fieldnum = InvalidAttrNumber;
+    *fieldtype = InvalidOid;
+
+    if (pg_strcasecmp(field_name, "id") == 0) {
+        *fieldnum = VERTEX_ID_FIELD_NUMBER;
+        *fieldtype = GRAPHIDOID;
+    } else if (is_vertex) {
+        if (pg_strcasecmp(field_name, "label") == 0) {
+            *fieldnum = VERTEX_LABEL_FIELD_NUMBER;
+            *fieldtype = AGTYPEOID;
+        } else if (pg_strcasecmp(field_name, "properties") == 0) {
+            *fieldnum = VERTEX_PROPERTIES_FIELD_NUMBER;
+            *fieldtype = AGTYPEOID;
+        }
+    } else if (is_edge) {
+        if (pg_strcasecmp(field_name, "label") == 0 ||
+            pg_strcasecmp(field_name, "type") == 0) {
+            *fieldnum = EDGE_LABEL_FIELD_NUMBER;
+            *fieldtype = AGTYPEOID;
+        } else if (pg_strcasecmp(field_name, "end_id") == 0 ||
+                 pg_strcasecmp(field_name, "endnode") == 0) {
+            *fieldnum = EDGE_END_ID_FIELD_NUMBER;
+            *fieldtype = GRAPHIDOID;
+        } else if (pg_strcasecmp(field_name, "start_id") == 0 ||
+                 pg_strcasecmp(field_name, "startnode") == 0) {
+            *fieldnum = EDGE_START_ID_FIELD_NUMBER;
+            *fieldtype = GRAPHIDOID;
+        } else if (pg_strcasecmp(field_name, "properties") == 0) {
+            *fieldnum = EDGE_PROPERTIES_FIELD_NUMBER;
+            *fieldtype = AGTYPEOID;
+        }
+    }
+}
+
+FieldSelect *make_field_select(Expr *expr, AttrNumber fieldnum,
+    Oid resulttype)
+{
+    FieldSelect *fselect = makeNode(FieldSelect);
+
+    fselect->arg = (Expr *)copyObject(expr);
+    fselect->fieldnum = fieldnum;
+    fselect->resulttype = resulttype;
+    fselect->resulttypmod = -1;
+    fselect->resultcollid = InvalidOid;
+
+    return fselect;
+}
+
 static Expr *get_relative_expr(transform_entity *entity, Index levelsup)
 {
-    Var *var;
-    Var *updated_var;
+    Node *relative_expr;
 
-    if (!IsA(entity->expr, Var))
-    {
-        return entity->expr;
-    }
+    Assert(entity != NULL);
+    Assert(entity->expr != NULL);
 
-    var = (Var *)entity->expr;
-    updated_var = makeVar(var->varno, var->varattno, var->vartype,
-                          var->vartypmod, var->varcollid,
-                          var->varlevelsup + levelsup);
+    relative_expr = (Node *)copyObject(entity->expr);
+    IncrementVarSublevelsUp(relative_expr, levelsup, 0);
 
-    return (Expr *)updated_var;
+    return (Expr *)relative_expr;
 }
 
 static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
                                    cypher_relationship *rel,
-                                   List **target_list)
+                                   List **target_list, bool valid_label)
 {
-   bool valid_label = true;
     ParseState *pstate = (ParseState *)cpstate;
     char *schema_name = NULL;
     char *rel_name = NULL;
@@ -4770,6 +6532,11 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
     Var *previous_clause_var = NULL;
     bool refs_var = false;
     RangeTblEntry *rte = NULL;
+
+    if (rel->label != NULL && rel->parsed_label == NULL)
+    {
+        rel->parsed_label = rel->label;
+    }
 
     /*
      * If we have an edge name, get any potential variable or column
@@ -4809,7 +6576,13 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
                         errmsg("variable '%s' is for a VLE edge", rel->name),
                         parser_errposition(pstate, rel->location)));
             }
-
+            else if (entity->type == ENT_PATH)
+            {
+                ereport(ERROR,
+                       (errcode(ERRCODE_DUPLICATE_ALIAS),
+                        errmsg("variable '%s' is for a path", rel->name),
+                        parser_errposition(pstate, rel->location)));
+            }
         }
 
         else if (te && !entity)
@@ -4871,30 +6644,27 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
          */
         rel->label = NULL;
     }
-    /*
-    *  XXX: Need to determine proper rules, for when label does not exist
-    *  or is for an edge. Maybe labels and edges should share names, like
-    *  in openCypher. But these are stand in errors, to prevent
-    *  segmentation faults, and other errors.
-    */
-    label_cache_data *lcd =
-        search_label_name_graph_cache(rel->label, cpstate->graph_oid);
-
-    if (lcd == NULL)
+    if (valid_label)
     {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("label %s does not exists", rel->label),
-                        parser_errposition(pstate, rel->location)));
-    }
+        label_cache_data *lcd =
+            search_label_name_graph_cache(rel->label, cpstate->graph_oid);
 
-    if (lcd->kind != LABEL_KIND_EDGE)
-    {
-        ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                    errmsg("label %s is for vertices, not edges", rel->label),
-                    parser_errposition(pstate, rel->location)));
-    }
+        if (lcd == NULL)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("label %s does not exists", rel->label),
+                     parser_errposition(pstate, rel->location)));
+        }
 
+        if (lcd->kind != LABEL_KIND_EDGE)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("label %s is for vertices, not edges", rel->label),
+                     parser_errposition(pstate, rel->location)));
+        }
+    }
 
     /*
      * Variables for edges are not allowed to be used multiple times within the
@@ -4913,10 +6683,10 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
      * If this edge uses a variable that already exists, verify that the label
      * names are the same.
      */
-    if (refs_var &&
-        (cr->parsed_label != NULL || rel->parsed_label != NULL) &&
-        (cr->parsed_label == NULL || rel->parsed_label == NULL ||
-        (strcmp(cr->parsed_label, rel->parsed_label) != 0)))
+    if (refs_var && rel->parsed_label != NULL &&
+        ((cr->parsed_label != NULL ? cr->parsed_label : cr->label) == NULL ||
+         strcmp(cr->parsed_label != NULL ? cr->parsed_label : cr->label,
+                rel->parsed_label) != 0))
     {
         ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -4946,7 +6716,8 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
          * TODO: Implement logic to alter outer scope results.
          *
          */
-        if (pstate->p_expr_kind == EXPR_KIND_WHERE)
+        if (pstate->p_expr_kind == EXPR_KIND_WHERE &&
+            cpstate->subquery_where_flag == false)
         {
             cypher_parsestate *parent_cpstate =
                (cypher_parsestate *)pstate->parentParseState->parentParseState;
@@ -4980,6 +6751,18 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
         if (refs_var)
         {
             return (te != NULL) ? te->expr : (Expr *)previous_clause_var;
+        }
+
+        if (cpstate->subquery_where_flag == true)
+        {
+            Index levelsup = 0;
+            transform_entity *tentity =
+                find_parent_variable(cpstate, rel->name, &levelsup);
+
+            if (tentity != NULL)
+            {
+                return get_relative_expr(tentity, levelsup);
+            }
         }
     }
 
@@ -5016,7 +6799,7 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
 
     if (valid_label)
     {
-        expr = make_edge_expr(cpstate, rte, rel->label);
+        expr = make_edge_expr(cpstate, rte);
     }
     else
     {
@@ -5034,10 +6817,9 @@ static Expr *transform_cypher_edge(cypher_parsestate *cpstate,
 
 static Expr *transform_cypher_node(cypher_parsestate *cpstate,
                                    cypher_node *node, List **target_list,
-                                   bool output_node,bool pathout)
+                                   bool output_node, bool valid_label)
 {
-   bool valid_label = true;
-     ParseState *pstate = (ParseState *)cpstate;
+    ParseState *pstate = (ParseState *)cpstate;
     char *schema_name = NULL;
     char *rel_name = NULL;
     RangeVar *label_range_var = NULL;
@@ -5048,8 +6830,14 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
     transform_entity *entity = NULL;
     cypher_node *cn = NULL;
     bool refs_var = false;
+    bool has_explicit_label = node->label != NULL;
     RangeTblEntry *rte   = NULL;
     Var *previous_clause_var = NULL;
+
+    if (has_explicit_label && node->parsed_label == NULL)
+    {
+        node->parsed_label = node->label;
+    }
 
     /* if we have a node name, get any potential variable references */
     if (node->name != NULL)
@@ -5085,6 +6873,13 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
                 ereport(ERROR,
                        (errcode(ERRCODE_DUPLICATE_ALIAS),
                         errmsg("variable '%s' is for a VLE edge", node->name),
+                        parser_errposition(pstate, node->location)));
+            }
+            else if (entity->type == ENT_PATH)
+            {
+                ereport(ERROR,
+                       (errcode(ERRCODE_DUPLICATE_ALIAS),
+                        errmsg("variable '%s' is for a path", node->name),
                         parser_errposition(pstate, node->location)));
             }
     
@@ -5152,37 +6947,36 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
         node->label = NULL;
     }
 
-        /*
-        *  XXX: Need to determine proper rules, for when label does not exist
-        *  or is for an edge. Maybe labels and edges should share names, like
-        *  in openCypher. But these are stand in errors, to prevent
-        *  segmentation faults, and other errors.
-        */
-    label_cache_data *lcd =
-        search_label_name_graph_cache(node->label, cpstate->graph_oid);
+    if (valid_label)
+    {
+        label_cache_data *lcd =
+            search_label_name_graph_cache(node->label, cpstate->graph_oid);
 
-    if (lcd == NULL)
-    {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("label %s does not exists", node->label),
-                        parser_errposition(pstate, node->location)));
-    }
-    if (lcd->kind != LABEL_KIND_VERTEX)
-    {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("label %s is for edges, not vertices",
-                                node->label),
-                        parser_errposition(pstate, node->location)));
+        if (lcd == NULL)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("label %s does not exists", node->label),
+                     parser_errposition(pstate, node->location)));
+        }
+        if (lcd->kind != LABEL_KIND_VERTEX)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("label %s is for edges, not vertices", node->label),
+                     parser_errposition(pstate, node->location)));
+        }
     }
 
     /*
      * If this vertex uses a variable that already exists, verify that the label
      * being used is of the same name.
      */
-    if (refs_var &&
-        (cn->parsed_label != NULL || node->parsed_label != NULL) &&
-        (cn->parsed_label == NULL || node->parsed_label == NULL ||
-        (strcmp(cn->parsed_label, node->parsed_label) != 0)))
+    if (refs_var && has_explicit_label &&
+        ((cn->parsed_label != NULL ? cn->parsed_label : cn->label) == NULL ||
+         node->parsed_label == NULL ||
+         strcmp(cn->parsed_label != NULL ? cn->parsed_label : cn->label,
+                node->parsed_label) != 0))
     {
         ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -5220,7 +7014,8 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
          * TODO: Implement logic to alter outer scope results.
          *
          */
-        if (pstate->p_expr_kind == EXPR_KIND_WHERE )
+        if (pstate->p_expr_kind == EXPR_KIND_WHERE &&
+            cpstate->subquery_where_flag == false)
         {
             cypher_parsestate *parent_cpstate =
                (cypher_parsestate *)pstate->parentParseState->parentParseState;
@@ -5254,6 +7049,18 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
         if (refs_var)
         {
             return (te != NULL) ? te->expr : (Expr *)previous_clause_var;
+        }
+
+        if (cpstate->subquery_where_flag == true)
+        {
+            Index levelsup = 0;
+            transform_entity *tentity =
+                find_parent_variable(cpstate, node->name, &levelsup);
+
+            if (tentity != NULL)
+            {
+                return get_relative_expr(tentity, levelsup);
+            }
         }
 
         /* if this vertex is referencing an existing col var, return its expr */
@@ -5294,7 +7101,7 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
 
     if (valid_label)
     {
-        expr = (Expr *)make_vertex_expr(cpstate, rte, node->label);
+        expr = (Expr *)make_vertex_expr(cpstate, rte);
     }
     else
     {
@@ -5308,87 +7115,87 @@ static Expr *transform_cypher_node(cypher_parsestate *cpstate,
     return expr;
 }
 
-static Node *make_edge_expr(cypher_parsestate *cpstate, RangeTblEntry *rte,
-                            char *label)
+static Node *make_edge_expr(cypher_parsestate *cpstate, RangeTblEntry *rte)
 {
     ParseState *pstate = (ParseState *)cpstate;
     Oid label_name_func_oid;
-    Oid func_oid;
     Node *id, *start_id, *end_id;
     Const *graph_oid_const;
     Node *props;
-    List *args, *label_name_args;
-    FuncExpr *func_expr;
+    List *label_name_args;
     FuncExpr *label_name_func_expr;
+    RowExpr *row_expr;
 
-    func_oid = get_ag_func_oid("_agtype_build_edge", 5, GRAPHIDOID, GRAPHIDOID,
-                               GRAPHIDOID, CSTRINGOID, AGTYPEOID);
     id = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_ID, -1, false);
-    start_id = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_START_ID, -1, false);
+    start_id = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_START_ID, -1,
+                                false);
     end_id = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_END_ID, -1, false);
 
     label_name_func_oid = get_ag_func_oid("_label_name", 2, OIDOID,
                                           GRAPHIDOID);
-
     graph_oid_const = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid),
                                 ObjectIdGetDatum(cpstate->graph_oid), false,
                                 true);
-
     label_name_args = list_make2(graph_oid_const, id);
-
-    label_name_func_expr = makeFuncExpr(label_name_func_oid, CSTRINGOID,
+    label_name_func_expr = makeFuncExpr(label_name_func_oid, AGTYPEOID,
                                         label_name_args, InvalidOid,
                                         InvalidOid, COERCE_EXPLICIT_CALL);
     label_name_func_expr->location = -1;
-    props = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_PROPERTIES, -1, false);
-    args=lcons(id, list_make4(start_id, end_id, label_name_func_expr, props));
+    props = scanRTEForColumn(pstate, rte, AG_EDGE_COLNAME_PROPERTIES, -1,
+                             false);
 
-    func_expr = makeFuncExpr(func_oid, AGTYPEOID, args, InvalidOid, InvalidOid,
-                             COERCE_EXPLICIT_CALL);
-    func_expr->location = -1;
+    row_expr = makeNode(RowExpr);
+    row_expr->args = lappend(list_make4(id, label_name_func_expr, end_id,
+                                       start_id),
+                             props);
+    row_expr->row_typeid = EDGEOID;
+    /* Preserve the named edge type when openGauss deparses CTAS queries. */
+    row_expr->row_format = COERCE_EXPLICIT_CAST;
+    row_expr->colnames = lappend(list_make4(makeString("id"),
+                                            makeString("label"),
+                                            makeString("end_id"),
+                                            makeString("start_id")),
+        makeString("properties"));
+    row_expr->location = -1;
 
-    return (Node *)func_expr;
+    return (Node *)row_expr;
 }
-static Node *make_vertex_expr(cypher_parsestate *cpstate, RangeTblEntry *rte,
-                              char *label)
+
+static Node *make_vertex_expr(cypher_parsestate *cpstate, RangeTblEntry *rte)
 {
     ParseState *pstate = (ParseState *)cpstate;
     Oid label_name_func_oid;
-    Oid func_oid;
     Node *id;
     Const *graph_oid_const;
     Node *props;
-    List *args, *label_name_args;
-    FuncExpr *func_expr;
+    List *label_name_args;
     FuncExpr *label_name_func_expr;
+    RowExpr *row_expr;
 
-    func_oid = get_ag_func_oid("_agtype_build_vertex", 3, GRAPHIDOID,
-                               CSTRINGOID, AGTYPEOID);
     id = scanRTEForColumn(pstate, rte, AG_VERTEX_COLNAME_ID, -1, false);
-
-
     label_name_func_oid = get_ag_func_oid("_label_name", 2, OIDOID,
                                           GRAPHIDOID);
-
     graph_oid_const = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid),
                                 ObjectIdGetDatum(cpstate->graph_oid), false,
                                 true);
-
     label_name_args = list_make2(graph_oid_const, id);
-
-    label_name_func_expr = makeFuncExpr(label_name_func_oid, CSTRINGOID,
+    label_name_func_expr = makeFuncExpr(label_name_func_oid, AGTYPEOID,
                                         label_name_args, InvalidOid,
                                         InvalidOid, COERCE_EXPLICIT_CALL);
     label_name_func_expr->location = -1;
-    props = scanRTEForColumn(pstate, rte, AG_VERTEX_COLNAME_PROPERTIES, -1, false);
+    props = scanRTEForColumn(pstate, rte, AG_VERTEX_COLNAME_PROPERTIES, -1,
+                             false);
 
-    args = list_make3(id, label_name_func_expr, props);
+    row_expr = makeNode(RowExpr);
+    row_expr->args = list_make3(id, label_name_func_expr, props);
+    row_expr->row_typeid = VERTEXOID;
+    /* Preserve the named vertex type when openGauss deparses CTAS queries. */
+    row_expr->row_format = COERCE_EXPLICIT_CAST;
+    row_expr->colnames = list_make3(makeString("id"), makeString("label"),
+                                    makeString("properties"));
+    row_expr->location = -1;
 
-    func_expr = makeFuncExpr(func_oid, AGTYPEOID, args, InvalidOid, InvalidOid,
-                             COERCE_EXPLICIT_CALL);
-    func_expr->location = -1;
-
-    return (Node *)func_expr;
+    return (Node *)row_expr;
 }
 
 static Query *transform_cypher_create(cypher_parsestate *cpstate,
@@ -5437,7 +7244,6 @@ static Query *transform_cypher_create(cypher_parsestate *cpstate,
         target_nodes->flags |= CYPHER_CLAUSE_FLAG_TERMINAL;
     }
 
-
     func_expr = make_clause_func_expr(CREATE_CLAUSE_FUNCTION_NAME,
                                       (Node *)target_nodes);
 
@@ -5480,8 +7286,17 @@ static cypher_create_path* transform_cypher_create_path(cypher_parsestate *cpsta
     List *transformed_path = NIL;
     cypher_create_path *ccp = make_ag_node(cypher_create_path);
     bool in_path = path->var_name != NULL;
+    bool has_edge = list_length(path->path) > 1;
 
     ccp->path_attr_num = InvalidAttrNumber;
+
+    if (in_path && findTarget(*target_list, path->var_name) != NULL)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_DUPLICATE_ALIAS),
+                 errmsg("variable \"%s\" already exists", path->var_name),
+                 parser_errposition(pstate, path->location)));
+    }
 
     foreach (lc, path->path)
     {
@@ -5491,10 +7306,21 @@ static cypher_create_path* transform_cypher_create_path(cypher_parsestate *cpsta
             transform_entity *entity;
 
             cypher_target_node *rel =
-                transform_create_cypher_node(cpstate, target_list, node);
+                transform_create_cypher_node(cpstate, target_list, node,
+                                             has_edge);
 
-            if (in_path)
+            if (in_path) {
+                if (node->name != NULL &&
+                    strcmp(node->name, path->var_name) == 0) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_DUPLICATE_ALIAS),
+                             errmsg("variable \"%s\" already exists",
+                                    path->var_name),
+                             parser_errposition(pstate, path->location)));
+                }
+
                 rel->flags |= CYPHER_TARGET_NODE_IN_PATH_VAR;
+            }
 
             transformed_path = lappend(transformed_path, rel);
 
@@ -5511,8 +7337,18 @@ static cypher_create_path* transform_cypher_create_path(cypher_parsestate *cpsta
             cypher_target_node *rel =
                 transform_create_cypher_edge(cpstate, target_list, edge);
 
-            if (in_path)
+            if (in_path) {
+                if (edge->name != NULL &&
+                    strcmp(edge->name, path->var_name) == 0) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_DUPLICATE_ALIAS),
+                             errmsg("variable \"%s\" already exists",
+                                    path->var_name),
+                             parser_errposition(pstate, path->location)));
+                }
+
                 rel->flags |= CYPHER_TARGET_NODE_IN_PATH_VAR;
+            }
 
             transformed_path = lappend(transformed_path, rel);
 
@@ -5595,7 +7431,8 @@ static cypher_target_node* transform_create_cypher_edge(cypher_parsestate *cpsta
          * Variables can be declared in a CREATE clause, but not used if
          * it already exists.
          */
-        if (variable_exists(cpstate, edge->name))
+        if (find_variable(cpstate, edge->name) != NULL ||
+            variable_exists(cpstate, edge->name))
         {
             ereport(ERROR,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -5705,7 +7542,8 @@ static bool variable_exists(cypher_parsestate *cpstate, char *name)
 // transform nodes, check to see if the variable name already exists.
 static cypher_target_node* transform_create_cypher_node(cypher_parsestate *cpstate,
                                                         List **target_list,
-                                                        cypher_node *node)
+                                                        cypher_node *node,
+                                                        bool has_edge)
 {
     ParseState *pstate = (ParseState *)cpstate;
 
@@ -5730,12 +7568,13 @@ static cypher_target_node* transform_create_cypher_node(cypher_parsestate *cpsta
     if (node->name)
     {
         transform_entity *entity;
+        TargetEntry *te;
 
         entity = find_variable(cpstate, node->name);
-
-        if (entity)
+        te = findTarget(*target_list, node->name);
+        if (entity && te)
         {
-            if (entity->type != ENT_VERTEX)
+            if (entity->type != ENT_VERTEX || !has_edge)
             {
                 ereport(ERROR,
                         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -5745,6 +7584,34 @@ static cypher_target_node* transform_create_cypher_node(cypher_parsestate *cpsta
 
             return transform_create_cypher_existing_node(cpstate, target_list,
                                                          entity->declared_in_current_clause, node);
+        }
+
+        /*
+         * WITH aliases and expression-backed vertices are visible in the
+         * previous clause target list even when there is no transform_entity
+         * carrying the new alias.  Treat them as existing endpoints instead
+         * of appending a second placeholder with the same column name.
+         */
+        if (te)
+        {
+            if (!has_edge)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("variable %s already exists", node->name),
+                         parser_errposition(pstate, node->location)));
+            }
+
+            return transform_create_cypher_existing_node(cpstate, target_list,
+                                                         false, node);
+        }
+
+        if (variable_exists(cpstate, node->name) && !has_edge)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("variable %s already exists", node->name),
+                     parser_errposition(pstate, node->location)));
         }
     }
 
@@ -5756,7 +7623,8 @@ static cypher_target_node* transform_create_cypher_node(cypher_parsestate *cpsta
  * Returns the resno for the TargetEntry with the resname equal to the name
  * passed. Returns -1 otherwise.
  */
-static int get_target_entry_resno(List *target_list, char *name)
+static int get_target_entry_resno(ParseState *pstate, List *target_list,
+                                  char *name)
 {
     ListCell *lc;
 
@@ -5765,7 +7633,7 @@ static int get_target_entry_resno(List *target_list, char *name)
         TargetEntry *te = (TargetEntry *)lfirst(lc);
         if (!strcmp(te->resname, name))
         {
-            te->expr = add_volatile_wrapper(te->expr);
+            te->expr = add_volatile_wrapper(pstate, te->expr);
             return te->resno;
         }
     }
@@ -5788,7 +7656,6 @@ static cypher_target_node *transform_create_cypher_existing_node(
     rel->flags = CYPHER_TARGET_NODE_FLAG_NONE;
     rel->resultRelInfo = NULL;
     rel->variable_name = node->name;
-
 
     if (node->props)
     {
@@ -5815,7 +7682,8 @@ static cypher_target_node *transform_create_cypher_existing_node(
      * Get the AttrNumber the variable is stored in, so we can extract the id
      * later.
      */
-    rel->tuple_position = get_target_entry_resno(*target_list, node->name);
+    rel->tuple_position = get_target_entry_resno((ParseState *)cpstate,
+        *target_list, node->name);
 
     return rel;
 }
@@ -5932,7 +7800,7 @@ static TargetEntry *placeholder_target_entry(cypher_parsestate *cpstate,
     int resno;
 
     n = (Expr *)makeNullConst(AGTYPEOID, -1, InvalidOid);
-    n = add_volatile_wrapper(n);
+    n = add_volatile_wrapper(pstate, n);
 
     resno = pstate->p_next_resno++;
 
@@ -5948,11 +7816,11 @@ static Expr *cypher_create_properties(cypher_parsestate *cpstate,
                                       Relation label_relation, Node *props,
                                       enum transform_entity_type type)
 {
+    ParseState *pstate = (ParseState *)cpstate;
     Expr *properties;
 
     if (props != NULL && is_ag_node(props, cypher_param))
     {
-        ParseState *pstate = (ParseState *) cpstate;
         cypher_param *param = (cypher_param *)props;
 
         ereport(ERROR,
@@ -5963,6 +7831,9 @@ static Expr *cypher_create_properties(cypher_parsestate *cpstate,
 
     if (props)
     {
+        if (is_ag_node(props, cypher_map))
+            ((cypher_map *)props)->keep_null = false;
+
         properties = (Expr *)transform_cypher_expr(cpstate, props,
                                                    EXPR_KIND_INSERT_TARGET);
     }
@@ -5982,7 +7853,7 @@ static Expr *cypher_create_properties(cypher_parsestate *cpstate,
     }
 
     // add a volatile wrapper call to prevent the optimizer from removing it
-    return (Expr *)add_volatile_wrapper(properties);
+    return add_volatile_wrapper(pstate, properties);
 }
 
 /*
@@ -6146,18 +8017,97 @@ static TargetEntry *findTarget(List *targetList, char *resname)
     return NULL;
 }
 
+static bool clause_is_dml(cypher_clause *clause)
+{
+    return is_ag_node(clause->self, cypher_create) ||
+           is_ag_node(clause->self, cypher_set) ||
+           is_ag_node(clause->self, cypher_delete) ||
+           is_ag_node(clause->self, cypher_merge);
+}
+
+static bool clause_chain_has_dml(cypher_clause *clause)
+{
+    while (clause != NULL) {
+        if (clause_is_dml(clause)) {
+            return true;
+        }
+
+        clause = clause->prev;
+    }
+
+    return false;
+}
+
+/*
+ * Build a false WHERE clause for an invalid label. A volatile predicate is
+ * required after DML so constant folding cannot skip the predecessor write.
+ */
+static Node *make_false_where_clause(bool volatile_needed)
+{
+    if (volatile_needed) {
+        FuncCall *random_fn;
+        NullTest *nt;
+
+        random_fn = makeFuncCall(
+            list_make2(makeString("pg_catalog"), makeString("random")),
+            NIL, -1);
+
+        nt = makeNode(NullTest);
+        nt->arg = (Expr *)random_fn;
+        nt->nulltesttype = IS_NULL;
+        nt->argisrow = false;
+
+        return (Node *)nt;
+    } else {
+        cypher_bool_const *lhs = make_ag_node(cypher_bool_const);
+        cypher_bool_const *rhs = make_ag_node(cypher_bool_const);
+
+        lhs->boolean = true;
+        lhs->location = -1;
+        rhs->boolean = false;
+        rhs->location = -1;
+
+        return (Node *)makeSimpleA_Expr(AEXPR_OP, "=",
+                                        (Node *)lhs, (Node *)rhs, -1);
+    }
+}
+
 /*
  * Wrap the expression with a volatile function, to prevent the optimer from
  * elimating the expression.
  */
-static Expr *add_volatile_wrapper(Expr *node)
+static Expr *add_volatile_wrapper(ParseState *pstate, Expr *node)
 {
+    Oid node_type;
     Oid oid;
+    Node *coerced;
 
-    oid = get_ag_func_oid("agtype_volatile_wrapper", 1, AGTYPEOID);
+    if (node == NULL) {
+        ereport(ERROR,
+                (errmsg_internal("add_volatile_wrapper: NULL expression")));
+    }
 
-    return (Expr *)makeFuncExpr(oid, AGTYPEOID, list_make1(node), InvalidOid,
-                                InvalidOid, COERCE_EXPLICIT_CALL);
+    oid = get_ag_func_oid("agtype_volatile_wrapper", 1, ANYOID);
+    if (IsA(node, FuncExpr) && oid == ((FuncExpr *)node)->funcid) {
+        return node;
+    }
+
+    coerced = coerce_entity_to_agtype(pstate, (Node *)node);
+    node_type = exprType(coerced);
+    if (node_type != AGTYPEOID) {
+        coerced = coerce_to_target_type(pstate, coerced, node_type,
+                                        AGTYPEOID, -1, COERCION_EXPLICIT,
+                                        COERCE_IMPLICIT_CAST, NULL, NULL, -1);
+        if (coerced == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_CANNOT_COERCE),
+                     errmsg("cannot convert volatile expression to agtype")));
+        }
+    }
+
+    return (Expr *)makeFuncExpr(oid, AGTYPEOID, list_make1(coerced),
+                                InvalidOid, InvalidOid,
+                                COERCE_EXPLICIT_CALL);
 }
 
 /*
@@ -6209,6 +8159,32 @@ Query *cypher_parse_sub_analyze(Node *parseTree,
     free_parsestate(pstate);
 
     return query;
+}
+
+/*
+ * MERGE stores ON SET expressions inside executor metadata because the
+ * planner can remove their target-list entries. Resolve each expression while
+ * the transformed target list still has the original expression tree.
+ */
+static void resolve_merge_set_exprs(List *set_items, List *target_list,
+                                    const char *clause_name)
+{
+    ListCell *lc;
+
+    foreach (lc, set_items)
+    {
+        cypher_update_item *item = (cypher_update_item *)lfirst(lc);
+        TargetEntry *tle = get_tle_by_resno(target_list, item->prop_position);
+
+        if (tle == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INTERNAL_ERROR),
+                     errmsg("%s target entry not found at position %d",
+                            clause_name, item->prop_position)));
+        }
+
+        item->prop_expr = (Node *)tle->expr;
+    }
 }
 
 /*
@@ -6313,12 +8289,37 @@ static Query *transform_cypher_merge(cypher_parsestate *cpstate,
          * For the metadata need to create paths, find the tuple position that
          * will represent the entity in the execution phase.
          */
-        transform_cypher_merge_mark_tuple_position(query->targetList,
+        transform_cypher_merge_mark_tuple_position(pstate,
+                                                   query->targetList,
                                                    merge_path);
     }
 
     merge_information->graph_oid = cpstate->graph_oid;
     merge_information->path = merge_path;
+
+    if (self->on_match != NIL)
+    {
+        merge_information->on_match_set_info =
+            transform_cypher_set_item_list(cpstate, self->on_match, query);
+        merge_information->on_match_set_info->clause_name =
+            "MERGE ON MATCH SET";
+        merge_information->on_match_set_info->graph_name = cpstate->graph_name;
+        resolve_merge_set_exprs(
+            merge_information->on_match_set_info->set_items,
+            query->targetList, "ON MATCH SET");
+    }
+
+    if (self->on_create != NIL)
+    {
+        merge_information->on_create_set_info =
+            transform_cypher_set_item_list(cpstate, self->on_create, query);
+        merge_information->on_create_set_info->clause_name =
+            "MERGE ON CREATE SET";
+        merge_information->on_create_set_info->graph_name = cpstate->graph_name;
+        resolve_merge_set_exprs(
+            merge_information->on_create_set_info->set_items,
+            query->targetList, "ON CREATE SET");
+    }
 
     if (!clause->next)
     {
@@ -6351,6 +8352,157 @@ static Query *transform_cypher_merge(cypher_parsestate *cpstate,
     return query;
 }
 
+static Query *transform_cypher_call_stmt(cypher_parsestate *cpstate,
+                                         cypher_clause *clause)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    cypher_call *self = (cypher_call *)clause->self;
+
+    if (!clause->prev && !clause->next) {
+        if (self->where) {
+            Assert(self->yield_items);
+
+            ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("Cannot use standalone CALL with WHERE"),
+                     errhint("Instead use `CALL ... WITH * WHERE ... RETURN *`"),
+                     parser_errposition(pstate,
+                                        exprLocation((Node *)self->where))));
+        }
+
+        return transform_cypher_call_subquery(cpstate, clause);
+    }
+
+    if (!self->yield_items) {
+        ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                 errmsg("Procedure call inside a query does not support naming results implicitly"),
+                 errhint("Name explicitly using `YIELD` instead"),
+                 parser_errposition(pstate, exprLocation((Node *)self))));
+    }
+
+    if (!clause->next) {
+        ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                 errmsg("Query cannot conclude with CALL"),
+                 errhint("Must be RETURN or an update clause"),
+                 parser_errposition(pstate, exprLocation((Node *)self))));
+    }
+
+    return transform_cypher_clause_with_where(cpstate,
+                                              transform_cypher_call_subquery,
+                                              clause,
+                                              self->where);
+}
+
+static Query *transform_cypher_call_subquery(cypher_parsestate *cpstate,
+                                             cypher_clause *clause)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    cypher_call *self = (cypher_call *)clause->self;
+    Query *query;
+    char *colname;
+    FuncExpr *func_expr;
+    TargetEntry *tle;
+
+    query = makeNode(Query);
+    query->commandType = CMD_SELECT;
+
+    if (clause->prev) {
+        handle_prev_clause(cpstate, query, clause->prev, false);
+    }
+
+    func_expr = (FuncExpr *)transform_cypher_expr(cpstate,
+        (Node *)self->funccall,
+        EXPR_KIND_FROM_FUNCTION);
+
+    colname = strVal(llast(self->funccall->funcname));
+    tle = makeTargetEntry((Expr *)func_expr,
+                          (AttrNumber)(list_length(query->targetList) + 1),
+                          colname,
+                          false);
+
+    if (self->yield_items) {
+        List *yield_target_list = list_make1(tle);
+        ListCell *lc;
+
+        foreach (lc, self->yield_items)
+        {
+            ResTarget *target = (ResTarget *)lfirst(lc);
+            ColumnRef *var;
+            TargetEntry *yielded_tle;
+            char *yield_name;
+
+            if (!IsA(target->val, ColumnRef)) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("YIELD item must be ColumnRef"),
+                         parser_errposition(pstate,
+                                            exprLocation((Node *)target))));
+            }
+
+            var = (ColumnRef *)target->val;
+            yield_name = strVal(linitial(var->fields));
+            if (findTarget(yield_target_list, yield_name) == NULL) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                         errmsg("Unknown CALL output"),
+                         parser_errposition(pstate,
+                                            exprLocation((Node *)target))));
+            }
+
+            if (target->name) {
+                if (findTarget(query->targetList, target->name) != NULL) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_DUPLICATE_ALIAS),
+                             errmsg("duplicate variable \"%s\"", target->name),
+                             parser_errposition(pstate,
+                                                exprLocation((Node *)target))));
+                }
+
+                yielded_tle = makeTargetEntry((Expr *)func_expr,
+                                              (AttrNumber)(list_length(query->targetList) + 1),
+                                              target->name,
+                                              false);
+            } else {
+                if (findTarget(query->targetList, yield_name) != NULL) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_DUPLICATE_ALIAS),
+                             errmsg("duplicate variable \"%s\"", yield_name),
+                             parser_errposition(pstate,
+                                                exprLocation((Node *)target))));
+                }
+
+                yielded_tle = makeTargetEntry((Expr *)func_expr,
+                                              (AttrNumber)(list_length(query->targetList) + 1),
+                                              colname,
+                                              false);
+            }
+
+            query->targetList = lappend(query->targetList, yielded_tle);
+        }
+        } else {
+        query->targetList = list_make1(tle);
+    }
+
+    markTargetListOrigins(pstate, query->targetList);
+
+    query->rtable = pstate->p_rtable;
+    query->jointree = makeFromExpr(pstate->p_joinlist, NULL);
+    query->hasAggs = pstate->p_hasAggs;
+    query->hasSubLinks = pstate->p_hasSubLinks;
+    query->hasTargetSRFs = pstate->p_hasTargetSRFs;
+
+    assign_query_collations(pstate, query);
+
+    if (pstate->p_hasAggs ||
+        query->groupClause || query->groupingSets || query->havingQual) {
+        parse_check_aggregates(pstate, query);
+    }
+
+    return query;
+}
+
 /*
  * This function does the heavy lifting of transforming a MERGE clause that has
  * a clause before it in the query of turning that into a lateral left join.
@@ -6375,6 +8527,7 @@ static cypher_create_path* transform_merge_make_lateral_join(cypher_parsestate *
     List *res_colnames = NIL, *res_colvars = NIL;
     ParseNamespaceItem *nsitem;
     ParseExprKind tmp;
+    ListCell *lc;
     cypher_merge *self = (cypher_merge *)clause->self;
     cypher_path *path;
 
@@ -6392,6 +8545,21 @@ static cypher_create_path* transform_merge_make_lateral_join(cypher_parsestate *
      */
     j->larg = transform_clause_for_join(cpstate, clause->prev, &l_rte,
                                             &l_nsitem, l_alias);
+
+    /*
+     * The write executor consumes agtype tuples. Convert entity outputs before
+     * exposing the left subquery to name resolution so its RTE and all Vars
+     * derived from it agree on the same type.
+     */
+    foreach (lc, l_rte->subquery->targetList)
+    {
+        TargetEntry *te = (TargetEntry *)lfirst(lc);
+        Oid te_type = exprType((Node *)te->expr);
+        if (te_type == VERTEXOID || te_type == EDGEOID) {
+            te->expr = add_volatile_wrapper(pstate, te->expr);
+        }
+    }
+
     pstate->p_relnamespace = lappend(pstate->p_relnamespace, l_nsitem);
     pstate->p_varnamespace = lappend(pstate->p_varnamespace, l_nsitem);
 
@@ -6416,6 +8584,19 @@ static cypher_create_path* transform_merge_make_lateral_join(cypher_parsestate *
     // transform MERGE
     j->rarg = transform_clause_for_join(cpstate, isolated_merge_clause, &r_rte,
                                             &r_nsitem, r_alias);
+
+    /*
+     * MERGE metadata is evaluated against an agtype scantuple. Normalize new
+     * entity variables before the join RTE exposes them to ON SET expressions.
+     */
+    foreach (lc, r_rte->subquery->targetList)
+    {
+        TargetEntry *te = (TargetEntry *)lfirst(lc);
+        Oid te_type = exprType((Node *)te->expr);
+        if (te_type == VERTEXOID || te_type == EDGEOID) {
+            te->expr = add_volatile_wrapper(pstate, te->expr);
+        }
+    }
 
     // deactivate the lateral flag
     pstate->p_lateral_active = false;
@@ -6466,10 +8647,26 @@ static cypher_create_path* transform_merge_make_lateral_join(cypher_parsestate *
                                     make_target_list_from_join(pstate, rte));
 
     /*
+     * Preserve every user-visible value needed by the write executor. The
+     * wrapper also establishes the legacy agtype tuple contract for scalar
+     * expressions such as id(entity).
+     */
+    foreach (lc, query->targetList)
+    {
+        TargetEntry *te = (TargetEntry *)lfirst(lc);
+
+        if (IsA(te->expr, Var) && te->resname != NULL &&
+            pg_strncasecmp(te->resname, AGE_DEFAULT_VARNAME_PREFIX,
+                           strlen(AGE_DEFAULT_VARNAME_PREFIX)) != 0) {
+            te->expr = add_volatile_wrapper(pstate, te->expr);
+        }
+    }
+
+    /*
      * For the metadata need to create paths, find the tuple position that
      * will represent the entity in the execution phase.
      */
-    transform_cypher_merge_mark_tuple_position(query->targetList,
+    transform_cypher_merge_mark_tuple_position(pstate, query->targetList,
                                                merge_path);
 
     return merge_path;
@@ -6481,7 +8678,8 @@ static cypher_create_path* transform_merge_make_lateral_join(cypher_parsestate *
  * function to keep the optimizer from removing the TargetEntry.
  */
 static void
-transform_cypher_merge_mark_tuple_position(List *target_list,
+transform_cypher_merge_mark_tuple_position(ParseState *pstate,
+                                           List *target_list,
                                            cypher_create_path *path)
 {
     ListCell *lc = NULL;
@@ -6495,7 +8693,7 @@ transform_cypher_merge_mark_tuple_position(List *target_list,
          * ensures the optimizer will not remove the expression, if nothing
          * other than a private data structure needs it.
          */
-        te->expr = add_volatile_wrapper(te->expr);
+        te->expr = add_volatile_wrapper(pstate, te->expr);
 
         // Mark the tuple position the target_node is for.
         path->path_attr_num = te->resno;
@@ -6512,7 +8710,7 @@ transform_cypher_merge_mark_tuple_position(List *target_list,
          * ensures the optimizer will not remove the expression, if nothing
          * other than a private data structure needs it.
          */
-        te->expr = add_volatile_wrapper(te->expr);
+        te->expr = add_volatile_wrapper(pstate, te->expr);
 
         // Mark the tuple position the target_node is for.
         node->tuple_position = te->resno;
@@ -6528,10 +8726,12 @@ static cypher_create_path* transform_cypher_merge_path(cypher_parsestate *cpstat
                                                        List **target_list,
                                                        cypher_path *path)
 {
+    ParseState *pstate = (ParseState *)cpstate;
     ListCell *lc;
     List *transformed_path = NIL;
     cypher_create_path *ccp = make_ag_node(cypher_create_path);
     bool in_path = path->var_name != NULL;
+    bool has_edge = list_length(path->path) > 1;
 
     ccp->path_attr_num = InvalidAttrNumber;
 
@@ -6540,9 +8740,72 @@ static cypher_create_path* transform_cypher_merge_path(cypher_parsestate *cpstat
         if (is_ag_node(lfirst(lc), cypher_node))
         {
             cypher_node *node = (cypher_node*)lfirst(lc);
+            cypher_target_node *rel = NULL;
+            ListCell *transformed_cell;
 
-            cypher_target_node *rel =
-                transform_merge_cypher_node(cpstate, target_list, node);
+            if (in_path && node->name != NULL &&
+                strcmp(path->var_name, node->name) == 0)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("variable \"%s\" is for a path", node->name),
+                         parser_errposition(pstate, node->location)));
+            }
+
+            foreach (transformed_cell, transformed_path)
+            {
+                cypher_target_node *existing =
+                    (cypher_target_node *)lfirst(transformed_cell);
+                bool same_name = node->name != NULL &&
+                                 existing->variable_name != NULL &&
+                                 strcmp(node->name,
+                                        existing->variable_name) == 0;
+                if (!same_name)
+                    continue;
+
+                if (existing->type != LABEL_KIND_VERTEX) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                             errmsg("variable \"%s\" is for an edge",
+                                    node->name),
+                             parser_errposition(pstate, node->location)));
+                }
+
+                if (node->label != NULL &&
+                    (existing->label_name == NULL ||
+                     strcmp(existing->label_name, node->label) != 0)) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                             errmsg("multiple labels for variable '%s' are not supported",
+                                    node->name),
+                             parser_errposition(pstate, node->location)));
+                }
+
+                rel = make_ag_node(cypher_target_node);
+                rel->type = existing->type;
+                rel->flags = existing->flags;
+                rel->dir = existing->dir;
+                rel->id_expr = existing->id_expr;
+                rel->id_expr_state = existing->id_expr_state;
+                rel->prop_expr = existing->prop_expr;
+                rel->prop_expr_state = existing->prop_expr_state;
+                rel->prop_attr_num = existing->prop_attr_num;
+                rel->resultRelInfo = existing->resultRelInfo;
+                rel->elemTupleSlot = existing->elemTupleSlot;
+                rel->relid = existing->relid;
+                rel->label_name = existing->label_name;
+                rel->variable_name = existing->variable_name;
+                rel->tuple_position = existing->tuple_position;
+                rel->flags &= ~CYPHER_TARGET_NODE_FLAG_INSERT;
+                rel->flags |= EXISTING_VARAIBLE_DECLARED_SAME_CLAUSE;
+                break;
+            }
+
+            if (rel == NULL)
+            {
+                rel = transform_merge_cypher_node(cpstate, target_list, node,
+                                                  has_edge);
+            }
 
             if (in_path)
             {
@@ -6554,6 +8817,41 @@ static cypher_create_path* transform_cypher_merge_path(cypher_parsestate *cpstat
         else if (is_ag_node(lfirst(lc), cypher_relationship))
         {
             cypher_relationship *edge = (cypher_relationship*)lfirst(lc);
+            ListCell *transformed_cell;
+
+            if (in_path && edge->name != NULL &&
+                strcmp(path->var_name, edge->name) == 0)
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("variable \"%s\" is for a path", edge->name),
+                         parser_errposition(pstate, edge->location)));
+            }
+
+            foreach (transformed_cell, transformed_path)
+            {
+                cypher_target_node *existing =
+                    (cypher_target_node *)lfirst(transformed_cell);
+
+                if (edge->name == NULL || existing->variable_name == NULL ||
+                    strcmp(edge->name, existing->variable_name) != 0) {
+                    continue;
+                }
+
+                if (existing->type == LABEL_KIND_EDGE) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                             errmsg("a duplicate edge variable \"%s\" is not permitted within a path",
+                                    edge->name),
+                             parser_errposition(pstate, edge->location)));
+                }
+
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                         errmsg("variable \"%s\" is for a vertex",
+                                edge->name),
+                         parser_errposition(pstate, edge->location)));
+            }
 
             cypher_target_node *rel =
                 transform_merge_cypher_edge(cpstate, target_list, edge);
@@ -6599,11 +8897,10 @@ static cypher_target_node* transform_merge_cypher_edge(cypher_parsestate *cpstat
 
     if (edge->name != NULL)
     {
-        transform_entity *entity = find_transform_entity(cpstate, edge->name,
-                                                         ENT_EDGE);
+        transform_entity *entity = find_variable(cpstate, edge->name);
 
         // We found a variable with this variable name, throw an error.
-        if (entity != NULL)
+        if (entity != NULL || variable_exists(cpstate, edge->name))
         {
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -6637,6 +8934,15 @@ static cypher_target_node* transform_merge_cypher_edge(cypher_parsestate *cpstat
                  parser_errposition(&cpstate->pstate, edge->location)));
     }
 
+    label_cache_data *edge_label =
+        search_label_name_graph_cache(edge->label, cpstate->graph_oid);
+    if (edge_label != NULL && edge_label->kind != LABEL_KIND_EDGE)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("label %s is for vertices, not edges", edge->label),
+                 parser_errposition(pstate, edge->location)));
+    }
 
     // check to see if the label exists, create the label entry if it does not.
     if (edge->label && !label_exists(edge->label, cpstate->graph_oid))
@@ -6688,8 +8994,10 @@ static cypher_target_node* transform_merge_cypher_edge(cypher_parsestate *cpstat
  */
 static cypher_target_node* transform_merge_cypher_node(cypher_parsestate *cpstate,
                                                        List **target_list,
-                                                       cypher_node *node)
+                                                       cypher_node *node,
+                                                       bool has_edge)
 {
+    ParseState *pstate = (ParseState *)cpstate;
     cypher_target_node *rel = make_ag_node(cypher_target_node);
     Relation label_relation;
     RangeVar *rv;
@@ -6697,24 +9005,30 @@ static cypher_target_node* transform_merge_cypher_node(cypher_parsestate *cpstat
 
     if (node->name != NULL)
     {
-
-        transform_entity *entity = find_transform_entity(cpstate, node->name,
-                                                         ENT_VERTEX);
-
+        transform_entity *entity = find_variable(cpstate, node->name);
+        bool var_exists = variable_exists(cpstate, node->name);
         /*
-         *  the vertex was previously declared, we do not need to do any setup
-         *  to create the node.
+         * A previous-clause column is the authoritative visibility check.
+         * WITH may rename a vertex without creating a matching
+         * transform_entity, so an entity lookup alone is insufficient.
          */
-        if (entity != NULL)
+        if (var_exists)
         {
-                rel->type = LABEL_KIND_VERTEX;
-                rel->tuple_position = InvalidAttrNumber;
-                rel->variable_name = node->name;
-                rel->resultRelInfo = NULL;
+            if ((entity != NULL && entity->type != ENT_VERTEX) || !has_edge) {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("variable %s already exists", node->name),
+                         parser_errposition(pstate, node->location)));
+            }
 
-                rel->flags |= CYPHER_TARGET_NODE_MERGE_EXISTS;
-                return rel;
+            rel->type = LABEL_KIND_VERTEX;
+            rel->tuple_position = InvalidAttrNumber;
+            rel->variable_name = node->name;
+            rel->resultRelInfo = NULL;
+            rel->flags |= CYPHER_TARGET_NODE_MERGE_EXISTS;
+            return rel;
         }
+
         rel->flags |= CYPHER_TARGET_NODE_IS_VAR;
     }
     else
@@ -6740,6 +9054,16 @@ static cypher_target_node* transform_merge_cypher_node(cypher_parsestate *cpstat
     else
     {
         rel->label_name = node->label;
+
+        label_cache_data *node_label =
+            search_label_name_graph_cache(node->label, cpstate->graph_oid);
+        if (node_label != NULL && node_label->kind != LABEL_KIND_VERTEX)
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                     errmsg("label %s is for edges, not vertices", node->label),
+                     parser_errposition(pstate, node->location)));
+        }
     }
 
     // check to see if the label exists, create the label entry if it does not.
@@ -6808,44 +9132,6 @@ static cypher_clause *convert_merge_to_match(cypher_merge *merge)
     clause->next = NULL;
 
     return clause;
-}
-
-/*
- * Finds the transform_entity in the cypher_parstate for a the given name and
- * type.
- */
-static transform_entity *find_transform_entity(cypher_parsestate *cpstate,
-                                               char *name,
-                                               enum transform_entity_type type)
-{
-    ListCell *lc;
-
-    foreach(lc, cpstate->entities)
-    {
-        transform_entity *entity = (transform_entity*)lfirst(lc);
-
-        if (entity->type != type)
-        {
-            continue;
-        }
-
-        if (type == ENT_VERTEX)
-        {
-            if (!strcmp(entity->entity.node->name, name))
-            {
-                return entity;
-            }
-        }
-        else if (type == ENT_EDGE || type == ENT_VLE_EDGE)
-        {
-            if (!strcmp(entity->entity.rel->name, name))
-            {
-                return entity;
-            }
-        }
-    }
-
-    return NULL;
 }
 
 /*
@@ -6922,6 +9208,11 @@ static void handle_prev_clause(cypher_parsestate *cpstate, Query *query,
     if (first_rte)
     {
         Assert(rtindex == 1);
+        if (rtindex != 1) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                     errmsg("invalid value for rtindex")));
+        }
     }
 
     // add all the rte's attributes to the current queries targetlist

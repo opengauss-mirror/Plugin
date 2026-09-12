@@ -35,7 +35,7 @@ static short ag_serialize_header(StringInfo buffer, uint32 type)
 
     padlen = pad_buffer_to_int(buffer);
     offset = reserve_from_buffer(buffer, AGT_HEADER_SIZE);
-    *((AGT_HEADER_TYPE *)(buffer->data + offset)) = type;
+    memcpy(buffer->data + offset, &type, sizeof(type));
 
     return padlen;
 }
@@ -59,7 +59,8 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         /* copy in the int_value data */
         numlen = sizeof(int64);
         offset = reserve_from_buffer(buffer, numlen);
-        *((int64 *)(buffer->data + offset)) = scalar_val->val.int_value;
+        memcpy(buffer->data + offset, &scalar_val->val.int_value,
+               sizeof(int64));
 
         *agtentry = AGTENTRY_IS_AGTYPE | (padlen + numlen + AGT_HEADER_SIZE);
         break;
@@ -70,7 +71,8 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         /* copy in the float_value data */
         numlen = sizeof(scalar_val->val.float_value);
         offset = reserve_from_buffer(buffer, numlen);
-        *((float8 *)(buffer->data + offset)) = scalar_val->val.float_value;
+        memcpy(buffer->data + offset, &scalar_val->val.float_value,
+               sizeof(float8));
 
         *agtentry = AGTENTRY_IS_AGTYPE | (padlen + numlen + AGT_HEADER_SIZE);
         break;
@@ -91,7 +93,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -111,7 +113,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -131,7 +133,7 @@ bool ag_serialize_extended_type(StringInfo buffer, agtentry *agtentry,
         object_ae += pad_buffer_to_int(buffer);
 
         *agtentry = AGTENTRY_IS_AGTYPE |
-                    ((AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
+                    (padlen + (AGTENTRY_OFFLENMASK & (int)object_ae) + AGT_HEADER_SIZE);
         break;
     }
 
@@ -150,18 +152,22 @@ void ag_deserialize_extended_type(char *base_addr, uint32 offset,
                                   agtype_value *result)
 {
     char *base = base_addr + INTALIGN(offset);
-    AGT_HEADER_TYPE agt_header = *((AGT_HEADER_TYPE *)base);
+    AGT_HEADER_TYPE agt_header;
+
+    memcpy(&agt_header, base, sizeof(agt_header));
 
     switch (agt_header)
     {
     case AGT_HEADER_INTEGER:
         result->type = AGTV_INTEGER;
-        result->val.int_value = *((int64 *)(base + AGT_HEADER_SIZE));
+        memcpy(&result->val.int_value, base + AGT_HEADER_SIZE,
+               sizeof(int64));
         break;
 
     case AGT_HEADER_FLOAT:
         result->type = AGTV_FLOAT;
-        result->val.float_value = *((float8 *)(base + AGT_HEADER_SIZE));
+        memcpy(&result->val.float_value, base + AGT_HEADER_SIZE,
+               sizeof(float8));
         break;
 
     case AGT_HEADER_VERTEX:

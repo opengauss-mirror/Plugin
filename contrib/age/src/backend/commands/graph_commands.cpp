@@ -36,13 +36,16 @@
 #include "nodes/value.h"
 #include "parser/parser.h"
 #include "utils/fmgroids.h"
+#include "utils/lsyscache.h"
 #include "utils/relcache.h"
 #include "utils/rel.h"
 
 #include "catalog/ag_graph.h"
 #include "catalog/ag_label.h"
 #include "commands/label_commands.h"
+#include "utils/agtype.h"
 #include "utils/graphid.h"
+#include "utils/name_validation.h"
 #include "catalog/namespace.h"
 
 /*
@@ -56,7 +59,8 @@ static void drop_schema_for_graph(char *graph_name_str, const bool cascade);
 static void remove_schema(Node *schema_name, DropBehavior behavior);
 static void rename_graph(const Name graph_name, const Name new_name);
 
-extern "C" Datum  create_graph(PG_FUNCTION_ARGS);
+extern "C" Datum age_graph_exists(PG_FUNCTION_ARGS);
+extern "C" Datum create_graph(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(create_graph);
 
@@ -75,6 +79,12 @@ Datum create_graph(PG_FUNCTION_ARGS)
     graph_name = PG_GETARG_NAME(0);
 
     graph_name_str = NameStr(*graph_name);
+    if (!is_valid_graph_name(graph_name_str))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("graph name is invalid")));
+    }
+
     if (graph_exists(graph_name_str))
     {
         ereport(ERROR,
@@ -98,6 +108,19 @@ Datum create_graph(PG_FUNCTION_ARGS)
             (errmsg("graph \"%s\" has been created", NameStr(*graph_name))));
 
     PG_RETURN_VOID();
+}
+
+PG_FUNCTION_INFO_V1(age_graph_exists);
+
+Datum age_graph_exists(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("graph name must not be NULL")));
+    }
+
+    Name graph_name = PG_GETARG_NAME(0);
+    return boolean_to_agtype(graph_exists(NameStr(*graph_name)));
 }
 
 static Oid create_schema_for_graph(const Name graph_name)
@@ -194,6 +217,9 @@ static void drop_schema_for_graph(char *graph_name_str, const bool cascade)
     Value *schema_name;
     List *label_id_seq_name;
     DropBehavior behavior;
+    Oid graph_namespace_id;
+    Oid label_id_sequence_id;
+    char label_id_sequence_kind;
 
     StringInfo tmp_query_string = NULL;
     RemoteQueryExecType exec_type = EXEC_ON_COORDS;
@@ -208,7 +234,30 @@ static void drop_schema_for_graph(char *graph_name_str, const bool cascade)
     schema_name = makeString(get_graph_namespace_name(graph_name_str));
     label_id_seq_name = list_make2(schema_name, makeString(LABEL_ID_SEQ_NAME));
     drop_stmt->objects = list_make1(label_id_seq_name);
-    drop_stmt->removeType = OBJECT_SEQUENCE_GSC;
+
+    graph_namespace_id = get_namespace_oid(strVal(schema_name), false);
+    label_id_sequence_id = get_relname_relid(LABEL_ID_SEQ_NAME,
+                                             graph_namespace_id);
+    if (!OidIsValid(label_id_sequence_id))
+        ereport(ERROR,
+                (errcode(ERRCODE_INTERNAL_ERROR),
+                 errmsg("ag_graph catalog is corrupted"),
+                 errhint("Sequence \"%s\".\"%s\" does not exist",
+                         strVal(schema_name), LABEL_ID_SEQ_NAME)));
+
+    label_id_sequence_kind = get_rel_relkind(label_id_sequence_id);
+    if (label_id_sequence_kind == RELKIND_SEQUENCE_GSC)
+        drop_stmt->removeType = OBJECT_SEQUENCE_GSC;
+    else if (label_id_sequence_kind == RELKIND_SEQUENCE)
+        drop_stmt->removeType = OBJECT_SEQUENCE;
+    else
+        ereport(ERROR,
+                (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                 errmsg("graph label identifier object is not a sequence"),
+                 errdetail("Relation \"%s\".\"%s\" has relkind '%c'.",
+                           strVal(schema_name), LABEL_ID_SEQ_NAME,
+                           label_id_sequence_kind)));
+
     drop_stmt->behavior = DROP_RESTRICT;
     drop_stmt->missing_ok = false;
     drop_stmt->concurrent = false;
@@ -329,6 +378,11 @@ static void rename_graph(const Name graph_name, const Name new_name)
     char *oldname = NameStr(*graph_name);
     char *newname = NameStr(*new_name);
     char *schema_name;
+
+    if (!is_valid_graph_name(newname)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("new graph name is invalid")));
+    }
 
     /*
      * ProcessUtilityContext of this command is PROCESS_UTILITY_SUBCOMMAND

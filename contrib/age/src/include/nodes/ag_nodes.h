@@ -51,7 +51,14 @@ typedef enum ag_node_tag
     cypher_bool_const_t,
     cypher_param_t,
     cypher_map_t,
+    cypher_map_projection_t,
+    cypher_map_projection_element_t,
     cypher_list_t,
+    cypher_list_comprehension_t,
+    cypher_reduce_t,
+    // comparison expression
+    cypher_comparison_aexpr_t,
+    cypher_comparison_boolexpr_t,
     // string match
     cypher_string_match_t,
     // typecast
@@ -60,6 +67,9 @@ typedef enum ag_node_tag
     cypher_integer_const_t,
     // sub patterns
     cypher_sub_pattern_t,
+    cypher_sub_query_t,
+    // procedure calls
+    cypher_call_t,
     // create data structures
     cypher_create_target_nodes_t,
     cypher_create_path_t,
@@ -72,7 +82,9 @@ typedef enum ag_node_tag
     cypher_delete_item_t,
     cypher_merge_information_t,
     // vle
-    cypher_vle_target_nodes_t
+    cypher_vle_target_nodes_t,
+    // predicate functions
+    cypher_predicate_function_t
 } ag_node_tag;
 
 void register_ag_nodes(void);
@@ -94,6 +106,9 @@ ExtensibleNode *_new_ag_node(Size size, ag_node_tag tag);
 static inline bool _is_ag_node(Node *node, const char *extnodename)
 {
     ExtensibleNode *extnode;
+
+    if (!IsA(node, EXTENSIBLE_NODE))
+        return false;
 
     extnode = (ExtensibleNode *)node;
     if (strcmp(extnode->extnodename, extnodename) == 0)

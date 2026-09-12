@@ -714,7 +714,13 @@ static inline void agtype_lex(agtype_lex_context *lex)
         case '7':
         case '8':
         case '9':
-            /* Positive number. */
+        case '.':
+            /*
+             * Positive number.  A leading '.' is accepted because openGauss
+             * float8out()/numeric_out() drop the leading zero of |x| < 1
+             * unless display_leading_zero is set, and agtype_out() relies on
+             * them; the output must remain readable by agtype_in().
+             */
             agtype_lex_number(lex, s, NULL, NULL);
             /* token is assigned in agtype_lex_number */
             break;
@@ -1128,8 +1134,9 @@ static inline void agtype_lex_number(agtype_lex_context *lex, char *s,
             len++;
         } while (len < lex->input_length && *s >= '0' && *s <= '9');
     }
-    else
+    else if (!(len < lex->input_length && *s == '.'))
     {
+        /* an empty integer part is only allowed before ".digits" */
         error = true;
     }
 
@@ -1314,6 +1321,8 @@ static void report_parse_error(agtype_parse_context ctx,
             elog(ERROR, "unexpected agtype parse state: %d", ctx);
         }
     }
+
+    pg_unreachable();
 }
 
 /*
@@ -1336,6 +1345,7 @@ static void report_invalid_token(agtype_lex_context *lex)
                     errmsg("invalid input syntax for type %s", "agtype"),
                     errdetail("Token \"%s\" is invalid.", token),
                     report_agtype_context(lex)));
+    pg_unreachable();
 }
 
 /*
@@ -1447,11 +1457,14 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         struct pg_tm tm;
 
         date = DatumGetDateADT(value);
-
         /* Same as date_out(), but forcing DateStyle */
-        if (DATE_NOT_FINITE(date))
+        if (DATE_IS_NOBEGIN(date))
         {
-            ;
+            strcpy(buf, EARLY);
+        }
+        else if (DATE_IS_NOEND(date))
+        {
+            strcpy(buf, LATE);
         }
         else
         {
@@ -1468,6 +1481,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         fsec_t fsec;
 
         /* Same as time_out(), but forcing DateStyle */
+        time2tm(time, tm, &fsec);
         EncodeTimeOnly(tm, fsec, false, 0, USE_XSD_DATES, buf);
     }
     break;
@@ -1479,6 +1493,7 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
         int tz;
 
         /* Same as timetz_out(), but forcing DateStyle */
+        timetz2tm(time, tm, &fsec, &tz);
         EncodeTimeOnly(tm, fsec, true, tz, USE_XSD_DATES, buf);
     }
     break;
@@ -1490,9 +1505,8 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 
         timestamp = DatumGetTimestamp(value);
         /* Same as timestamp_out(), but forcing DateStyle */
-        if (TIMESTAMP_NOT_FINITE(timestamp))
-        {
-            ;
+        if (TIMESTAMP_NOT_FINITE(timestamp)) {
+            EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, NULL, &tm, &fsec, NULL, NULL) == 0)
         {
@@ -1515,9 +1529,8 @@ char *agtype_encode_date_time(char *buf, Datum value, Oid typid)
 
         timestamp = DatumGetTimestampTz(value);
         /* Same as timestamptz_out(), but forcing DateStyle */
-        if (TIMESTAMP_NOT_FINITE(timestamp))
-        {
-            ;
+        if (TIMESTAMP_NOT_FINITE(timestamp)) {
+            EncodeSpecialTimestamp(timestamp, buf);
         }
         else if (timestamp2tm(timestamp, &tz, &tm, &fsec, &tzn, NULL) == 0)
         {

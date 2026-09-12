@@ -56,6 +56,23 @@ SELECT * FROM cypher('expr', $$
 RETURN [['str'], [1, [1.0], [[true]]], null]
 $$) AS r(c agtype);
 
+-- Apache AGE #1001: list literals must remain constructible across the
+-- openGauss 100-function-argument boundary.
+SELECT * FROM cypher('expr', $$
+RETURN size([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99])
+$$) AS r(size_100 agtype);
+
+SELECT * FROM cypher('expr', $$
+WITH [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100] AS items
+RETURN size(items), items[99], items[100]
+$$) AS r(size_101 agtype, boundary_99 agtype, boundary_100 agtype);
+
+SELECT * FROM cypher('expr', $$
+WITH {items: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]} AS holder
+RETURN size(holder.items), head(holder.items), holder.items[100], last(holder.items)
+$$) AS r(size_201 agtype, first_item agtype, middle_item agtype,
+         last_item agtype);
+
 --
 -- parameter
 --
@@ -127,7 +144,7 @@ SELECT * FROM cypher('expr',
 $$RETURN null IN ['str', 1, 1.0, true]$$) AS r(c boolean);
 SELECT * FROM cypher('expr',
 $$RETURN 'str' IN null $$) AS r(c boolean);
--- should all return false
+-- should all return SQL null because no value matches and the list contains null
 SELECT * FROM cypher('expr',
 $$RETURN 0 IN ['str', 1, 1.0, true, null]$$) AS r(c boolean);
 SELECT * FROM cypher('expr',
@@ -138,6 +155,20 @@ SELECT * FROM cypher('expr',
 $$RETURN [1,3,5,[2,4,5]] IN ['str', 1, 1.0, true, null, [1,3,5,[2,4,6]]]$$) AS r(c boolean);
 SELECT * FROM cypher('expr',
 $$RETURN {bool: true, int: 2} IN ['str', 1, 1.0, true, null, {bool: true, int: 1}, [1,3,5,[2,4,6]]]$$) AS r(c boolean);
+-- empty list membership is always false
+SELECT * FROM cypher('expr',
+$$RETURN 1 IN []$$) AS r(c boolean);
+SELECT * FROM cypher('expr',
+$$RETURN 'a' IN []$$) AS r(c boolean);
+SELECT * FROM cypher('expr',
+$$RETURN null IN []$$) AS r(c boolean);
+SELECT * FROM cypher('expr',
+$$RETURN [1,2,3] IN []$$) AS r(c boolean);
+-- negating empty list membership is always true
+SELECT * FROM cypher('expr',
+$$RETURN NOT (1 IN [])$$) AS r(c boolean);
+SELECT * FROM cypher('expr',
+$$RETURN NOT ('a' IN [])$$) AS r(c boolean);
 -- should error - ERROR:  object of IN must be a list
 SELECT * FROM cypher('expr',
 $$RETURN null IN 'str' $$) AS r(c boolean);
@@ -233,6 +264,26 @@ $$) AS r(result boolean);
 
 SELECT * FROM cypher('expr', $$
 RETURN (1 + 1.0) = (7 % 5)
+$$) AS r(result boolean);
+
+SELECT * FROM cypher('expr', $$
+RETURN 1 < 2 < 3
+$$) AS r(result boolean);
+
+SELECT * FROM cypher('expr', $$
+RETURN 1 < 2 > 3
+$$) AS r(result boolean);
+
+SELECT * FROM cypher('expr', $$
+RETURN 1 <= 1 = 1 <> 2
+$$) AS r(result boolean);
+
+SELECT * FROM cypher('expr', $$
+RETURN 3 > 2 >= 2
+$$) AS r(result boolean);
+
+SELECT * FROM cypher('expr', $$
+RETURN NOT 1 < 2 < 3
 $$) AS r(result boolean);
 
 --
@@ -408,6 +459,12 @@ SELECT * FROM cypher('regex', $$
 MATCH (n:Person) WHERE n.name =~ 'J.*' RETURN n
 $$) AS r(result agtype);
 
+-- Exercise the SQL-visible operator added by Apache AGE current.
+SELECT '"John"'::agtype OPERATOR(ag_catalog.=~) '"Jo.n"'::agtype;
+SELECT '"John"'::agtype OPERATOR(ag_catalog.=~) '"jeff"'::agtype;
+SELECT NULL::agtype OPERATOR(ag_catalog.=~) '"Jo.n"'::agtype;
+SELECT '1'::agtype OPERATOR(ag_catalog.=~) '"Jo.n"'::agtype;
+
 --
 --Coearce to Postgres 3 int types (smallint, int, bigint)
 --
@@ -440,7 +497,8 @@ SELECT * FROM cypher('type_coercion', $$
 	RETURN '1'
 $$) AS (i bigint);
 
---Invalid String Format
+-- Apache AGE #1339: a string containing a floating literal is parsed as an
+-- agtype float before the SQL bigint conversion, so this truncates to 1.
 SELECT * FROM cypher('type_coercion', $$
 	RETURN '1.0'
 $$) AS (i bigint);
@@ -776,12 +834,32 @@ SELECT * FROM cypher('expr', $$CREATE (:v {i: 1})$$) AS (a agtype);
 SELECT * FROM cypher('expr', $$
     CREATE (:v1 {id:'initial'})-[:e1]->(:v1 {id:'middle'})-[:e1]->(:v1 {id:'end'})
 $$) AS (a agtype);
+
+-- Apache AGE #1064: packed VLE containers must implement the complete list
+-- function contract without requiring callers to materialize them first.
+SELECT * FROM cypher('expr', $$
+    MATCH ()-[vle_array *2..2]->()
+    RETURN size(vle_array) = 2,
+           head(vle_array) = vle_array[0],
+           last(vle_array) = vle_array[1],
+           reverse(vle_array)[0] = last(vle_array),
+           vle_array[0] IN vle_array,
+           vle_array[0..1] = [vle_array[0]],
+           isEmpty(vle_array),
+           isEmpty(vle_array[0..0])
+    LIMIT 1
+$$) AS r(size_ok boolean, head_ok boolean, last_ok boolean,
+         reverse_ok boolean, in_ok boolean, slice_ok boolean,
+         vpc_is_empty boolean, empty_slice_is_empty boolean);
+
 -- show them
 SELECT * FROM cypher('expr', $$ MATCH (v) RETURN v $$) AS (expression agtype);
-SELECT * FROM cypher('expr', $$ MATCH ()-[e]-() RETURN e $$) AS (expression agtype);
+-- ORDER BY keeps this independent of undirected join/scan order.
+SELECT * FROM cypher('expr', $$ MATCH ()-[e]-() RETURN e ORDER BY id(e) $$) AS (expression agtype);
 -- id()
 SELECT * FROM cypher('expr', $$
     MATCH ()-[e]-() RETURN id(e)
+    ORDER BY id(e)
 $$) AS (id agtype);
 SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN id(v)
@@ -797,6 +875,7 @@ $$) AS (id agtype);
 -- start_id()
 SELECT * FROM cypher('expr', $$
     MATCH ()-[e]-() RETURN start_id(e)
+    ORDER BY id(e)
 $$) AS (start_id agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -812,6 +891,7 @@ $$) AS (start_id agtype);
 -- end_id()
 SELECT * FROM cypher('expr', $$
     MATCH ()-[e]-() RETURN end_id(e)
+    ORDER BY id(e)
 $$) AS (end_id agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -827,6 +907,7 @@ $$) AS (end_id agtype);
 -- startNode()
 SELECT * FROM cypher('expr', $$
     MATCH ()-[e]-() RETURN id(e), start_id(e), startNode(e)
+    ORDER BY id(e)
 $$) AS (id agtype, start_id agtype, startNode agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -842,6 +923,7 @@ $$) AS (startNode agtype);
 -- endNode()
 SELECT * FROM cypher('expr', $$
     MATCH ()-[e]-() RETURN id(e), end_id(e), endNode(e)
+    ORDER BY id(e)
 $$) AS (id agtype, end_id agtype, endNode agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
@@ -1030,10 +1112,18 @@ $$) AS (toBoolean agtype);
 SELECT * FROM cypher('expr', $$
     RETURN toBoolean(null)
 $$) AS (toBoolean agtype);
--- should fail
 SELECT * FROM cypher('expr', $$
     RETURN toBoolean(1)
 $$) AS (toBoolean agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN toBoolean(0)
+$$) AS (toBoolean agtype);
+-- Apache AGE #1199: integer elements are converted element-wise rather than
+-- becoming null in toBooleanList().
+SELECT * FROM cypher('expr', $$
+    RETURN toBooleanList([0,1,2,3,4])
+$$) AS (toBooleanList agtype);
+-- should fail
 SELECT * FROM cypher('expr', $$
     RETURN toBoolean()
 $$) AS (toBoolean agtype);
@@ -1130,6 +1220,8 @@ SELECT * FROM age_toString(false);
 SELECT * FROM age_toString('a string');
 SELECT * FROM age_toString('a cstring'::cstring);
 SELECT * FROM age_toString('a text string'::text);
+-- Apache AGE #1036: pg_typeof() returns regtype, which toString accepts.
+SELECT * FROM age_toString(pg_typeof(3.14));
 -- agtypes
 SELECT * FROM age_toString(agtype_in('3'));
 SELECT * FROM age_toString(agtype_in('3.14'));
@@ -1155,6 +1247,10 @@ $$) AS (results agtype);
 SELECT * FROM age_reverse('gnirts a si siht');
 SELECT * FROM age_reverse('gnirts a si siht'::text);
 SELECT * FROM age_reverse('gnirts a si siht'::cstring);
+-- should return empty string
+SELECT * FROM cypher('expr', $$
+    RETURN reverse("")
+$$) AS (results agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
     RETURN reverse(null)
@@ -1203,6 +1299,10 @@ SELECT * FROM cypher('expr', $$
     RETURN reverse(3.14)
 $$) AS (results agtype);
 SELECT * FROM age_reverse(3.14);
+-- An object must raise a controlled error rather than terminate the server.
+SELECT * FROM cypher('expr', $$
+    RETURN reverse({})
+$$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN reverse()
 $$) AS (results agtype);
@@ -1262,6 +1362,10 @@ $$) AS (results agtype);
 SELECT * FROM age_ltrim('  string   ');
 SELECT * FROM age_rtrim('  string   ');
 SELECT * FROM age_trim('  string   ');
+-- should return empty string
+SELECT * FROM cypher('expr', $$
+    RETURN trim("")
+$$) AS (results agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
     RETURN lTrim(null)
@@ -1308,10 +1412,11 @@ $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN left("123456789", 3)
 $$) AS (results agtype);
--- should return null
+-- should return empty string
 SELECT * FROM cypher('expr', $$
-    RETURN left("123456789", 0)
+    RETURN left("abc", 0)
 $$) AS (results agtype);
+-- should return null
 SELECT * FROM cypher('expr', $$
     RETURN left(null, 1)
 $$) AS (results agtype);
@@ -1328,6 +1433,9 @@ SELECT * FROM cypher('expr', $$
     RETURN left("123456789", -1)
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
+    RETURN left("abc", 2147483648)
+$$) AS (results agtype);
+SELECT * FROM cypher('expr', $$
     RETURN left()
 $$) AS (results agtype);
 SELECT * FROM age_left('123456789', null);
@@ -1340,10 +1448,11 @@ $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN right("123456789", 3)
 $$) AS (results agtype);
--- should return null
+-- should return empty string
 SELECT * FROM cypher('expr', $$
-    RETURN right("123456789", 0)
+    RETURN right("abc", 0)
 $$) AS (results agtype);
+-- should return null
 SELECT * FROM cypher('expr', $$
     RETURN right(null, 1)
 $$) AS (results agtype);
@@ -1358,6 +1467,9 @@ SELECT * FROM cypher('expr', $$
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN right("123456789", -1)
+$$) AS (results agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN right("abc", -2147483649)
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN right()
@@ -1380,6 +1492,10 @@ SELECT * FROM cypher('expr', $$
 $$) AS (results agtype);
 SELECT * FROM age_substring('0123456789', 3, 2);
 SELECT * FROM age_substring('0123456789', 1);
+-- should return empty string
+SELECT * FROM cypher('expr', $$
+    RETURN substring("abc", 0, 0)
+$$) AS (results agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
     RETURN substring(null, null, null)
@@ -1398,15 +1514,25 @@ SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", null)
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
+    RETURN substring("123456789", null, 1)
+$$) AS (results agtype);
+SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", 0, -1)
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", -1)
 $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
+    RETURN substring("abc", 2147483648, 1)
+$$) AS (results agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN substring("abc", 0, 2147483648)
+$$) AS (results agtype);
+SELECT * FROM cypher('expr', $$
     RETURN substring("123456789")
 $$) AS (results agtype);
 SELECT * FROM age_substring('123456789', null);
+SELECT * FROM age_substring('123456789', null, 1);
 SELECT * FROM age_substring('123456789', 0, -1);
 SELECT * FROM age_substring('123456789', -1);
 SELECT * FROM age_substring();
@@ -1481,6 +1607,10 @@ $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN replace("ababab", "ab", "ab")
 $$) AS (results agtype);
+-- should return empty string
+SELECT * FROM cypher('expr', $$
+    RETURN replace("abc", "abc", "")
+$$) AS (results agtype);
 -- should return null
 SELECT * FROM cypher('expr', $$
     RETURN replace(null, null, null)
@@ -1500,6 +1630,9 @@ $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN replace("", "Hello", "Mellow")
 $$) AS (results agtype);
+-- The regression database uses openGauss A compatibility, where a SQL empty
+-- string literal is NULL.  The Cypher empty-string cases above remain strings;
+-- these direct SQL calls therefore return SQL NULL.
 SELECT * FROM age_replace(null, null, null);
 SELECT * FROM age_replace('Hello', null, null);
 SELECT * FROM age_replace('Hello', '', null);
@@ -2261,7 +2394,8 @@ SELECT create_graph('opt_forms');
 SELECT * FROM cypher('opt_forms', $$CREATE ({i:1})-[:KNOWS]->({i:2})<-[:KNOWS]-({i:3})$$)AS (result agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u) RETURN u$$) AS (result agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u) RETURN *$$) AS (result agtype);
-SELECT * FROM cypher('opt_forms', $$MATCH (u)--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
+-- ORDER BY keeps this independent of undirected join/scan order.
+SELECT * FROM cypher('opt_forms', $$MATCH (u)--(v) RETURN u.i, v.i ORDER BY u.i, v.i$$) AS (u agtype, v agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u)<--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->()<--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
@@ -2275,6 +2409,83 @@ $$) as (result agtype);
 SELECT * from cypher('expr', $$
 RETURN pg_catalog.sqrt(pg_catalog.sqrt(pg_catalog.sqrt(256::pg_float8)))
 $$) as (result agtype);
+SELECT * from cypher('expr', $$
+RETURN true::pg_bigint
+$$) as (result agtype);
+SELECT * from cypher('expr', $$
+RETURN "1.25"::pg_float8
+$$) as (result agtype);
+SELECT * from cypher('expr', $$
+RETURN "not-a-float"::pg_float8
+$$) as (result agtype);
+-- Apache AGE #240: negative list bounds and chained access/slice semantics.
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][5]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][10]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-1]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-3]$$) AS r(c agtype);
+-- should return null
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][11]$$) AS r(c agtype);
+
+-- list slice
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0..]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][..11]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0..0]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][10..10]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0..1]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][9..10]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-1..]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-1..11]$$) AS r(c agtype);
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-3..11]$$) AS r(c agtype);
+-- this one should return null
+SELECT * FROM cypher('expr',
+$$RETURN [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10][-1..10]$$) AS r(c agtype);
+SELECT agtype_access_slice('[0]'::agtype, 'null'::agtype, '1'::agtype);
+SELECT agtype_access_slice('[0]'::agtype, '0'::agtype, 'null'::agtype);
+-- should error - slice must access a list
+SELECT * from cypher('expr', $$RETURN 0[0..1]$$) as r(a agtype);
+SELECT * from cypher('expr', $$RETURN 0[[0]..[1]]$$) as r(a agtype);
+-- should return nothing
+SELECT * from cypher('expr', $$RETURN [0][0..-2147483649]$$) as r(a agtype);
+
+-- access and slice operators nested
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[0] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[2] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-1] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[2][-2] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[2][-2..] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-1..][-1..] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-1..][0] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-1..][-1] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-2..-1] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-4..-2] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-4..-2][-2] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-4..-2][0] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-4..-2][-2][-2..] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-4..-2][-2][-2..][0] $$) as (results agtype);
+
+-- empty list
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-1..][-2..-2] $$) as (results agtype);
+
+-- should return null
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[2][3] $$) as (results agtype);
+SELECT * from cypher('expr', $$ WITH [0, 1, [2, 3, 4], 5, [6, 7, 8], 9] as l RETURN l[-2..][-1..][-2] $$) as (results agtype);
 
 -- VLE
 SELECT create_graph('VLE');
@@ -2293,7 +2504,8 @@ SELECT * FROM cypher('keys', $$CREATE ({name: 'keiko fuji', age: 62, job: 'singe
 SELECT * FROM cypher('keys', $$MATCH (a),(b) WHERE a.name = 'hikaru utada' AND b.name = 'alexander guy cook' CREATE (a)-[:collaborated_with {song:"one last kiss"}]->(b)$$) AS (result agtype);
 SELECT * FROM cypher('keys', $$MATCH (a),(b) WHERE a.name = 'hikaru utada' AND b.name = 'keiko fuji' CREATE (a)-[:knows]->(b)$$) AS (result agtype);
 SELECT * FROM cypher('keys', $$MATCH (v) RETURN keys(v)$$) AS (vertex_keys agtype);
-SELECT * FROM cypher('keys', $$MATCH ()-[e]-() RETURN keys(e)$$) AS (edge_keys agtype);
+-- ORDER BY keeps this independent of undirected join/scan order.
+SELECT * FROM cypher('keys', $$MATCH ()-[e]-() RETURN keys(e) ORDER BY id(e)$$) AS (edge_keys agtype);
 SELECT * FROM cypher('keys', $$RETURN keys({a:1,b:'two',c:[1,2,3]})$$) AS (keys agtype);
 
 --should return empty list
@@ -2359,9 +2571,466 @@ SELECT * from cypher('list', $$MATCH (u) RETURN labels(u), u$$) as (Labels agtyp
 SELECT * from cypher('list', $$RETURN labels(NULL)$$) as (Labels agtype);
 -- should return an error
 SELECT * from cypher('list', $$RETURN labels("string")$$) as (Labels agtype);
+-- predicate functions all(), any(), none(), single()
+SELECT * FROM cypher('expr', $$RETURN all(x IN [1, 2, 3] WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN all(x IN [1, 0, 3] WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN all(x IN [] WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN all(x IN null WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN all(x IN [1, null, 3] WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN any(x IN [1, 2, 3] WHERE x > 2)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN any(x IN [1, 2, 3] WHERE x > 5)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN any(x IN [] WHERE x > 0)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN none(x IN [1, 2, 3] WHERE x > 5)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN none(x IN [1, 2, 3] WHERE x > 2)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN single(x IN [1, 2, 3] WHERE x = 2)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN single(x IN [1, 2, 2] WHERE x = 2)$$) AS r(result boolean);
+SELECT * FROM cypher('expr', $$RETURN single(x IN [] WHERE x = 2)$$) AS r(result boolean);
+
+--
+-- Chained expression order of operations (#1402) and
+-- chained expressions in CASE (#1431)
+--
+SELECT * FROM create_graph('chained');
+
+SELECT * FROM cypher('chained', $$ CREATE (:people {name: "Jason", age:50}) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ CREATE (:people {name: "Amy", age:25}) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ CREATE (:people {name: "Samantha", age:35}) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ CREATE (:people {name: "Mark", age:40}) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ CREATE (:people {name: "David", age:15}) $$) AS (result agtype);
+
+-- order of operations in RETURN
+SELECT * FROM cypher('chained', $$ RETURN 1 = 1 = 1 $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN 1 = 2 = 1 $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN (1 = 1) = 1 $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN 1 = (1 = 1) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN 1 = 1 = true $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN (1 = 1) = true $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN true = ((1 = 1) = true) $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN ((1 = (1 = 1)) = 1) = 1 $$) AS (result agtype);
+
+-- chained comparisons mixed with logical operators
+SELECT * FROM cypher('chained', $$ RETURN 1 < 2 < 3 AND 4 < 5 $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ RETURN NOT (1 = 2) = true $$) AS (result agtype);
+
+-- order of operations in WHERE
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE 35 = u.age = 35  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE (35 = u.age) = 35  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE u.age = u.age = u.age  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE (u.age = u.age) = u.age  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE u.age = (u.age = u.age)  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE (u.age = u.age) = (u.age = u.age)  RETURN u $$) AS (result agtype);
+
+SELECT * FROM cypher('chained', $$ MATCH (u:people) WHERE ((u.age = u.age) = (u.age = u.age)) = (u.age = u.age)  RETURN u $$) AS (result agtype);
+
+SELECT * FROM drop_graph('chained', true);
+
+--CASE chained expressions
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE
+    WHEN null THEN 'should not return me'
+    WHEN n.i = 1 = 1 THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE
+    WHEN null THEN 'should not return me'
+    WHEN n.i = (1 = 1) THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE n
+    WHEN null THEN 'should not return me'
+    WHEN n.i = 1 THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE n = 1
+    WHEN null THEN 'should not return me'
+    WHEN n.i = 1 = 1 THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE n = 1
+    WHEN null THEN 'should not return me'
+    WHEN n.i = (1 = 1) THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+--should return n
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE n = 1
+    WHEN null THEN 'should not return me'
+    WHEN n = 1 = 1 THEN n
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+--chained expression in THEN
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE
+    WHEN null THEN 'should not return me'
+    WHEN n.i = 1 THEN n.i = 1 = 1
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+--order of operations in THEN
+SELECT * FROM cypher('case_statement', $$
+  MATCH (n)
+  RETURN CASE n
+    WHEN null THEN 'should not return me'
+    WHEN n THEN (n.i = 1) = 1
+    ELSE 'none'
+  END
+$$ ) AS (case_statement agtype);
+
+--
+-- Typecast bool to integer and vice versa
+--
+-- toBoolean() on an integer, nonzero is true
+SELECT * FROM cypher('expr', $$
+    RETURN toBoolean(2)
+$$) AS (toBoolean agtype);
+
+-- typecast bool to agtype integer
+SELECT * FROM cypher('expr', $$
+RETURN true::int
+$$) AS r(result agtype);
+SELECT * FROM cypher('expr', $$
+RETURN false::int
+$$) AS r(result agtype);
+
+-- typecast integer to agtype bool
+SELECT * FROM cypher('expr', $$
+RETURN 0::bool
+$$) AS r(result agtype);
+
+-- chained bool/int typecast round trip
+SELECT * FROM cypher('expr', $$
+RETURN NOT 1::bool::int::bool
+$$) AS (result boolean);
+
+-- coerce bool to Postgres integer types
+SELECT * FROM cypher('type_coercion', $$
+    RETURN true
+$$) AS (i int);
+SELECT * FROM cypher('type_coercion', $$
+    RETURN false
+$$) AS (i smallint);
+
+-- CASE with an integer typecast to bool as the predicate
+SELECT * FROM cypher('expr', $$
+    RETURN CASE WHEN 1::bool THEN 'int true' ELSE 'int false' END
+$$) AS (result agtype);
+
+-- these should fail
+SELECT * FROM cypher('expr', $$
+RETURN 1.23::bool
+$$) AS r(result agtype);
+SELECT * FROM cypher('expr', $$
+RETURN 'falze'::int
+$$) AS r(result agtype);
+
+
+--
+-- IN operator scalar-array comparison semantics
+--
+-- Matching values return true, including numeric coercion and nested lists.
+SELECT * FROM cypher('expr', $$RETURN 1 IN [1.0]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 1 IN [1.0, [null]]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN [null] IN [1.0, [null]]$$) AS r(c boolean);
+
+-- A top-level null or a null operand makes an otherwise unresolved result null.
+SELECT * FROM cypher('expr', $$RETURN 0 IN ['str', 1, 1.0, true, null]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 1.1 IN ['str', 1, 1.0, true, null]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 'Str' IN ['str', 1, 1.0, true, null]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN [1, 3, 5, [2, 4, 5]] IN ['str', 1, 1.0, true, null, [1, 3, 5, [2, 4, 6]]]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN {bool: true, int: 2} IN ['str', 1, 1.0, true, null, {bool: true, int: 1}]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN true IN null$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN null IN ['str', 1, 1.0, true, null]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN null IN ['str', 1, 1.0, true]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 'str' IN null$$) AS r(c boolean);
+
+-- Definite non-matches return false when the list has no top-level null.
+SELECT * FROM cypher('expr', $$RETURN 'str' IN ['StR', 1, true]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 2 IN ['StR', 1, true]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN false IN ['StR', 1, true]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN [1, 2] IN ['StR', 1, 2, true]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 1 IN [[1]]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 1 IN [[null]]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 2 IN [1, 2, 3]$$) AS r(c boolean);
+SELECT * FROM cypher('expr', $$RETURN 4 IN [1, 2, 3]$$) AS r(c boolean);
+
+-- Dynamic lists use the runtime IN operator.
+SELECT * FROM cypher('expr', $$
+    WITH [1, 2, 3] AS values
+    RETURN 2 IN values, 4 IN values
+$$) AS r(found boolean, missing boolean);
+
+SELECT * FROM cypher('expr', $$
+    UNWIND [1, 2, 3] AS value
+    WITH collect(value) AS values
+    RETURN 2 IN values, 4 IN values
+$$) AS r(found boolean, missing boolean);
+
+-- Apache AGE #1959: indirection over a non-agtype SQL Datum must fail with a
+-- controlled coercion error rather than treating the Datum as an agtype ptr.
+SELECT * FROM cypher('expr', $$
+    RETURN is_valid_label_name('expr')[{}]
+$$) AS (result agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN is_valid_label_name('expr')[0]
+$$) AS (result agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN is_valid_label_name('expr')[0..1]
+$$) AS (result agtype);
+SELECT 1 AS server_still_alive;
+
+-- Apache AGE #2005: backtick-quoted keywords are ordinary property names.
+SELECT create_graph('keyword_property_contract');
+SELECT * FROM cypher('keyword_property_contract', $$
+    CREATE (:KeywordContract {id: 1})
+$$) AS (result agtype);
+SELECT * FROM cypher('keyword_property_contract', $$
+    MATCH (p:KeywordContract {id: 1})
+    SET p.`match` = 'match', p.`set` = 'set',
+        p.`delete` = 'delete', p.`merge` = 'merge',
+        p.`create` = 'create'
+    RETURN p.`match`, p.`set`, p.`delete`, p.`merge`, p.`create`
+$$) AS (match_value agtype, set_value agtype, delete_value agtype,
+         merge_value agtype, create_value agtype);
+SELECT * FROM cypher('keyword_property_contract', $$
+    MATCH (p:KeywordContract {id: 1})
+    RETURN p.`match`, p.`set`, p.`delete`, p.`merge`, p.`create`
+$$) AS (match_value agtype, set_value agtype, delete_value agtype,
+         merge_value agtype, create_value agtype);
+SELECT drop_graph('keyword_property_contract', true);
+
+-- Apache AGE #2172: explicit PostgreSQL operators and generic type names,
+-- including typmods, are valid inside Cypher expressions.
+SELECT * FROM cypher('expr', $$
+    RETURN 1 OPERATOR(ag_catalog.+) 2
+$$) AS (result agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN 'abc' OPERATOR(ag_catalog.=~) 'a.*'
+$$) AS (result agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN OPERATOR(ag_catalog.-) 3
+$$) AS (result agtype);
+SELECT * FROM cypher('expr', $$
+    RETURN 12.345::numeric(5,2)
+$$) AS (result numeric);
+SELECT * FROM cypher('expr', $$
+    RETURN 1::int2
+$$) AS (result int2);
+SELECT * FROM cypher('expr', $$
+    RETURN 1::no_such_type
+$$) AS (result agtype);
+
+SELECT * FROM cypher('expr', $$
+    RETURN toString(pg_catalog.pg_typeof(3.14))
+$$) AS (result agtype);
+
+-- Apache AGE #1311: PostgreSQL count() is wrapped as agtype inside CASE.
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n)
+    RETURN n, CASE n.j WHEN 1 THEN count(*) ELSE 'not count' END
+$$) AS (n agtype, count_star agtype);
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n) MATCH (m)
+    RETURN n, CASE n.j WHEN 1 THEN count(*) ELSE 'not count' END
+$$) AS (n agtype, count_star agtype);
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n)
+    RETURN n, CASE n.j WHEN 1 THEN count(n) ELSE 'not count' END
+$$) AS (n agtype, count_entity agtype);
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n) MATCH (m)
+    RETURN n, CASE n.j WHEN 1 THEN count(n) ELSE 'not count' END
+$$) AS (n agtype, count_entity agtype);
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n)
+    RETURN n, CASE n.j WHEN 1 THEN count(1) ELSE 'not count' END
+$$) AS (n agtype, count_value agtype);
+SELECT * FROM cypher('case_statement', $$
+    MATCH (n) MATCH (m)
+    RETURN n, CASE n.j WHEN 1 THEN count(1) ELSE 'not count' END
+$$) AS (n agtype, count_value agtype);
+
+-- Apache AGE #1317: non-FuncExpr FROM expressions must not be interpreted as
+-- cypher() calls by the post-parse hook.
+SELECT * FROM agtype(NULL);
+SELECT * FROM agtype('[1, 2]'::agtype || '[3]'::agtype);
+SELECT * FROM bool(true AND false);
+
 --
 -- Cleanup
 --
+--
+-- Composite types, vertex and edge
+--
+SELECT * FROM create_graph('composite_types');
+
+SELECT * FROM cypher('composite_types', $$
+    CREATE (a:Person {name: 'Alice', age: 30})-[r:KNOWS {since: 2020}]->(b:Person {name: 'Bob', age: 25})
+$$) AS (result agtype);
+
+-- Return vertex as vertex type
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n
+$$) AS (n vertex);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n
+    ORDER BY n.name
+$$) AS (n vertex);
+
+-- Return edge as edge type
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r:KNOWS]->()
+    RETURN r
+$$) AS (r edge);
+
+-- Return multiple entities
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person)-[r:KNOWS]->(b:Person)
+    RETURN a, b
+$$) AS (a vertex, b vertex);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person)-[r:KNOWS]->(b:Person)
+    RETURN a, r, b
+$$) AS (a vertex, r edge, b vertex);
+
+-- Mixed return: entity and agtype property
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n, n.name
+$$) AS (n vertex, name agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n, n.name
+    ORDER BY n.name
+$$) AS (n vertex, name agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r:KNOWS]->()
+    RETURN r, r.since
+$$) AS (r edge, since agtype);
+
+-- IN operator with vertex and edge types
+EXPLAIN (COSTS OFF)
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person), (b:Person)
+    WHERE a <> b AND a IN [a, b]
+    RETURN a.name
+$$) AS (name agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person), (b:Person)
+    WHERE a <> b AND a IN [a, b]
+    RETURN a.name
+$$) AS (name agtype);
+
+EXPLAIN (COSTS OFF)
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r1:KNOWS]->(), ()-[r2:KNOWS]->()
+    WHERE r1 IN [r1, r2]
+    RETURN id(r1)
+$$) AS (id agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r1:KNOWS]->(), ()-[r2:KNOWS]->()
+    WHERE r1 IN [r1, r2]
+    RETURN id(r1)
+$$) AS (id agtype);
+
+-- Equality operators with vertex and edge types
+EXPLAIN (COSTS OFF)
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person), (b:Person)
+    WHERE a = b
+    RETURN a.name
+$$) AS (name agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH (a:Person), (b:Person)
+    WHERE a = b
+    RETURN a.name
+$$) AS (name agtype);
+
+EXPLAIN (COSTS OFF)
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r1:KNOWS]->(), ()-[r2:KNOWS]->()
+    WHERE r1 = r2
+    RETURN id(r1)
+$$) AS (id agtype);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r1:KNOWS]->(), ()-[r2:KNOWS]->()
+    WHERE r1 = r2
+    RETURN id(r1)
+$$) AS (id agtype);
+
+-- Cast vertex and edge to json
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n
+$$) AS (n json);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r:KNOWS]->()
+    RETURN r
+$$) AS (r json);
+
+-- Cast vertex and edge to jsonb
+SELECT * FROM cypher('composite_types', $$
+    MATCH (n:Person)
+    RETURN n
+$$) AS (n jsonb);
+
+SELECT * FROM cypher('composite_types', $$
+    MATCH ()-[r:KNOWS]->()
+    RETURN r
+$$) AS (r jsonb);
+SELECT * FROM drop_graph('composite_types', true);
+
 SELECT * FROM drop_graph('VLE', true);
 SELECT * FROM drop_graph('case_statement', true);
 SELECT * FROM drop_graph('opt_forms', true);

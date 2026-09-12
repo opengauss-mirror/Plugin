@@ -19,16 +19,23 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_unwind');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_unwind" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
 (1 row)
+
+SELECT * FROM cypher('cypher_unwind', $$
+    CREATE (node1 {name: 'node1', a: [1, 2, 3]}),
+           (node2 {name: 'node2', a: [4, 5, 6]}),
+           (node3 {name: 'node3', a: [7, 8, 9]}),
+           (node1)-[:KNOWS]->(node2),
+           (node2)-[:KNOWS]->(node3)
+$$) as (i agtype);
+ i 
+---
+(0 rows)
 
 SELECT * FROM cypher('cypher_unwind', $$
     UNWIND [1, 2, 3] AS i RETURN i
@@ -41,14 +48,11 @@ $$) as (i agtype);
 (3 rows)
 
 SELECT * FROM cypher('cypher_unwind', $$
-    CREATE ({a: [1, 2, 3]}), ({a: [4, 5, 6]})
-$$) as (i agtype);
- i 
----
-(0 rows)
-
-SELECT * FROM cypher('cypher_unwind', $$
-    MATCH (n) WITH n.a AS a UNWIND a AS i RETURN *
+    MATCH (n)
+    WITH n.a AS a
+    UNWIND a AS i
+    RETURN *
+    ORDER BY a, i
 $$) as (i agtype, j agtype);
      i     | j 
 -----------+---
@@ -58,7 +62,10 @@ $$) as (i agtype, j agtype);
  [4, 5, 6] | 4
  [4, 5, 6] | 5
  [4, 5, 6] | 6
-(6 rows)
+ [7, 8, 9] | 7
+ [7, 8, 9] | 8
+ [7, 8, 9] | 9
+(9 rows)
 
 SELECT * FROM cypher('cypher_unwind', $$
     WITH [[1, 2], [3, 4], 5] AS nested
@@ -75,18 +82,82 @@ $$) as (i agtype);
  5
 (5 rows)
 
+-- UNWIND vertices
 SELECT * FROM cypher('cypher_unwind', $$
-    WITH [{id: 0, label:'', properties:{}}::vertex, {id: 1, label:'', properties:{}}::vertex] as n
-    UNWIND n as a
-    SET a.i = 1
-    RETURN a
-$$) as (i agtype);
-ERROR:  UNWIND clause does not support agtype vertex
-CONTEXT:  referenced column: a
+    MATCH p=()-[:KNOWS]->()
+    UNWIND nodes(p) AS node
+    RETURN node.name
+    ORDER BY node.name
+$$) as (name agtype);
+  name   
+---------
+ "node1"
+ "node2"
+ "node2"
+ "node3"
+(4 rows)
+
+-- UNWIND edges
+SELECT * FROM cypher('cypher_unwind', $$
+    MATCH p=()-[:KNOWS]->()
+    UNWIND relationships(p) AS relation
+    RETURN type(relation)
+    ORDER BY type(relation)
+$$) as (relation_type agtype);
+ relation_type 
+---------------
+ "KNOWS"
+ "KNOWS"
+(2 rows)
+
+-- UNWIND paths
+SELECT * FROM cypher('cypher_unwind', $$
+    MATCH p=({name: 'node1'})-[:KNOWS*1..2]->({name: 'node3'})
+    UNWIND [p] AS path
+    RETURN size(relationships(path))
+$$) as (edge_count agtype);
+ edge_count 
+------------
+ 2
+(1 row)
+
+-- #1304: SQL NULL input propagates through UNWIND without detoast errors.
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND NULL AS i
+    RETURN i
+$$) AS (i agtype);
+ i 
+---
+ 
+(1 row)
+
+-- any SubLink-producing expression may be unwound, not only a list
+-- comprehension
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND reduce(acc = [], x IN [1, 2] | acc + [x]) AS y
+    RETURN y
+$$) AS (y agtype);
+ y 
+---
+ 1
+ 2
+(2 rows)
+
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND [x IN [1, 2, 3] WHERE x > 1] AS y
+    RETURN y
+$$) AS (y agtype);
+ y 
+---
+ 2
+ 3
+(2 rows)
+
 SELECT drop_graph('cypher_unwind', true);
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table cypher_unwind._ag_label_vertex
 drop cascades to table cypher_unwind._ag_label_edge
+drop cascades to table cypher_unwind."KNOWS"
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_unwind" has been dropped
 CONTEXT:  referenced column: drop_graph

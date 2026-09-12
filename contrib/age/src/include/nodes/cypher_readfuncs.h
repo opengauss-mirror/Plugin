@@ -39,6 +39,12 @@
 
 void read_ag_node(ExtensibleNode *node);
 
+// clause and pattern data structures
+void read_cypher_create(struct ExtensibleNode *node);
+void read_cypher_path(struct ExtensibleNode *node);
+void read_cypher_node(struct ExtensibleNode *node);
+void read_cypher_relationship(struct ExtensibleNode *node);
+
 // create data structures
 void read_cypher_create_target_nodes(struct ExtensibleNode *node);
 void read_cypher_create_path(struct ExtensibleNode *node);
@@ -56,4 +62,17 @@ void read_cypher_merge_information(struct ExtensibleNode *node);
 
 // vle data structures
 void read_cypher_vle_target_nodes(struct ExtensibleNode *node);
+
+// list comprehension
+void read_cypher_map(struct ExtensibleNode *node);
+void read_cypher_map_projection(struct ExtensibleNode *node);
+void read_cypher_map_projection_element(struct ExtensibleNode *node);
+void read_cypher_integer_const(struct ExtensibleNode *node);
+void read_cypher_list_comprehension(struct ExtensibleNode *node);
+
+// reduce
+void read_cypher_reduce(struct ExtensibleNode *node);
+
+// predicate functions
+void read_cypher_predicate_function(struct ExtensibleNode *node);
 #endif

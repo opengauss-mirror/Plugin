@@ -20,9 +20,12 @@
 #include "postgres.h"
 
 #include "nodes/readfuncs.h"
+#include "nodes/ag_extensible.h"
 
 #include "nodes/cypher_readfuncs.h"
 #include "nodes/cypher_nodes.h"
+
+#define pg_strtok ag_pg_strtok
 
 /*
  * Copied From openGauss
@@ -71,6 +74,14 @@
         token = pg_strtok(&length); \
         local_node->fldname = pg_strtouint64(token, NULL, 10)
 
+// Read a signed 64-bit integer field (anything written as ":fldname %ld")
+#define READ_INT64_FIELD(fldname) \
+        do { \
+            token = pg_strtok(&length); \
+            token = pg_strtok(&length); \
+            local_node->fldname = strtoll(token, NULL, 10); \
+        } while (0)
+
 // Read a long integer field (anything written as ":fldname %ld")
 #define READ_LONG_FIELD(fldname) \
         token = pg_strtok(&length); \
@@ -113,6 +124,13 @@
         token = pg_strtok(&length); \
         token = pg_strtok(&length); \
         local_node->fldname = (decltype(local_node->fldname))non_nullable_string(token, length)
+
+#define READ_NULLABLE_STRING_FIELD(fldname) \
+        do { \
+            token = pg_strtok(&length); \
+            token = pg_strtok(&length); \
+            local_node->fldname = (decltype(local_node->fldname))nullable_string(token, length); \
+        } while (0)
 
 // Read a parse location field (and throw away the value, per notes above)
 #define READ_LOCATION_FIELD(fldname) \
@@ -175,7 +193,109 @@
  */
 void read_ag_node(ExtensibleNode *node)
 {
-    ereport(ERROR, (errmsg("unexpected parseNodeString() for ag_node")));
+    ereport(ERROR,
+            (errmsg("unexpected parseNodeString() for ag_node \"%s\"",
+                    node->extnodename)));
+}
+
+/*
+ * Deserialize a string representing the cypher_create data structure.
+ */
+void read_cypher_create(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_create);
+
+    READ_NODE_FIELD(pattern);
+}
+
+/*
+ * Deserialize a string representing the cypher_path data structure.
+ */
+void read_cypher_path(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_path);
+
+    READ_NODE_FIELD(path);
+    READ_NULLABLE_STRING_FIELD(var_name);
+    READ_LOCATION_FIELD(location);
+}
+
+/*
+ * Deserialize a string representing the cypher_node data structure.
+ */
+void read_cypher_node(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_node);
+
+    READ_NULLABLE_STRING_FIELD(name);
+    READ_NULLABLE_STRING_FIELD(label);
+    READ_BOOL_FIELD(use_equals);
+    READ_NODE_FIELD(props);
+    READ_LOCATION_FIELD(location);
+}
+
+/*
+ * Deserialize a string representing the cypher_relationship data structure.
+ */
+void read_cypher_relationship(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_relationship);
+
+    READ_NULLABLE_STRING_FIELD(name);
+    READ_NULLABLE_STRING_FIELD(label);
+    READ_BOOL_FIELD(use_equals);
+    READ_NODE_FIELD(props);
+    READ_NODE_FIELD(varlen);
+    READ_ENUM_FIELD(dir, cypher_rel_dir);
+    READ_LOCATION_FIELD(location);
+}
+
+/*
+ * Deserialize a string representing the cypher_map data structure.
+ */
+void read_cypher_map(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_map);
+
+    READ_NODE_FIELD(keyvals);
+    READ_LOCATION_FIELD(location);
+    READ_BOOL_FIELD(keep_null);
+}
+
+/*
+ * Deserialize a string representing the cypher_map_projection data structure.
+ */
+void read_cypher_map_projection(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_map_projection);
+
+    READ_NODE_FIELD(map_var);
+    READ_NODE_FIELD(map_elements);
+    READ_LOCATION_FIELD(location);
+}
+
+/*
+ * Deserialize a string representing the cypher_map_projection_element data structure.
+ */
+void read_cypher_map_projection_element(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_map_projection_element);
+
+    READ_ENUM_FIELD(type, cypher_map_projection_element_type);
+    READ_STRING_FIELD(key);
+    READ_NODE_FIELD(value);
+    READ_LOCATION_FIELD(location);
+}
+
+/*
+ * Deserialize a string representing the cypher_integer_const data structure.
+ */
+void read_cypher_integer_const(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_integer_const);
+
+    READ_INT64_FIELD(integer);
+    READ_LOCATION_FIELD(location);
 }
 
 /*
@@ -190,7 +310,7 @@ void read_cypher_create_target_nodes(struct ExtensibleNode *node)
     (void) token;
     local_node->paths = (List *)nodeRead_AG(NULL, 0);
 
-    READ_INT_FIELD(flags);
+    READ_UINT_FIELD(flags);
     READ_OID_FIELD(graph_oid);
 }
 
@@ -239,7 +359,7 @@ void read_cypher_target_node(struct ExtensibleNode *node)
     READ_LOCALS(cypher_target_node);
 
     READ_CHAR_FIELD(type);
-    READ_INT_FIELD(flags);
+    READ_UINT_FIELD(flags);
     READ_ENUM_FIELD(dir, cypher_rel_dir);
 
     token = pg_strtok(&length);
@@ -296,6 +416,10 @@ void read_cypher_update_item(struct ExtensibleNode *node)
     READ_STRING_FIELD(prop_name);
     READ_NODE_FIELD(qualified_name);
     READ_BOOL_FIELD(remove_item);
+    READ_BOOL_FIELD(replace_properties);
+    READ_BOOL_FIELD(is_add);
+    READ_NODE_FIELD(prop_expr);
+    READ_NODE_FIELD(prop_expr_state);
 }
 
 /*
@@ -337,4 +461,46 @@ void read_cypher_merge_information(struct ExtensibleNode *node)
     READ_OID_FIELD(graph_oid);
     READ_INT_FIELD(merge_function_attr);
     READ_NODE_FIELD(path);
+    READ_NODE_FIELD(on_match_set_info);
+    READ_NODE_FIELD(on_create_set_info);
+}
+
+/*
+ * Deserialize a string representing the cypher_list_comprehension data structure.
+ */
+void read_cypher_list_comprehension(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_list_comprehension);
+
+    READ_STRING_FIELD(varname);
+    READ_NODE_FIELD(expr);
+    READ_NODE_FIELD(where);
+    READ_NODE_FIELD(mapping_expr);
+}
+
+/*
+ * Deserialize a string representing the cypher_reduce data structure.
+ */
+void read_cypher_reduce(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_reduce);
+
+    READ_STRING_FIELD(accumname);
+    READ_NODE_FIELD(initial);
+    READ_STRING_FIELD(varname);
+    READ_NODE_FIELD(expr);
+    READ_NODE_FIELD(mapping_expr);
+}
+
+/*
+ * Deserialize a string representing the cypher_predicate_function data structure.
+ */
+void read_cypher_predicate_function(struct ExtensibleNode *node)
+{
+    READ_LOCALS(cypher_predicate_function);
+
+    READ_ENUM_FIELD(kind, cypher_predicate_function_kind);
+    READ_STRING_FIELD(varname);
+    READ_NODE_FIELD(expr);
+    READ_NODE_FIELD(where);
 }

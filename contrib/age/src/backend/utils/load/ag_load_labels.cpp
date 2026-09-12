@@ -17,274 +17,269 @@
  * under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 #include "postgres.h"
 
-#include "access/heapam.h"
-#include "access/xact.h"
-#include "catalog/dependency.h"
-#include "catalog/namespace.h"
-#include "catalog/objectaddress.h"
-#include "commands/defrem.h"
-#include "commands/sequence.h"
-#include "commands/tablecmds.h"
-#include "miscadmin.h"
-#include "nodes/makefuncs.h"
-#include "nodes/nodes.h"
-#include "nodes/parsenodes.h"
-#include "nodes/pg_list.h"
-#include "nodes/plannodes.h"
-#include "nodes/primnodes.h"
-#include "nodes/value.h"
-#include "parser/parse_node.h"
-#include "parser/parser.h"
-#include "tcop/dest.h"
-#include "tcop/utility.h"
-#include "utils/acl.h"
 #include "utils/builtins.h"
-#include "utils/inval.h"
-#include "utils/lsyscache.h"
-#include "utils/rel.h"
+#include "utils/memutils.h"
 
-#include "catalog/ag_graph.h"
 #include "catalog/ag_label.h"
-#include "commands/label_commands.h"
-#include "utils/ag_cache.h"
 #include "utils/agtype.h"
 #include "utils/graphid.h"
 
+#include "utils/load/ag_csv_reader.h"
 #include "utils/load/ag_load_labels.h"
 #include "utils/load/age_load.h"
-#include "utils/load/csv.h"
 
-void vertex_field_cb(void *field, size_t field_len, void *data)
+#define DECIMAL_RADIX 10
+
+/* Per-file state of the vertex loader; everything lives in load_context. */
+typedef struct csv_vertex_reader {
+    /* header row: trimmed column names, NULL/"" columns carry no property */
+    char **header;
+    int header_num;
+    /* neo4j-style header only: per-column type and the "id" column index */
+    agtype_value_type *col_type;
+    int id_col;
+
+    Oid graph_id;
+    char *object_name;
+    int object_id;
+    bool id_field_exists;
+    bool load_as_agtype;
+    bool with_neo4j_like_header;
+    bool adjust_id;
+
+    Oid sequence_id;
+    /* last value handed out by the sequence when the load started */
+    int64 current_sequence_value;
+    /* highest explicit id seen; the sequence is moved past it once at the end */
+    int64 highest_explicit_id;
+
+    loader_target *target;
+} csv_vertex_reader;
+
+static void parse_vertex_header(csv_vertex_reader *cr, char **fields,
+                                int nfields);
+static int64 resolve_vertex_row_id(csv_vertex_reader *cr, char **fields,
+                                   int nfields);
+static void process_vertex_row(csv_vertex_reader *cr, char **fields,
+                               int nfields);
+
+/*
+ * The header row.  Plain files carry property names; neo4j-import style
+ * files carry "name:TYPE" columns, with the "id" column giving the vertex id.
+ * File content is untrusted: every column is validated before use.
+ */
+static void parse_vertex_header(csv_vertex_reader *cr, char **fields,
+                                int nfields)
 {
+    int i;
 
-    csv_vertex_reader *cr = (csv_vertex_reader *) data;
-
-    if (cr->error)
-    {
-        cr->error = 1;
-        ereport(NOTICE,(errmsg("There is some unknown error")));
+    cr->header_num = nfields;
+    cr->header = (char **)palloc0(sizeof(char *) * nfields);
+    if (cr->with_neo4j_like_header) {
+        cr->col_type = (agtype_value_type *)palloc0(
+            sizeof(agtype_value_type) * nfields);
+        cr->id_col = -1;
     }
 
-    // check for space to store this field
-    if (cr->cur_field == cr->alloc)
-    {
-        cr->alloc *= 2;
-        cr->fields = (char**)realloc(cr->fields, sizeof(char *) * cr->alloc);
-        cr->fields_len = (size_t*)realloc(cr->header, sizeof(size_t *) * cr->alloc);
-        if (cr->fields == NULL)
-        {
-            cr->error = 1;
+    for (i = 0; i < nfields; i++) {
+        char *field = trim_csv_value(fields[i]);
+
+        if (!cr->with_neo4j_like_header) {
+            cr->header[i] = field;
+            continue;
+        }
+
+        char *colon = strchr(field, ':');
+        if (colon == NULL) {
             ereport(ERROR,
-                    (errmsg("field_cb: failed to reallocate %zu bytes\n",
-                            sizeof(char *) * cr->alloc)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("label file header column %d (\"%s\") "
+                            "must have the form name:TYPE",
+                            i + 1, field)));
+        }
+
+        *colon = '\0';
+        cr->header[i] = field;
+        const char *type = colon + 1;
+
+        if (strcmp(cr->header[i], "id") == 0) {
+            cr->id_col = i;
+            cr->col_type[i] = AGTV_NUMERIC;
+        }
+        else if (strcmp(type, "LONG") == 0) {
+            cr->col_type[i] = AGTV_NUMERIC;
+        }
+        else if (strcmp(type, "BOOL") == 0) {
+            cr->col_type[i] = AGTV_BOOL;
+        }
+        else {
+            /* STRING and any unknown type are loaded as strings */
+            cr->col_type[i] = AGTV_STRING;
         }
     }
-    cr->fields_len[cr->cur_field] = field_len;
-    cr->curr_row_length += field_len;
-    cr->fields[cr->cur_field] = strndup((char *) field, field_len);
-    cr->cur_field += 1;
 }
 
-void vertex_row_cb(int delim __attribute__((unused)), void *data)
+/*
+ * Determine the vertex id for the current CSV row: either the id column
+ * supplied by the file (keeping the loader sequence ahead of it) or the next
+ * loader sequence value.
+ */
+static int64 resolve_vertex_row_id(csv_vertex_reader *cr, char **fields,
+                                   int nfields)
 {
-
-    csv_vertex_reader *cr = (csv_vertex_reader*)data;
-    agtype *props = NULL;
-    size_t i, n_fields;
-    graphid object_graph_id;
+    int id_index;
+    const char *id_text;
     int64 label_id_int;
 
-    n_fields = cr->cur_field;
-
-
-    if (cr->row == 0)
-    {
-        cr->header_num = cr->cur_field;
-        cr->header_row_length = cr->curr_row_length;
-        cr->header_len = (size_t* )malloc(sizeof(size_t *) * cr->cur_field);
-        cr->header = (char **)malloc((sizeof (char*) * cr->cur_field));
-        if(cr -> with_neo4j_like_header)
-        {
-            cr->col_type = (agtype_value_type *)malloc((sizeof (agtype_value_type*) * cr->cur_field));
-            cr->id_col = -1;
-        }
-
-        for (i = 0; i<cr->cur_field; i++)
-        {
-            cr->header_len[i] = cr->fields_len[i];
-            if(cr -> with_neo4j_like_header){
-                char *start = NULL;
-                char *end = NULL;
-                char dest[100];
-                char type[100];
-                start = strchr(cr->fields[i], (int)':');
-                memcpy(dest, cr->fields[i], start - cr->fields[i]);
-                dest[start - cr->fields[i]] = '\0'; 
-                
-                memcpy(type, start + 1, cr->fields[i]+strlen(cr->fields[i])-start);
-                type[ cr->fields[i]+strlen(cr->fields[i])-start-1] = '\0';
-                cr->header[i] = strndup(dest, strlen(dest));
-                if( strcmp(cr->header[i], "id") == 0  ){
-                   cr->id_col = i;
-                   cr->col_type[i] = AGTV_NUMERIC;
-                   continue;
-                }
-                if(strcmp(type, "LONG") == 0){
-                    cr->col_type[i] = AGTV_NUMERIC;
-                }else  if(strcmp(type, "STRING") == 0){
-                    cr->col_type[i] = AGTV_STRING;
-                }else  if(strcmp(type, "BOOL") == 0){
-                    cr->col_type[i] = AGTV_BOOL;
-                }else{
-                    cr->col_type[i] = AGTV_STRING;
-                }
-            }else
-            {
-                cr->header[i] = strndup(cr->fields[i], cr->header_len[i]);
-            }
-        } 
-
-
-    } else {
-        if (cr->id_field_exists)
-        {
-            if(cr->id_col>=0){
-                label_id_int = strtol(cr->fields[cr->id_col], NULL, 10);
-                if(cr->adjust_id){
-                    label_id_int =label_id_int +1;
-                }
-            }else{
-                label_id_int = strtol(cr->fields[0], NULL, 10);
-            }
-            
-        }
-        else
-        {
-            label_id_int = (int64)cr->row;
-        }
-
-        object_graph_id = make_graphid(cr->object_id, label_id_int);
-
-        props = create_agtype_from_list(cr->header, cr->fields,cr->col_type,
-                                        n_fields, label_id_int);
-        insert_vertex_simple(cr->graph_id, cr->object_name,
-                             object_graph_id, props);
-        if(cr->free_context){
-            MemoryContextReset(CurrentMemoryContext);
-        }                     
-        
+    if (!cr->id_field_exists) {
+        return next_loader_sequence_value(cr->sequence_id);
     }
 
-
-    for (i = 0; i < n_fields; ++i)
-    {
-        free(cr->fields[i]);
+    id_index = cr->id_col >= 0 ? cr->id_col : 0;
+    if (id_index >= nfields) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("label file row has %d columns and does not "
+                        "contain required id column %d",
+                        nfields, id_index + 1)));
     }
 
-
-    if (cr->error)
-    {
-        ereport(NOTICE,(errmsg("THere is some error")));
+    id_text = fields[id_index] != NULL ? fields[id_index] : "";
+    label_id_int = strtol(id_text, NULL, DECIMAL_RADIX);
+    if (cr->adjust_id) {
+        label_id_int++;
     }
 
+    if (label_id_int > cr->highest_explicit_id) {
+        cr->highest_explicit_id = label_id_int;
+    }
 
-    cr->cur_field = 0;
-    cr->curr_row_length = 0;
-    cr->row += 1;
+    return label_id_int;
 }
 
-static int is_space(unsigned char c)
+static void process_vertex_row(csv_vertex_reader *cr, char **fields,
+                               int nfields)
 {
-    if(c == CSV_SPACE || c == CSV_TAB) return 1;
-    return 0;
+    int64 entry_id;
+    graphid vertex_id;
+    agtype *props;
+
+    if (nfields > cr->header_num) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("label file row has %d columns, more than the "
+                        "header's %d columns",
+                        nfields, cr->header_num)));
+    }
+
+    entry_id = resolve_vertex_row_id(cr, fields, nfields);
+    vertex_id = make_graphid(cr->object_id, entry_id);
+
+    props = create_agtype_from_list(cr->header, fields, cr->col_type,
+                                    nfields, entry_id, cr->load_as_agtype);
+    insert_vertex_simple(cr->target, vertex_id, props);
 }
 
-static int is_term(unsigned char c)
-{
-    if (c == CSV_CR || c == CSV_LF) return 1;
-    return 0;
-}
 int create_labels_from_csv_file(char *file_path,
                                 char *graph_name,
                                 Oid graph_id,
                                 char *object_name,
                                 int object_id,
-                                bool id_field_exists,bool with_header,bool adjust_id,bool free_context)
+                                bool id_field_exists,
+                                bool load_as_agtype,
+                                char delimiter,
+                                bool with_header,
+                                bool adjust_id)
 {
+    csv_vertex_reader *reader;
+    ag_csv_reader *volatile csv = NULL;
+    char **fields;
+    int nfields;
+    bool is_header_row = true;
+    MemoryContext load_context;
+    MemoryContext row_context;
+    MemoryContext old_context;
 
-    FILE *fp;
-    struct csv_parser p;
-    char buf[1024];
-    size_t bytes_read;
-    unsigned char options = 0;
-    csv_vertex_reader cr;
+    /*
+     * load_context holds the reader, the header and the CSV record buffers
+     * for the whole file; row_context holds one row's properties and SPI
+     * query text and is reset after every row.  The caller's context is never
+     * touched: it still owns the function arguments (label name, path).
+     */
+    load_context = AllocSetContextCreate(CurrentMemoryContext,
+                                         "AGE CSV label loader",
+                                         ALLOCSET_DEFAULT_SIZES);
+    row_context = AllocSetContextCreate(load_context,
+                                        "AGE CSV label loader row",
+                                        ALLOCSET_DEFAULT_SIZES);
+    old_context = MemoryContextSwitchTo(load_context);
 
-    if (csv_init(&p, options) != 0)
+    reader = (csv_vertex_reader *)palloc0(sizeof(csv_vertex_reader));
+    reader->graph_id = graph_id;
+    reader->object_name = object_name;
+    reader->object_id = object_id;
+    reader->id_field_exists = id_field_exists;
+    reader->load_as_agtype = load_as_agtype;
+    reader->with_neo4j_like_header = with_header;
+    reader->adjust_id = adjust_id;
+    reader->id_col = -1;
+    reader->sequence_id = get_loader_label_sequence_oid(graph_id, object_name);
+    reader->current_sequence_value =
+        id_field_exists ? next_loader_sequence_value(reader->sequence_id) : 0;
+    reader->highest_explicit_id = reader->current_sequence_value;
+
+    /* neo4j-import style files are always '|' separated */
+    if (with_header)
     {
-        ereport(ERROR,
-                (errmsg("Failed to initialize csv parser\n")));
-        return EXIT_FAILURE; /* suppress the static check warmings */
+        delimiter = '|';
     }
 
-    csv_set_space_func(&p, is_space);
-    csv_set_term_func(&p, is_term);
-
-    fp = fopen(file_path, "rb");
-    if (!fp)
+    PG_TRY();
     {
-        ereport(ERROR,
-                (errmsg("Failed to open %s\n", file_path)));
-        return EXIT_FAILURE; /* suppress the static check warmings */
-    }
+        reader->target = open_loader_target(graph_id, graph_name, object_name);
 
-    memset((void*)&cr, 0, sizeof(csv_vertex_reader));
+        /* file_path was resolved and checked by build_safe_csv_path() */
+        csv = ag_csv_open(file_path, delimiter);
 
-    cr.alloc = 2048;
-    cr.fields = (char **)malloc(sizeof(char *) * cr.alloc);
-    cr.fields_len = (size_t *)malloc(sizeof(size_t *) * cr.alloc);
-    cr.header_row_length = 0;
-    cr.curr_row_length = 0;
-    cr.graph_name = graph_name;
-    cr.graph_id = graph_id;
-    cr.object_name = object_name;
-    cr.object_id = object_id;
-    cr.id_field_exists = id_field_exists;
-    if(with_header){
-        cr.with_neo4j_like_header = true;
-        p.delim_char = CSV_SHUXIAN;
-    }
-    cr.adjust_id = adjust_id;
-    cr.free_context = free_context; 
-
-    while ((bytes_read=fread(buf, 1, 1024, fp)) > 0)
-    {
-        if (csv_parse(&p, buf, bytes_read, vertex_field_cb,
-                      vertex_row_cb, &cr) != bytes_read)
+        while (ag_csv_next_record(csv, &fields, &nfields))
         {
-            ereport(ERROR, (errmsg("Error while parsing file: %s\n",
-                                   csv_strerror(csv_error(&p)))));
+            if (is_header_row) {
+                parse_vertex_header(reader, fields, nfields);
+                is_header_row = false;
+                continue;
+            }
+
+            MemoryContextSwitchTo(row_context);
+            process_vertex_row(reader, fields, nfields);
+            MemoryContextSwitchTo(load_context);
+            MemoryContextReset(row_context);
+        }
+
+        /* keep the label sequence ahead of the ids the file supplied */
+        if (reader->highest_explicit_id > reader->current_sequence_value)
+        {
+            advance_loader_sequence(reader->sequence_id,
+                                    reader->highest_explicit_id);
         }
     }
-
-    csv_fini(&p, vertex_field_cb, vertex_row_cb, &cr);
-
-    if (ferror(fp))
+    PG_CATCH();
     {
-        ereport(ERROR, (errmsg("Error while reading file %s\n",
-                               file_path)));
+        /* the file handle and the relation are also released by the abort */
+        if (csv != NULL)
+        {
+            ag_csv_close(csv);
+        }
+        MemoryContextSwitchTo(old_context);
+        MemoryContextDelete(load_context);
+        PG_RE_THROW();
     }
+    PG_END_TRY();
 
-    fclose(fp);
-
-    free(cr.fields);
-    csv_free(&p);
+    ag_csv_close(csv);
+    close_loader_target(reader->target);
+    MemoryContextSwitchTo(old_context);
+    MemoryContextDelete(load_context);
     return EXIT_SUCCESS;
 }

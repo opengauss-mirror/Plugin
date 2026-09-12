@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -114,10 +110,63 @@ SELECT * FROM cypher('cypher', $$RETURN 0$$) AS (c oid);
 ERROR:  cannot cast type agtype to oid for column "c"
 LINE 1: SELECT * FROM cypher('cypher', $$RETURN 0$$) AS (c oid);
                       ^
+-- Apache AGE #1799: CREATE TABLE AS must preserve transformed Cypher
+-- columns and named graph entity types through openGauss CTAS rewriting.
+SELECT * FROM cypher('cypher', $$
+    CREATE ()-[:knows]->()
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+CREATE TABLE cypher_ctas_vertices AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH (u) RETURN u ORDER BY u.id
+    $$) AS (u agtype);
+CREATE TABLE cypher_ctas_edges AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH ()-[e]->() RETURN e
+    $$) AS (e agtype);
+CREATE TABLE cypher_ctas_paths AS
+    SELECT * FROM cypher('cypher', $$
+        MATCH p=(u)-[e]->(v) RETURN u, e, v, p
+    $$) AS (u agtype, e agtype, v agtype, p agtype);
+SELECT count(*) AS vertex_count FROM cypher_ctas_vertices;
+ vertex_count 
+--------------
+            2
+(1 row)
+
+SELECT count(*) AS edge_count FROM cypher_ctas_edges;
+ edge_count 
+------------
+          1
+(1 row)
+
+SELECT count(*) AS path_count FROM cypher_ctas_paths;
+ path_count 
+------------
+          1
+(1 row)
+
+SELECT age_id(u) IS NOT NULL AS vertex_ok,
+       age_id(e) IS NOT NULL AS edge_ok,
+       age_id(v) IS NOT NULL AS end_vertex_ok,
+       age_size(age_nodes(p)) = '2'::agtype AS path_ok
+FROM cypher_ctas_paths;
+ vertex_ok | edge_ok | end_vertex_ok | path_ok 
+-----------+---------+---------------+---------
+ t         | t       | t             | t
+(1 row)
+
+DROP TABLE cypher_ctas_vertices;
+DROP TABLE cypher_ctas_edges;
+DROP TABLE cypher_ctas_paths;
 SELECT drop_graph('cypher', true);
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table cypher._ag_label_vertex
 drop cascades to table cypher._ag_label_edge
+drop cascades to table cypher.knows
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher" has been dropped
 CONTEXT:  referenced column: drop_graph

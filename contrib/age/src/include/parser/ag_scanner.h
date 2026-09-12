@@ -38,6 +38,7 @@ typedef enum ag_token_type
     AG_TOKEN_DECIMAL,
     AG_TOKEN_STRING,
     AG_TOKEN_IDENTIFIER,
+    AG_TOKEN_BQIDENT,
     AG_TOKEN_PARAMETER,
     AG_TOKEN_LT_GT,
     AG_TOKEN_LT_EQ,
@@ -46,7 +47,8 @@ typedef enum ag_token_type
     AG_TOKEN_TYPECAST,
     AG_TOKEN_PLUS_EQ,
     AG_TOKEN_EQ_TILDE,
-    AG_TOKEN_CHAR
+    AG_TOKEN_CHAR,
+    AG_TOKEN_OP
 } ag_token_type;
 
 /*

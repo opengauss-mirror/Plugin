@@ -25,9 +25,11 @@
 #include "catalog/namespace.h"
 #include "catalog/objectaddress.h"
 #include "catalog/pg_class.h"
+#include "catalog/pg_trigger.h"
 #include "commands/defrem.h"
 #include "commands/sequence.h"
 #include "commands/tablecmds.h"
+#include "commands/trigger.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodes.h"
@@ -36,12 +38,14 @@
 #include "nodes/plannodes.h"
 #include "nodes/primnodes.h"
 #include "nodes/value.h"
+#include "parser/parse_func.h"
 #include "parser/parse_node.h"
 #include "parser/parser.h"
 #include "tcop/dest.h"
 #include "tcop/utility.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
+#include "utils/guc.h"
 #include "utils/inval.h"
 #include "utils/lsyscache.h"
 #include "utils/numeric.h"
@@ -50,8 +54,10 @@
 #include "catalog/ag_label.h"
 #include "commands/label_commands.h"
 #include "utils/ag_cache.h"
+#include "utils/age_global_graph.h"
 #include "utils/agtype.h"
 #include "utils/graphid.h"
+#include "utils/name_validation.h"
 #include "catalog/index.h"
 #include "utils/ag_func.h"
 
@@ -87,6 +93,12 @@ static int32 get_new_label_id(Oid graph_oid, Oid nsp_id);
 static void change_label_id_default(char *graph_name, char *label_name,
                                     char *schema_name, char *seq_name,
                                     Oid relid);
+static void create_index_on_column(char *schema_name,
+                                   char *rel_name,
+                                   char *colname,
+                                   bool unique);
+static void install_global_graph_invalidation_trigger(Oid relation_id);
+static void process_utility_suppress_notice(processutility_context *context);
 
 // drop
 static void remove_relation(List *qname);
@@ -97,6 +109,44 @@ static void range_var_callback_for_remove_relation(const RangeVar *rel,
                                                    void *arg);
 
 static ColumnDef* agmakeColumnDef(const char* colname, Oid typeOid, int32 typmod, Oid collOid);
+
+PG_FUNCTION_INFO_V1(age_is_valid_label_name);
+extern "C" Datum age_is_valid_label_name(PG_FUNCTION_ARGS);
+
+Datum age_is_valid_label_name(PG_FUNCTION_ARGS)
+{
+    agtype *agt_arg = NULL;
+    agtype_value *agtv_value = NULL;
+    char *label_name = NULL;
+    bool is_valid = false;
+
+    if (PG_ARGISNULL(0)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("label name must not be NULL")));
+    }
+
+    agt_arg = AG_GET_ARG_AGTYPE_P(0);
+    if (!AGT_ROOT_IS_SCALAR(agt_arg)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("is_valid_label_name() only supports scalar arguments")));
+    }
+
+    agtv_value = get_ith_agtype_value_from_container(&agt_arg->root, 0);
+    if (agtv_value->type != AGTV_STRING) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("is_valid_label_name() only supports string arguments")));
+    }
+
+    label_name = pnstrdup(agtv_value->val.string.val,
+                          agtv_value->val.string.len);
+
+    is_valid = is_valid_label_name(label_name, 0);
+    pfree(label_name);
+
+    PG_RETURN_BOOL(is_valid);
+}
 
 
 PG_FUNCTION_INFO_V1(create_vlabel);
@@ -114,16 +164,12 @@ extern "C" Datum  create_vlabel(PG_FUNCTION_ARGS);
 
 Datum create_vlabel(PG_FUNCTION_ARGS)
 {
-    char *graph;
-    Name graph_name;
     char *graph_name_str;
     Oid graph_oid;
     List *parent;
 
     RangeVar *rv;
 
-    char *label;
-    Name label_name;
     char *label_name_str;
 
     // checking if user has not provided the graph name
@@ -140,11 +186,20 @@ Datum create_vlabel(PG_FUNCTION_ARGS)
                 errmsg("label name must not be NULL")));
     }
 
-    graph_name = PG_GETARG_NAME(0);
-    label_name = PG_GETARG_NAME(1);
+    graph_name_str = PG_GETARG_CSTRING(0);
+    label_name_str = PG_GETARG_CSTRING(1);
 
-    graph_name_str = NameStr(*graph_name);
-    label_name_str = NameStr(*label_name);
+    if (is_valid_graph_name(graph_name_str) == 0)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("graph name is invalid")));
+    }
+
+    if (is_valid_label_name(label_name_str, 0) == 0)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("label name is invalid")));
+    }
 
     // Check if graph does not exist
     if (!graph_exists(graph_name_str))
@@ -165,17 +220,14 @@ Datum create_vlabel(PG_FUNCTION_ARGS)
     }
 
     //Create the default label tables
-    graph = graph_name->data;
-    label = label_name->data;
-
-    rv = get_label_range_var(graph, graph_oid, AG_DEFAULT_LABEL_VERTEX);
+    rv = get_label_range_var(graph_name_str, graph_oid, AG_DEFAULT_LABEL_VERTEX);
 
     parent = list_make1(rv);
 
-    create_label(graph, label, LABEL_TYPE_VERTEX, parent);
+    create_label(graph_name_str, label_name_str, LABEL_TYPE_VERTEX, parent);
 
     ereport(NOTICE,
-            (errmsg("VLabel \"%s\" has been created", NameStr(*label_name))));
+            (errmsg("VLabel \"%s\" has been created", label_name_str)));
 
     PG_RETURN_VOID();
 }
@@ -194,16 +246,12 @@ extern "C" Datum  create_elabel(PG_FUNCTION_ARGS);
 
 Datum create_elabel(PG_FUNCTION_ARGS)
 {
-    char *graph;
-    Name graph_name;
     char *graph_name_str;
     Oid graph_oid;
     List *parent;
 
     RangeVar *rv;
 
-    char *label;
-    Name label_name;
     char *label_name_str;
 
     // checking if user has not provided the graph name
@@ -220,11 +268,20 @@ Datum create_elabel(PG_FUNCTION_ARGS)
                 errmsg("label name must not be NULL")));
     }
 
-    graph_name = PG_GETARG_NAME(0);
-    label_name = PG_GETARG_NAME(1);
+    graph_name_str = PG_GETARG_CSTRING(0);
+    label_name_str = PG_GETARG_CSTRING(1);
 
-    graph_name_str = NameStr(*graph_name);
-    label_name_str = NameStr(*label_name);
+    if (is_valid_graph_name(graph_name_str) == 0)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("graph name is invalid")));
+    }
+
+    if (is_valid_label_name(label_name_str, 0) == 0)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("label name is invalid")));
+    }
 
     // Check if graph does not exist
     if (!graph_exists(graph_name_str))
@@ -245,16 +302,13 @@ Datum create_elabel(PG_FUNCTION_ARGS)
     }
 
     //Create the default label tables
-    graph = graph_name->data;
-    label = label_name->data;
-
-    rv = get_label_range_var(graph, graph_oid, AG_DEFAULT_LABEL_EDGE);
+    rv = get_label_range_var(graph_name_str, graph_oid, AG_DEFAULT_LABEL_EDGE);
 
     parent = list_make1(rv);
-    create_label(graph, label, LABEL_TYPE_EDGE, parent);
+    create_label(graph_name_str, label_name_str, LABEL_TYPE_EDGE, parent);
 
     ereport(NOTICE,
-            (errmsg("ELabel \"%s\" has been created", NameStr(*label_name))));
+            (errmsg("ELabel \"%s\" has been created", label_name_str)));
 
     PG_RETURN_VOID();
 }
@@ -277,6 +331,12 @@ Oid create_label(char *graph_name, char *label_name, char label_type,
     int32 label_id;
     Oid relation_id;
     Oid label_oid;
+
+    if (!is_valid_label_name(label_name, label_type))
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("label name is invalid")));
+    }
 
     cache_data = search_graph_name_cache(graph_name);
     if (!cache_data)
@@ -316,6 +376,9 @@ Oid create_label(char *graph_name, char *label_name, char label_type,
                              relation_id);
 
     CommandCounterIncrement();
+
+    install_global_graph_invalidation_trigger(relation_id);
+    notify_GRAPH_global_contexts_catalog_modified();
 
     return label_oid;
 }
@@ -360,7 +423,8 @@ static void create_table_for_label(char *graph_name, char *label_name,
     create_stmt->inhRelations = parents;
     create_stmt->ofTypename = NULL;
     create_stmt->constraints = NIL;
-    create_stmt->options = NIL;
+    create_stmt->options = list_make1(
+        makeDefElem("storage_type", (Node *)makeString("astore")));
     create_stmt->oncommit = ONCOMMIT_NOOP;
     create_stmt->tablespacename = NULL;
     create_stmt->if_not_exists = false;
@@ -376,12 +440,120 @@ static void create_table_for_label(char *graph_name, char *label_name,
     processutility_cxt.is_top_level = false;
     processutility_cxt.readOnlyTree = false;
 
-    ProcessUtility(&processutility_cxt,
-                   None_Receiver,
-                   false,
-                   NULL,
-                   PROCESS_UTILITY_QUERY);
+    process_utility_suppress_notice(&processutility_cxt);
     // CommandCounterIncrement() is called in ProcessUtility()
+
+    if (label_type == LABEL_TYPE_VERTEX && list_length(parents) != 0) {
+        create_index_on_column(schema_name, rel_name, "id", true);
+    } else if (label_type == LABEL_TYPE_EDGE) {
+        create_index_on_column(schema_name, rel_name, "start_id", false);
+        create_index_on_column(schema_name, rel_name, "end_id", false);
+    }
+}
+
+static void install_global_graph_invalidation_trigger(Oid relation_id)
+{
+    List *func_name = list_make2(makeString("ag_catalog"),
+                                 makeString("age_invalidate_graph_cache"));
+    CreateTrigStmt *trigger_stmt;
+
+    if (!OidIsValid(LookupFuncName(func_name, 0, NULL, true))) {
+        return;
+    }
+
+    trigger_stmt = makeNode(CreateTrigStmt);
+    trigger_stmt->trigname = "_age_cache_invalidate";
+    trigger_stmt->relation = NULL;
+    trigger_stmt->funcname = func_name;
+    trigger_stmt->args = NIL;
+    trigger_stmt->row = false;
+    trigger_stmt->timing = TRIGGER_TYPE_AFTER;
+    trigger_stmt->events = TRIGGER_TYPE_INSERT | TRIGGER_TYPE_UPDATE |
+                           TRIGGER_TYPE_DELETE | TRIGGER_TYPE_TRUNCATE;
+    trigger_stmt->columns = NIL;
+    trigger_stmt->whenClause = NULL;
+    trigger_stmt->isconstraint = false;
+    trigger_stmt->deferrable = false;
+    trigger_stmt->initdeferred = false;
+    trigger_stmt->constrrel = NULL;
+    trigger_stmt->if_not_exists = false;
+
+    (void)CreateTrigger(trigger_stmt, NULL, relation_id, InvalidOid,
+                        InvalidOid, InvalidOid, false);
+    CommandCounterIncrement();
+}
+
+static void create_index_on_column(char *schema_name,
+                                   char *rel_name,
+                                   char *colname,
+                                   bool unique)
+{
+    IndexStmt *index_stmt;
+    IndexElem *index_col;
+    processutility_context processutility_cxt;
+
+    index_stmt = makeNode(IndexStmt);
+    index_col = makeNode(IndexElem);
+
+    index_col->name = colname;
+    index_col->expr = NULL;
+    index_col->indexcolname = NULL;
+    index_col->collation = NIL;
+    index_col->opclass = list_make1(makeString("graphid_ops"));
+    index_col->ordering = SORTBY_DEFAULT;
+    index_col->nulls_ordering = SORTBY_NULLS_DEFAULT;
+
+    index_stmt->relation = makeRangeVar(schema_name, rel_name, -1);
+    index_stmt->accessMethod = "btree";
+    index_stmt->tableSpace = NULL;
+    index_stmt->indexParams = list_make1(index_col);
+    index_stmt->indexIncludingParams = NIL;
+    index_stmt->options = NIL;
+    index_stmt->whereClause = NULL;
+    index_stmt->excludeOpNames = NIL;
+    index_stmt->idxcomment = NULL;
+    index_stmt->indexOid = InvalidOid;
+    index_stmt->oldNode = InvalidOid;
+    index_stmt->oldPSortOid = InvalidOid;
+    index_stmt->unique = unique;
+    index_stmt->primary = unique;
+    index_stmt->isconstraint = unique;
+    index_stmt->deferrable = false;
+    index_stmt->initdeferred = false;
+    index_stmt->concurrent = false;
+
+    processutility_cxt.parse_tree = (Node *)index_stmt;
+    processutility_cxt.query_string = "(generated CREATE INDEX command)";
+    processutility_cxt.params = NULL;
+    processutility_cxt.is_top_level = false;
+    processutility_cxt.readOnlyTree = false;
+
+    process_utility_suppress_notice(&processutility_cxt);
+}
+
+static void process_utility_suppress_notice(processutility_context *context)
+{
+    int save_client_min_messages = client_min_messages;
+
+    if (client_min_messages < WARNING)
+        client_min_messages = WARNING;
+
+    PG_TRY();
+    {
+        ProcessUtility(context,
+                       None_Receiver,
+                       false,
+                       NULL,
+                       PROCESS_UTILITY_QUERY);
+    }
+    PG_CATCH();
+    {
+        client_min_messages = save_client_min_messages;
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    client_min_messages = save_client_min_messages;
 }
 
 // CREATE TABLE `schema_name`.`rel_name` (
@@ -793,6 +965,8 @@ Datum drop_label(PG_FUNCTION_ARGS)
 
     remove_relation(qname);
     // CommandCounterIncrement() is called in performDeletion()
+
+    notify_GRAPH_global_contexts_catalog_modified();
 
     // delete_label() will be called in object_access()
 

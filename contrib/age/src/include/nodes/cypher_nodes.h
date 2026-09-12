@@ -43,6 +43,22 @@ typedef struct cypher_sub_pattern
         List *pattern;
 } cypher_sub_pattern;
 
+typedef struct cypher_sub_query
+{
+        ExtensibleNode extensible;
+        csp_kind kind;
+        List *query;
+} cypher_sub_query;
+
+typedef struct cypher_call
+{
+    ExtensibleNode extensible;
+    FuncCall *funccall;
+    FuncExpr *funcexpr;
+    Node *where;
+    List *yield_items;
+} cypher_call;
+
 /*
  * clauses
  */
@@ -131,6 +147,8 @@ typedef struct cypher_merge
 {
     ExtensibleNode extensible;
     Node *path;
+    List *on_match;  // List of cypher_set_item, or NIL
+    List *on_create; // List of cypher_set_item, or NIL
 } cypher_merge;
 
 /*
@@ -151,6 +169,7 @@ typedef struct cypher_node
     ExtensibleNode extensible;
     char *name;
     char *label;
+    bool use_equals;
     Node *props; // map or parameter
     int location;
     char * parsed_label;
@@ -169,6 +188,7 @@ typedef struct cypher_relationship
     ExtensibleNode extensible;
     char *name;
     char *label;
+    bool use_equals;
     Node *props; // map or parameter
     Node *varlen; // variable length relationships (A_Indices)
     cypher_rel_dir dir;
@@ -206,7 +226,33 @@ typedef struct cypher_map
     ExtensibleNode extensible;
     List *keyvals;
     int location;
+    bool keep_null;
 } cypher_map;
+
+typedef struct cypher_map_projection
+{
+    ExtensibleNode extensible;
+    ColumnRef *map_var;
+    List *map_elements;
+    int location;
+} cypher_map_projection;
+
+typedef enum cypher_map_projection_element_type
+{
+    PROPERTY_SELECTOR = 0,
+    VARIABLE_SELECTOR,
+    LITERAL_ENTRY,
+    ALL_PROPERTIES_SELECTOR
+} cypher_map_projection_element_type;
+
+typedef struct cypher_map_projection_element
+{
+    ExtensibleNode extensible;
+    cypher_map_projection_element_type type;
+    char *key;
+    Node *value;
+    int location;
+} cypher_map_projection_element;
 
 typedef struct cypher_list
 {
@@ -214,6 +260,70 @@ typedef struct cypher_list
     List *elems;
     int location;
 } cypher_list;
+
+typedef struct cypher_list_comprehension
+{
+    ExtensibleNode extensible;
+    char *varname;
+    Node *expr;
+    Node *where;
+    Node *mapping_expr;
+} cypher_list_comprehension;
+
+typedef struct cypher_reduce
+{
+    ExtensibleNode extensible;
+    char *accumname;
+    Node *initial;
+    char *varname;
+    Node *expr;
+    Node *mapping_expr;
+} cypher_reduce;
+
+// Predicate function kinds for all(), any(), none(), single().
+typedef enum cypher_predicate_function_kind
+{
+    CPFK_ALL = 0,
+    CPFK_ANY,
+    CPFK_NONE,
+    CPFK_SINGLE
+} cypher_predicate_function_kind;
+
+typedef struct cypher_predicate_function
+{
+    ExtensibleNode extensible;
+    cypher_predicate_function_kind kind;
+    char *varname;
+    Node *expr;
+    Node *where;
+} cypher_predicate_function;
+
+/*
+ * comparison expressions
+ *
+ * These nodes wrap comparison operations at parse time so the grammar can
+ * detect chained comparisons (e.g. 1 < 2 < 3) while still letting
+ * parenthesized groups evaluate in order of operations. They are unwrapped
+ * to regular A_Expr/BoolExpr nodes during transform.
+ */
+
+typedef struct cypher_comparison_aexpr
+{
+    ExtensibleNode extensible;
+    A_Expr_Kind kind; /* see A_Expr */
+    List *name; /* possibly-qualified name of operator */
+    Node *lexpr; /* left argument, or NULL if none */
+    Node *rexpr; /* right argument, or NULL if none */
+    int location; /* token location, or -1 if unknown */
+} cypher_comparison_aexpr;
+
+typedef struct cypher_comparison_boolexpr
+{
+    ExtensibleNode extensible;
+    BoolExprType boolop;
+    List *args; /* arguments to this expression */
+    int location; /* token location, or -1 if unknown */
+} cypher_comparison_boolexpr;
 
 enum cypher_string_match_op
 {
@@ -382,6 +492,10 @@ typedef struct cypher_update_item
     char *prop_name;
     List *qualified_name;
     bool remove_item;
+    bool replace_properties;
+    bool is_add;
+    Node *prop_expr;
+    ExprState *prop_expr_state;
 } cypher_update_item;
 
 typedef struct cypher_delete_information
@@ -408,6 +522,8 @@ typedef struct cypher_merge_information
     Oid graph_oid;
     AttrNumber merge_function_attr;
     cypher_create_path *path;
+    cypher_update_information *on_match_set_info;
+    cypher_update_information *on_create_set_info;
 } cypher_merge_information;
 
 /* grammar node for typecasts */
@@ -415,7 +531,7 @@ typedef struct cypher_typecast
 {
     ExtensibleNode extensible;
     Node *expr;
-    char *typecast;
+    TypeName *typname;
     int location;
 } cypher_typecast;
 

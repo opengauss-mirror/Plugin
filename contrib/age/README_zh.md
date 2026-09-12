@@ -8,6 +8,12 @@ AGE 在数据库内核的查询解析，查询重写，查询计划，查询执�
 在其他方面使用数据库内核的hook点，对Cypher语言进行支持，实现了同时处理关系型和图数据的能力。
 
 ## 安装
+### 内核版本要求
+- 本版本（1.0.1）依赖 openGauss-server master 上 7.0.0-RC3 之后合入的内核改动：`nextval_internal(Oid, bool)`（`e7036a977`）、
+  单机模式放开 `ALTER EXTENSION ... UPDATE` 以及扩展脚本中执行 `SELECT pg_extension_config_dump(...)`（`d65e16cd4`、`34af3ce50`）。
+  在 7.0.0-RC3 及更早的内核上无法编译，也无法从 1.0.0 原地升级。
+- 不支持线程池模式：`enable_thread_pool = on` 时 `load 'age'` 会直接报错。会话级缓存与解析状态按线程保存，只在每个会话独占一个线程的模式下成立。
+- 图名最短允许 1 个字符（上游 Apache AGE 要求至少 3 个），以兼容既有数据。
 ### 安装方式一（同openGauss一起安装）
 将age源码 放到openGauss-server的源码 contrib 目录下,直接编译安装openGauss-server,age会被自动编译安装
 >> 此方式适用于openGauss-server 同时编译安装

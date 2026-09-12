@@ -40,7 +40,8 @@ enum transform_entity_type
 {
     ENT_VERTEX = 0x0,
     ENT_EDGE,
-    ENT_VLE_EDGE
+    ENT_VLE_EDGE,
+    ENT_PATH
 };
 
 enum transform_entity_join_side
@@ -82,6 +83,14 @@ typedef struct
     Expr *expr;
 
     /*
+     * The openGauss VLE executor exposes the vertices preceding each edge in
+     * a separate agtype[] column. Path construction needs that column to
+     * interleave vertices with the VLE edge array; an edge variable itself
+     * continues to use expr above.
+     */
+    Expr *vle_vertices;
+
+    /*
      * tells each clause whether this variable was
      * declared by itself or a previous clause.
      */
@@ -92,6 +101,7 @@ typedef struct
     {
         cypher_node *node;
         cypher_relationship *rel;
+        cypher_path *path;
     } entity;
 } transform_entity;
 
@@ -103,5 +113,9 @@ Query *cypher_parse_sub_analyze(Node *parseTree,
                                 CommonTableExpr *parentCTE,
                                 bool locked_from_parent,
                                 bool resolve_unknowns);
-transform_entity *find_variable(cypher_parsestate *cpstate, char *name);                                
+transform_entity *find_variable(cypher_parsestate *cpstate, char *name);
+void get_record_field_info(const char *field_name, Oid entity_type,
+                           AttrNumber *fieldnum, Oid *fieldtype);
+FieldSelect *make_field_select(Expr *expr, AttrNumber fieldnum,
+    Oid resulttype);
 #endif

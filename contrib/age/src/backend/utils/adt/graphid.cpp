@@ -40,7 +40,7 @@
 #include "nodes/pg_list.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
-#include "utils/int8.h"
+#include "plugin_utils/int8.h"
 #include "utils/lsyscache.h"
 #include "utils/rel.h"
 #include "utils/snapmgr.h"
@@ -50,6 +50,37 @@
 #include "utils/graphid.h"
 
 static int graphid_btree_fast_cmp(Datum x, Datum y, SortSupport ssup);
+
+static THR_LOCAL Oid g_GRAPHIDOID = InvalidOid;
+static THR_LOCAL Oid g_GRAPHIDARRAYOID = InvalidOid;
+
+Oid get_GRAPHIDOID(void)
+{
+    if (!OidIsValid(g_GRAPHIDOID)) {
+        g_GRAPHIDOID = GetSysCacheOid2(
+            TYPENAMENSP, CStringGetDatum("graphid"),
+            ObjectIdGetDatum(ag_catalog_namespace_id()));
+    }
+
+    return g_GRAPHIDOID;
+}
+
+Oid get_GRAPHIDARRAYOID(void)
+{
+    if (!OidIsValid(g_GRAPHIDARRAYOID)) {
+        g_GRAPHIDARRAYOID = GetSysCacheOid2(
+            TYPENAMENSP, CStringGetDatum("_graphid"),
+            ObjectIdGetDatum(ag_catalog_namespace_id()));
+    }
+
+    return g_GRAPHIDARRAYOID;
+}
+
+void clear_global_Oids_GRAPHID(void)
+{
+    g_GRAPHIDOID = InvalidOid;
+    g_GRAPHIDARRAYOID = InvalidOid;
+}
 
 PG_FUNCTION_INFO_V1(graphid_in);
 extern "C" Datum  graphid_in(PG_FUNCTION_ARGS);
@@ -188,6 +219,23 @@ static int graphid_btree_fast_cmp(Datum x, Datum y, SortSupport ssup)
 graphid make_graphid(const int32 label_id, const int64 entry_id)
 {
     uint64 tmp;
+
+    /*
+     * Out-of-range ids would be silently truncated into another label's id
+     * space (e.g. the CSV loader turning an unknown vertex label, id 0, into a
+     * dangling edge), so reject them here as upstream does.
+     */
+    if (!label_id_is_valid(label_id)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("label_id must be %d .. %d",
+                               LABEL_ID_MIN, LABEL_ID_MAX)));
+    }
+    if (!entry_id_is_valid(entry_id)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("entry_id must be " INT64_FORMAT " .. " INT64_FORMAT,
+                        ENTRY_ID_MIN, ENTRY_ID_MAX)));
+    }
 
     tmp = (((uint64)label_id) << ENTRY_ID_BITS) |
           (((uint64)entry_id) & ENTRY_ID_MASK);

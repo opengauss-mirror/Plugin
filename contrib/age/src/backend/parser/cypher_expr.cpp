@@ -24,7 +24,11 @@
 
 #include "postgres.h"
 
+#include "catalog/dependency.h"
+#include "catalog/namespace.h"
+#include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
+#include "commands/extension.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
@@ -40,8 +44,10 @@
 #include "parser/parse_node.h"
 #include "parser/parse_oper.h"
 #include "parser/parse_relation.h"
+#include "parser/parse_type.h"
 #include "utils/builtins.h"
-#include "utils/int8.h"
+#include "utils/catcache.h"
+#include "plugin_utils/int8.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
 
@@ -60,8 +66,14 @@
 #define FUNC_AGTYPE_TYPECAST_NUMERIC "agtype_typecast_numeric"
 #define FUNC_AGTYPE_TYPECAST_FLOAT "agtype_typecast_float"
 #define FUNC_AGTYPE_TYPECAST_INT "agtype_typecast_int"
+#define FUNC_AGTYPE_TYPECAST_BOOL "agtype_typecast_bool"
 #define FUNC_AGTYPE_TYPECAST_PG_FLOAT8 "agtype_to_float8"
 #define FUNC_AGTYPE_TYPECAST_PG_BIGINT "agtype_to_int8"
+
+#define AGTYPE_IN_OPERATOR_ARGUMENT_COUNT 2
+#define AGTYPE_LIST_CHUNK_SIZE 100
+#define AGE_FUNCTION_NAME_PREFIX_LENGTH (sizeof("age_") - 1)
+#define ACCESSOR_NODE_FUNCTION_MIN_ARGUMENTS 2
 
 static Node *transform_cypher_expr_recurse(cypher_parsestate *cpstate,
                                            Node *expr);
@@ -70,7 +82,13 @@ static Node *transform_ColumnRef(cypher_parsestate *cpstate, ColumnRef *cref);
 static Node *transform_A_Indirection(cypher_parsestate *cpstate,
                                      A_Indirection *a_ind);
 static Node *transform_AEXPR_OP(cypher_parsestate *cpstate, A_Expr *a);
+static Node *transform_cypher_comparison_aexpr_OP(cypher_parsestate *cpstate,
+                                                  cypher_comparison_aexpr *a);
 static Node *transform_BoolExpr(cypher_parsestate *cpstate, BoolExpr *expr);
+static Node *transform_cypher_comparison_boolexpr(cypher_parsestate *cpstate,
+                                                  cypher_comparison_boolexpr *b);
+static Node *coerce_cypher_expr_to_boolean(ParseState *pstate, Node *expr,
+                                           const char *construct_name);
 static Node *transform_cypher_bool_const(cypher_parsestate *cpstate,
                                          cypher_bool_const *bc);
 static Node *transform_cypher_integer_const(cypher_parsestate *cpstate,
@@ -79,6 +97,8 @@ static Node *transform_AEXPR_IN(cypher_parsestate *cpstate, A_Expr *a);
 static Node *transform_cypher_param(cypher_parsestate *cpstate,
                                     cypher_param *cp);
 static Node *transform_cypher_map(cypher_parsestate *cpstate, cypher_map *cm);
+static Node *transform_cypher_map_projection(cypher_parsestate *cpstate,
+                                             cypher_map_projection *cmp);
 static Node *transform_cypher_list(cypher_parsestate *cpstate,
                                    cypher_list *cl);
 static Node *transform_cypher_string_match(cypher_parsestate *cpstate,
@@ -91,11 +111,51 @@ static Node *transform_CoalesceExpr(cypher_parsestate *cpstate,
                                     CoalesceExpr *cexpr);
 static Node *transform_SubLink(cypher_parsestate *cpstate, SubLink *sublink);
 static Node *transform_FuncCall(cypher_parsestate *cpstate, FuncCall *fn);
+static Node *transform_cypher_list_comprehension_expr(cypher_parsestate *cpstate,
+    cypher_list_comprehension *list_comp);
+static Node *transform_cypher_reduce_expr(cypher_parsestate *cpstate,
+                                          cypher_reduce *reduce);
+
+static Node *transform_cypher_predicate_function_expr(cypher_parsestate *cpstate,
+    cypher_predicate_function *pred_func);
+static Node *transform_cypher_reduce_expr(cypher_parsestate *cpstate,
+                                          cypher_reduce *reduce);
+static Node *coerce_expr_flexible(ParseState *pstate, Node *expr,
+                                  Oid source_oid, Oid target_oid,
+                                  int32 t_typmod, bool error_out);
 static Node *transform_WholeRowRef(ParseState *pstate, RangeTblEntry *rte,
                                    int location);
 static ArrayExpr *make_agtype_array_expr(List *args);
+static RangeTblEntry *find_current_rte(ParseState *pstate, char *relname);
 static Node *transform_column_ref_for_indirection(cypher_parsestate *cpstate,
                                                   ColumnRef *cr);
+static Node *transform_external_ext_FuncCall(cypher_parsestate *cpstate,
+                                             FuncCall *fn, List *targs,
+                                             Form_pg_proc procform);
+static bool is_external_vector_typecast(const char *typecast);
+static bool has_external_vector_arg(List *args);
+static bool is_external_vector_type_oid(Oid type_oid);
+static Node *transform_vector_list_typecast(cypher_parsestate *cpstate,
+                                            cypher_typecast *ctypecast,
+                                            Oid target_oid,
+                                            int32 target_typmod);
+static Node *transform_vector_string_typecast(cypher_typecast *ctypecast,
+                                              Oid target_oid,
+                                              int32 target_typmod);
+static List *cast_agtype_args_to_target_type(cypher_parsestate *cpstate,
+                                             Form_pg_proc procform,
+                                             List *fargs,
+                                             Oid *target_types);
+static Node *wrap_text_output_to_agtype(cypher_parsestate *cpstate,
+                                        FuncExpr *fexpr);
+static Form_pg_proc get_procform(FuncCall *fn, List *targs,
+                                 bool err_not_found);
+static char *construct_age_function_name(char *funcname);
+static bool function_exists(char *funcname, char *extension);
+static Node *coerce_expr_flexible(ParseState *pstate, Node *expr,
+                                  Oid source_oid, Oid target_oid,
+                                  int32 t_typmod, bool error_out);
+static Oid get_entity_record_type(Node *node);
 /* transform a cypher expression */
 Node *transform_cypher_expr(cypher_parsestate *cpstate, Node *expr,
                             ParseExprKind expr_kind)
@@ -152,13 +212,17 @@ static Node *transform_cypher_expr_recurse(cypher_parsestate *cpstate,
         return transform_BoolExpr(cpstate, (BoolExpr *)expr);
     case T_NullTest:
     {
-        NullTest *n = (NullTest *)expr;
+        NullTest *null_test = (NullTest *)expr;
+        NullTest *transformed_null_test = makeNode(NullTest);
 
-        n->arg = (Expr *)transform_cypher_expr_recurse(cpstate,
-                                                       (Node *)n->arg);
-        n->argisrow = type_is_rowtype(exprType((Node *)n->arg));
+        transformed_null_test->arg =
+            (Expr *)transform_cypher_expr_recurse(cpstate,
+                                                  (Node *)null_test->arg);
+        transformed_null_test->nulltesttype = null_test->nulltesttype;
+        transformed_null_test->argisrow =
+            type_is_rowtype(exprType((Node *)transformed_null_test->arg));
 
-        return expr;
+        return (Node *)transformed_null_test;
     }
     case T_CaseExpr:
         return transform_CaseExpr(cpstate, (CaseExpr *) expr);
@@ -177,14 +241,32 @@ static Node *transform_cypher_expr_recurse(cypher_parsestate *cpstate,
             return transform_cypher_param(cpstate, (cypher_param *)expr);
         if (is_ag_node(expr, cypher_map))
             return transform_cypher_map(cpstate, (cypher_map *)expr);
+        if (is_ag_node(expr, cypher_map_projection))
+            return transform_cypher_map_projection(cpstate,
+                                                   (cypher_map_projection *)expr);
         if (is_ag_node(expr, cypher_list))
             return transform_cypher_list(cpstate, (cypher_list *)expr);
+        if (is_ag_node(expr, cypher_list_comprehension))
+            return transform_cypher_list_comprehension_expr(cpstate,
+                                                            (cypher_list_comprehension *)expr);
+        if (is_ag_node(expr, cypher_predicate_function))
+            return transform_cypher_predicate_function_expr(cpstate,
+                                                            (cypher_predicate_function *)expr);
+        if (is_ag_node(expr, cypher_reduce))
+            return transform_cypher_reduce_expr(cpstate,
+                                                (cypher_reduce *)expr);
         if (is_ag_node(expr, cypher_string_match))
             return transform_cypher_string_match(cpstate,
                                                  (cypher_string_match *)expr);
         if (is_ag_node(expr, cypher_typecast))
             return transform_cypher_typecast(cpstate,
                                              (cypher_typecast *)expr);
+        if (is_ag_node(expr, cypher_comparison_aexpr))
+            return transform_cypher_comparison_aexpr_OP(cpstate,
+                                                        (cypher_comparison_aexpr *)expr);
+        if (is_ag_node(expr, cypher_comparison_boolexpr))
+            return transform_cypher_comparison_boolexpr(cpstate,
+                                                        (cypher_comparison_boolexpr *)expr);
         ereport(ERROR,
                 (errmsg_internal("unrecognized ExtensibleNode: %s",
                                  ((ExtensibleNode *)expr)->extnodename)));
@@ -221,7 +303,7 @@ static Node *transform_A_Const(cypher_parsestate *cpstate, A_Const *ac)
             char *n = strVal(v);
             int64 i;
 
-            if (scanint8(n, true, &i))
+            if (ag_scanint8(n, true, &i))
             {
                 d = integer_to_agtype(i);
             }
@@ -323,7 +405,8 @@ static Node *transform_ColumnRef(cypher_parsestate *cpstate, ColumnRef *cref)
                  * the expr.
                  */
                 te = find_variable(cpstate, colname) ;
-                if (te != NULL && te->expr != NULL)
+                if (te != NULL && te->expr != NULL &&
+                    te->declared_in_current_clause)
                 {
                     node = (Node *)te->expr;
                     break;
@@ -348,9 +431,11 @@ static Node *transform_ColumnRef(cypher_parsestate *cpstate, ColumnRef *cref)
                 else
                 {
                     ereport(ERROR,
-                                (errcode(ERRCODE_UNDEFINED_COLUMN),
-                                 errmsg("could not find rte for %s", colname),
-                                 parser_errposition(pstate, cref->location)));
+                            (errcode(ERRCODE_UNDEFINED_COLUMN),
+                             errmsg("could not find rte for %s", colname),
+                             errhint("variable %s does not exist within scope of usage",
+                                     colname),
+                             parser_errposition(pstate, cref->location)));
                 }
 
                 if (node == NULL)
@@ -387,6 +472,8 @@ static Node *transform_ColumnRef(cypher_parsestate *cpstate, ColumnRef *cref)
                             (errcode(ERRCODE_UNDEFINED_COLUMN),
                              errmsg("could not find rte for %s.%s", relname,
                                     colname),
+                             errhint("variable %s does not exist within scope of usage",
+                                     relname),
                              parser_errposition(pstate, cref->location)));
                     break;
                 }
@@ -454,30 +541,143 @@ static Node *transform_AEXPR_OP(cypher_parsestate *cpstate, A_Expr *a)
     Node *last_srf = pstate->p_last_srf;
     Node *lexpr = transform_cypher_expr_recurse(cpstate, a->lexpr);
     Node *rexpr = transform_cypher_expr_recurse(cpstate, a->rexpr);
+    char *opname = strVal(linitial(a->name));
+    Oid lexpr_type = exprType(lexpr);
+    Oid rexpr_type = exprType(rexpr);
+    bool left_is_entity = lexpr_type == VERTEXOID || lexpr_type == EDGEOID;
+    bool right_is_entity = rexpr_type == VERTEXOID || rexpr_type == EDGEOID;
+    bool is_eq_op = strcmp(opname, "=") == 0 || strcmp(opname, "<>") == 0;
+    if (is_eq_op && lexpr_type == rexpr_type && left_is_entity) {
+        return (Node *)make_op(pstate, a->name, lexpr, rexpr, last_srf,
+                               a->location);
+    }
+
+    if (left_is_entity) {
+        lexpr = coerce_entity_to_agtype(pstate, lexpr);
+    }
+    if (right_is_entity) {
+        rexpr = coerce_entity_to_agtype(pstate, rexpr);
+    }
 
     return (Node *)make_op(pstate, a->name, lexpr, rexpr, last_srf,
-        a->location);
+                           a->location);
+}
+
+/*
+ * function for transforming cypher comparison A_Expr. Since this node is a
+ * wrapper to let us know when a comparison occurs in a chained comparison,
+ * we convert it to a regular A_Expr and transform it.
+ */
+static Node *transform_cypher_comparison_aexpr_OP(cypher_parsestate *cpstate,
+                                                  cypher_comparison_aexpr *a)
+{
+    A_Expr *n = makeNode(A_Expr);
+
+    n->kind = a->kind;
+    n->name = a->name;
+    n->lexpr = a->lexpr;
+    n->rexpr = a->rexpr;
+    n->location = a->location;
+
+    return (Node *)transform_AEXPR_OP(cpstate, n);
 }
 
 static Node *transform_AEXPR_IN(cypher_parsestate *cpstate, A_Expr *a)
 {
-    Oid func_in_oid;
-    FuncExpr *result;
-    List *args = NIL;
+    ParseState *pstate = (ParseState *)cpstate;
+    cypher_list *raw_rexpr;
+    Node *result = NULL;
+    Node *lexpr;
+    List *rexprs = NIL;
+    List *rvars = NIL;
+    List *rnonvars = NIL;
+    bool use_or;
+    ListCell *list_cell;
 
-    args = lappend(args, transform_cypher_expr_recurse(cpstate, a->rexpr));
-    args = lappend(args, transform_cypher_expr_recurse(cpstate, a->lexpr));
+    if (!is_ag_node(a->rexpr, cypher_list)) {
+        Oid function_oid;
+        FuncExpr *function_expression;
+        List *arguments = NIL;
 
-    /* get the agtype_access_slice function */
-    func_in_oid = get_ag_func_oid("agtype_in_operator", 2, AGTYPEOID,
-                                  AGTYPEOID);
+        arguments = lappend(arguments,
+                            transform_cypher_expr_recurse(cpstate, a->rexpr));
+        arguments = lappend(arguments,
+                            transform_cypher_expr_recurse(cpstate, a->lexpr));
+        function_oid = get_ag_func_oid("agtype_in_operator",
+                                       AGTYPE_IN_OPERATOR_ARGUMENT_COUNT, AGTYPEOID,
+                                       AGTYPEOID);
+        function_expression = makeFuncExpr(function_oid, AGTYPEOID, arguments,
+                                           InvalidOid, InvalidOid,
+                                           COERCE_EXPLICIT_CALL);
+        function_expression->location = exprLocation(a->lexpr);
 
-    result = makeFuncExpr(func_in_oid, AGTYPEOID, args, InvalidOid, InvalidOid,
-                          COERCE_EXPLICIT_CALL);
+        return (Node *)function_expression;
+    }
 
-    result->location = exprLocation(a->lexpr);
+    raw_rexpr = (cypher_list *)a->rexpr;
+    use_or = strcmp(strVal(linitial(a->name)), "<>") != 0;
 
-    return (Node *)result;
+    if (raw_rexpr->elems == NIL) {
+        return (Node *)makeBoolConst(!use_or, false);
+    }
+
+    lexpr = transform_cypher_expr_recurse(cpstate, a->lexpr);
+
+    foreach (list_cell, raw_rexpr->elems)
+    {
+        Node *rexpr = transform_cypher_expr_recurse(
+            cpstate, (Node *)lfirst(list_cell));
+
+        rexprs = lappend(rexprs, rexpr);
+        if (contain_vars_of_level(rexpr, 0)) {
+            rvars = lappend(rvars, rexpr);
+        } else {
+            rnonvars = lappend(rnonvars, rexpr);
+        }
+    }
+
+    if (list_length(rnonvars) > 1) {
+        List *array_elements = NIL;
+        ArrayExpr *array_expr;
+
+        foreach (list_cell, rnonvars)
+        {
+            Node *rexpr = (Node *)lfirst(list_cell);
+
+            rexpr = coerce_to_common_type(pstate, rexpr, AGTYPEOID, "IN");
+            array_elements = lappend(array_elements, rexpr);
+        }
+
+        array_expr = makeNode(ArrayExpr);
+        array_expr->array_typeid = get_array_type(AGTYPEOID);
+        array_expr->element_typeid = AGTYPEOID;
+        array_expr->elements = array_elements;
+        array_expr->multidims = false;
+        array_expr->location = -1;
+
+        result = (Node *)make_scalar_array_op(
+            pstate, a->name, use_or, lexpr, (Node *)array_expr, a->location);
+        rexprs = rvars;
+    }
+
+    foreach (list_cell, rexprs)
+    {
+        Node *rexpr = (Node *)lfirst(list_cell);
+        Node *comparison = (Node *)make_op(
+            pstate, a->name, (Node *)copyObject(lexpr), rexpr,
+            pstate->p_last_srf, a->location);
+
+        comparison = coerce_to_boolean(pstate, comparison, "IN");
+        if (result == NULL) {
+            result = comparison;
+        } else {
+            result = (Node *)makeBoolExpr(
+                use_or ? OR_EXPR : AND_EXPR,
+                list_make2(result, comparison), a->location);
+        }
+    }
+
+    return result;
 }
 
 static Node *transform_BoolExpr(cypher_parsestate *cpstate, BoolExpr *expr)
@@ -509,12 +709,39 @@ static Node *transform_BoolExpr(cypher_parsestate *cpstate, BoolExpr *expr)
         Node *arg = (Node*)lfirst(la);
 
         arg = transform_cypher_expr_recurse(cpstate, arg);
-        arg = coerce_to_boolean(pstate, arg, opname);
+        arg = coerce_cypher_expr_to_boolean(pstate, arg, opname);
 
         args = lappend(args, arg);
     }
 
     return (Node *)makeBoolExpr(expr->boolop, args, expr->location);
+}
+
+/*
+ * function for transforming cypher_comparison_boolexpr. Since this node is a
+ * wrapper to let us know when a comparison occurs in a chained comparison,
+ * we convert it to a PG BoolExpr and transform it.
+ */
+static Node *transform_cypher_comparison_boolexpr(cypher_parsestate *cpstate,
+                                                  cypher_comparison_boolexpr *b)
+{
+    BoolExpr *n = makeNode(BoolExpr);
+
+    n->boolop = b->boolop;
+    n->args = b->args;
+    n->location = b->location;
+
+    return transform_BoolExpr(cpstate, n);
+}
+
+static Node *coerce_cypher_expr_to_boolean(ParseState *pstate, Node *expr,
+                                           const char *construct_name)
+{
+    if (expr != NULL && IsA(expr, BoolExpr)) {
+        return expr;
+    }
+
+    return coerce_to_boolean(pstate, expr, construct_name);
 }
 
 static Node *transform_cypher_bool_const(cypher_parsestate *cpstate,
@@ -629,8 +856,10 @@ static Node *transform_cypher_map(cypher_parsestate *cpstate, cypher_map *cm)
 
     if (list_length(newkeyvals) == 0)
         func_oid = get_ag_func_oid("agtype_build_map", 0);
-    else
+    else if (cm->keep_null)
         func_oid = get_ag_func_oid("agtype_build_map", 1, ANYOID);
+    else
+        func_oid = get_ag_func_oid("agtype_build_map_nonull", 1, ANYOID);
 
     fexpr = makeFuncExpr(func_oid, AGTYPEOID, newkeyvals, InvalidOid,
                          InvalidOid, COERCE_EXPLICIT_CALL);
@@ -639,30 +868,261 @@ static Node *transform_cypher_map(cypher_parsestate *cpstate, cypher_map *cm)
     return (Node *)fexpr;
 }
 
+static Oid get_entity_record_type(Node *node)
+{
+    Oid entity_type_oid;
+
+    if (IsA(node, RowExpr)) {
+        entity_type_oid = ((RowExpr *)node)->row_typeid;
+    } else if (IsA(node, Var)) {
+        entity_type_oid = ((Var *)node)->vartype;
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("argument must be a vertex or edge record")));
+        pg_unreachable();
+    }
+
+    if (entity_type_oid != VERTEXOID && entity_type_oid != EDGEOID) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("argument must be a vertex or edge record")));
+    }
+
+    return entity_type_oid;
+}
+
+bool is_vertex_or_edge(Node *node)
+{
+    Oid entity_type_oid;
+
+    if (node == NULL) {
+        return false;
+    }
+
+    if (IsA(node, RowExpr)) {
+        entity_type_oid = ((RowExpr *)node)->row_typeid;
+    } else if (IsA(node, Var)) {
+        entity_type_oid = ((Var *)node)->vartype;
+        } else {
+        return false;
+    }
+
+    return entity_type_oid == VERTEXOID || entity_type_oid == EDGEOID;
+}
+
+Node *extract_field_from_record(Node *node, const char *field_name)
+{
+    AttrNumber fieldnum;
+    Oid fieldtype;
+    Oid entity_type_oid = get_entity_record_type(node);
+
+    get_record_field_info(field_name, entity_type_oid, &fieldnum, &fieldtype);
+    if (fieldnum == InvalidAttrNumber || fieldtype == InvalidOid) {
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_COLUMN),
+                 errmsg("field '%s' does not exist for the entity",
+                        field_name)));
+    }
+
+    if (IsA(node, RowExpr)) {
+        RowExpr *row_expr = (RowExpr *)node;
+
+        if (list_length(row_expr->args) < fieldnum) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_COLUMN),
+                     errmsg("field '%s' does not exist in entity row",
+                            field_name)));
+        }
+
+        return (Node *)list_nth(row_expr->args, fieldnum - 1);
+    }
+
+    return (Node *)make_field_select((Expr *)node, fieldnum, fieldtype);
+}
+
+Node *make_properties_expr(Node *prop_var)
+{
+    Oid func_oid;
+
+    if (is_vertex_or_edge(prop_var)) {
+        return extract_field_from_record(prop_var, "properties");
+    }
+
+    func_oid = get_ag_func_oid("age_properties", 1, AGTYPEOID);
+    return (Node *)makeFuncExpr(func_oid, AGTYPEOID, list_make1(prop_var),
+                                InvalidOid, InvalidOid,
+                                COERCE_EXPLICIT_CALL);
+}
+
+static Node *transform_cypher_map_projection(cypher_parsestate *cpstate,
+                                             cypher_map_projection *cmp)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    ListCell *lc;
+    List *keyvals = NIL;
+    FuncExpr *fexpr_new_map = NULL;
+    bool has_all_prop_selector = false;
+    Node *transformed_map_var;
+    Node *fexpr_orig_map;
+
+    transformed_map_var = transform_cypher_expr_recurse(cpstate,
+                                                        (Node *)cmp->map_var);
+    fexpr_orig_map = make_properties_expr(transformed_map_var);
+
+    foreach (lc, cmp->map_elements)
+    {
+        cypher_map_projection_element *elem;
+        Const *key = NULL;
+        Node *val = NULL;
+
+        elem = (cypher_map_projection_element *)lfirst(lc);
+        if (elem->type == ALL_PROPERTIES_SELECTOR) {
+            has_all_prop_selector = true;
+            continue;
+        }
+
+        switch (elem->type) {
+            case PROPERTY_SELECTOR:
+                {
+                Oid func_access_oid;
+                FuncExpr *func_access_expr;
+                ArrayExpr *args_access_expr;
+                Const *key_agtype;
+
+                key = makeConst(TEXTOID, -1, InvalidOid, -1,
+                                CStringGetTextDatum(elem->key), false, false);
+                key_agtype = makeConst(AGTYPEOID, -1, InvalidOid, -1,
+                                       string_to_agtype(elem->key), false,
+                                       false);
+                func_access_oid = get_ag_func_oid("agtype_access_operator", 1,
+                                                  AGTYPEARRAYOID);
+                args_access_expr = make_agtype_array_expr(
+                    list_make2(fexpr_orig_map, key_agtype));
+                func_access_expr = makeFuncExpr(func_access_oid, AGTYPEOID,
+                                                list_make1(args_access_expr),
+                                                InvalidOid, InvalidOid,
+                                                COERCE_EXPLICIT_CALL);
+                func_access_expr->funcvariadic = true;
+                func_access_expr->location = elem->location;
+                val = (Node *)func_access_expr;
+                break;
+            }
+            case LITERAL_ENTRY:
+                key = makeConst(TEXTOID, -1, InvalidOid, -1,
+                                CStringGetTextDatum(elem->key), false, false);
+                val = transform_cypher_expr_recurse(cpstate, elem->value);
+                break;
+            case VARIABLE_SELECTOR:
+                {
+                List *fields;
+                char *key_str;
+
+                Assert(IsA(elem->value, ColumnRef));
+                fields = ((ColumnRef *)elem->value)->fields;
+                key_str = strVal(lfirst(list_head(fields)));
+                key = makeConst(TEXTOID, -1, InvalidOid, -1,
+                                CStringGetTextDatum(key_str), false, false);
+                val = transform_cypher_expr_recurse(cpstate, elem->value);
+                break;
+            }
+            case ALL_PROPERTIES_SELECTOR:
+                break;
+            default:
+                elog(ERROR, "unknown map projection element type");
+        }
+
+        Assert(key);
+        Assert(val);
+        keyvals = lappend(lappend(keyvals, key), val);
+    }
+
+    if (keyvals != NIL) {
+        Oid func_oid;
+
+        func_oid = get_ag_func_oid("agtype_build_map_nonull", 1, ANYOID);
+        fexpr_new_map = makeFuncExpr(func_oid, AGTYPEOID, keyvals, InvalidOid,
+                                     InvalidOid, COERCE_EXPLICIT_CALL);
+        fexpr_new_map->location = cmp->location;
+    }
+
+    if (has_all_prop_selector) {
+        if (keyvals == NIL) {
+            return fexpr_orig_map;
+        }
+
+        return (Node *)make_op(pstate, list_make1(makeString("+")),
+                               fexpr_orig_map, (Node *)fexpr_new_map,
+                               pstate->p_last_srf, cmp->location);
+    }
+
+    Assert(fexpr_new_map);
+    return (Node *)fexpr_new_map;
+}
+
 static Node *transform_cypher_list(cypher_parsestate *cpstate, cypher_list *cl)
 {
-    List *newelems = NIL;
-    ListCell *le;
-    FuncExpr *fexpr;
-    Oid func_oid;
+    List *build_args = NIL;
+    ListCell *le = NULL;
+    FuncExpr *concat_lhs = NULL;
+    FuncExpr *fexpr = NULL;
+    Oid build_func_oid = InvalidOid;
+    Oid concat_func_oid = InvalidOid;
+    int nelems = list_length(cl->elems);
+    int chunk_size = 0;
+
+    /* openGauss, like PostgreSQL, limits a function call to 100 arguments. */
+    if (nelems == 0) {
+        build_func_oid = get_ag_func_oid("agtype_build_list", 0);
+    } else {
+        build_func_oid = get_ag_func_oid("agtype_build_list", 1, ANYOID);
+    }
+
+    if (nelems > AGTYPE_LIST_CHUNK_SIZE) {
+        concat_func_oid = get_ag_func_oid("agtype_add",
+                                          AGTYPE_IN_OPERATOR_ARGUMENT_COUNT, AGTYPEOID,
+                                          AGTYPEOID);
+    }
 
     foreach (le, cl->elems)
     {
-        Node *newv;
+        Node *newv = transform_cypher_expr_recurse(cpstate,
+                                                   (Node *)lfirst(le));
 
-        newv = transform_cypher_expr_recurse(cpstate, (Node*)lfirst(le));
+        if (chunk_size >= AGTYPE_LIST_CHUNK_SIZE) {
+            fexpr = makeFuncExpr(build_func_oid, AGTYPEOID, build_args,
+                                 InvalidOid, InvalidOid,
+                                 COERCE_EXPLICIT_CALL);
+            fexpr->location = cl->location;
 
-        newelems = lappend(newelems, newv);
+            if (concat_lhs == NULL) {
+                concat_lhs = fexpr;
+            } else {
+                concat_lhs = makeFuncExpr(
+                    concat_func_oid, AGTYPEOID,
+                    list_make2(concat_lhs, fexpr), InvalidOid, InvalidOid,
+                    COERCE_EXPLICIT_CALL);
+                concat_lhs->location = cl->location;
+            }
+
+            build_args = NIL;
+            chunk_size = 0;
+        }
+
+        build_args = lappend(build_args, newv);
+        chunk_size++;
     }
 
-    if (list_length(newelems) == 0)
-        func_oid = get_ag_func_oid("agtype_build_list", 0);
-    else
-        func_oid = get_ag_func_oid("agtype_build_list", 1, ANYOID);
-
-    fexpr = makeFuncExpr(func_oid, AGTYPEOID, newelems, InvalidOid, InvalidOid,
-                         COERCE_EXPLICIT_CALL);
+    fexpr = makeFuncExpr(build_func_oid, AGTYPEOID, build_args, InvalidOid,
+                         InvalidOid, COERCE_EXPLICIT_CALL);
     fexpr->location = cl->location;
+
+    if (concat_lhs != NULL) {
+        fexpr = makeFuncExpr(concat_func_oid, AGTYPEOID,
+                             list_make2(concat_lhs, fexpr), InvalidOid,
+                             InvalidOid, COERCE_EXPLICIT_CALL);
+        fexpr->location = cl->location;
+    }
 
     return (Node *)fexpr;
 }
@@ -693,6 +1153,24 @@ static ArrayExpr *make_agtype_array_expr(List *args)
     return newa;
 }
 
+static RangeTblEntry *find_current_rte(ParseState *pstate, char *relname)
+{
+    ListCell *lc;
+
+    foreach (lc, pstate->p_relnamespace)
+    {
+        ParseNamespaceItem *nsitem = (ParseNamespaceItem *)lfirst(lc);
+        RangeTblEntry *rte = nsitem->p_rte;
+
+        if (rte != NULL && rte->eref != NULL &&
+            strcmp(rte->eref->aliasname, relname) == 0) {
+            return rte;
+        }
+    }
+
+    return NULL;
+}
+
 /*
  * Transforms a column ref for indirection. Try to find the rte that the
  * columnRef is references and pass the properties of that rte as what the
@@ -706,30 +1184,42 @@ static Node *transform_column_ref_for_indirection(cypher_parsestate *cpstate,
     Node *field1 = (Node *)linitial(cr->fields);
     char *relname = NULL;
     Node *node = NULL;
+    int levels_up = 0;
 
     Assert(IsA(field1, String));
     relname = strVal(field1);
 
-    // locate the referenced RTE
-    rte = find_rte(cpstate, relname);
+    /* Resolve the nearest visible namespace item, including parent scopes. */
+    rte = refnameRangeTblEntry(pstate, NULL, relname, cr->location,
+                               &levels_up);
     if (rte == NULL)
     {
-        /*
-         * This column ref is referencing something that was created in
-         * a previous query and is a variable.
-         */
-        return transform_cypher_expr_recurse(cpstate, (Node *)cr);
+        rte = find_rte(cpstate, relname);
+    }
+    if (rte == NULL)
+    {
+        rte = find_current_rte(pstate, relname);
+    }
+    if (rte == NULL)
+    {
+        node = transform_cypher_expr_recurse(cpstate, (Node *)cr);
+    } else {
+        node = scanRTEForColumn(pstate, rte, "properties", cr->location,
+                                false);
     }
 
-    // try to identify the properties column of the RTE
-    node = scanRTEForColumn(pstate, rte, "properties", cr->location, false);
+    if (node != NULL && is_vertex_or_edge(node))
+    {
+        return extract_field_from_record(node, "properties");
+    }
 
     if (node == NULL)
     {
-        ereport(ERROR,
-                (errcode(ERRCODE_UNDEFINED_OBJECT),
-                 errmsg("could not find rte for %s", relname)));
-
+        /*
+         * Scalar agtype loop vars, such as list-comprehension variables, do not
+         * expose a properties column. Use the variable itself as the access root.
+         */
+        node = transform_cypher_expr_recurse(cpstate, (Node *)cr);
     }
 
     return node;
@@ -738,6 +1228,7 @@ static Node *transform_column_ref_for_indirection(cypher_parsestate *cpstate,
 static Node *transform_A_Indirection(cypher_parsestate *cpstate,
                                      A_Indirection *a_ind)
 {
+    ParseState *pstate = (ParseState *)cpstate;
     int location;
     ListCell *lc;
     Node *ind_arg_expr;
@@ -767,6 +1258,14 @@ static Node *transform_A_Indirection(cypher_parsestate *cpstate,
         ind_arg_expr = transform_cypher_expr_recurse(cpstate, a_ind->arg);
     }                                 
 
+    if (ind_arg_expr == NULL)
+    {
+        ind_arg_expr = transform_cypher_expr_recurse(cpstate, a_ind->arg);
+    }
+
+    ind_arg_expr = coerce_entity_to_agtype(pstate, ind_arg_expr);
+    ind_arg_expr = coerce_to_common_type(pstate, ind_arg_expr, AGTYPEOID,
+                                         "A_indirection");
     location = exprLocation(ind_arg_expr);
 
     args = lappend(args, ind_arg_expr);
@@ -787,10 +1286,18 @@ static Node *transform_A_Indirection(cypher_parsestate *cpstate,
                                          InvalidOid, InvalidOid,
                                          COERCE_EXPLICIT_CALL);
 
+                func_expr->funcvariadic = true;
+                func_expr->location = location;
+
+                /*
+                 * The completed access is the input container for the
+                 * following slice. Do not leave the original root and index
+                 * arguments in the slice call.
+                 */
+                args = lappend(NIL, func_expr);
+
                 /* we are no longer working on an access */
                 is_access = false;
-
-                func_expr->funcvariadic = true;
             }
             /* add slice bounds to args */
             if (!indices->lidx)
@@ -887,6 +1394,7 @@ static Node *transform_cypher_string_match(cypher_parsestate *cpstate,
     default:
         ereport(ERROR,
                 (errmsg_internal("unknown Cypher string match operation")));
+        pg_unreachable();
     }
 
     func_access_oid = get_ag_func_oid(func_name, 2, AGTYPEOID, AGTYPEOID);
@@ -909,64 +1417,713 @@ static Node *transform_cypher_string_match(cypher_parsestate *cpstate,
 static Node *transform_cypher_typecast(cypher_parsestate *cpstate,
                                        cypher_typecast *ctypecast)
 {
-    List *fname;
-    FuncCall *fnode;
+    ParseState *pstate;
+    TypeName *target_typ;
+    char *typecast;
 
     /* verify input parameter */
     Assert (cpstate != NULL);
     Assert (ctypecast != NULL);
+    Assert (ctypecast->typname != NULL);
+    Assert (ctypecast->typname->names != NIL);
 
-    /* create the qualified function name, schema first */
-    fname = list_make1(makeString("ag_catalog"));
+    pstate = &cpstate->pstate;
+    target_typ = ctypecast->typname;
+    typecast = strVal((Node *)llast(target_typ->names));
 
-    /* append the name of the requested typecast function */
-    if (pg_strcasecmp(ctypecast->typecast, "edge") == 0)
+    /*
+     * Preserve AGE's Cypher aliases when they are unqualified and have no
+     * typmod.  Qualified names and typmod-bearing casts use PostgreSQL's
+     * normal type resolution below.
+     */
+    if (list_length(target_typ->names) == 1 && target_typ->typmods == NIL)
     {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_EDGE));
+        List *fname = list_make1(makeString("ag_catalog"));
+        char *funcname = NULL;
+
+        if (pg_strcasecmp(typecast, "edge") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_EDGE;
+        } else if (pg_strcasecmp(typecast, "path") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_PATH;
+        } else if (pg_strcasecmp(typecast, "vertex") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_VERTEX;
+        } else if (pg_strcasecmp(typecast, "numeric") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_NUMERIC;
+        } else if (pg_strcasecmp(typecast, "float") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_FLOAT;
+        } else if (pg_strcasecmp(typecast, "int") == 0 ||
+                 pg_strcasecmp(typecast, "integer") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_INT;
+        } else if (pg_strcasecmp(typecast, "bool") == 0 ||
+                 pg_strcasecmp(typecast, "boolean") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_BOOL;
+        } else if (pg_strcasecmp(typecast, "pg_float8") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_PG_FLOAT8;
+        } else if (pg_strcasecmp(typecast, "pg_bigint") == 0) {
+            funcname = FUNC_AGTYPE_TYPECAST_PG_BIGINT;
+        }
+
+        if (funcname != NULL) {
+            FuncCall *fnode;
+
+            fname = lappend(fname, makeString(funcname));
+            fnode = makeFuncCall(fname, list_make1(ctypecast->expr),
+                                 ctypecast->location);
+            return transform_FuncCall(cpstate, fnode);
+        }
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "path") == 0)
+
     {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_PATH));
+        Oid target_oid = InvalidOid;
+        int32 target_typmod = -1;
+        Node *expr = NULL;
+
+        typenameTypeIdAndMod(pstate, target_typ, &target_oid, &target_typmod);
+
+        if (is_external_vector_typecast(typecast)) {
+            if (IsA(ctypecast->expr, A_Const) &&
+                nodeTag(&((A_Const *)ctypecast->expr)->val) == T_String)
+                return transform_vector_string_typecast(ctypecast, target_oid,
+                                                        target_typmod);
+
+            if (is_ag_node(ctypecast->expr, cypher_list) &&
+                pg_strcasecmp(typecast, "sparsevec") != 0)
+                return transform_vector_list_typecast(cpstate, ctypecast,
+                                                      target_oid,
+                                                      target_typmod);
+        }
+
+        expr = transform_cypher_expr_recurse(cpstate, ctypecast->expr);
+
+        return coerce_expr_flexible(pstate, expr, exprType(expr), target_oid,
+                                    target_typmod, true);
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "vertex") == 0)
-    {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_VERTEX));
+}
+
+static bool is_external_vector_typecast(const char *typecast)
+{
+    return pg_strcasecmp(typecast, "vector") == 0 ||
+           pg_strcasecmp(typecast, "halfvec") == 0 ||
+           pg_strcasecmp(typecast, "sparsevec") == 0;
+}
+
+static bool is_external_vector_type_oid(Oid type_oid)
+{
+    char *typname = get_typename(type_oid);
+    bool is_vector_type = false;
+
+    if (typname == NULL) {
+        return false;
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "numeric") == 0)
+
+    is_vector_type = is_external_vector_typecast(typname);
+    pfree(typname);
+
+    return is_vector_type;
+}
+
+static bool has_external_vector_arg(List *args)
+{
+    ListCell *lc = NULL;
+
+    foreach(lc, args)
     {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_NUMERIC));
+        if (is_external_vector_type_oid(exprType((Node *)lfirst(lc))))
+            return true;
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "float") == 0)
+
+    return false;
+}
+
+static Node *transform_vector_list_typecast(cypher_parsestate *cpstate,
+                                            cypher_typecast *ctypecast,
+                                            Oid target_oid,
+                                            int32 target_typmod)
+{
+    ParseState *pstate = &cpstate->pstate;
+    cypher_list *cl = (cypher_list *)ctypecast->expr;
+    ArrayExpr *array = makeNode(ArrayExpr);
+    List *elements = NIL;
+    ListCell *lc = NULL;
+
+    foreach(lc, cl->elems)
     {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_FLOAT));
+        Node *elem = (Node *)lfirst(lc);
+        float8 value = 0;
+        Const *c = NULL;
+
+        if (!IsA(elem, A_Const))
+            ereport(ERROR,
+                    (errmsg_internal("vector typecast only supports numeric list literals")));
+
+        A_Const *aconst = (A_Const *)elem;
+
+        if (nodeTag(&aconst->val) == T_Integer)
+            value = (float8)intVal(&aconst->val);
+        else if (nodeTag(&aconst->val) == T_Float)
+            value = float8in_internal(strVal(&aconst->val), NULL, NULL);
+        else
+            ereport(ERROR,
+                    (errmsg_internal("vector typecast only supports numeric list literals")));
+
+        c = makeConst(FLOAT8OID, -1, InvalidOid, sizeof(float8),
+                      Float8GetDatum(value), false, FLOAT8PASSBYVAL);
+        c->location = aconst->location;
+        elements = lappend(elements, c);
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "int") == 0 ||
-             pg_strcasecmp(ctypecast->typecast, "integer") == 0)
-    {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_INT));
+
+    array->array_typeid = get_array_type(FLOAT8OID);
+    array->array_collid = InvalidOid;
+    array->element_typeid = FLOAT8OID;
+    array->elements = elements;
+    array->multidims = false;
+    array->location = cl->location;
+
+    return coerce_expr_flexible(pstate, (Node *)array, array->array_typeid,
+                                target_oid, target_typmod, true);
+}
+
+static Node *transform_vector_string_typecast(cypher_typecast *ctypecast,
+                                              Oid target_oid,
+                                              int32 target_typmod)
+{
+    A_Const *aconst = (A_Const *)ctypecast->expr;
+    Oid typinput;
+    Oid typioparam;
+    int16 typlen;
+    bool typbyval;
+    Datum value;
+    Const *c = NULL;
+
+    getTypeInputInfo(target_oid, &typinput, &typioparam);
+    get_typlenbyval(target_oid, &typlen, &typbyval);
+
+    value = OidInputFunctionCall(typinput, strVal(&aconst->val), typioparam,
+                                 target_typmod);
+
+    c = makeConst(target_oid, target_typmod, InvalidOid, typlen, value, false,
+                  typbyval);
+    c->location = aconst->location;
+
+    return (Node *)c;
+}
+
+static Node *transform_cypher_list_comprehension_expr(cypher_parsestate *cpstate,
+    cypher_list_comprehension *list_comp)
+{
+    Node *list_expr = transform_cypher_expr_recurse(cpstate, list_comp->expr);
+    SubLink *sublink = makeNode(SubLink);
+    Node *result = NULL;
+    CaseExpr *guard = makeNode(CaseExpr);
+    CaseWhen *when = makeNode(CaseWhen);
+    NullTest *is_null = makeNode(NullTest);
+    Const *null_list = makeConst(AGTYPEOID, -1, InvalidOid, -1, (Datum)0, true, false);
+
+    sublink->subLinkType = EXPR_SUBLINK;
+    sublink->testexpr = NULL;
+    sublink->operName = NIL;
+    sublink->subselect = (Node *)list_comp;
+    sublink->location = -1;
+
+    result = transform_SubLink(cpstate, sublink);
+
+    is_null->arg = (Expr *)list_expr;
+    is_null->nulltesttype = IS_NULL;
+    is_null->argisrow = type_is_rowtype(exprType(list_expr));
+
+    when->expr = (Expr *)is_null;
+    when->result = (Expr *)null_list;
+    when->location = -1;
+
+    guard->casetype = AGTYPEOID;
+    guard->arg = NULL;
+    guard->args = list_make1(when);
+    guard->defresult = (Expr *)result;
+    guard->location = -1;
+
+    return (Node *)guard;
+}
+
+static Node *transform_cypher_reduce_expr(cypher_parsestate *cpstate,
+                                          cypher_reduce *reduce)
+{
+    Node *list_expr = transform_cypher_expr_recurse(cpstate, reduce->expr);
+    SubLink *sublink = makeNode(SubLink);
+    Node *result = NULL;
+    Node *init_expr = NULL;
+    CoalesceExpr *coalesce = makeNode(CoalesceExpr);
+    CaseExpr *guard = makeNode(CaseExpr);
+    CaseWhen *when = makeNode(CaseWhen);
+    NullTest *is_null = makeNode(NullTest);
+    Const *null_agtype = makeConst(AGTYPEOID, -1, InvalidOid, -1, (Datum)0,
+                                   true, false);
+
+    sublink->subLinkType = EXPR_SUBLINK;
+    sublink->testexpr = NULL;
+    sublink->operName = NIL;
+    sublink->subselect = (Node *)reduce;
+    sublink->location = -1;
+
+    result = transform_SubLink(cpstate, sublink);
+
+    /*
+     * The fold aggregate returns no rows for an empty list, so the scalar
+     * sublink yields SQL NULL in that case. Cypher's reduce() must return the
+     * initial value for an empty (but non-null) list, so wrap the sublink in
+     * COALESCE(<agg>, <init>). The init expression is normalized to agtype so
+     * the COALESCE result type stays agtype.
+     */
+    init_expr = transform_cypher_expr_recurse(cpstate, reduce->initial);
+    if (exprType(init_expr) != AGTYPEOID) {
+        init_expr = coerce_to_common_type((ParseState *)cpstate, init_expr,
+                                          AGTYPEOID, "reduce");
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "pg_float8") == 0)
-    {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_PG_FLOAT8));
+
+    coalesce->coalescetype = AGTYPEOID;
+    coalesce->args = list_make2(result, init_expr);
+    coalesce->location = -1;
+
+    is_null->arg = (Expr *)list_expr;
+    is_null->nulltesttype = IS_NULL;
+    is_null->argisrow = type_is_rowtype(exprType(list_expr));
+
+    when->expr = (Expr *)is_null;
+    when->result = (Expr *)null_agtype;
+    when->location = -1;
+
+    guard->casetype = AGTYPEOID;
+    guard->arg = NULL;
+    guard->args = list_make1(when);
+    guard->defresult = (Expr *)coalesce;
+    guard->location = -1;
+
+    return (Node *)guard;
+}
+
+static Node *transform_cypher_predicate_function_expr(cypher_parsestate *cpstate,
+    cypher_predicate_function *pred_func)
+{
+    Node *list_expr = transform_cypher_expr_recurse(cpstate, pred_func->expr);
+    SubLink *sublink = makeNode(SubLink);
+    Node *result = NULL;
+    CaseExpr *guard = makeNode(CaseExpr);
+    CaseWhen *when = makeNode(CaseWhen);
+    NullTest *is_null = makeNode(NullTest);
+    Const *null_bool = makeConst(BOOLOID, -1, InvalidOid, 1, (Datum)0, true, true);
+
+    sublink->subLinkType = EXPR_SUBLINK;
+    sublink->testexpr = NULL;
+    sublink->operName = NIL;
+    sublink->subselect = (Node *)pred_func;
+    sublink->location = -1;
+
+    result = transform_SubLink(cpstate, sublink);
+
+    is_null->arg = (Expr *)list_expr;
+    is_null->nulltesttype = IS_NULL;
+    is_null->argisrow = type_is_rowtype(exprType(list_expr));
+
+    when->expr = (Expr *)is_null;
+    when->result = (Expr *)null_bool;
+    when->location = -1;
+
+    guard->casetype = BOOLOID;
+    guard->arg = NULL;
+    guard->args = list_make1(when);
+    guard->defresult = (Expr *)result;
+    guard->location = -1;
+
+    return (Node *)guard;
+}
+
+/*
+ * Helper function to coerce an expression to the target type. If no direct cast
+ * exists, try casting through text when agtype is involved.
+ */
+static Node *coerce_expr_flexible(ParseState *pstate, Node *expr,
+                                  Oid source_oid, Oid target_oid,
+                                  int32 t_typmod, bool error_out)
+{
+    Node *result;
+
+    if (expr == NULL)
+        return NULL;
+
+    result = coerce_to_target_type(pstate, expr, source_oid, target_oid,
+                                   t_typmod, COERCION_EXPLICIT,
+                                   COERCE_EXPLICIT_CAST, NULL, NULL, -1);
+    if (result != NULL)
+        return result;
+
+    if (source_oid == AGTYPEOID || target_oid == AGTYPEOID) {
+        Node *to_text = coerce_to_target_type(pstate, expr, source_oid,
+                                              TEXTOID, -1,
+                                              COERCION_EXPLICIT,
+                                              COERCE_EXPLICIT_CAST, NULL, NULL,
+                                              -1);
+        if (to_text != NULL) {
+            result = coerce_to_target_type(pstate, to_text, TEXTOID,
+                                           target_oid, t_typmod,
+                                           COERCION_EXPLICIT,
+                                           COERCE_EXPLICIT_CAST, NULL, NULL,
+                                           -1);
+            if (result != NULL)
+                return result;
+        }
     }
-    else if (pg_strcasecmp(ctypecast->typecast, "pg_bigint") == 0)
-    {
-        fname = lappend(fname, makeString(FUNC_AGTYPE_TYPECAST_PG_BIGINT));
+
+    if (is_external_vector_type_oid(source_oid) &&
+        is_external_vector_type_oid(target_oid)) {
+        TypeName *typname = makeTypeName("vector");
+        Oid vector_oid = InvalidOid;
+        int32 vector_typmod = -1;
+
+        typenameTypeIdAndMod(pstate, typname, &vector_oid, &vector_typmod);
+
+        if (OidIsValid(vector_oid) &&
+            source_oid != vector_oid &&
+            target_oid != vector_oid) {
+            Node *to_vector = coerce_to_target_type(pstate, expr, source_oid,
+                                                    vector_oid, -1,
+                                                    COERCION_EXPLICIT,
+                                                    COERCE_EXPLICIT_CAST, NULL,
+                                                    NULL, -1);
+            if (to_vector != NULL) {
+                result = coerce_to_target_type(pstate, to_vector, vector_oid,
+                                               target_oid, t_typmod,
+                                               COERCION_EXPLICIT,
+                                               COERCE_EXPLICIT_CAST, NULL,
+                                               NULL, -1);
+            }
+            /* result is still NULL here unless the vector route succeeded */
+            if (result != NULL) {
+                return result;
+            }
+        }
     }
-    /* if none was found, error out */
-    else
-    {
+
+    if (error_out)
         ereport(ERROR,
-                (errmsg_internal("typecast \'%s\' not supported",
-                                 ctypecast->typecast)));
+                (errmsg_internal("typecast '%s' not supported",
+                                 format_type_be(target_oid))));
+
+    return NULL;
+}
+
+static List *cast_agtype_args_to_target_type(cypher_parsestate *cpstate,
+                                             Form_pg_proc procform,
+                                             List *fargs,
+                                             Oid *target_types)
+{
+    char *funcname = NameStr(procform->proname);
+    int nargs = procform->pronargs;
+    int argno = 0;
+    ListCell *lc = NULL;
+
+    if (list_length(fargs) != nargs)
+        ereport(ERROR,
+                (errcode(ERRCODE_DATA_EXCEPTION),
+                 errmsg("function %s requires %d arguments, %d given",
+                        funcname, nargs, list_length(fargs))));
+
+    foreach(lc, fargs)
+    {
+        Node *expr = (Node *)lfirst(lc);
+        Oid source_oid = exprType(expr);
+        Oid target_oid = target_types[argno++];
+
+        expr = coerce_expr_flexible(&cpstate->pstate, expr, source_oid,
+                                    target_oid, -1, true);
+        lfirst(lc) = expr;
     }
 
-    /* make a function call node */
-    fnode = makeFuncCall(fname, list_make1(ctypecast->expr),
-                         ctypecast->location);
+    return fargs;
+}
 
-    /* return the transformed function */
-    return transform_FuncCall(cpstate, fnode);
+static Node *wrap_text_output_to_agtype(cypher_parsestate *cpstate,
+                                        FuncExpr *fexpr)
+{
+    ParseState *pstate = &cpstate->pstate;
+    Node *last_srf = pstate->p_last_srf;
+    List *fname = NIL;
+    FuncCall *fnode = NULL;
+
+    if (fexpr->funcresulttype != TEXTOID)
+        ereport(ERROR,
+                (errcode(ERRCODE_DATA_EXCEPTION),
+                 errmsg("can only wrap text to agtype")));
+
+    fname = list_make2(makeString("ag_catalog"), makeString("text_to_agtype"));
+    fnode = makeFuncCall(fname, list_make1(fexpr), -1);
+
+    return ParseFuncOrColumn(pstate, fname, list_make1(fexpr), last_srf,
+                             fnode, -1, false);
+}
+
+static Node *transform_external_ext_FuncCall(cypher_parsestate *cpstate,
+                                             FuncCall *fn, List *targs,
+                                             Form_pg_proc procform)
+{
+    ParseState *pstate = &cpstate->pstate;
+    Node *last_srf = pstate->p_last_srf;
+    FuncExpr *fexpr = NULL;
+    Node *retval = NULL;
+
+    Assert(procform != NULL);
+
+    targs = cast_agtype_args_to_target_type(cpstate, procform, targs,
+                                            procform->proargtypes.values);
+
+    fexpr = (FuncExpr *)ParseFuncOrColumn(pstate, fn->funcname, targs,
+                                          last_srf, fn, fn->location, false);
+    if (fexpr->funcresulttype == TEXTOID)
+        retval = wrap_text_output_to_agtype(cpstate, fexpr);
+    else
+        retval = (Node *)fexpr;
+
+    if (retval != NULL && retval->type == T_Aggref)
+        cpstate->exprHasAgg = true;
+
+    return retval;
+}
+
+static Form_pg_proc copy_procform(Form_pg_proc candidate)
+{
+    Form_pg_proc procform = NULL;
+    size_t procform_size;
+
+    procform_size = offsetof(FormData_pg_proc, proargtypes.values) +
+                    candidate->pronargs * sizeof(Oid);
+    procform = (Form_pg_proc)palloc0(procform_size);
+    memcpy(procform, candidate, offsetof(FormData_pg_proc, proargtypes.values));
+    procform->proargtypes.dim1 = candidate->pronargs;
+    for (int argno = 0; argno < candidate->pronargs; argno++)
+        procform->proargtypes.values[argno] =
+            candidate->proargtypes.values[argno];
+
+    return procform;
+}
+
+static Form_pg_proc get_procform(FuncCall *fn, List *targs,
+                                 bool err_not_found)
+{
+    CatCList *catlist = NULL;
+    Form_pg_proc procform = NULL;
+    List *search_path = NIL;
+    char *funcname = strVal(linitial(fn->funcname));
+    int nargs = list_length(fn->args);
+    Oid *source_oids = NULL;
+    Oid pg_catalog_oid;
+    int i;
+
+    catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
+    if (catlist->n_members == 0) {
+        ReleaseSysCacheList(catlist);
+        return NULL;
+    }
+
+    if (targs != NIL) {
+        ListCell *lc = NULL;
+        int argno = 0;
+
+        source_oids = (Oid *)palloc0(nargs * sizeof(Oid));
+        foreach(lc, targs)
+        {
+            source_oids[argno++] = exprType((Node *)lfirst(lc));
+        }
+    }
+
+    search_path = fetch_search_path(false);
+    pg_catalog_oid = get_namespace_oid("pg_catalog", false);
+
+    for (i = 0; i < catlist->n_members; i++) {
+        ListCell *nsp = NULL;
+        HeapTuple proctup = t_thrd.lsc_cxt.FetchTupleFromCatCList(catlist, i);
+        Form_pg_proc candidate = (Form_pg_proc)GETSTRUCT(proctup);
+        bool visible = false;
+        bool exact = true;
+        bool coercible = true;
+        int argno;
+
+        if (pg_strcasecmp(funcname, NameStr(candidate->proname)) != 0 ||
+            nargs != candidate->pronargs ||
+            fn->func_variadic != candidate->provariadic)
+            continue;
+
+        if (candidate->pronamespace == pg_catalog_oid)
+            visible = true;
+        else {
+            foreach(nsp, search_path)
+            {
+                Oid oid = lfirst_oid(nsp);
+                if (candidate->pronamespace == oid &&
+                    isTempNamespace(candidate->pronamespace) == false) {
+                    visible = true;
+                    break;
+                }
+            }
+        }
+
+        if (!visible)
+            continue;
+
+        for (argno = 0; source_oids != NULL && argno < nargs; argno++) {
+            Oid target_oid = candidate->proargtypes.values[argno];
+
+            if (source_oids[argno] != target_oid)
+                exact = false;
+
+            if (!can_coerce_type(1, &source_oids[argno], &target_oid,
+                                 COERCION_EXPLICIT)) {
+                coercible = false;
+                break;
+            }
+        }
+
+        if (coercible && exact) {
+            procform = copy_procform(candidate);
+            break;
+        }
+
+        if (coercible && procform == NULL)
+            procform = copy_procform(candidate);
+    }
+
+    if (err_not_found && procform == NULL)
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_FUNCTION),
+                 errmsg("function %s does not exist", funcname),
+                 errhint("If the function is from an external extension, "
+                         "make sure the extension is installed and the "
+                         "function is in the search path.")));
+
+    ReleaseSysCacheList(catlist);
+    list_free(search_path);
+    if (source_oids != NULL)
+        pfree(source_oids);
+
+    return procform;
+}
+
+static char *construct_age_function_name(char *funcname)
+{
+    int pnlen = strlen(funcname);
+    char *ag_name = (char *)palloc(pnlen + AGE_FUNCTION_NAME_PREFIX_LENGTH + 1);
+    int i;
+
+    memcpy(ag_name, "age_", AGE_FUNCTION_NAME_PREFIX_LENGTH);
+    for (i = 0; i < pnlen; i++) {
+        ag_name[i + AGE_FUNCTION_NAME_PREFIX_LENGTH] =
+            tolower((unsigned char)funcname[i]);
+    }
+    ag_name[i + AGE_FUNCTION_NAME_PREFIX_LENGTH] = '\0';
+
+    return ag_name;
+}
+
+static bool function_exists(char *funcname, char *extension)
+{
+    CatCList *catlist = NULL;
+    bool found = false;
+    int i;
+
+    catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
+    if (catlist->n_members == 0) {
+        ReleaseSysCacheList(catlist);
+        return false;
+    }
+
+    if (extension == NULL) {
+        ReleaseSysCacheList(catlist);
+        return true;
+    }
+
+    if (pg_strcasecmp(extension, "age") == 0) {
+        Oid ag_catalog_oid = get_namespace_oid("ag_catalog", true);
+
+        for (i = 0; i < catlist->n_members; i++) {
+            HeapTuple proctup = t_thrd.lsc_cxt.FetchTupleFromCatCList(catlist, i);
+            Form_pg_proc procform = (Form_pg_proc)GETSTRUCT(proctup);
+            if (procform->pronamespace == ag_catalog_oid) {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    ReleaseSysCacheList(catlist);
+
+    return found;
+}
+
+static bool is_accessor_function(const char *func_name)
+{
+    return pg_strcasecmp("id", func_name) == 0 ||
+           pg_strcasecmp("properties", func_name) == 0 ||
+           pg_strcasecmp("type", func_name) == 0 ||
+           pg_strcasecmp("label", func_name) == 0 ||
+           pg_strcasecmp("start_id", func_name) == 0 ||
+           pg_strcasecmp("end_id", func_name) == 0 ||
+           pg_strcasecmp("startnode", func_name) == 0 ||
+           pg_strcasecmp("endnode", func_name) == 0;
+}
+
+static Node *optimize_accessor_function(cypher_parsestate *cpstate,
+                                        const char *func_name,
+                                        FuncCall *fn, List *targs)
+{
+    ParseState *pstate = (ParseState *)cpstate;
+    bool is_node_func = pg_strcasecmp(func_name, "startNode") == 0 ||
+                        pg_strcasecmp(func_name, "endNode") == 0;
+    Node *arg;
+    AttrNumber fieldnum;
+    Oid fieldtype;
+    Oid entity_type;
+    Node *field;
+
+    if (is_node_func) {
+        if (list_length(targs) < ACCESSOR_NODE_FUNCTION_MIN_ARGUMENTS) {
+            return NULL;
+        }
+        arg = (Node *)lsecond(targs);
+    } else {
+        if (list_length(targs) < 1) {
+            return NULL;
+        }
+        arg = (Node *)linitial(targs);
+    }
+
+    if (!is_vertex_or_edge(arg)) {
+        return NULL;
+    }
+
+    entity_type = get_entity_record_type(arg);
+    get_record_field_info(func_name, entity_type, &fieldnum, &fieldtype);
+    if (fieldnum == InvalidAttrNumber || fieldtype == InvalidOid) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("%s() is not valid for this entity type", func_name),
+                 parser_errposition(pstate, fn->location)));
+    }
+
+    field = extract_field_from_record(arg, func_name);
+    if (is_node_func) {
+        Oid func_oid;
+        Const *graph_name;
+
+        graph_name = makeConst(TEXTOID, -1, InvalidOid, -1,
+                               CStringGetTextDatum(cpstate->graph_name), false,
+                               false);
+        func_oid = get_ag_func_oid("_get_vertex_by_graphid",
+                                   AGTYPE_IN_OPERATOR_ARGUMENT_COUNT, TEXTOID,
+                                   GRAPHIDOID);
+        return (Node *)makeFuncExpr(func_oid, AGTYPEOID,
+                                    list_make2(graph_name, field),
+                                    InvalidOid, InvalidOid,
+                                    COERCE_EXPLICIT_CALL);
+    }
+
+    return field;
 }
 
 /*
@@ -980,6 +2137,29 @@ static Node *transform_FuncCall(cypher_parsestate *cpstate, FuncCall *fn)
     List *fname = NIL;
     ListCell *arg;
     Node *retval = NULL;
+    bool is_accessor = false;
+
+    if (list_length(fn->funcname) == 1)
+    {
+        is_accessor = is_accessor_function(
+            ((Value *)linitial(fn->funcname))->val.str);
+    }
+
+    if (list_length(fn->funcname) == 1 && list_length(fn->args) == 1)
+    {
+        char *name = ((Value *)linitial(fn->funcname))->val.str;
+        Node *raw_arg = (Node *)linitial(fn->args);
+
+        if ((pg_strcasecmp(name, "all") == 0 ||
+             pg_strcasecmp(name, "any") == 0 ||
+             pg_strcasecmp(name, "none") == 0 ||
+             pg_strcasecmp(name, "single") == 0) &&
+            is_ag_node(raw_arg, cypher_predicate_function))
+        {
+            return transform_cypher_predicate_function_expr(cpstate,
+                (cypher_predicate_function *)raw_arg);
+        }
+    }
 
     /* Transform the list of arguments ... */
     foreach(arg, fn->args)
@@ -993,65 +2173,74 @@ static Node *transform_FuncCall(cypher_parsestate *cpstate, FuncCall *fn)
     /* within group should not happen */
     Assert(!fn->agg_within_group);
 
-    /*
-     * If the function name is not qualified, then it is one of ours. We need to
-     * construct its name, and qualify it, so that PG can find it.
-     */
     if (list_length(fn->funcname) == 1)
     {
-        /* get the name, size, and the ag name allocated */
         char *name = ((Value*)linitial(fn->funcname))->val.str;
-        int pnlen = strlen(name);
-        char *ag_name = (char*)palloc(pnlen + 5);
-        int i;
-
-        /* copy in the prefix - all AGE functions are prefixed with age_ */
-        strncpy(ag_name, "age_", 4);
+        char *ag_name = construct_age_function_name(name);
+        Form_pg_proc procform = NULL;
+        Node *optimized = NULL;
 
         /*
-         * All AGE function names are in lower case. So, copy in the name
-         * in lower case.
+         * Cypher's avg/sum/etc. normally map to AGE's agtype aggregates, but
+         * external datavec values already have concrete PostgreSQL types after
+         * an explicit cast. Prefer pg_catalog overloads such as avg(vector) or
+         * sum(halfvec) when they exist, and fall back to the AGE aggregate for
+         * ordinary agtype expressions.
          */
-        for (i = 0; i < pnlen; i++)
-            ag_name[i + 4] = tolower(name[i]);
-
-        /* terminate it with 0 */
-        ag_name[i + 4] = 0;
-
-        /* qualify the name with our schema name */
-        fname = list_make2(makeString("ag_catalog"), makeString(ag_name));
-
-        /*
-         * Currently 3 functions need the graph name passed in as the first
-         * argument - in addition to the other arguments: startNode, endNode,
-         * and vle. So, check for those 3 functions here and that the arg list
-         * is not empty. Then prepend the graph name if necessary.
-         */
-        if ((list_length(targs) != 0) &&
-            ((pg_strcasecmp("startNode", name) == 0 ||
-              pg_strcasecmp("endNode", name) == 0 ||
-              pg_strcasecmp("vle", name) == 0) || 
-              pg_strcasecmp("vertex_stats", name) == 0))
-              
+        if (has_external_vector_arg(targs) &&
+            (procform = get_procform(fn, targs, false)) != NULL)
         {
-            char *graph_name = cpstate->graph_name;
-            Datum d = string_to_agtype(graph_name);
-            Const *c = makeConst(AGTYPEOID, -1, InvalidOid, -1, d, false,
-                                 false);
-
-            targs = lcons(c, targs);
+            Oid pg_catalog_oid = get_namespace_oid("pg_catalog", false);
+            if (procform->pronamespace == pg_catalog_oid)
+                return transform_external_ext_FuncCall(cpstate, fn, targs,
+                                                       procform);
         }
 
-    }
-    /* If it is not one of our functions, pass the name list through */
-    else
-    {
+        if (function_exists(ag_name, "age"))
+        {
+            fname = list_make2(makeString("ag_catalog"), makeString(ag_name));
+
+            if ((list_length(targs) != 0) &&
+                ((pg_strcasecmp("startNode", name) == 0 ||
+                  pg_strcasecmp("endNode", name) == 0 ||
+                  pg_strcasecmp("vle", name) == 0) ||
+                  pg_strcasecmp("vertex_stats", name) == 0 ||
+                  pg_strcasecmp("shortest_path", name) == 0 ||
+                  pg_strcasecmp("all_shortest_paths", name) == 0)) {
+                char *graph_name = cpstate->graph_name;
+                Datum d = string_to_agtype(graph_name);
+                Const *c = makeConst(AGTYPEOID, -1, InvalidOid, -1, d, false,
+                                     false);
+
+                targs = lcons(c, targs);
+            }
+
+            /* accessor functions may collapse into a direct field access */
+            optimized = is_accessor
+                ? optimize_accessor_function(cpstate, name, fn, targs)
+                : NULL;
+            if (optimized != NULL) {
+                return optimized;
+            }
+        } else if (function_exists(name, NULL)) {
+            Form_pg_proc procform = get_procform(fn, targs, true);
+
+            return transform_external_ext_FuncCall(cpstate, fn, targs,
+                                                   procform);
+        } else {
+            ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_FUNCTION),
+                     errmsg("function %s does not exist", name),
+                     errhint("If the function is from an external extension, "
+                             "make sure the extension is installed and the "
+                             "function is in the search path.")));
+        }
+    } else {
         fname = fn->funcname;
     }
-    /* ... and hand off to ParseFuncOrColumn */
-    retval= ParseFuncOrColumn(pstate, fname, targs, last_srf, fn, false, fn->location);
 
-    /* flag that an aggregate was found during a transform */
+    retval = ParseFuncOrColumn(pstate, fname, targs, last_srf, fn,
+                               fn->location, false);
     if (retval != NULL && retval->type == T_Aggref)
     {
         cpstate->exprHasAgg = true;
@@ -1125,15 +2314,36 @@ static Node *transform_CaseExpr(cypher_parsestate *cpstate,CaseExpr
     bool saved_is_case_when = pstate->p_is_decode;
     pstate->p_is_decode = true;
 
+    /*
+     * A chained comparison used as the CASE test expression must become an
+     * agtype boolean before the placeholder type is derived. openGauss's
+     * DECODE-style CASE otherwise resolves the boolean placeholder against
+     * the agtype WHEN values inconsistently and no branch ever matches.
+     */
+    if (cexpr->arg != NULL &&
+        (is_ag_node((Node *) cexpr->arg, cypher_comparison_aexpr) ||
+         is_ag_node((Node *) cexpr->arg, cypher_comparison_boolexpr)))
+    {
+        List *funcname = list_make1(makeString("ag_catalog"));
+
+        funcname = lappend(funcname, makeString("bool_to_agtype"));
+        cexpr->arg = (Expr *) makeFuncCall(funcname,
+                                           list_make1(cexpr->arg),
+                                           cexpr->location);
+    }
+
     /* transform the test expression, if any */
     arg = transform_cypher_expr_recurse(cpstate, (Node *) cexpr->arg);
-
     /* generate placeholder for test expression */
     if (arg)
     {
-        if (exprType(arg) == UNKNOWNOID)
+        Oid argtype = exprType(arg);
+        if (argtype == UNKNOWNOID)
+        {
             arg = coerce_to_common_type(pstate, arg, TEXTOID, "CASE");
-
+        } else if (argtype == VERTEXOID || argtype == EDGEOID) {
+            arg = coerce_entity_to_agtype(pstate, arg);
+        }
         assign_expr_collations(pstate, arg);
 
         placeholder = makeNode(CaseTestExpr);
@@ -1160,6 +2370,19 @@ static Node *transform_CaseExpr(cypher_parsestate *cpstate,CaseExpr
         warg = (Node *) w->expr;
         if (placeholder)
         {
+            /*
+             * A chained comparison used as the WHEN value must be compared
+             * as an agtype boolean, not merged into the comparison chain.
+             */
+            if (is_ag_node(warg, cypher_comparison_aexpr) ||
+                is_ag_node(warg, cypher_comparison_boolexpr)) {
+                List *funcname = list_make1(makeString("ag_catalog"));
+
+                funcname = lappend(funcname, makeString("bool_to_agtype"));
+                warg = (Node *) makeFuncCall(funcname, list_make1(warg),
+                                             cexpr->location);
+            }
+
             /* shorthand form was specified, so expand... */
             warg = (Node *) makeSimpleA_Expr(AEXPR_OP, "=",
                                              (Node *) placeholder,
@@ -1168,11 +2391,23 @@ static Node *transform_CaseExpr(cypher_parsestate *cpstate,CaseExpr
         }
         neww->expr = (Expr *) transform_cypher_expr_recurse(cpstate, warg);
 
-        neww->expr = (Expr *) coerce_to_boolean(pstate,
-                                                (Node *) neww->expr,
-                                                "CASE/WHEN");
+        neww->expr = (Expr *) coerce_cypher_expr_to_boolean(pstate,
+                                                            (Node *)neww->expr,
+                                                            "CASE/WHEN");
 
         warg = (Node *) w->result;
+
+        /* THEN results that are chained comparisons become agtype booleans */
+        if (is_ag_node(warg, cypher_comparison_aexpr) ||
+            is_ag_node(warg, cypher_comparison_boolexpr))
+        {
+            List *funcname = list_make1(makeString("ag_catalog"));
+
+            funcname = lappend(funcname, makeString("bool_to_agtype"));
+            warg = (Node *) makeFuncCall(funcname, list_make1(warg),
+                                         cexpr->location);
+        }
+
         neww->result = (Expr *) transform_cypher_expr_recurse(cpstate, warg);
         neww->location = w->location;
 
@@ -1196,7 +2431,29 @@ static Node *transform_CaseExpr(cypher_parsestate *cpstate,CaseExpr
 
     resultexprs = lcons(newcexpr->defresult, resultexprs);
 
-    ptype = select_common_type(pstate, resultexprs, "CASE", NULL);
+    /*
+     * Cypher CASE results are usually agtype, but predicate subexpressions can
+     * still be plain SQL boolean. Let AGE-specific boolean/record mixes choose
+     * a concrete common type instead of erroring out in select_common_type().
+     */
+    ptype = select_common_type(pstate, resultexprs, NULL, NULL);
+    if (ptype == InvalidOid)
+    {
+        ListCell *result_lc;
+        bool has_entity = false;
+
+        foreach(result_lc, resultexprs)
+        {
+            Oid result_type = exprType((Node *)lfirst(result_lc));
+            if (result_type == VERTEXOID || result_type == EDGEOID) {
+                has_entity = true;
+                break;
+            }
+        }
+
+        ptype = has_entity ? AGTYPEOID : BOOLOID;
+    }
+
     Assert(OidIsValid(ptype));
     newcexpr->casetype = ptype;
     /* casecollid will be set by parse_collate.c */
@@ -1281,12 +2538,9 @@ static Node *transform_SubLink(cypher_parsestate *cpstate, SubLink *sublink)
 
     sublink->subselect = (Node *)qtree;
 
-    if (sublink->subLinkType == EXISTS_SUBLINK)
+    if (sublink->subLinkType == EXISTS_SUBLINK ||
+        sublink->subLinkType == EXPR_SUBLINK)
     {
-        /*
-         * EXISTS needs no test expression or combining operator. These fields
-         * should be null already, but make sure.
-         */
         sublink->testexpr = NULL;
         sublink->operName = NIL;
     }
@@ -1294,4 +2548,43 @@ static Node *transform_SubLink(cypher_parsestate *cpstate, SubLink *sublink)
         elog(ERROR, "unsupported SubLink type");
 
     return result;
+}
+
+Node *coerce_entity_to_agtype(ParseState *pstate, Node *node)
+{
+    Oid node_type;
+    Node *coerced;
+
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node_type = exprType(node);
+    if (node_type != VERTEXOID && node_type != EDGEOID) {
+        return node;
+    }
+
+    coerced = coerce_to_target_type(pstate, node, node_type, AGTYPEOID, -1,
+                                    COERCION_EXPLICIT,
+                                    COERCE_IMPLICIT_CAST, NULL, NULL, -1);
+    if (coerced == NULL) {
+        ereport(ERROR,
+                (errcode(ERRCODE_CANNOT_COERCE),
+                 errmsg("cannot convert graph entity to agtype")));
+    }
+
+    return coerced;
+}
+
+void coerce_target_entities_to_agtype(ParseState *pstate, List *target_list)
+{
+    ListCell *lc;
+
+    foreach (lc, target_list)
+    {
+        TargetEntry *te = (TargetEntry *)lfirst(lc);
+
+        te->expr = (Expr *)coerce_entity_to_agtype(pstate,
+                                                   (Node *)te->expr);
+    }
 }

@@ -26,6 +26,7 @@
 #include "nodes/pg_list.h"
 #include "nodes/plannodes.h"
 #include "nodes/relation.h"
+#include "optimizer/restrictinfo.h"
 
 #include "executor/cypher_executor.h"
 #include "optimizer/cypher_createplan.h"
@@ -41,6 +42,13 @@ const ExtensiblePlanMethods cypher_merge_plan_methods = {
 const ExtensiblePlanMethods cypher_vle_plan_methods = {
     "Cypher VLE", create_cypher_vle_plan_state};
 
+static void initialize_cypher_plan_distribution(Plan *plan)
+{
+    plan->exec_type = EXEC_ON_COORDS;
+    plan->exec_nodes = NULL;
+    plan->distributed_keys = NIL;
+}
+
 Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
                               ExtensiblePath *best_path, List *tlist,
                               List *clauses, List *custom_plans)
@@ -49,6 +57,7 @@ Plan *plan_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
     Plan *subplan = (Plan *)linitial(custom_plans);
 
     cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -88,6 +97,7 @@ Plan *plan_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
     Plan *subplan = (Plan *)linitial(custom_plans);
 
     cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -132,6 +142,7 @@ Plan *plan_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
     Plan *subplan = (Plan *)linitial(custom_plans);
 
     cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -194,6 +205,7 @@ Plan *plan_cypher_merge_path(PlannerInfo *root,
     Plan *subplan = (Plan *)linitial(custom_plans);
 
     cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -248,6 +260,7 @@ Plan *plan_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
     Plan *subplan = (Plan *)linitial(custom_plans);
 
     cs = makeNode(ExtensiblePlan);
+    initialize_cypher_plan_distribution(&cs->scan.plan);
 
     cs->scan.plan.startup_cost = best_path->path.startup_cost;
     cs->scan.plan.total_cost = best_path->path.total_cost;
@@ -257,7 +270,16 @@ Plan *plan_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
 
     cs->scan.plan.plan_node_id = 0; // Set later in set_plan_refs
     cs->scan.plan.targetlist = tlist;
-    cs->scan.plan.qual = NIL;
+
+    /*
+     * The child is the seed subquery. Its relation restrictions are planned
+     * before the Cypher VLE wrapper and would therefore inspect the empty seed
+     * arrays rather than the traversed edge/vertex arrays. Move those clauses
+     * onto the VLE plan so MATCH WHERE predicates are evaluated against each
+     * completed path.
+     */
+    cs->scan.plan.qual = extract_actual_clauses(clauses, false);
+    subplan->qual = NIL;
     cs->scan.plan.lefttree = NULL;
     cs->scan.plan.righttree = NULL;
     cs->scan.plan.initPlan = NIL;

@@ -21,11 +21,17 @@
 
 #include "fmgr.h"
 
+#define CYPHER_FUNCTION_MIN_ARGUMENTS 2
+
 PG_FUNCTION_INFO_V1(cypher);
 extern "C" Datum  cypher(PG_FUNCTION_ARGS);
 Datum cypher(PG_FUNCTION_ARGS)
 {
     const char *s;
+
+    if (PG_NARGS() < CYPHER_FUNCTION_MIN_ARGUMENTS)
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                        errmsg("cypher function requires a minimum of 2 arguments")));
 
     s = PG_ARGISNULL(0) ? "NULL" : PG_GETARG_CSTRING(0);
 

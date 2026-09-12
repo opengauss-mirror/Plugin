@@ -38,6 +38,7 @@
 #include "lib/stringinfo.h"
 #include "nodes/pg_list.h"
 #include "utils/array.h"
+#include "utils/memutils.h"
 #include "utils/numeric.h"
 #include "utils/syscache.h"
 
@@ -295,6 +296,9 @@ typedef struct
     ((*(uint32 *)VARDATA(agtp_) & AGT_FBINARY) != 0)
 #define AGT_ROOT_BINARY_FLAGS(agtp_) \
     (*(uint32 *)VARDATA(agtp_) & AGT_FBINARY_MASK)
+#define AGT_ROOT_IS_VPC(agtp_) \
+    (AGT_ROOT_IS_BINARY(agtp_) && \
+     AGT_ROOT_BINARY_FLAGS(agtp_) == AGT_FBINARY_TYPE_VLE_PATH)
 
 /* values for the AGTYPE header field to denote the stored data type */
 #define AGT_HEADER_INTEGER 0x00000000
@@ -326,6 +330,60 @@ enum agtype_value_type
     /* Binary (i.e. struct agtype) AGTV_ARRAY/AGTV_OBJECT */
     AGTV_BINARY
 };
+
+/*
+ * Vertex and edge keys are sorted by length and then lexicographically by
+ * uniqueify_agtype_object(), so their field positions are deterministic.
+ */
+#define VERTEX_FIELD_ID 0
+#define VERTEX_FIELD_LABEL 1
+#define VERTEX_FIELD_PROPERTIES 2
+#define VERTEX_NUM_FIELDS 3
+
+#define EDGE_FIELD_ID 0
+#define EDGE_FIELD_LABEL 1
+#define EDGE_FIELD_END_ID 2
+#define EDGE_FIELD_START_ID 3
+#define EDGE_FIELD_PROPERTIES 4
+#define EDGE_NUM_FIELDS 5
+
+#define AGTYPE_VERTEX_GET_FIELD(v, field) \
+    ({ \
+        if ((v)->val.object.num_pairs != VERTEX_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid vertex structure: expected %d fields, found %d", \
+                            VERTEX_NUM_FIELDS, (v)->val.object.num_pairs))); \
+        &(v)->val.object.pairs[(field)].value; \
+    })
+
+#define AGTYPE_EDGE_GET_FIELD(e, field) \
+    ({ \
+        if ((e)->val.object.num_pairs != EDGE_NUM_FIELDS) \
+            ereport(ERROR, \
+                    (errcode(ERRCODE_DATA_CORRUPTED), \
+                     errmsg("invalid edge structure: expected %d fields, found %d", \
+                            EDGE_NUM_FIELDS, (e)->val.object.num_pairs))); \
+        &(e)->val.object.pairs[(field)].value; \
+    })
+
+#define AGTYPE_VERTEX_GET_ID(v) \
+    AGTYPE_VERTEX_GET_FIELD((v), VERTEX_FIELD_ID)
+#define AGTYPE_VERTEX_GET_LABEL(v) \
+    AGTYPE_VERTEX_GET_FIELD((v), VERTEX_FIELD_LABEL)
+#define AGTYPE_VERTEX_GET_PROPERTIES(v) \
+    AGTYPE_VERTEX_GET_FIELD((v), VERTEX_FIELD_PROPERTIES)
+
+#define AGTYPE_EDGE_GET_ID(e) \
+    AGTYPE_EDGE_GET_FIELD((e), EDGE_FIELD_ID)
+#define AGTYPE_EDGE_GET_LABEL(e) \
+    AGTYPE_EDGE_GET_FIELD((e), EDGE_FIELD_LABEL)
+#define AGTYPE_EDGE_GET_END_ID(e) \
+    AGTYPE_EDGE_GET_FIELD((e), EDGE_FIELD_END_ID)
+#define AGTYPE_EDGE_GET_START_ID(e) \
+    AGTYPE_EDGE_GET_FIELD((e), EDGE_FIELD_START_ID)
+#define AGTYPE_EDGE_GET_PROPERTIES(e) \
+    AGTYPE_EDGE_GET_FIELD((e), EDGE_FIELD_PROPERTIES)
 
 /*
  * agtype_value: In-memory representation of agtype.  This is a convenient
@@ -464,6 +522,12 @@ int reserve_from_buffer(StringInfo buffer, int len);
 short pad_buffer_to_int(StringInfo buffer);
 uint32 get_agtype_offset(const agtype_container *agtc, int index);
 uint32 get_agtype_length(const agtype_container *agtc, int index);
+typedef struct agtype_arena agtype_arena;
+agtype_arena *agt_arena_create(MemoryContext parent);
+void agt_arena_destroy(agtype_arena *arena);
+int compare_agtype_containers_orderability_with_arena(agtype_container *a,
+                                                      agtype_container *b,
+                                                      agtype_arena *arena);
 int compare_agtype_containers_orderability(agtype_container *a,
                                            agtype_container *b);
 agtype_value *find_agtype_value_from_container(agtype_container *container,
@@ -471,6 +535,8 @@ agtype_value *find_agtype_value_from_container(agtype_container *container,
                                                agtype_value *key);
 agtype_value *get_ith_agtype_value_from_container(agtype_container *container,
                                                   uint32 i);
+void pfree_agtype_value(agtype_value *value);
+void pfree_agtype_value_content(agtype_value *value);
 agtype_value *push_agtype_value(agtype_parse_state **pstate,
                                 agtype_iterator_token seq,
                                 agtype_value *agtval);
@@ -480,7 +546,8 @@ agtype_iterator_token agtype_iterator_next(agtype_iterator **it,
                                            bool skip_nested);
 agtype *agtype_value_to_agtype(agtype_value *val);
 bool agtype_deep_contains(agtype_iterator **val,
-                          agtype_iterator **m_contained);
+                          agtype_iterator **m_contained,
+                          bool skip_nested);
 void agtype_hash_scalar_value(const agtype_value *scalar_val, uint32 *hash);
 void agtype_hash_scalar_value_extended(const agtype_value *scalar_val,
                                        uint64 *hash, uint64 seed);
@@ -525,6 +592,10 @@ bool is_decimal_needed(char *numstr);
 int compare_agtype_scalar_values(agtype_value *a, agtype_value *b);
 agtype_value *alter_property_value(agtype_value *properties, char *var_name,
                                    agtype *new_v, bool remove_property);
+agtype_value *copy_agtype_map(agtype *properties);
+agtype_value *merge_agtype_maps(agtype_value *original_properties,
+                                agtype *new_properties);
+void remove_null_properties(agtype_value *object);
 
 agtype *get_one_agtype_from_variadic_args(FunctionCallInfo fcinfo,
                                           int variadic_offset,
@@ -556,13 +627,22 @@ agtype_value *execute_map_access_operator(agtype *map,
 bool agtype_extract_scalar(agtype_container *agtc, agtype_value *res);
 void add_agtype(Datum val, bool is_null, agtype_in_state *result, Oid val_type,
                 bool key_scalar);
+
+Oid get_VERTEXOID(void);
+Oid get_EDGEOID(void);
+void clear_global_Oids_VERTEX_EDGE(void);
+Oid get_AGTYPEOID(void);
+Oid get_AGTYPEARRAYOID(void);
+void clear_global_Oids_AGTYPE(void);
+
+#define VERTEXOID (get_VERTEXOID())
+#define EDGEOID (get_EDGEOID())
+#define VERTEXOIDSTR "ag_catalog.vertex"
+#define EDGEOIDSTR "ag_catalog.edge"
+
 // OID of agtype and _agtype
-#define AGTYPEOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("agtype"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
-#define AGTYPEARRAYOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("_agtype"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
+#define AGTYPEOID (get_AGTYPEOID())
+#define AGTYPEARRAYOID (get_AGTYPEARRAYOID())
 
 
 #define AGTYPEOIDSTR "ag_catalog.agtype"

@@ -53,7 +53,7 @@ typedef struct cypher_parsestate
      */
     bool exprHasAgg;
     bool p_opt_match;
-
+    bool subquery_where_flag;
 } cypher_parsestate;
 
 typedef struct errpos_ecb_state

@@ -175,12 +175,14 @@ void out_cypher_unwind(StringInfo str, const ExtensibleNode *node)
     WRITE_NODE_FIELD(target);
 }
 
-// serialization function for the cypher_delete ExtensibleNode.
+// serialization function for the cypher_merge ExtensibleNode.
 void out_cypher_merge(StringInfo str, const ExtensibleNode *node)
 {
     DEFINE_AG_NODE(cypher_merge);
 
     WRITE_NODE_FIELD(path);
+    WRITE_NODE_FIELD(on_match);
+    WRITE_NODE_FIELD(on_create);
 }
 
 // serialization function for the cypher_path ExtensibleNode.
@@ -189,6 +191,7 @@ void out_cypher_path(StringInfo str, const ExtensibleNode *node)
     DEFINE_AG_NODE(cypher_path);
 
     WRITE_NODE_FIELD(path);
+    WRITE_STRING_FIELD(var_name);
     WRITE_LOCATION_FIELD(location);
 }
 
@@ -199,6 +202,8 @@ void out_cypher_node(StringInfo str, const ExtensibleNode *node)
 
     WRITE_STRING_FIELD(name);
     WRITE_STRING_FIELD(label);
+    WRITE_STRING_FIELD(parsed_label);
+    WRITE_BOOL_FIELD(use_equals);
     WRITE_NODE_FIELD(props);
     WRITE_LOCATION_FIELD(location);
 }
@@ -210,6 +215,8 @@ void out_cypher_relationship(StringInfo str, const ExtensibleNode *node)
 
     WRITE_STRING_FIELD(name);
     WRITE_STRING_FIELD(label);
+    WRITE_STRING_FIELD(parsed_label);
+    WRITE_BOOL_FIELD(use_equals);
     WRITE_NODE_FIELD(props);
     WRITE_NODE_FIELD(varlen);
     WRITE_ENUM_FIELD(dir, cypher_rel_dir);
@@ -241,6 +248,29 @@ void out_cypher_map(StringInfo str, const ExtensibleNode *node)
 
     WRITE_NODE_FIELD(keyvals);
     WRITE_LOCATION_FIELD(location);
+    WRITE_BOOL_FIELD(keep_null);
+}
+
+// serialization function for the cypher_map_projection ExtensibleNode.
+void out_cypher_map_projection(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_map_projection);
+
+    WRITE_NODE_FIELD(map_var);
+    WRITE_NODE_FIELD(map_elements);
+    WRITE_LOCATION_FIELD(location);
+}
+
+// serialization function for the cypher_map_projection_element ExtensibleNode.
+void out_cypher_map_projection_element(StringInfo str,
+                                       const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_map_projection_element);
+
+    WRITE_ENUM_FIELD(type, cypher_map_projection_element_type);
+    WRITE_STRING_FIELD(key);
+    WRITE_NODE_FIELD(value);
+    WRITE_LOCATION_FIELD(location);
 }
 
 // serialization function for the cypher_list ExtensibleNode.
@@ -250,6 +280,62 @@ void out_cypher_list(StringInfo str, const ExtensibleNode *node)
 
     WRITE_NODE_FIELD(elems);
     WRITE_LOCATION_FIELD(location);
+}
+
+// serialization function for the cypher_list_comprehension ExtensibleNode.
+void out_cypher_list_comprehension(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_list_comprehension);
+
+    WRITE_STRING_FIELD(varname);
+    WRITE_NODE_FIELD(expr);
+    WRITE_NODE_FIELD(where);
+    WRITE_NODE_FIELD(mapping_expr);
+}
+
+// serialization function for the cypher_reduce ExtensibleNode.
+void out_cypher_reduce(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_reduce);
+
+    WRITE_STRING_FIELD(accumname);
+    WRITE_NODE_FIELD(initial);
+    WRITE_STRING_FIELD(varname);
+    WRITE_NODE_FIELD(expr);
+    WRITE_NODE_FIELD(mapping_expr);
+}
+
+// serialization function for the cypher_comparison_aexpr ExtensibleNode.
+void out_cypher_comparison_aexpr(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_comparison_aexpr);
+
+    WRITE_ENUM_FIELD(kind, A_Expr_Kind);
+    WRITE_NODE_FIELD(name);
+    WRITE_NODE_FIELD(lexpr);
+    WRITE_NODE_FIELD(rexpr);
+    WRITE_LOCATION_FIELD(location);
+}
+
+// serialization function for the cypher_comparison_boolexpr ExtensibleNode.
+void out_cypher_comparison_boolexpr(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_comparison_boolexpr);
+
+    WRITE_ENUM_FIELD(boolop, BoolExprType);
+    WRITE_NODE_FIELD(args);
+    WRITE_LOCATION_FIELD(location);
+}
+
+// serialization function for the cypher_predicate_function ExtensibleNode.
+void out_cypher_predicate_function(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_predicate_function);
+
+    WRITE_ENUM_FIELD(kind, cypher_predicate_function_kind);
+    WRITE_STRING_FIELD(varname);
+    WRITE_NODE_FIELD(expr);
+    WRITE_NODE_FIELD(where);
 }
 
 // serialization function for the cypher_string_match ExtensibleNode.
@@ -269,7 +355,7 @@ void out_cypher_typecast(StringInfo str, const ExtensibleNode *node)
     DEFINE_AG_NODE(cypher_typecast);
 
     WRITE_NODE_FIELD(expr);
-    WRITE_STRING_FIELD(typecast);
+    WRITE_NODE_FIELD(typname);
     WRITE_LOCATION_FIELD(location);
 }
 
@@ -289,6 +375,26 @@ void out_cypher_sub_pattern(StringInfo str, const ExtensibleNode *node)
 
     WRITE_ENUM_FIELD(kind, csp_kind);
     WRITE_NODE_FIELD(pattern);
+}
+
+// serialization function for the cypher_sub_query ExtensibleNode.
+void out_cypher_sub_query(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_sub_query);
+
+    WRITE_ENUM_FIELD(kind, csp_kind);
+    WRITE_NODE_FIELD(query);
+}
+
+// serialization function for the cypher_call ExtensibleNode.
+void out_cypher_call(StringInfo str, const ExtensibleNode *node)
+{
+    DEFINE_AG_NODE(cypher_call);
+
+    WRITE_NODE_FIELD(funccall);
+    WRITE_NODE_FIELD(funcexpr);
+    WRITE_NODE_FIELD(where);
+    WRITE_NODE_FIELD(yield_items);
 }
 
 // serialization function for the cypher_create_target_nodes ExtensibleNode.
@@ -367,6 +473,10 @@ void out_cypher_update_item(StringInfo str, const ExtensibleNode *node)
     WRITE_STRING_FIELD(prop_name);
     WRITE_NODE_FIELD(qualified_name);
     WRITE_BOOL_FIELD(remove_item);
+    WRITE_BOOL_FIELD(replace_properties);
+    WRITE_BOOL_FIELD(is_add);
+    WRITE_NODE_FIELD(prop_expr);
+    WRITE_NODE_FIELD(prop_expr_state);
 }
 
 // serialization function for the cypher_delete_information ExtensibleNode.
@@ -409,6 +519,8 @@ void out_cypher_merge_information(StringInfo str, const ExtensibleNode *node)
     WRITE_OID_FIELD(graph_oid);
     WRITE_INT32_FIELD(merge_function_attr);
     WRITE_NODE_FIELD(path);
+    WRITE_NODE_FIELD(on_match_set_info);
+    WRITE_NODE_FIELD(on_create_set_info);
 }
 
 /*
@@ -427,4 +539,3 @@ outChar(StringInfo str, char c)
 
         outToken_age(str, in);
 }
-

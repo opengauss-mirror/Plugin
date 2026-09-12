@@ -137,6 +137,9 @@ static void begin_cypher_create(ExtensiblePlanState *node, EState *estate,
     if (estate->es_output_cid == 0)
         estate->es_output_cid = estate->es_snapshot->curcid;
 
+    /* the child subtree must keep seeing the state before this clause */
+    css->child_curcid = estate->es_snapshot->curcid;
+
     Increment_Estate_CommandId(estate);
 }
 
@@ -206,9 +209,9 @@ static TupleTableSlot *exec_cypher_create(ExtensiblePlanState *node)
     do
     {
         /*Process the subtree first */
-        Decrement_Estate_CommandId(estate)
+        age_enter_child_scan(estate, css->child_curcid);
         slot = ExecProcNode(node->ss.ps.lefttree);
-        Increment_Estate_CommandId(estate)
+        age_leave_child_scan(estate, css->child_curcid);
         /* break when there are no tuples */
         if (TupIsNull(slot))
         {
@@ -236,8 +239,13 @@ static TupleTableSlot *exec_cypher_create(ExtensiblePlanState *node)
     {
         return NULL;
     }
-    /* update the current command Id */
+    /*
+     * Update the current command Id and let every scan above this clause see
+     * the rows just inserted (openCypher: later clauses observe the writes of
+     * earlier ones).
+     */
     CommandCounterIncrement();
+    estate->es_snapshot->curcid = GetCurrentCommandId(false);
     /* if this was a terminal CREATE just return NULL */
     if (terminal)
     {
@@ -276,12 +284,14 @@ static void end_cypher_create(ExtensiblePlanState *node)
                        RowExclusiveLock);
         }
     }
+
+    notify_modified_entity_relations(&css->modified_relids);
 }
 
 static void rescan_cypher_create(ExtensiblePlanState *node)
 {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                    errmsg("cypher create clause cannot be rescaned"),
+                    errmsg("cypher create clause cannot be rescanned"),
                     errhint("its unsafe to use joins in a query with a Cypher CREATE clause")));
 }
 
@@ -361,6 +371,7 @@ static void create_edge(cypher_create_custom_scan_state *css,
         ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                  errmsg("edge direction must be specified in a CREATE clause")));
+        pg_unreachable();
     }
 
     /*
@@ -375,7 +386,8 @@ static void create_edge(cypher_create_custom_scan_state *css,
 
     estate->es_result_relation_info = resultRelInfo;
 
-    ExecClearTuple(elemTupleSlot);
+    /* Null-init every attribute before AGE fills the edge columns (issue #2450). */
+    clear_entity_slot(elemTupleSlot);
 
     // Graph Id for the edge
     id = ExecEvalExpr(node->id_expr_state, econtext, &isNull, NULL);
@@ -398,6 +410,9 @@ static void create_edge(cypher_create_custom_scan_state *css,
 
     // Insert the new edge
     insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
+    mark_entity_relation_modified(
+        &css->modified_relids,
+        RelationGetRelid(resultRelInfo->ri_RelationDesc));
 
     /* restore the old result relation info */
     estate->es_result_relation_info = old_estate_es_result_relation_info;
@@ -422,7 +437,7 @@ static void create_edge(cypher_create_custom_scan_state *css,
         Datum result;
 
         result = make_edge(
-            id, start_id, end_id, CStringGetDatum(node->label_name),
+            id, start_id, end_id, string_to_agtype(node->label_name),
             PointerGetDatum(scanTupleSlot->tts_values[node->prop_attr_num]));
 
         if (CYPHER_TARGET_NODE_IN_PATH(node->flags))
@@ -476,7 +491,14 @@ static Datum create_vertex(cypher_create_custom_scan_state *css,
 
         estate->es_result_relation_info = resultRelInfo;
 
-        ExecClearTuple(elemTupleSlot);
+        /*
+         * Null-init every attribute before AGE fills id/properties. The slot
+         * descriptor is the full label-table descriptor, which may include a
+         * user-added or GENERATED ALWAYS ... STORED column AGE does not populate;
+         * leaving those slot entries uninitialized makes materialization
+         * segfault (issue #2450).
+         */
+        clear_entity_slot(elemTupleSlot);
 
         // get the next graphid for this vertex.
         id = ExecEvalExpr(node->id_expr_state, econtext, &isNull, NULL);
@@ -491,6 +513,9 @@ static Datum create_vertex(cypher_create_custom_scan_state *css,
 
         // Insert the new vertex
         insert_entity_tuple(resultRelInfo, elemTupleSlot, estate);
+        mark_entity_relation_modified(
+            &css->modified_relids,
+            RelationGetRelid(resultRelInfo->ri_RelationDesc));
 
         /* restore the old result relation info */
         estate->es_result_relation_info = old_estate_es_result_relation_info;
@@ -512,7 +537,7 @@ static Datum create_vertex(cypher_create_custom_scan_state *css,
 
             // make the vertex agtype
             result = make_vertex(
-                id, CStringGetDatum(node->label_name),
+                id, string_to_agtype(node->label_name),
                 PointerGetDatum(scanTupleSlot->tts_values[node->prop_attr_num]));
 
             // append to the path list

@@ -69,6 +69,7 @@ cypher_parsestate *make_cypher_parsestate(cypher_parsestate *parent_cpstate)
         cpstate->params = parent_cpstate->params;
 
         cpstate->p_vle_initial_vid = parent_cpstate->p_vle_initial_vid;
+        cpstate->subquery_where_flag = parent_cpstate->subquery_where_flag;
     }
 
     return cpstate;

@@ -515,24 +515,19 @@ float8out_internal(double num)
 	if (std::isnan(num))
 		return strcpy(ascii, "NaN");
 
-	switch (std::isinf(num))
+	if (std::isinf(num))
 	{
-		case 1:
-			strcpy(ascii, "Infinity");
-			break;
-		case -1:
-			strcpy(ascii, "-Infinity");
-			break;
-		default:
-			{
-				int			ndig = DBL_DIG;
-
-				if (ndig < 1)
-					ndig = 1;
-
-				snprintf(ascii, MAXDOUBLEWIDTH + 1, "%.*g", ndig, num);
-			}
+		return strcpy(ascii, std::signbit(num) ? "-Infinity" : "Infinity");
 	}
+
+	int ndig = DBL_DIG;
+
+	if (ndig < 1)
+	{
+		ndig = 1;
+	}
+
+	snprintf(ascii, MAXDOUBLEWIDTH + 1, "%.*g", ndig, num);
 
 	return ascii;
 }

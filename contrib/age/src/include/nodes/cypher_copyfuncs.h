@@ -34,6 +34,13 @@
 void copy_ag_node(ExtensibleNode *newnode,
                          const ExtensibleNode *oldnode);
 
+// clause and pattern data structures
+void copy_cypher_create(ExtensibleNode *newnode, const ExtensibleNode *from);
+void copy_cypher_path(ExtensibleNode *newnode, const ExtensibleNode *from);
+void copy_cypher_node(ExtensibleNode *newnode, const ExtensibleNode *from);
+void copy_cypher_relationship(ExtensibleNode *newnode,
+                              const ExtensibleNode *from);
+
 // create data structures
 void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from);
 void copy_cypher_create_path(ExtensibleNode *newnode, const ExtensibleNode *from);
@@ -52,4 +59,20 @@ void copy_cypher_merge_information(ExtensibleNode *newnode, const ExtensibleNode
 
 // vle
 void copy_cypher_vle_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from);
+
+// list comprehension
+void copy_cypher_map(ExtensibleNode *newnode, const ExtensibleNode *from);
+void copy_cypher_map_projection(ExtensibleNode *newnode,
+                                const ExtensibleNode *from);
+void copy_cypher_map_projection_element(ExtensibleNode *newnode,
+                                        const ExtensibleNode *from);
+void copy_cypher_integer_const(ExtensibleNode *newnode,
+                               const ExtensibleNode *from);
+void copy_cypher_list_comprehension(ExtensibleNode *newnode, const ExtensibleNode *from);
+
+// reduce
+void copy_cypher_reduce(ExtensibleNode *newnode, const ExtensibleNode *from);
+
+// predicate functions
+void copy_cypher_predicate_function(ExtensibleNode *newnode, const ExtensibleNode *from);
 #endif

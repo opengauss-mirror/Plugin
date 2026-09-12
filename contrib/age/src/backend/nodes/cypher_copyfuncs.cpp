@@ -71,6 +71,94 @@ void copy_ag_node(ExtensibleNode *newnode,
     ereport(ERROR, (errmsg("unexpected copyObject() over ag_node")));
 }
 
+// copy function for cypher_create
+void copy_cypher_create(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_create);
+
+    extended_newnode->pattern = (List *)copyObject(extended_from->pattern);
+}
+
+// copy function for cypher_path
+void copy_cypher_path(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_path);
+
+    extended_newnode->path = (List *)copyObject(extended_from->path);
+    COPY_STRING_FIELD(var_name);
+    COPY_SCALAR_FIELD(location);
+}
+
+// copy function for cypher_node
+void copy_cypher_node(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_node);
+
+    COPY_STRING_FIELD(name);
+    COPY_STRING_FIELD(label);
+    COPY_SCALAR_FIELD(use_equals);
+    extended_newnode->props = (Node *)copyObject(extended_from->props);
+    COPY_SCALAR_FIELD(location);
+}
+
+// copy function for cypher_relationship
+void copy_cypher_relationship(ExtensibleNode *newnode,
+                              const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_relationship);
+
+    COPY_STRING_FIELD(name);
+    COPY_STRING_FIELD(label);
+    COPY_SCALAR_FIELD(use_equals);
+    extended_newnode->props = (Node *)copyObject(extended_from->props);
+    extended_newnode->varlen = (Node *)copyObject(extended_from->varlen);
+    COPY_SCALAR_FIELD(dir);
+    COPY_SCALAR_FIELD(location);
+}
+
+// copy function for cypher_map
+void copy_cypher_map(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_map);
+
+    extended_newnode->keyvals = (List *)copyObject(extended_from->keyvals);
+    COPY_SCALAR_FIELD(location);
+    COPY_SCALAR_FIELD(keep_null);
+}
+
+// copy function for cypher_map_projection
+void copy_cypher_map_projection(ExtensibleNode *newnode,
+                                const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_map_projection);
+
+    extended_newnode->map_var = (ColumnRef *)copyObject(extended_from->map_var);
+    extended_newnode->map_elements = (List *)copyObject(extended_from->map_elements);
+    COPY_SCALAR_FIELD(location);
+}
+
+// copy function for cypher_map_projection_element
+void copy_cypher_map_projection_element(ExtensibleNode *newnode,
+                                        const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_map_projection_element);
+
+    COPY_SCALAR_FIELD(type);
+    COPY_STRING_FIELD(key);
+    extended_newnode->value = (Node *)copyObject(extended_from->value);
+    COPY_SCALAR_FIELD(location);
+}
+
+// copy function for cypher_integer_const
+void copy_cypher_integer_const(ExtensibleNode *newnode,
+                               const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_integer_const);
+
+    COPY_SCALAR_FIELD(integer);
+    COPY_SCALAR_FIELD(location);
+}
+
 // copy function for cypher_create_target_nodes
 void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
@@ -83,7 +171,15 @@ void copy_cypher_create_target_nodes(ExtensibleNode *newnode, const ExtensibleNo
 }
 void copy_cypher_vle_target_nodes(ExtensibleNode *newnode, const ExtensibleNode *from)
 {
-   ereport(NOTICE, (errmsg("cypher_vle_target_nodes do not need copy")));
+    COPY_LOCALS(cypher_vle_target_nodes);
+
+    COPY_SCALAR_FIELD(minimum_output_depth);
+    COPY_SCALAR_FIELD(maximum_output_depth);
+    COPY_SCALAR_FIELD(cypher_rel_direction);
+    COPY_STRING_FIELD(label_name);
+    COPY_SCALAR_FIELD(graph_oid);
+    extended_newnode->edge_property_constraint =
+        (Node *)copyObject(extended_from->edge_property_constraint);
 }
 
 // copy function for cypher_create_path
@@ -142,6 +238,11 @@ void copy_cypher_update_item(ExtensibleNode *newnode, const ExtensibleNode *from
     COPY_STRING_FIELD(prop_name);
     extended_newnode->qualified_name = (List *)copyObject(extended_from->qualified_name);
     COPY_SCALAR_FIELD(remove_item);
+    COPY_SCALAR_FIELD(replace_properties);
+    COPY_SCALAR_FIELD(is_add);
+    extended_newnode->prop_expr = (Node *)copyObject(extended_from->prop_expr);
+    extended_newnode->prop_expr_state =
+        (ExprState *)copyObject(extended_from->prop_expr_state);
 }
 
 // copy function for cypher_delete_information
@@ -174,4 +275,44 @@ void copy_cypher_merge_information(ExtensibleNode *newnode, const ExtensibleNode
     COPY_SCALAR_FIELD(graph_oid);
     COPY_SCALAR_FIELD(merge_function_attr);
     extended_newnode->path = (cypher_create_path *)copyObject(extended_from->path);
+    extended_newnode->on_match_set_info =
+        (cypher_update_information *)copyObject(extended_from->on_match_set_info);
+    extended_newnode->on_create_set_info =
+        (cypher_update_information *)copyObject(extended_from->on_create_set_info);
+}
+
+// copy function for cypher_list_comprehension
+void copy_cypher_list_comprehension(ExtensibleNode *newnode,
+                                    const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_list_comprehension);
+
+    COPY_STRING_FIELD(varname);
+    extended_newnode->expr = (Node *)copyObject(extended_from->expr);
+    extended_newnode->where = (Node *)copyObject(extended_from->where);
+    extended_newnode->mapping_expr = (Node *)copyObject(extended_from->mapping_expr);
+}
+
+// copy function for cypher_reduce
+void copy_cypher_reduce(ExtensibleNode *newnode, const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_reduce);
+
+    COPY_STRING_FIELD(accumname);
+    extended_newnode->initial = (Node *)copyObject(extended_from->initial);
+    COPY_STRING_FIELD(varname);
+    extended_newnode->expr = (Node *)copyObject(extended_from->expr);
+    extended_newnode->mapping_expr = (Node *)copyObject(extended_from->mapping_expr);
+}
+
+// copy function for cypher_predicate_function
+void copy_cypher_predicate_function(ExtensibleNode *newnode,
+                                    const ExtensibleNode *from)
+{
+    COPY_LOCALS(cypher_predicate_function);
+
+    COPY_SCALAR_FIELD(kind);
+    COPY_STRING_FIELD(varname);
+    extended_newnode->expr = (Node *)copyObject(extended_from->expr);
+    extended_newnode->where = (Node *)copyObject(extended_from->where);
 }

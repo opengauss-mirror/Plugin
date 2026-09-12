@@ -46,8 +46,16 @@ struct agtype_build_state
  */
 #define BUFFER_RESERVE(size) reserve_from_buffer(bstate->buffer, (size))
 #define BUFFER_WRITE_PAD() pad_buffer_to_int(bstate->buffer)
-#define BUFFER_WRITE_CONST(offset, type, val) *((type *)(bstate->buffer->data + (offset))) = (val)
-#define BUFFER_WRITE_PTR(offset, ptr, len) memcpy(bstate->buffer->data + offset, ptr, len)
+#define BUFFER_WRITE_CONST(offset, type, val) \
+    do \
+    { \
+        type buffer_write_value = (val); \
+        memcpy(bstate->buffer->data + (offset), &buffer_write_value, \
+               sizeof(type)); \
+    } \
+    while (0)
+#define BUFFER_WRITE_PTR(state, offset, ptr, len) \
+    memcpy((state)->buffer->data + (offset), (ptr), (len))
 
 static int write_pointer(agtype_build_state *bstate, char *ptr, int len);
 static void write_agtentry(agtype_build_state *bstate, agtentry agte);
@@ -73,8 +81,17 @@ static void write_agtentry(agtype_build_state *bstate, agtentry agte);
  */
 static int write_pointer(agtype_build_state *bstate, char *ptr, int len)
 {
-    int offset = BUFFER_RESERVE(len);
-    BUFFER_WRITE_PTR(offset, ptr, len);
+    int offset;
+
+    if (len < 0 || (len > 0 && ptr == NULL))
+        ereport(ERROR,
+                (errcode(ERRCODE_DATA_EXCEPTION),
+                 errmsg("invalid agtype raw write length or source")));
+
+    offset = BUFFER_RESERVE(len);
+    if (len > 0) {
+        BUFFER_WRITE_PTR(bstate, offset, ptr, len);
+    }
     return len;
 }
 
@@ -199,9 +216,12 @@ void write_graphid(agtype_build_state *bstate, graphid graphid)
     write_const(AGT_HEADER_INTEGER, AGT_HEADER_TYPE);
     length += AGT_HEADER_SIZE;
 
-    // graphid value
-    write_const(graphid, int64);
-    length += sizeof(int64);
+    /* graphid value */
+    {
+        int offset = BUFFER_RESERVE(sizeof(int64));
+        memcpy(bstate->buffer->data + offset, &graphid, sizeof(graphid));
+        length += sizeof(graphid);
+    }
 
     // agtentry
     write_agt(AGTENTRY_IS_AGTYPE | length);
@@ -212,14 +232,21 @@ void write_graphid(agtype_build_state *bstate, graphid graphid)
 void write_container(agtype_build_state *bstate, agtype *agtype)
 {
     int length = 0;
+    int container_length;
 
-    // padding
+    if (agtype == NULL || VARSIZE(agtype) < VARHDRSZ + (int)sizeof(uint32))
+        ereport(ERROR,
+                (errcode(ERRCODE_DATA_CORRUPTED),
+                 errmsg("invalid agtype container size")));
+    container_length = VARSIZE(agtype) - VARHDRSZ;
+
+    /* padding */
     length += BUFFER_WRITE_PAD();
 
-    // varlen data
-    length += write_ptr((char *) &agtype->root, VARSIZE(agtype));
+    /* copy the inner container, excluding the outer varlena header */
+    length += write_ptr((char *)&agtype->root, container_length);
 
-    // agtentry
+    /* agtentry */
     write_agt(AGTENTRY_IS_CONTAINER | length);
 
     bstate->i++;
@@ -232,18 +259,30 @@ void write_container(agtype_build_state *bstate, agtype *agtype)
 void write_extended(agtype_build_state *bstate, agtype *val, uint32 header)
 {
     int length = 0;
+    int container_length;
 
-    // padding
+    if (header != AGT_HEADER_VERTEX && header != AGT_HEADER_EDGE &&
+        header != AGT_HEADER_PATH)
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("invalid agtype extended header: %u", header)));
+    if (val == NULL || VARSIZE(val) < VARHDRSZ + (int)sizeof(uint32))
+        ereport(ERROR,
+                (errcode(ERRCODE_DATA_CORRUPTED),
+                 errmsg("invalid agtype extended container size")));
+    container_length = VARSIZE(val) - VARHDRSZ;
+
+    /* padding */
     length += BUFFER_WRITE_PAD();
 
-    // vertex header
+    /* extended type header */
     write_const(header, AGT_HEADER_TYPE);
     length += AGT_HEADER_SIZE;
 
-    // vertex data
-    length += write_ptr((char *) &val->root, VARSIZE(val));
+    /* copy the inner container, excluding the outer varlena header */
+    length += write_ptr((char *)&val->root, container_length);
 
-    // agtentry
+    /* agtentry */
     write_agt(AGTENTRY_IS_AGTYPE | length);
 
     bstate->i++;

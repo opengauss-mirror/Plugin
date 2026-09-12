@@ -25,7 +25,10 @@ SET search_path TO ag_catalog;
 --
 
 SELECT create_graph('g');
-SELECT * FROM ag_graph WHERE name = 'g';
+SELECT g.name, n.nspname AS namespace
+FROM ag_graph g
+JOIN pg_namespace n ON n.oid = g.namespaceoid
+WHERE g.name = 'g';
 
 -- create a label to test drop_label()
 SELECT * FROM cypher('g', $$CREATE (:l)$$) AS r(a agtype);
@@ -62,14 +65,20 @@ SELECT create_graph('GraphA');
 SELECT create_graph('GraphB');
 
 -- Show GraphA's construction to verify case is preserved.
-SELECT * FROM ag_graph WHERE name = 'GraphA';
+SELECT g.name, n.nspname AS namespace
+FROM ag_graph g
+JOIN pg_namespace n ON n.oid = g.namespaceoid
+WHERE g.name = 'GraphA';
 SELECT nspname FROM pg_namespace WHERE nspname = 'GraphA';
 
 -- Rename GraphA to GraphX.
 SELECT alter_graph('GraphA', 'RENAME', 'GraphX');
 
 -- Show GraphX's construction to verify case is preserved.
-SELECT * FROM ag_graph WHERE name = 'GraphX';
+SELECT g.name, n.nspname AS namespace
+FROM ag_graph g
+JOIN pg_namespace n ON n.oid = g.namespaceoid
+WHERE g.name = 'GraphX';
 SELECT nspname FROM pg_namespace WHERE nspname = 'GraphX';
 
 -- Verify there isn't a graph GraphA anymore.
@@ -166,7 +175,38 @@ SELECT create_elabel(NULL, 'r');
 SELECT create_vlabel(NULL, NULL);
 SELECT create_elabel(NULL, NULL);
 
+-- graph_exists() returns an agtype boolean for SQL and PL/pgSQL callers.
+SELECT graph_exists('graph_exists_probe');
+SELECT create_graph('graph_exists_probe');
+SELECT graph_exists('graph_exists_probe');
+SELECT graph_exists('graph_exists_probe')::boolean;
+SELECT drop_graph('graph_exists_probe', true);
+SELECT graph_exists('graph_exists_probe');
+SELECT graph_exists(NULL);
+
 -- dropping the graph
 SELECT drop_graph('g', true);
 
+-- issue 2245: graph-local label counts are reset after dropping a graph
+SET client_min_messages = error;
+SELECT create_graph('issue_2245');
+SELECT count(create_vlabel('issue_2245',
+                           ('Part' || label_number::text)::cstring))
+FROM generate_series(1, 51) AS labels(label_number);
+RESET client_min_messages;
+SELECT count(*)
+FROM ag_label
+WHERE graph = (SELECT oid FROM ag_graph WHERE name = 'issue_2245');
+
+SET client_min_messages = error;
+SELECT drop_graph('issue_2245', true);
+SELECT create_graph('issue_2245');
+RESET client_min_messages;
+SELECT count(*)
+FROM ag_label
+WHERE graph = (SELECT oid FROM ag_graph WHERE name = 'issue_2245');
+
+SET client_min_messages = error;
+SELECT drop_graph('issue_2245', true);
+RESET client_min_messages;
 

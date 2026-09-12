@@ -39,6 +39,7 @@
 #include "commands/label_commands.h"
 #include "executor/cypher_utils.h"
 #include "utils/ag_cache.h"
+#include "utils/agtype.h"
 #include "utils/graphid.h"
 
 // INSERT INTO ag_catalog.ag_label
@@ -162,6 +163,14 @@ char *get_label_relation_name(const char *label_name, Oid label_graph)
     return get_rel_name(get_label_relation(label_name, label_graph));
 }
 
+char *get_label_name(int32 label_id, Oid graph_oid)
+{
+    label_cache_data *cache_data;
+
+    cache_data = search_label_graph_id_cache(graph_oid, label_id);
+    return cache_data == NULL ? NULL : NameStr(cache_data->name);
+}
+
 PG_FUNCTION_INFO_V1(_label_name);
 extern "C" Datum  _label_name(PG_FUNCTION_ARGS);
 
@@ -172,7 +181,6 @@ extern "C" Datum  _label_name(PG_FUNCTION_ARGS);
 Datum _label_name(PG_FUNCTION_ARGS)
 {
     char *label_name;
-    label_cache_data *label_cache;
     Oid graph;
     uint32 label_id;
 
@@ -181,17 +189,18 @@ Datum _label_name(PG_FUNCTION_ARGS)
                         errmsg("graph_oid and label_id must not be null")));
 
     graph = PG_GETARG_OID(0);
-
-    label_id = (int32)(((uint64)AG_GETARG_GRAPHID(1)) >> ENTRY_ID_BITS);
-
-    label_cache = search_label_graph_id_cache(graph, label_id);
-
-    label_name = NameStr(label_cache->name);
+    label_id = get_graphid_label_id(AG_GETARG_GRAPHID(1));
+    label_name = get_label_name(label_id, graph);
+    if (label_name == NULL)
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_OBJECT),
+                 errmsg("label with id %u in graph with oid %u does not exist",
+                        label_id, graph)));
 
     if (IS_AG_DEFAULT_LABEL(label_name))
-        PG_RETURN_CSTRING("");
+        label_name = "";
 
-    PG_RETURN_CSTRING(label_name);
+    PG_RETURN_DATUM(string_to_agtype(label_name));
 }
 
 PG_FUNCTION_INFO_V1(_label_id);
@@ -273,50 +282,39 @@ RangeVar *get_label_range_var(char *graph_name, Oid graph_oid,
 List *get_all_edge_labels_per_graph(EState *estate, Oid graph_oid)
 {
     List *labels = NIL;
-    ScanKeyData scan_keys[2];
     Relation ag_label;
-    TableScanDesc scan_desc;
+    TupleDesc tupdesc;
+    AgeBtreeEqScan *scan;
     HeapTuple tuple;
-    TupleTableSlot *slot;
 
-    // setup scan keys to get all edges for the given graph oid
-    ScanKeyInit(&scan_keys[1], Anum_ag_label_graph, BTEqualStrategyNumber,
-                F_OIDEQ, ObjectIdGetDatum(graph_oid));
-    ScanKeyInit(&scan_keys[0], Anum_ag_label_kind, BTEqualStrategyNumber,
-                F_CHAREQ, CharGetDatum(LABEL_TYPE_EDGE));
+    ag_label = heap_open(ag_label_relation_id(), AccessShareLock);
+    tupdesc = RelationGetDescr(ag_label);
+    scan = age_btree_eq_beginscan(
+        ag_label, estate->es_snapshot, Anum_ag_label_graph, F_OIDEQ,
+        ObjectIdGetDatum(graph_oid), AccessShareLock);
 
-    // setup the table to be scanned
-    ag_label = heap_open(ag_label_relation_id(), RowExclusiveLock);
-    scan_desc = heap_beginscan(ag_label, estate->es_snapshot, 2, scan_keys);
-
-
-    slot = ExecInitExtraTupleSlot(estate);
-    ExecSetSlotDescriptor(slot, /* slot to change */
-                     RelationGetDescr(ag_label)) ;
-
-    // scan through the results and get all the label names.
-    while(true)
+    while (HeapTupleIsValid(tuple = age_btree_eq_getnext(scan)))
     {
-        Name label;
-        bool isNull;
-        Datum datum;
+        bool is_null = false;
+        Datum kind = heap_getattr(tuple, Anum_ag_label_kind, tupdesc,
+                                  &is_null);
+        if (is_null || DatumGetChar(kind) != LABEL_TYPE_EDGE) {
+            continue;
+        }
 
-        tuple = heap_getnext(scan_desc, ForwardScanDirection);
+        Datum name = heap_getattr(tuple, Anum_ag_label_name, tupdesc,
+                                  &is_null);
+        if (!is_null) {
+            Name source = DatumGetName(name);
+            Name copy = (Name) palloc(NAMEDATALEN);
 
-        // no more labels to process
-        if (!HeapTupleIsValid(tuple))
-            break;
-
-        ExecStoreTuple(tuple, slot, InvalidBuffer, false);
-
-        datum = heap_slot_getattr(slot, Anum_ag_label_name, &isNull);
-        label = DatumGetName(datum);
-
-        labels = lappend(labels, label);
+            namestrcpy(copy, NameStr(*source));
+            labels = lappend(labels, copy);
+        }
     }
 
-    heap_endscan(scan_desc);
-    heap_close(ag_label, RowExclusiveLock);
+    age_btree_eq_endscan(scan);
+    heap_close(ag_label, AccessShareLock);
 
     return labels;
 }

@@ -53,7 +53,19 @@ void out_cypher_relationship(StringInfo str, const ExtensibleNode *node);
 void out_cypher_bool_const(StringInfo str, const ExtensibleNode *node);
 void out_cypher_param(StringInfo str, const ExtensibleNode *node);
 void out_cypher_map(StringInfo str, const ExtensibleNode *node);
+void out_cypher_map_projection(StringInfo str, const ExtensibleNode *node);
+void out_cypher_map_projection_element(StringInfo str,
+    const ExtensibleNode *node);
 void out_cypher_list(StringInfo str, const ExtensibleNode *node);
+void out_cypher_list_comprehension(StringInfo str, const ExtensibleNode *node);
+void out_cypher_reduce(StringInfo str, const ExtensibleNode *node);
+
+// predicate functions
+void out_cypher_predicate_function(StringInfo str, const ExtensibleNode *node);
+
+// comparison expression
+void out_cypher_comparison_aexpr(StringInfo str, const ExtensibleNode *node);
+void out_cypher_comparison_boolexpr(StringInfo str, const ExtensibleNode *node);
 
 // string match
 void out_cypher_string_match(StringInfo str, const ExtensibleNode *node);
@@ -66,6 +78,10 @@ void out_cypher_integer_const(StringInfo str, const ExtensibleNode *node);
 
 // sub pattern
 void out_cypher_sub_pattern(StringInfo str, const ExtensibleNode *node);
+void out_cypher_sub_query(StringInfo str, const ExtensibleNode *node);
+
+// procedure calls
+void out_cypher_call(StringInfo str, const ExtensibleNode *node);
 
 // create private data structures
 void out_cypher_create_target_nodes(StringInfo str, const ExtensibleNode *node);

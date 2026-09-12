@@ -49,20 +49,20 @@ SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION MATCH (n) RETURN
 /*should return triple*/
 SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION ALL MATCH (n) return n UNION ALL MATCH(n) RETURN n$$) AS (result agtype);
 
-/*should return double*/
+/*should return single: UNION eliminates duplicates from the complete left input*/
 SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION ALL MATCH (n) return n UNION MATCH(n) RETURN n$$) AS (result agtype);
 
-/*should return just UNION*/
+/*should return just a pair: final UNION ALL preserves its right input*/
 SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION MATCH (n) return n UNION ALL MATCH(n) RETURN n$$) AS (result agtype);
 
 /*should return 3 rows*/
 SELECT * FROM cypher('cypher_union', $$RETURN NULL UNION ALL RETURN NULL UNION ALL RETURN NULL$$) AS (result agtype);
 
-/*should return 2 rows*/
-SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION ALL MATCH (n) return n UNION MATCH(n) RETURN n$$) AS (result agtype);
+/*should return 1 null row*/
+SELECT * FROM cypher('cypher_union', $$RETURN NULL UNION ALL RETURN NULL UNION RETURN NULL$$) AS (result agtype);
 
-/*should return 1 row*/
-SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION MATCH (n) return n UNION ALL MATCH(n) RETURN n$$) AS (result agtype);
+/*should return 2 null rows*/
+SELECT * FROM cypher('cypher_union', $$RETURN NULL UNION RETURN NULL UNION ALL RETURN NULL$$) AS (result agtype);
 
 /* scoping */
 SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION ALL MATCH (m) RETURN n$$) AS (result agtype);
@@ -71,6 +71,8 @@ SELECT * FROM cypher('cypher_union', $$MATCH (n) RETURN n UNION ALL MATCH (m) RE
  *UNION and UNION ALL, type casting
  */
 SELECT * FROM cypher('cypher_union', $$ RETURN 1.0::int UNION return 1::float UNION ALL RETURN 2.0::float $$) AS (result agtype);
+
+SELECT * FROM cypher('cypher_union', $$ RETURN 1.0::int UNION RETURN 1.0::float UNION ALL RETURN 1::int $$) AS (result agtype);
 
 SELECT * FROM cypher('cypher_union', $$ RETURN 1.0::float UNION return 1::int UNION RETURN 1::float $$) AS (result agtype);
 

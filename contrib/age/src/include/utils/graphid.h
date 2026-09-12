@@ -37,7 +37,8 @@ typedef int64 graphid;
 
 #define label_id_is_valid(id) (id >= LABEL_ID_MIN && id <= LABEL_ID_MAX)
 
-#define ENTRY_ID_MIN INT64CONST(1)
+/* upstream allows entry id 0 since the loader revamp (apache/age#2044) */
+#define ENTRY_ID_MIN INT64CONST(0)
 #define ENTRY_ID_MAX INT64CONST(281474976710655) // 0x0000ffffffffffff
 #define INVALID_ENTRY_ID INT64CONST(0)
 
@@ -56,12 +57,12 @@ typedef int64 graphid;
 #define GRAPHIDOIDSTR "ag_catalog.graphid"
 #define GRAPHIDARRAYOIDSTR "ag_catalog._graphid"
 
-#define GRAPHIDOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("graphid"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
-#define GRAPHIDARRAYOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("_graphid"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
+Oid get_GRAPHIDOID(void);
+Oid get_GRAPHIDARRAYOID(void);
+void clear_global_Oids_GRAPHID(void);
+
+#define GRAPHIDOID (get_GRAPHIDOID())
+#define GRAPHIDARRAYOID (get_GRAPHIDARRAYOID())
 
 #define GET_LABEL_ID(id) \
        (((uint64)id) >> ENTRY_ID_BITS)

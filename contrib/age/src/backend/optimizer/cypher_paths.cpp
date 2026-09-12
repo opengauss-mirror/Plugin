@@ -27,6 +27,7 @@
 #include "optimizer/pathnode.h"
 #include "optimizer/paths.h"
 
+#include "catalog/ag_catalog.h"
 #include "optimizer/cypher_pathnode.h"
 #include "optimizer/cypher_paths.h"
 #include "utils/ag_func.h"
@@ -41,7 +42,7 @@ typedef enum cypher_clause_kind
     CYPHER_CLAUSE_VLE
 } cypher_clause_kind;
 
-static set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
+static THR_LOCAL set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
 
 static void set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, Index rti,
                              RangeTblEntry *rte);
@@ -56,6 +57,8 @@ static void handle_cypher_merge_clause(PlannerInfo *root, RelOptInfo *rel,
                                         Index rti, RangeTblEntry *rte);
 static void handle_cypher_vle_clause(PlannerInfo *root, RelOptInfo *rel,
                                         Index rti, RangeTblEntry *rte);
+static void replace_rel_paths(PlannerInfo *root, RelOptInfo *rel,
+                              ExtensiblePath *cp);
 
 void set_rel_pathlist_init(void)
 {
@@ -73,6 +76,10 @@ static void set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, Index rti,
 {
     if (prev_set_rel_pathlist_hook)
         prev_set_rel_pathlist_hook(root, rel, rti, rte);
+
+    if (!is_age_extension_exists()) {
+        return;
+    }
 
     switch (get_cypher_clause_kind(rte))
     {
@@ -139,6 +146,28 @@ static cypher_clause_kind get_cypher_clause_kind(RangeTblEntry *rte)
         return CYPHER_CLAUSE_NONE;
 }
 
+/*
+ * Make the clause path the only path of the rel.
+ *
+ * openGauss differs from PostgreSQL here: set_subquery_pathlist() already ran
+ * set_cheapest() before set_rel_pathlist_hook is invoked, and set_rel_pathlist()
+ * does not call it again afterwards.  Just resetting rel->pathlist therefore
+ * leaves rel->cheapest_* pointing at the discarded SubqueryScan path, and
+ * grouping_planner() picks that stale path whenever query_pathkeys is set
+ * (ORDER BY / DISTINCT / GROUP BY), silently dropping the write clause.
+ */
+static void replace_rel_paths(PlannerInfo *root, RelOptInfo *rel,
+                              ExtensiblePath *cp)
+{
+    // Discard any pre-existing paths, they should be under the cp path
+    rel->pathlist = NIL;
+
+    add_path(root, rel, (Path *)cp);
+
+    // Re-evaluate cheapest_* so the planner cannot pick a discarded path
+    set_cheapest(rel);
+}
+
 // replace all possible paths with our CustomPath
 static void handle_cypher_delete_clause(PlannerInfo *root, RelOptInfo *rel,
                                         Index rti, RangeTblEntry *rte)
@@ -156,16 +185,7 @@ static void handle_cypher_delete_clause(PlannerInfo *root, RelOptInfo *rel,
 
     cp = create_cypher_delete_path(root, rel, custom_private);
 
-    if (root->distinct_pathkeys) {
-        rel->cheapest_startup_path = (Path *)cp;
-        rel->cheapest_total_path = list_make1((Path *)cp);
-        rel->cheapest_parameterized_paths =list_make1((Path *)cp);
-    }
-
-    // Discard any pre-existing paths
-    rel->pathlist = NIL;
-
-    add_path(root, rel, (Path *)cp);
+    replace_rel_paths(root, rel, cp);
 }
 
 /*
@@ -189,11 +209,7 @@ static void handle_cypher_create_clause(PlannerInfo *root, RelOptInfo *rel,
 
     cp = create_cypher_create_path(root, rel, custom_private);
 
-    // Discard any pre-existing paths, they should be under the cp path
-    rel->pathlist = NIL;
-
-    // Add the new path to the rel.
-    add_path(root, rel, &(cp->path));
+    replace_rel_paths(root, rel, cp);
 }
 
 // replace all possible paths with our CustomPath
@@ -213,10 +229,7 @@ static void handle_cypher_set_clause(PlannerInfo *root, RelOptInfo *rel,
 
     cp = create_cypher_set_path(root, rel, custom_private);
 
-    // Discard any pre-existing paths
-    rel->pathlist = NIL;
-
-    add_path(root, rel, (Path *)cp);
+    replace_rel_paths(root, rel, cp);
 }
 
 // replace all possible paths with our CustomPath
@@ -236,10 +249,7 @@ static void handle_cypher_merge_clause(PlannerInfo *root, RelOptInfo *rel,
 
     cp = create_cypher_merge_path(root, rel, custom_private);
 
-    // Discard any pre-existing paths
-    rel->pathlist = NIL;
-
-    add_path(root, rel, (Path *)cp);
+    replace_rel_paths(root, rel, cp);
 }
 
 /*
@@ -302,11 +312,5 @@ static void handle_cypher_vle_clause(PlannerInfo *root, RelOptInfo *rel,
 
     cp = create_cypher_vle_path(root, rel, custom_private);
 
-    // Discard any pre-existing paths
-    rel->pathlist = NIL;
-    // the path must been chosen
-    rel->cheapest_parameterized_paths =list_make1((Path *)cp);
-    rel->cheapest_startup_path =  (Path *)cp;
-    rel->cheapest_total_path= list_make1((Path *)cp);
-    add_path(root, rel, (Path *)cp);
+    replace_rel_paths(root, rel, cp);
 }

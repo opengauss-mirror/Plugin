@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_create');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_create" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -543,11 +539,8 @@ cypher('cypher_create', $$
 	CREATE (b)
 	RETURN b
 $$) as t(b agtype);
-                               a                                | b 
-----------------------------------------------------------------+---
- {"id": 281474976710678, "label": "", "properties": {}}::vertex | 
-(1 row)
-
+ERROR:  cypher create clause cannot be rescanned
+HINT:  its unsafe to use joins in a query with a Cypher CREATE clause
 -- column definition list for CREATE clause must contain a single agtype
 -- attribute
 SELECT * FROM cypher('cypher_create', $$CREATE ()$$) AS (a int);
@@ -648,13 +641,213 @@ SELECT * FROM cypher('cypher_create', $$ MATCH (a:Part) RETURN a $$) as (a agtyp
 (4 rows)
 
 END;
+-- Apache AGE #1515: a previously declared vertex can only be reused as a
+-- connected path endpoint; standalone node reuse and edge-name reuse fail.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) CREATE (n) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 2:     CREATE (n) CREATE (n) RETURN n
+                              ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (n) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 2:     CREATE (n), (n) RETURN n
+                        ^
+SELECT * FROM cypher('cypher_create', $$
+    MATCH (n) CREATE (n) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 2:     MATCH (n) CREATE (n) RETURN n
+                             ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (n)-[:reuse_edge]->(n), (n) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 2:     CREATE (n), (n)-[:reuse_edge]->(n), (n) RETURN n
+                                                ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (n), (m) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 2:     CREATE (n)-[e:reuse_edge]->(m) CREATE (n), (m) RETURN n
+                                                  ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (), (m) RETURN m
+$$) AS (m agtype);
+ERROR:  variable m already exists
+LINE 2:     CREATE (n)-[e:reuse_edge]->(m) CREATE (), (m) RETURN m
+                                                      ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (), (e) RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 2:     CREATE (n)-[e:reuse_edge]->(m) CREATE (), (e) RETURN e
+                                                      ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m)
+    CREATE (n)-[e:reuse_edge]->(m) RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 1: SELECT * FROM cypher('cypher_create', $$
+                                               ^
+SELECT * FROM cypher('cypher_create', $$
+    WITH {id: 281474976710657, label: "", properties: {}}::vertex AS n
+    CREATE (n) RETURN n
+$$) AS (n agtype);
+ERROR:  variable n already exists
+LINE 3:     CREATE (n) RETURN n
+                   ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(n)-[e:reuse_edge]->(n) RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 1: SELECT * FROM cypher('cypher_create', $$
+                                               ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE ()-[e:reuse_edge]->(),
+           (n)-[e:reuse_edge]->(n)-[e:reuse_edge]->(n) RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 1: SELECT * FROM cypher('cypher_create', $$
+                                               ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m)
+    CREATE (e)-[:reuse_edge]->() RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 3:     CREATE (e)-[:reuse_edge]->() RETURN e
+                   ^
+SELECT * FROM cypher('cypher_create', $$
+    WITH {id: 1407374883553281, label: "reuse_edge",
+          end_id: 281474976710658, start_id: 281474976710657,
+          properties: {}}::edge AS e
+    CREATE ()-[e:reuse_edge]->() RETURN e
+$$) AS (e agtype);
+ERROR:  variable e already exists
+LINE 1: SELECT * FROM cypher('cypher_create', $$
+                                               ^
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) WITH n AS r CREATE (r) RETURN r
+$$) AS (r agtype);
+ERROR:  variable r already exists
+LINE 2:     CREATE (n) WITH n AS r CREATE (r) RETURN r
+                                          ^
+-- Connected endpoint reuse remains valid.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[:reuse_edge]->(m)
+    CREATE (n)-[:reuse_edge]->(m)
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) WITH n AS r
+    CREATE (r)-[:reuse_edge]->() RETURN r
+$$) AS (reused agtype);
+                             reused                             
+----------------------------------------------------------------
+ {"id": 281474976710683, "label": "", "properties": {}}::vertex
+(1 row)
+
+-- Variables removed by WITH are out of scope and can be declared again.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (m) WITH n AS r CREATE (m) RETURN m
+$$) AS (redeclared agtype);
+                           redeclared                           
+----------------------------------------------------------------
+ {"id": 281474976710687, "label": "", "properties": {}}::vertex
+(1 row)
+
+--
+-- openGauss: a write clause must survive ORDER BY / DISTINCT / aggregation on
+-- the same query level. set_rel_pathlist_hook runs after set_cheapest() here,
+-- so the clause path has to re-evaluate the cheapest paths itself or the
+-- planner keeps the discarded SubqueryScan and the CREATE silently vanishes.
+--
+SELECT create_graph('cypher_create_sorted');
+NOTICE:  graph "cypher_create_sorted" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'outer'}) RETURN n.name
+$$) AS (name agtype) ORDER BY name;
+  name   
+---------
+ "outer"
+(1 row)
+
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'inner'}) RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+  name   
+---------
+ "inner"
+(1 row)
+
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'distinct'}) RETURN DISTINCT n.name
+$$) AS (name agtype);
+    name    
+------------
+ "distinct"
+(1 row)
+
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'grouped'}) RETURN n.name, count(*)
+$$) AS (name agtype, cnt agtype);
+   name    | cnt 
+-----------+-----
+ "grouped" | 1
+(1 row)
+
+SELECT DISTINCT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'sql_distinct'}) RETURN n.name
+$$) AS (name agtype);
+      name      
+----------------
+ "sql_distinct"
+(1 row)
+
+-- every CREATE above must have been applied
+SELECT * FROM cypher('cypher_create_sorted', $$
+    MATCH (n:Person) RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+      name      
+----------------
+ "distinct"
+ "grouped"
+ "inner"
+ "outer"
+ "sql_distinct"
+(5 rows)
+
+SELECT drop_graph('cypher_create_sorted', true);
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table cypher_create_sorted._ag_label_vertex
+drop cascades to table cypher_create_sorted._ag_label_edge
+drop cascades to table cypher_create_sorted."Person"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "cypher_create_sorted" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
 --
 -- Clean up
 --
 DROP TABLE simple_path;
 DROP FUNCTION create_test;
 SELECT drop_graph('cypher_create', true);
-NOTICE:  drop cascades to 13 other objects
+NOTICE:  drop cascades to 14 other objects
 DETAIL:  drop cascades to table cypher_create._ag_label_vertex
 drop cascades to table cypher_create._ag_label_edge
 drop cascades to table cypher_create.v
@@ -668,6 +861,7 @@ drop cascades to table cypher_create.existing_vlabel
 drop cascades to table cypher_create.existing_elabel
 drop cascades to table cypher_create.knows
 drop cascades to table cypher_create."Part"
+drop cascades to table cypher_create.reuse_edge
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_create" has been dropped
 CONTEXT:  referenced column: drop_graph

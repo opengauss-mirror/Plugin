@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+.DEFAULT_GOAL := all
+
 MODULE_big = age
 
 
@@ -60,22 +62,31 @@ OBJS = src/backend/age.o \
        src/backend/utils/adt/agtype_util.o \
        src/backend/utils/adt/agtype_raw.o \
        src/backend/utils/adt/ag_extend_func.o \
+       src/backend/utils/adt/age_session_info.o \
        src/backend/utils/adt/age_global_graph.o \
        src/backend/utils/adt/cypher_funcs.o \
+       src/backend/utils/graph_generation.o \
        src/backend/utils/adt/ag_float8_supp.o \
        src/backend/utils/adt/graphid.o \
        src/backend/utils/adt/age_vle.o \
+       src/backend/utils/name_validation.o \
        src/backend/utils/ag_func.o \
+       src/backend/utils/ag_guc.o \
        src/backend/utils/cache/ag_cache.o \
+       src/backend/utils/cache/agehash.o \
+       src/backend/utils/load/ag_csv_reader.o \
        src/backend/utils/load/ag_load_labels.o \
        src/backend/utils/load/ag_load_edges.o \
-       src/backend/utils/load/age_load.o \
-       src/backend/utils/load/libcsv.o
+       src/backend/utils/load/age_load.o
+
+DEPFILES = $(OBJS:.o=.d)
 
 
 EXTENSION = age
 
-DATA = age--1.0.0.sql
+DATA = age--1.0.0.sql age--1.0.1.sql age--1.0.0--1.0.1.sql
+
+SHLIB_LINK += -Wl,--version-script=$(srcdir)/age.exports.map
 
 override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC
 
@@ -98,9 +109,21 @@ FLEXFLAGS = -CF -b -p -p
 REGRESS = scan\
           graphid \
           expr \
+          predicate_functions \
           agtype \
+          agtype_hash_cmp \
+          agtype_jsonb_cast \
+          jsonb_operators \
+          containment_selectivity \
+          pattern_expression \
+          index \
           catalog \
           cypher \
+          cypher_call \
+          cypher_subquery \
+          age_upgrade \
+          pgvector \
+          analyze \
           cypher_create \
           cypher_match \
           cypher_unwind \
@@ -111,7 +134,26 @@ REGRESS = scan\
           cypher_vle \
           cypher_union \
           cypher_merge \
+          generated_columns \
+          age_global_graph \
+          graph_generation \
+          issue_369 \
+          list_comprehension \
+          map_projection \
+          tail \
+          reduce \
+          scalar \
+          direct_field_access \
           age_load \
+          name_validation \
+          reserved_keyword_alias \
+          fuzzystrmatch \
+          pg_trgm \
+          age_shortest_path \
+          subgraph \
+          agehash \
+          extension_security \
+          security \
           drop
 
 srcdir=`pwd`
@@ -119,14 +161,17 @@ srcdir=`pwd`
 ag_regress_dir = $(srcdir)/regress
 
 top_builddir = ../..
-REGRESS_OPTS =  --load-extension=age --extra-install='contrib/age' --top-builddir="../.."  --inputdir=$(ag_regress_dir) --outputdir=$(ag_regress_dir) --encoding=UTF-8 --temp-install=$(ag_regress_dir)/instance --port=61958 --encoding=UTF-8 --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
+REGRESS_OPTS =  --load-extension=age --extra-install='contrib/age' --extra-install='contrib/fuzzystrmatch' --extra-install='contrib/pg_trgm' --top-builddir="../.."  --inputdir=$(ag_regress_dir) --outputdir=$(ag_regress_dir) --encoding=UTF-8 --temp-install=$(ag_regress_dir)/instance --temp-config=$(ag_regress_dir)/age_regress.conf --port=61958 --encoding=UTF-8 --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 
 ag_regress_out = instance/ log/ results/ regression.*
 
 EXTRA_CLEAN = src/backend/parser/cypher_gram.cpp src/include/parser/cypher_gram_def.h \
 				src/backend/parser/ag_scanner.cpp \
                 src/include/parser/cypher_kwlist_d.h src/include/parser/kwlist_d.h \
-                regress/regression.diffs regress/regression.out regress/instance/ regress/log/ regress/results/ regress/.sql/
+                regress/regression.diffs regress/regression.out regress/instance/ regress/log/ regress/results/ regress/.sql/ \
+                $(DEPFILES)
+
+$(MODULE_big)$(DLSUFFIX): age.exports.map
 
 
 
@@ -136,11 +181,13 @@ PG_CPPFLAGS = -I$(ag_include_dir) -I$(ag_include_dir)/parser
 
 BISON = /usr/bin/bison
 BISONFLAGS += --defines=src/include/parser/cypher_gram_def.h
+BISON_WARNING_FLAGS = -Werror -Wno-error=deprecated -Wno-error=other \
+	-Wno-error=conflicts-sr -Wno-error=conflicts-rr
 src/include/parser/cypher_gram_def.h: src/backend/parser/cypher_gram.cpp;
 
 src/backend/parser/cypher_gram.cpp: src/backend/parser/cypher_gram.y
 ifdef BISON
-	$(BISON) src/backend/parser/cypher_gram.y --defines=src/include/parser/cypher_gram_def.h -o src/backend/parser/cypher_gram.cpp
+	$(BISON) $(BISON_WARNING_FLAGS) src/backend/parser/cypher_gram.y --defines=src/include/parser/cypher_gram_def.h -o src/backend/parser/cypher_gram.cpp
 	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' src/backend/parser/cypher_gram.cpp
 else
 	@$(missing) bison $< $@
@@ -178,6 +225,7 @@ REGRESS_OPTS = --dbname=contrib_regression \
 	           --dlpath=$(CMAKE_CHECK_INSTALL_PREFIX)/lib/postgresql \
 	           --temp-install=$(CMAKE_CHECK_INPUT_DIR)/instance \
 	           --port=61958 -c 0 -d 1 --single_node \
+	           --temp-config=$(CMAKE_CHECK_INPUT_DIR)/age_regress.conf \
 	           --abs_gausshome=$(CMAKE_CHECK_INSTALL_PREFIX)
 CMAKE_CHECK_PREP = age-prepare-check
 CMAKE_CHECK_CLEAN_FILES = $(CMAKE_CHECK_INPUT_DIR)/.sql \
@@ -207,6 +255,9 @@ subdir = contrib/age
 include $(top_builddir)/src/Makefile.global
 include $(top_builddir)/contrib/contrib-global.mk
 endif
+
+override CXXFLAGS += -MMD -MP
+-include $(DEPFILES)
 
 installcheck:	use_smartmatch
 

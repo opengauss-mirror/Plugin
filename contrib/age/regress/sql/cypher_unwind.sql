@@ -23,15 +23,23 @@ SET search_path TO ag_catalog;
 SELECT create_graph('cypher_unwind');
 
 SELECT * FROM cypher('cypher_unwind', $$
+    CREATE (node1 {name: 'node1', a: [1, 2, 3]}),
+           (node2 {name: 'node2', a: [4, 5, 6]}),
+           (node3 {name: 'node3', a: [7, 8, 9]}),
+           (node1)-[:KNOWS]->(node2),
+           (node2)-[:KNOWS]->(node3)
+$$) as (i agtype);
+
+SELECT * FROM cypher('cypher_unwind', $$
     UNWIND [1, 2, 3] AS i RETURN i
 $$) as (i agtype);
 
 SELECT * FROM cypher('cypher_unwind', $$
-    CREATE ({a: [1, 2, 3]}), ({a: [4, 5, 6]})
-$$) as (i agtype);
-
-SELECT * FROM cypher('cypher_unwind', $$
-    MATCH (n) WITH n.a AS a UNWIND a AS i RETURN *
+    MATCH (n)
+    WITH n.a AS a
+    UNWIND a AS i
+    RETURN *
+    ORDER BY a, i
 $$) as (i agtype, j agtype);
 
 SELECT * FROM cypher('cypher_unwind', $$
@@ -41,11 +49,44 @@ SELECT * FROM cypher('cypher_unwind', $$
     RETURN y
 $$) as (i agtype);
 
+-- UNWIND vertices
 SELECT * FROM cypher('cypher_unwind', $$
-    WITH [{id: 0, label:'', properties:{}}::vertex, {id: 1, label:'', properties:{}}::vertex] as n
-    UNWIND n as a
-    SET a.i = 1
-    RETURN a
-$$) as (i agtype);
+    MATCH p=()-[:KNOWS]->()
+    UNWIND nodes(p) AS node
+    RETURN node.name
+    ORDER BY node.name
+$$) as (name agtype);
+
+-- UNWIND edges
+SELECT * FROM cypher('cypher_unwind', $$
+    MATCH p=()-[:KNOWS]->()
+    UNWIND relationships(p) AS relation
+    RETURN type(relation)
+    ORDER BY type(relation)
+$$) as (relation_type agtype);
+
+-- UNWIND paths
+SELECT * FROM cypher('cypher_unwind', $$
+    MATCH p=({name: 'node1'})-[:KNOWS*1..2]->({name: 'node3'})
+    UNWIND [p] AS path
+    RETURN size(relationships(path))
+$$) as (edge_count agtype);
+
+-- #1304: SQL NULL input propagates through UNWIND without detoast errors.
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND NULL AS i
+    RETURN i
+$$) AS (i agtype);
+
+-- any SubLink-producing expression may be unwound, not only a list
+-- comprehension
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND reduce(acc = [], x IN [1, 2] | acc + [x]) AS y
+    RETURN y
+$$) AS (y agtype);
+SELECT * FROM cypher('cypher_unwind', $$
+    UNWIND [x IN [1, 2, 3] WHERE x > 1] AS y
+    RETURN y
+$$) AS (y agtype);
 
 SELECT drop_graph('cypher_unwind', true);

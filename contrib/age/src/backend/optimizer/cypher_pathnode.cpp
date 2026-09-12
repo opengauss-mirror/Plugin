@@ -39,6 +39,20 @@ const ExtensiblePathMethods cypher_merge_path_methods = {
 const ExtensiblePathMethods cypher_vle_path_methods = {
     VLE_PATH_NAME, plan_cypher_vle_path};
 
+/*
+ * AGE extensible nodes execute inside the coordinator backend. In openGauss
+ * the zero value of RemoteQueryExecType is EXEC_ON_DATANODES, so relying on
+ * makeNode() zero-initialization creates an invalid distributed path with no
+ * execution nodes and can crash an aggregate built above it.
+ */
+static void initialize_cypher_path_distribution(Path *path)
+{
+    path->exec_type = EXEC_ON_COORDS;
+    path->distribute_keys = NIL;
+    path->distribution.group_oid = InvalidOid;
+    path->distribution.bms_data_nodeids = NULL;
+}
+
 ExtensiblePath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
                                           List *custom_private)
 {
@@ -47,6 +61,7 @@ ExtensiblePath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
     cp = makeNode(ExtensiblePath);
 
     cp->path.pathtype = T_ExtensiblePlan;
+    initialize_cypher_path_distribution(&cp->path);
 
     cp->path.parent = rel;
 
@@ -79,6 +94,7 @@ ExtensiblePath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
     cp = makeNode(ExtensiblePath);
 
     cp->path.pathtype = T_ExtensiblePlan;
+    initialize_cypher_path_distribution(&cp->path);
 
     cp->path.parent = rel;
 
@@ -115,6 +131,7 @@ ExtensiblePath *create_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
     cp = makeNode(ExtensiblePath);
 
     cp->path.pathtype = T_ExtensiblePlan;
+    initialize_cypher_path_distribution(&cp->path);
 
     cp->path.parent = rel;
 
@@ -154,6 +171,7 @@ ExtensiblePath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
     cp = makeNode(ExtensiblePath);
 
     cp->path.pathtype = T_ExtensiblePlan;
+    initialize_cypher_path_distribution(&cp->path);
 
     cp->path.parent = rel;
 
@@ -189,6 +207,7 @@ ExtensiblePath *create_cypher_vle_path(PlannerInfo *root, RelOptInfo *rel,
     cp = makeNode(ExtensiblePath);
 
     cp->path.pathtype = T_ExtensiblePlan;
+    initialize_cypher_path_distribution(&cp->path);
 
     cp->path.parent = rel;
 

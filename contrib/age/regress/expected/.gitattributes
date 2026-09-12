@@ -1,0 +1,4 @@
+# Regression test expected files contain intentional trailing whitespace
+# produced by psql's aligned output format. Same convention as PostgreSQL's
+# own .gitattributes ("*.out -whitespace").
+*.out -whitespace

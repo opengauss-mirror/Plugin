@@ -2,3 +2,7 @@ zhparser:
   cpeName: zhparser
   version: 1.2.3
   url: 'https://github.com/hightman/scws'
+apache-age:
+  cpeName: apache-age
+  version: master 801417404 (2026-07-17, four commits after v1.8.0-rc0)
+  url: 'https://github.com/apache/age'

@@ -123,7 +123,7 @@ whitespace [\t\n\v\f\r ]+
  * Therefore, the rule has been modified so that it can match such comments.
  */
 %x mlcomment
-mlcstart  "/*"
+mlcstart  \/\*{op_chars}*
 mlcchars  [^*]+|\*+
 mlcstop    \*+\/
 slcomment "//"[^\n\r]*
@@ -194,6 +194,8 @@ dquote        \"
 dqchars       [^"\\]+
 squote        '
 sqchars       [^'\\]+
+esdquote      {dquote}{dquote}
+essquote      {squote}{squote}
 esascii       \\["'/\\bfnrt]
 esasciifail   \\[^Uu]?
 esunicode     \\(U{hexdigit}{8}|u{hexdigit}{4})
@@ -234,7 +236,10 @@ dot_dot  ".."
 plus_eq  "+="
 eq_tilde "=~"
 typecast "::"
+vector_l2_op "<->"
 self     [%()*+,\-./:;<=>[\]^{|}]
+op_chars [\!\@\#\^\&\|\~\?\+\*\/\%\<\>\=]
+operator {op_chars}+
 
 other .
 
@@ -333,6 +338,11 @@ ag_token token;
     // update location in case of unterminated comment
     update_location();
     BEGIN(mlcomment);
+    yyless(2);
+}
+
+<mlcomment>{mlcstart} {
+    yyless(2);
 }
 
 <mlcomment>{mlcchars} {
@@ -412,6 +422,14 @@ ag_token token;
 <dqstr>{dqchars} |
 <sqstr>{sqchars} {
     strbuf_append_buf(&yyextra.literal_buf, yytext, yyleng);
+}
+
+<dqstr>{esdquote} {
+    strbuf_append_char(&yyextra.literal_buf, '"');
+}
+
+<sqstr>{essquote} {
+    strbuf_append_char(&yyextra.literal_buf, '\'');
 }
 
 <dqstr,sqstr>{esascii} {
@@ -623,7 +641,7 @@ ag_token token;
                         scan_errposition()));
     }
 
-    token.type = AG_TOKEN_IDENTIFIER;
+    token.type = AG_TOKEN_BQIDENT;
     token.value.s = strbuf_get_str(&yyextra.literal_buf);
     token.location = get_location();
     return token;
@@ -699,10 +717,116 @@ ag_token token;
     return token;
 }
 
+{vector_l2_op} {
+    update_location();
+    token.type = AG_TOKEN_OP;
+    token.value.s = yytext;
+    token.location = get_location();
+    return token;
+}
+
 {self} {
     update_location();
     token.type = AG_TOKEN_CHAR;
     token.value.c = yytext[0];
+    token.location = get_location();
+    return token;
+}
+
+{op_chars} {
+    update_location();
+    token.type = AG_TOKEN_OP;
+    token.value.s = yytext;
+    token.location = get_location();
+    return token;
+}
+
+{operator} {
+    int nchars = yyleng;
+    char *slashstar = strstr(yytext, "/*");
+    char *slashslash = strstr(yytext, "//");
+
+    if (slashstar && slashslash)
+    {
+        if (slashstar > slashslash)
+            slashstar = slashslash;
+    }
+    else if (!slashstar)
+        slashstar = slashslash;
+    if (slashstar)
+        nchars = slashstar - yytext;
+
+    if (nchars > 1 &&
+        (yytext[nchars - 1] == '+' ||
+         yytext[nchars - 1] == '-'))
+    {
+        int ic;
+
+        for (ic = nchars - 2; ic >= 0; ic--)
+        {
+            char c = yytext[ic];
+            if (c == '~' || c == '!' || c == '@' ||
+                c == '#' || c == '^' || c == '&' ||
+                c == '|' || c == '`' || c == '?' ||
+                c == '%')
+                break;
+        }
+        if (ic < 0)
+        {
+            do {
+                nchars--;
+            } while (nchars > 1 &&
+                     (yytext[nchars - 1] == '+' ||
+                      yytext[nchars - 1] == '-'));
+        }
+    }
+
+    update_location();
+
+    if (nchars < yyleng)
+    {
+        yyless(nchars);
+        if (nchars == 1 &&
+            strchr("%()*+,-./:;<=>[\\]^{|}", yytext[0]))
+        {
+            token.type = AG_TOKEN_CHAR;
+            token.value.c = yytext[0];
+            token.location = get_location();
+            return token;
+        }
+
+        if (nchars == 2)
+        {
+            if (yytext[0] == '>' && yytext[1] == '=')
+                token.type = AG_TOKEN_GT_EQ;
+            else if (yytext[0] == '<' && yytext[1] == '=')
+                token.type = AG_TOKEN_LT_EQ;
+            else if (yytext[0] == '<' && yytext[1] == '>')
+                token.type = AG_TOKEN_LT_GT;
+            else if (yytext[0] == '+' && yytext[1] == '=')
+                token.type = AG_TOKEN_PLUS_EQ;
+            else if ((yytext[0] == '!' && yytext[1] == '=') ||
+                     (yytext[0] == '=' && yytext[1] == '>'))
+                ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                                scan_errmsg("unexpected character"),
+                                scan_errposition()));
+            else
+                goto handle_generic_op;
+
+            token.value.s = yytext;
+            token.location = get_location();
+            return token;
+        }
+    }
+
+handle_generic_op:
+    if (nchars >= NAMEDATALEN)
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                        scan_errmsg("operator too long"),
+                        scan_errposition()));
+
+    token.type = AG_TOKEN_OP;
+    token.value.s = yytext;
     token.location = get_location();
     return token;
 }

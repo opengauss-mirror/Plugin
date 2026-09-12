@@ -39,6 +39,7 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
         DECIMAL,
         STRING,
         IDENTIFIER,
+        IDENTIFIER,
         PARAMETER,
         NOT_EQ,
         LT_EQ,
@@ -46,7 +47,9 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
         DOT_DOT,
         TYPECAST,
         PLUS_EQ,
-        EQ_TILDE
+        EQ_TILDE,
+        CHAR,
+        OP
     };
 
     ag_token token;
@@ -55,28 +58,31 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
 
     switch (token.type)
     {
-    case AG_TOKEN_NULL:
-        break;
-    case AG_TOKEN_INTEGER:
-        lvalp->integer = token.value.i;
-        break;
-    case AG_TOKEN_DECIMAL:
-    case AG_TOKEN_STRING:
-        lvalp->string = pstrdup(token.value.s);
-        break;
-    case AG_TOKEN_IDENTIFIER:
-    {
-        int kwnum;
-        char *ident;
+        case AG_TOKEN_NULL:
+            break;
+        case AG_TOKEN_INTEGER:
+            lvalp->integer = token.value.i;
+            break;
+        case AG_TOKEN_DECIMAL:
+        case AG_TOKEN_STRING:
+        case AG_TOKEN_OP:
+            lvalp->string = pstrdup(token.value.s);
+            break;
+        case AG_TOKEN_IDENTIFIER: {
+            int kwnum;
+            char *ident;
 
             kwnum = ScanKeywordLookup(token.value.s, &CypherKeyword);
-        if (kwnum >= 0)
+            if (kwnum >= 0)
             {
                 /*
-             * use token.value.s instead of keyword->name to preserve
-             * case sensitivity
-             */
+                 * use token.value.s instead of keyword->name to preserve
+                 * case sensitivity
+                 */
                 lvalp->keyword = GetScanKeyword(kwnum, &CypherKeyword);
+                ident = pstrdup(token.value.s);
+                truncate_identifier(ident, strlen(ident), true);
+                lvalp->string = ident;
                 *llocp = token.location;
                 return CypherKeywordTokens[kwnum];
             }
@@ -85,27 +91,34 @@ int cypher_yylex(YYSTYPE *lvalp, YYLTYPE *llocp, ag_scanner_t scanner)
             truncate_identifier(ident, strlen(ident), true);
             lvalp->string = ident;
             break;
-    }
-    case AG_TOKEN_PARAMETER:
-        lvalp->string = pstrdup(token.value.s);
-        break;
-    case AG_TOKEN_LT_GT:
-    case AG_TOKEN_LT_EQ:
-    case AG_TOKEN_GT_EQ:
-    case AG_TOKEN_DOT_DOT:
-    case AG_TOKEN_PLUS_EQ:
-    case AG_TOKEN_EQ_TILDE:
-        break;
-    case AG_TOKEN_TYPECAST:
-        break;
-    case AG_TOKEN_CHAR:
-        *llocp = token.location;
-        return token.value.c;
-    default:
-        ereport(ERROR, (errmsg("unexpected ag_token_type: %d", token.type)));
-        break;
-    }
+        }
+        case AG_TOKEN_BQIDENT: {
+            char *ident = pstrdup(token.value.s);
 
+            /* Backtick-quoted names bypass keyword lookup. */
+            truncate_identifier(ident, strlen(ident), true);
+            lvalp->string = ident;
+            break;
+        }
+        case AG_TOKEN_PARAMETER:
+            lvalp->string = pstrdup(token.value.s);
+            break;
+        case AG_TOKEN_LT_GT:
+        case AG_TOKEN_LT_EQ:
+        case AG_TOKEN_GT_EQ:
+        case AG_TOKEN_DOT_DOT:
+        case AG_TOKEN_PLUS_EQ:
+        case AG_TOKEN_EQ_TILDE:
+            break;
+        case AG_TOKEN_TYPECAST:
+            break;
+        case AG_TOKEN_CHAR:
+            *llocp = token.location;
+            return token.value.c;
+        default:
+            ereport(ERROR, (errmsg("unexpected ag_token_type: %d", token.type)));
+            break;
+    }
     *llocp = token.location;
     return type_map[token.type];
 }

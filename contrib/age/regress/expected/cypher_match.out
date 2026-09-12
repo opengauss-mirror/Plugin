@@ -19,10 +19,6 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_match');
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
-CONTEXT:  referenced column: create_graph
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
-CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_match" has been created
 CONTEXT:  referenced column: create_graph
  create_graph 
@@ -61,6 +57,15 @@ SELECT * FROM cypher('cypher_match', $$MATCH (n:v) RETURN n.i$$) AS (i agtype);
  1
 (3 rows)
 
+SELECT _get_vertex_by_graphid('cypher_match', id)
+FROM cypher_match.v
+ORDER BY id
+LIMIT 1;
+                     _get_vertex_by_graphid                      
+-----------------------------------------------------------------
+ {"id": 844424930131969, "label": "v", "properties": {}}::vertex
+(1 row)
+
 SELECT * FROM cypher('cypher_match', $$
 MATCH (n:v) WHERE n.i > 0
 RETURN n.i
@@ -84,8 +89,8 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (a agtype);
                                                                                                                                                                                                                                                        a                                                                                                                                                                                                                                                       
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
  [{"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex]::path
+ [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -116,12 +121,12 @@ $$) AS (a agtype);
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
-	MATCH ()-[b:e1]-()-[]-() RETURN b
+	MATCH ()-[b:e1]-()-[]-() RETURN b ORDER BY id(b)
 $$) AS (a agtype);
                                                              a                                                             
 ---------------------------------------------------------------------------------------------------------------------------
- {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
  {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
+ {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -223,7 +228,7 @@ $$) AS (a agtype);
 (1 row)
 
 SELECT * FROM cypher('cypher_match', $$
-	MATCH ()<-[b:e1]-()-[]-() RETURN b
+	MATCH ()<-[b:e1]-()-[]-() RETURN b ORDER BY id(b)
 $$) AS (a agtype);
                                                              a                                                             
 ---------------------------------------------------------------------------------------------------------------------------
@@ -250,14 +255,14 @@ $$) AS (i agtype);
 SELECT * FROM cypher('cypher_match', $$
 	MATCH ()<-[]-(n:v2)-[]->()
 	MATCH p=(n)-[]->()
-	RETURN p
+	RETURN p ORDER BY p
 $$) AS (i agtype);
                                                                                                                                                   i                                                                                                                                                   
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974594, "label": "e2", "end_id": 1688849860263937, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263937, "label": "v2", "properties": {"id": "initial"}}::vertex]::path
+ [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974593, "label": "e2", "end_id": 1688849860263939, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263939, "label": "v2", "properties": {"id": "end"}}::vertex]::path
  [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974593, "label": "e2", "end_id": 1688849860263939, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263939, "label": "v2", "properties": {"id": "end"}}::vertex]::path
  [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974594, "label": "e2", "end_id": 1688849860263937, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263937, "label": "v2", "properties": {"id": "initial"}}::vertex]::path
- [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974593, "label": "e2", "end_id": 1688849860263939, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263939, "label": "v2", "properties": {"id": "end"}}::vertex]::path
+ [{"id": 1688849860263938, "label": "v2", "properties": {"id": "middle"}}::vertex, {"id": 1970324836974594, "label": "e2", "end_id": 1688849860263937, "start_id": 1688849860263938, "properties": {}}::edge, {"id": 1688849860263937, "label": "v2", "properties": {"id": "initial"}}::vertex]::path
 (4 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -282,12 +287,12 @@ $$) AS (a agtype);
 
 SELECT * FROM cypher('cypher_match', $$
 	MATCH ()-[b:e1]->()
-	RETURN b
+	RETURN b ORDER BY id(b)
 $$) AS (i agtype);
                                                              i                                                             
 ---------------------------------------------------------------------------------------------------------------------------
- {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
  {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge
+ {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -394,25 +399,28 @@ $$) AS (i agtype, p agtype);
    | [{"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex, {"id": 1407374883553282, "label": "e1", "end_id": 1125899906842626, "start_id": 1125899906842625, "properties": {}}::edge, {"id": 1125899906842626, "label": "v1", "properties": {"id": "middle"}}::vertex, {"id": 1407374883553281, "label": "e1", "end_id": 1125899906842627, "start_id": 1125899906842626, "properties": {}}::edge, {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex]::path
 (3 rows)
 
+-- ORDER BY keeps this independent of the join order the planner picks for the
+-- cartesian product; the assertion here is the result set, not a scan order.
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a:v)
 	MATCH (b:v1)-[]-(c)
 	RETURN a.i, b.id, c.id
+	ORDER BY a.i, b.id, c.id
 $$) AS (i agtype, b agtype, c agtype);
  i |     b     |     c     
 ---+-----------+-----------
-   | "middle"  | "end"
- 0 | "middle"  | "end"
- 1 | "middle"  | "end"
-   | "end"     | "middle"
  0 | "end"     | "middle"
- 1 | "end"     | "middle"
-   | "initial" | "middle"
  0 | "initial" | "middle"
- 1 | "initial" | "middle"
-   | "middle"  | "initial"
+ 0 | "middle"  | "end"
  0 | "middle"  | "initial"
+ 1 | "end"     | "middle"
+ 1 | "initial" | "middle"
+ 1 | "middle"  | "end"
  1 | "middle"  | "initial"
+   | "end"     | "middle"
+   | "initial" | "middle"
+   | "middle"  | "end"
+   | "middle"  | "initial"
 (12 rows)
 
 --
@@ -478,6 +486,36 @@ AS (p agtype);
 ---
 (0 rows)
 
+SHOW age.enable_containment;
+ age.enable_containment 
+------------------------
+ on
+(1 row)
+
+SET age.enable_containment = off;
+SELECT count(*) FROM cypher('cypher_match',
+ $$MATCH (n {string_key: "test", map_key: {key: "value"}}) RETURN n $$)
+AS (n agtype);
+ count 
+-------
+     1
+(1 row)
+
+SELECT count(*) FROM cypher('cypher_match',
+ $$MATCH (n {list_key: [1, 2, 3]}) RETURN n $$)
+AS (n agtype);
+ count 
+-------
+     1
+(1 row)
+
+RESET age.enable_containment;
+SHOW age.enable_containment;
+ age.enable_containment 
+------------------------
+ on
+(1 row)
+
 --
 -- Prepared Statement Property Constraint
 --
@@ -500,10 +538,15 @@ LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n:v)$$) AS (a ...
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a)-[]-()-[]-(a:v1) RETURN a
 $$) AS (a agtype);
- a 
----
-(0 rows)
-
+ERROR:  multiple labels for variable 'a' are not supported
+LINE 2:  MATCH (a)-[]-()-[]-(a:v1) RETURN a
+                            ^
+SELECT * FROM cypher('cypher_match', $$
+	MATCH (a)-[]-()-[]-(a:invalid_label) RETURN a
+$$) AS (a agtype);
+ERROR:  multiple labels for variable 'a' are not supported
+LINE 2:  MATCH (a)-[]-()-[]-(a:invalid_label) RETURN a
+                            ^
 SELECT * FROM cypher('cypher_match', $$
 	MATCH (a:v1)-[]-()-[a]-() RETURN a
 $$) AS (a agtype);
@@ -519,21 +562,45 @@ $$) AS (a agtype);
 
 --Incorrect Labels
 SELECT * FROM cypher('cypher_match', $$MATCH (n)-[:v]-() RETURN n$$) AS (n agtype);
-ERROR:  label v is for vertices, not edges
-LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n)-[:v]-() RET...
-                                                         ^
+ n 
+---
+(0 rows)
+
 SELECT * FROM cypher('cypher_match', $$MATCH (n)-[:emissing]-() RETURN n$$) AS (n agtype);
-ERROR:  label emissing does not exists
-LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n)-[:emissing]...
-                                                         ^
+ n 
+---
+(0 rows)
+
 SELECT * FROM cypher('cypher_match', $$MATCH (n:e1)-[]-() RETURN n$$) AS (n agtype);
-ERROR:  label e1 is for edges, not vertices
-LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n:e1)-[]-() RE...
-                                                     ^
+ n 
+---
+(0 rows)
+
 SELECT * FROM cypher('cypher_match', $$MATCH (n:vmissing)-[]-() RETURN n$$) AS (n agtype);
-ERROR:  label vmissing does not exists
-LINE 1: SELECT * FROM cypher('cypher_match', $$MATCH (n:vmissing)-[]...
-                                                     ^
+ n 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_match', $$MATCH (:e1)-[r]-() RETURN r$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_match', $$MATCH (:vmissing)-[r]-() RETURN r$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_match', $$MATCH (n),(:e1) RETURN n$$) AS (n agtype);
+ n 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_match', $$MATCH (n),()-[:v]-() RETURN n$$) AS (n agtype);
+ n 
+---
+(0 rows)
+
 --
 -- Path of one vertex. This should select 14
 --
@@ -935,6 +1002,22 @@ $$) AS (u agtype, m agtype, l agtype);
  "someone"  | "opt_match_e" | "somebody"
 (4 rows)
 
+-- Entity DISTINCT uses graph identifiers internally but must preserve the
+-- complete entity value for property access by following clauses.
+SELECT * FROM cypher('cypher_match', $$
+    MATCH (u:opt_match_v), (duplicate:opt_match_v)
+    WITH DISTINCT u
+    RETURN u.name AS name
+    ORDER BY name
+$$) AS (name agtype);
+    name    
+------------
+ "anybody"
+ "nobody"
+ "somebody"
+ "someone"
+(4 rows)
+
 SELECT * FROM cypher('cypher_match', $$
     OPTIONAL MATCH (n:opt_match_v)-[r]->(p), (m:opt_match_v)-[s]->(q)
     WHERE id(n) <> id(m)
@@ -972,6 +1055,51 @@ SELECT * FROM cypher('cypher_match', $$
  "someone"  |               |            | "somebody" |               | 
 (12 rows)
 
+-- A correlated three-edge OPTIONAL MATCH must preserve both the selective
+-- endpoint traversal and the NULL-extended row for an unmatched outer vertex.
+SELECT * FROM cypher('cypher_match', $$
+    CREATE (:opt_long_v {name: 'matched'})
+               -[:opt_long_e]->(:opt_long_v {name: 'first'})
+               -[:opt_long_e]->(:opt_long_v {name: 'second'})
+               -[:opt_long_e]->(:opt_long_v {name: 'target'}),
+           (:opt_long_v {name: 'unmatched'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('cypher_match', $$
+    MATCH (source:opt_long_v)
+    WHERE source.name IN ['matched', 'unmatched']
+    OPTIONAL MATCH (source)-[:opt_long_e]->()-[:opt_long_e]->()-[:opt_long_e]->(target)
+    RETURN source.name AS source, target.name AS target
+    ORDER BY source
+$$) AS (source agtype, target agtype);
+   source    |  target  
+-------------+----------
+ "matched"   | "target"
+ "unmatched" | 
+(2 rows)
+
+-- Tests to catch match following optional match logic
+-- this syntax is invalid in cypher
+SELECT * FROM cypher('cypher_match', $$
+    OPTIONAL MATCH (n)
+    MATCH (m)
+    RETURN n,m
+ $$) AS (n agtype, m agtype);
+ERROR:  MATCH cannot follow OPTIONAL MATCH
+LINE 1: SELECT * FROM cypher('cypher_match', $$
+                                              ^
+SELECT * FROM cypher('cypher_match', $$
+    MATCH (n)
+    OPTIONAL MATCH (m)
+    MATCH (o)
+    RETURN n,m,o
+ $$) AS (n agtype, m agtype, o agtype);
+ERROR:  MATCH cannot follow OPTIONAL MATCH
+LINE 1: SELECT * FROM cypher('cypher_match', $$
+                                              ^
 --
 -- JIRA: AGE2-544
 --
@@ -1061,10 +1189,620 @@ $$) as (f agtype, t agtype);
 (9 rows)
 
 --
+-- #2303 parser composite entities and direct accessor fields
+--
+SELECT create_graph('c2303_parser');
+NOTICE:  graph "c2303_parser" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    CREATE (:Person {name: 'Alice', age: 30})
+           -[:KNOWS {since: 2020}]->
+           (:Person {name: 'Bob', age: 25})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (a:Person {name: 'Alice'})-[r:KNOWS]->(b:Person)
+    RETURN id(a) = start_id(r), id(b) = end_id(r),
+           label(a), type(r), properties(a), properties(r)
+$$) AS (start_ok agtype, end_ok agtype, vertex_label agtype,
+       edge_label agtype, vertex_properties agtype, edge_properties agtype);
+ start_ok | end_ok | vertex_label | edge_label |      vertex_properties       | edge_properties 
+----------+--------+--------------+------------+------------------------------+-----------------
+ true     | true   | "Person"     | "KNOWS"    | {"age": 30, "name": "Alice"} | {"since": 2020}
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (a:Person {name: 'Alice'})-[r:KNOWS]->(b:Person)
+    RETURN startNode(r) = a, endNode(r) = b,
+           start_id(r) = id(startNode(r)),
+           end_id(r) = id(endNode(r)), type(r) = label(r)
+$$) AS (start_vertex_ok agtype, end_vertex_ok agtype,
+       start_alias_ok agtype, end_alias_ok agtype, label_alias_ok agtype);
+ start_vertex_ok | end_vertex_ok | start_alias_ok | end_alias_ok | label_alias_ok 
+-----------------+---------------+----------------+--------------+----------------
+ true            | true          | true           | true         | true
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH p=(a:Person {name: 'Alice'})-[r:KNOWS]->(b:Person)
+    RETURN properties(a).name, [a, r, b],
+           {vertex: a, edge: r}, a {.name, .age}, p
+$$) AS (name agtype, entities agtype, entity_map agtype,
+       projected agtype, path agtype);
+  name   |                                                                                                                                                                entities                                                                                                                                                                 |                                                                                                                         entity_map                                                                                                                          |          projected           |                                                                                                                                                                     path                                                                                                                                                                      
+---------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ "Alice" | [{"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}}::vertex, {"id": 1125899906842625, "label": "KNOWS", "end_id": 844424930131970, "start_id": 844424930131969, "properties": {"since": 2020}}::edge, {"id": 844424930131970, "label": "Person", "properties": {"age": 25, "name": "Bob"}}::vertex] | {"edge": {"id": 1125899906842625, "label": "KNOWS", "end_id": 844424930131970, "start_id": 844424930131969, "properties": {"since": 2020}}::edge, "vertex": {"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}}::vertex} | {"age": 30, "name": "Alice"} | [{"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}}::vertex, {"id": 1125899906842625, "label": "KNOWS", "end_id": 844424930131970, "start_id": 844424930131969, "properties": {"since": 2020}}::edge, {"id": 844424930131970, "label": "Person", "properties": {"age": 25, "name": "Bob"}}::vertex]::path
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (a:Person {name: 'Alice'})-[r:KNOWS]->(b:Person)
+    RETURN CASE WHEN a.age > b.age THEN a ELSE b END
+$$) AS (older agtype);
+                                             older                                              
+------------------------------------------------------------------------------------------------
+ {"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}}::vertex
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (n:Person)
+    RETURN n ORDER BY n.name
+$$) AS (n vertex);
+                                  n                                  
+---------------------------------------------------------------------
+ (844424930131969,"""Person""","{""age"": 30, ""name"": ""Alice""}")
+ (844424930131970,"""Person""","{""age"": 25, ""name"": ""Bob""}")
+(2 rows)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH ()-[r:KNOWS]->()
+    RETURN r
+$$) AS (r edge);
+                                         r                                          
+------------------------------------------------------------------------------------
+ (1125899906842625,"""KNOWS""",844424930131970,844424930131969,"{""since"": 2020}")
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (n:Person)
+    WITH n AS m
+    RETURN m ORDER BY m.name
+$$) AS (n vertex);
+                                  n                                  
+---------------------------------------------------------------------
+ (844424930131969,"""Person""","{""age"": 30, ""name"": ""Alice""}")
+ (844424930131970,"""Person""","{""age"": 25, ""name"": ""Bob""}")
+(2 rows)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (a:Person {name: 'Alice'})-[r:KNOWS]->(b:Person)
+    RETURN a = a, a <> b, r = r, r <> r
+$$) AS (vertex_eq agtype, vertex_ne agtype,
+       edge_eq agtype, edge_ne agtype);
+ vertex_eq | vertex_ne | edge_eq | edge_ne 
+-----------+-----------+---------+---------
+ true      | true      | true    | false
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (a:Person {name: 'Alice'})-[r:KNOWS]->()
+    RETURN a, r
+$$) AS (vertex_json json, edge_jsonb jsonb);
+                                      vertex_json                                       |                                                            edge_jsonb                                                             
+----------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------
+ {"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}} | {"id": 1125899906842625, "label": "KNOWS", "end_id": 844424930131970, "start_id": 844424930131969, "properties": {"since": 2020}}
+(1 row)
+
+SELECT * FROM cypher('c2303_parser', $$
+    MATCH (n:Person)
+    RETURN n ORDER BY n.name
+$$) AS (n agtype);
+                                               n                                                
+------------------------------------------------------------------------------------------------
+ {"id": 844424930131969, "label": "Person", "properties": {"age": 30, "name": "Alice"}}::vertex
+ {"id": 844424930131970, "label": "Person", "properties": {"age": 25, "name": "Bob"}}::vertex
+(2 rows)
+
+SELECT drop_graph('c2303_parser', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table c2303_parser._ag_label_vertex
+drop cascades to table c2303_parser._ag_label_edge
+drop cascades to table c2303_parser."Person"
+drop cascades to table c2303_parser."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "c2303_parser" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
+-- issue 2308 / #2340: MATCH after CREATE or SET must evaluate after DML.
+--
+SELECT * FROM cypher('cypher_match', $$
+    CREATE (a:v {issue_2308: true})-[e:e1]->(b:v)
+    WITH a, e, b
+    MATCH (a)-[e]->(b)
+    RETURN a.issue_2308
+$$) AS (value agtype);
+ value 
+-------
+ true
+(1 row)
+
+SELECT * FROM cypher('cypher_match', $$
+    MATCH (a:v {issue_2308: true})-[e:e1]->(b:v)
+    SET a.issue_2308 = false
+    WITH a, e, b
+    MATCH (a)-[e]->(b)
+    RETURN a.issue_2308
+$$) AS (value agtype);
+ value 
+-------
+ false
+(1 row)
+
+--
+-- issue 2193 / #2341: defer label validation until preceding writes are
+-- transformed, so labels created in the same query are immediately visible.
+--
+SELECT create_graph('match_new_label_visibility');
+NOTICE:  graph "match_new_label_visibility" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('match_new_label_visibility', $$
+    CREATE (u:FreshUser {name: 'Neo'})-[e:FreshOwns]->
+           (f:FreshFolder {name: 'Inbox'})
+    WITH u, e, f
+    MATCH p=(u:FreshUser)-[e:FreshOwns]->(f:FreshFolder)
+    RETURN u.name = 'Neo', type(e) = 'FreshOwns', f.name = 'Inbox'
+$$) AS (user_ok agtype, edge_ok agtype, folder_ok agtype);
+ user_ok | edge_ok | folder_ok 
+---------+---------+-----------
+ true    | true    | true
+(1 row)
+
+-- An invalid deferred label must still register MATCH variables and execute
+-- the preceding write instead of allowing constant folding to remove it.
+SELECT * FROM cypher('match_new_label_visibility', $$
+    CREATE (created:FreshUser {name: 'Alice'})
+    WITH created
+    MATCH (missing:NeverCreated)
+    RETURN missing
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('match_new_label_visibility', $$
+    MATCH (created:FreshUser {name: 'Alice'})
+    RETURN created.name
+$$) AS (result agtype);
+ result  
+---------
+ "Alice"
+(1 row)
+
+SELECT drop_graph('match_new_label_visibility', true);
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table match_new_label_visibility._ag_label_vertex
+drop cascades to table match_new_label_visibility._ag_label_edge
+drop cascades to table match_new_label_visibility."FreshUser"
+drop cascades to table match_new_label_visibility."FreshOwns"
+drop cascades to table match_new_label_visibility."FreshFolder"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "match_new_label_visibility" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
+-- issue 2378 / #2380: OPTIONAL MATCH WHERE belongs to the LEFT JOIN ON clause.
+--
+SELECT create_graph('optional_match_predicate');
+NOTICE:  graph "optional_match_predicate" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('optional_match_predicate', $$
+    CREATE (a:Person {name: 'Alice'}),
+           (b:Person {name: 'Bob'}),
+           (c:Person {name: 'Charlie'}),
+           (a)-[:KNOWS]->(b),
+           (a)-[:KNOWS]->(c)
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+-- Correlated EXISTS referencing the optional variable.
+SELECT * FROM cypher('optional_match_predicate', $$
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:KNOWS]->(friend:Person)
+    WHERE EXISTS {(friend)-[:KNOWS]->(:Person)}
+    RETURN p.name AS name, friend.name AS friend
+    ORDER BY name
+$$) AS (name agtype, friend agtype);
+   name    | friend 
+-----------+--------
+ "Alice"   | 
+ "Bob"     | 
+ "Charlie" | 
+(3 rows)
+
+-- Correlated EXISTS referencing the outer variable.
+SELECT * FROM cypher('optional_match_predicate', $$
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:KNOWS]->(friend:Person)
+    WHERE EXISTS {(p)-[:KNOWS]->(:Person)}
+    RETURN p.name AS name, friend.name AS friend
+    ORDER BY name, friend
+$$) AS (name agtype, friend agtype);
+   name    |  friend   
+-----------+-----------
+ "Alice"   | "Bob"
+ "Alice"   | "Charlie"
+ "Bob"     | 
+ "Charlie" | 
+(4 rows)
+
+-- Non-correlated EXISTS guard.
+SELECT * FROM cypher('optional_match_predicate', $$
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:KNOWS]->(friend:Person)
+    WHERE EXISTS {MATCH (x:Person) RETURN x}
+    RETURN p.name AS name, friend.name AS friend
+    ORDER BY name, friend
+$$) AS (name agtype, friend agtype);
+   name    |  friend   
+-----------+-----------
+ "Alice"   | "Bob"
+ "Alice"   | "Charlie"
+ "Bob"     | 
+ "Charlie" | 
+(4 rows)
+
+-- Scalar predicate guard.
+SELECT * FROM cypher('optional_match_predicate', $$
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:KNOWS]->(friend:Person)
+    WHERE friend.name = 'Bob'
+    RETURN p.name AS name, friend.name AS friend
+    ORDER BY name
+$$) AS (name agtype, friend agtype);
+   name    | friend 
+-----------+--------
+ "Alice"   | "Bob"
+ "Bob"     | 
+ "Charlie" | 
+(3 rows)
+
+-- Constant-false guard.
+SELECT * FROM cypher('optional_match_predicate', $$
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:KNOWS]->(friend:Person)
+    WHERE false
+    RETURN p.name AS name, friend.name AS friend
+    ORDER BY name
+$$) AS (name agtype, friend agtype);
+   name    | friend 
+-----------+--------
+ "Alice"   | 
+ "Bob"     | 
+ "Charlie" | 
+(3 rows)
+
+SELECT drop_graph('optional_match_predicate', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table optional_match_predicate._ag_label_vertex
+drop cascades to table optional_match_predicate._ag_label_edge
+drop cascades to table optional_match_predicate."Person"
+drop cascades to table optional_match_predicate."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "optional_match_predicate" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- #2339: parameterized =properties uses top-level containment.
+SELECT create_graph('match_equals_parameter');
+NOTICE:  graph "match_equals_parameter" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('match_equals_parameter', $$
+    CREATE (:Person {name: 'Alice', address: {city: 'Toronto', zip: 1}}),
+           (:Person {name: 'Bob', address: {city: 'Toronto'}}),
+           (:Person {name: 'Alice'})-[:KNOWS {since: 2020}]->(:Person {name: 'Bob'})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+PREPARE match_equals_vertex(agtype) AS
+SELECT count(*) FROM cypher('match_equals_parameter',
+    $$ MATCH (n = $props) RETURN n $$, $1) AS (result agtype);
+EXECUTE match_equals_vertex(
+    '{"props": {"address": {"city": "Toronto"}}}');
+ count 
+-------
+     1
+(1 row)
+
+DEALLOCATE match_equals_vertex;
+PREPARE match_contains_vertex(agtype) AS
+SELECT count(*) FROM cypher('match_equals_parameter',
+    $$ MATCH (n $props) RETURN n $$, $1) AS (result agtype);
+EXECUTE match_contains_vertex(
+    '{"props": {"address": {"city": "Toronto"}}}');
+ count 
+-------
+     2
+(1 row)
+
+DEALLOCATE match_contains_vertex;
+PREPARE match_equals_edge(agtype) AS
+SELECT count(*) FROM cypher('match_equals_parameter',
+    $$ MATCH ()-[r = $props]->() RETURN r $$, $1) AS (result agtype);
+EXECUTE match_equals_edge('{"props": {"since": 2020}}');
+ count 
+-------
+     1
+(1 row)
+
+DEALLOCATE match_equals_edge;
+SELECT drop_graph('match_equals_parameter', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table match_equals_parameter._ag_label_vertex
+drop cascades to table match_equals_parameter._ag_label_edge
+drop cascades to table match_equals_parameter."Person"
+drop cascades to table match_equals_parameter."KNOWS"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "match_equals_parameter" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- #1288: standalone anonymous MATCH clauses preserve row cardinality.
+SELECT create_graph('anonymous_match_cardinality');
+NOTICE:  graph "anonymous_match_cardinality" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('anonymous_match_cardinality', $$
+    CREATE (:Part {n: 1}), (:Part {n: 2}),
+           (:Part {n: 3}), (:Part {n: 4})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('anonymous_match_cardinality', $$
+    MATCH (:Part) RETURN count(*)
+$$) AS (result agtype);
+ result 
+--------
+ 4
+(1 row)
+
+SELECT count(*) FROM cypher('anonymous_match_cardinality', $$
+    MATCH (:Part) RETURN 0
+$$) AS (result agtype);
+ count 
+-------
+     4
+(1 row)
+
+SELECT * FROM cypher('anonymous_match_cardinality', $$
+    MATCH (:Part) MATCH (:Part) RETURN count(*)
+$$) AS (result agtype);
+ result 
+--------
+ 16
+(1 row)
+
+SELECT drop_graph('anonymous_match_cardinality', true);
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table anonymous_match_cardinality._ag_label_vertex
+drop cascades to table anonymous_match_cardinality._ag_label_edge
+drop cascades to table anonymous_match_cardinality."Part"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "anonymous_match_cardinality" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+-- #1295: path variables declared by MATCH are visible in its WHERE clause.
+SELECT create_graph('path_where_contract');
+NOTICE:  graph "path_where_contract" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('path_where_contract', $$
+    CREATE (:N {n: 1})-[:R]->(:N {n: 2})-[:R]->(:N {n: 3})
+$$) AS (result agtype);
+ result 
+--------
+(0 rows)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH p=()-[*]->()
+    RETURN length(p)
+$$) AS (length agtype);
+ length 
+--------
+ 1
+ 2
+ 1
+(3 rows)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH p=()-[*]->()
+    WHERE length(p) > 1
+    RETURN length(p)
+$$) AS (length agtype);
+ length 
+--------
+ 2
+(1 row)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH p=()-[*]->()
+    WHERE size(nodes(p)) = 3
+    RETURN nodes(p)[0]
+$$) AS (first_node agtype);
+                              first_node                               
+-----------------------------------------------------------------------
+ {"id": 844424930131969, "label": "N", "properties": {"n": 1}}::vertex
+(1 row)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH (n:N {n: 1})
+    MATCH p=()-[*]->()
+    WHERE nodes(p)[0] = n
+    RETURN length(p)
+$$) AS (length agtype);
+ length 
+--------
+ 1
+ 2
+(2 rows)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH p1=(n:N {n: 1})-[]->()
+    MATCH p2=()-[*]->()
+    WHERE p2 = p1
+    RETURN p2 = p1
+$$) AS (same_path agtype);
+ same_path 
+-----------
+ true
+(1 row)
+
+-- #1400: a missing relationship label inside EXISTS is false, not an error.
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH (n:N)
+    WHERE exists((n)-[:MISSING]->())
+    RETURN count(n)
+$$) AS (matched agtype);
+ matched 
+---------
+ 0
+(1 row)
+
+SELECT * FROM cypher('path_where_contract', $$
+    MATCH (n:N)
+    WHERE NOT exists((n)-[:MISSING]->())
+    RETURN count(n)
+$$) AS (matched agtype);
+ matched 
+---------
+ 3
+(1 row)
+
+SELECT drop_graph('path_where_contract', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table path_where_contract._ag_label_vertex
+drop cascades to table path_where_contract._ag_label_edge
+drop cascades to table path_where_contract."N"
+drop cascades to table path_where_contract."R"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "path_where_contract" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
+-- ORDER BY with several items: the resjunk target entries added for earlier
+-- sort items have no resname and must be skipped by the alias lookup.
+--
+SELECT create_graph('cypher_match_sort');
+NOTICE:  graph "cypher_match_sort" has been created
+CONTEXT:  referenced column: create_graph
+ create_graph 
+--------------
+ 
+(1 row)
+
+SELECT * FROM cypher('cypher_match_sort', $$
+    CREATE (:P {name: 'a'})-[:E]->(:P {name: 'b'}),
+           (:P {name: 'c'})-[:E]->(:P {name: 'd'})
+$$) AS (r agtype);
+ r 
+---
+(0 rows)
+
+SELECT * FROM cypher('cypher_match_sort', $$
+    MATCH (n:P)-[]->(m:P) RETURN n.name ORDER BY m.name, m
+$$) AS (name agtype);
+ name 
+------
+ "a"
+ "c"
+(2 rows)
+
+SELECT * FROM cypher('cypher_match_sort', $$
+    MATCH (n:P)-[]->(m:P) RETURN n.name AS src, m.name ORDER BY m.name DESC, src, n
+$$) AS (src agtype, dst agtype);
+ src | dst 
+-----+-----
+ "c" | "d"
+ "a" | "b"
+(2 rows)
+
+SELECT drop_graph('cypher_match_sort', true);
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table cypher_match_sort._ag_label_vertex
+drop cascades to table cypher_match_sort._ag_label_edge
+drop cascades to table cypher_match_sort."P"
+drop cascades to table cypher_match_sort."E"
+CONTEXT:  referenced column: drop_graph
+NOTICE:  graph "cypher_match_sort" has been dropped
+CONTEXT:  referenced column: drop_graph
+ drop_graph 
+------------
+ 
+(1 row)
+
+--
 -- Clean up
 --
 SELECT drop_graph('cypher_match', true);
-NOTICE:  drop cascades to 16 other objects
+NOTICE:  drop cascades to 18 other objects
 DETAIL:  drop cascades to table cypher_match._ag_label_vertex
 drop cascades to table cypher_match._ag_label_edge
 drop cascades to table cypher_match.v
@@ -1081,6 +1819,8 @@ drop cascades to table cypher_match.dup_edge
 drop cascades to table cypher_match.other_v
 drop cascades to table cypher_match.opt_match_v
 drop cascades to table cypher_match.opt_match_e
+drop cascades to table cypher_match.opt_long_v
+drop cascades to table cypher_match.opt_long_e
 CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_match" has been dropped
 CONTEXT:  referenced column: drop_graph

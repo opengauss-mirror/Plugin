@@ -246,11 +246,55 @@ END;
 
 SELECT * FROM cypher('cypher_delete', $$MATCH (u:vertices) RETURN u $$) AS (result agtype);
 
+-- Terminal DELETE must expose a typed empty slot to an outer aggregate while
+-- still applying every write side effect.
+SELECT * FROM cypher('cypher_delete', $$
+    CREATE (:aggregate_delete {id: 1}), (:aggregate_delete {id: 2})
+$$) AS (result agtype);
+SELECT count(*) AS delete_rows FROM cypher('cypher_delete', $$
+    MATCH (n:aggregate_delete) DELETE n
+$$) AS (result agtype);
+SELECT count(*) AS remaining_after_delete FROM cypher('cypher_delete', $$
+    MATCH (n:aggregate_delete) RETURN n
+$$) AS (result agtype);
+
+SELECT * FROM cypher('cypher_delete', $$
+    CREATE (:aggregate_delete {id: 3})-[:aggregate_edge]->(:aggregate_delete {id: 4})
+$$) AS (result agtype);
+SELECT count(*) AS detach_rows FROM cypher('cypher_delete', $$
+    MATCH (n:aggregate_delete) DETACH DELETE n
+$$) AS (result agtype);
+SELECT count(*) AS remaining_after_detach FROM cypher('cypher_delete', $$
+    MATCH (n:aggregate_delete) RETURN n
+$$) AS (result agtype);
+
 --
 -- Clean up
 --
 DROP FUNCTION delete_test;
 SELECT drop_graph('cypher_delete', true);
+
+--
+-- openGauss: DELETE must be applied when the same query level sorts or
+-- de-duplicates its output (see cypher_create.sql for the planner background).
+--
+SELECT create_graph('cypher_delete_sorted');
+SELECT * FROM cypher('cypher_delete_sorted', $$
+    CREATE (:P {name: 'a'}), (:P {name: 'b'}), (:P {name: 'c'}), (:P {name: 'd'})
+$$) AS (r agtype);
+SELECT * FROM cypher('cypher_delete_sorted', $$
+    MATCH (n:P {name: 'a'}) DELETE n RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+SELECT * FROM cypher('cypher_delete_sorted', $$
+    MATCH (n:P {name: 'b'}) DELETE n RETURN n.name
+$$) AS (name agtype) ORDER BY name;
+SELECT * FROM cypher('cypher_delete_sorted', $$
+    MATCH (n:P {name: 'c'}) DELETE n RETURN DISTINCT n.name
+$$) AS (name agtype);
+SELECT * FROM cypher('cypher_delete_sorted', $$
+    MATCH (n:P) RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+SELECT drop_graph('cypher_delete_sorted', true);
 
 --
 -- End

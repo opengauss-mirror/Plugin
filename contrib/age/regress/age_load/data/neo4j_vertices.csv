@@ -1,0 +1,4 @@
+id:ID|name:STRING|age:LONG|active:BOOL
+1|Alice|30|true
+2|Bob|41|false
+3|Carol|27|true

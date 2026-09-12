@@ -299,6 +299,100 @@ SELECT * FROM cypher('cypher_create', $$ CREATE (a:Part {part_num: '673'}) $$) a
 SELECT * FROM cypher('cypher_create', $$ MATCH (a:Part) RETURN a $$) as (a agtype);
 END;
 
+-- Apache AGE #1515: a previously declared vertex can only be reused as a
+-- connected path endpoint; standalone node reuse and edge-name reuse fail.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) CREATE (n) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (n) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    MATCH (n) CREATE (n) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (n)-[:reuse_edge]->(n), (n) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (n), (m) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (), (m) RETURN m
+$$) AS (m agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m) CREATE (), (e) RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m)
+    CREATE (n)-[e:reuse_edge]->(m) RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    WITH {id: 281474976710657, label: "", properties: {}}::vertex AS n
+    CREATE (n) RETURN n
+$$) AS (n agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(n)-[e:reuse_edge]->(n) RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE ()-[e:reuse_edge]->(),
+           (n)-[e:reuse_edge]->(n)-[e:reuse_edge]->(n) RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[e:reuse_edge]->(m)
+    CREATE (e)-[:reuse_edge]->() RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    WITH {id: 1407374883553281, label: "reuse_edge",
+          end_id: 281474976710658, start_id: 281474976710657,
+          properties: {}}::edge AS e
+    CREATE ()-[e:reuse_edge]->() RETURN e
+$$) AS (e agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) WITH n AS r CREATE (r) RETURN r
+$$) AS (r agtype);
+
+-- Connected endpoint reuse remains valid.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n)-[:reuse_edge]->(m)
+    CREATE (n)-[:reuse_edge]->(m)
+$$) AS (result agtype);
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n) WITH n AS r
+    CREATE (r)-[:reuse_edge]->() RETURN r
+$$) AS (reused agtype);
+-- Variables removed by WITH are out of scope and can be declared again.
+SELECT * FROM cypher('cypher_create', $$
+    CREATE (n), (m) WITH n AS r CREATE (m) RETURN m
+$$) AS (redeclared agtype);
+
+--
+-- openGauss: a write clause must survive ORDER BY / DISTINCT / aggregation on
+-- the same query level. set_rel_pathlist_hook runs after set_cheapest() here,
+-- so the clause path has to re-evaluate the cheapest paths itself or the
+-- planner keeps the discarded SubqueryScan and the CREATE silently vanishes.
+--
+SELECT create_graph('cypher_create_sorted');
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'outer'}) RETURN n.name
+$$) AS (name agtype) ORDER BY name;
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'inner'}) RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'distinct'}) RETURN DISTINCT n.name
+$$) AS (name agtype);
+SELECT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'grouped'}) RETURN n.name, count(*)
+$$) AS (name agtype, cnt agtype);
+SELECT DISTINCT * FROM cypher('cypher_create_sorted', $$
+    CREATE (n:Person {name: 'sql_distinct'}) RETURN n.name
+$$) AS (name agtype);
+-- every CREATE above must have been applied
+SELECT * FROM cypher('cypher_create_sorted', $$
+    MATCH (n:Person) RETURN n.name ORDER BY n.name
+$$) AS (name agtype);
+SELECT drop_graph('cypher_create_sorted', true);
+
 --
 -- Clean up
 --
