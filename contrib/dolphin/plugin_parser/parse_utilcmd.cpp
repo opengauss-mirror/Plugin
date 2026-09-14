@@ -6382,6 +6382,13 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
 #endif
 
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);
+    /*
+     * default typmod for varbinary is 1
+     */
+    if (typeTypeId(ctype) == VARBINARYOID &&
+        column->typname && !column->typname->typmods && column->typname->typemod == -1) {
+        column->typname->typmods = list_make1(makeAConst(makeInteger(1), -1));
+    }
     Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
     if (typtup->typtype == TYPTYPE_SET) {
