@@ -45,6 +45,10 @@
 #define SH_DECLARE
 #include "lib/simplehash.h"
 
+/* Unified server-status helper; combines autocommit + sql_mode flags for
+ * HandshakeV10, auth-success OK, normal OK and EOF packets. Defined in dqformat.cpp. */
+uint16 get_current_server_status();
+
 typedef enum {
     NETWORK_MYSQLD_PROTOCOL_VERSION_41
 } network_mysqld_protocol_t;
@@ -151,7 +155,8 @@ inline void make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg, ne
 {
     ok_packet->affected_rows = affected_rows;
     ok_packet->insert_id = insert_id;
-    ok_packet->server_status = SERVER_STATUS_AUTOCOMMIT;
+    ok_packet->server_status =
+        u_sess->attr.attr_storage.phony_autocommit ? SERVER_STATUS_AUTOCOMMIT : 0;
     ok_packet->warnings = 0;
     ok_packet->msg = msg;
 }
@@ -162,6 +167,7 @@ char *read_switch_response(StringInfo buf);
 
 void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake);
 
+void set_ok_packet_sql_mode_status(network_mysqld_ok_packet_t* ok_packet);
 void send_network_ok_packet(network_mysqld_ok_packet_t *ok_packet);
 
 void send_general_ok_packet();

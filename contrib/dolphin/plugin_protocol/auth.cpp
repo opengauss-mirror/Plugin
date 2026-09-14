@@ -165,8 +165,19 @@ int dolphin_conn_handshake(Port* port)
     temp_Conn_Mysql_Info->max_packet_size = authreq->max_packet_size;
     
     port->user_name = authreq->username;
-    // support database.schema format later
-    port->database_name = pstrdup(g_proto_ctx.database_name.data);
+    // database_name must come from the GUC-configured physical database only.
+    // authreq->schema is a B-compatibility "schema" concept mapped to search_path
+    // below, not an openGauss physical database name, and must not be used here.
+    // If the GUC is not configured, reject the connection explicitly instead of
+    // silently falling back to a default database that the client never asked for.
+    const char *guc_db = g_proto_ctx.database_name.data;
+    if (guc_db == NULL || guc_db[0] == '\0') {
+        ereport(FATAL,
+                (errcode(ERRCODE_INVALID_AUTHORIZATION_SPECIFICATION),
+                 errmsg("dolphin.default_database_name is not configured; "
+                        "cannot determine the physical database for this MySQL protocol connection")));
+    }
+    port->database_name = pstrdup(guc_db);
 
     if (authreq->auth_response) {
         int rc = memcpy_s(temp_Conn_Mysql_Info->conn_sha256_token, CLIENT_PASSWORD_SHA256_TOKEN_LEN + 1,
@@ -192,6 +203,7 @@ void dolphin_client_authentication(Port *port)
 
     network_mysqld_ok_packet_t ok_packet;
     make_ok_packet(0, 0, "", &ok_packet);
+    set_ok_packet_sql_mode_status(&ok_packet);
     send_network_ok_packet(&ok_packet);
     pq_flush();
 }

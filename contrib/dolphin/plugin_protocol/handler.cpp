@@ -101,6 +101,7 @@ void dolphin_end_command(const char *completionTag)
     } else {
         network_mysqld_ok_packet_t ok_packet;
         make_ok_packet(BEENTRY_STMEMENET_CXT.current_row_count, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
+        set_ok_packet_sql_mode_status(&ok_packet);
         send_network_ok_packet(&ok_packet);
     }
 }
@@ -444,6 +445,7 @@ int execute_text_protocol_sql(const char *sql)
     } else {
         network_mysqld_ok_packet_t ok_packet;
         make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
+        set_ok_packet_sql_mode_status(&ok_packet);
         send_network_ok_packet(&ok_packet);
     }
 
