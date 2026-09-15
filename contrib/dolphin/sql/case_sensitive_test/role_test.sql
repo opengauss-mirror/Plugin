@@ -23,5 +23,14 @@ ALTER TABLE test_table OWNER TO test_USer;
 DROP USER test_user CASCADE;
 DROP USER test_USer CASCADE;
 
+CREATE ROLE Aa PASSWORD 'gauss;123';
+DROP ROLE Aa;
+
+SET dolphin.lower_case_table_names TO 1;
+CREATE ROLE TEST PASSWORD 'abcde;123';
+GRANT ALL ON pg_roles TO TEST;
+REVOKE ALL ON pg_roles FROM TEST;
+DROP ROLE TEST;
+
 \c postgres
 DROP DATABASE role_test_db;
