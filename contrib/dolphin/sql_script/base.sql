@@ -297,7 +297,9 @@ select
   i.namespace as "namespace",
   (select relname from pg_class tc where tc.oid = i.indrelid) as "table",
   not i.indisunique as "non_unique",
-  c.relname as "key_name",
+  (case when exists (
+    select 1 from pg_index pi where pi.indexrelid = i.indexrelid and pi.indisprimary
+  ) then 'PRIMARY'::name else c.relname end) as "key_name",
   i.seq_in_index as "seq_in_index",
   a.attname as "column_name",
   (case when m.amcanorder
