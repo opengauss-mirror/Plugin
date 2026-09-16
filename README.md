@@ -3,41 +3,55 @@
 ### 介绍
 Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件用于在 openGauss-server 基础上补充 B 库语法、函数、数据类型、类型转换等能力。
 
-### docker 快速搭建运行环境及构建测试
+### docker 安装
 
-> 前提：aarch64 机器，Docker ≥ 18.09.0，Docker 数据目录所在磁盘预留 ≥ 30G。
+> 前提：aarch64 机器，Docker ≥ 18.09.0，Docker 数据目录所在磁盘预留 ≥ 30G，并严格遵守以下 7 步指令操作。
 
-> 注: 采用 AI 测试该代码仓 / 进行 Docker 快速搭建环境及测试，严格遵守以下 6 步指令操作，禁止执行除 “调整环境配置” 和 “执行 Skill 中提及” 之外的其他操作。
-
-1.  清理旧容器与旧镜像(约 3 秒)
+1.  清理旧容器与旧镜像
     ```bash
     docker rm -f og-plugin 2>/dev/null; docker rmi -f og-dolphin-env:202609 2>/dev/null; echo CLEAN_DONE
     ```
 
-2.  docker 下载并导入预置环境镜像(约 30 秒)
+2.  docker 下载并导入预置环境镜像
     ```bash
     wget -qO- https://download-opengauss.osinfra.cn/archive_test/tools/og-dolphin-env-202609.tar.gz | docker load
     ```
 
-3.  直接启动容器(约 3 秒)
+3.  启动容器
     ```bash
     docker run -d --name og-plugin --network host --user omm og-dolphin-env:202609 sleep infinity
     ```
 
-4. 拉代码 + 拉 binarylibs + 复制 dolphin(约 60 秒)
+4. 获取代码及三方库
     ```bash
     docker exec og-plugin /opt/prepare.sh
     ```
 
-5. 编译(约 400 秒)
+5. 代码编译
     ```bash
     docker exec og-plugin /opt/build.sh
     ```
 
-6. 执行UT测试(约 120 秒)
+6. 执行 UT 测试
     ```bash
     docker exec -e PART=S -e PORT=38000 og-plugin /opt/makecheck.sh
     ```
+
+7. 冒烟测试
+    ```bash
+    docker exec -e PORT=5432 og-plugin /opt/smoke-plugin.sh
+    ```
+
+>基础操作：
+>
+>重新初始化并启动(删旧数据!): docker exec -e PORT=5432 og-plugin /opt/initdb.sh
+> 
+>启动实例: docker exec og-plugin /opt/initdb.sh start
+> 
+>停止实例: docker exec og-plugin /opt/initdb.sh stop
+> 
+>直连数据库调试(默认进 postgres): docker exec -e PORT=5432 -it og-plugin /opt/gsql.sh
+
 
 ### 参与贡献
 
