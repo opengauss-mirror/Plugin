@@ -146,6 +146,43 @@ LANGUAGE c
 VOLATILE
 AS 'MODULE_PATHNAME';
 
+-- Install cache invalidation triggers on label tables that predate 1.0.1.
+-- New label tables receive the trigger from the label creation path.
+DO $upgrade$
+DECLARE
+    label_record record;
+BEGIN
+    FOR label_record IN
+        SELECT namespace_object.nspname AS schema_name,
+               relation_object.relname AS table_name,
+               label_object.relation AS label_relation_oid
+        FROM ag_catalog.ag_label label_object
+        JOIN pg_catalog.pg_class relation_object
+          ON relation_object.oid = label_object.relation
+        JOIN pg_catalog.pg_namespace namespace_object
+          ON namespace_object.oid = relation_object.relnamespace
+        WHERE label_object.name NOT IN ('_ag_label_vertex', '_ag_label_edge')
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_catalog.pg_trigger trigger_object
+            WHERE trigger_object.tgrelid = label_record.label_relation_oid
+              AND trigger_object.tgname = '_age_cache_invalidate'
+        ) THEN
+            EXECUTE pg_catalog.format(
+                'CREATE TRIGGER _age_cache_invalidate '
+                'AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE '
+                'ON %I.%I '
+                'FOR EACH STATEMENT '
+                'EXECUTE PROCEDURE ag_catalog.age_invalidate_graph_cache()',
+                label_record.schema_name,
+                label_record.table_name
+            );
+        END IF;
+    END LOOP;
+END
+$upgrade$;
+
 CREATE OR REPLACE FUNCTION ag_catalog.age_prepare_pg_upgrade()
 RETURNS void
 LANGUAGE plpgsql

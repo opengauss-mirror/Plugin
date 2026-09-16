@@ -84,7 +84,7 @@ DEPFILES = $(OBJS:.o=.d)
 
 EXTENSION = age
 
-DATA = age--1.0.0.sql age--1.0.1.sql age--1.0.0--1.0.1.sql
+DATA = age--1.0.0.sql age--1.0.1.sql age--1.0.0--1.0.1.sql age--1.0.1--1.0.0.sql
 
 SHLIB_LINK += -Wl,--version-script=$(srcdir)/age.exports.map
 
