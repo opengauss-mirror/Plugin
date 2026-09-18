@@ -303,3 +303,78 @@ SELECT EXISTS (
     WHERE name = 'age'
       AND version = '1.0.1'
 ) AS supported_upgrade_versions_present;
+
+-- Rollback must only remove cache triggers managed by AGE label relations.
+-- A user trigger that depends on a 1.0.1-only function must block rollback
+-- transactionally instead of being deleted behind the user's back.
+SELECT create_graph('age_rollback_label_probe');
+CREATE SCHEMA age_rollback_user_probe;
+CREATE TABLE age_rollback_user_probe.probe_table (id integer);
+CREATE TRIGGER _age_cache_invalidate
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON age_rollback_user_probe.probe_table
+FOR EACH STATEMENT
+EXECUTE PROCEDURE ag_catalog.age_invalidate_graph_cache();
+
+DO $rollback_dependency_probe$
+BEGIN
+    BEGIN
+        ALTER EXTENSION age UPDATE TO '1.0.0';
+        RAISE EXCEPTION 'AGE rollback unexpectedly ignored a user dependency';
+    EXCEPTION
+        WHEN dependent_objects_still_exist THEN
+            NULL;
+    END;
+END
+$rollback_dependency_probe$;
+
+SELECT extversion = '1.0.1' AS rollback_dependency_kept_version
+FROM pg_extension
+WHERE extname = 'age';
+
+SELECT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_trigger trigger_object
+    WHERE trigger_object.tgrelid =
+              'age_rollback_user_probe.probe_table'::regclass
+      AND trigger_object.tgname = '_age_cache_invalidate'
+      AND trigger_object.tgfoid =
+              'ag_catalog.age_invalidate_graph_cache()'::regprocedure
+) AS user_trigger_preserved_after_failed_rollback;
+
+SELECT count(*) > 0 AS age_label_triggers_restored_after_failed_rollback
+FROM pg_catalog.pg_trigger trigger_object
+WHERE trigger_object.tgname = '_age_cache_invalidate'
+  AND trigger_object.tgfoid =
+          'ag_catalog.age_invalidate_graph_cache()'::regprocedure
+  AND EXISTS (
+      SELECT 1
+      FROM ag_catalog.ag_label label_object
+      WHERE label_object.relation = trigger_object.tgrelid
+  );
+
+DROP TRIGGER _age_cache_invalidate
+ON age_rollback_user_probe.probe_table;
+DROP SCHEMA age_rollback_user_probe CASCADE;
+
+ALTER EXTENSION age UPDATE TO '1.0.0';
+
+SELECT extversion = '1.0.0' AS rollback_succeeds_after_dependency_cleanup
+FROM pg_extension
+WHERE extname = 'age';
+
+SELECT count(*) = 0 AS age_label_triggers_removed_by_rollback
+FROM pg_catalog.pg_trigger trigger_object
+WHERE trigger_object.tgname = '_age_cache_invalidate'
+  AND trigger_object.tgrelid IN (
+      SELECT label_object.relation
+      FROM ag_catalog.ag_label label_object
+  );
+
+ALTER EXTENSION age UPDATE TO '1.0.1';
+
+SELECT extversion = '1.0.1' AS reupgrade_succeeds_after_rollback
+FROM pg_extension
+WHERE extname = 'age';
+
+SELECT drop_graph('age_rollback_label_probe', true);

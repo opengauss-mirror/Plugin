@@ -193,6 +193,7 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/age--1.0.0.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/age--1.0.1.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/age--1.0.0--1.0.1.sql
+    ${CMAKE_CURRENT_SOURCE_DIR}/age--1.0.1--1.0.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(TARGETS age DESTINATION lib/postgresql)
