@@ -1,6 +1,13 @@
 #!/bin/bash
 BUILD_TUPLE=$1
-CMAKE_OPT="-DENABLE_MULTIPLE_NODES=OFF -DENABLE_PRIVATEGAUSS=OFF -DENABLE_THREAD_SAFETY=ON -DHAVE_LIBXML2=ON -DENABLE_LITE_MODE=$2 -DENABLE_MOT=$3 -DENABLE_HTAP=$4"
+# Non-lite builds always enable libxml2 (historical behavior).
+# Lite builds follow the server's 5th argument, defaulting to OFF when not passed.
+if [ "$2" == "ON" ]; then
+    HAVE_LIBXML2_OPT=${5:-OFF}
+else
+    HAVE_LIBXML2_OPT=ON
+fi
+CMAKE_OPT="-DENABLE_MULTIPLE_NODES=OFF -DENABLE_PRIVATEGAUSS=OFF -DENABLE_THREAD_SAFETY=ON -DENABLE_LITE_MODE=$2 -DENABLE_MOT=$3 -DENABLE_HTAP=$4 -DHAVE_LIBXML2=${HAVE_LIBXML2_OPT}"
 cpus_num=$(grep -w processor /proc/cpuinfo|wc -l)
 rm -f dolphin--5.3.sql
 touch dolphin--5.3.sql
