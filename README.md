@@ -1,4 +1,5 @@
 # Plugin
+简体中文 | [English](./README_EN.md)
 
 ### 介绍
 Plugin 仓主要承载 openGauss 的插件扩展能力，其中 dolphin 插件用于在 openGauss-server 基础上补充 B 库语法、函数、数据类型、类型转换等能力。
