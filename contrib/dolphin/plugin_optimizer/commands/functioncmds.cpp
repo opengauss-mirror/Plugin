@@ -1080,7 +1080,7 @@ void CheckCreateFunctionPrivilege(Oid namespaceId, Oid funcOid, const char* func
                 erraction("Please create an object in another schema.")));
     }
 
-    if (!isRelSuperuser() && !OidIsValid(funcOid) &&
+    if (!superuser() && !OidIsValid(funcOid) &&
         (namespaceId == PG_CATALOG_NAMESPACE ||
         namespaceId == PG_PUBLIC_NAMESPACE ||
         namespaceId == PG_DB4AI_NAMESPACE)) {
