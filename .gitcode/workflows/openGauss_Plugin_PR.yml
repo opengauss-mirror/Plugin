@@ -4,14 +4,17 @@ on:
   push:
     branches:
       - master
+      - '**'
   pull_request_target:
     branches:
       - master
+      - '**'
   pull_request_comment:
     types:
       - created
     branches:
       - master
+      - '**'
     comments:
       - '/retest'
   workflow_dispatch:
