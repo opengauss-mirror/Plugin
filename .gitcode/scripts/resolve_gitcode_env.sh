@@ -2,8 +2,9 @@
 set -euo pipefail
 
 event_file="${ATOMGIT_EVENT_PATH:-${GITCODE_EVENT_PATH:-}}"
+default_branch="${GITCODE_DEFAULT_BRANCH:-master}"
 pr_iid="${gitcodePullRequestIid:-${GITCODE_PR_IID:-}}"
-target_branch="${gitcodeTargetBranch:-${GITCODE_TARGET_BRANCH:-master}}"
+target_branch="${gitcodeTargetBranch:-${GITCODE_TARGET_BRANCH:-}}"
 after_sha="${gitcodeAfterCommitSha:-${GITCODE_AFTER_COMMIT_SHA:-${GITCODE_SHA:-}}}"
 merge_ref="${gitcodeMergeRef:-${GITCODE_MERGE_REF:-}}"
 
@@ -16,11 +17,11 @@ if [[ -n "${event_file}" && -f "${event_file}" ]]; then
   fi
   if [[ -z "${target_branch}" || "${target_branch}" == "master" ]]; then
     parsed_target="$(sed -n 's/.*"target_branch"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${event_file}" | head -n 1 || true)"
-    target_branch="${parsed_target:-${target_branch:-master}}"
+    target_branch="${parsed_target:-}"
   fi
 fi
 
-target_branch="${target_branch:-master}"
+target_branch="${target_branch:-${default_branch}}"
 
 if [[ -n "${pr_iid}" && -z "${merge_ref}" ]]; then
   merge_ref="refs/merge-requests/${pr_iid}/merge"
