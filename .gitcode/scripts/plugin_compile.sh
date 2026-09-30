@@ -8,15 +8,15 @@ echo "gitcodeMergeRef: ${GITCODE_MERGE_REF:-}"
 
 git config --global core.compression 0
 
-gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-${GITCODE_DEFAULT_BRANCH:-7.0.0}}"
+gitcodeTargetBranch="7.0.0"
 if [[ -z "${gitcodeTargetBranch}" ]]; then
-  gitcodeTargetBranch="${GITCODE_DEFAULT_BRANCH:-7.0.0}"
+  gitcodeTargetBranch="7.0.0"
 fi
 echo "gitcodeTargetBranch: ${gitcodeTargetBranch}"
 
 plugin_repo="${PLUGIN_REPO:-https://gitcode.com/opengauss/Plugin.git}"
 server_repo="${SERVER_REPO:-https://gitcode.com/opengauss/openGauss-server.git}"
-server_branch="${SERVER_BRANCH:-${gitcodeTargetBranch}}"
+server_branch="7.0.0"
 WORKSPACE="${WORKSPACE_ROOT:?WORKSPACE_ROOT is required}"
 private_build_script="${PRIVATE_BUILD_SCRIPT:-/home/PrivateBuild_tools/Private_Main_Plugin.sh}"
 
