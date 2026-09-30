@@ -23,6 +23,7 @@ permissions:
 
 env:
   GITCODE_REPO: opengauss/Plugin
+  GITCODE_DEFAULT_BRANCH: 7.0.0
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
@@ -73,7 +74,7 @@ jobs:
             ref="${GITCODE_REF:-}"
           fi
           if [ -z "${ref}" ]; then
-            ref="refs/heads/master"
+            ref="refs/heads/${GITCODE_DEFAULT_BRANCH}"
           fi
           sha="${ATOMGIT_SHA:-}"
           if [ -z "${sha}" ]; then
@@ -133,7 +134,7 @@ jobs:
             ref="${GITCODE_REF:-}"
           fi
           if [ -z "${ref}" ]; then
-            ref="refs/heads/master"
+            ref="refs/heads/${GITCODE_DEFAULT_BRANCH}"
           fi
           sha="${ATOMGIT_SHA:-}"
           if [ -z "${sha}" ]; then
