@@ -16,8 +16,11 @@ echo "gitcodeTargetBranch: ${gitcodeTargetBranch}"
 
 plugin_repo="${PLUGIN_REPO:-https://gitcode.com/opengauss/Plugin.git}"
 server_repo="${SERVER_REPO:-https://gitcode.com/opengauss/openGauss-server.git}"
+server_branch="${SERVER_BRANCH:-${gitcodeTargetBranch}}"
 WORKSPACE="${WORKSPACE_ROOT:?WORKSPACE_ROOT is required}"
 private_build_script="${PRIVATE_BUILD_SCRIPT:-/home/PrivateBuild_tools/Private_Main_Plugin.sh}"
+
+echo "serverBranch: ${server_branch}"
 
 export JAVA_HOME="${JAVA_HOME:-/usr/local/jdk-17}"
 export PATH="${JAVA_HOME}/bin:${PATH}"
@@ -54,7 +57,7 @@ download_source_from_gitcode() {
 
 download_source() {
   cd "${WORKSPACE}"
-  download_source_from_gitcode "${server_repo}" "${gitcodeTargetBranch}" openGauss
+  download_source_from_gitcode "${server_repo}" "${server_branch}" openGauss
 
   echo "server: current commit:"
   cd "${WORKSPACE}/openGauss"
