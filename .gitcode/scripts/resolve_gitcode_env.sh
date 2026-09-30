@@ -22,6 +22,9 @@ if [[ -n "${event_file}" && -f "${event_file}" ]]; then
 fi
 
 target_branch="${target_branch:-${default_branch}}"
+if [[ "${target_branch}" == "master" && "${default_branch}" != "master" ]]; then
+  target_branch="${default_branch}"
+fi
 
 if [[ -n "${pr_iid}" && -z "${merge_ref}" ]]; then
   merge_ref="refs/merge-requests/${pr_iid}/merge"
