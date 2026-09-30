@@ -166,21 +166,19 @@ jobs:
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
 
-  report_result:
-    name: Query pipeline and label PR
-    if: ${{ always() }}
-    needs:
-      - compile_plugin_1
-      - compile_plugin_2
-    runs-on: [self-hosted, plugin_1]
-    steps:
-      - name: Query pipeline and update PR label
-        if: ${{ atomgit.event.pull_request.number != '' }}
-        uses: cann/.gitcode/actions/query-pipeline@master
-        with:
-          owner: opengauss
-          repo: Plugin
-          run_id: ${{ atomgit.workflow_run_id }}
-          token: ${{ secrets.PR_LABEL_TOKEN }}
-          pr_number: ${{ atomgit.event.pull_request.number }}
-          apply_label: 'true'
+post:
+  jobs:
+    report_result:
+      name: Query pipeline and label PR
+      runs-on: [self-hosted, plugin_1]
+      steps:
+        - name: Query pipeline and update PR label
+          if: ${{ atomgit.event.pull_request.number != '' }}
+          uses: cann/.gitcode/actions/query-pipeline@master
+          with:
+            owner: opengauss
+            repo: Plugin
+            run_id: ${{ atomgit.workflow_run_id }}
+            token: ${{ secrets.PR_LABEL_TOKEN }}
+            pr_number: ${{ atomgit.event.pull_request.number }}
+            apply_label: 'true'
