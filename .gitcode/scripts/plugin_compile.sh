@@ -8,9 +8,9 @@ echo "gitcodeMergeRef: ${GITCODE_MERGE_REF:-}"
 
 git config --global core.compression 0
 
-gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-${GITCODE_DEFAULT_BRANCH:-master}}"
+gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-${GITCODE_DEFAULT_BRANCH:-7.0.0}}"
 if [[ -z "${gitcodeTargetBranch}" ]]; then
-  gitcodeTargetBranch="${GITCODE_DEFAULT_BRANCH:-master}"
+  gitcodeTargetBranch="${GITCODE_DEFAULT_BRANCH:-7.0.0}"
 fi
 echo "gitcodeTargetBranch: ${gitcodeTargetBranch}"
 
