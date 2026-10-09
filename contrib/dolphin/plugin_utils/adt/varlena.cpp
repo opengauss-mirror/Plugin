@@ -40,6 +40,7 @@
 #include "libpq/md5.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
+#include "nodes/makefuncs.h"
 #include "parser/scansup.h"
 #include "plugin_parser/parse_type.h"
 #include "port/pg_bswap.h"
@@ -54,11 +55,13 @@
 #include "utils/int8.h"
 #include "utils/sortsupport.h"
 #include "executor/node/nodeSort.h"
+#include "plugin_utils/fmgr_hook.h"
 #include "plugin_utils/my_locale.h"
 #include "pgxc/groupmgr.h"
 #include "openssl/evp.h"
 #include "catalog/gs_collation.h"
 #include "catalog/pg_collation_fn.h"
+#include "utils/fmgroids.h"
 #include "commands/extension.h"
 #include "plugin_postgres.h"
 #include "parser/parse_coerce.h"
@@ -1011,38 +1014,30 @@ Datum rawin(PG_FUNCTION_ARGS)
 
 Datum normal_rawout(PG_FUNCTION_ARGS)
 {
-        /*fcinfo->fncollation is set to 0 when calling Macro FuncCall1,
-        *so the collation value needs to be reset.
-        */
-        if (!OidIsValid(fcinfo->fncollation))
-            fcinfo->fncollation = DEFAULT_COLLATION_OID;
+    /* Direct calls may not supply a collation. */
+    if (!OidIsValid(fcinfo->fncollation)) {
+        fcinfo->fncollation = DEFAULT_COLLATION_OID;
+    }
 
-        bytea* data = PG_GETARG_BYTEA_P(0);
-        text* ans = NULL;
-        int datalen = 0;
-        int resultlen = 0;
-        int ans_len = 0;
-        char* out_string = NULL;
+    bytea* data = PG_GETARG_BYTEA_PP(0);
+    int datalen = VARSIZE_ANY_EXHDR(data);
+    int resultlen = datalen << 1;
+    if (resultlen >= (int)(MaxAllocSize - VARHDRSZ) * 2) {
+        PG_FREE_IF_COPY(data, 0);
+        ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
+    }
 
-        datalen = VARSIZE(data) - VARHDRSZ;
-
-        resultlen = datalen << 1;
-
-        if (resultlen < (int)(MaxAllocSize - VARHDRSZ) * 2) {
-            ans = (text*)palloc_huge(CurrentMemoryContext, VARHDRSZ + resultlen);
-            ans_len = hex_encode(VARDATA(data), datalen, VARDATA(ans));
-            /* Make this FATAL 'cause we've trodden on memory ... */
-            if (ans_len > resultlen)
-                ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
-
-            SET_VARSIZE(ans, VARHDRSZ + ans_len);
-            
-            out_string = str_toupper_for_raw(VARDATA_ANY(ans), VARSIZE_ANY_EXHDR(ans), PG_GET_COLLATION());
-        } else {
-            ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
-        }
-        pfree_ext(ans);
-        PG_RETURN_CSTRING(out_string);
+    /* Hex output can outgrow the short-varlena limit even when its input fits. */
+    text* ans = (text*)palloc_huge(CurrentMemoryContext, VARHDRSZ + resultlen);
+    int ans_len = hex_encode(VARDATA_ANY(data), datalen, VARDATA(ans));
+    if (ans_len > resultlen) {
+        ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
+    }
+    SET_VARSIZE(ans, VARHDRSZ + ans_len);
+    char* out_string = str_toupper_for_raw(VARDATA(ans), ans_len, PG_GET_COLLATION());
+    pfree_ext(ans);
+    PG_FREE_IF_COPY(data, 0);
+    PG_RETURN_CSTRING(out_string);
 }
 
 // output interface of RAW type
@@ -1403,15 +1398,17 @@ Datum text_len(PG_FUNCTION_ARGS)
 {
     text* input = PG_GETARG_TEXT_PP(0);
     int result = 0;
+    /* Fused strict calls may bypass the executor's encoding switch. */
+    int encoding = get_valid_charset_by_collation(PG_GET_COLLATION());
 
-    if (pg_database_encoding_max_length() == 1) {
+    if (pg_encoding_max_length(encoding) == 1) {
         char* cp = text_to_cstring(input);
         while (*cp) {
                 cp += get_step_len(*cp);
                 result++;
         }
     } else {
-        result = pg_mbstrlen_with_len(VARDATA_ANY(input), VARSIZE_ANY_EXHDR(input));
+        result = pg_encoding_mbstrlen_with_len(VARDATA_ANY(input), VARSIZE_ANY_EXHDR(input), encoding);
     }
 
     PG_RETURN_INT64(result);
@@ -2459,187 +2456,203 @@ static void text_position_cleanup(TextPositionState* state)
     }
 }
 
+void optimize_varstr_cmp(FmgrInfo* finfo, Oid collation)
+{
+    switch (finfo->fn_oid) {
+        case F_BTTEXTCMP:
+            if (lc_collate_is_c(collation)) {
+                finfo->fn_addr = bttextcmp_c_locale;
+            } else if (is_b_format_collation(collation)) {
+                finfo->fn_addr = bttextcmp_b_format;
+            } else {
+                finfo->fn_addr = bttextcmp_locale;
+            }
+            break;
+        case F_BPCHARCMP:
+            if (lc_collate_is_c(collation)) {
+                finfo->fn_addr = bpcharcmp_c_locale;
+            } else if (is_b_format_collation(collation)) {
+                finfo->fn_addr = bpcharcmp_b_format;
+            } else {
+                finfo->fn_addr = bpcharcmp_locale;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+/* varstr_cmp_locale()
+ * General locale-aware path: strcoll / wcscoll.
+ */
+int varstr_cmp_locale(char* arg1, int len1, char* arg2, int len2, Oid collid)
+{
+    int result;
+    char a1buf[TEXTBUFLEN];
+    char a2buf[TEXTBUFLEN];
+    char *a1p = NULL;
+    char *a2p = NULL;
+
+#ifdef HAVE_LOCALE_T
+    pg_locale_t mylocale = 0;
+#endif
+
+    if (collid != DEFAULT_COLLATION_OID) {
+        if (!OidIsValid(collid)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INDETERMINATE_COLLATION),
+                    errmsg("could not determine which collation to use for string comparison"),
+                    errhint("Use the COLLATE clause to set the collation explicitly.")));
+        }
+#ifdef HAVE_LOCALE_T
+        mylocale = pg_newlocale_from_collation(collid);
+#endif
+    }
+
+    if (len1 == len2 && memcmp(arg1, arg2, len1) == 0) {
+        return 0;
+    }
+
+#ifdef WIN32
+    if (GetDatabaseEncoding() == PG_UTF8) {
+        int a1len;
+        int a2len;
+        int r;
+
+        if (len1 >= TEXTBUFLEN / 2) {
+            a1len = len1 * 2 + 2;
+            a1p = palloc(a1len);
+        } else {
+            a1len = TEXTBUFLEN;
+            a1p = a1buf;
+        }
+        if (len2 >= TEXTBUFLEN / 2) {
+            a2len = len2 * 2 + 2;
+            a2p = palloc(a2len);
+        } else {
+            a2len = TEXTBUFLEN;
+            a2p = a2buf;
+        }
+
+        if (len1 == 0) {
+            r = 0;
+        } else {
+            r = MultiByteToWideChar(CP_UTF8, 0, arg1, len1, (LPWSTR)a1p, a1len / 2);
+            if (!r) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_CHARACTER_VALUE_FOR_CAST),
+                        errmsg("could not convert string to UTF-16: error code %lu", GetLastError())));
+            }
+        }
+        ((LPWSTR)a1p)[r] = 0;
+
+        if (len2 == 0) {
+            r = 0;
+        } else {
+            r = MultiByteToWideChar(CP_UTF8, 0, arg2, len2, (LPWSTR)a2p, a2len / 2);
+            if (!r) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_CHARACTER_VALUE_FOR_CAST),
+                        errmsg("could not convert string to UTF-16: error code %lu", GetLastError())));
+            }
+        }
+        ((LPWSTR)a2p)[r] = 0;
+
+        errno = 0;
+#ifdef HAVE_LOCALE_T
+        if (mylocale) {
+            result = wcscoll_l((LPWSTR)a1p, (LPWSTR)a2p, mylocale);
+        } else {
+#endif
+            result = wcscoll((LPWSTR)a1p, (LPWSTR)a2p);
+#ifdef HAVE_LOCALE_T
+        }
+#endif
+        if (result == 2147483647) {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("could not compare Unicode strings: %m")));
+        }
+
+        if (result == 0) {
+            result = memcmp(arg1, arg2, Min(len1, len2));
+            if ((result == 0) && (len1 != len2)) {
+                result = (len1 < len2) ? -1 : 1;
+            }
+        }
+
+        if (a1p != a1buf) {
+            pfree_ext(a1p);
+        }
+        if (a2p != a2buf) {
+            pfree_ext(a2p);
+        }
+
+        return result;
+    }
+#endif /* WIN32 */
+
+    if (len1 >= TEXTBUFLEN) {
+        a1p = (char*)palloc(len1 + 1);
+    } else {
+        a1p = a1buf;
+    }
+    if (len2 >= TEXTBUFLEN) {
+        a2p = (char*)palloc(len2 + 1);
+    } else {
+        a2p = a2buf;
+    }
+
+    errno_t err = EOK;
+    if (len1 > 0) {
+        err = memcpy_s(a1p, len1, arg1, len1);
+        securec_check(err, "\0", "\0");
+    }
+    a1p[len1] = '\0';
+    if (len2 > 0) {
+        err = memcpy_s(a2p, len2, arg2, len2);
+        securec_check(err, "\0", "\0");
+    }
+    a2p[len2] = '\0';
+
+#ifdef HAVE_LOCALE_T
+    if (mylocale) {
+        result = strcoll_l(a1p, a2p, mylocale);
+    } else {
+#endif
+        result = strcoll(a1p, a2p);
+#ifdef HAVE_LOCALE_T
+    }
+#endif
+
+    if (result == 0) {
+        result = strcmp(a1p, a2p);
+    }
+
+    if (a1p != a1buf) {
+        pfree_ext(a1p);
+    }
+    if (a2p != a2buf) {
+        pfree_ext(a2p);
+    }
+
+    return result;
+}
+
 /* varstr_cmp()
  * Comparison function for text strings with given lengths.
  * Includes locale support, but must copy strings to temporary memory
- *	to allow null-termination for inputs to strcoll().
+ *      to allow null-termination for inputs to strcoll().
  * Returns an integer less than, equal to, or greater than zero, indicating
  * whether arg1 is less than, equal to, or greater than arg2.
  */
 int varstr_cmp(char* arg1, int len1, char* arg2, int len2, Oid collid)
 {
-    int result;
-
-    /*
-     * Unfortunately, there is no strncoll(), so in the non-C locale case we
-     * have to do some memory copying.	This turns out to be significantly
-     * slower, so we optimize the case where LC_COLLATE is C.  We also try to
-     * optimize relatively-short strings by avoiding palloc/pfree overhead.
-     */
-    if (is_b_format_collation(collid)) {
-        result = varstr_cmp_by_builtin_collations(arg1, len1, arg2, len2, collid);
-    } else if (lc_collate_is_c(collid)) {
-        result = memcmp(arg1, arg2, Min(len1, len2));
-        if ((result == 0) && (len1 != len2))
-            result = (len1 < len2) ? -1 : 1;
+    if (lc_collate_is_c(collid)) {
+        return varstr_cmp_c(arg1, len1, arg2, len2);
+    } else if (is_b_format_collation(collid)) {
+        return varstr_cmp_by_builtin_collations(arg1, len1, arg2, len2, collid);
     } else {
-        char a1buf[TEXTBUFLEN];
-        char a2buf[TEXTBUFLEN];
-        char *a1p = NULL, *a2p = NULL;
-
-#ifdef HAVE_LOCALE_T
-        pg_locale_t mylocale = 0;
-#endif
-
-        if (collid != DEFAULT_COLLATION_OID) {
-            if (!OidIsValid(collid)) {
-                /*
-                 * This typically means that the parser could not resolve a
-                 * conflict of implicit collations, so report it that way.
-                 */
-                ereport(ERROR,
-                    (errcode(ERRCODE_INDETERMINATE_COLLATION),
-                        errmsg("could not determine which collation to use for string comparison"),
-                        errhint("Use the COLLATE clause to set the collation explicitly.")));
-            }
-#ifdef HAVE_LOCALE_T
-            mylocale = pg_newlocale_from_collation(collid);
-#endif
-        }
-
-        /*
-         * memcmp() can't tell us which of two unequal strings sorts first, but
-         * it's a cheap way to tell if they're equal.  Testing shows that
-         * memcmp() followed by strcoll() is only trivially slower than
-         * strcoll() by itself, so we don't lose much if this doesn't work out
-         * very often, and if it does - for example, because there are many
-         * equal strings in the input - then we win big by avoiding expensive
-         * collation-aware comparisons.
-         */
-        if (len1 == len2 && memcmp(arg1, arg2, len1) == 0)
-            return 0;
-
-#ifdef WIN32
-        /* Win32 does not have UTF-8, so we need to map to UTF-16 */
-        if (GetDatabaseEncoding() == PG_UTF8) {
-            int a1len;
-            int a2len;
-            int r;
-
-            if (len1 >= TEXTBUFLEN / 2) {
-                a1len = len1 * 2 + 2;
-                a1p = palloc(a1len);
-            } else {
-                a1len = TEXTBUFLEN;
-                a1p = a1buf;
-            }
-            if (len2 >= TEXTBUFLEN / 2) {
-                a2len = len2 * 2 + 2;
-                a2p = palloc(a2len);
-            } else {
-                a2len = TEXTBUFLEN;
-                a2p = a2buf;
-            }
-
-            /* stupid Microsloth API does not work for zero-length input */
-            if (len1 == 0)
-                r = 0;
-            else {
-                r = MultiByteToWideChar(CP_UTF8, 0, arg1, len1, (LPWSTR)a1p, a1len / 2);
-                if (!r)
-                    ereport(ERROR,
-                        (errcode(ERRCODE_INVALID_CHARACTER_VALUE_FOR_CAST),
-                            errmsg("could not convert string to UTF-16: error code %lu", GetLastError())));
-            }
-            ((LPWSTR)a1p)[r] = 0;
-
-            if (len2 == 0)
-                r = 0;
-            else {
-                r = MultiByteToWideChar(CP_UTF8, 0, arg2, len2, (LPWSTR)a2p, a2len / 2);
-                if (!r)
-                    ereport(ERROR,
-                        (errcode(ERRCODE_INVALID_CHARACTER_VALUE_FOR_CAST),
-                            errmsg("could not convert string to UTF-16: error code %lu", GetLastError())));
-            }
-            ((LPWSTR)a2p)[r] = 0;
-
-            errno = 0;
-#ifdef HAVE_LOCALE_T
-            if (mylocale)
-                result = wcscoll_l((LPWSTR)a1p, (LPWSTR)a2p, mylocale);
-            else
-#endif
-                result = wcscoll((LPWSTR)a1p, (LPWSTR)a2p);
-            if (result == 2147483647) /* _NLSCMPERROR; missing from mingw
-                                       * headers */
-                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("could not compare Unicode strings: %m")));
-
-            /*
-             * In some locales wcscoll() can claim that nonidentical strings
-             * are equal.  Believing that would be bad news for a number of
-             * reasons, so we follow Perl's lead and sort "equal" strings
-             * according to strcmp (on the UTF-8 representation).
-             */
-            if (result == 0) {
-                result = memcmp(arg1, arg2, Min(len1, len2));
-                if ((result == 0) && (len1 != len2))
-                    result = (len1 < len2) ? -1 : 1;
-            }
-
-            if (a1p != a1buf)
-                pfree_ext(a1p);
-            if (a2p != a2buf)
-                pfree_ext(a2p);
-
-            return result;
-        }
-#endif /* WIN32 */
-
-        if (len1 >= TEXTBUFLEN)
-            a1p = (char*)palloc(len1 + 1);
-        else
-            a1p = a1buf;
-        if (len2 >= TEXTBUFLEN)
-            a2p = (char*)palloc(len2 + 1);
-        else
-            a2p = a2buf;
-
-        errno_t err = EOK;
-        if (len1 > 0) {
-            err = memcpy_s(a1p, len1, arg1, len1);
-            securec_check(err, "\0", "\0");
-        }
-        a1p[len1] = '\0';
-        if (len2 > 0) {
-            err = memcpy_s(a2p, len2, arg2, len2);
-            securec_check(err, "\0", "\0");
-        }
-        a2p[len2] = '\0';
-
-#ifdef HAVE_LOCALE_T
-        if (mylocale)
-            result = strcoll_l(a1p, a2p, mylocale);
-        else
-#endif
-            result = strcoll(a1p, a2p);
-
-        /*
-         * In some locales strcoll() can claim that nonidentical strings are
-         * equal.  Believing that would be bad news for a number of reasons,
-         * so we follow Perl's lead and sort "equal" strings according to
-         * strcmp().
-         */
-        if (result == 0)
-            result = strcmp(a1p, a2p);
-
-        if (a1p != a1buf)
-            pfree_ext(a1p);
-        if (a2p != a2buf)
-            pfree_ext(a2p);
+        return varstr_cmp_locale(arg1, len1, arg2, len2, collid);
     }
-
-    return result;
 }
 
 /* text_cmp()
@@ -2982,6 +2995,56 @@ Datum bttextcmp(PG_FUNCTION_ARGS)
     int32 result;
 
     result = text_cmp(arg1, arg2, PG_GET_COLLATION());
+
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+
+    PG_RETURN_INT32(result);
+}
+
+Datum bttextcmp_c_locale(PG_FUNCTION_ARGS)
+{
+    text* arg1 = PG_GETARG_TEXT_PP(0);
+    text* arg2 = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bttextcmp_c_locale()");
+
+    int32 result;
+    result = varstr_cmp_c(VARDATA_ANY(arg1), VARSIZE_ANY_EXHDR(arg1),
+                          VARDATA_ANY(arg2), VARSIZE_ANY_EXHDR(arg2));
+
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+
+    PG_RETURN_INT32(result);
+}
+
+Datum bttextcmp_b_format(PG_FUNCTION_ARGS)
+{
+    text* arg1 = PG_GETARG_TEXT_PP(0);
+    text* arg2 = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bttextcmp_b_format()");
+
+    int32 result;
+    result = varstr_cmp_by_builtin_collations(VARDATA_ANY(arg1), VARSIZE_ANY_EXHDR(arg1),
+                                              VARDATA_ANY(arg2), VARSIZE_ANY_EXHDR(arg2),
+                                              PG_GET_COLLATION());
+
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+
+    PG_RETURN_INT32(result);
+}
+
+Datum bttextcmp_locale(PG_FUNCTION_ARGS)
+{
+    text* arg1 = PG_GETARG_TEXT_PP(0);
+    text* arg2 = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bttextcmp_locale()");
+
+    int32 result;
+    result = varstr_cmp_locale(VARDATA_ANY(arg1), VARSIZE_ANY_EXHDR(arg1),
+                               VARDATA_ANY(arg2), VARSIZE_ANY_EXHDR(arg2),
+                               PG_GET_COLLATION());
 
     PG_FREE_IF_COPY(arg1, 0);
     PG_FREE_IF_COPY(arg2, 1);
@@ -5104,17 +5167,17 @@ Datum replace_text_with_two_args(PG_FUNCTION_ARGS)
 #else
         PG_RETURN_TEXT_P(PG_GETARG_TEXT_PP(0));
 #endif
-    FunctionCallInfoData locfcinfo;
+    LOCAL_FCINFO(locfcinfo, 3);
     Datum result;
-    InitFunctionCallInfoData(locfcinfo, NULL, 3, InvalidOid, NULL, NULL);
-    locfcinfo.arg[0] = PG_GETARG_DATUM(0);
-    locfcinfo.arg[1] = PG_GETARG_DATUM(1);
-    locfcinfo.arg[2] = CStringGetTextDatum("\0");
-    locfcinfo.argnull[0] = false;
-    locfcinfo.argnull[1] = false;
-    locfcinfo.argnull[2] = false;
-    result = (*replace_text)(&locfcinfo);
-    fcinfo->isnull = locfcinfo.isnull;
+    InitFunctionCallInfoData(*locfcinfo, NULL, 3, InvalidOid, NULL, NULL);
+    locfcinfo->args[0].value = PG_GETARG_DATUM(0);
+    locfcinfo->args[1].value = PG_GETARG_DATUM(1);
+    locfcinfo->args[2].value = CStringGetTextDatum("\0");
+    locfcinfo->args[0].isnull = false;
+    locfcinfo->args[1].isnull = false;
+    locfcinfo->args[2].isnull = false;
+    result = (*replace_text)(locfcinfo);
+    fcinfo->isnull = locfcinfo->isnull;
     return result;
 }
 
@@ -6905,11 +6968,8 @@ Datum list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfoText(state, PG_GETARG_TEXT_PP(1)); /* value */
     }
@@ -7008,11 +7068,8 @@ Datum int2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%hd", PG_GETARG_INT16(1)); /* value */
     }
@@ -7056,11 +7113,8 @@ Datum int4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%d", PG_GETARG_INT32(1)); /* value */
     }
@@ -7104,11 +7158,8 @@ Datum int8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%ld", PG_GETARG_INT64(1)); /* value */
     }
@@ -7152,11 +7203,8 @@ Datum float4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%lf", PG_GETARG_FLOAT4(1)); /* value */
     }
@@ -7200,11 +7248,8 @@ Datum float8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
 
     /* Append the value unless null. */
     if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%lf", PG_GETARG_FLOAT8(1)); /* value */
     }
@@ -7265,11 +7310,8 @@ Datum numeric_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         }
         val = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
 
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%s", val); /* value */
         pfree_ext(val);
@@ -7323,11 +7365,8 @@ Datum date_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         DateADT dateVal = PG_GETARG_DATEADT(1);
         val = DatumGetCString(DirectFunctionCall1(date_out, dateVal));
 
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%s", val); /* value */
         pfree_ext(val);
@@ -7381,11 +7420,8 @@ Datum timestamp_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
         val = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
 
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%s", val); /* value */
         pfree_ext(val);
@@ -7439,11 +7475,8 @@ Datum timestamptz_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         TimestampTz dt = PG_GETARG_TIMESTAMPTZ(1);
         val = DatumGetCString(DirectFunctionCall1(timestamptz_out, dt));
 
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%s", val); /* value */
         pfree_ext(val);
@@ -7497,11 +7530,8 @@ Datum interval_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         Interval* span = PG_GETARG_INTERVAL_P(1);
         val = DatumGetCString(DirectFunctionCall1(interval_out, PointerGetDatum(span)));
 
-        /* On the first time through, we ignore the delimiter. */
         if (state == NULL)
             state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
         appendStringInfo(state, "%s", val); /* value */
         pfree_ext(val);
@@ -7740,7 +7770,7 @@ Datum text_concat_ws(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
-Datum text_left_right_helper(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
+static Datum text_left_right_internal(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
 {
     const char* p = VARDATA_ANY(str);
     int64 len = VARSIZE_ANY_EXHDR(str);
@@ -7776,6 +7806,22 @@ Datum text_left_right_helper(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_TEXT_P((isleft ? cstring_to_text_with_len(p, off) : cstring_to_text_with_len(p + off, len - off)));
+}
+
+/* Preserve column encoding when fused calls bypass the executor's switch. */
+Datum text_left_right_helper(text* str, int64 n, bool isleft, PG_FUNCTION_ARGS)
+{
+    int db_encoding = GetDatabaseEncoding();
+    int func_encoding = get_valid_charset_by_collation(PG_GET_COLLATION());
+    if (func_encoding == db_encoding) {
+        return text_left_right_internal(str, n, isleft, fcinfo);
+    }
+
+    Datum result;
+    DB_ENCODING_SWITCH_TO(func_encoding);
+    result = text_left_right_internal(str, n, isleft, fcinfo);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
 }
 
 /*
@@ -9499,15 +9545,22 @@ static float8 GetValueFromArg(Oid valtype, Datum arg, bool can_ignore)
     ReleaseSysCache(tuple);
 
     FmgrInfo flinfo;
-    FunctionCallInfoData fcinfo;
+    LOCAL_FCINFO(fcinfo, 1);
     fmgr_info(cast_func_oid, &flinfo);
-    InitFunctionCallInfoData(fcinfo, &flinfo, 1, InvalidOid, NULL, NULL);
-    fcinfo.arg[0] = arg;
-    fcinfo.argnull[0] = false;
-    fcinfo.argTypes[0] = valtype;
-    fcinfo.can_ignore = can_ignore;
+    /*
+     * The new fmgr ABI dropped the per-argument type array; a function's
+     * argument types are now derived from its parse node.  Synthesize a
+     * minimal FuncExpr so that get_fn_expr_argtype() reports the source type
+     * the cast function expects to see.
+     */
+    flinfo.fn_expr = (Node*)makeFuncExpr(flinfo.fn_oid, FLOAT8OID,
+        list_make1(makeNullConst(valtype, -1, InvalidOid)), InvalidOid, InvalidOid, COERCE_EXPLICIT_CALL);
+    InitFunctionCallInfoData(*fcinfo, &flinfo, 1, InvalidOid, NULL, NULL);
+    fcinfo->args[0].value = arg;
+    fcinfo->args[0].isnull = false;
+    fcinfo->can_ignore = can_ignore;
 
-    return DatumGetFloat8(FunctionCallInvoke(&fcinfo));
+    return DatumGetFloat8(FunctionCallInvoke(fcinfo));
 }
 
 Datum gs_interval(PG_FUNCTION_ARGS)
@@ -9937,8 +9990,8 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     if (valtype == BOOLOID) {
         return cstring_to_text(DatumGetBool(PG_GETARG_DATUM(idx)) ? "1" : "0");
     }
-    getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
-    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
+    getTypeOutputInfo(get_fn_expr_argtype(fcinfo->flinfo, idx), &typeOutput, &typIsVarlena);
+    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->args[idx].value);
     result = cstring_to_text(str_value);
     if (BITOID == valtype) {
         int from_base = 2;
@@ -9974,8 +10027,8 @@ static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx)
     bool typIsVarlena;
     int ret;
     char result_chr[CONV_MAX_CHAR_LEN + 1] = "";
-    getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
-    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
+    getTypeOutputInfo(get_fn_expr_argtype(fcinfo->flinfo, idx), &typeOutput, &typIsVarlena);
+    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->args[idx].value);
     result_l = strtol(str_value, &badp, 10);
     if (str_value == badp) {
         result_l = 0;
@@ -10108,8 +10161,8 @@ static char* cmp_get_string_type(PG_FUNCTION_ARGS, int argn)
     char* res;
     Oid typeOutput;
     bool typIsVarlena;
-    getTypeOutputInfo(fcinfo->argTypes[argn], &typeOutput, &typIsVarlena);
-    res = OidOutputFunctionCall(typeOutput, fcinfo->arg[argn]);
+    getTypeOutputInfo(get_fn_expr_argtype(fcinfo->flinfo, argn), &typeOutput, &typIsVarlena);
+    res = OidOutputFunctionCall(typeOutput, fcinfo->args[argn].value);
     return res;
 }
 
@@ -10118,8 +10171,8 @@ static int128 cmp_get_int_type(PG_FUNCTION_ARGS, int argn)
     int128 res;
     char* str_val = NULL;
     Oid typeoid = InvalidOid;
-    typeoid = fcinfo->argTypes[argn];
-    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    typeoid = get_fn_expr_argtype(fcinfo->flinfo, argn);
+    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), get_fn_expr_argtype(fcinfo->flinfo, argn));
     if (is_unsigned_intType(typeoid)) {
         res = parse_unsigned_val(typeoid, str_val);
     } else {
@@ -10133,8 +10186,8 @@ static Numeric cmp_get_decimal_type(PG_FUNCTION_ARGS, int argn)
     Numeric res;
     char* str_val = NULL;
     Oid typeoid = InvalidOid;
-    typeoid = fcinfo->argTypes[argn];
-    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    typeoid = get_fn_expr_argtype(fcinfo->flinfo, argn);
+    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), get_fn_expr_argtype(fcinfo->flinfo, argn));
     if (typeoid == NUMERICOID) {
         res = PG_GETARG_NUMERIC(argn);
     } else if (is_unsigned_intType(typeoid)) { //bool, bit or varbit type
@@ -10157,10 +10210,10 @@ static float8 cmp_get_real_type(PG_FUNCTION_ARGS, int argn)
     fsec_t fsec = 0;
     bool flag = true;
     Oid typeoid = InvalidOid;
-    typeoid = fcinfo->argTypes[argn];
+    typeoid = get_fn_expr_argtype(fcinfo->flinfo, argn);
     if (is_type_with_date(typeoid)) {
         const char* tzn = NULL;
-        TimestampTz tsVal = temporal_to_timestamptz(fcinfo->argTypes[argn], argn, fcinfo);
+        TimestampTz tsVal = temporal_to_timestamptz(get_fn_expr_argtype(fcinfo->flinfo, argn), argn, fcinfo);
         timestamp2tm(tsVal, &tz, tm, &fsec, &tzn, NULL);
         str_val = tm_to_cstring(tm, typeoid);
     } else if (typeoid == TIMEOID) {
@@ -10173,7 +10226,7 @@ static float8 cmp_get_real_type(PG_FUNCTION_ARGS, int argn)
         str_val = tm_to_cstring(tm, typeoid);
     } else {
         flag = false;
-        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), get_fn_expr_argtype(fcinfo->flinfo, argn));
     }
     if (typeoid == FLOAT8OID) {
         res = PG_GETARG_FLOAT8(argn);
@@ -10559,9 +10612,9 @@ CmpType agg_cmp_type(CmpType a, CmpType b)
 static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc)
 {
     bool unsigned_flag = false;
-    CmpType agg_type = map_oid_to_cmp_type(fcinfo->argTypes[0], &unsigned_flag);
+    CmpType agg_type = map_oid_to_cmp_type(get_fn_expr_argtype(fcinfo->flinfo, 0), &unsigned_flag);
     for (int i = 1; i < argc; i++) {
-        agg_type = agg_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i], &unsigned_flag));
+        agg_type = agg_cmp_type(agg_type, map_oid_to_cmp_type(get_fn_expr_argtype(fcinfo->flinfo, i), &unsigned_flag));
     }
     return agg_type;
 }
@@ -10637,7 +10690,7 @@ static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS
             timestamptz = timetz2timestamptz(PG_GETARG_TIMETZADT_P(index));
             break;
         default:
-            timestamptz = nontemporal_to_timestamptz(fcinfo->argTypes[index], fcinfo->arg[index]);
+            timestamptz = nontemporal_to_timestamptz(get_fn_expr_argtype(fcinfo->flinfo, index), fcinfo->args[index].value);
             break;
     }
     return timestamptz;
@@ -10704,8 +10757,8 @@ static bool cmp_between_unsigned_type(PG_FUNCTION_ARGS, CmpMode mode)
     Oid typeoid = InvalidOid;
     uint64 cmp_args[BETWEEN_AND_ARGC];
     for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-        typeoid = fcinfo->argTypes[i];
-        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+        typeoid = get_fn_expr_argtype(fcinfo->flinfo, i);
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), get_fn_expr_argtype(fcinfo->flinfo, i));
         if (is_unsigned_intType(typeoid)) {
             cmp_args[i] = parse_unsigned_val(typeoid, str_val);
         } else {
@@ -10717,7 +10770,7 @@ static bool cmp_between_unsigned_type(PG_FUNCTION_ARGS, CmpMode mode)
         rewritten to
         value BETWEEN 0 AND <some number>
     */
-    if (!is_unsigned_intType(fcinfo->argTypes[ARG_1]) && static_cast<int64>(cmp_args[ARG_1]) < 0) {
+    if (!is_unsigned_intType(get_fn_expr_argtype(fcinfo->flinfo, ARG_1)) && static_cast<int64>(cmp_args[ARG_1]) < 0) {
         cmp_args[ARG_1] = 0;
     }
     /*
@@ -10725,7 +10778,7 @@ static bool cmp_between_unsigned_type(PG_FUNCTION_ARGS, CmpMode mode)
         rewritten to
         1 BETWEEN <some number> AND 0
     */
-    if (!is_unsigned_intType(fcinfo->argTypes[ARG_2]) && static_cast<int64>(cmp_args[ARG_2]) < 0) {
+    if (!is_unsigned_intType(get_fn_expr_argtype(fcinfo->flinfo, ARG_2)) && static_cast<int64>(cmp_args[ARG_2]) < 0) {
         cmp_args[ARG_2] = 0;
         cmp_args[ARG_0] = 1;
     }
@@ -10738,8 +10791,8 @@ static bool cmp_between_signed_type(PG_FUNCTION_ARGS, CmpMode mode)
     Oid typeoid = InvalidOid;
     int64 cmp_args[BETWEEN_AND_ARGC];
     for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-        typeoid = fcinfo->argTypes[i];
-        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+        typeoid = get_fn_expr_argtype(fcinfo->flinfo, i);
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), get_fn_expr_argtype(fcinfo->flinfo, i));
         if (is_unsigned_intType(typeoid)) {
             cmp_args[i] = parse_unsigned_val(typeoid, str_val);
         } else {
@@ -10747,7 +10800,7 @@ static bool cmp_between_signed_type(PG_FUNCTION_ARGS, CmpMode mode)
         }
     }
     // cmp_args[ARG_2] is unsigned, and really large
-    if (is_unsigned_intType(fcinfo->argTypes[ARG_2]) && (int64) cmp_args[ARG_2] < 0) {
+    if (is_unsigned_intType(get_fn_expr_argtype(fcinfo->flinfo, ARG_2)) && (int64) cmp_args[ARG_2] < 0) {
         cmp_args[ARG_2] = INT64_MAX;
     }
     return cmp_result_for_expr<int64>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
@@ -10760,9 +10813,9 @@ static CmpType handle_types_map(bool& cmp_as_ts_strings, bool& cmp_as_times, boo
     CmpType type = agg_cmp_type(fcinfo, BETWEEN_AND_ARGC);
     if (type == CMP_STRING_TYPE) {
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            if (is_type_with_date(fcinfo->argTypes[i])) {
+            if (is_type_with_date(get_fn_expr_argtype(fcinfo->flinfo, i))) {
                 args_date_cnt++;
-            } else if (is_type_with_time(fcinfo->argTypes[i])) {
+            } else if (is_type_with_time(get_fn_expr_argtype(fcinfo->flinfo, i))) {
                 args_time_cnt++;
             }
         }
@@ -10790,7 +10843,7 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
     if (compare_as_times) {
         Datum cmp_args[BETWEEN_AND_ARGC];
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            if (fcinfo->argTypes[i] == TIMEOID) {
+            if (get_fn_expr_argtype(fcinfo->flinfo, i) == TIMEOID) {
                 TimeADT time_val = PG_GETARG_TIMEADT(i);
                 cmp_args[i] = DirectFunctionCall1(time_timetz, time_val);
             } else {
@@ -10802,16 +10855,16 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
     } else if (compare_as_ts) {
         TimestampTz cmp_args[BETWEEN_AND_ARGC];
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            cmp_args[i] = temporal_to_timestamptz(fcinfo->argTypes[i], i, fcinfo);
+            cmp_args[i] = temporal_to_timestamptz(get_fn_expr_argtype(fcinfo->flinfo, i), i, fcinfo);
         }
         return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
     } else if (compare_as_ts_with_strings) {
         TimestampTz cmp_args[BETWEEN_AND_ARGC];
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            if (is_temporal_type(fcinfo->argTypes[i])) {
-                cmp_args[i] = temporal_to_timestamptz(fcinfo->argTypes[i], i, fcinfo);
+            if (is_temporal_type(get_fn_expr_argtype(fcinfo->flinfo, i))) {
+                cmp_args[i] = temporal_to_timestamptz(get_fn_expr_argtype(fcinfo->flinfo, i), i, fcinfo);
             } else { //string type
-                cmp_args[i] = nontemporal_to_timestamptz(fcinfo->argTypes[i], fcinfo->arg[i]);
+                cmp_args[i] = nontemporal_to_timestamptz(get_fn_expr_argtype(fcinfo->flinfo, i), fcinfo->args[i].value);
             }
         }
         return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
@@ -10837,7 +10890,7 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         }
         return_val = cmp_result_for_func(res_arg1_2, res_arg1_3, mode);
     } else if (type == CMP_INT_TYPE) {
-        if (is_unsigned_intType(fcinfo->argTypes[ARG_0])) {// Comparing as unsigned.
+        if (is_unsigned_intType(get_fn_expr_argtype(fcinfo->flinfo, ARG_0))) {// Comparing as unsigned.
             return_val = cmp_between_unsigned_type(fcinfo, mode);
         } else {
             return_val = cmp_between_signed_type(fcinfo, mode);
@@ -10917,7 +10970,7 @@ Datum make_set(PG_FUNCTION_ARGS)
         if (i == MYSQL_SUPPORT_MINUS_MAX_LENGTH && num < 0) {
             break;
         }
-        if ((flag != 0 || (flag == 0 && num < 0)) && !fcinfo->argnull[i]) {
+        if ((flag != 0 || (flag == 0 && num < 0)) && !fcinfo->args[i].isnull) {
             if (output_flag && (flag % 2 == 1 || (flag % 2 == 0 && num < 0))) {
                 appendStringInfoString(&buf, ",");
                 output_flag = false;
@@ -11791,11 +11844,11 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
     bool hasLenError = false;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasLenError);
     
     bool hasError = false;
     char* endptr = NULL;
-    double result = float8in_internal(data, &endptr, &hasError, fcinfo->ccontext);
+    double result = float8in_internal(data, &endptr, &hasError, FCINFO_GET_COERCION_CONTEXT(fcinfo));
     if (hasError || (endptr != NULL && *endptr != '\0')) {
         ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -11812,7 +11865,7 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
 Datum Varlena2Numeric(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0));
     Datum result;
 
     result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(data), ObjectIdGetDatum(0),
@@ -11827,7 +11880,7 @@ Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
     char* data = NULL;
     bool hasError = false;
     bool typIsVarlena = false;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
     if (typIsVarlena) {
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
@@ -11845,7 +11898,7 @@ Datum Varlena2Varchar(PG_FUNCTION_ARGS)
     char* data = NULL;
     bool hasError = false;
     bool typIsVarlena = false;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
     if (typIsVarlena) {
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
@@ -11863,7 +11916,7 @@ Datum Varlena2Text(PG_FUNCTION_ARGS)
     char* data = NULL;
     bool hasError = false;
     bool typIsVarlena = false;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
     if (typIsVarlena) {
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
@@ -11879,7 +11932,7 @@ Datum Varlena2Text(PG_FUNCTION_ARGS)
 Datum Varlena2Bit(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0));
     int32 typmod = PG_GETARG_INT32(1);
     Datum bits;
     Datum result;
@@ -12286,10 +12339,10 @@ Datum blob_to_float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
     bool hasLenError = false;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    data = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasLenError);
     bool hasError = false;
     char* endptr = NULL;
-    double result = float8in_internal(data, &endptr, &hasError, fcinfo->ccontext);
+    double result = float8in_internal(data, &endptr, &hasError, FCINFO_GET_COERCION_CONTEXT(fcinfo));
     pfree_ext(data);
     
     PG_RETURN_FLOAT8(result);

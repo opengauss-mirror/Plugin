@@ -1726,7 +1726,7 @@ Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS)
         rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
         securec_check(rc, "\0", "\0");
         values[0] = CStringGetTextDatum((char*)(lockName->name)+strlen((char*)dataBaseId));
-        fcinfo->arg[0] = values[0];
+        fcinfo->args[0].value = values[0];
         Datum datum1 = IsUsedAdvisoryLock(fcinfo);
         if (datum1 == 0) {
             fcinfo->isnull = false;

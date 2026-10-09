@@ -41,6 +41,7 @@
 #include "plugin_utils/timestamp.h"
 #include "plugin_utils/datetime.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/fmgr_hook.h"
 #include "plugin_utils/year.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
@@ -116,6 +117,7 @@
 #define MAX_YEAR 9999
 #endif
 
+constexpr int TIMESTAMP_TYPMOD_ARG_INDEX = 2;
 constexpr int N_TIMESTAMP_FUNC_ARGS = 4;
 constexpr int FMT_INDX_TIMESTAMP_FUNC_ARGS = 3;
 /* NaN and Infinity Macro used in interval_mul and interval_div*/
@@ -659,7 +661,7 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
     char* str = PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = timestamp_internal(fcinfo, str, TIME_IN, &time_error_type);
-    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
+    if ((FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_IMPLICIT || FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_EXPLICIT) &&
         time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -675,7 +677,7 @@ Datum timestamp_cast(PG_FUNCTION_ARGS)
 
 Datum timestamp_explicit(PG_FUNCTION_ARGS)
 {
-    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    Oid input_oid = get_fn_expr_argtype(fcinfo->flinfo, 0) ? get_fn_expr_argtype(fcinfo->flinfo, 0) : TEXTOID;
     char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = timestamp_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
@@ -700,7 +702,9 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
 #ifdef DOLPHIN
-    int32 typmod = time_cast_type > 0 ? -1 : PG_GETARG_INT32(2);
+    /* Single-argument binary casts do not carry an input function typmod. */
+    int32 typmod = (time_cast_type != TIME_IN || PG_NARGS() <= TIMESTAMP_TYPMOD_ARG_INDEX) ?
+        -1 : PG_GETARG_INT32(TIMESTAMP_TYPMOD_ARG_INDEX);
     error_t rc = EOK;
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
@@ -1890,7 +1894,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum result = timestamptz_internal(fcinfo, str, TIME_IN, &time_error_type);
     if (time_error_type == TIME_INCORRECT &&
-        (fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT)) {
+        (FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_IMPLICIT || FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_EXPLICIT)) {
         PG_RETURN_NULL();
     }
     return result;
@@ -1905,7 +1909,7 @@ Datum timestamptz_cast(PG_FUNCTION_ARGS)
 
 Datum timestamptz_explicit(PG_FUNCTION_ARGS)
 {
-    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    Oid input_oid = get_fn_expr_argtype(fcinfo->flinfo, 0) ? get_fn_expr_argtype(fcinfo->flinfo, 0) : TEXTOID;
     char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
 
     TimeErrorType time_error_type = TIME_CORRECT;
@@ -1931,7 +1935,9 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
 #ifdef DOLPHIN
-    int32 typmod = time_cast_type > 0 ? -1 : PG_GETARG_INT32(2);
+    /* Single-argument binary casts do not carry an input function typmod. */
+    int32 typmod = (time_cast_type != TIME_IN || PG_NARGS() <= TIMESTAMP_TYPMOD_ARG_INDEX) ?
+        -1 : PG_GETARG_INT32(TIMESTAMP_TYPMOD_ARG_INDEX);
     error_t rc = EOK;
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
@@ -13091,7 +13097,7 @@ Datum binary_timestamp(PG_FUNCTION_ARGS)
     Datum result = timestamp_internal(fcinfo, data, TIME_IN, &time_error_type);
     pfree_ext(data);
 
-    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
+    if ((FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_IMPLICIT || FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_EXPLICIT) &&
         time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
@@ -13114,7 +13120,7 @@ Datum binary_timestamptz(PG_FUNCTION_ARGS)
     pfree_ext(data);
     
     if (time_error_type == TIME_INCORRECT &&
-        (fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT)) {
+        (FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_IMPLICIT || FCINFO_GET_COERCION_CONTEXT(fcinfo) == COERCION_EXPLICIT)) {
         PG_RETURN_NULL();
     }
 
@@ -13531,7 +13537,7 @@ Datum any2interval(PG_FUNCTION_ARGS)
     Datum datumVal = PG_GETARG_DATUM(0);
     int typmod = PG_GETARG_INT32(1);
     int precision = PG_GETARG_INT32(2);
-    Oid datumValType = fcinfo->argTypes[0];
+    Oid datumValType = get_fn_expr_argtype(fcinfo->flinfo, 0);
     Interval *itv = (Interval*)palloc0(sizeof(Interval));
 
     if (MakeInterval(datumVal, datumValType, itv, typmod, precision, fcinfo->can_ignore)) {

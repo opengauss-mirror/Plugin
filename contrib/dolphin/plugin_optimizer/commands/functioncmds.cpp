@@ -1080,7 +1080,7 @@ void CheckCreateFunctionPrivilege(Oid namespaceId, Oid funcOid, const char* func
                 erraction("Please create an object in another schema.")));
     }
 
-    if (!isRelSuperuser() && !OidIsValid(funcOid) &&
+    if (!superuser() && !OidIsValid(funcOid) &&
         (namespaceId == PG_CATALOG_NAMESPACE ||
         namespaceId == PG_PUBLIC_NAMESPACE ||
         namespaceId == PG_DB4AI_NAMESPACE)) {
@@ -2784,19 +2784,21 @@ static void CheckIsTriggerAndAssign(Oid func_oid, FunctionCallInfo fcinfo, Trigg
 
 void RecompileSingleFunction(Oid func_oid, bool is_procedure)
 {
-    FunctionCallInfoData fake_fcinfo;
+    /* fake fcinfo carries only the target function oid for recompilation */
+    const int fakeFcinfoNargs = 2;
+    LOCAL_FCINFO(fake_fcinfo, fakeFcinfoNargs);
     FmgrInfo flinfo;
     if (!CheckBeforeRecompile(func_oid)) {
         return;
     }
-    error_t rc = memset_s(&fake_fcinfo, sizeof(fake_fcinfo), 0, sizeof(fake_fcinfo));
+    error_t rc = memset_s(fake_fcinfo, SizeForFunctionCallInfo(fakeFcinfoNargs), 0,
+        SizeForFunctionCallInfo(fakeFcinfoNargs));
     securec_check(rc, "", "");
     rc = memset_s(&flinfo, sizeof(flinfo), 0, sizeof(flinfo));
     securec_check(rc, "", "");
 
-    fake_fcinfo.flinfo = &flinfo;
-    fake_fcinfo.arg = (Datum*)palloc0(sizeof(Datum));
-    fake_fcinfo.arg[0] = ObjectIdGetDatum(func_oid);
+    fake_fcinfo->flinfo = &flinfo;
+    fake_fcinfo->args[0].value = ObjectIdGetDatum(func_oid);
     flinfo.fn_oid = func_oid;
     flinfo.fn_mcxt = CurrentMemoryContext;
 
@@ -2819,8 +2821,8 @@ void RecompileSingleFunction(Oid func_oid, bool is_procedure)
         }
         SetCurrCompilePgObjStatus(true);
         TriggerData trigdata;
-        CheckIsTriggerAndAssign(func_oid, &fake_fcinfo, &trigdata);
-        PLpgSQL_function* func = plpgsql_compile(&fake_fcinfo, true, true);
+        CheckIsTriggerAndAssign(func_oid, fake_fcinfo, &trigdata);
+        PLpgSQL_function* func = plpgsql_compile(fake_fcinfo, true, true);
         u_sess->plsql_cxt.need_create_depend = save_need_create_depend;
         if(func != NULL) {
             SetFuncValid(func->fn_oid, is_procedure);
@@ -4246,7 +4248,7 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
     EState      *estate;
     ExprContext *econtext;
     HeapTuple   tp;
-    FunctionCallInfoData fcinfo;
+    FunctionCallInfo fcinfo = NULL;
     PgStat_FunctionCallUsage fcusage;
     Datum       retval;
     int         nargs = 0;
@@ -4333,7 +4335,8 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
     InvokeFunctionExecuteHook(fexpr->funcid);
     fmgr_info(fexpr->funcid, &flinfo);
     fmgr_info_set_expr((Node *) fexpr, &flinfo);
-    InitFunctionCallInfoData(fcinfo, &flinfo, nargs, fexpr->inputcollid,
+    fcinfo = (FunctionCallInfoData*)palloc0(SizeForFunctionCallInfo(nargs));
+    InitFunctionCallInfoData(*fcinfo, &flinfo, nargs, fexpr->inputcollid,
                              (Node *) callcontext, NULL);
 
     /*
@@ -4363,9 +4366,8 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
         exprstate = ExecPrepareExpr((Expr *)lfirst(lc), estate);
         val = ExecEvalExprSwitchContext(exprstate, econtext, &isnull);
 
-        fcinfo.arg[i] = val;
-        fcinfo.argnull[i] = isnull;
-        fcinfo.argTypes[i] = exprstate->resultType;
+        fcinfo->args[i].value = val;
+        fcinfo->args[i].isnull = isnull;
 
         i++;
     }
@@ -4376,14 +4378,14 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
     }
 
     /* Here we actually call the procedure */
-    pgstat_init_function_usage(&fcinfo, &fcusage);
+    pgstat_init_function_usage(fcinfo, &fcusage);
 #ifdef DOLPHIN
     PG_TRY();
     {
         if (!GetSessionContext()->is_dolphin_call_stmt)
             topCall = true;
         GetSessionContext()->is_dolphin_call_stmt = true;
-        retval = FunctionCallInvoke(&fcinfo);
+        retval = FunctionCallInvoke(fcinfo);
     }
     PG_CATCH();
     {
@@ -4395,7 +4397,7 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
     if (topCall)
         GetSessionContext()->is_dolphin_call_stmt = false;
 #else
-    retval = FunctionCallInvoke(&fcinfo);
+    retval = FunctionCallInvoke(fcinfo);
 #endif
 
     pgstat_end_function_usage(&fcusage, true);
@@ -4411,7 +4413,7 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic, D
         TupleTableSlot  *slot;
         HeapTupleHeader td;
 
-        if (fcinfo.isnull) {
+        if (fcinfo->isnull) {
             elog(ERROR, "procedure returned null record");
         }
         td = DatumGetHeapTupleHeader(retval);

@@ -910,10 +910,12 @@ static int record_cmp(FunctionCallInfo fcinfo)
      * the logical column index.
      */
     i1 = i2 = j = 0;
+    /* fcinfo for comparing one pair of column values */
+    const int cmpFcinfoNargs = 2;
     while (i1 < ncolumns1 || i2 < ncolumns2) {
         TypeCacheEntry* typentry = NULL;
         Oid collation;
-        FunctionCallInfoData locfcinfo;
+        LOCAL_FCINFO(locfcinfo, cmpFcinfoNargs);
         int32 cmpresult;
 
         /*
@@ -979,14 +981,13 @@ static int record_cmp(FunctionCallInfo fcinfo)
             }
 
             /* Compare the pair of elements */
-            InitFunctionCallInfoData(locfcinfo, &typentry->cmp_proc_finfo, 2, collation, NULL, NULL);
-            locfcinfo.arg[0] = values1[i1];
-            locfcinfo.arg[1] = values2[i2];
-            locfcinfo.argnull[0] = false;
-            locfcinfo.argnull[1] = false;
-            locfcinfo.isnull = false;
-            cmpresult = DatumGetInt32(FunctionCallInvoke(&locfcinfo));
-
+            InitFunctionCallInfoData(*locfcinfo, &typentry->cmp_proc_finfo, cmpFcinfoNargs, collation, NULL, NULL);
+            locfcinfo->args[0].value = values1[i1];
+            locfcinfo->args[1].value = values2[i2];
+            locfcinfo->args[0].isnull = false;
+            locfcinfo->args[1].isnull = false;
+            locfcinfo->isnull = false;
+            cmpresult = DatumGetInt32(FunctionCallInvoke(locfcinfo));
             if (cmpresult < 0) {
                 /* arg1 is less than arg2 */
                 result = -1;
@@ -1062,20 +1063,22 @@ static Datum GetFunctionCallDatum(RegProcedure op_proc, Node* fn_expr, Datum fun
     Datum funcArg2, bool can_ignore)
 {
     FmgrInfo flinfo;
-    FunctionCallInfoData fi;
+    /* binary operator call: two datum arguments */
+    const int fcinfoNargs = 2;
+    LOCAL_FCINFO(fi, fcinfoNargs);
 
     fmgr_info(op_proc, &flinfo);
     flinfo.fn_expr = fn_expr;
 
-    InitFunctionCallInfoData(fi, &flinfo, 2, InvalidOid, NULL, NULL);
+    InitFunctionCallInfoData(*fi, &flinfo, fcinfoNargs, InvalidOid, NULL, NULL);
 
-    fi.arg[0] = funcArg1;
-    fi.arg[1] = funcArg2;
-    fi.argnull[0] = false;
-    fi.argnull[1] = false;
-    fi.can_ignore = can_ignore;
-    
-    return FunctionCallInvoke(&fi);
+    fi->args[0].value = funcArg1;
+    fi->args[1].value = funcArg2;
+    fi->args[0].isnull = false;
+    fi->args[1].isnull = false;
+    fi->can_ignore = can_ignore;
+
+    return FunctionCallInvoke(fi);
 }
 #endif
 /*
@@ -1187,10 +1190,12 @@ Datum record_eq(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
     bool hasNull = false;
 #endif
+    /* fcinfo for comparing one pair of column values */
+    const int eqFcinfoNargs = 2;
     while (i1 < ncolumns1 || i2 < ncolumns2) {
         TypeCacheEntry* typentry = NULL;
         Oid collation;
-        FunctionCallInfoData locfcinfo;
+        LOCAL_FCINFO(locfcinfo, eqFcinfoNargs);
         bool oprresult = false;
 
         /*
@@ -1296,13 +1301,13 @@ Datum record_eq(PG_FUNCTION_ARGS)
             }
 
             /* Compare the pair of elements */
-            InitFunctionCallInfoData(locfcinfo, &typentry->eq_opr_finfo, 2, collation, NULL, NULL);
-            locfcinfo.arg[0] = values1[i1];
-            locfcinfo.arg[1] = values2[i2];
-            locfcinfo.argnull[0] = false;
-            locfcinfo.argnull[1] = false;
-            locfcinfo.isnull = false;
-            oprresult = DatumGetBool(FunctionCallInvoke(&locfcinfo));
+            InitFunctionCallInfoData(*locfcinfo, &typentry->eq_opr_finfo, eqFcinfoNargs, collation, NULL, NULL);
+            locfcinfo->args[0].value = values1[i1];
+            locfcinfo->args[1].value = values2[i2];
+            locfcinfo->args[0].isnull = false;
+            locfcinfo->args[1].isnull = false;
+            locfcinfo->isnull = false;
+            oprresult = DatumGetBool(FunctionCallInvoke(locfcinfo));
             if (!oprresult) {
                 result = false;
                 break;

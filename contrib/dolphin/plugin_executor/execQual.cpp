@@ -66,6 +66,7 @@
 #include "utils/xml.h"
 #include "access/hash.h"
 #include "access/transam.h"
+#include "plugin_executor/execQual.h"
 #ifdef PGXC
 #include "pgxc/groupmgr.h"
 #include "pgxc/pgxc.h"
@@ -1805,26 +1806,35 @@ static void init_fcache(
         Assert(fcache->func.fn_retset == fcache->funcReturnsSet);
     }
 
+    /* Allocate fcinfo_data if not yet allocated (was by-value, now a pointer) */
+    if (fcache->fcinfo_data == NULL) {
+        int nargs = list_length(fcache->args);
+        /* vectorized callers write nargs + EXTRA_NARGS slots after the real args */
+        fcache->fcinfo_data =
+                (FunctionCallInfoData*)palloc0(SizeForFunctionCallInfo(nargs + (vectorized ? EXTRA_NARGS : 0)));
+    }
+
     /* Initialize the function call parameter struct as well */
     if (vectorized)
         InitVecFunctionCallInfoData(
-            &fcache->fcinfo_data, &(fcache->func), list_length(fcache->args), input_collation, NULL, NULL);
+            fcache->fcinfo_data, &(fcache->func), list_length(fcache->args), input_collation, NULL, NULL);
     else
         InitFunctionCallInfoData(
-            fcache->fcinfo_data, &(fcache->func), list_length(fcache->args), input_collation, NULL, NULL);
+            *fcache->fcinfo_data, &(fcache->func), list_length(fcache->args), input_collation, NULL, NULL);
 
    if (vectorized) {
        int nargs = list_length(fcache->args);
        ListCell* cell = NULL;
        GenericFunRuntime* genericRuntime = NULL;
        errno_t rc;
+       FmgrInfoExt* ext = FmgrInfoEnsureExt(fcache->fcinfo_data->flinfo);
 
-       if (fcache->fcinfo_data.flinfo->genericRuntime == NULL) {
-           genericRuntime = (GenericFunRuntime*)palloc0(sizeof(GenericFunRuntime));
-           InitGenericFunRuntimeInfo(*genericRuntime, nargs);
-           fcache->fcinfo_data.flinfo->genericRuntime = genericRuntime;
-       } else {
-           genericRuntime = fcache->fcinfo_data.flinfo->genericRuntime;
+        if (ext->generic_runtime == NULL) {
+            genericRuntime = (GenericFunRuntime*)palloc0(sizeof(GenericFunRuntime));
+            InitGenericFunRuntimeInfo(*genericRuntime, nargs);
+            ext->generic_runtime = genericRuntime;
+        } else {
+            genericRuntime = ext->generic_runtime;
 
            /* if internalFinfo is not null, release the internalFinfo's memory and set the pointer to null */
            if (genericRuntime->internalFinfo != NULL) {
@@ -1839,16 +1849,10 @@ static void init_fcache(
                          sizeof(GenericFunRuntimeArg) * genericRuntime->compacity);
            securec_check(rc, "\0", "\0");
 
-           rc = memset_s(genericRuntime->inputargs,
-                         sizeof(Datum) * genericRuntime->compacity,
+           rc = memset_s(genericRuntime->nargs,
+                         sizeof(NullableDatum) * genericRuntime->compacity,
                          0,
-                         sizeof(Datum) * genericRuntime->compacity);
-           securec_check(rc, "\0", "\0");
-
-           rc = memset_s(genericRuntime->nulls,
-                         sizeof(bool) * genericRuntime->compacity,
-                         0,
-                         sizeof(bool) * genericRuntime->compacity);
+                         sizeof(NullableDatum) * genericRuntime->compacity);
            securec_check(rc, "\0", "\0");
 
            /* we have to adjust the GenericFunRuntimeArg when
@@ -1868,8 +1872,6 @@ static void init_fcache(
            }
        }
 
-       ScalarVector* pVector = New(CurrentMemoryContext) ScalarVector[nargs];
-
        int i = 0;
        if (fcache->args && fcache->args->length > 0) {
            Oid* actual_arg_types = (Oid*)palloc0(fcache->args->length * sizeof(Oid));
@@ -1884,19 +1886,19 @@ static void init_fcache(
 
                desc.typeId = funcrettype;
                desc.encoded = COL_IS_ENCODE(funcrettype);
-               fcache->fcinfo_data.flinfo->genericRuntime->args[i].argType = funcrettype;
+               ext->generic_runtime->args[i].argType = funcrettype;
 
-               pVector[i].init(CurrentMemoryContext, desc);
+               argstate->vecresult = New(CurrentMemoryContext) ScalarVector();
+               argstate->vecresult->init(CurrentMemoryContext, desc);
                /* Record the real arg types from sub functions. */
                actual_arg_types[i] = funcrettype;
                i++;
            }
 
            /* Find the real return type for func with return type like ANYELEMENT. */
-           fcache->fcinfo_data.flinfo->fn_rettype = getRealFuncRetype(i, actual_arg_types, fcache);
+           fcache->fcinfo_data->flinfo->fn_rettype = getRealFuncRetype(i, actual_arg_types, fcache);
            pfree_ext(actual_arg_types);
        }
-       fcache->fcinfo_data.argVector = pVector;
    }
    (void)MemoryContextSwitchTo(oldcontext);
 
@@ -1966,9 +1968,8 @@ static void init_fcache(
    fcache->setArgByVal = false;
    if(fcache->xprstate.is_flt_frame){
         fcache->is_plpgsql_func_with_outparam = is_function_with_plpgsql_language_and_outparam(fcache->func.fn_oid);
-        fcache->has_refcursor = func_has_refcursor_args(fcache->func.fn_oid, &fcache->fcinfo_data);
-   }
-
+        fcache->has_refcursor = func_has_refcursor_args(fcache->func.fn_oid, fcache->fcinfo_data);
+    }
 }
 
 void initVectorFcache(Oid foid, Oid input_collation, FuncExprState* fcache, MemoryContext fcacheCxt)
@@ -2068,7 +2069,7 @@ static ExprDoneCond ExecEvalFuncArgs(
 
        if (has_refcursor && argstate->resultType == REFCURSOROID)
            econtext->is_cursor = true;
-       fcinfo->arg[i] = ExecEvalExpr(argstate, econtext, &fcinfo->argnull[i], &thisArgIsDone);
+       fcinfo->args[i].value = ExecEvalExpr(argstate, econtext, &fcinfo->args[i].isnull, &thisArgIsDone);
        ExecTableOfIndexInfo execTableOfIndexInfo;
        initExecTableOfIndexInfo(&execTableOfIndexInfo, econtext);
        ExecEvalParamExternTableOfIndex((Node*)argstate->expr, &execTableOfIndexInfo);
@@ -2085,11 +2086,10 @@ static ExprDoneCond ExecEvalFuncArgs(
 
        if (has_refcursor && econtext->is_cursor && plpgsql_var_dno != NULL) {
            plpgsql_var_dno[i] = econtext->dno;
-           CopyCursorInfoData(&fcinfo->refcursor_data.argCursor[i], &econtext->cursor_data);
+           CopyCursorInfoData(&fcinfo->extra->refcursor_data.argCursor[i], &econtext->cursor_data);
        }
-       fcinfo->argTypes[i] = argstate->resultType;
        econtext->is_cursor = false;
-       if (is_huge_clob(fcinfo->argTypes[i], fcinfo->argnull[i], fcinfo->arg[i])) {
+       if (is_huge_clob(argstate->resultType, fcinfo->args[i].isnull, fcinfo->args[i].value)) {
            is_have_huge_clob = true;
        }
 
@@ -2269,11 +2269,10 @@ void set_result_for_plpgsql_language_function_with_outparam(FuncExprState *fcach
     return set_result_for_plpgsql_language_function_with_outparam(result, isNull);
 }
 
-
 bool ExecSetArgIsByValue(FunctionCallInfo fcinfo)
 {
     for (int i = 0; i < fcinfo->nargs; i++) {
-        if (!fcinfo->argnull[i] && !get_typbyval(fcinfo->argTypes[i])) {
+        if (!fcinfo->args[i].isnull && !get_typbyval(get_fn_expr_argtype(fcinfo->flinfo, i))) {
             return false;
         }
     }
@@ -2383,19 +2382,23 @@ restart:
     * previous call (ie, we are continuing the evaluation of a set-valued
     * function).  Otherwise, collect the current argument values into fcinfo.
     */
-   fcinfo = &fcache->fcinfo_data;
+   fcinfo = fcache->fcinfo_data;
+
+   if (has_cursor_return || has_refcursor) {
+       FunctionCallEnsureExtra(fcinfo);
+   }
 
    if (has_cursor_return) {
        /* init returnCursor to store out-args cursor info on ExprContext*/
-       fcinfo->refcursor_data.returnCursor =
-           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->refcursor_data.return_number);
-   } else {
-       fcinfo->refcursor_data.returnCursor = NULL;
+       fcinfo->extra->refcursor_data.returnCursor =
+           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->extra->refcursor_data.return_number);
+   } else if (fcinfo->extra != NULL) {
+       fcinfo->extra->refcursor_data.returnCursor = NULL;
    }
 
    if (has_refcursor) {
        /* init argCursor to store in-args cursor info on ExprContext*/
-       fcinfo->refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->nargs);
+       fcinfo->extra->refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->nargs);
        var_dno = (int*)palloc0(sizeof(int) * fcinfo->nargs);
        for (i = 0; i < fcinfo->nargs; i++) {
            var_dno[i] = -1;
@@ -2490,7 +2493,7 @@ restart:
 
            if (fcache->func.fn_strict) {
                for (i = 0; i < fcinfo->nargs; i++) {
-                   if (fcinfo->argnull[i]) {
+                   if (fcinfo->args[i].isnull) {
                        callit = false;
                        break;
                    }
@@ -2546,7 +2549,7 @@ restart:
                for (i = 0; i < fcinfo->nargs; i++) {
                    if (var_dno[i] >= 0) {
                        int dno = var_dno[i];
-                       Cursor_Data* cursor_data = &fcinfo->refcursor_data.argCursor[i];
+                       Cursor_Data* cursor_data = &fcinfo->extra->refcursor_data.argCursor[i];
 #ifdef USE_ASSERT_CHECKING
                        PLpgSQL_datum* datum = estate->datums[dno];
 #endif
@@ -2557,7 +2560,7 @@ restart:
                    }
                }
 
-               if (fcinfo->refcursor_data.return_number > 0) {
+               if (fcinfo->extra->refcursor_data.return_number > 0) {
                    /* copy function returns cursor option info.
                     * for simple expr in exec_eval_expr, we can not get the result type,
                     * so cursor_return_data mallocs here.
@@ -2565,15 +2568,15 @@ restart:
                    if (estate->cursor_return_data == NULL && estate->tuple_store_cxt != NULL) {
                        MemoryContext oldcontext = MemoryContextSwitchTo(estate->tuple_store_cxt);
                        estate->cursor_return_data =
-                           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->refcursor_data.return_number);
-                       estate->cursor_return_numbers = fcinfo->refcursor_data.return_number;
+                           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->extra->refcursor_data.return_number);
+                       estate->cursor_return_numbers = fcinfo->extra->refcursor_data.return_number;
                        (void)MemoryContextSwitchTo(oldcontext);
                    }
 
                    if (estate->cursor_return_data != NULL) {
-                       for (i = 0; i < fcinfo->refcursor_data.return_number; i++) {
+                       for (i = 0; i < fcinfo->extra->refcursor_data.return_number; i++) {
                            int rc = memcpy_s(&estate->cursor_return_data[i], sizeof(Cursor_Data),
-                                             &fcinfo->refcursor_data.returnCursor[i], sizeof(Cursor_Data));
+                                             &fcinfo->extra->refcursor_data.returnCursor[i], sizeof(Cursor_Data));
                            securec_check(rc, "\0", "\0");
                        }
                    }
@@ -2677,7 +2680,7 @@ restart:
         */
        if (fcache->func.fn_strict) {
            for (i = 0; i < fcinfo->nargs; i++) {
-               if (fcinfo->argnull[i]) {
+               if (fcinfo->args[i].isnull) {
                    *isNull = true;
                    return (Datum)0;
                }
@@ -2700,7 +2703,16 @@ restart:
    }
 
    if (has_refcursor) {
-       pfree_ext(fcinfo->refcursor_data.argCursor);
+       if (fcinfo->extra != NULL) {
+           if (fcinfo->extra->refcursor_data.argCursor != NULL) {
+               pfree_ext(fcinfo->extra->refcursor_data.argCursor);
+               fcinfo->extra->refcursor_data.argCursor = NULL;
+           }
+           if (fcinfo->extra->refcursor_data.returnCursor != NULL) {
+               pfree_ext(fcinfo->extra->refcursor_data.returnCursor);
+               fcinfo->extra->refcursor_data.returnCursor = NULL;
+           }
+       }
        pfree_ext(var_dno);
    }
 
@@ -2819,7 +2831,7 @@ static Datum ExecMakeFunctionResultNoSets(
    plpgsql_estate = NULL;
 
    /* inlined, simplified version of ExecEvalFuncArgs */
-   fcinfo = &fcache->fcinfo_data;
+   fcinfo = fcache->fcinfo_data;
 
    /* init the number of arguments to a function*/
    InitFunctionCallInfoArgs(*fcinfo, list_length(fcache->args), 1);
@@ -2841,22 +2853,27 @@ static Datum ExecMakeFunctionResultNoSets(
      */
     if (fcinfo->flinfo->fn_oid == CONNECT_BY_ROOT_FUNCOID ||
                 fcinfo->flinfo->fn_oid == SYS_CONNECT_BY_PATH_FUNCOID) {
-        fcinfo->swinfo.sw_econtext = (Node *)econtext;
-        fcinfo->swinfo.sw_exprstate = (Node *)linitial(fcache->args);
-        fcinfo->swinfo.sw_is_flt_frame = false;
+        FunctionCallEnsureExtra(fcinfo);
+        fcinfo->extra->swinfo.sw_econtext = (Node *)econtext;
+        fcinfo->extra->swinfo.sw_exprstate = (Node *)linitial(fcache->args);
+        fcinfo->extra->swinfo.sw_is_flt_frame = false;
     }
+
+   if (has_cursor_return || has_refcursor) {
+       FunctionCallEnsureExtra(fcinfo);
+   }
 
    if (has_cursor_return) {
        /* init returnCursor to store out-args cursor info on ExprContext*/
-       fcinfo->refcursor_data.returnCursor =
-           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->refcursor_data.return_number);
-   } else {
-       fcinfo->refcursor_data.returnCursor = NULL;
+       fcinfo->extra->refcursor_data.returnCursor =
+           (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->extra->refcursor_data.return_number);
+   } else if (fcinfo->extra != NULL) {
+       fcinfo->extra->refcursor_data.returnCursor = NULL;
    }
 
    if (has_refcursor) {
        /* init argCursor to store in-args cursor info on ExprContext */
-       fcinfo->refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->nargs);
+       fcinfo->extra->refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->nargs);
        var_dno = (int*)palloc0(sizeof(int) * fcinfo->nargs);
        for (i = 0; i < fcinfo->nargs; i++) {
            var_dno[i] = -1;
@@ -2869,11 +2886,11 @@ static Datum ExecMakeFunctionResultNoSets(
    foreach (arg, fcache->args) {
        ExprState* argstate = (ExprState*)lfirst(arg);
 
-       fcinfo->argTypes[i] = argstate->resultType;
-       if (has_refcursor && fcinfo->argTypes[i] == REFCURSOROID)
+       if (has_refcursor && argstate->resultType == REFCURSOROID) {
            econtext->is_cursor = true;
-       fcinfo->arg[i] = ExecEvalExpr(argstate, econtext, &fcinfo->argnull[i], NULL);
-       if (is_huge_clob(fcinfo->argTypes[i], fcinfo->argnull[i], fcinfo->arg[i])) {
+       }
+       fcinfo->args[i].value = ExecEvalExpr(argstate, econtext, &fcinfo->args[i].isnull, NULL);
+       if (is_huge_clob(argstate->resultType, fcinfo->args[i].isnull, fcinfo->args[i].value)) {
            is_have_huge_clob = true;
        }
        ExecTableOfIndexInfo execTableOfIndexInfo;
@@ -2901,7 +2918,7 @@ static Datum ExecMakeFunctionResultNoSets(
 
        if (has_refcursor && econtext->is_cursor) {
            var_dno[i] = econtext->dno;
-           CopyCursorInfoData(&fcinfo->refcursor_data.argCursor[i], &econtext->cursor_data);
+           CopyCursorInfoData(&fcinfo->extra->refcursor_data.argCursor[i], &econtext->cursor_data);
        }
        econtext->is_cursor = false;
        i++;
@@ -2913,7 +2930,7 @@ static Datum ExecMakeFunctionResultNoSets(
     */
    if (fcache->func.fn_strict) {
        while (--i >= 0) {
-           if (fcinfo->argnull[i]) {
+           if (fcinfo->args[i].isnull) {
                *isNull = true;
                u_sess->SPI_cxt.is_stp = savedIsSTP;
                u_sess->SPI_cxt.is_proconfig_set = savedProConfigIsSet;
@@ -2946,23 +2963,37 @@ static Datum ExecMakeFunctionResultNoSets(
         }
        u_sess->instr_cxt.global_instr = save_global_instr;
    } else {
-       if (fcinfo->argTypes[0] == CLOBOID && fcinfo->argTypes[1] == CLOBOID && fcinfo->flinfo->fn_addr == textcat) {
+       if (fcinfo->flinfo->fn_addr == textcat &&
+           get_fn_expr_argtype(fcinfo->flinfo, 0) == CLOBOID &&
+           get_fn_expr_argtype(fcinfo->flinfo, 1) == CLOBOID) {
            bool is_null = false;
-           if (fcinfo->arg[0] != 0 && VARATT_IS_EXTERNAL_LOB(fcinfo->arg[0])) {
-               struct varatt_lob_pointer* lob_pointer = (varatt_lob_pointer*)(VARDATA_EXTERNAL(fcinfo->arg[0]));
-               fcinfo->arg[0] = fetch_lob_value_from_tuple(lob_pointer, InvalidOid, &is_null);
+           if (fcinfo->args[0].value != 0 && VARATT_IS_EXTERNAL_LOB(fcinfo->args[0].value)) {
+               struct varatt_lob_pointer* lob_pointer = (varatt_lob_pointer*)(VARDATA_EXTERNAL(fcinfo->args[0].value));
+               fcinfo->args[0].value = fetch_lob_value_from_tuple(lob_pointer, InvalidOid, &is_null);
            }
-           if (fcinfo->arg[1] != 0 && VARATT_IS_EXTERNAL_LOB(fcinfo->arg[1])) {
-               struct varatt_lob_pointer* lob_pointer = (varatt_lob_pointer*)(VARDATA_EXTERNAL(fcinfo->arg[1]));
-               fcinfo->arg[1] = fetch_lob_value_from_tuple(lob_pointer, InvalidOid, &is_null);
+           if (fcinfo->args[1].value != 0 && VARATT_IS_EXTERNAL_LOB(fcinfo->args[1].value)) {
+               struct varatt_lob_pointer* lob_pointer = (varatt_lob_pointer*)(VARDATA_EXTERNAL(fcinfo->args[1].value));
+               fcinfo->args[1].value = fetch_lob_value_from_tuple(lob_pointer, InvalidOid, &is_null);
            }
        }
-        if (func_encoding != db_encoding) {
-            DB_ENCODING_SWITCH_TO(func_encoding);
-            result = FunctionCallInvoke(fcinfo);
-            DB_ENCODING_SWITCH_BACK(db_encoding);
-        } else {
-            result = FunctionCallInvoke(fcinfo);
+        bool cachedResult = true;
+        bool useResultCache = !has_refcursor && !has_cursor_return &&
+            ENABLE_FUNCTION_RESULT_CACHE() && fcache->fncache;
+        if (useResultCache) {
+            cachedResult = EStateFuncGetRetCache(fcache, &result, &fcinfo->isnull);
+        }
+        if (!useResultCache || !cachedResult) {
+            if (func_encoding != db_encoding) {
+                DB_ENCODING_SWITCH_TO(func_encoding);
+                result = FunctionCallInvoke(fcinfo);
+                DB_ENCODING_SWITCH_BACK(db_encoding);
+            } else {
+                result = FunctionCallInvoke(fcinfo);
+            }
+        }
+        /* Executing the function can invalidate its cache. */
+        if (fcache->fncache && !cachedResult) {
+            EStateFuncPutRetCache(fcache, result);
         }
    }
    *isNull = fcinfo->isnull;
@@ -2976,7 +3007,7 @@ static Datum ExecMakeFunctionResultNoSets(
            /* copy in-args cursor option info */
            if (var_dno[i] >= 0) {
                int dno = var_dno[i];
-               Cursor_Data* cursor_data = &fcinfo->refcursor_data.argCursor[i];
+               Cursor_Data* cursor_data = &fcinfo->extra->refcursor_data.argCursor[i];
 #ifdef USE_ASSERT_CHECKING
                PLpgSQL_datum* datum = estate->datums[dno];
 #endif
@@ -2998,7 +3029,7 @@ static Datum ExecMakeFunctionResultNoSets(
            }
            int rc = memcpy_s(estate->cursor_return_data,
                              sizeof(Cursor_Data),
-                             fcinfo->refcursor_data.returnCursor,
+                             fcinfo->extra->refcursor_data.returnCursor,
                              sizeof(Cursor_Data));
            securec_check(rc, "\0", "\0");
        }
@@ -3007,8 +3038,16 @@ static Datum ExecMakeFunctionResultNoSets(
    pgstat_end_function_usage(&fcusage, true);
 
    if (has_refcursor) {
-       if (fcinfo->refcursor_data.argCursor != NULL)
-           pfree_ext(fcinfo->refcursor_data.argCursor);
+       if (fcinfo->extra != NULL) {
+           if (fcinfo->extra->refcursor_data.argCursor != NULL) {
+               pfree_ext(fcinfo->extra->refcursor_data.argCursor);
+               fcinfo->extra->refcursor_data.argCursor = NULL;
+           }
+           if (fcinfo->extra->refcursor_data.returnCursor != NULL) {
+               pfree_ext(fcinfo->extra->refcursor_data.returnCursor);
+               fcinfo->extra->refcursor_data.returnCursor = NULL;
+           }
+       }
        if (var_dno != NULL)
            pfree_ext(var_dno);
    }
@@ -3025,6 +3064,23 @@ static Datum ExecMakeFunctionResultNoSets(
 }
 
 /*
+ * Allocate fcinfo->extra in the function's long-lived context (fn_mcxt).
+ * extra must live as long as fcinfo itself, so it cannot be palloc'd in a
+ * short-lived per-tuple context that gets reset between rows.
+ */
+void FunctionCallEnsureExtra(FunctionCallInfoData* fcinfo)
+{
+    if (fcinfo->extra == NULL) {
+        MemoryContext callContext = (fcinfo->flinfo != NULL && fcinfo->flinfo->fn_mcxt != NULL) ?
+            fcinfo->flinfo->fn_mcxt : CurrentMemoryContext;
+        MemoryContext oldctx = MemoryContextSwitchTo(callContext);
+        fcinfo->extra = (FunctionCallExtraData*)palloc0(sizeof(FunctionCallExtraData));
+        fcinfo->extra->ccontext = COERCION_UNKNOWN;
+        (void)MemoryContextSwitchTo(oldctx);
+    }
+}
+
+/*
 * @Description: jugde function has parameter that is refcursor or return type is refcursor
 * @in Funcid - function oid
 * @in fcinfo - function call info
@@ -3038,55 +3094,64 @@ extern bool func_has_refcursor_args(Oid Funcid, FunctionCallInfoData* fcinfo)
    Oid* p_argtypes = NULL;
    char** p_argnames = NULL;
    char* p_argmodes = NULL;
-   bool use_cursor = false;
-   bool return_refcursor = false;
-   int out_count = 0; /* out arg count */
+    bool use_cursor = false;
+    bool return_refcursor = false;
+    int out_count = 0; /* out arg count */
+    int return_number = 0;
 
-   fcinfo->refcursor_data.return_number = 0;
-   fcinfo->refcursor_data.returnCursor = NULL;
-
-   if (IsSystemObjOid(Funcid) && Funcid != CURSORTOXMLOID && Funcid != CURSORTOXMLSCHEMAOID) {
+    if (IsSystemObjOid(Funcid) && Funcid != CURSORTOXMLOID && Funcid != CURSORTOXMLSCHEMAOID) {
         return false;
-   }
+    }
 
-   proctup = SearchSysCache(PROCOID, ObjectIdGetDatum(Funcid), 0, 0, 0);
+    proctup = SearchSysCache(PROCOID, ObjectIdGetDatum(Funcid), 0, 0, 0);
 
-   /*
-    * function may be deleted after clist be searched.
-    */
-   if (!HeapTupleIsValid(proctup)) {
-       ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("function doesn't exist ")));
-   }
+    /*
+     * function may be deleted after clist be searched.
+     */
+    if (!HeapTupleIsValid(proctup)) {
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("function doesn't exist ")));
+    }
 
-   /* get the all args informations, only "in" parameters if p_argmodes is null */
-   allarg = get_func_arg_info(proctup, &p_argtypes, &p_argnames, &p_argmodes);
-   procStruct = (Form_pg_proc)GETSTRUCT(proctup);
+    /* get the all args informations, only "in" parameters if p_argmodes is null */
+    allarg = get_func_arg_info(proctup, &p_argtypes, &p_argnames, &p_argmodes);
+    procStruct = (Form_pg_proc)GETSTRUCT(proctup);
 
-   for (int i = 0; i < allarg; i++) {
-       if (p_argmodes != NULL && (p_argmodes[i] == 'o' || p_argmodes[i] == 'b')) {
-           out_count++;
-           if (p_argtypes[i] == REFCURSOROID)
-               return_refcursor = true;
-       } else {
-           if (p_argtypes[i] == REFCURSOROID)
-               use_cursor = true;
-       }
-   }
+    for (int i = 0; i < allarg; i++) {
+        if (p_argmodes != NULL && (p_argmodes[i] == 'o' || p_argmodes[i] == 'b')) {
+            out_count++;
+            if (p_argtypes[i] == REFCURSOROID) {
+                return_refcursor = true;
+            }
+        } else {
+            if (p_argtypes[i] == REFCURSOROID) {
+                use_cursor = true;
+            }
+        }
+    }
 
-   if (procStruct->prorettype == REFCURSOROID) {
-       use_cursor = true;
-       fcinfo->refcursor_data.return_number = 1;
-   } else if (return_refcursor) {
-       fcinfo->refcursor_data.return_number = out_count;
-   }
+    if (procStruct->prorettype == REFCURSOROID) {
+        use_cursor = true;
+        return_number = 1;
+    } else if (return_refcursor) {
+        return_number = out_count;
+    }
     /* func_has_out_param means whether a func with out param and with GUC proc_outparam_override. */
     bool func_has_out_param = is_function_with_plpgsql_language_and_outparam((fcinfo->flinfo)->fn_oid);
     if (func_has_out_param && (return_refcursor || procStruct->prorettype == REFCURSOROID)) {
-        fcinfo->refcursor_data.return_number = out_count + 1;
+        return_number = out_count + 1;
     }
-    
-   ReleaseSysCache(proctup);
-   return use_cursor;
+
+    ReleaseSysCache(proctup);
+
+    /* extra is only needed when the function actually uses or returns refcursors */
+    if (fcinfo->extra == NULL && (use_cursor || return_number > 0)) {
+        FunctionCallEnsureExtra(fcinfo);
+    }
+    if (fcinfo->extra != NULL) {
+        fcinfo->extra->refcursor_data.return_number = return_number;
+    }
+
+    return use_cursor;
 }
 /*
 *		ExecMakeTableFunctionResult
@@ -3102,7 +3167,7 @@ Tuplestorestate* ExecMakeTableFunctionResult(
    Oid funcrettype;
    bool returnsTuple = false;
    bool returnsSet = false;
-   FunctionCallInfoData fcinfo;
+   FunctionCallInfo fcinfo = NULL;
    PgStat_FunctionCallUsage fcusage;
    ReturnSetInfo rsinfo;
    HeapTupleData tmptup;
@@ -3242,33 +3307,35 @@ Tuplestorestate* ExecMakeTableFunctionResult(
            init_fcache<false>(func->funcid, func->inputcollid, fcache, econtext->ecxt_per_query_memory, true, false);
        }
        returnsSet = fcache->func.fn_retset;
-       InitFunctionCallInfoData(fcinfo,
+       fcinfo = (FunctionCallInfoData*)palloc0(SizeForFunctionCallInfo(list_length(fcache->args)));
+       InitFunctionCallInfoData(*fcinfo,
                                 &(fcache->func),
                                 list_length(fcache->args),
-                                fcache->fcinfo_data.fncollation,
+                                fcache->fcinfo_data->fncollation,
                                 (Node*)node,
                                 (Node*)&rsinfo);
 
-       has_refcursor = func_has_refcursor_args(fcinfo.flinfo->fn_oid, &fcinfo);
+       has_refcursor = func_has_refcursor_args(fcinfo->flinfo->fn_oid, fcinfo);
 
-       has_out_param = (is_function_with_plpgsql_language_and_outparam(fcinfo.flinfo->fn_oid) != InvalidOid);
+       has_out_param = (is_function_with_plpgsql_language_and_outparam(fcinfo->flinfo->fn_oid) != InvalidOid);
        if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && has_out_param) {
            returnsTuple = type_is_rowtype(RECORDOID);
        }
 
-       int cursor_return_number = fcinfo.refcursor_data.return_number;
+       int cursor_return_number = (fcinfo->extra != NULL) ? fcinfo->extra->refcursor_data.return_number : 0;
        if (cursor_return_number > 0) {
            /* init returnCursor to store out-args cursor info on FunctionScan context*/
-           fcinfo.refcursor_data.returnCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * cursor_return_number);
-       } else {
-           fcinfo.refcursor_data.returnCursor = NULL;
+           fcinfo->extra->refcursor_data.returnCursor =
+                   (Cursor_Data*)palloc0(sizeof(Cursor_Data) * cursor_return_number);
+       } else if (fcinfo->extra != NULL) {
+           fcinfo->extra->refcursor_data.returnCursor = NULL;
        }
 
        if (has_refcursor) {
            /* init argCursor to store in-args cursor info on FunctionScan context*/
-           fcinfo.refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo.nargs);
-           var_dno = (int*)palloc0(sizeof(int) * fcinfo.nargs);
-           int rc = memset_s(var_dno, sizeof(int) * fcinfo.nargs, -1, sizeof(int) * fcinfo.nargs);
+           fcinfo->extra->refcursor_data.argCursor = (Cursor_Data*)palloc0(sizeof(Cursor_Data) * fcinfo->nargs);
+           var_dno = (int*)palloc0(sizeof(int) * fcinfo->nargs);
+           int rc = memset_s(var_dno, sizeof(int) * fcinfo->nargs, -1, sizeof(int) * fcinfo->nargs);
            securec_check(rc, "\0", "\0");
        }
 
@@ -3281,9 +3348,9 @@ Tuplestorestate* ExecMakeTableFunctionResult(
         * separate context just to hold the evaluated arguments?
         */
        if (has_refcursor)
-           argDone = ExecEvalFuncArgs<true>(&fcinfo, fcache->args, econtext, var_dno);
+           argDone = ExecEvalFuncArgs<true>(fcinfo, fcache->args, econtext, var_dno);
        else
-           argDone = ExecEvalFuncArgs<false>(&fcinfo, fcache->args, econtext);
+           argDone = ExecEvalFuncArgs<false>(fcinfo, fcache->args, econtext);
        /* We don't allow sets in the arguments of the table function */
        if (!funcexpr->is_flt_frame && (argDone != ExprSingleResult))
            ereport(ERROR,
@@ -3298,15 +3365,17 @@ Tuplestorestate* ExecMakeTableFunctionResult(
        if (fcache->func.fn_strict) {
            int i;
 
-           for (i = 0; i < fcinfo.nargs; i++) {
-               if (fcinfo.argnull[i])
+           for (i = 0; i < fcinfo->nargs; i++) {
+               if (fcinfo->args[i].isnull) {
                    goto no_function_result;
+               }
            }
        }
    } else {
        /* Treat funcexpr as a generic expression */
        direct_function_call = false;
-       InitFunctionCallInfoData(fcinfo, NULL, 0, InvalidOid, (Node*)node, NULL);
+       fcinfo = (FunctionCallInfoData*)palloc0(SizeForFunctionCallInfo(0));
+       InitFunctionCallInfoData(*fcinfo, NULL, 0, InvalidOid, (Node*)node, NULL);
    }
 
    /*
@@ -3332,37 +3401,41 @@ Tuplestorestate* ExecMakeTableFunctionResult(
 
        /* Call the function or expression one time */
        if (direct_function_call) {
-           pgstat_init_function_usage(&fcinfo, &fcusage);
+           pgstat_init_function_usage(fcinfo, &fcusage);
 
-           fcinfo.isnull = false;
+           fcinfo->isnull = false;
            rsinfo.isDone = ExprSingleResult;
-           result = FunctionCallInvoke(&fcinfo);
+           result = FunctionCallInvoke(fcinfo);
             if (AUDIT_SYSTEM_EXEC_ENABLED) {
-                audit_system_function(&fcinfo, AUDIT_OK);
+                audit_system_function(fcinfo, AUDIT_OK);
             }
 
            if (econtext->plpgsql_estate != NULL) {
                PLpgSQL_execstate* estate = econtext->plpgsql_estate;
-               bool isVaildReturn = (fcinfo.refcursor_data.return_number > 0 &&
-                                     estate->cursor_return_data != NULL && fcinfo.refcursor_data.returnCursor != NULL);
+               bool isVaildReturn = (fcinfo->extra != NULL && fcinfo->extra->refcursor_data.return_number > 0 &&
+                                     estate->cursor_return_data != NULL &&
+                                     fcinfo->extra->refcursor_data.returnCursor != NULL);
                if (isVaildReturn) {
-                   bool isVaildReturnNum = (fcinfo.refcursor_data.return_number > estate->cursor_return_numbers);
+                   bool isVaildReturnNum =
+                           (fcinfo->extra->refcursor_data.return_number > estate->cursor_return_numbers);
                    if (isVaildReturnNum) {
                        pgstat_end_function_usage(&fcusage, rsinfo.isDone != ExprMultipleResult);
                        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmodule(MOD_PLSQL),
                                        errmsg("The expected output of the cursor:%d and function:%d does not match",
-                                              estate->cursor_return_numbers, fcinfo.refcursor_data.return_number)));
+                                              estate->cursor_return_numbers,
+                                              fcinfo->extra->refcursor_data.return_number)));
                    }
-                   for (int i = 0; i < fcinfo.refcursor_data.return_number; i++) {
-                       CopyCursorInfoData(&estate->cursor_return_data[i], &fcinfo.refcursor_data.returnCursor[i]);
+                   for (int i = 0; i < fcinfo->extra->refcursor_data.return_number; i++) {
+                       CopyCursorInfoData(&estate->cursor_return_data[i],
+                                          &fcinfo->extra->refcursor_data.returnCursor[i]);
                    }
                }
 
                if (var_dno != NULL) {
-                   for (int i = 0; i < fcinfo.nargs; i++) {
+                   for (int i = 0; i < fcinfo->nargs; i++) {
                        if (var_dno[i] >= 0) {
                            int dno = var_dno[i];
-                           Cursor_Data* cursor_data = &fcinfo.refcursor_data.argCursor[i];
+                           Cursor_Data* cursor_data = &fcinfo->extra->refcursor_data.argCursor[i];
                            PLpgSQL_execstate* execstate = econtext->plpgsql_estate;
 #ifdef USE_ASSERT_CHECKING
                            PLpgSQL_datum* datum = execstate->datums[dno];
@@ -3378,7 +3451,7 @@ Tuplestorestate* ExecMakeTableFunctionResult(
 
            pgstat_end_function_usage(&fcusage, rsinfo.isDone != ExprMultipleResult);
        } else {
-           result = ExecEvalExpr(funcexpr, econtext, &fcinfo.isnull, &rsinfo.isDone);
+           result = ExecEvalExpr(funcexpr, econtext, &fcinfo->isnull, &rsinfo.isDone);
        }
 
        /* Which protocol does function want to use? */
@@ -3398,7 +3471,7 @@ Tuplestorestate* ExecMakeTableFunctionResult(
             * set, we fall out of the loop; we'll cons up an all-nulls result
             * row below.
             */
-           if (returnsTuple && fcinfo.isnull && !has_out_param) {
+           if (returnsTuple && fcinfo->isnull && !has_out_param) {
                if (!returnsSet) {
                    break;
                }
@@ -3475,7 +3548,7 @@ Tuplestorestate* ExecMakeTableFunctionResult(
 
                tuplestore_puttuple(tupstore, &tmptup);
            } else {
-               tuplestore_putvalues(tupstore, tupdesc, &result, &fcinfo.isnull);
+               tuplestore_putvalues(tupstore, tupdesc, &result, &fcinfo->isnull);
            }
 
            /*
@@ -3548,15 +3621,26 @@ no_function_result:
    MemoryContextSwitchTo(callerContext);
    econtext->plpgsql_estate = NULL;
 
-   if (has_refcursor) {
-       pfree_ext(fcinfo.refcursor_data.argCursor);
-       pfree_ext(fcinfo.refcursor_data.returnCursor);
-       pfree_ext(var_dno);
-   }
+       if (has_refcursor) {
+           if (fcinfo->extra != NULL) {
+               if (fcinfo->extra->refcursor_data.argCursor != NULL) {
+                   pfree_ext(fcinfo->extra->refcursor_data.argCursor);
+                   fcinfo->extra->refcursor_data.argCursor = NULL;
+               }
+               if (fcinfo->extra->refcursor_data.returnCursor != NULL) {
+                   pfree_ext(fcinfo->extra->refcursor_data.returnCursor);
+                   fcinfo->extra->refcursor_data.returnCursor = NULL;
+               }
+               pfree_ext(fcinfo->extra);
+           }
+           if (var_dno != NULL) {
+               pfree_ext(var_dno);
+           }
+       }
 
-   /* reset the u_sess->SPI_cxt.is_stp, u_sess->SPI_cxt.is_proconfig_set
-      and error message value */
-   u_sess->SPI_cxt.is_stp = savedIsSTP;
+       /* reset the u_sess->SPI_cxt.is_stp, u_sess->SPI_cxt.is_proconfig_set
+          and error message value */
+       u_sess->SPI_cxt.is_stp = savedIsSTP;
    u_sess->SPI_cxt.is_proconfig_set = savedProConfigIsSet;
    if (needResetErrMsg) {
        stp_reset_commit_rolback_err_msg();
@@ -3592,8 +3676,12 @@ static Datum ExecEvalFunc(FuncExprState *fcache, ExprContext *econtext, bool *is
 
     if (fcache->xprstate.is_flt_frame) {
        init_fcache<false>(func->funcid, func->inputcollid, fcache, econtext->ecxt_per_query_memory, false, false);
-       has_refcursor = func_has_refcursor_args(func->funcid, &fcache->fcinfo_data);
-       cursor_return_number = fcache->fcinfo_data.refcursor_data.return_number;
+       has_refcursor = func_has_refcursor_args(func->funcid, fcache->fcinfo_data);
+       cursor_return_number = (fcache->fcinfo_data->extra != NULL) ?
+           fcache->fcinfo_data->extra->refcursor_data.return_number : 0;
+       /* extra is allocated for every function that uses or returns refcursors,
+        * so a non-zero cursor_return_number always has a valid extra to read from. */
+       Assert(cursor_return_number == 0 || fcache->fcinfo_data->extra != NULL);
 
        Assert(!fcache->func.fn_retset);
 
@@ -3619,8 +3707,12 @@ static Datum ExecEvalFunc(FuncExprState *fcache, ExprContext *econtext, bool *is
     /* Initialize function lookup info */
     init_fcache<false>(func->funcid, func->inputcollid, fcache, econtext->ecxt_per_query_memory, false, true);
 
-    has_refcursor = func_has_refcursor_args(func->funcid, &fcache->fcinfo_data);
-    cursor_return_number = fcache->fcinfo_data.refcursor_data.return_number;
+    has_refcursor = func_has_refcursor_args(func->funcid, fcache->fcinfo_data);
+    cursor_return_number = (fcache->fcinfo_data->extra != NULL) ?
+        fcache->fcinfo_data->extra->refcursor_data.return_number : 0;
+    /* extra is allocated for every function that uses or returns refcursors,
+     * so a non-zero cursor_return_number always has a valid extra to read from. */
+    Assert(cursor_return_number == 0 || fcache->fcinfo_data->extra != NULL);
 
    /*
     * We need to invoke ExecMakeFunctionResult if either the function itself
@@ -3678,6 +3770,9 @@ static Datum ExecEvalFunc(FuncExprState *fcache, ExprContext *econtext, bool *is
                fcache->xprstate.evalfunc = (ExprStateEvalFunc)ExecMakeFunctionResultNoSets<false, true>;
                return ExecMakeFunctionResultNoSets<false, true>(fcache, econtext, isNull, isDone);
            } else {
+               if (ENABLE_FUNCTION_RESULT_CACHE()) {
+                   EStateFuncAssignCache(NULL, econtext, func, fcache);
+               }
                fcache->xprstate.evalfunc = (ExprStateEvalFunc)ExecMakeFunctionResultNoSets<false, false>;
                return ExecMakeFunctionResultNoSets<false, false>(fcache, econtext, isNull, isDone);
            }
@@ -3697,8 +3792,12 @@ static Datum ExecEvalOper(FuncExprState* fcache, ExprContext* econtext, bool* is
     int cursor_return_number = 0;
    if (fcache->xprstate.is_flt_frame) {
         init_fcache<false>(op->opfuncid, op->inputcollid, fcache, econtext->ecxt_per_query_memory, false, false);
-        has_refcursor = func_has_refcursor_args(op->opfuncid, &fcache->fcinfo_data);
-        cursor_return_number = fcache->fcinfo_data.refcursor_data.return_number;
+        has_refcursor = func_has_refcursor_args(op->opfuncid, fcache->fcinfo_data);
+        cursor_return_number = (fcache->fcinfo_data->extra != NULL) ?
+            fcache->fcinfo_data->extra->refcursor_data.return_number : 0;
+        /* extra is allocated for every function that uses or returns refcursors,
+         * so a non-zero cursor_return_number always has a valid extra to read from. */
+        Assert(cursor_return_number == 0 || fcache->fcinfo_data->extra != NULL);
         Assert(!fcache->func.fn_retset);
         if (has_refcursor) {
             if (cursor_return_number > 0) {
@@ -3721,8 +3820,12 @@ static Datum ExecEvalOper(FuncExprState* fcache, ExprContext* econtext, bool* is
 
     /* Initialize function lookup info */
     init_fcache<false>(op->opfuncid, op->inputcollid, fcache, econtext->ecxt_per_query_memory, false, true);
-    has_refcursor = func_has_refcursor_args(op->opfuncid, &fcache->fcinfo_data);
-    cursor_return_number = fcache->fcinfo_data.refcursor_data.return_number;
+    has_refcursor = func_has_refcursor_args(op->opfuncid, fcache->fcinfo_data);
+    cursor_return_number = (fcache->fcinfo_data->extra != NULL) ?
+        fcache->fcinfo_data->extra->refcursor_data.return_number : 0;
+    /* extra is allocated for every function that uses or returns refcursors,
+     * so a non-zero cursor_return_number always has a valid extra to read from. */
+    Assert(cursor_return_number == 0 || fcache->fcinfo_data->extra != NULL);
 
     /*
      * We need to invoke ExecMakeFunctionResult if either the function itself
@@ -3825,16 +3928,16 @@ static Datum ExecEvalDistinct(FuncExprState* fcache, ExprContext* econtext, bool
    /*
     * Evaluate arguments
     */
-   fcinfo = &fcache->fcinfo_data;
+   fcinfo = fcache->fcinfo_data;
    argDone = ExecEvalFuncArgs<false>(fcinfo, fcache->args, econtext);
    if (argDone != ExprSingleResult)
        ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("IS DISTINCT FROM does not support set arguments")));
    Assert(fcinfo->nargs == 2);
 
-   if (fcinfo->argnull[0] && fcinfo->argnull[1]) {
+   if (fcinfo->args[0].isnull && fcinfo->args[1].isnull) {
        /* Both NULL? Then is not distinct... */
        result = BoolGetDatum(FALSE);
-   } else if (fcinfo->argnull[0] || fcinfo->argnull[1]) {
+   } else if (fcinfo->args[0].isnull || fcinfo->args[1].isnull) {
        /* Only one is NULL? Then is distinct... */
        result = BoolGetDatum(TRUE);
    } else {
@@ -3897,7 +4000,7 @@ static Datum ExecEvalScalarArrayOp(
    /*
     * Evaluate arguments
     */
-   fcinfo = &sstate->fxprstate.fcinfo_data;
+   fcinfo = sstate->fxprstate.fcinfo_data;
    /* init the number of arguments to a function. */
    InitFunctionCallInfoArgs(*fcinfo, 2, 1);
    argDone = ExecEvalFuncArgs<false>(fcinfo, sstate->fxprstate.args, econtext);
@@ -3910,12 +4013,12 @@ static Datum ExecEvalScalarArrayOp(
     * If the array is NULL then we return NULL --- it's not very meaningful
     * to do anything else, even if the operator isn't strict.
     */
-   if (fcinfo->argnull[1]) {
+   if (fcinfo->args[1].isnull) {
        *isNull = true;
        return (Datum)0;
    }
    /* Else okay to fetch and detoast the array */
-   arr = DatumGetArrayTypeP(fcinfo->arg[1]);
+   arr = DatumGetArrayTypeP(fcinfo->args[1].value);
 
    /*
     * If the array is empty, we return either FALSE or TRUE per the useOr
@@ -3931,7 +4034,7 @@ static Datum ExecEvalScalarArrayOp(
     * If the scalar is NULL, and the function is strict, return NULL; no
     * point in iterating the loop.
     */
-   if (fcinfo->argnull[0] && sstate->fxprstate.func.fn_strict) {
+   if (fcinfo->args[0].isnull && sstate->fxprstate.func.fn_strict) {
        *isNull = true;
        return (Datum)0;
    }
@@ -3962,19 +4065,18 @@ static Datum ExecEvalScalarArrayOp(
 
         /* Get array element, checking for NULL */
         if (bitmap && (*bitmap & bitmask) == 0) {
-            fcinfo->arg[1] = (Datum)0;
-            fcinfo->argnull[1] = true;
+            fcinfo->args[1].value = (Datum)0;
+            fcinfo->args[1].isnull = true;
         } else {
             elt = fetch_att(s, typbyval, typlen);
             s = att_addlength_pointer(s, typlen, s);
             s = (char*)att_align_nominal(s, typalign);
-            fcinfo->arg[1] = elt;
-            fcinfo->argnull[1] = false;
-            fcinfo->argTypes[1] = ARR_ELEMTYPE(arr);
+            fcinfo->args[1].value = elt;
+            fcinfo->args[1].isnull = false;
         }
 
        /* Call comparison function */
-       if (fcinfo->argnull[1] && sstate->fxprstate.func.fn_strict) {
+       if (fcinfo->args[1].isnull && sstate->fxprstate.func.fn_strict) {
            fcinfo->isnull = true;
            thisresult = (Datum)0;
        } else {
@@ -4617,17 +4719,19 @@ static Datum ExecEvalRowCompare(RowCompareExprState* rstate, ExprContext* econte
    {
        ExprState* le = (ExprState*)lfirst(l);
        ExprState* re = (ExprState*)lfirst(r);
-       FunctionCallInfoData locfcinfo;
+       LOCAL_FCINFO(locfcinfo, 2);
 
-       InitFunctionCallInfoData(locfcinfo, &(rstate->funcs[i]), 2, rstate->collations[i], NULL, NULL);
-       locfcinfo.arg[0] = ExecEvalExpr(le, econtext, &locfcinfo.argnull[0], NULL);
-       locfcinfo.arg[1] = ExecEvalExpr(re, econtext, &locfcinfo.argnull[1], NULL);
-       if (rstate->funcs[i].fn_strict && (locfcinfo.argnull[0] || locfcinfo.argnull[1]))
+       InitFunctionCallInfoData(*locfcinfo, &(rstate->funcs[i]), 2, rstate->collations[i], NULL, NULL);
+       locfcinfo->args[0].value = ExecEvalExpr(le, econtext, &locfcinfo->args[0].isnull, NULL);
+       locfcinfo->args[1].value = ExecEvalExpr(re, econtext, &locfcinfo->args[1].isnull, NULL);
+       if (rstate->funcs[i].fn_strict && (locfcinfo->args[0].isnull || locfcinfo->args[1].isnull)) {
            return (Datum)0; /* force NULL result */
-       locfcinfo.isnull = false;
-       cmpresult = DatumGetInt32(FunctionCallInvoke(&locfcinfo));
-       if (locfcinfo.isnull)
+       }
+       locfcinfo->isnull = false;
+       cmpresult = DatumGetInt32(FunctionCallInvoke(locfcinfo));
+       if (locfcinfo->isnull) {
            return (Datum)0; /* force NULL result */
+       }
        if (cmpresult != 0)
            break; /* no need to compare remaining columns */
        i++;
@@ -4718,8 +4822,8 @@ static int ExecEvalMinMaxHelper(List* args, ExprContext* econtext, FunctionCallI
             resultIndex = index;
         } else {
             /* apply comparison function */
-            locfcinfo->arg[0] = result;
-            locfcinfo->arg[1] = value;
+            locfcinfo->args[0].value = result;
+            locfcinfo->args[1].value = value;
             locfcinfo->isnull = false;
             cmpresult = DatumGetInt32(FunctionCallInvoke(locfcinfo));
             if (locfcinfo->isnull) /* probably should not happen */
@@ -4747,7 +4851,7 @@ static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, 
     MinMaxExpr* minmax = (MinMaxExpr*)minmaxExpr->xprstate.expr;
     Oid collation = minmax->inputcollid;
     MinMaxOp op = minmax->op;
-    FunctionCallInfoData locfcinfo;
+    LOCAL_FCINFO(locfcinfo, 2);
     ListCell* arg = NULL;
     ListCell* cmp_arg = NULL;
     int index = -1;
@@ -4757,14 +4861,14 @@ static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, 
         *isDone = ExprSingleResult;
     }
     *isNull = true; /* until we get a result */
-    InitFunctionCallInfoData(locfcinfo, &minmaxExpr->cfunc, 2, collation, NULL, NULL);
-    locfcinfo.argnull[0] = false;
-    locfcinfo.argnull[1] = false;
+    InitFunctionCallInfoData(*locfcinfo, &minmaxExpr->cfunc, 2, collation, NULL, NULL);
+    locfcinfo->args[0].isnull = false;
+    locfcinfo->args[1].isnull = false;
 
     if (minmaxExpr->cmpargs) {
-        index = ExecEvalMinMaxHelper(minmaxExpr->cmpargs, econtext, &locfcinfo, op, isNull);
+        index = ExecEvalMinMaxHelper(minmaxExpr->cmpargs, econtext, locfcinfo, op, isNull);
     } else {
-        index = ExecEvalMinMaxHelper(minmaxExpr->args, econtext, &locfcinfo, op, isNull);
+        index = ExecEvalMinMaxHelper(minmaxExpr->args, econtext, locfcinfo, op, isNull);
     }
     if (index != -1) {
         result = ExecEvalExpr((ExprState*)list_nth(minmaxExpr->args, index), econtext, &valueIsNull, NULL);
@@ -5002,14 +5106,14 @@ static Datum ExecEvalNullIf(FuncExprState* nullIfExpr, ExprContext* econtext, bo
    /*
     * Evaluate arguments
     */
-   fcinfo = &nullIfExpr->fcinfo_data;
+   fcinfo = nullIfExpr->fcinfo_data;
    argDone = ExecEvalFuncArgs<false>(fcinfo, nullIfExpr->args, econtext);
    if (argDone != ExprSingleResult)
        ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("NULLIF does not support set arguments")));
    Assert(fcinfo->nargs == 2);
 
    /* if either argument is NULL they can't be equal */
-   if (!fcinfo->argnull[0] && !fcinfo->argnull[1]) {
+   if (!fcinfo->args[0].isnull && !fcinfo->args[1].isnull) {
        fcinfo->isnull = false;
        result = FunctionCallInvoke(fcinfo);
        /* if the arguments are equal return null */
@@ -5020,8 +5124,8 @@ static Datum ExecEvalNullIf(FuncExprState* nullIfExpr, ExprContext* econtext, bo
    }
 
    /* else return first argument */
-   *isNull = fcinfo->argnull[0];
-   return fcinfo->arg[0];
+   *isNull = fcinfo->args[0].isnull;
+   return fcinfo->args[0].value;
 }
 
 static Datum CheckRowTypeIsNull(TupleDesc tupDesc, HeapTupleData tmptup, NullTest *ntest)
@@ -5947,7 +6051,7 @@ static Datum ExecEvalArrayCoerceExpr(
     ArrayCoerceExpr* acoerce = (ArrayCoerceExpr*)astate->xprstate.expr;
     Datum result;
     ArrayType* array = NULL;
-    FunctionCallInfoData locfcinfo;
+    LOCAL_FCINFO(locfcinfo, 3);
 
     if (u_sess) {
         u_sess->parser_cxt.fmt_str = astate->fmtstr;
@@ -5997,15 +6101,15 @@ static Datum ExecEvalArrayCoerceExpr(
         *
         * Note: coercion functions are assumed to not use collation.
         */
-    InitFunctionCallInfoData(locfcinfo, &(astate->elemfunc), 3, InvalidOid, NULL, NULL);
-    locfcinfo.arg[0] = PointerGetDatum(array);
-    locfcinfo.arg[1] = Int32GetDatum(acoerce->resulttypmod);
-    locfcinfo.arg[2] = BoolGetDatum(acoerce->isExplicit);
-    locfcinfo.argnull[0] = false;
-    locfcinfo.argnull[1] = false;
-    locfcinfo.argnull[2] = false;
+    InitFunctionCallInfoData(*locfcinfo, &(astate->elemfunc), 3, InvalidOid, NULL, NULL);
+    locfcinfo->args[0].value = PointerGetDatum(array);
+    locfcinfo->args[1].value = Int32GetDatum(acoerce->resulttypmod);
+    locfcinfo->args[2].value = BoolGetDatum(acoerce->isExplicit);
+    locfcinfo->args[0].isnull = false;
+    locfcinfo->args[1].isnull = false;
+    locfcinfo->args[2].isnull = false;
 
-    return array_map(&locfcinfo, ARR_ELEMTYPE(array), astate->resultelemtype, astate->amstate);
+    return array_map(locfcinfo, ARR_ELEMTYPE(array), astate->resultelemtype, astate->amstate);
 }
 
 /* ----------------------------------------------------------------

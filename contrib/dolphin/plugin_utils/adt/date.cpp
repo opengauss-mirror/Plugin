@@ -32,6 +32,7 @@
 #include "plugin_utils/date.h"
 #include "plugin_utils/year.h"
 #include "plugin_utils/datetime.h"
+#include "plugin_utils/fmgr_hook.h"
 #include "utils/formatting.h"
 #include "utils/nabstime.h"
 #include "utils/sortsupport.h"
@@ -579,8 +580,8 @@ Datum date_in(PG_FUNCTION_ARGS)
     TimeErrorType time_error_type = TIME_CORRECT;
     char* str = PG_GETARG_CSTRING(0);
     result = date_internal(fcinfo, str, TIME_IN, &time_error_type);
-    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
-        time_error_type == TIME_INCORRECT) {
+    CoercionContext ccontext = FCINFO_GET_COERCION_CONTEXT(fcinfo);
+    if ((ccontext == COERCION_IMPLICIT || ccontext == COERCION_EXPLICIT) && time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
     return result;
@@ -597,8 +598,8 @@ Datum text_date_explicit(PG_FUNCTION_ARGS)
 {
     Datum result;
     TimeErrorType time_error_type = TIME_CORRECT;
-    char* str = fcinfo->argTypes[0] ?
-                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
+    char* str = get_fn_expr_argtype(fcinfo->flinfo, 0) ?
+                      parser_function_input(PG_GETARG_DATUM(0), get_fn_expr_argtype(fcinfo->flinfo, 0)) :
                       PG_GETARG_CSTRING(0);
     result = date_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
@@ -1916,7 +1917,7 @@ char* parser_function_input(Datum txt, Oid oid)
  */
 Datum text_time_explicit(PG_FUNCTION_ARGS)
 {
-    Oid input_oid = fcinfo->argTypes[0] ? fcinfo->argTypes[0] : TEXTOID;
+    Oid input_oid = get_fn_expr_argtype(fcinfo->flinfo, 0) ? get_fn_expr_argtype(fcinfo->flinfo, 0) : TEXTOID;
     char* input_str = parser_function_input(PG_GETARG_DATUM(0), input_oid);
     TimeErrorType time_error_type = TIME_CORRECT;
     int tm_type = DTK_ERROR;

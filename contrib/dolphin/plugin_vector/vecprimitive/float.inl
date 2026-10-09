@@ -97,11 +97,14 @@ vfloat_avg_final(PG_FUNCTION_ARGS)
 	ArrayType  *transarray = NULL;
 	float8	   *transvalues = NULL;
 
-	Datum	  args[3];
-	Datum arg;
-	FunctionCallInfoData finfo;
+        NullableDatum arg;
+        const int scalarNargs = 3;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
-	finfo.arg = &args[0];
 	if(singlenode)
 	{
 		if(IS_NULL(cell->m_val[idx].flag))
@@ -110,45 +113,50 @@ vfloat_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 
-		args[0] = cell->m_val[idx].val;
+                finfo->args[0].value = cell->m_val[idx].val;
 		if (isTransition)
-			args[1] = DirectFunctionCall1(i8tod,cell->m_val[idx + 1].val);
+                        finfo->args[1].value = DirectFunctionCall1(i8tod, cell->m_val[idx + 1].val);
 		else
-			args[1] = cell->m_val[idx + 1].val;
+                        finfo->args[1].value = cell->m_val[idx + 1].val;
 
 		if (is_samp)
 		{
-			args[2] =  cell->m_val[idx + 2].val;
+                        finfo->args[2].value =  cell->m_val[idx + 2].val;
 		}
 		else
 		{
-			args[2] =  DatumGetFloat8(args[0]) *  DatumGetFloat8(args[0]);
+                        finfo->args[2].value =
+                            DatumGetFloat8(finfo->args[0].value) *  DatumGetFloat8(finfo->args[0].value);
 		}
 
 		if (false == is_samp)
 		{
-			*m_vals = float8div(&finfo);
+                        *m_vals = float8div(finfo);
 			SET_NOTNULL(*m_flag);
 		}
 		else
 		{
-			transarray = construct_array(args, 3, FLOAT8OID, sizeof(float8), true, 'd');
+                        Datum tmpargs[3];
+                        for (int k = 0; k < 3; k++) {
+                            tmpargs[k] = finfo->args[k].value;
+                        }
+                        transarray = construct_array(tmpargs, 3, FLOAT8OID, sizeof(float8), true, 'd');
 			transvalues = check_float8_array(transarray, "float8_accum", 3);
 
-			transvalues[0] = DatumGetFloat8(args[1]);
-			transvalues[1] = DatumGetFloat8(args[0]);
-			transvalues[2] =  DatumGetFloat8(args[2]);
+                        transvalues[0] = DatumGetFloat8(tmpargs[1]);
+                        transvalues[1] = DatumGetFloat8(tmpargs[0]);
+                        transvalues[2] = DatumGetFloat8(tmpargs[2]);
 
-			finfo.arg = &arg;
-			arg = PointerGetDatum(transarray);
+                        finfo->args[0].value = PointerGetDatum(transarray);
 
-			finfo.isnull = false;
-			*m_vals = float8_stddev_samp(&finfo);
+                        finfo->isnull = false;
+                        *m_vals = float8_stddev_samp(finfo);
 
-			if (finfo.isnull)
-				SET_NULL(*m_flag);
-			else
-				SET_NOTNULL(*m_flag);
+                        if (finfo->isnull) {
+                            SET_NULL(*m_flag);
+                        } else {
+                            SET_NOTNULL(*m_flag);
+                        }
 		}
 	}
 	else //construct a array type.
@@ -159,27 +167,32 @@ vfloat_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 
-		args[0] = cell->m_val[idx].val;
+                finfo->args[0].value = cell->m_val[idx].val;
 		if (isTransition)
-			args[1] = DirectFunctionCall1(i8tod,cell->m_val[idx + 1].val);
+                        finfo->args[1].value = DirectFunctionCall1(i8tod, cell->m_val[idx + 1].val);
 		else
-			args[1] = cell->m_val[idx + 1].val;
+                        finfo->args[1].value = cell->m_val[idx + 1].val;
 
 		if (is_samp)
 		{
-			args[2] =  cell->m_val[idx + 2].val;
+                        finfo->args[2].value =  cell->m_val[idx + 2].val;
 		}
 		else
 		{
-			args[2] =  DatumGetFloat8(args[0]) *  DatumGetFloat8(args[0]);
+                        finfo->args[2].value =
+                            DatumGetFloat8(finfo->args[0].value) *  DatumGetFloat8(finfo->args[0].value);
 		}
 
-		transarray = construct_array(args, 3, FLOAT8OID, sizeof(float8), true, 'd');
+                Datum tmpargs[3];
+                for (int k = 0; k < 3; k++) {
+                    tmpargs[k] = finfo->args[k].value;
+                }
+                transarray = construct_array(tmpargs, 3, FLOAT8OID, sizeof(float8), true, 'd');
 		transvalues = check_float8_array(transarray, "float8_accum", 3);
-		
-		transvalues[0] = DatumGetFloat8(args[1]);
-		transvalues[1] = DatumGetFloat8(args[0]);
-		transvalues[2] = DatumGetFloat8(args[2]);
+
+                transvalues[0] = DatumGetFloat8(finfo->args[1].value);
+                transvalues[1] = DatumGetFloat8(finfo->args[0].value);
+                transvalues[2] = DatumGetFloat8(finfo->args[2].value);
 
 		*m_vals = PointerGetDatum(transarray);
 		SET_NOTNULL(*m_flag);
@@ -191,7 +204,7 @@ vfloat_avg_final(PG_FUNCTION_ARGS)
 
 /*
 * @Description: For each level of avg/stddev_samp, a trans operation is needed
-* @in isTransition -  is the first stage of avg/stddev_samp. 
+* @in isTransition -  is the first stage of avg/stddev_samp.
 * @in is_samp- is avg or stddev_samp
 * @return - ScalarVector
 */
@@ -207,13 +220,15 @@ vfloat8_avg(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector1->m_vals;
 	uint8*		  flag = pVector1->m_flag;
 	int			  nrows = pVector1->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	ArrayType  *transarray = NULL;
 	float8	   *transvalues = NULL;
-
-	finfo.arg = &args[0];
 
 	for (i = 0 ; i < nrows; i++)
 	{
@@ -256,19 +271,19 @@ vfloat8_avg(PG_FUNCTION_ARGS)
 			}
 			else
 			{
-				args[0] = cell->m_val[idx].val;
-				args[1] = pVal[i];
-				
+                                finfo->args[0].value = cell->m_val[idx].val;
+                                finfo->args[1].value = pVal[i];
+
 				if (isTransition)
 				{
-					result = float8pl(&finfo);
+                                        result = float8pl(finfo);
 					cell->m_val[idx].val = result;
 					cell->m_val[idx + 1].val++; //count++
 					if (is_samp)
 					{
-						args[0] = cell->m_val[idx + 2].val;
-						args[1] = DirectFunctionCall2(float8mul, pVal[i], pVal[i]);	
-						result = float8pl(&finfo);
+                                                finfo->args[0].value = cell->m_val[idx + 2].val;
+                                                finfo->args[1].value = DirectFunctionCall2(float8mul, pVal[i], pVal[i]);
+                                                result = float8pl(finfo);
 						cell->m_val[idx + 2].val = result;
 					}
 				}
@@ -309,14 +324,16 @@ vfloat4_avg(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector1->m_vals;
 	uint8*		  flag = pVector1->m_flag;
 	int			  nrows = pVector1->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	ArrayType  *transarray = NULL;
 	float8	   *transvalues = NULL;
 	Datum		  pvalue;
-
-	finfo.arg = &args[0];
 
 	for (i = 0 ; i < nrows; i++)
 	{
@@ -363,17 +380,17 @@ vfloat4_avg(PG_FUNCTION_ARGS)
 			{
 				if (isTransition)
 				{
-					args[0] = cell->m_val[idx].val;
-					args[1] = pVal[i];
-					result = float84pl(&finfo);
+                                        finfo->args[0].value = cell->m_val[idx].val;
+                                        finfo->args[1].value = pVal[i];
+                                        result = float84pl(finfo);
 					cell->m_val[idx].val = result;
 					cell->m_val[idx + 1].val++; //count++
 					if (is_samp)
 					{
-						args[0] = cell->m_val[idx + 2].val;
+                                                finfo->args[0].value = cell->m_val[idx + 2].val;
 						pvalue = DirectFunctionCall1(ftod,pVal[i]);
-						args[1] = DirectFunctionCall2(float8mul, pvalue, pvalue);
-						result = float8pl(&finfo);
+                                                finfo->args[1].value = DirectFunctionCall2(float8mul, pvalue, pvalue);
+                                                result = float8pl(finfo);
 						cell->m_val[idx + 2].val = result;
 					}
 				}
@@ -409,11 +426,13 @@ vfloat_min_max(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	for(i = 0 ; i < nrows; i++)
 	{
@@ -427,10 +446,10 @@ vfloat_min_max(PG_FUNCTION_ARGS)
 			}
 			else
 			{
-				args[0] = cell->m_val[idx].val;
-				args[1] = pVal[i];
+                                finfo->args[0].value = cell->m_val[idx].val;
+                                finfo->args[1].value = pVal[i];
 
-				result = floatFun(&finfo);
+                                result = floatFun(finfo);
 
 				cell->m_val[idx].val = result;
 			}
@@ -452,11 +471,13 @@ vfloat_sum(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	for(i = 0 ; i < nrows; i++)
 	{
@@ -465,15 +486,15 @@ vfloat_sum(PG_FUNCTION_ARGS)
 		{
 			if(IS_NULL(cell->m_val[idx].flag))
 			{
-				cell->m_val[idx].val = pVal[i];	
+                                cell->m_val[idx].val = pVal[i];
 				SET_NOTNULL(cell->m_val[idx].flag);
 			}
 			else
 			{
-				args[0] = cell->m_val[idx].val;
-				args[1] = pVal[i];
+                                finfo->args[0].value = cell->m_val[idx].val;
+                                finfo->args[1].value = pVal[i];
 
-				result = floatFun(&finfo);
+                                result = floatFun(finfo);
 				cell->m_val[idx].val = result;
 			}
 		}
@@ -495,11 +516,13 @@ vfloat4_mop(PG_FUNCTION_ARGS)
 	uint8*		pflags2 = (uint8*)(PG_GETARG_VECTOR(1)->m_flag);
 	uint8* 		pflagsRes = (uint8*)(PG_GETARG_VECTOR(3)->m_flag);
 	int          i;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	if(likely(pselection == NULL))
 	{
@@ -507,10 +530,10 @@ vfloat4_mop(PG_FUNCTION_ARGS)
 		{
 			if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 			{
-				args[0] = parg1[i];
-				args[1] = parg2[i];
+                                finfo->args[0].value = parg1[i];
+                                finfo->args[1].value = parg2[i];
 
-				result = floatFun(&finfo);
+                                result = floatFun(finfo);
 				presult[i] = result;
 				SET_NOTNULL(pflagsRes[i]);
 			}
@@ -526,10 +549,10 @@ vfloat4_mop(PG_FUNCTION_ARGS)
 			{
 				if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 				{
-					args[0] = parg1[i];
-					args[1] = parg2[i];
+                                        finfo->args[0].value = parg1[i];
+                                        finfo->args[1].value = parg2[i];
 
-					result = floatFun(&finfo);
+                                        result = floatFun(finfo);
 					presult[i] = result;
 					SET_NOTNULL(pflagsRes[i]);
 				}
@@ -558,11 +581,13 @@ vfloat8_mop(PG_FUNCTION_ARGS)
 	uint8*		pflags2 = (uint8*)(PG_GETARG_VECTOR(1)->m_flag);
 	uint8* 		pflagsRes = (uint8*)(PG_GETARG_VECTOR(3)->m_flag);
 	int          i;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	if(likely(pselection == NULL))
 	{
@@ -570,10 +595,10 @@ vfloat8_mop(PG_FUNCTION_ARGS)
 		{
 			if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 			{
-				args[0] = parg1[i];
-				args[1] = parg2[i];
+                                finfo->args[0].value = parg1[i];
+                                finfo->args[1].value = parg2[i];
 
-				result = floatFun(&finfo);
+                                result = floatFun(finfo);
 				presult[i] = result;
 				SET_NOTNULL(pflagsRes[i]);
 			}
@@ -589,10 +614,10 @@ vfloat8_mop(PG_FUNCTION_ARGS)
 			{
 				if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 				{
-					args[0] = parg1[i];
-					args[1] = parg2[i];
+                                        finfo->args[0].value = parg1[i];
+                                        finfo->args[1].value = parg2[i];
 
-					result = floatFun(&finfo);
+                                        result = floatFun(finfo);
 					presult[i] = result;
 					SET_NOTNULL(pflagsRes[i]);
 				}

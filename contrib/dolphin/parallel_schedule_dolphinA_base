@@ -100,3 +100,5 @@ test: drop_view
 
 test: test_create_function
 
+
+test: sync_fmgr_abi

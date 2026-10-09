@@ -301,7 +301,7 @@ vsint8_avg(PG_FUNCTION_ARGS)
 	int			nrows = pVector->m_rows;
 
 	/* left-hand and right-hand operand of addition  */
-	Datum		args[2];
+        NullableDatum   args[2];
 	Datum		*leftdata = NULL;
 	Datum		*countdata = NULL;
 	uint8		leftflag;
@@ -311,10 +311,13 @@ vsint8_avg(PG_FUNCTION_ARGS)
 	Datum		*datumarray = NULL;
 	int			arrIndx,atomIndx;
 	int			ndatum;
-	
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	bictl		  ctl;
-	finfo.arg = &args[0];
 	ctl.context = data->m_cxt;
 	
 	for (i = 0 ; i < nrows; i++)
@@ -407,10 +410,12 @@ vector_abs(PG_FUNCTION_ARGS)
 	uint8*		pflags1 = (uint8*)(PG_GETARG_VECTOR(0)->m_flag);
 	uint8* 	pflagsRes = (uint8*)(PG_GETARG_VECTOR(2)->m_flag);
 	int i;
-	Datum args;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	if (likely(pselection == NULL))
 	{   
@@ -418,8 +423,8 @@ vector_abs(PG_FUNCTION_ARGS)
 		{
 			if (NOT_NULL(pflags1[i]))
 			{
-				args = parg1[i];
-				presult[i] =  absfun(&finfo);
+                                finfo->args[0].value = parg1[i];
+                                presult[i] =  absfun(finfo);
 				SET_NOTNULL(pflagsRes[i]);
 			}
 			else
@@ -434,8 +439,8 @@ vector_abs(PG_FUNCTION_ARGS)
 			{
 				if (NOT_NULL(pflags1[i]))
 				{	
-					args = parg1[i];
-					presult[i] =  absfun(&finfo);
+                                        finfo->args[0].value = parg1[i];
+                                        presult[i] =  absfun(finfo);
 					SET_NOTNULL(pflagsRes[i]);	
 				}
 				else
@@ -683,20 +688,24 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
+        NullableDatum     args[2];
 	Datum		  result[2];
 	Datum		  bi_result;
 	Datum		*datumarray = NULL;
 	int			ndatum;
 	Datum		newval;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	bictl		  ctl;
 	Numeric		  leftarg, rightarg;	/* left-hand and right-hand operand of addition */
 	uint16		  num1Flags, num2Flags;	/* numeric flags of num1 and num2  */
 	int			  arg1, arg2;
 
-	finfo.arg = &args[0];
 	ctl.context = context;
 
 	for (i = 0 ; i < nrows; i++)
@@ -750,7 +759,7 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 			{
 				if (isTransition)
 				{
-					args[0] = cell->m_val[idx].val;
+                                        finfo->args[0].value = cell->m_val[idx].val;
 
 					if (type_size == 4)
 					{
@@ -769,13 +778,12 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 						newval = pVal[i];
 					}
 
-					args[1] = newval;
+                                        finfo->args[1].value = newval;
 
-					leftarg =  (Numeric)(args[0]);
+                                        leftarg =  (Numeric)(finfo->args[0].value);
 					rightarg = DatumGetBINumeric(newval);
 					num1Flags = NUMERIC_NB_FLAGBITS(leftarg);
 					num2Flags = NUMERIC_NB_FLAGBITS(rightarg);
-
 					if (NUMERIC_FLAG_IS_BI(num1Flags) && NUMERIC_FLAG_IS_BI(num2Flags))
 					{
 						arg1 = NUMERIC_FLAG_IS_BI128(num1Flags);
@@ -788,10 +796,11 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 					} 
 					else /* call numeric_add */
 					{
-						args[0] = NumericGetDatum(leftarg);
-						args[1] = NumericGetDatum(rightarg);
+                                                finfo->args[0].value = NumericGetDatum(leftarg);
+                                                finfo->args[1].value = NumericGetDatum(rightarg);
 						
-						result[0] = DirectFunctionCall2(numeric_add, args[0], args[1]);
+                                                result[0] = DirectFunctionCall2(
+                                                    numeric_add, finfo->args[0].value, finfo->args[1].value);
 						cell->m_val[idx].val = addVariable(context, result[0]);
 					}
 
@@ -812,8 +821,8 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 					} 
 					else /* call numeric_add */
 					{
-						args[0] = NumericGetDatum(leftarg);
-						args[1] = NumericGetDatum(rightarg);
+                                                finfo->args[0].value = NumericGetDatum(leftarg);
+                                                finfo->args[1].value = NumericGetDatum(rightarg);
 						
 						result[1] = DirectFunctionCall2(numeric_add, cell->m_val[idx + 2].val, DirectFunctionCall2(numeric_mul, newval, newval));
 						cell->m_val[idx + 2].val = addVariable(context, result[1]);
@@ -844,9 +853,9 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 					} 
 					else  /* call numeric_add */
 					{
-						args[0] = NumericGetDatum(leftarg);
-						args[1] = NumericGetDatum(rightarg);
-						bi_result = numeric_add(&finfo);
+                                                finfo->args[0].value = NumericGetDatum(leftarg);
+                                                finfo->args[1].value = NumericGetDatum(rightarg);
+                                                bi_result = numeric_add(finfo);
 						cell->m_val[idx].val = replaceVariable(context, cell->m_val[idx].val, bi_result);
 					}
 
@@ -866,9 +875,9 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 					} 
 					else  /* call numeric_add */
 					{
-						args[0] = NumericGetDatum(leftarg);
-						args[1] = NumericGetDatum(rightarg);
-						bi_result = numeric_add(&finfo);
+                                                finfo->args[0].value = NumericGetDatum(leftarg);
+                                                finfo->args[1].value = NumericGetDatum(rightarg);
+                                                bi_result = numeric_add(finfo);
 						cell->m_val[idx + 2].val = replaceVariable(context, cell->m_val[idx + 2].val, bi_result);
 					}
 					
@@ -902,11 +911,14 @@ vnumeric_stddev_samp_final(PG_FUNCTION_ARGS)
 	ScalarValue*	m_vals = (ScalarValue*)PG_GETARG_DATUM(2);
 	uint8  *m_flag = (uint8*)PG_GETARG_DATUM(3);
 	
-	Datum	  args;
 	Datum	  arg[3];
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
-	finfo.arg = &args;
 	Numeric tmp_arg;
 	
 	if (singlenode)
@@ -930,11 +942,11 @@ vnumeric_stddev_samp_final(PG_FUNCTION_ARGS)
 		arg[1] = NumericGetDatum(bitonumeric(cell->m_val[idx].val));
 		arg[2] = NumericGetDatum(bitonumeric(cell->m_val[idx + 2].val));
 		
-		args = PointerGetDatum(construct_array(arg, 3, NUMERICOID, -1, false, 'i'));
+                finfo->args[0].value = PointerGetDatum(construct_array(arg, 3, NUMERICOID, -1, false, 'i'));
 
-		finfo.isnull = false;
-		*m_vals = numeric_stddev_samp(&finfo);
-		if (finfo.isnull)
+                finfo->isnull = false;
+                *m_vals = numeric_stddev_samp(finfo);
+                if (finfo->isnull)
 		{
 			SET_NULL(*m_flag);
 		}
