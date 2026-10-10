@@ -104,10 +104,13 @@ vint_avg_final(PG_FUNCTION_ARGS)
 	int		  idx  = PG_GETARG_DATUM(1);
 	ScalarValue*  pvals = (ScalarValue*)PG_GETARG_DATUM(2);
 	uint8  *pflag = (uint8*)PG_GETARG_DATUM(3);
-	Datum	  args[2];
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
-	finfo.arg = &args[0];
 	if(singlenode)
 	{
 		if(IS_NULL(cell->m_val[idx].flag))
@@ -117,10 +120,10 @@ vint_avg_final(PG_FUNCTION_ARGS)
 		}
 
 		/* call int8_numeric_bi and numeric_div, the avg result can be big integer type */
-		args[0] = DirectFunctionCall1(int8_numeric_bi, cell->m_val[idx].val);
-		args[1] = DirectFunctionCall1(int8_numeric_bi, cell->m_val[idx+1].val);
+                finfo->args[0].value = DirectFunctionCall1(int8_numeric_bi, cell->m_val[idx].val);
+                finfo->args[1].value = DirectFunctionCall1(int8_numeric_bi, cell->m_val[idx+1].val);
 
-		*pvals = numeric_div(&finfo);
+                *pvals = numeric_div(finfo);
 		SET_NOTNULL(*pflag);
 	}
 	else
@@ -133,14 +136,18 @@ vint_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 
-		args[0] = cell->m_val[idx].val;
-		args[1] = cell->m_val[idx+1].val;
+                finfo->args[0].value = cell->m_val[idx].val;
+                finfo->args[1].value = cell->m_val[idx+1].val;
 		
-		transarray = construct_array(args, 2, INT8OID, sizeof(int64), true, 'd');
+                Datum tmpargs[2];
+                for (int k = 0; k < 2; k++) {
+                    tmpargs[k] = finfo->args[k].value;
+                }
+                transarray = construct_array(tmpargs, 2, INT8OID, sizeof(int64), true, 'd');
 
 		transdata = (VecInt8TransTypeData *) ARR_DATA_PTR(transarray);
-		transdata->count = args[1];
-		transdata->sum = args[0];
+                transdata->count = finfo->args[1].value;
+                transdata->sum = finfo->args[0].value;
 		*pvals = PointerGetDatum(transarray);
 		SET_NOTNULL(*pflag);
 	}
@@ -170,14 +177,18 @@ vsint_avg_final(PG_FUNCTION_ARGS)
 	int		nrows = pVector->m_rows;
 	uint8*	pflag = &pVector->m_flag[nrows];
 	ScalarValue* pvals = &pVector->m_vals[nrows];
-	Datum	args[2];
+        NullableDatum   args[2];
 	Datum	*leftdata = NULL;
 	Datum	*countdata = NULL;
 	uint8	leftflag;
-	FunctionCallInfoData finfo;
 	int		arrIndx, atomIndx;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
-	finfo.arg = &args[0];
 	nrows = nrows + 1;
 
 	/* the same index are used for data and m_count */
@@ -198,10 +209,10 @@ vsint_avg_final(PG_FUNCTION_ARGS)
 		}
 		
 		/* call int8_numeric_bi and numeric_div, the avg result can be big integer type */
-		args[0] = DirectFunctionCall1(int8_numeric_bi, *leftdata);
-		args[1] = DirectFunctionCall1(int8_numeric_bi, *countdata);
+                finfo->args[0].value = DirectFunctionCall1(int8_numeric_bi, *leftdata);
+                finfo->args[1].value = DirectFunctionCall1(int8_numeric_bi, *countdata);
 
-		*pvals = numeric_div(&finfo);
+                *pvals = numeric_div(finfo);
 		SET_NOTNULL(*pflag);
 	}
 	else
@@ -214,13 +225,17 @@ vsint_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 
-		args[0] = *leftdata;
-		args[1] = *countdata;
+                finfo->args[0].value = *leftdata;
+                finfo->args[1].value = *countdata;
 	
-		transarray = construct_array(args, 2, INT8OID, sizeof(int64), true, 'd');
+                Datum tmpargs[2];
+                for (int k = 0; k < 2; k++) {
+                    tmpargs[k] = finfo->args[k].value;
+                }
+                transarray = construct_array(tmpargs, 2, INT8OID, sizeof(int64), true, 'd');
 		transdata = (VecInt8TransTypeData *) ARR_DATA_PTR(transarray);
-		transdata->count = args[1];
-		transdata->sum = args[0];
+                transdata->count = finfo->args[1].value;
+                transdata->sum = finfo->args[0].value;
 		*pvals = PointerGetDatum(transarray);
 		SET_NOTNULL(*pflag);
 	}
@@ -246,14 +261,16 @@ vint_avg(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	ArrayType  *transarray = NULL;
 	VecInt8TransTypeData *transdata = NULL;
 	
-	finfo.arg = &args[0];
-
 	for(i = 0 ; i < nrows; i++)
 	{
 		cell = loc[i];
@@ -289,17 +306,17 @@ vint_avg(PG_FUNCTION_ARGS)
 				
 				if(isTransition)
 				{
-					args[0] = cell->m_val[idx].val;
-					args[1] = pVal[i];
+                                        finfo->args[0].value = cell->m_val[idx].val;
+                                        finfo->args[1].value = pVal[i];
 
 					if(int_size == 4)
-						result = int84pl(&finfo);
+                                                result = int84pl(finfo);
 					else if(int_size == 2)
-						result = int82pl(&finfo);
+                                                result = int82pl(finfo);
 					else if(int_size == 1)
 					{
-						args[1] = Int64GetDatum((int64)DatumGetUInt8(pVal[i]));
-						result = int8pl(&finfo);
+                                                finfo->args[1].value = Int64GetDatum((int64)DatumGetUInt8(pVal[i]));
+                                                result = int8pl(finfo);
 					}
 					
 					cell->m_val[idx].val = result;
@@ -344,7 +361,7 @@ vsint_avg(PG_FUNCTION_ARGS)
 	int			nrows = pVector->m_rows;
 	int			arrIndx, atomIndx;
 	
-	Datum		args[2];
+        NullableDatum           args[2];
 	Datum		*leftdata = NULL;
 	Datum		*countdata = NULL;
 	uint8		leftflag;
@@ -352,10 +369,13 @@ vsint_avg(PG_FUNCTION_ARGS)
 	
 	ArrayType  *transarray = NULL;
 	VecInt8TransTypeData *transdata = NULL;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	
-	finfo.arg = &args[0];
-
 	for (i = 0; i < nrows; i++)
 	{
 		if (loc[i] != 0 && NOT_NULL(flag[i]))
@@ -402,17 +422,17 @@ vsint_avg(PG_FUNCTION_ARGS)
 				/* updata previous sum result based on the given pVal[i] */
 				if (isTransition)
 				{
-					args[0] = *leftdata;
-					args[1] = pVal[i];
+                                        finfo->args[0].value = *leftdata;
+                                        finfo->args[1].value = pVal[i];
 
 					if (int_size == 4)
-						*leftdata  = int84pl(&finfo);
+                                                *leftdata  = int84pl(finfo);
 					else if (int_size == 2)
-						*leftdata  = int82pl(&finfo);
+                                                *leftdata  = int82pl(finfo);
 					else if (int_size == 1)
 					{
-						args[1] = Int64GetDatum((int64)DatumGetUInt8(pVal[i]));
-						*leftdata  = int8pl(&finfo);
+                                                finfo->args[1].value = Int64GetDatum((int64)DatumGetUInt8(pVal[i]));
+                                                *leftdata  = int8pl(finfo);
 					}
 					(*countdata)++;
 				}
@@ -558,6 +578,24 @@ vsint_sum(PG_FUNCTION_ARGS)
 	return NULL;
 }
 	
+/* update one row of the min/max aggregate state for a timetz value */
+template <PGFunction timetzFun>
+static inline void TimetzMinMaxUpdateRow(MemoryContext context, hashCell* cell, int idx, ScalarValue newVal,
+                                         FunctionCallInfo finfo)
+{
+	if (IS_NULL(cell->m_val[idx].flag)) {
+		cell->m_val[idx].val = addVariable(context, newVal);
+		SET_NOTNULL(cell->m_val[idx].flag);
+	} else {
+		finfo->args[0].value = PointerGetDatum((char*)ScalarVector::Decode(cell->m_val[idx].val) + VARHDRSZ_SHORT);
+		finfo->args[1].value = PointerGetDatum((char*)ScalarVector::Decode(newVal) + VARHDRSZ_SHORT);
+		Datum result = timetzFun(finfo);
+		if (result != finfo->args[0].value) {
+			cell->m_val[idx].val = replaceVariable(context, cell->m_val[idx].val, newVal);
+		}
+	}
+}
+
 template <PGFunction timetzFun>
 ScalarVector*
 vtimetz_min_max(PG_FUNCTION_ARGS)
@@ -571,32 +609,19 @@ vtimetz_min_max(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
-	Datum		  result;
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	for(i = 0 ; i < nrows; i++)
 	{
 		cell = loc[i];
-		if(cell && IS_NULL(flag[i]) == false) //only do when not null
+		if (cell && IS_NULL(flag[i]) == false) //only do when not null
 		{
-			if(IS_NULL(cell->m_val[idx].flag))
-			{
-				cell->m_val[idx].val = addVariable(context, pVal[i]);
-				SET_NOTNULL(cell->m_val[idx].flag);
-			}
-			else
-			{
-				args[0] = PointerGetDatum((char*)ScalarVector::Decode(cell->m_val[idx].val) + VARHDRSZ_SHORT);
-				args[1] = PointerGetDatum((char*)ScalarVector::Decode(pVal[i]) + VARHDRSZ_SHORT);
-				result = timetzFun(&finfo);
-				if(result != args[0])
-				{
-					cell->m_val[idx].val = replaceVariable(context, cell->m_val[idx].val, pVal[i]);
-				}
-			}
+			TimetzMinMaxUpdateRow<timetzFun>(context, cell, idx, pVal[i], finfo);
 		}
 	}
 
@@ -621,16 +646,18 @@ vinterval_avg(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-	Datum 		  args[2];
 	Datum		  result;
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	Datum		  sum;
 	Datum			*transdatums = NULL;
 	int				ndatums;
 	Interval		*N = NULL;
 	
-	finfo.arg = &args[0];
-
 	for(i = 0 ; i < nrows; i++)
 	{
 		cell = loc[i];
@@ -662,12 +689,12 @@ vinterval_avg(PG_FUNCTION_ARGS)
 			}
 			else
 			{
-				args[0] = PointerGetDatum((char*)cell->m_val[idx].val + VARHDRSZ_SHORT);
-				args[1] = PointerGetDatum((char*)pVal[i] + VARHDRSZ_SHORT);
+                                finfo->args[0].value = PointerGetDatum((char*)cell->m_val[idx].val + VARHDRSZ_SHORT);
+                                finfo->args[1].value = PointerGetDatum((char*)pVal[i] + VARHDRSZ_SHORT);
 				
 				if(isTransition)
 				{
-					result = interval_pl(&finfo);
+                                        result = interval_pl(finfo);
 					ScalarValue     val = ScalarVector::DatumToScalar(result,INTERVALOID,false);
 					cell->m_val[idx].val = replaceVariable(context, cell->m_val[idx].val, val);
 					cell->m_val[idx + 1].val++; //count++
@@ -680,7 +707,7 @@ vinterval_avg(PG_FUNCTION_ARGS)
 					
 					N = DatumGetIntervalP(transdatums[1]);
 
-					sum = DirectFunctionCall2(interval_pl,  transdatums[0], args[0]);
+                                        sum = DirectFunctionCall2(interval_pl,  transdatums[0], finfo->args[0].value);
 					cell->m_val[idx].val = replaceVariable(context, cell->m_val[idx].val, ScalarVector::DatumToScalar(sum,INTERVALOID,false));
 
 					cell->m_val[idx + 1].val += N->time;
@@ -704,13 +731,15 @@ vinterval_avg_final(PG_FUNCTION_ARGS)
 	int		  idx  = PG_GETARG_DATUM(1);
 	ScalarValue*  m_vals = (ScalarValue*)PG_GETARG_DATUM(2);
 	uint8  *m_flag = (uint8*)PG_GETARG_DATUM(3);
-	
-	Datum	  args[2];
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 	Datum	   transdatums[2];
 	Interval	N;
 
-	finfo.arg = &args[0];
 	if(singlenode)
 	{
 		if(IS_NULL(cell->m_val[idx].flag))
@@ -719,10 +748,10 @@ vinterval_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 		
-		args[0] = PointerGetDatum((char*)cell->m_val[idx].val + VARHDRSZ_SHORT);
-		args[1] = DirectFunctionCall1(i8tod,cell->m_val[idx+1].val);
+                finfo->args[0].value = PointerGetDatum((char*)cell->m_val[idx].val + VARHDRSZ_SHORT);
+                finfo->args[1].value = DirectFunctionCall1(i8tod, cell->m_val[idx+1].val);
 		
-		*m_vals = ScalarVector::DatumToScalar(interval_div(&finfo),INTERVALOID,false);
+                *m_vals = ScalarVector::DatumToScalar(interval_div(finfo), INTERVALOID, false);
 		SET_NOTNULL(*m_flag);
 	}
 	else
@@ -733,12 +762,12 @@ vinterval_avg_final(PG_FUNCTION_ARGS)
 			return (Datum) 0;
 		}
 
-		args[0] = cell->m_val[idx].val;
-		args[1] = cell->m_val[idx+1].val;
+                finfo->args[0].value = cell->m_val[idx].val;
+                finfo->args[1].value = cell->m_val[idx+1].val;
 		
-		N.time = args[1];
+                N.time = finfo->args[1].value;
 		
-		transdatums[0] = PointerGetDatum((char*)args[0] + VARHDRSZ_SHORT);
+                transdatums[0] = PointerGetDatum((char*)finfo->args[0].value + VARHDRSZ_SHORT);
 		transdatums[1] = IntervalPGetDatum(&N);
 
 		*m_vals = PointerGetDatum(construct_array(transdatums, 2, INTERVALOID, sizeof(Interval), false, 'd'));
@@ -763,10 +792,12 @@ vctid_sop(PG_FUNCTION_ARGS)
 	Oid     typeId1 = PG_GETARG_VECTOR(0)->m_desc.typeId;
 	Oid     typeId2 = PG_GETARG_VECTOR(1)->m_desc.typeId;
 	int          i;
-	Datum 		  args[2];
-	FunctionCallInfoData finfo;
-
-	finfo.arg = &args[0];
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	if(likely(pselection == NULL))
 	{
@@ -774,10 +805,10 @@ vctid_sop(PG_FUNCTION_ARGS)
 		{
 			if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 			{
-				args[0] = typeId1 == TIDOID?parg1[i]:PointerGetDatum(parg1+i);
-				args[1] = typeId2 == TIDOID?parg2[i]:PointerGetDatum(parg2+i);
+                                finfo->args[0].value = typeId1 == TIDOID?parg1[i]:PointerGetDatum(parg1+i);
+                                finfo->args[1].value = typeId2 == TIDOID?parg2[i]:PointerGetDatum(parg2+i);
 
-				presult[i] = ctidFun(&finfo);
+                                presult[i] = ctidFun(finfo);
 				SET_NOTNULL(pflag[i]);
 			}
 			else
@@ -792,10 +823,10 @@ vctid_sop(PG_FUNCTION_ARGS)
 			{
 				if (BOTH_NOT_NULL(pflags1[i], pflags2[i]))
 				{
-					args[0] = typeId1 == TIDOID?parg1[i]:PointerGetDatum(parg1+i);
-					args[1] = typeId2 == TIDOID?parg2[i]:PointerGetDatum(parg2+i);
+                                        finfo->args[0].value = typeId1 == TIDOID?parg1[i]:PointerGetDatum(parg1+i);
+                                        finfo->args[1].value = typeId2 == TIDOID?parg2[i]:PointerGetDatum(parg2+i);
 
-					presult[i] = ctidFun(&finfo);
+                                        presult[i] = ctidFun(finfo);
 					SET_NOTNULL(pflag[i]);
 				}
 			else

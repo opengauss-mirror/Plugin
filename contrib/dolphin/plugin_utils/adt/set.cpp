@@ -918,7 +918,7 @@ Datum settonumber(PG_FUNCTION_ARGS)
 Datum settobpchar(PG_FUNCTION_ARGS)
 {
     Datum setlabels = DirectFunctionCall1(set_out, PG_GETARG_DATUM(0));
-    int32 atttypmod = PG_GETARG_INT32(1);
+    int32 atttypmod = (fcinfo->nargs > 1) ? PG_GETARG_INT32(1) : 0;
     return DirectFunctionCall3(bpcharin, PointerGetDatum(setlabels),
         ObjectIdGetDatum(BPCHAROID), Int32GetDatum(atttypmod));
 }
@@ -926,7 +926,7 @@ Datum settobpchar(PG_FUNCTION_ARGS)
 Datum settovarchar(PG_FUNCTION_ARGS)
 {
     Datum setlabels = DirectFunctionCall1(set_out, PG_GETARG_DATUM(0));
-    int32 atttypmod = PG_GETARG_INT32(1);
+    int32 atttypmod = (fcinfo->nargs > 1) ? PG_GETARG_INT32(1) : 0;
     return DirectFunctionCall3(varcharin, PointerGetDatum(setlabels),
         ObjectIdGetDatum(VARCHAROID), Int32GetDatum(atttypmod));
 }
@@ -940,7 +940,7 @@ Datum settotext(PG_FUNCTION_ARGS)
 Datum settonvarchar2(PG_FUNCTION_ARGS)
 {
     Datum setlabels = DirectFunctionCall1(set_out, PG_GETARG_DATUM(0));
-    int32 atttypmod = PG_GETARG_INT32(1);
+    int32 atttypmod = (fcinfo->nargs > 1) ? PG_GETARG_INT32(1) : 0;
     return DirectFunctionCall3(nvarchar2in, PointerGetDatum(setlabels),
         ObjectIdGetDatum(NVARCHAR2OID), Int32GetDatum(atttypmod));
 }
@@ -1421,7 +1421,7 @@ Datum varlenatoset(PG_FUNCTION_ARGS)
 {
     char* setlabels = NULL;
     bool hasLenError = false;
-    setlabels = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    setlabels = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasLenError);
     Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels, PG_GET_COLLATION());
     pfree_ext(setlabels);
     PG_RETURN_VARBIT_P(result);

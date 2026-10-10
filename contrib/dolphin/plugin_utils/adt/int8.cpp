@@ -1925,7 +1925,7 @@ Datum text_cast_int8(PG_FUNCTION_ARGS)
     int128 result;
     Oid typeOutput;
     bool typIsVarlena;
-    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+    getTypeOutputInfo(get_fn_expr_argtype(fcinfo->flinfo, 0), &typeOutput, &typIsVarlena);
     tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
     result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore));
     pfree_ext(tmp);
@@ -1937,7 +1937,7 @@ Datum varlena_cast_int8(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     int128 result;
     bool hasLenError = false;
-    tmp = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    tmp = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasLenError);
     bool hasError = false;
     (void)scanint16(tmp, fcinfo->can_ignore || !SQL_MODE_STRICT(), &result, &hasError);
     if (result > (int128)INT64_MAX || result < (int128)INT64_MIN) {

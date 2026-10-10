@@ -633,6 +633,17 @@ vtext_substr (PG_FUNCTION_ARGS)
 	return VecResult;
 }
 
+/* store the scalar function result into the vectorized result row */
+static inline void SetVecResultFromDatum(ScalarVector *VecResult, Datum result, bool isnull, int i, uint8 *ResultFlag)
+{
+	if (isnull) {
+		SET_NULL(ResultFlag[i]);
+	} else {
+		VecResult->m_vals[i] = result;
+		SET_NOTNULL(ResultFlag[i]);
+	}
+}
+
 template <PGFunction bpcharFunc>
 ScalarVector *
 vbpchar(PG_FUNCTION_ARGS)
@@ -645,8 +656,12 @@ vbpchar(PG_FUNCTION_ARGS)
 	bool			*pselection = NULL;
 	Datum			result;
 	int				i;
-	Datum 			args[3];
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 3;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
 	if (bpcharFunc == name_bpchar)
 	{
@@ -678,7 +693,6 @@ vbpchar(PG_FUNCTION_ARGS)
 	ScalarValue		*parg1 = VecParg1->m_vals;
 	uint8           *flag1 = VecParg1->m_flag;
 	uint8			*ResultFlag = VecResult->m_flag;
-	finfo.arg = &args[0];
 
     if (pselection != NULL)
     {
@@ -688,22 +702,16 @@ vbpchar(PG_FUNCTION_ARGS)
 			{
 				if (NOT_NULL(flag1[i]))
 				{
-					args[0] = ScalarVector::Decode(parg1[i]);
+                                        finfo->args[0].value = ScalarVector::Decode(parg1[i]);
 					
 					if(bpcharFunc == bpchar)
 					{
-						args[1] = parg2[i];
-						args[2] = parg3[i];
+                                                finfo->args[1].value = parg2[i];
+                                                finfo->args[2].value = parg3[i];
 					}
-					finfo.isnull = false;
-					result = bpcharFunc(&finfo);
-					if(finfo.isnull == true)
-						SET_NULL(ResultFlag[i]);
-					else
-					{
-						VecResult->m_vals[i] = result;
-						SET_NOTNULL(ResultFlag[i]);
-					}
+                                        finfo->isnull = false;
+                                        result = bpcharFunc(finfo);
+                                        SetVecResultFromDatum(VecResult, result, finfo->isnull == true, i, ResultFlag);
 				}
 				else
 				{
@@ -718,22 +726,16 @@ vbpchar(PG_FUNCTION_ARGS)
 		{
 			if (NOT_NULL(flag1[i]))
 			{
-				args[0] = ScalarVector::Decode(parg1[i]);
+                                finfo->args[0].value = ScalarVector::Decode(parg1[i]);
 				
 				if(bpcharFunc == bpchar)
 				{
-					args[1] = parg2[i];
-					args[2] = parg3[i];
+                                        finfo->args[1].value = parg2[i];
+                                        finfo->args[2].value = parg3[i];
 				}
-				finfo.isnull = false;
-				result = bpcharFunc(&finfo);
-				if(finfo.isnull == true)
-					SET_NULL(ResultFlag[i]);
-				else
-				{
-					VecResult->m_vals[i] = result;
-					SET_NOTNULL(ResultFlag[i]);
-				}
+                                finfo->isnull = false;
+                                result = bpcharFunc(finfo);
+                                SetVecResultFromDatum(VecResult, result, finfo->isnull == true, i, ResultFlag);
 			}
 			else
 			{
@@ -762,11 +764,14 @@ vtrim1(PG_FUNCTION_ARGS)
 	uint8			*ResultFlag = VecResult->m_flag;
 	Datum			result;
 	int				i;
-	Datum 			args[1];
-	FunctionCallInfoData finfo;
+        const int scalarNargs = 2;
+        LOCAL_FCINFO(finfo, scalarNargs);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
+            finfo->args[argIndex].isnull = false;
+        }
 
-	finfo.arg = &args[0];
-	finfo.flinfo = fcinfo->flinfo;
+        finfo->flinfo = fcinfo->flinfo;
 
 	if (pselection != NULL)
 	{
@@ -780,16 +785,10 @@ vtrim1(PG_FUNCTION_ARGS)
 				}
 				else
 				{
-					args[0] = ScalarVector::Decode(parg1[i]);
-					finfo.isnull = false;
-					result = trim1Func(&finfo);
-					if(unlikely(finfo.isnull == true))
-						SET_NULL(ResultFlag[i]);
-					else
-					{
-						VecResult->m_vals[i] = result;
-						SET_NOTNULL(ResultFlag[i]);
-					}
+                                        finfo->args[0].value = ScalarVector::Decode(parg1[i]);
+                                        finfo->isnull = false;
+                                        result = trim1Func(finfo);
+                                        SetVecResultFromDatum(VecResult, result, finfo->isnull == true, i, ResultFlag);
 				}
 			}
 		}
@@ -804,16 +803,10 @@ vtrim1(PG_FUNCTION_ARGS)
 			}
 			else
 			{
-				args[0] = ScalarVector::Decode(parg1[i]);
-				finfo.isnull = false;
-				result = trim1Func(&finfo);
-				if(unlikely(finfo.isnull == true))
-					SET_NULL(ResultFlag[i]);
-				else
-				{
-					VecResult->m_vals[i] = result;
-					SET_NOTNULL(ResultFlag[i]);
-				}
+                                finfo->args[0].value = ScalarVector::Decode(parg1[i]);
+                                finfo->isnull = false;
+                                result = trim1Func(finfo);
+                                SetVecResultFromDatum(VecResult, result, finfo->isnull == true, i, ResultFlag);
 			}
 		}
 	}

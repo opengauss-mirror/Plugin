@@ -49,7 +49,7 @@
 #define CHAR_LENGTH_FUNC_OID 1372
 #define CHARACTER_LENGTH_FUNC_OID 1367
 
-int bpcharcase(PG_FUNCTION_ARGS);
+static inline int bpcharcase(PG_FUNCTION_ARGS);
 
 /* common code for bpchartypmodin and varchartypmodin */
 static int32 anychar_typmodin(ArrayType* ta, const char* typname)
@@ -799,12 +799,7 @@ Datum varchartypmodout(PG_FUNCTION_ARGS)
     PG_RETURN_CSTRING(anychar_typmodout(typmod));
 }
 
-/*****************************************************************************
- * Exported functions
- *****************************************************************************/
-
-/* "True" length (not counting trailing blanks) of a BpChar */
-int bcTruelen(BpChar* arg)
+static inline int bcTruelen_internal(BpChar* arg)
 {
     char* s = VARDATA_ANY(arg);
     int i;
@@ -812,10 +807,21 @@ int bcTruelen(BpChar* arg)
 
     len = VARSIZE_ANY_EXHDR(arg);
     for (i = len - 1; i >= 0; i--) {
-        if (s[i] != ' ')
+        if (s[i] != ' ') {
             break;
+        }
     }
     return i + 1;
+}
+
+/*****************************************************************************
+ * Exported functions
+ *****************************************************************************/
+
+/* "True" length (not counting trailing blanks) of a BpChar */
+int bcTruelen(BpChar* arg)
+{
+    return bcTruelen_internal(arg);
 }
 
 /*
@@ -851,7 +857,7 @@ Datum bpcharlen(PG_FUNCTION_ARGS)
         len = VARSIZE_ANY_EXHDR(arg);
     } else
 #endif
-        len = bcTruelen(arg);
+        len = bcTruelen_internal(arg);
 
     /* in multibyte encoding, convert to number of characters */
     if (pg_database_encoding_max_length() != 1 && (fcinfo->flinfo->fn_oid == CHAR_LENGTH_FUNC_OID ||
@@ -912,8 +918,8 @@ Datum bpchareq(PG_FUNCTION_ARGS)
     }
 
     int len1, len2;
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
     /*
      * Since we only care about equality or not-equality, we can avoid all the
      * expense of strcoll() here, and just do bitwise comparison.
@@ -939,15 +945,14 @@ Datum bpcharne(PG_FUNCTION_ARGS)
 
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
-    int len1, len2;
-
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
 
     /*
      * Since we only care about equality or not-equality, we can avoid all the
      * expense of strcoll() here, and just do bitwise comparison.
      */
+    int len1, len2;
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
     if (len1 != len2)
         result = true;
     else
@@ -959,15 +964,15 @@ Datum bpcharne(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(result);
 }
 
-int bpcharcase(PG_FUNCTION_ARGS)
+static inline int bpcharcase(PG_FUNCTION_ARGS)
 {
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
     int len1, len2;
     int cmp;
 
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
 
     cmp = varstr_cmp(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2, PG_GET_COLLATION());
 
@@ -1005,6 +1010,44 @@ Datum bpcharcmp(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(cmp);
 }
 
+Datum bpcharcmp_c_locale(PG_FUNCTION_ARGS)
+{
+    BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
+    BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
+    int len1 = bcTruelen_internal(arg1);
+    int len2 = bcTruelen_internal(arg2);
+    int cmp = varstr_cmp_c(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2);
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+    PG_RETURN_INT32(cmp);
+}
+
+Datum bpcharcmp_b_format(PG_FUNCTION_ARGS)
+{
+    BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
+    BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
+    int len1 = bcTruelen_internal(arg1);
+    int len2 = bcTruelen_internal(arg2);
+    int cmp = varstr_cmp_by_builtin_collations(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2,
+                                               PG_GET_COLLATION());
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+    PG_RETURN_INT32(cmp);
+}
+
+Datum bpcharcmp_locale(PG_FUNCTION_ARGS)
+{
+    BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
+    BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
+    int len1 = bcTruelen_internal(arg1);
+    int len2 = bcTruelen_internal(arg2);
+    int cmp = varstr_cmp_locale(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2,
+                                PG_GET_COLLATION());
+    PG_FREE_IF_COPY(arg1, 0);
+    PG_FREE_IF_COPY(arg2, 1);
+    PG_RETURN_INT32(cmp);
+}
+
 Datum bpchar_sortsupport(PG_FUNCTION_ARGS)
 {
     SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
@@ -1028,8 +1071,8 @@ Datum bpchar_larger(PG_FUNCTION_ARGS)
     int len1, len2;
     int cmp;
 
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
 
     cmp = varstr_cmp(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2, PG_GET_COLLATION());
 
@@ -1043,8 +1086,8 @@ Datum bpchar_smaller(PG_FUNCTION_ARGS)
     int len1, len2;
     int cmp;
 
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
 
     cmp = varstr_cmp(VARDATA_ANY(arg1), len1, VARDATA_ANY(arg2), len2, PG_GET_COLLATION());
 
@@ -1165,7 +1208,7 @@ Datum hashbpchar(PG_FUNCTION_ARGS)
     Oid collid = PG_GET_COLLATION();
 
     keydata = VARDATA_ANY(key);
-    keylen = bcTruelen(key);
+    keylen = bcTruelen_internal(key);
 
     if (is_b_format_collation(collid)) {
         result = hash_text_by_builtin_collations((unsigned char *)VARDATA_ANY(key), keylen, collid);
@@ -1191,8 +1234,8 @@ static int internal_bpchar_pattern_compare(BpChar* arg1, BpChar* arg2)
     int result;
     int len1, len2;
 
-    len1 = bcTruelen(arg1);
-    len2 = bcTruelen(arg2);
+    len1 = bcTruelen_internal(arg1);
+    len2 = bcTruelen_internal(arg2);
 
     result = memcmp(VARDATA_ANY(arg1), VARDATA_ANY(arg2), Min(len1, len2));
     if (result != 0)
@@ -2207,7 +2250,8 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
         for (k = 0; k < nvalues; k++) {
             if (pselection[k]) {
                 if (NOT_NULL(vflag[k])) {
-                    len = getTrueLen ? bcTruelen((BpChar*)varg->m_vals[k]) : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
+                    len = getTrueLen ? bcTruelen_internal((BpChar*)varg->m_vals[k])
+                                     : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
                     if (eml != 1)
                         len = pg_mbstrlen_with_len_eml(VARDATA_ANY(varg->m_vals[k]), len, eml);
                     vresult->m_vals[k] = Int32GetDatum(len);
@@ -2220,7 +2264,7 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
     } else {
         for (k = 0; k < nvalues; k++) {
             if (NOT_NULL(vflag[k])) {
-                len = getTrueLen ? bcTruelen((BpChar*)varg->m_vals[k]) : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
+                len = getTrueLen ? bcTruelen_internal((BpChar*)varg->m_vals[k]) : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
                 if (eml != 1)
                     len = pg_mbstrlen_with_len_eml(VARDATA_ANY(varg->m_vals[k]), len, eml);
                 vresult->m_vals[k] = Int32GetDatum(len);

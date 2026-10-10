@@ -2541,14 +2541,14 @@ Datum _agtype_build_vertex(PG_FUNCTION_ARGS)
     agtype *vertex;
 
     /* handles null */
-    if (fcinfo->argnull[0])
+    if (fcinfo->args[0].isnull)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("_agtype_build_vertex() graphid cannot be NULL")));
     }
 
-    if (fcinfo->argnull[1])
+    if (fcinfo->args[1].isnull)
     {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("_agtype_build_vertex() label cannot be NULL")));
@@ -2559,7 +2559,7 @@ Datum _agtype_build_vertex(PG_FUNCTION_ARGS)
     label = agtype_label_to_cstring(label_agtype,
                                     "_agtype_build_vertex()");
 
-    if (fcinfo->argnull[2])
+    if (fcinfo->args[2].isnull)
     {
         agtype_build_state *bstate = init_agtype_build_state(0, AGT_FOBJECT);
         properties = build_agtype(bstate);
@@ -2623,7 +2623,7 @@ Datum _agtype_build_edge(PG_FUNCTION_ARGS)
     agtype *properties;
 
     /* process graph id */
-    if (fcinfo->argnull[0])
+    if (fcinfo->args[0].isnull)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2633,7 +2633,7 @@ Datum _agtype_build_edge(PG_FUNCTION_ARGS)
     id = AG_GETARG_GRAPHID(0);
 
     /* process label */
-    if (fcinfo->argnull[3])
+    if (fcinfo->args[3].isnull)
     {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("_agtype_build_edge() label cannot be NULL")));
@@ -2643,7 +2643,7 @@ Datum _agtype_build_edge(PG_FUNCTION_ARGS)
     label = agtype_label_to_cstring(label_agtype, "_agtype_build_edge()");
 
     /* process end_id */
-    if (fcinfo->argnull[2])
+    if (fcinfo->args[2].isnull)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2653,7 +2653,7 @@ Datum _agtype_build_edge(PG_FUNCTION_ARGS)
     end_id = AG_GETARG_GRAPHID(2);
 
     /* process start_id */
-    if (fcinfo->argnull[1])
+    if (fcinfo->args[1].isnull)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2665,7 +2665,7 @@ Datum _agtype_build_edge(PG_FUNCTION_ARGS)
     /* process properties */
 
     /* if the properties object is null, push an empty object */
-    if (fcinfo->argnull[4])
+    if (fcinfo->args[4].isnull)
     {
         agtype_build_state *bstate = init_agtype_build_state(0, AGT_FOBJECT);
         properties = build_agtype(bstate);
@@ -8414,15 +8414,15 @@ Datum age_tolower(PG_FUNCTION_ARGS)
 
 static text *call_trim_function(PGFunction trim_function, text *input)
 {
-    FunctionCallInfoData trim_fcinfo;
+    LOCAL_FCINFO(trim_fcinfo, 1);
     Datum result;
 
-    InitFunctionCallInfoData(trim_fcinfo, NULL, 1, InvalidOid, NULL, NULL);
-    trim_fcinfo.arg[0] = PointerGetDatum(input);
-    trim_fcinfo.argnull[0] = false;
+    InitFunctionCallInfoData(*trim_fcinfo, NULL, 1, InvalidOid, NULL, NULL);
+    trim_fcinfo->args[0].value = PointerGetDatum(input);
+    trim_fcinfo->args[0].isnull = false;
 
-    result = (*trim_function)(&trim_fcinfo);
-    if (trim_fcinfo.isnull || DatumGetPointer(result) == NULL)
+    result = (*trim_function)(trim_fcinfo);
+    if (trim_fcinfo->isnull || DatumGetPointer(result) == NULL)
     {
         return cstring_to_text_with_len("", 0);
     }

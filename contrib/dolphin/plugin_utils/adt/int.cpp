@@ -249,7 +249,10 @@ Datum int2vectorout(PG_FUNCTION_ARGS)
 Datum int2vectorrecv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
-    FunctionCallInfoData locfcinfo;
+    /* array_recv takes: the buffer, the element type and the typmod */
+    const int arrayRecvNargs = 3;
+    const int typmodArgIdx = 2;
+    LOCAL_FCINFO(locfcinfo, arrayRecvNargs);
     int2vector* result = NULL;
 
     /*
@@ -258,18 +261,18 @@ Datum int2vectorrecv(PG_FUNCTION_ARGS)
      * fcinfo->flinfo->fn_extra.  So we need to pass it our own flinfo
      * parameter.
      */
-    InitFunctionCallInfoData(locfcinfo, fcinfo->flinfo, 3, InvalidOid, NULL, NULL);
+    InitFunctionCallInfoData(*locfcinfo, fcinfo->flinfo, arrayRecvNargs, InvalidOid, NULL, NULL);
 
-    locfcinfo.arg[0] = PointerGetDatum(buf);
-    locfcinfo.arg[1] = ObjectIdGetDatum(INT2OID);
-    locfcinfo.arg[2] = Int32GetDatum(-1);
-    locfcinfo.argnull[0] = false;
-    locfcinfo.argnull[1] = false;
-    locfcinfo.argnull[2] = false;
+    locfcinfo->args[0].value = PointerGetDatum(buf);
+    locfcinfo->args[1].value = ObjectIdGetDatum(INT2OID);
+    locfcinfo->args[typmodArgIdx].value = Int32GetDatum(-1);
+    locfcinfo->args[0].isnull = false;
+    locfcinfo->args[1].isnull = false;
+    locfcinfo->args[typmodArgIdx].isnull = false;
 
-    result = (int2vector*)DatumGetPointer(array_recv(&locfcinfo));
+    result = (int2vector*)DatumGetPointer(array_recv(locfcinfo));
 
-    Assert(!locfcinfo.isnull);
+    Assert(!locfcinfo->isnull);
 
     /* sanity checks: int2vector must be 1-D, 0-based, no nulls */
     if (ARR_NDIM(result) != 1 || ARR_HASNULL(result) || ARR_ELEMTYPE(result) != INT2OID || ARR_LBOUND(result)[0] != 0)

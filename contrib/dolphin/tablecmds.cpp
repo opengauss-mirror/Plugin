@@ -48,6 +48,7 @@
 #include "catalog/namespace.h"
 #include "catalog/objectaccess.h"
 #include "catalog/pg_attrdef.h"
+#include "catalog/pg_am.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_constraint.h"
 #include "catalog/pg_depend.h"
@@ -16502,6 +16503,17 @@ static ObjectAddress ATExecAddIndexConstraint(AlteredTableInfo* tab, Relation re
     Assert(OidIsValid(index_oid));
     Assert(stmt->isconstraint);
 
+    /* Ustore tables do not support deferrable constraints. */
+    if (rel->rd_tam_ops == TableAmUstore && stmt->deferrable == true) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmodule(MOD_COMMAND),
+                errmsg("Ustore table does not support to set deferrable."),
+                errdetail("N/A"),
+                errcause("feature not supported"),
+                erraction("check constraints of columns")));
+    }
+
     indexRel = index_open(index_oid, AccessShareLock);
 
     indexName = pstrdup(RelationGetRelationName(indexRel));
@@ -18011,7 +18023,7 @@ static void validateForeignKeyConstraint(char* conname, Relation rel, Relation p
     scan = tableam_scan_begin(rel, SnapshotNow, 0, NULL);
 
     while ((tuple = (HeapTuple) tableam_scan_getnexttuple(scan, ForwardScanDirection)) != NULL) {
-        FunctionCallInfoData fcinfo;
+        LOCAL_FCINFO(fcinfo, 2);
         TriggerData trigdata;
 
         /*
@@ -18019,7 +18031,7 @@ static void validateForeignKeyConstraint(char* conname, Relation rel, Relation p
          *
          * No parameters are passed, but we do set a context
          */
-        rc = memset_s(&fcinfo, sizeof(fcinfo), 0, sizeof(fcinfo));
+        rc = memset_s(fcinfo, SizeForFunctionCallInfo(2), 0, SizeForFunctionCallInfo(2));
         securec_check(rc, "\0", "\0");
         rc = memset_s(&trigdata, sizeof(trigdata), 0, sizeof(trigdata));
         securec_check(rc, "\0", "\0");
@@ -18035,9 +18047,9 @@ static void validateForeignKeyConstraint(char* conname, Relation rel, Relation p
         trigdata.tg_trigtuplebuf = scan->rs_cbuf;
         trigdata.tg_newtuplebuf = InvalidBuffer;
 
-        fcinfo.context = (Node*)&trigdata;
+        fcinfo->context = (Node*)&trigdata;
 
-        RI_FKey_check_ins(&fcinfo);
+        RI_FKey_check_ins(fcinfo);
     }
 
     tableam_scan_end(scan);
@@ -20771,13 +20783,11 @@ void ATExecChangeOwner(Oid relationOid, Oid newOwnerId, bool recursing, LOCKMODE
                 UserData* newUserdata = GetUserDataFromHTab(newOwnerId, false);
 
                 FunctionCallInfo fcinfo =
-                    (FunctionCallInfo)palloc0(sizeof(FunctionCallInfoData) + sizeof(bool) + sizeof(Datum));
+                    (FunctionCallInfo)palloc0(SizeForFunctionCallInfo(1));
 
                 fcinfo->nargs = 1;
-                fcinfo->argnull = (bool*)((char*)fcinfo + sizeof(FunctionCallInfoData));
-                fcinfo->argnull[0] = false;
-                fcinfo->arg = (Datum*)((char*)fcinfo->argnull + sizeof(bool));
-                fcinfo->arg[0] = UInt32GetDatum(relationOid);
+                fcinfo->args[0].isnull = false;
+                fcinfo->args[0].value = UInt32GetDatum(relationOid);
 
                 int64 tableSize = DatumGetInt64(pg_total_relation_size(fcinfo));
 
@@ -21600,6 +21610,58 @@ bool static transformCompressedOptions(Relation rel, bytea* relOption, List* def
 /*
  * Set, reset, or replace reloptions.
  */
+static bool GetVectorPayloadStorageReloption(List *options, bool *enabled)
+{
+    ListCell *cell = NULL;
+
+    foreach (cell, options) {
+        DefElem *def = (DefElem *)lfirst(cell);
+
+        if (pg_strcasecmp(def->defname, "enable_vector_payload_storage") == 0) {
+            *enabled = defGetBoolean(def);
+            return true;
+        }
+    }
+    return false;
+}
+
+static void ForbidVectorPayloadStorageReloptionAlter(Relation rel, List *defList,
+    AlterTableType operation, Datum oldOptions, bool oldOptionsIsNull)
+{
+    Oid relam;
+    bool newEnabled = false;
+    bool oldEnabled = false;
+    bool specified;
+
+    if (!RelationIsIndex(rel) || rel->rd_rel == NULL) {
+        return;
+    }
+    relam = rel->rd_rel->relam;
+    if (relam != HNSW_AM_OID && relam != IVFFLAT_AM_OID && relam != DISKANN_AM_OID) {
+        return;
+    }
+    specified = GetVectorPayloadStorageReloption(defList, &newEnabled);
+    if (operation != AT_ReplaceRelOptions) {
+        if (specified) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("cannot alter \"enable_vector_payload_storage\" for an existing vector index"),
+                errhint("Rebuild the index with the desired vector payload storage setting.")));
+        }
+        return;
+    }
+    if (!oldOptionsIsNull) {
+        List *options = untransformRelOptions(oldOptions);
+
+        (void)GetVectorPayloadStorageReloption(options, &oldEnabled);
+        list_free_deep(options);
+    }
+    if (oldEnabled != newEnabled) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("cannot alter \"enable_vector_payload_storage\" for an existing vector index"),
+            errhint("Rebuild the index with the desired vector payload storage setting.")));
+    }
+}
+
 static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType operation, LOCKMODE lockmode, bool innerset, AlteredTableInfo* tab)
 {
     Oid relid;
@@ -21676,6 +21738,8 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
         psortTid = DatumGetObjectId(SysCacheGetAttr(RELOID, tuple, Anum_pg_class_relcudescrelid, &isnull));
     }
 
+    datum = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+    ForbidVectorPayloadStorageReloptionAlter(rel, defList, operation, datum, isnull);
     if (operation == AT_ReplaceRelOptions) {
         /*
          * If we're supposed to replace the reloptions list, we just pretend
@@ -21683,9 +21747,6 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
          */
         datum = (Datum)0;
         isnull = true;
-    } else {
-        /* Get the old reloptions */
-        datum = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
     }
     if (rel->rd_rel->relkind == RELKIND_RELATION) {
         oldOptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);

@@ -21,6 +21,7 @@
 #include <ctype.h>
 
 #include "catalog/pg_collation.h"
+#include "catalog/pg_collation_fn.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "utils/builtins.h"
@@ -187,13 +188,29 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
         return MB_MatchText(s, slen, p, plen, 0, true);
 }
 
-int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
+static int match_text_with_collation_internal(char* s, int slen, char* p, int plen, Oid collation)
 {
     if (is_b_format_collation(collation)) {
         return match_text_by_builtin_collations((unsigned char*)s, slen, (unsigned char*)p, plen, collation);
     }
 
     return GenericMatchText(s, slen, p, plen);
+}
+
+/* Fused strict calls still need the collation's multibyte character boundaries. */
+int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
+{
+    int db_encoding = GetDatabaseEncoding();
+    int func_encoding = get_valid_charset_by_collation(collation);
+    if (func_encoding == db_encoding) {
+        return match_text_with_collation_internal(s, slen, p, plen, collation);
+    }
+
+    int result;
+    DB_ENCODING_SWITCH_TO(func_encoding);
+    result = match_text_with_collation_internal(s, slen, p, plen, collation);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
 }
 
 static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool ifbpchar)

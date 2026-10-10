@@ -44,6 +44,7 @@
 #include "utils/int8.h"
 #include "utils/sortsupport.h"
 #include "executor/node/nodeSort.h"
+#include "plugin_utils/fmgr_hook.h"
 #include "plugin_utils/my_locale.h"
 #include "pgxc/groupmgr.h"
 #include "plugin_postgres.h"
@@ -4350,28 +4351,28 @@ Datum text_uint8(PG_FUNCTION_ARGS)
 Datum text_cast_uint1(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    Oid typeoid = fcinfo->argTypes[0];
+    Oid typeoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     PG_RETURN_UINT8(UnknownUintInternal(txt, SCHAR_MIN, UCHAR_MAX, "tinyint", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint2(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    Oid typeoid = fcinfo->argTypes[0];
+    Oid typeoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     PG_RETURN_UINT16(UnknownUintInternal(txt, SHRT_MIN, USHRT_MAX, "smallint", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint4(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    Oid typeoid = fcinfo->argTypes[0];
+    Oid typeoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     PG_RETURN_UINT32(UnknownUintInternal(txt, INT_MIN, UINT_MAX, "int", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint8(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    Oid typeoid = fcinfo->argTypes[0];
+    Oid typeoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     PG_RETURN_UINT64(UnknownUintInternal(txt, LONG_MIN, ULONG_MAX, "bigint", fcinfo->can_ignore, typeoid));
 }
 
@@ -5159,7 +5160,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui1);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui1(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui1(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     return DirectFunctionCall1Coll(f8_cast_ui1, InvalidOid, val, fcinfo->can_ignore);
 }
@@ -5168,7 +5169,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui2);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui2(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui2(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     return DirectFunctionCall1Coll(f8_cast_ui2, InvalidOid, val, fcinfo->can_ignore);
 }
@@ -5177,7 +5178,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui4);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui4(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui4(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     return DirectFunctionCall1Coll(f8_cast_ui4, InvalidOid, val, fcinfo->can_ignore);
 }
@@ -5186,7 +5187,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
 }
@@ -5195,7 +5196,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int1);
 extern "C" DLL_PUBLIC Datum varlena_cast_int1(PG_FUNCTION_ARGS);
 Datum varlena_cast_int1(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     PG_RETURN_INT8(DirectFunctionCall1Coll(f8toi1, InvalidOid, val, fcinfo->can_ignore));
 }
@@ -5204,7 +5205,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int2);
 extern "C" DLL_PUBLIC Datum varlena_cast_int2(PG_FUNCTION_ARGS);
 Datum varlena_cast_int2(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     PG_RETURN_INT16(DirectFunctionCall1Coll(dtoi2, InvalidOid, val, fcinfo->can_ignore));
 }
@@ -5213,7 +5214,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int4);
 extern "C" DLL_PUBLIC Datum varlena_cast_int4(PG_FUNCTION_ARGS);
 Datum varlena_cast_int4(PG_FUNCTION_ARGS)
 {
-    fcinfo->ccontext = COERCION_EXPLICIT;
+    FCINFO_SET_COERCION_CONTEXT(fcinfo, COERCION_EXPLICIT);
     Datum val = Varlena2Float8(fcinfo);
     PG_RETURN_INT32(DirectFunctionCall1Coll(dtoi4, InvalidOid, val, fcinfo->can_ignore));
 }

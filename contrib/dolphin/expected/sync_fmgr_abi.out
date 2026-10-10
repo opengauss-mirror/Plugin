@@ -1,0 +1,196 @@
+-- Preserve Dolphin semantics across the Server fmgr ABI migration.
+create schema sync_fmgr_abi;
+set current_schema = sync_fmgr_abi;
+set dolphin.sql_mode = '';
+select concat('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l') = 'abcdefghijkl' as many_args;
+ many_args 
+-----------
+ t
+(1 row)
+
+select least(3, 1, 2) = 1 as least_ok, greatest(3, 1, 2) = 3 as greatest_ok;
+ least_ok | greatest_ok 
+----------+-------------
+ t        | t
+(1 row)
+
+select least(1, null) is null as least_null, greatest(null, 1) is null as greatest_null;
+ least_null | greatest_null 
+------------+---------------
+ t          | t
+(1 row)
+
+select cast('42' as unsigned) = 42 as unsigned_cast, cast('42' as signed) = 42 as signed_cast;
+ unsigned_cast | signed_cast 
+---------------+-------------
+ t             | t
+(1 row)
+
+select round(123.456::numeric(10,3), 2) = 123.46::numeric(10,2) as numeric_round;
+ numeric_round 
+---------------
+ t
+(1 row)
+
+select format_type('integer[]'::regtype, null) as integer_array_type;
+ integer_array_type 
+--------------------
+ integer[]
+(1 row)
+
+-- Binary casts have one argument; the input-function typmod slot does not exist.
+select pg_catalog.binary_timestamp('2008-04-01 12:34:56.123456'::binary(26)) =
+       '2008-04-01 12:34:56.123456'::timestamp without time zone as binary_timestamp_ok;
+ binary_timestamp_ok 
+---------------------
+ t
+(1 row)
+
+select pg_catalog.binary_timestamptz('2008-04-01 12:34:56.123456'::binary(26)) =
+       '2008-04-01 12:34:56.123456'::timestamp with time zone as binary_timestamptz_ok;
+ binary_timestamptz_ok 
+-----------------------
+ t
+(1 row)
+
+select quarter('2008-04-01'::binary(10)) = 2 as binary_quarter_ok,
+       weekofyear('2008-04-01'::binary(10)) = 14 as binary_weekofyear_ok;
+ binary_quarter_ok | binary_weekofyear_ok 
+-------------------+----------------------
+ t                 | t
+(1 row)
+
+select pg_catalog.binary_timestamp(null::binary) is null as binary_timestamp_null,
+       pg_catalog.binary_timestamptz(null::binary) is null as binary_timestamptz_null;
+ binary_timestamp_null | binary_timestamptz_null 
+-----------------------+-------------------------
+ t                     | t
+(1 row)
+
+-- Three-argument timestamp input functions must still honor the supplied precision.
+select '2008-04-01 12:34:56.123456'::timestamp(3) without time zone =
+       '2008-04-01 12:34:56.123'::timestamp without time zone as timestamp_typmod_ok;
+ timestamp_typmod_ok 
+---------------------
+ t
+(1 row)
+
+select '2008-04-01 12:34:56.123456'::timestamp(3) with time zone =
+       '2008-04-01 12:34:56.123'::timestamp with time zone as timestamptz_typmod_ok;
+ timestamptz_typmod_ok 
+-----------------------
+ t
+(1 row)
+
+create table char_values (v char(5));
+insert into char_values values ('a');
+select length(v) = 1 as trimmed_char from char_values;
+ trimmed_char 
+--------------
+ t
+(1 row)
+
+set dolphin.sql_mode = 'pad_char_to_full_length';
+select length(v) = 5 as padded_char from char_values;
+ padded_char 
+-------------
+ t
+(1 row)
+
+set dolphin.sql_mode = '';
+create function add_nullable(a int, b int) returns int as $$
+begin
+    return coalesce(a, 0) + coalesce(b, 0);
+end;
+$$ language plpgsql;
+select add_nullable(2, 3) = 5 as pl_args, add_nullable(null, 3) = 3 as pl_null;
+ pl_args | pl_null 
+---------+---------
+ t       | t
+(1 row)
+
+create function add_many(a int, b int, c int, d int, e int, f int,
+                        g int, h int, i int, j int, k int, l int) returns int as $$
+begin
+    return a + b + c + d + e + f + g + h + i + j + k + l;
+end;
+$$ language plpgsql;
+select add_many(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12) = 78 as pl_many_args;
+ pl_many_args 
+--------------
+ t
+(1 row)
+
+create table numeric_vectors (id int, a numeric(20,4), b numeric(20,4)) with (orientation = column);
+insert into numeric_vectors values (1, 10.5, null), (2, 21, 2), (3, null, 3), (4, 8, 4);
+set enable_vector_engine = on;
+select id, a / b as quotient from numeric_vectors order by id;
+ id |      quotient       
+----+---------------------
+  1 |                    
+  2 | 10.5000000000000000
+  3 |                    
+  4 |  2.0000000000000000
+(4 rows)
+
+select sum(a) = 39.5 as vector_sum, min(a) = 8 as vector_min, max(a) = 21 as vector_max from numeric_vectors;
+ vector_sum | vector_min | vector_max 
+------------+------------+------------
+ t          | t          | t
+(1 row)
+
+reset enable_vector_engine;
+select count(*) = 2 as union_limit from
+    (select id from numeric_vectors union all select id from numeric_vectors limit 2) s;
+ union_limit 
+-------------
+ t
+(1 row)
+
+-- RAW output grows past the one-byte varlena header limit at 64 input bytes.
+set dolphin.b_compatibility_mode = off;
+create table raw_values (v raw(100));
+insert into raw_values values (hextoraw(repeat('AB', 64)));
+select length(rawtohex(v)) = 128 as raw_hex_boundary from raw_values;
+ raw_hex_boundary 
+------------------
+ t
+(1 row)
+
+reset dolphin.b_compatibility_mode;
+select count(*) > 0 as os_memory_view from pv_os_run_info();
+ os_memory_view 
+----------------
+ t
+(1 row)
+
+select count(*) > 0 as instance_time_view from pv_instance_time();
+ instance_time_view 
+--------------------
+ t
+(1 row)
+
+-- Validate existing rows through the migrated trigger FunctionCallInfo pointer.
+create table fk_parent (id int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "fk_parent_pkey" for table "fk_parent"
+create table fk_child (pid int);
+insert into fk_parent values (1);
+insert into fk_child values (1);
+alter table fk_child add constraint fk_sync foreign key (pid) references fk_parent (id);
+select count(*) = 1 as validated_fk_rows from fk_child;
+ validated_fk_rows 
+-------------------
+ t
+(1 row)
+
+reset dolphin.sql_mode;
+reset current_schema;
+drop schema sync_fmgr_abi cascade;
+NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table sync_fmgr_abi.char_values
+drop cascades to function sync_fmgr_abi.add_nullable(integer,integer)
+drop cascades to function sync_fmgr_abi.add_many(integer,integer,integer,integer,integer,integer,integer,integer,integer,integer,integer,integer)
+drop cascades to table sync_fmgr_abi.numeric_vectors
+drop cascades to table sync_fmgr_abi.raw_values
+drop cascades to table sync_fmgr_abi.fk_parent
+drop cascades to table sync_fmgr_abi.fk_child

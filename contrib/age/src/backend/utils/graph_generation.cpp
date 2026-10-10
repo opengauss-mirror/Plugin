@@ -259,21 +259,21 @@ static void call_create_complete_graph(Datum graph_name, Datum graph_size,
                                        Datum edge_label, Datum node_label,
                                        bool node_label_is_null)
 {
-    FunctionCallInfoData complete_graph_fcinfo;
+    LOCAL_FCINFO(complete_graph_fcinfo, COMPLETE_GRAPH_ARGUMENT_COUNT);
 
-    InitFunctionCallInfoData(complete_graph_fcinfo, NULL,
+    InitFunctionCallInfoData(*complete_graph_fcinfo, NULL,
                              COMPLETE_GRAPH_ARGUMENT_COUNT, InvalidOid,
                              NULL, NULL);
-    complete_graph_fcinfo.arg[GRAPH_NAME_ARGUMENT_INDEX] = graph_name;
-    complete_graph_fcinfo.arg[GRAPH_SIZE_ARGUMENT_INDEX] = graph_size;
-    complete_graph_fcinfo.arg[EDGE_LABEL_ARGUMENT_INDEX] = edge_label;
-    complete_graph_fcinfo.arg[NODE_LABEL_ARGUMENT_INDEX] = node_label;
-    complete_graph_fcinfo.argnull[GRAPH_NAME_ARGUMENT_INDEX] = false;
-    complete_graph_fcinfo.argnull[GRAPH_SIZE_ARGUMENT_INDEX] = false;
-    complete_graph_fcinfo.argnull[EDGE_LABEL_ARGUMENT_INDEX] = false;
-    complete_graph_fcinfo.argnull[NODE_LABEL_ARGUMENT_INDEX] = node_label_is_null;
+    complete_graph_fcinfo->args[GRAPH_NAME_ARGUMENT_INDEX].value = graph_name;
+    complete_graph_fcinfo->args[GRAPH_SIZE_ARGUMENT_INDEX].value = graph_size;
+    complete_graph_fcinfo->args[EDGE_LABEL_ARGUMENT_INDEX].value = edge_label;
+    complete_graph_fcinfo->args[NODE_LABEL_ARGUMENT_INDEX].value = node_label;
+    complete_graph_fcinfo->args[GRAPH_NAME_ARGUMENT_INDEX].isnull = false;
+    complete_graph_fcinfo->args[GRAPH_SIZE_ARGUMENT_INDEX].isnull = false;
+    complete_graph_fcinfo->args[EDGE_LABEL_ARGUMENT_INDEX].isnull = false;
+    complete_graph_fcinfo->args[NODE_LABEL_ARGUMENT_INDEX].isnull = node_label_is_null;
 
-    create_complete_graph(&complete_graph_fcinfo);
+    create_complete_graph(complete_graph_fcinfo);
 }
 
 /*

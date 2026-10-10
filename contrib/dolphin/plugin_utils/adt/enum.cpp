@@ -289,7 +289,7 @@ Datum varlena_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = NULL;
     bool hasLenError = false;
-    tmp = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    tmp = AnyElementGetCString(get_fn_expr_argtype(fcinfo->flinfo, 0), PG_GETARG_DATUM(0), &hasLenError);
     Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
                                            CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);

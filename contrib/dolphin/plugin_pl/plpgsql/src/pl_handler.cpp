@@ -1069,9 +1069,9 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
         /* copy cursor option on in-parameter to function body's cursor */
         for (int i = 0; i < fun_arg; i++) {
             int dno = i + cursor_step + pkgDatumsNumber;
-            if (fcinfo->argTypes[i] == REFCURSOROID && fcinfo->refcursor_data.argCursor != NULL && 
-                func->datums[dno]->dtype == PLPGSQL_DTYPE_VAR) {
-                Cursor_Data* arg_cursor = &fcinfo->refcursor_data.argCursor[i];
+            if (get_fn_expr_argtype(fcinfo->flinfo, i) == REFCURSOROID && fcinfo->extra != NULL &&
+                fcinfo->extra->refcursor_data.argCursor != NULL && func->datums[dno]->dtype == PLPGSQL_DTYPE_VAR) {
+                Cursor_Data* arg_cursor = &fcinfo->extra->refcursor_data.argCursor[i];
                 ExecCopyDataToDatum(func->datums, dno, arg_cursor);
                 cursor_step += 4;
             }
@@ -1233,9 +1233,10 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
         }
         for (int i = 0; i < fun_arg; i++) {
             int dno = i + cursor_step + pkgDatumsNumber;
-            if (fcinfo->argTypes[i] == REFCURSOROID && fcinfo->refcursor_data.argCursor != NULL 
+            if (get_fn_expr_argtype(fcinfo->flinfo, i) == REFCURSOROID && fcinfo->extra != NULL
+                && fcinfo->extra->refcursor_data.argCursor != NULL
                 && func->datums[dno]->dtype == PLPGSQL_DTYPE_VAR) {
-                Cursor_Data* arg_cursor = &fcinfo->refcursor_data.argCursor[i];
+                Cursor_Data* arg_cursor = &fcinfo->extra->refcursor_data.argCursor[i];
                 ExecCopyDataFromDatum(func->datums, dno, arg_cursor);
                 cursor_step += 4;
             }
@@ -1369,7 +1370,9 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
 {
     InlineCodeBlock* codeblock = (InlineCodeBlock*)DatumGetPointer(PG_GETARG_DATUM(0));
     PLpgSQL_function* func = NULL;
-    FunctionCallInfoData fake_fcinfo;
+    /* fake fcinfo for plpgsql_exec_function; no real arguments are passed */
+    const int fakeFcinfoNargs = 2;
+    LOCAL_FCINFO(fake_fcinfo, fakeFcinfoNargs);
     FmgrInfo flinfo;
     Datum retval;
     int rc;
@@ -1468,12 +1471,12 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
      * plpgsql_exec_function().  In particular note that this sets things up
      * with no arguments passed.
      */
-    rc = memset_s(&fake_fcinfo, sizeof(fake_fcinfo), 0, sizeof(fake_fcinfo));
+    rc = memset_s(fake_fcinfo, SizeForFunctionCallInfo(fakeFcinfoNargs), 0, SizeForFunctionCallInfo(fakeFcinfoNargs));
     securec_check(rc, "\0", "\0");
     rc = memset_s(&flinfo, sizeof(flinfo), 0, sizeof(flinfo));
     securec_check(rc, "\0", "\0");
 
-    fake_fcinfo.flinfo = &flinfo;
+    fake_fcinfo->flinfo = &flinfo;
     flinfo.fn_oid = InvalidOid;
     flinfo.fn_mcxt = CurrentMemoryContext;
     PGSTAT_START_PLSQL_TIME_RECORD();
@@ -1487,11 +1490,11 @@ Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
     PG_TRY();
     {
         if (IsAutonomousTransaction(func->action->isAutonomous)) {
-            retval = plpgsql_exec_autonm_function(func, &fake_fcinfo, codeblock->source_text);
+            retval = plpgsql_exec_autonm_function(func, fake_fcinfo, codeblock->source_text);
         } else {
             Oid old_value = saveCallFromPkgOid(func->pkg_oid);
             u_sess->plsql_cxt.need_init = true;
-            retval = plpgsql_exec_function(func, &fake_fcinfo, false);
+            retval = plpgsql_exec_function(func, fake_fcinfo, false);
             restoreCallFromPkgOid(old_value);
             u_sess->plsql_cxt.need_init = true;
         }
@@ -1722,7 +1725,9 @@ Datum b_plpgsql_validator(PG_FUNCTION_ARGS)
     bool save_curr_status = GetCurrCompilePgObjStatus();
     /* Postpone body checks if !u_sess->attr.attr_sql.check_function_bodies */
     if (u_sess->attr.attr_sql.check_function_bodies || !u_sess->plsql_cxt.isCreateFunction) {
-        FunctionCallInfoData fake_fcinfo;
+        /* fake fcinfo for plpgsql_compile; at most one real argument is passed */
+        const int fakeFcinfoNargs = 2;
+        LOCAL_FCINFO(fake_fcinfo, fakeFcinfoNargs);
         FmgrInfo flinfo;
         TriggerData dml_trigdata;
         EventTriggerData event_trigdata;
@@ -1731,24 +1736,26 @@ Datum b_plpgsql_validator(PG_FUNCTION_ARGS)
          * Set up a fake fcinfo with just enough info to satisfy
          * plpgsql_compile().
          */
-        errno_t errorno = memset_s(&fake_fcinfo, sizeof(fake_fcinfo), 0, sizeof(fake_fcinfo));
+        errno_t errorno = memset_s(fake_fcinfo, SizeForFunctionCallInfo(fakeFcinfoNargs), 0,
+            SizeForFunctionCallInfo(fakeFcinfoNargs));
         securec_check(errorno, "", "");
         errorno = memset_s(&flinfo, sizeof(flinfo), 0, sizeof(flinfo));
         securec_check(errorno, "", "");
-        fake_fcinfo.flinfo = &flinfo;
-        fake_fcinfo.arg = (Datum*)palloc0(sizeof(Datum));
-        fake_fcinfo.arg[0] = fcinfo->arg[1];
+        fake_fcinfo->flinfo = &flinfo;
+        if (PG_NARGS() > 1) {
+            fake_fcinfo->args[0].value = fcinfo->args[1].value;
+        }
         flinfo.fn_oid = funcoid;
         flinfo.fn_mcxt = CurrentMemoryContext;
         if (is_dml_trigger) {
             errorno = memset_s(&dml_trigdata, sizeof(dml_trigdata), 0, sizeof(dml_trigdata));
             securec_check(errorno, "", "");
             dml_trigdata.type = T_TriggerData;
-            fake_fcinfo.context = (Node*)&dml_trigdata;
+            fake_fcinfo->context = (Node*)&dml_trigdata;
         } else if (is_event_trigger) {
             MemSet(&event_trigdata, 0, sizeof(event_trigdata));
             event_trigdata.type = T_EventTriggerData;
-            fake_fcinfo.context = (Node *) &event_trigdata;
+            fake_fcinfo->context = (Node *) &event_trigdata;
         }
         /* save flag for nest plpgsql compile */
         PLpgSQL_compile_context* save_compile_context = u_sess->plsql_cxt.curr_compile_context;
@@ -1761,7 +1768,7 @@ Datum b_plpgsql_validator(PG_FUNCTION_ARGS)
         {
             SetCurrCompilePgObjStatus(true);
             u_sess->parser_cxt.isCreateFuncOrProc = true;
-            func = plpgsql_compile(&fake_fcinfo, true);
+            func = plpgsql_compile(fake_fcinfo, true);
             u_sess->parser_cxt.isCreateFuncOrProc = false;
             if (func != NULL) {
                 if (OidIsValid(func->pkg_oid)) {
