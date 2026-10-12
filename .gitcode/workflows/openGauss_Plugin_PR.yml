@@ -38,6 +38,7 @@ jobs:
     steps:
       - name: Mark PR as running
         if: ${{ atomgit.event.pull_request.number != '' }}
+        continue-on-error: true
         run: |
           curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
           bash /tmp/gitcode_pr_labels.sh running
@@ -54,6 +55,8 @@ jobs:
       result: ${{ steps.compile.outputs.result }}
     steps:
       - name: Manual checkout source code
+        id: checkout
+        continue-on-error: true
         run: |
           set -e
           workspace="$PWD"
@@ -106,8 +109,13 @@ jobs:
           source .gitcode/scripts/resolve_gitcode_env.sh
           bash .gitcode/scripts/plugin_compile.sh
           set +e
-          source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
-          rc=$?
+          if [ "${CHECKOUT_OUTCOME}" != "success" ]; then
+            echo "Manual checkout failed; skip compile."
+            rc=1
+          else
+            source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
+            rc=$?
+          fi
           set -e
           if [ "${rc}" -eq 0 ]; then
             echo "result=success" >> "${ATOMGIT_OUTPUT}"
@@ -116,6 +124,7 @@ jobs:
           fi
           exit 0
         env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
@@ -128,6 +137,8 @@ jobs:
       result: ${{ steps.compile.outputs.result }}
     steps:
       - name: Manual checkout source code
+        id: checkout
+        continue-on-error: true
         run: |
           set -e
           workspace="$PWD"
@@ -180,8 +191,13 @@ jobs:
           source .gitcode/scripts/resolve_gitcode_env.sh
           bash .gitcode/scripts/plugin_compile.sh
           set +e
-          source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
-          rc=$?
+          if [ "${CHECKOUT_OUTCOME}" != "success" ]; then
+            echo "Manual checkout failed; skip compile."
+            rc=1
+          else
+            source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
+            rc=$?
+          fi
           set -e
           if [ "${rc}" -eq 0 ]; then
             echo "result=success" >> "${ATOMGIT_OUTPUT}"
@@ -190,6 +206,7 @@ jobs:
           fi
           exit 0
         env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
@@ -218,7 +235,6 @@ post:
     needs:
       - compile_plugin_1
       - compile_plugin_2
-    if: ${{ always() }}
     runs-on: [self-hosted, plugin_1]
     steps:
       - name: Report PR label
