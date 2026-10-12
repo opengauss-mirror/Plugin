@@ -16,7 +16,7 @@ on:
       - master
       - '**'
     comments:
-      - '/retest'
+      - '^\s*/retest\s*$'
   workflow_dispatch:
 
 permissions:
@@ -46,7 +46,6 @@ jobs:
           PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
         uses: openlibing/pr-label-action@v1.0.0
         with:
-          token: ${{ secrets.PR_LABEL_TOKEN }}
           add_labels: ci-pipeline-running
           remove_labels: ci-pipeline-success,ci-pipeline-failed,ci-pipeline-passed
 
@@ -195,6 +194,5 @@ post:
         - name: Set result label
           uses: openlibing/pr-label-action@v1.0.0
           with:
-            token: ${{ secrets.PR_LABEL_TOKEN }}
             add_labels: ${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-success' || 'ci-pipeline-failed' }}
-            remove_labels: ci-pipeline-running,ci-pipeline-passed
+            remove_labels: ci-pipeline-running
