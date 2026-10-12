@@ -175,3 +175,4 @@ post:
           with:
             add_labels: ${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-success' || 'ci-pipeline-failed' }}
             remove_labels: ci-pipeline-running
+            token: ${{secrets.PR_LABEL_TOKEN}}
