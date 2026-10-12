@@ -177,13 +177,13 @@ post:
           if: ${{ always() && atomgit.event.pull_request.number != '' }}
           run: curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
         - name: Mark PR as successful
-          if: ${{ atomgit.event.pull_request.number != '' && success }}
+          if: ${{ atomgit.event.pull_request.number != '' && success() }}
           run: bash /tmp/gitcode_pr_labels.sh success
           env:
             GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
             PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
         - name: Mark PR as failed
-          if: ${{ atomgit.event.pull_request.number != '' && failed }}
+          if: ${{ atomgit.event.pull_request.number != '' && failed() }}
           run: bash /tmp/gitcode_pr_labels.sh failed
           env:
             GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
