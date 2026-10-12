@@ -26,7 +26,6 @@ permissions:
 
 env:
   GITCODE_REPO: opengauss/Plugin
-  LABEL_SCRIPT_BRANCH: master
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
@@ -38,12 +37,6 @@ jobs:
     steps:
       - name: Mark PR as running
         if: ${{ atomgit.event.pull_request.number != '' }}
-        run: |
-          curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
-          bash /tmp/gitcode_pr_labels.sh running
-        env:
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
-          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
         uses: openlibing/pr-label-action@v1.0.0
         with:
           add_labels: ci-pipeline-running
@@ -177,20 +170,6 @@ post:
       name: Report pipeline result
       runs-on: [self-hosted, plugin_1]
       steps:
-        - name: Download PR label script
-          run: curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
-        - name: Mark PR as successful
-          if: ${{ success }}
-          run: bash /tmp/gitcode_pr_labels.sh success
-          env:
-            GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
-            PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
-        - name: Mark PR as failed
-          if: ${{ failed }}
-          run: bash /tmp/gitcode_pr_labels.sh failed
-          env:
-            GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
-            PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
         - name: Set result label
           uses: openlibing/pr-label-action@v1.0.0
           with:
