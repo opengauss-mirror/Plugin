@@ -16,7 +16,7 @@ on:
       - master
       - '**'
     comments:
-      - '^/retest$'
+      - '/retest'
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,7 @@ permissions:
 
 env:
   GITCODE_REPO: opengauss/Plugin
+  LABEL_SCRIPT_BRANCH: master
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
@@ -37,14 +38,12 @@ jobs:
     steps:
       - name: Mark PR as running
         if: ${{ atomgit.event.pull_request.number != '' }}
-        uses: cann/.gitcode/actions/pre-pipeline@master
-        with:
-          owner: opengauss
-          repo: Plugin
-          pr_number: ${{ atomgit.event.pull_request.number }}
-          token: ${{ secrets.PR_LABEL_TOKEN }}
-          apply_label: 'true'
-          run_url: https://gitcode.com/opengauss/Plugin/actions/runs/${{ atomgit.workflow_run_id }}
+        run: |
+          curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
+          bash /tmp/gitcode_pr_labels.sh running
+        env:
+          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
 
   compile_plugin_1:
     name: openGauss_Plugin_Compile
@@ -105,7 +104,6 @@ jobs:
           bash .gitcode/scripts/plugin_compile.sh
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
   compile_plugin_2:
     name: openGauss_Plugin_Compile_Part2
@@ -166,21 +164,25 @@ jobs:
           bash .gitcode/scripts/plugin_compile.sh
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
 post:
   jobs:
     report_result:
-      name: Query pipeline and label PR
+      name: Report pipeline result
       runs-on: [self-hosted, plugin_1]
       steps:
-        - name: Query pipeline and update PR label
-          if: ${{ atomgit.event.pull_request.number != '' }}
-          uses: cann/.gitcode/actions/query-pipeline@master
-          with:
-            owner: opengauss
-            repo: Plugin
-            run_id: ${{ atomgit.workflow_run_id }}
-            token: ${{ secrets.PR_LABEL_TOKEN }}
-            pr_number: ${{ atomgit.event.pull_request.number }}
-            apply_label: 'true'
+        - name: Download PR label script
+          if: ${{ always() && atomgit.event.pull_request.number != '' }}
+          run: curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
+        - name: Mark PR as successful
+          if: ${{ atomgit.event.pull_request.number != '' && success }}
+          run: bash /tmp/gitcode_pr_labels.sh success
+          env:
+            GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+            PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+        - name: Mark PR as failed
+          if: ${{ atomgit.event.pull_request.number != '' && failed }}
+          run: bash /tmp/gitcode_pr_labels.sh failed
+          env:
+            GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+            PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
