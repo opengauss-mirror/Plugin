@@ -110,6 +110,7 @@ name: openGauss_Plugin_PR
            bash .gitcode/scripts/plugin_compile.sh 
          env: 
            WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/ 
+           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
  
  
    compile_plugin_2: 
@@ -172,6 +173,7 @@ name: openGauss_Plugin_PR
            bash .gitcode/scripts/plugin_compile.sh 
          env: 
            WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/ 
+           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
  
  
 post:
