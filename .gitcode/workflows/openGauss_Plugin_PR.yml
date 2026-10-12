@@ -50,6 +50,8 @@ jobs:
     needs: prepare
     runs-on: [self-hosted, plugin_1]
     timeout-minutes: 120
+    outputs:
+      result: ${{ steps.compile.outputs.result }}
     steps:
       - name: Manual checkout source code
         run: |
@@ -99,9 +101,20 @@ jobs:
           git fetch --depth=1 origin "${ref}"
           git checkout -f "${sha}" || git checkout -f FETCH_HEAD
       - name: Run openGauss plugin compile on plugin-1
+        id: compile
         run: |
           source .gitcode/scripts/resolve_gitcode_env.sh
           bash .gitcode/scripts/plugin_compile.sh
+          set +e
+          source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
+          rc=$?
+          set -e
+          if [ "${rc}" -eq 0 ]; then
+            echo "result=success" >> "${ATOMGIT_OUTPUT}"
+          else
+            echo "result=failure" >> "${ATOMGIT_OUTPUT}"
+          fi
+          exit 0
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
@@ -111,6 +124,8 @@ jobs:
     needs: prepare
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
+    outputs:
+      result: ${{ steps.compile.outputs.result }}
     steps:
       - name: Manual checkout source code
         run: |
@@ -160,9 +175,20 @@ jobs:
           git fetch --depth=1 origin "${ref}"
           git checkout -f "${sha}" || git checkout -f FETCH_HEAD
       - name: Run openGauss plugin compile on docker-1
+        id: compile
         run: |
           source .gitcode/scripts/resolve_gitcode_env.sh
           bash .gitcode/scripts/plugin_compile.sh
+          set +e
+          source .gitcode/scripts/resolve_gitcode_env.sh && bash .gitcode/scripts/plugin_compile.sh
+          rc=$?
+          set -e
+          if [ "${rc}" -eq 0 ]; then
+            echo "result=success" >> "${ATOMGIT_OUTPUT}"
+          else
+            echo "result=failure" >> "${ATOMGIT_OUTPUT}"
+          fi
+          exit 0
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
           GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
@@ -187,3 +213,33 @@ post:
           env:
             GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
             PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+  report_result:
+    name: Report pipeline result
+    needs:
+      - compile_plugin_1
+      - compile_plugin_2
+    if: ${{ always() }}
+    runs-on: [self-hosted, plugin_1]
+    steps:
+      - name: Report PR label
+        run: |
+          result="success"
+          if [ "${COMPILE_PLUGIN_1_RESULT}" != "success" ] || [ "${COMPILE_PLUGIN_2_RESULT}" != "success" ]; then
+            result="failed"
+          fi
+
+          echo "compile_plugin_1=${COMPILE_PLUGIN_1_RESULT:-missing}"
+          echo "compile_plugin_2=${COMPILE_PLUGIN_2_RESULT:-missing}"
+          echo "pipeline_result=${result}"
+
+          curl -fsSL "https://gitcode.com/opengauss/Plugin/raw/${LABEL_SCRIPT_BRANCH}/.gitcode/scripts/gitcode_pr_labels.sh" -o /tmp/gitcode_pr_labels.sh
+          bash /tmp/gitcode_pr_labels.sh "${result}"
+
+          if [ "${result}" = "failed" ]; then
+            exit 1
+          fi
+        env:
+          COMPILE_PLUGIN_1_RESULT: ${{ needs.compile_plugin_1.outputs.result }}
+          COMPILE_PLUGIN_2_RESULT: ${{ needs.compile_plugin_2.outputs.result }}
+          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+          PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
