@@ -16,7 +16,7 @@ on:
       - master
       - '**'
     comments:
-      - '^/retest$'
+      - '^\s*/retest\s*$'
   workflow_dispatch:
 
 permissions:
