@@ -41,6 +41,7 @@ jobs:
         with:
           add_labels: ci-pipeline-running
           remove_labels: ci-pipeline-success,ci-pipeline-failed,ci-pipeline-passed
+          token: ${{secrets.PR_LABEL_TOKEN}}
 
   compile_plugin_1:
     name: openGauss_Plugin_Compile
