@@ -1,8 +1,16 @@
 label: dolphin and sqlplugin Extension Reference
 isManual: true
 sections:
-  - label: Dolphin Extensions
-    href: ./dolphin.md
+  - label: Dolphin Extension
+    sections:
+      - label: Dolphin
+        href: ./dolphin.md
+      - label: Dolphin unsupported Syntax
+        href: ./dolphin_unsupported_syntax.md
+      - label: List Of Mysql Features Not Compatible
+        href: ./dolphin_list_of_mysql_features_not_compatible.md
+      - label: MySQL Protocol Compatibility
+        href: ./dolphin_mysql_protocol_compatibility.md
   - label: Dolphin Syntax
     sections:
       - label: Keywords
@@ -23,6 +31,10 @@ sections:
             href: ./dolphin_boolean_types.md
           - label: Binary Types
             href: ./dolphin_binary_types.md
+          - label: Type Conversion
+            href: ./dolphin_type_conversion.md
+      - label: Nominal Value
+        href: ./dolphin_nominal_value.md
       - label: Functions and Operators
         sections:
           - label: Assignment Operators
@@ -57,10 +69,20 @@ sections:
             href: ./dolphin_type_conversion_functions.md
           - label: Compatible Operators and Operations
             href: ./dolphin_compatible_operators_and_operations.md
+          - label: Commenting Operators
+            href: ./dolphin_commenting_operators.md
+          - label: Operator Priority
+            href: ./dolphin_operator_priority.md
+          - label: JSON Operator Compatibility
+            href: ./dolphin_json_operator_compatibility.md
+          - label: XML Functions
+            href: ./dolphin_xml_functions.md    
       - label: Expressions
         sections:
           - label: Conditional Expressions
             href: ./dolphin_conditional_expressions.md
+          - label: Time Interval Expressions
+            href: ./dolphin_time_interval_expressions.md
       - label: DDL Syntax
         href: ./dolphin_ddl_syntax_overview.md
       - label: DML Syntax
@@ -69,6 +91,8 @@ sections:
         href: ./dolphin_dcl_syntax_overview.md
       - label: SQL Syntax
         sections:
+          - label: ALTER DATABASE
+            href: ./dolphin-ALTER-DATABASE.md
           - label: ALTER FUNCTION
             href: ./dolphin-alter-function.md
           - label: ALTER PROCEDURE
@@ -87,8 +111,12 @@ sections:
             href: ./dolphin-analyze-analyse.md
           - label: AST
             href: ./dolphin-ast.md
+          - label: CALL
+            href: ./dolphin-CALL.md
           - label: CHECKSUM TABLE
             href: ./dolphin-checksum-table.md
+          - label: CREATE DATABASE
+            href: ./dolphin-CREATE-DATABASE.md
           - label: CREATE FUNCTION
             href: ./dolphin-create-function.md
           - label: CREATE INDEX
@@ -117,6 +145,8 @@ sections:
             href: ./dolphin-drop-database.md
           - label: DROP INDEX
             href: ./dolphin-drop-index.md
+          - label: DROP TABLES
+            href: ./dolphin-DROP-TABLES.md
           - label: DROP TABLESPACE
             href: ./dolphin-drop-tablespace.md
           - label: EXECUTE
@@ -131,8 +161,6 @@ sections:
             href: ./dolphin-grant-revoke-proxy.md
           - label: INSERT
             href: ./dolphin-insert.md
-          - label: INDEX STAITISTIC
-            href: ./dolphin-index-statistic.md
           - label: KILL
             href: ./dolphin-kill.md
           - label: LOAD DATA
@@ -141,8 +169,6 @@ sections:
             href: ./dolphin-optimize-table.md
           - label: PREPARE
             href: ./dolphin-prepare.md
-          - label: PG TYPE NONSTRICT BASIC VALUE
-            href: ./dolphin-pg-type-nonstrict-basic-value.md
           - label: RENAME-TABLE
             href: ./dolphin-rename-table.md
           - label: RENAME USER
@@ -205,14 +231,48 @@ sections:
             href: ./dolphin-show-variables.md
           - label: SHOW WARNINGS
             href: ./dolphin-show-warnings.md
+          - label: SHOW STORAGE ENGINES
+            href: ./dolphin-SHOW-ENGINES.md                        
+          - label: SHOW SLAVE STATUS
+            href: ./dolphin-SHOW-SLAVE-STATUS.md
+          - label: SHOW OPEN TABLES
+            href: ./dolphin-SHOW-OPEN-TABLES.md   
           - label: UPDATE
             href: ./dolphin-update.md
           - label: USE DB-NAME
             href: ./dolphin-use-db-name.md
           - label: SELECT-HINT
             href: ./dolphin-select-hint.md
+          - label: JOIN
+            href: ./dolphin-JOIN.md
+      - label: Aliasing
+        href: ./dolphin_single_quotation_aliasing.md
+      - label: "@variable"
+        href: ./dolphin_at_variable.md
       - label: System Views
-        href: ./dolphin-system-views.md
+        sections:
+          - label: PG TYPE NONSTRICT BASIC VALUE
+            href: ./dolphin-PG_TYPE_NONSTRICT_BASIC_VALUE.md
+          - label: INDEX STATISTIC
+            href: ./dolphin-INDEX_STATISTIC.md               
+          - label: PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT
+            href: ./dolphin-PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT.md
+          - label: PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_HISTORY
+            href: ./dolphin-PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_HISTORY.md
+          - label: PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_SUMMARY_BY_DIGEST
+            href: ./dolphin-PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_SUMMARY_BY_DIGEST.md
+          - label: PERFORMANCE_SCHEMA.EVENTS_WAITS_CURRENT
+            href: ./dolphin-PERFORMANCE_SCHEMA.EVENTS_WAITS_CURRENT.md
+          - label: PERFORMANCE_SCHEMA.EVENTS_WAITS_SUMMARY_GLOBAL_BY_EVENT_NAME
+            href: ./dolphin-PERFORMANCE_SCHEMA.EVENTS_WAITS_SUMMARY_GLOBAL_BY_EVENT_NAME.md
+          - label: PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE
+            href: ./dolphin-PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE.md
+          - label: PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_INDEX_USAGE
+            href: ./dolphin-PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_INDEX_USAGE.md
+          - label: PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_TABLE
+            href: ./dolphin-PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_TABLE.md  
+          - label: PERFORMANCE_SCHEMA.THREADS
+            href: ./dolphin-PERFORMANCE_SCHEMA.THREADS.md 
       - label: GUC Parameters
         href: ./dolphin_guc_parameters.md
       - label: Resetting Parameters
@@ -227,3 +287,30 @@ sections:
         sections:
           - label: Column Name Identifiers
             href: ./dolphin_column_name_identifiers.md
+  - label: spqplugin Extension
+    sections:
+      - label: spqplugin
+        href: ./spqplugin.md
+      - label: GUC Parameters
+        href: ./spqplugin_guc_parameters.md
+      - label: CREATE INDEX
+        href: ./spqplugin-CREATE-INDEX.md
+      - label: DELETE
+        href: ./spqplugin-DELETE.md
+      - label: DML
+        href: ./spqplugin-DML.md
+      - label: INSERT
+        href: ./spqplugin-INSERT.md
+      - label: SELECT
+        href: ./spqplugin-SELECT.md 
+      - label: SQL
+        href: ./spqplugin-SQL.md
+      - label: UPDATE
+        href: ./spqplugin-UPDATE.md                     
+  - label: spqplugin_v2 Extension
+    sections:
+      - label: spqplugin_v2
+        href: ./spqplugin_v2.md
+      - label: spqplugin_v2 usage
+        href: ./spqplugin_v2_usage.md
+    
