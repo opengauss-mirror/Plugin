@@ -19,9 +19,29 @@ import java.sql.Statement;
 import java.util.Properties;
 
 public class MySQLJdbcErrorMappingTest {
+    private static Properties connectionProperties(
+            String host, String port, String database, String user, String password) {
+        Properties info = new Properties();
+        info.setProperty("HOST", host);
+        info.setProperty("PORT", port);
+        info.setProperty("DBNAME", database);
+        info.setProperty("user", user);
+        info.setProperty("password", password);
+        return info;
+    }
+
+    private static SQLException connectExpectingError(Properties info) throws SQLException {
+        try (Connection ignored = DriverManager.getConnection("jdbc:mysql://", info)) {
+            // The connection must not succeed.
+        } catch (SQLException exception) {
+            return exception;
+        }
+        throw new AssertionError("connection unexpectedly succeeded for database " + info.getProperty("DBNAME"));
+    }
+
     private static SQLException executeExpectingError(Statement statement, String sql) throws SQLException {
         try {
-            statement.executeUpdate(sql);
+            statement.execute(sql);
         } catch (SQLException exception) {
             return exception;
         }
@@ -37,15 +57,21 @@ public class MySQLJdbcErrorMappingTest {
     }
 
     public static void main(String[] args) throws Exception {
-        Properties info = new Properties();
-        info.setProperty("HOST", args[0]);
-        info.setProperty("PORT", args[1]);
-        info.setProperty("DBNAME", args[2]);
-        info.setProperty("user", args[3]);
-        info.setProperty("password", args[4]);
+        Properties wrongPasswordInfo = connectionProperties(args[0], args[1], args[2], args[3], "wrong_password");
+        SQLException wrongPassword = connectExpectingError(wrongPasswordInfo);
+        assertError("access denied", wrongPassword, 1045, "28000");
+
+        Properties info = connectionProperties(args[0], args[1], args[2], args[3], args[4]);
 
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://", info);
              Statement statement = connection.createStatement()) {
+            SQLException missingTable = executeExpectingError(
+                statement, "select * from jdbc_error_mapping_missing_table");
+            assertError("missing table", missingTable, 1146, "42S02");
+
+            SQLException syntaxError = executeExpectingError(statement, "SELEC 1");
+            assertError("syntax error", syntaxError, 1064, "42000");
+
             statement.executeUpdate("drop table if exists jdbc_error_mapping");
             statement.executeUpdate("create table jdbc_error_mapping (id int primary key)");
             statement.executeUpdate("insert into jdbc_error_mapping values (1)");

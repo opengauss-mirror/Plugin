@@ -159,6 +159,7 @@ void dolphin_send_message(ErrorData *edata)
 
     bool duplicateKeyError = is_duplicate_key_error(edata);
     uint16 errorCode = 0;
+    const char *mappedSqlState = get_dolphin_sqlstate(edata->sqlerrcode);
     network_mysqld_err_packet_t *err_packet =
         (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
     if (get_explicit_mysql_errno(edata, &errorCode)) {
@@ -169,10 +170,14 @@ void dolphin_send_message(ErrorData *edata)
         err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
     }
     err_packet->errmsg = edata->message;
-    if (edata->sqlstate != NULL) {
+    if (edata->is_signal && edata->sqlstate != NULL) {
         err_packet->sqlstate = edata->sqlstate;
     } else if (duplicateKeyError) {
         err_packet->sqlstate = MYSQL_INTEGRITY_CONSTRAINT_VIOLATION;
+    } else if (mappedSqlState != NULL) {
+        err_packet->sqlstate = mappedSqlState;
+    } else if (edata->sqlstate != NULL) {
+        err_packet->sqlstate = edata->sqlstate;
     } else {
         err_packet->sqlstate = "HY000";
     }

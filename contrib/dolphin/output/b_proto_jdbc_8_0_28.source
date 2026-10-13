@@ -565,6 +565,9 @@ Field:dt:datetime(0)
 Field:n:decimal(10,2)
 Field:i:int
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcErrorMappingTest localhost $dp db_jdbc proto_user Gauss@123
+access denied: 1045/28000
+missing table: 1146/42S02
+syntax error: 1064/42000
 duplicate key: 1062/23000
 generic 23505 preserved: 23505
 explicit signal: 30001/45000
