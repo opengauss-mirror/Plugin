@@ -1,0 +1,325 @@
+create schema block_label;
+set current_schema to 'block_label';
+set enable_set_variable_b_format = on;
+set behavior_compat_options = 'display_leading_zero,select_into_return_null,skip_insert_gs_source';
+-- Issue 8570: accept the block-label spelling without changing block execution.
+-- Outer-handler block creation is checked here; CALL is validated separately with the server fix.
+delimiter //
+CREATE PROCEDURE `test_label_proc`()
+BEGIN
+  DECLARE vi_result integer DEFAULT 1;
+  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET vi_result = -1;
+  LABEL:
+    BEGIN
+      SET vi_result = 0;
+      LEAVE LABEL;
+    END LABEL;
+  SELECT vi_result;
+END
+//
+CREATE PROCEDURE test_label_proc_legacy()
+BEGIN
+  DECLARE vi_result integer DEFAULT 1;
+  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET vi_result = -1;
+  <<label>> BEGIN
+    SET vi_result = 0;
+    LEAVE label;
+  END label;
+  SELECT vi_result;
+END
+//
+-- All spelling variants must skip the statements after LEAVE.
+CREATE PROCEDURE test_label_variants()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  compact:BEGIN
+    SET vi_result = vi_result + 1;
+    LEAVE compact;
+    SET vi_result = 100;
+  END compact;
+  line_block:
+  BEGIN
+    SET vi_result = vi_result + 2;
+    LEAVE line_block;
+    SET vi_result = 100;
+  END line_block;
+  commented: /* label comment */ BEGIN
+    SET vi_result = vi_result + 4;
+    LEAVE commented;
+    SET vi_result = 100;
+  END commented;
+  <<legacy>>
+  BEGIN
+    SET vi_result = vi_result + 8;
+    LEAVE legacy;
+    SET vi_result = 100;
+  END legacy;
+  SELECT vi_result AS variants_result;
+END
+//
+-- Exiting an outer block skips the rest of both nested blocks.
+CREATE PROCEDURE test_label_nested()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  outer_block: BEGIN
+    DECLARE local_value integer DEFAULT 1;
+    SET vi_result = local_value;
+    inner_block:BEGIN
+      DECLARE local_value integer DEFAULT 2;
+      SET vi_result = vi_result + local_value;
+      LEAVE outer_block;
+      SET vi_result = 100;
+    END inner_block;
+    SET vi_result = 100;
+  END outer_block;
+  SET vi_result = vi_result + 4;
+  SELECT vi_result AS nested_result;
+END
+//
+-- Labels are recognized before resolving a same-named local variable.
+CREATE PROCEDURE test_label_variable()
+BEGIN
+  DECLARE shared_name integer DEFAULT 3;
+  shared_name:BEGIN
+    SET shared_name = shared_name + 1;
+    LEAVE shared_name;
+    SET shared_name = 100;
+  END shared_name;
+  SELECT shared_name AS variable_result;
+END
+//
+-- Keep block-local declarations and CONTINUE HANDLER behavior.
+CREATE PROCEDURE test_label_handler()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  handled_block: BEGIN
+    DECLARE local_value integer DEFAULT 2;
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '45000'
+    BEGIN
+      SET vi_result = 10;
+    END;
+    SET vi_result = local_value;
+    SIGNAL SQLSTATE '45000';
+    LEAVE handled_block;
+    SET vi_result = 100;
+  END handled_block;
+  SET vi_result = vi_result + 1;
+  SELECT vi_result AS handler_result;
+END
+//
+-- Optional closing label and a quoted identifier.
+CREATE PROCEDURE test_label_optional()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  `quoted label`:BEGIN
+    SET vi_result = 1;
+    LEAVE `quoted label`;
+    SET vi_result = 100;
+  END;
+  SELECT vi_result AS optional_result;
+END
+//
+-- Existing loop labels still use their original parser path.
+CREATE PROCEDURE test_label_loop()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  compact_loop:LOOP
+    SET vi_result = vi_result + 1;
+    LEAVE compact_loop;
+  END LOOP compact_loop;
+  spaced_loop: LOOP
+    SET vi_result = vi_result + 2;
+    LEAVE spaced_loop;
+  END LOOP spaced_loop;
+  SELECT vi_result AS loop_result;
+END
+//
+-- Fall-through, conditional LEAVE and repeated calls with parameters.
+CREATE PROCEDURE test_label_paths(p_leave integer)
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  result_block:BEGIN
+    SET vi_result = vi_result + 1;
+    IF p_leave = 1 THEN
+      LEAVE result_block;
+    END IF;
+    SET vi_result = vi_result + 2;
+  END result_block;
+  SET vi_result = vi_result + 4;
+  SELECT vi_result AS paths_result;
+END
+//
+-- RETURN propagates through the labelled block without re-entering it.
+CREATE FUNCTION test_label_return(p_value integer) RETURNS integer
+BEGIN
+  return_block:BEGIN
+    IF p_value > 0 THEN
+      RETURN p_value;
+    END IF;
+  END return_block;
+  RETURN 0;
+END
+//
+delimiter ;
+CALL test_label_variants();
+ variants_result 
+-----------------
+              15
+(1 row)
+
+CALL test_label_nested();
+ nested_result 
+---------------
+             7
+(1 row)
+
+CALL test_label_variable();
+ variable_result 
+-----------------
+               4
+(1 row)
+
+CALL test_label_handler();
+ handler_result 
+----------------
+             11
+(1 row)
+
+CALL test_label_optional();
+ optional_result 
+-----------------
+               1
+(1 row)
+
+CALL test_label_loop();
+ loop_result 
+-------------
+           3
+(1 row)
+
+CALL test_label_paths(1);
+ paths_result 
+--------------
+            5
+(1 row)
+
+CALL test_label_paths(0);
+ paths_result 
+--------------
+            7
+(1 row)
+
+CALL test_label_paths(1);
+ paths_result 
+--------------
+            5
+(1 row)
+
+SELECT test_label_return(7), test_label_return(0);
+ test_label_return | test_label_return 
+-------------------+-------------------
+                 7 |                 0
+(1 row)
+
+-- Ordinary EXIT and CONTINUE must still target the real surrounding loop.
+delimiter //
+CREATE PROCEDURE test_label_control()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  LOOP
+    SET vi_result = vi_result + 1;
+    exit_block:BEGIN EXIT; END exit_block;
+    SET vi_result = 100;
+  END LOOP;
+  SELECT vi_result AS exit_result;
+  SET vi_result = 0;
+  WHILE vi_result < 3 LOOP
+    SET vi_result = vi_result + 1;
+    continue_block:BEGIN CONTINUE; END continue_block;
+    SET vi_result = 100;
+  END LOOP;
+  SELECT vi_result AS continue_result;
+END
+//
+delimiter ;
+CALL test_label_control();
+ exit_result 
+-------------
+           1
+(1 row)
+
+ continue_result 
+-----------------
+               3
+(1 row)
+
+-- The B database syntax must not depend on whitespace or the parser override.
+SET dolphin.b_compatibility_mode = off;
+delimiter //
+CREATE PROCEDURE test_label_mode_off()
+BEGIN
+  DECLARE vi_result integer DEFAULT 0;
+  spaced: BEGIN SET vi_result = vi_result + 1; LEAVE spaced; END spaced;
+  compact:BEGIN SET vi_result = vi_result + 2; LEAVE compact; END compact;
+  SELECT vi_result AS mode_off_result;
+END
+//
+delimiter ;
+CALL test_label_mode_off();
+ mode_off_result 
+-----------------
+               3
+(1 row)
+
+SET dolphin.b_compatibility_mode = on;
+-- A closing label must match the opening label.
+delimiter //
+CREATE PROCEDURE test_label_mismatch()
+BEGIN
+  start_label: BEGIN
+    SELECT 1;
+  END other_label;
+END
+//
+ERROR:  end label "other_label" differs from block's label "start_label"
+LINE 3:   END other_label;
+              ^
+QUERY:      BEGIN      start_label: BEGIN
+    SELECT 1;
+  END other_label;
+END
+
+delimiter ;
+-- A BEGIN block is not an ITERATE target.
+delimiter //
+CREATE PROCEDURE test_label_iterate()
+BEGIN
+  block_target: BEGIN
+    ITERATE block_target;
+  END block_target;
+END
+//
+ERROR:  cannot iterate a BEGIN block label "block_target"
+CONTEXT:  compilation of PL/pgSQL function "test_label_iterate" near line 1
+delimiter ;
+-- Standalone named placeholders retain their original meaning.
+select :begin;
+ERROR:  there is no parameter $1
+LINE 1: select :begin;
+               ^
+drop procedure test_label_proc;
+drop procedure test_label_proc_legacy;
+drop procedure test_label_variants;
+drop procedure test_label_nested;
+drop procedure test_label_variable;
+drop procedure test_label_handler;
+drop procedure test_label_optional;
+drop procedure test_label_loop;
+drop procedure test_label_paths;
+drop function test_label_return;
+drop procedure test_label_control;
+drop procedure test_label_mode_off;
+reset current_schema;
+drop schema block_label;
+reset enable_set_variable_b_format;
+reset behavior_compat_options;

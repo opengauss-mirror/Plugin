@@ -157,6 +157,31 @@ int plpgsql_yylex(void)
             tok1_val = aux1.lval.str;
 
         tok2 = internal_yylex(&aux2);
+        /* Recognize B-format block labels before resolving same-named variables. */
+        if (tok1 == IDENT && u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup == IDENTIFIER_LOOKUP_NORMAL &&
+            (tok2 == ':' || (tok2 == PARAM && pg_strcasecmp(aux2.lval.str, ":begin") == 0))) {
+            TokenAuxData aux3;
+            int tok3;
+            if (tok2 == ':') {
+                tok3 = internal_yylex(&aux3);
+            } else {
+                /* The core lexer returns adjacent ':BEGIN' as one PARAM; restore BEGIN's location. */
+                tok3 = K_BEGIN;
+                aux3 = aux2;
+                aux3.lval.keyword = "begin";
+                aux3.lloc++;
+                aux3.leng--;
+            }
+            /* Leave BEGIN for pl_block; on mismatch, the existing path also restores tok2. */
+            push_back_token(tok3, &aux3);
+            if (tok3 == K_BEGIN) {
+                plpgsql_yylval.str = aux1.lval.str;
+                plpgsql_yylloc = aux1.lloc;
+                u_sess->plsql_cxt.curr_compile_context->plpgsql_yyleng = aux1.leng;
+                return T_BLOCK_LABEL;
+            }
+        }
         if (tok2 == '.') {
             int tok3;
             TokenAuxData aux3;
