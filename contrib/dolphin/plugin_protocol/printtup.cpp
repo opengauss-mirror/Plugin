@@ -245,7 +245,7 @@ static void DolphinSendColumnDefinition(StringInfo buf, TupleDesc typeinfo, List
         }
 
         char* oriColName = NULL;
-        if (tle != NULL && strcmp(tle->resname, attrs[i].attname.data) == 0 &&
+        if (tle != NULL && tle->resname != NULL && strcmp(tle->resname, attrs[i].attname.data) == 0 &&
             OidIsValid(tle->resorigtbl) && tle->resorigcol > 0) {
             HeapTuple tuple;
             Form_pg_attribute attForm;

@@ -106,6 +106,10 @@ enum dolphin_server_capability {
 #define SERVER_STATUS_IN_TRANS_READONLY 8192
 #define SERVER_SESSION_STATE_CHANGED (1UL << 14)
 
+/* Default character set (collation) number sent in the MySQL protocol column
+ * definition packet for dynamically constructed column types (0x2d = 45). */
+#define DOLPHIN_DEFAULT_CHARSETNR 0x2d
+
 /* Command phase definition*/
 #define COM_SLEEP                   0x00 
 #define COM_QUIT                    0x01

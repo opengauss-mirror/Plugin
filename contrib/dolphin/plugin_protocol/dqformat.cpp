@@ -399,7 +399,7 @@ void make_dolphin_column_definition(const char *name, char *tableName, dolphin_c
     field->db = u_sess->proc_cxt.MyProcPort->database_name;
     field->table = tableName;
     field->org_table = tableName;
-    field->charsetnr = 0x2d;
+    field->charsetnr = DOLPHIN_DEFAULT_CHARSETNR;
 }
 
 void make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName, char *oriColName,
