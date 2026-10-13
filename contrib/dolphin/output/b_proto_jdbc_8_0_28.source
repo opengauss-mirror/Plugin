@@ -564,6 +564,15 @@ Field:ts:timestamp(0)
 Field:dt:datetime(0)
 Field:n:decimal(10,2)
 Field:i:int
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcOkPacketTest localhost $dp db_jdbc proto_user Gauss@123
+insert generated key: positive
+update generated key: 0
+delete generated key: 0
+error-path insert generated key: positive
+duplicate key before update: 1062/23000
+update after error generated key: 0
+duplicate key before plain insert: 1062/23000
+plain insert after error generated key: 0
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcErrorMappingTest localhost $dp db_jdbc proto_user Gauss@123
 duplicate key: 1062/23000
 generic 23505 preserved: 23505

@@ -40,6 +40,8 @@
 #define SHOW_TAG_LEN 4
 #define EXPLAIN_TAG_LEN 7
 #define EXPLAIN_SUCCESS_TAG_LEN 15
+#define INSERT_TAG_LEN 6
+#define REPLACE_TAG_LEN 7
 #define MYSQL_DUP_ENTRY_ERROR 1062
 #define MYSQL_INTEGRITY_CONSTRAINT_VIOLATION "23000"
 
@@ -145,10 +147,21 @@ void dolphin_end_command(const char *completionTag)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(BEENTRY_STMEMENET_CXT.current_row_count, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
+        /*
+         * Only INSERT/REPLACE expose generated IDs in OK packets. COPY may set
+         * last_autoinc_value to first_autoinc, but a "COPY n" completion now
+         * reports insertId 0 instead of that value.
+         */
+        uint64 insertId = 0;
+        if (strncasecmp(completionTag, "INSERT", INSERT_TAG_LEN) == 0 ||
+            strncasecmp(completionTag, "REPLACE", REPLACE_TAG_LEN) == 0) {
+            insertId = u_sess->cmd_cxt.last_autoinc_value;
+        }
+        make_ok_packet(BEENTRY_STMEMENET_CXT.current_row_count, insertId, "", &ok_packet);
         set_ok_packet_sql_mode_status(&ok_packet);
         send_network_ok_packet(&ok_packet);
     }
+    u_sess->cmd_cxt.last_autoinc_value = 0;
 }
 
 void dolphin_send_message(ErrorData *edata)
@@ -183,6 +196,7 @@ void dolphin_send_message(ErrorData *edata)
     pfree(err_packet);
     DestroyStringInfo(buf);
     pq_flush();
+    u_sess->cmd_cxt.last_autoinc_value = 0;
 }
 
 int dophin_read_command(StringInfo buf)
@@ -503,7 +517,7 @@ int execute_text_protocol_sql(const char *sql)
         }
     } else {
         network_mysqld_ok_packet_t ok_packet;
-        make_ok_packet(SPI_processed, u_sess->cmd_cxt.last_autoinc_value, "", &ok_packet);
+        make_ok_packet(SPI_processed, 0, "", &ok_packet);
         set_ok_packet_sql_mode_status(&ok_packet);
         send_network_ok_packet(&ok_packet);
     }
