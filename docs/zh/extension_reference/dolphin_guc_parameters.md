@@ -552,6 +552,36 @@ dayname
 
 **默认值**：openGauss Server(MulanPSL-2.0)
 
+## version<a name="section203671436826b"></a>
+
+**参数说明**：该参数目前未实现其具体意义。参数值为字符串类型，表示服务端版本字符串。openGauss B 兼容模式通过 dolphin 握手上报的版本与此默认值对齐为 `8.0.28-dophin-server`，供 Prisma 等 MySQL 客户端探测 `@@version` / `@@GLOBAL.version`。
+
+该参数目前属于USERSET类型参数，但设置参数值时会报错（将参数设置为default时不会报错），与 MySQL 只读行为对齐。
+
+**取值范围**：字符串
+
+**默认值**：8.0.28-dophin-server
+
+**示例**：
+
+```sql
+--查询version
+openGauss=# select @@version;
+          version          
+---------------------------
+ 8.0.28-dophin-server
+(1 row)
+--查询GLOBAL.version（与 SESSION 同值）
+openGauss=# select @@GLOBAL.version;
+          version          
+---------------------------
+ 8.0.28-dophin-server
+(1 row)
+--设置version会报错
+openGauss=# set version = 'x';
+ERROR:  Variable 'version' is a read only variable.
+```
+
 ## auto_increment_increment<a name="section203671436827"></a>
 
 **参数说明**：该参数目前未实现其具体意义。参数值为整数类型，表示自增列的自增步长。
@@ -880,6 +910,30 @@ SET
 --设置sql_auto_is_null为default
 openGauss=# set sql_auto_is_null = default;
 SET
+```
+
+## socket<a name="section203671436841b"></a>
+
+**参数说明**：该参数目前未实现其具体意义。参数值为字符串类型，表示 Unix socket 文件路径。openGauss B 兼容 MySQL 协议无对应 Unix socket，默认返回空字符串，供 Prisma 等 MySQL 客户端探测 `@@socket`。
+
+该参数目前属于USERSET类型参数，但设置参数值时会报错（将参数设置为default时不会报错），与 MySQL 只读行为对齐。
+
+**取值范围**：字符串
+
+**默认值**：空字符串
+
+**示例**：
+
+```sql
+--查询socket
+openGauss=# select @@socket;
+ socket 
+--------
+ 
+(1 row)
+--设置socket会报错
+openGauss=# set socket = '';
+ERROR:  Variable 'socket' is a read only variable.
 ```
 
 ## system_time_zone<a name="section203671436842"></a>

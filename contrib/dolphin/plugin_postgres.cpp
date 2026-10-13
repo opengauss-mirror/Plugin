@@ -199,6 +199,8 @@ static bool check_system_time_zone(char** newval, void** extra, GucSource source
 static bool check_time_zone(char** newval, void** extra, GucSource source);
 static bool check_default_storage_engine(char** newval, void** extra, GucSource source);
 static bool check_sql_auto_is_null(int* newval, void** extra, GucSource source);
+static bool check_socket(char** newval, void** extra, GucSource source);
+static bool check_version(char** newval, void** extra, GucSource source);
 static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
     PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
@@ -917,6 +919,28 @@ static bool check_sql_auto_is_null(int* newval, void** extra, GucSource source)
     return true;
 }
 
+static bool check_socket(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_DEFAULT) {
+        return true;
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("Variable 'socket' is a read only variable.")));
+    return false;
+}
+
+static bool check_version(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_DEFAULT) {
+        return true;
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("Variable 'version' is a read only variable.")));
+    return false;
+}
+
 static bool check_wait_timeout(int* newval, void** extra, GucSource source)
 {
     if (source == PGC_S_SESSION) {
@@ -1467,6 +1491,38 @@ void init_session_vars(void)
                             check_sql_auto_is_null,
                             NULL,
                             NULL);
+    /*
+     * Compatibility stub: Prisma (and other MySQL clients) probe @@socket on connect /
+     * db pull. openGauss B-compatible mode has no Unix socket path for MySQL protocol;
+     * return empty string so clients that only need the variable to exist can proceed.
+     * Read-only like MySQL: user SET is rejected (see check_socket / license).
+     */
+    DefineCustomStringVariable("socket",
+                               gettext_noop("The name of the Unix socket file (compatibility stub for MySQL clients)."),
+                               NULL,
+                               &GetSessionContext()->socket,
+                               "",
+                               PGC_USERSET,
+                               0,
+                               check_socket,
+                               NULL,
+                               NULL);
+    /*
+     * Compatibility stub: Prisma (and other MySQL clients) probe
+     * SELECT @@version, @@GLOBAL.version. Align default with dolphin handshake
+     * server_version_str ("8.0.28-dophin-server"). Read-only like MySQL;
+     * @@GLOBAL.version is remapped in setValueToConstExpr (MySQL dual-scope).
+     */
+    DefineCustomStringVariable("version",
+                               gettext_noop("Server version string (compatibility stub for MySQL clients)."),
+                               NULL,
+                               &GetSessionContext()->version,
+                               "8.0.28-dophin-server",
+                               PGC_USERSET,
+                               0,
+                               check_version,
+                               NULL,
+                               NULL);
     DefineCustomIntVariable("wait_timeout",
                             gettext_noop("After this number of seconds of inactivity, "
                             "the server will close the noninteractive connection."),

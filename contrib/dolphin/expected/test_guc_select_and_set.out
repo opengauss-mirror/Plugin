@@ -389,4 +389,43 @@ select @@default_storage_engine as default_storage_engine;
  InnoDB
 (1 row)
 
+-- Prisma mysql engine probe stubs (@@socket / @@version / @@GLOBAL.version)
+-- socket/version are read-only (MySQL-compatible): SET must error
+select @@socket as socket;
+ socket 
+--------
+ 
+(1 row)
+
+set socket = '';
+ERROR:  Variable 'socket' is a read only variable.
+set @@socket = '';
+ERROR:  Variable 'socket' is a read only variable.
+set @@session.socket = '';
+ERROR:  Variable 'socket' is a read only variable.
+select @@version as version;
+       version        
+----------------------
+ 8.0.28-dophin-server
+(1 row)
+
+set version = 'x';
+ERROR:  Variable 'version' is a read only variable.
+set @@version = 'x';
+ERROR:  Variable 'version' is a read only variable.
+set @@session.version = 'x';
+ERROR:  Variable 'version' is a read only variable.
+select @@GLOBAL.version as global_version;
+    global_version    
+----------------------
+ 8.0.28-dophin-server
+(1 row)
+
+-- Cover ColId path for @@SESSION.VERSION
+select @@session.version as session_version;
+   session_version    
+----------------------
+ 8.0.28-dophin-server
+(1 row)
+
 drop schema test_guc_select_and_set cascade;

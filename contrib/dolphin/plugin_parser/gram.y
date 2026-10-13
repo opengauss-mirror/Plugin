@@ -3453,7 +3453,12 @@ set_ident_expr:
  
 					}
 				}
-			| SET_IDENT_SESSION '.' normal_ident
+			/*
+			 * Use ColId (not normal_ident) so unreserved keywords such as
+			 * VERSION can appear in @@SESSION./@@GLOBAL. system variables.
+			 * Prisma issues SELECT @@version, @@GLOBAL.version on connect.
+			 */
+			| SET_IDENT_SESSION '.' ColId
 				{
 					SetVariableExpr *n = makeNode(SetVariableExpr);
 					n->name = $3;
@@ -3461,7 +3466,7 @@ set_ident_expr:
 					n->is_global = false;
 					$$ = (Node *) n;
 				}
-			| SET_IDENT_GLOBAL '.' normal_ident
+			| SET_IDENT_GLOBAL '.' ColId
 				{
 					SetVariableExpr *n = makeNode(SetVariableExpr);
 					n->name = $3;
