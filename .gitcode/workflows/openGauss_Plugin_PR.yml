@@ -175,5 +175,5 @@ post:
           uses: openlibing/pr-label-action@v1.0.0
           with:
             add_labels: ${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-success' || 'ci-pipeline-failed' }}
-            remove_labels: ci-pipeline-running
+            remove_labels: ci-pipeline-running,${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-failed' || 'ci-pipeline-success' }}
             token: ${{secrets.PR_LABEL_TOKEN}}
