@@ -17,9 +17,9 @@ SPQ基于的是sharedEverything分布式架构，所有节点都共享集群内�
 
 ### 编译安装
 
-1. [编译安装openGauss](https://gitcode.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91)。
+1. [编译安装openGauss](https://atomgit.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91)。
 
-2. 将[spqplugin源码](https://gitcode.com/opengauss/Plugin/tree/master/contrib/spq_plugin)拷贝到openGauss-server源码的contrib目录下。
+2. 将[spqplugin源码](https://atomgit.com/opengauss/Plugin/tree/master/contrib/spq_plugin)拷贝到openGauss-server源码的contrib目录下。
 
 3. 进入spq_plugin目录执行make install。
 

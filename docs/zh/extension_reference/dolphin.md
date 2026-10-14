@@ -10,9 +10,9 @@ openGauss提供dolphin Extension（版本为dolphin-1.0.0）。dolphin Extension
     
 ### 编译安装
 
-1. [编译安装openGauss](https://gitcode.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91)。
+1. [编译安装openGauss](https://atomgit.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91)。
 
-2. 将[dolphin源码](https://gitcode.com/opengauss/Plugin/tree/master/contrib/dolphin)拷贝到openGauss-server源码的contrib目录下。
+2. 将[dolphin源码](https://atomgit.com/opengauss/Plugin/tree/master/contrib/dolphin)拷贝到openGauss-server源码的contrib目录下。
 
 3. 进入dolphin目录执行make install。
 

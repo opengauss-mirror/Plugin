@@ -19,9 +19,9 @@ The extension is automatically installed and does not require manual installatio
 
 ### Compilation and Installation
 
-1. [Compile and install openGauss](https://gitcode.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91).
+1. [Compile and install openGauss](https://atomgit.com/opengauss/openGauss-server#%E7%BC%96%E8%AF%91).
 
-2. Copy the [spqplugin source code](https://gitcode.com/opengauss/Plugin/tree/master/contrib/spq_plugin) to the `contrib` directory of the openGauss-server source code.
+2. Copy the [spqplugin source code](https://atomgit.com/opengauss/Plugin/tree/master/contrib/spq_plugin) to the `contrib` directory of the openGauss-server source code.
 
 3. Enter the `spq_plugin` directory and run `make install`.
 
