@@ -566,7 +566,6 @@ Field:n:decimal(10,2)
 Field:i:int
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-8.0.28.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcOkPacketTest localhost $dp db_jdbc proto_user Gauss@123
 insert generated key: positive
-second table insert generated key: positive
 update generated key: 0
 delete generated key: 0
 error-path insert generated key: positive

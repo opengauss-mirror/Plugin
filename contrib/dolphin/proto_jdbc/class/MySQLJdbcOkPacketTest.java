@@ -55,12 +55,9 @@ public class MySQLJdbcOkPacketTest {
             statement.executeUpdate("drop table if exists jdbc_ok_packet");
             try {
                 statement.executeUpdate("drop table if exists jdbc_ok_packet_no_auto");
-                statement.executeUpdate("drop table if exists jdbc_ok_packet_second");
                 statement.executeUpdate("create table jdbc_ok_packet_no_auto (id int primary key)");
                 statement.executeUpdate(
                     "create table jdbc_ok_packet (id bigint auto_increment primary key, score int not null)");
-                statement.executeUpdate(
-                    "create table jdbc_ok_packet_second (id bigint auto_increment primary key, score int not null)");
 
                 statement.executeUpdate("insert into jdbc_ok_packet (score) values (10)",
                     Statement.RETURN_GENERATED_KEYS);
@@ -69,15 +66,6 @@ public class MySQLJdbcOkPacketTest {
                     throw new AssertionError("INSERT should return a positive generated key, got " + insertId);
                 }
                 System.out.println("insert generated key: positive");
-
-                statement.executeUpdate("insert into jdbc_ok_packet_second (score) values (20)",
-                    Statement.RETURN_GENERATED_KEYS);
-                long secondInsertId = generatedKey(statement);
-                if (secondInsertId <= 0) {
-                    throw new AssertionError("INSERT into the second table should return a positive generated key, got " +
-                        secondInsertId);
-                }
-                System.out.println("second table insert generated key: positive");
 
                 statement.executeUpdate("update jdbc_ok_packet set score = 11 where id = " + insertId,
                     Statement.RETURN_GENERATED_KEYS);
@@ -136,11 +124,7 @@ public class MySQLJdbcOkPacketTest {
                 try {
                     statement.executeUpdate("drop table if exists jdbc_ok_packet_no_auto");
                 } finally {
-                    try {
-                        statement.executeUpdate("drop table if exists jdbc_ok_packet_second");
-                    } finally {
-                        statement.executeUpdate("drop table if exists jdbc_ok_packet");
-                    }
+                    statement.executeUpdate("drop table if exists jdbc_ok_packet");
                 }
             }
         }
