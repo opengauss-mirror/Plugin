@@ -159,7 +159,7 @@ extra_clean:
 clean: extra_clean
 	rm -f parallel_schedule_dolphinA
 
-dolphin--5.3.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--4.3.sql upgrade_script/dolphin--4.3--4.4.sql upgrade_script/dolphin--4.4--4.5.sql upgrade_script/dolphin--4.5--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql upgrade_script/dolphin--5.2--5.3.sql
+dolphin--6.0.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql upgrade_script/dolphin--4.0--4.1.sql upgrade_script/dolphin--4.1--4.2.sql upgrade_script/dolphin--4.2--4.3.sql upgrade_script/dolphin--4.3--4.4.sql upgrade_script/dolphin--4.4--4.5.sql upgrade_script/dolphin--4.5--5.0.sql upgrade_script/dolphin--5.0--5.1.sql upgrade_script/dolphin--5.1--5.2.sql upgrade_script/dolphin--5.2--5.3.sql upgrade_script/dolphin--5.3--6.0.sql
 	cat $^ > $@
 
 dolphin--4.0--4.0.1.sql: upgrade_script/dolphin--2.0--2.0.1.sql
@@ -175,7 +175,7 @@ parallel_schedule_dolphinA: parallel_schedule_dolphinS parallel_schedule_dolphin
 parallel_schedule_dolphin: parallel_schedule_dolphinA parallel_schedule_dolphinB
 	cat $^ > $@
 
-DATA_built = dolphin--5.3.sql openGauss_expr_dolphin.ir dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql parallel_schedule_dolphin
+DATA_built = dolphin--6.0.sql openGauss_expr_dolphin.ir dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql parallel_schedule_dolphin
 DATA = upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql \
 upgrade_script/dolphin--1.1--2.0.sql rollback_script/dolphin--2.0--1.1.sql \
 upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql \
@@ -189,6 +189,7 @@ upgrade_script/dolphin--4.5--5.0.sql rollback_script/dolphin--5.0--4.5.sql \
 upgrade_script/dolphin--5.0--5.1.sql rollback_script/dolphin--5.1--5.0.sql \
 upgrade_script/dolphin--5.1--5.2.sql rollback_script/dolphin--5.2--5.1.sql \
 upgrade_script/dolphin--5.2--5.3.sql rollback_script/dolphin--5.3--5.2.sql \
+upgrade_script/dolphin--5.3--6.0.sql rollback_script/dolphin--6.0--5.3.sql \
 upgrade_script/dolphin--2.0--2.0.1.sql rollback_script/dolphin--2.0.1--2.0.sql \
 dolphin--4.0--4.0.1.sql dolphin--4.0.1--4.0.sql
 
