@@ -1,5 +1,8 @@
 #!/bin/bash
 CMAKE_OPT="-DENABLE_MULTIPLE_NODES=OFF -DENABLE_PRIVATEGAUSS=OFF -DENABLE_THREAD_SAFETY=ON -DENABLE_LITE_MODE=$1 -DENABLE_MOT=$2"
+if [ "$3" == "ON" ] || [ "${ENABLE_BLCKSZ_4K}" == "ON" ]; then
+    CMAKE_OPT="$CMAKE_OPT -DENABLE_BLCKSZ_4K=ON"
+fi
 cpus_num=$(grep -w processor /proc/cpuinfo|wc -l)
 rm -f dolphin--4.5.sql
 touch dolphin--4.5.sql
