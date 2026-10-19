@@ -1295,6 +1295,17 @@ other			.
 				}
 {newParam}		{
 					SET_YYLLOC();
+					/*
+					 * Expose BEGIN during B-format body collection so ':BEGIN' does not
+					 * hide a nested block and let its END truncate the procedure body.
+					 * Match the PL lexer's B_FORMAT gate regardless of the parser override.
+					 */
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && yyextra->in_slash_proc_body &&
+						pg_strcasecmp(yytext, ":begin") == 0) {
+						yyless(1);
+						yyextra->is_hint_str = false;
+						return ':';
+					}
 					yylval->ival = getDynaParamSeq(yytext + 1, false, true, yyscanner);
 					yyextra->is_hint_str = false;
 					return PARAM;
