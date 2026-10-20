@@ -57,6 +57,15 @@
 
 #include <limits.h>
 
+/*
+ * Defined in pl_scanner.cpp.  Set while the scanner is inside the body of a
+ * MySQL-style "DECLARE ... HANDLER FOR ..." statement so that "SET var = value"
+ * is reduced to a single assignment statement.  Kept local to the dolphin
+ * PL/pgSQL scanner/grammar to avoid depending on a field in the core
+ * PLpgSQL_compile_context.
+ */
+extern THR_LOCAL bool plpgsql_is_declare_handler_body;
+
 #define MAX_LAYER 256
 #define LENGTH_OF_BRACKETS_AND_DOT 4
 #define LENGTH_OF_QUOTATION_MARKS 2
@@ -930,11 +939,29 @@ declare_stmt    : T_DECLARE_CURSOR decl_varname K_CURSOR opt_scrollable
                         pfree($2);
                         $$ = NULL;
                     }
-                | T_DECLARE_HANDLER handler_type K_HANDLER K_FOR cond_list proc_stmt
+                | T_DECLARE_HANDLER handler_type K_HANDLER K_FOR cond_list
+                    {
+                        /*
+                         * The handler action is a normal statement rather than
+                         * a declaration.  Resume identifier lookup before parsing
+                         * it so that variables declared earlier are visible,
+                         * e.g. SET done = 1 in MySQL-style handlers.  Mark the
+                         * scope so the scanner turns "SET var = value" into a
+                         * single assignment statement.
+                         */
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+                        plpgsql_is_declare_handler_body = true;
+                    }
+                    proc_stmt
                     {
                         int tok = -1;
+                        /* the handler body ends here; leave the SET-assignment scope */
+                        plpgsql_is_declare_handler_body = false;
                         plpgsql_peek(&tok);
-                        if (tok != K_DECLARE) {
+                        if (tok == K_DECLARE) {
+                            /* more declarations follow, back to declare-mode lookup */
+                            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+                        } else {
                             u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
                         }
                         PLpgSQL_exception *newp;
@@ -943,7 +970,7 @@ declare_stmt    : T_DECLARE_CURSOR decl_varname K_CURSOR opt_scrollable
                         newp->lineno     = plpgsql_location_to_lineno(@1);
                         newp->handler_type = $2;
                         newp->conditions = $5;
-                        newp->action	 = list_make1($6);
+                        newp->action	 = list_make1($7);
 
                         $$ = newp;
                     }
