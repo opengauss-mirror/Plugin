@@ -4,7 +4,8 @@ CREATE USER user1 WITH ENCRYPTED PASSWORD 'user1@1234';
 CREATE USER user2 WITH ENCRYPTED PASSWORD 'user2@1234';
 CREATE USER user3 WITH ENCRYPTED PASSWORD 'user3@1234';
 select usename from pg_catalog.pg_user 
-    where usename='user1' or usename='user2' or usename='user3';
+    where usename='user1' or usename='user2' or usename='user3'
+    order by usename;
  usename 
 ---------
  user1
@@ -24,7 +25,8 @@ select usename from pg_catalog.pg_user
 (0 rows)
 
 select usename from pg_catalog.pg_user 
-    where usename='user4' or usename='user5' or usename='user6';
+    where usename='user4' or usename='user5' or usename='user6'
+    order by usename;
  usename 
 ---------
  user4
@@ -39,7 +41,8 @@ rename user
     user7 to user3;
 ERROR:  role "user7" does not exist
 select usename from pg_catalog.pg_user 
-    where usename='user4' or usename='user5' or usename='user6';
+    where usename='user4' or usename='user5' or usename='user6'
+    order by usename;
  usename 
 ---------
  user4
