@@ -191,3 +191,6 @@ test: prepare_index_con tpcc_plan parse_fusion tpcc_opt
 test: alter_type_index_comment
 
 test: test_create_function
+
+# Parser name validation and UPSERT clause guards
+test: parser_null_guards
