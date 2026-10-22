@@ -16,6 +16,9 @@ select elt(1,null,'1.2a测试',23);
 select elt(true,12,null,'1.2a测试',23);
 select elt('1',1);
 select elt('1',1.2);
+-- A prior index overflow must not warn for a valid index.
+select elt('1', coalesce(elt('999999999999999999999999999999999999', 'x'), 'ok'));
+select elt('1',1.2);
 select elt(1,'a','b');
 select elt(1,'a',2);
 select elt('1.0', 0);

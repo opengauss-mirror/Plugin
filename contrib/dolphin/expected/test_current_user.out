@@ -80,10 +80,32 @@ CREATE USER MAPPING FOR current_user SERVER s1;
 DROP USER MAPPING FOR current_user SERVER s1;
 CREATE USER MAPPING FOR current_user() SERVER s1;
 DROP USER MAPPING FOR current_user() SERVER s1;
+-- Make the USER keyword check independent of roles left by other tests.
+CREATE TEMP TABLE mapping_user_fixture AS
+SELECT NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'user') AS created;
+DO $$
+BEGIN
+    IF (SELECT created FROM mapping_user_fixture) THEN
+        CREATE ROLE "user" NOLOGIN PASSWORD 'MappingUser@123';
+    END IF;
+END;
+$$;
 CREATE USER MAPPING FOR USER SERVER s1;
-ERROR:  role "USER" does not exist
+SELECT usename FROM pg_user_mappings WHERE srvname = 's1';
+ usename 
+---------
+ user
+(1 row)
+
 DROP USER MAPPING FOR USER SERVER s1;
-ERROR:  role "USER" does not exist
+DO $$
+BEGIN
+    IF (SELECT created FROM mapping_user_fixture) THEN
+        DROP ROLE "user";
+    END IF;
+END;
+$$;
+DROP TABLE mapping_user_fixture;
 CREATE USER MAPPING FOR u1 SERVER s1;
 DROP USER MAPPING FOR u1 SERVER s1;
 drop user u1;
