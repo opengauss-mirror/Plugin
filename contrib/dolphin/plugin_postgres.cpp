@@ -933,6 +933,18 @@ FORCE_INLINE BSqlPluginContext* GetSessionContext()
     return (BSqlPluginContext *)u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
 }
 
+conn_mysql_infoP_t GetMysqlConnectionInfo()
+{
+    if (u_sess->attr.attr_common.extension_session_vars_array == NULL ||
+        dolphin_index >= u_sess->attr.attr_common.extension_session_vars_array_size ||
+        u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
+        return NULL;
+    }
+    BSqlPluginContext *context =
+        (BSqlPluginContext *)u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
+    return context->Conn_Mysql_Info;
+}
+
 void set_extension_index(uint32 index)
 {
     dolphin_index = index;
@@ -1110,6 +1122,11 @@ void init_session_vars(void)
         errno_t rc = memcpy_s(cxt->Conn_Mysql_Info, sizeof(conn_mysql_info_t),
                               temp_Conn_Mysql_Info, sizeof(conn_mysql_info_t));
         securec_check(rc, "\0", "\0");
+        if (temp_Conn_Mysql_Info->requested_schema != NULL) {
+            cxt->Conn_Mysql_Info->requested_schema =
+                MemoryContextStrdup(u_sess->self_mem_cxt, temp_Conn_Mysql_Info->requested_schema);
+            pfree_ext(temp_Conn_Mysql_Info->requested_schema);
+        }
         pfree(temp_Conn_Mysql_Info);
         temp_Conn_Mysql_Info = NULL;
     }

@@ -119,6 +119,8 @@ typedef struct conn_mysql_info {
     uint32 server_capabilities;
     uint32 max_packet_size;
     uint8 charset;
+    char *requested_schema;
+    bool authentication_pending;
     /* data */
 } conn_mysql_info_t, *conn_mysql_infoP_t;
 
@@ -213,6 +215,7 @@ typedef struct BSqlPluginContext {
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
+conn_mysql_infoP_t GetMysqlConnectionInfo();
 
 #define PG_RETURN_UINT64(x) return UInt64GetDatum(x)
 #define PG_GETARG_UINT64(n) DatumGetUInt64(PG_GETARG_DATUM(n))

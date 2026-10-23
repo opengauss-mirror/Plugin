@@ -27,10 +27,15 @@
 #include "cipher.h"
 
 #include "catalog/pg_authid.h"
+#include "catalog/namespace.h"
+#include "access/xact.h"
+#include "utils/acl.h"
+#include "parser/scansup.h"
 #include "utils/builtins.h"
 
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/password.h"
+#include "plugin_protocol/handler.h"
 #include "plugin_protocol/auth.h"
 
 extern int SSL_set_fd_ex_wrap(Port* port, int fd);
@@ -133,7 +138,7 @@ int dolphin_conn_handshake(Port* port)
 
     StringInfo buf = makeStringInfo();
     u_sess->proc_cxt.nextSeqid = 0;
-    temp_Conn_Mysql_Info = (conn_mysql_infoP_t)palloc(sizeof(conn_mysql_info_t));
+    temp_Conn_Mysql_Info = (conn_mysql_infoP_t)palloc0(sizeof(conn_mysql_info_t));
 
     // send handshakev10 packet
     network_mysqld_auth_challenge *challenge = make_mysqld_handshakev10_packet(temp_Conn_Mysql_Info->conn_scramble);
@@ -149,6 +154,7 @@ int dolphin_conn_handshake(Port* port)
     // read user login request packet
     if (dq_special_getmessage(buf) != STATUS_OK) {
         DestroyStringInfo(buf);
+        dolphin_comm_reset();
         return EOF;
     }
     
@@ -158,6 +164,7 @@ int dolphin_conn_handshake(Port* port)
     DestroyStringInfo(buf);
 
     if (authreq == NULL) {
+        dolphin_comm_reset();
         return EOF;
     }
     temp_Conn_Mysql_Info->client_capabilities = authreq->client_capabilities;
@@ -186,12 +193,10 @@ int dolphin_conn_handshake(Port* port)
         temp_Conn_Mysql_Info->conn_sha256_token[CLIENT_PASSWORD_SHA256_TOKEN_LEN] = 0x00;
     }
 
-    if (authreq->schema) {
-        StringInfo search_path = makeStringInfo();
-        appendStringInfo(search_path, "%s,\"$user\"", authreq->schema);
-        SetConfigOption("search_path", search_path->data, PGC_SUSET, PGC_S_OVERRIDE);
-        DestroyStringInfo(search_path);
+    if (authreq->schema != NULL && authreq->schema[0] != '\0') {
+        temp_Conn_Mysql_Info->requested_schema = pstrdup(authreq->schema);
     }
+    pfree_ext(authreq->schema);
 
     pfree(authreq);
     return STATUS_OK;
@@ -200,12 +205,57 @@ int dolphin_conn_handshake(Port* port)
 void dolphin_client_authentication(Port *port)
 {
     dophin_hba_authentication(port);
+    temp_Conn_Mysql_Info->authentication_pending = true;
+}
+
+void dolphin_finish_authentication()
+{
+    conn_mysql_infoP_t connection = GetMysqlConnectionInfo();
+    if (connection == NULL || !connection->authentication_pending) {
+        return;
+    }
+
+    if (connection->requested_schema != NULL) {
+        StartTransactionCommand();
+        size_t schemaLength = strlen(connection->requested_schema);
+        char *schemaName = connection->requested_schema;
+        if (schemaLength < NAMEDATALEN && GetSessionContext()->lower_case_table_names != 0) {
+            schemaName = downcase_truncate_identifier(schemaName, schemaLength, false);
+        }
+        Oid namespaceOid = schemaLength < NAMEDATALEN ? get_namespace_oid(schemaName, true) : InvalidOid;
+        if (!OidIsValid(namespaceOid)) {
+            ereport(FATAL,
+                (errcode(ERRCODE_UNDEFINED_SCHEMA), signal_mysql_errno("1049"), signal_returnd_sqlstate("42000"),
+                    errmsg("Unknown database '%s'", connection->requested_schema)));
+        }
+        if (pg_namespace_aclcheck(namespaceOid, GetUserId(), ACL_USAGE) != ACLCHECK_OK) {
+            ereport(FATAL,
+                (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), signal_mysql_errno("1044"), signal_returnd_sqlstate("42000"),
+                    errmsg("Access denied for user '%s' to database '%s'",
+                        u_sess->proc_cxt.MyProcPort->user_name, connection->requested_schema)));
+        }
+
+        StringInfo search_path = makeStringInfo();
+        appendStringInfoChar(search_path, '"');
+        for (const char *character = schemaName; *character != '\0'; character++) {
+            if (*character == '"') {
+                appendStringInfoChar(search_path, '"');
+            }
+            appendStringInfoChar(search_path, *character);
+        }
+        appendStringInfoString(search_path, "\",\"$user\"");
+        SetConfigOption("search_path", search_path->data, PGC_SUSET, PGC_S_OVERRIDE);
+        DestroyStringInfo(search_path);
+        CommitTransactionCommand();
+        pfree_ext(connection->requested_schema);
+    }
 
     network_mysqld_ok_packet_t ok_packet;
     make_ok_packet(0, 0, "", &ok_packet);
     set_ok_packet_sql_mode_status(&ok_packet);
     send_network_ok_packet(&ok_packet);
     pq_flush();
+    connection->authentication_pending = false;
 }
 
 void dophin_hba_authentication(Port *port)

@@ -32,6 +32,7 @@
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
+#include "plugin_protocol/auth.h"
 
 #include "instruments/instr_handle_mgr.h"
 
@@ -110,6 +111,7 @@ void dophin_send_ready_for_query(CommandDest dest)
         case DestBatchBroadCast:
         case DestBatchLocalBroadCast:
         case DestBatchRedistribute:
+            dolphin_finish_authentication();
             /* Flush output at end of cycle in any case. */
             pq_flush();
 
@@ -341,7 +343,12 @@ int dolphin_process_command(StringInfo buf)
 
 void dolphin_comm_reset(void)
 {
+    conn_mysql_infoP_t connection = GetMysqlConnectionInfo();
+    if (connection != NULL) {
+        connection->authentication_pending = false;
+    }
     if (temp_Conn_Mysql_Info) {
+        pfree_ext(temp_Conn_Mysql_Info->requested_schema);
         pfree(temp_Conn_Mysql_Info);
         temp_Conn_Mysql_Info = NULL;
     }
