@@ -181,4 +181,18 @@ select @@default_storage_engine as default_storage_engine;
 set default_storage_engine = 'ArbitraryEngine';
 select @@default_storage_engine as default_storage_engine;
 
+-- Prisma mysql engine probe stubs (@@socket / @@version / @@GLOBAL.version)
+-- socket/version are read-only (MySQL-compatible): SET must error
+select @@socket as socket;
+set socket = '';
+set @@socket = '';
+set @@session.socket = '';
+select @@version as version;
+set version = 'x';
+set @@version = 'x';
+set @@session.version = 'x';
+select @@GLOBAL.version as global_version;
+-- Cover ColId path for @@SESSION.VERSION
+select @@session.version as session_version;
+
 drop schema test_guc_select_and_set cascade;

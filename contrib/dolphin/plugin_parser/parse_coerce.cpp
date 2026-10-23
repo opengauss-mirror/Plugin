@@ -4550,7 +4550,20 @@ Const* setValueToConstExpr(SetVariableExpr* set)
 
     struct config_generic* record = NULL;
     record = find_option(set->name, false, ERROR);
-    char* variable_str = SetVariableExprGetConfigOption(set);
+    /*
+     * MySQL exposes some system variables under both @@SESSION and @@GLOBAL
+     * (e.g. @@version). openGauss GUC contexts are exclusive (USERSET vs INTERNAL),
+     * so remap GLOBAL reads of known dual-scope stubs to the session GUC.
+     */
+    char* variable_str = NULL;
+    if (set->is_global && set->name != NULL && pg_strcasecmp(set->name, "version") == 0) {
+        SetVariableExpr session_set = *set;
+        session_set.is_global = false;
+        session_set.is_session = true;
+        variable_str = SetVariableExprGetConfigOption(&session_set);
+    } else {
+        variable_str = SetVariableExprGetConfigOption(set);
+    }
 
     switch (record->vartype) {
         case PGC_BOOL:
