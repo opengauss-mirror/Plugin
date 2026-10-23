@@ -461,6 +461,7 @@ const TypeItem* GetItemByTypeOid(Oid oid)
             result->og_typname = NameStr(typeForm->typname);
             result->og_type_oid = oid;
             result->flags = 0;
+            result->charset_flag = DOLPHIN_DEFAULT_CHARSETNR; /* fixes INFORMATION_SCHEMA column charset */
             switch (typeForm->typtype) {
                 case 'e':
                     result->dolphin_type_id = DOLPHIN_TYPE_ENUM;
