@@ -6,7 +6,8 @@ CREATE USER user2 WITH ENCRYPTED PASSWORD 'user2@1234';
 CREATE USER user3 WITH ENCRYPTED PASSWORD 'user3@1234';
 
 select usename from pg_catalog.pg_user 
-    where usename='user1' or usename='user2' or usename='user3';
+    where usename='user1' or usename='user2' or usename='user3'
+    order by usename;
 
 -- rename to other name
 rename user 
@@ -18,7 +19,8 @@ select usename from pg_catalog.pg_user
     where usename='user1' or usename='user2' or usename='user3';
 
 select usename from pg_catalog.pg_user 
-    where usename='user4' or usename='user5' or usename='user6';
+    where usename='user4' or usename='user5' or usename='user6'
+    order by usename;
 
 -- rename rollback
 rename user 
@@ -27,7 +29,8 @@ rename user
     user7 to user3;
 
 select usename from pg_catalog.pg_user 
-    where usename='user4' or usename='user5' or usename='user6';
+    where usename='user4' or usename='user5' or usename='user6'
+    order by usename;
 
 set enable_set_variable_b_format to off;
 set b_compatibility_user_host_auth to on;

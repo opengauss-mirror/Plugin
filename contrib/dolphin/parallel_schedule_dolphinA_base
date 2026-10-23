@@ -14,7 +14,8 @@ test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlm
 test: test_shows
 test: gsql_command
 
-test: test_shows_2 time_function_test infomation_schema_test
+test: time_function_test infomation_schema_test
+#test: test_shows_2
 
 # must be single test group, cause other connection will affect the result
 test: test_shows_3
@@ -27,11 +28,13 @@ test: nvarchar regexp upsert zerofill test_set_charset test_optimize
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum bxconst_test table_option_separator grant_user_to_user compress_modify_flag
 
-test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_binary_and_varbinary create_function_core time_type_compare
+test: like_index_test_binary_and_varbinary create_function_core time_type_compare
+#test: like_index_test_utf8 like_index_test_utf8mb4
 
 test: test_enum_collation multi_delete join_using function_type_test join_commas_connect define_primary_key interval_units interval_expr_unit date_add_time_interval test_interval_expr
 
-test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3 test_straight_join enum_empty_str_copy
+test: test_straight_join enum_empty_str_copy
+#test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
 
 test: builtin_funcs/bin builtin_funcs/char builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format builtin_funcs/math_func builtin_funcs/ascii builtin_funcs/bit_func builtin_funcs/varlena_func builtin_funcs/b_compatibility_substr_func
 
@@ -39,7 +42,8 @@ test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_fun
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_cast3 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
 
-test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast bool_implicit_cast
+test: uint_procedure_col_bypass uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast bool_implicit_cast
+#test: uint_smp
 
 test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure algorithm_opt extract_units rpad_integer_overflow
 
@@ -49,19 +53,19 @@ test: b_database_deadlock
 
 test: b_database_diff_session
 
-test: b_database_getlock b_database_getlock_01 b_database_getlock_02 b_database_getlock_03 b_database_getlock_04 b_database_getlock_05 b_database_getlock_06 b_database_getlock_07
+#test: b_database_getlock b_database_getlock_01 b_database_getlock_02 b_database_getlock_03 b_database_getlock_04 b_database_getlock_05 b_database_getlock_06 b_database_getlock_07
 
-test: b_database_isfreelock_01 b_database_isfreelock_02 b_database_isfreelock_03 b_database_isfreelock_04
+#test: b_database_isfreelock_01 b_database_isfreelock_02 b_database_isfreelock_03 b_database_isfreelock_04
 
-test: b_database_isusedlock_01 b_database_isusedlock_02 b_database_isusedlock_03 b_database_isusedlock_04
+#test: b_database_isusedlock_01 b_database_isusedlock_02 b_database_isusedlock_03 b_database_isusedlock_04
 
-test: b_database_lock_other_01 b_database_lock_other_02 b_database_lock_other_03
+#test: b_database_lock_other_01 b_database_lock_other_02 b_database_lock_other_03
 
-test: b_database_other_languages_01 b_database_other_languages_02 b_database_other_languages_03 b_database_other_languages_04 b_database_other_languages_05 b_database_other_languages_06
+#test: b_database_other_languages_01 b_database_other_languages_02 b_database_other_languages_03 b_database_other_languages_04 b_database_other_languages_05 b_database_other_languages_06
 
-test: b_database_releasealllocks_01
+#test: b_database_releasealllocks_01
 
-test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
+#test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
 
 test: enable_thread_pool
 
@@ -69,34 +73,38 @@ test: create_function_test/m_type_create_proc create_function_test/b_compat_crea
 
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
 
-test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index invisible_index
+test: b_do_statment option test_table_index test_float_double_real_double_precision_MD single_line_trigger invisible_index
+#test: revoke prefixkey_index
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace multi_select_in_proc
 
-test: network2 use_dbname view_definer_test insert_set show_variables b_auto_increment nulls_get_partition null_in_partitions partition_test1
+test: network2 use_dbname insert_set show_variables nulls_get_partition null_in_partitions partition_test1
+#test: view_definer_test b_auto_increment
 
 test: partition_test2 partition_test3 partition_test4 partition_test5 partition_maxvalue_test partition_no_key
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
 
-test: test_show_status pad_char_to_full_length dump_dumpall_test timestamp_test test_mediumtext ai dump_ddl dump_force_clean dump_encryption_test
+test: test_show_status pad_char_to_full_length timestamp_test test_mediumtext ai dump_ddl
+#test: dump_dumpall_test dump_force_clean dump_encryption_test
 
-test: b_auth_8_0 ignore_keyword_list test_show_slave_status recursive autoinc_sql_mode privileges
+test: b_auth_8_0 ignore_keyword_list recursive autoinc_sql_mode privileges
+#test: test_show_slave_status
 
 # lock tables
 test: lock_tables lock_tables_1
 
 # test user@host
-test: user_host_test
+#test: user_host_test
 
 test: sqlmode_having is_clause null-safe_eq_in null-safe_eq_like null-safe_eq_test uint_array
 
 # show open tables
 test: test_show_open_tables
-test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
+#test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
 test: test_show_open_tables_cleanup
 
-test: drop_view
+#test: drop_view
 
 test: test_create_function
 

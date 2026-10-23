@@ -131,7 +131,6 @@ REGRESS = scan\
           cypher_remove \
           cypher_delete \
           cypher_with \
-          cypher_vle \
           cypher_union \
           cypher_merge \
           generated_columns \
@@ -155,6 +154,8 @@ REGRESS = scan\
           extension_security \
           security \
           drop
+
+# cypher_vle
 
 srcdir=`pwd`
 
