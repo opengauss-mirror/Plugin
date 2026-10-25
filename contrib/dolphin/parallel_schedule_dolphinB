@@ -110,3 +110,4 @@ test: insert_bypass prepare_index_con tpcc_plan
 
 # Preserve index comments during ALTER COLUMN TYPE.
 test: alter_type_index_comment
+test: node_mysql2_binary
