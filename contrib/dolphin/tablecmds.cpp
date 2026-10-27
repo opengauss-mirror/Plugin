@@ -20323,6 +20323,34 @@ static void setPrimaryNotnull(Oid relid, IndexStmt *stmt, AlteredTableInfo* tab)
 }
 
 /*
+ * Index rebuilding changes its OID even when the storage can be reused.
+ * Restore CLUSTER ON after the replacement indexes have been created.
+ */
+static void ATQueueClusteredIndexRestore(Oid indexOid, Relation rel, AlteredTableInfo* tab)
+{
+    /* Ustore does not support CLUSTER; do not restore legacy markers. */
+    if (rel->rd_tam_ops == TableAmUstore) {
+        return;
+    }
+
+    HeapTuple indexTuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(indexOid));
+    if (!HeapTupleIsValid(indexTuple)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for index %u", indexOid)));
+    }
+    bool isClustered = ((Form_pg_index)GETSTRUCT(indexTuple))->indisclustered;
+    ReleaseSysCache(indexTuple);
+    if (!isClustered) {
+        return;
+    }
+
+    AlterTableCmd* cmd = makeNode(AlterTableCmd);
+    cmd->subtype = AT_ClusterOn;
+    cmd->name = get_rel_name(indexOid);
+    tab->subcmds[AT_PASS_OLD_CONSTR] = lappend(tab->subcmds[AT_PASS_OLD_CONSTR], cmd);
+}
+
+/*
  * Attach each generated command to the proper place in the work queue.
  * Note this could result in creation of entirely new work-queue entries.
  *
@@ -20360,6 +20388,7 @@ static void AttachEachCommandInQueue(
                 newcmd->subtype = AT_ReAddIndex;
                 newcmd->def = (Node*)stmt;
                 tab->subcmds[AT_PASS_OLD_INDEX] = lappend(tab->subcmds[AT_PASS_OLD_INDEX], newcmd);
+                ATQueueClusteredIndexRestore(oldId, rel, tab);
                 break;
             }
             case T_AlterTableStmt: {
@@ -20390,6 +20419,7 @@ static void AttachEachCommandInQueue(
 
                             cmd->subtype = AT_ReAddIndex;
                             tab->subcmds[AT_PASS_OLD_INDEX] = lappend(tab->subcmds[AT_PASS_OLD_INDEX], cmd);
+                            ATQueueClusteredIndexRestore(oldIndexId, rel, tab);
 
                             if (tab->is_first_after) {
                                 setPrimaryNotnull(rel->rd_id, (IndexStmt*)cmd->def, tab);
@@ -21193,6 +21223,15 @@ static ObjectAddress ATExecClusterOn(Relation rel, const char* indexName, LOCKMO
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("cluster not supported in ustore")));
+    }
+
+    /*
+     * Online ALTER TYPE can release the table lock between catalog passes.
+     * mark_index_clustered() requires exclusive access to the parent table.
+     * Acquire it before the index lock to preserve the usual lock order.
+     */
+    if (!CheckLockRelationOid(RelationGetRelid(rel), AccessExclusiveLock)) {
+        LockRelationOid(RelationGetRelid(rel), AccessExclusiveLock);
     }
 
     indexOid = get_relname_relid(indexName, rel->rd_rel->relnamespace);
@@ -30019,6 +30058,19 @@ static void ATExecMergePartition(Relation partTableRel, AlterTableCmd* cmd, Alte
         foreach (cell, oldRelations) {
             Relation srcPartRel = (Relation)lfirst(cell);
             releaseDummyRelation(&srcPartRel);
+        }
+    }
+
+    /*
+     * The cloned BM25 indexes were built on an empty temporary heap. Unlike
+     * btree indexes, they cannot be merged by adjusting block offsets, so
+     * rebuild them after copying the heap and applying online DDL changes.
+     */
+    ListCell* clonedIndexCell = NULL;
+    forboth(cell, indexRel_list, clonedIndexCell, clonedIndexRelId_list) {
+        Relation currentIndex = (Relation)lfirst(cell);
+        if (currentIndex->rd_rel->relam == BM25_AM_OID) {
+            reindex_index(lfirst_oid(clonedIndexCell), InvalidOid, false, NULL, false);
         }
     }
 
