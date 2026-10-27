@@ -17,16 +17,23 @@ on:
       - '**'
     comments:
       - '^\s*/retest\s*$'
-  pr_comment:
-    types:
-      - created
-    keyword: '^\s*/retest\s*$'
   workflow_dispatch:
 
 permissions:
   repository: read
   pr: write
   note: write
+
+# 同一 PR 再次触发（新提交、reopen、/retest）时，立刻取消还在跑的上一次门禁。
+# mr_id 抢占只作用于同一个合并请求；不同 PR 仍可并行，最多 5 条。
+concurrency:
+  enable: true
+  max: 100
+  exceed-action: QUEUE
+  preemption:
+    enable: true
+    events:
+      - mr_id
 
 env:
   GITCODE_REPO: opengauss/Plugin
@@ -52,18 +59,21 @@ jobs:
     needs: prepare
     runs-on: [self-hosted, plugin_1]
     timeout-minutes: 120
+    env:
+      GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
+      GITCODE_REF: ${{ atomgit.ref }}
+      GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+      GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
     steps:
-      - name: Manual checkout source code
+      - name: Run openGauss plugin compile on plugin-1
         run: |
-          set -e
-          workspace="$PWD"
-          repo="${ATOMGIT_REPOSITORY:-}"
-          if [ -z "${repo}" ]; then
-            repo="${GITCODE_REPOSITORY:-}"
-          fi
-          if [ -z "${repo}" ] || ! echo "${repo}" | grep -q '/'; then
-            repo="${GITCODE_REPO:-opengauss/Plugin}"
-          fi
+          set -eu
+          # CI scripts always come from opengauss/Plugin master, not the PR target branch.
+          repo="${GITCODE_REPO:-opengauss/Plugin}"
+          case "${repo}" in
+            */*) ;;
+            *) echo "Invalid repository: ${repo}" >&2; exit 1 ;;
+          esac
           server="${ATOMGIT_SERVER_URL:-}"
           if [ -z "${server}" ]; then
             server="${GITCODE_SERVER_URL:-}"
@@ -71,60 +81,49 @@ jobs:
           if [ -z "${server}" ]; then
             server="https://gitcode.com"
           fi
-          repo_url="${server%/}/${repo}.git"
-          ref="${ATOMGIT_REF:-}"
-          if [ -z "${ref}" ]; then
-            ref="${GITCODE_REF:-}"
-          fi
-          if [ -z "${ref}" ]; then
-            ref="refs/heads/master"
-          fi
-          sha="${ATOMGIT_SHA:-}"
-          if [ -z "${sha}" ]; then
-            sha="${GITCODE_SHA:-}"
-          fi
-          if [ -z "${sha}" ]; then
-            sha="FETCH_HEAD"
-          fi
-          echo "Manual checkout ${repo_url} ${ref} ${sha}"
-
-          mkdir -p "${workspace}"
-          cd "${workspace}"
-          if [ ! -d .git ]; then
-            git init
-          fi
-          if git remote | grep -qx origin; then
-            git remote set-url origin "${repo_url}"
-          else
-            git remote add origin "${repo_url}"
-          fi
-          git fetch --depth=1 origin "${ref}"
-          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
-      - name: Run openGauss plugin compile on plugin-1
-        run: |
-          source .gitcode/scripts/resolve_gitcode_env.sh
-          bash .gitcode/scripts/plugin_compile.sh
+          server="${server%/}"
+          dest="${PWD}/master-gitcode-scripts"
+          rm -rf "${dest}"
+          mkdir -p "${dest}"
+          dir="$(mktemp -d)"
+          cleanup() {
+            rm -rf "${dir}"
+          }
+          trap cleanup EXIT
+          echo "Fetch CI scripts from ${server}/${repo}.git refs/heads/master"
+          (
+            cd "${dir}"
+            git init -q
+            git remote add origin "${server}/${repo}.git"
+            timeout 300 git fetch --depth=1 --force origin refs/heads/master
+            git show "FETCH_HEAD:.gitcode/scripts/resolve_gitcode_env.sh" > "${dest}/resolve_gitcode_env.sh"
+            git show "FETCH_HEAD:.gitcode/scripts/plugin_compile.sh" > "${dest}/plugin_compile.sh"
+          )
+          source "${dest}/resolve_gitcode_env.sh"
+          bash "${dest}/plugin_compile.sh"
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
   compile_plugin_2:
     name: openGauss_Plugin_Compile_Part2
     needs: prepare
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
+    env:
+      GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
+      GITCODE_REF: ${{ atomgit.ref }}
+      GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+      GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
     steps:
-      - name: Manual checkout source code
+      - name: Run openGauss plugin compile on docker-1
         run: |
-          set -e
-          workspace="$PWD"
-          repo="${ATOMGIT_REPOSITORY:-}"
-          if [ -z "${repo}" ]; then
-            repo="${GITCODE_REPOSITORY:-}"
-          fi
-          if [ -z "${repo}" ] || ! echo "${repo}" | grep -q '/'; then
-            repo="${GITCODE_REPO:-opengauss/Plugin}"
-          fi
+          set -eu
+          # CI scripts always come from opengauss/Plugin master, not the PR target branch.
+          repo="${GITCODE_REPO:-opengauss/Plugin}"
+          case "${repo}" in
+            */*) ;;
+            *) echo "Invalid repository: ${repo}" >&2; exit 1 ;;
+          esac
           server="${ATOMGIT_SERVER_URL:-}"
           if [ -z "${server}" ]; then
             server="${GITCODE_SERVER_URL:-}"
@@ -132,42 +131,28 @@ jobs:
           if [ -z "${server}" ]; then
             server="https://gitcode.com"
           fi
-          repo_url="${server%/}/${repo}.git"
-          ref="${ATOMGIT_REF:-}"
-          if [ -z "${ref}" ]; then
-            ref="${GITCODE_REF:-}"
-          fi
-          if [ -z "${ref}" ]; then
-            ref="refs/heads/master"
-          fi
-          sha="${ATOMGIT_SHA:-}"
-          if [ -z "${sha}" ]; then
-            sha="${GITCODE_SHA:-}"
-          fi
-          if [ -z "${sha}" ]; then
-            sha="FETCH_HEAD"
-          fi
-          echo "Manual checkout ${repo_url} ${ref} ${sha}"
-
-          mkdir -p "${workspace}"
-          cd "${workspace}"
-          if [ ! -d .git ]; then
-            git init
-          fi
-          if git remote | grep -qx origin; then
-            git remote set-url origin "${repo_url}"
-          else
-            git remote add origin "${repo_url}"
-          fi
-          git fetch --depth=1 origin "${ref}"
-          git checkout -f "${sha}" || git checkout -f FETCH_HEAD
-      - name: Run openGauss plugin compile on docker-1
-        run: |
-          source .gitcode/scripts/resolve_gitcode_env.sh
-          bash .gitcode/scripts/plugin_compile.sh
+          server="${server%/}"
+          dest="${PWD}/master-gitcode-scripts"
+          rm -rf "${dest}"
+          mkdir -p "${dest}"
+          dir="$(mktemp -d)"
+          cleanup() {
+            rm -rf "${dir}"
+          }
+          trap cleanup EXIT
+          echo "Fetch CI scripts from ${server}/${repo}.git refs/heads/master"
+          (
+            cd "${dir}"
+            git init -q
+            git remote add origin "${server}/${repo}.git"
+            timeout 300 git fetch --depth=1 --force origin refs/heads/master
+            git show "FETCH_HEAD:.gitcode/scripts/resolve_gitcode_env.sh" > "${dest}/resolve_gitcode_env.sh"
+            git show "FETCH_HEAD:.gitcode/scripts/plugin_compile.sh" > "${dest}/plugin_compile.sh"
+          )
+          source "${dest}/resolve_gitcode_env.sh"
+          bash "${dest}/plugin_compile.sh"
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
 
 post:
   jobs:
