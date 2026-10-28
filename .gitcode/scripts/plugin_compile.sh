@@ -8,8 +8,13 @@ echo "gitcodeMergeRef: ${GITCODE_MERGE_REF:-}"
 
 git config --global core.compression 0
 
-gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-master}"
+gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-}"
+gitcodeTargetBranch="${gitcodeTargetBranch#refs/heads/}"
 if [[ -z "${gitcodeTargetBranch}" ]]; then
+  if [[ -n "${GITCODE_PR_IID:-}" ]]; then
+    echo "ERROR: GITCODE_TARGET_BRANCH is empty; cannot determine the pull request target branch." >&2
+    exit 1
+  fi
   gitcodeTargetBranch=master
 fi
 echo "gitcodeTargetBranch: ${gitcodeTargetBranch}"
