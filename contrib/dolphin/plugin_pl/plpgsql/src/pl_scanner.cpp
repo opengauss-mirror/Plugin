@@ -98,6 +98,15 @@ typedef struct {
 
 THR_LOCAL TokenAuxData pushback_auxdata[MAX_PUSHBACKS];
 
+/*
+ * Set while scanning the body of a MySQL-style "DECLARE ... HANDLER FOR ..."
+ * statement.  In this scope plpgsql_yylex drops the SET keyword of
+ * "SET var = value" so that the assignment is reduced to a single stmt_assign.
+ * Kept local to the dolphin PL/pgSQL scanner/grammar so that the plugin does
+ * not depend on a field added to the core PLpgSQL_compile_context.
+ */
+THR_LOCAL bool plpgsql_is_declare_handler_body = false;
+
 /* Internal functions */
 static int internal_yylex(TokenAuxData* auxdata);
 static void push_back_token(int token, TokenAuxData* auxdata);
@@ -147,6 +156,37 @@ int plpgsql_yylex(void)
     }
 
     tok1 = internal_yylex(&aux1);
+    /*
+     * MySQL-style "DECLARE ... HANDLER FOR ... SET var = value": the handler
+     * action is a single statement, so drop the SET keyword when it introduces
+     * a variable assignment and let the assignment be parsed as one stmt_assign.
+     * Otherwise stmt_execsql's K_SET rule reduces SET to a NULL statement and
+     * leaves the assignment to be parsed as a separate statement, which makes
+     * the exception action NULL and crashes when the handler runs.
+     *
+     * This SET token is fetched as the lookahead that terminates the condition
+     * list, i.e. before the grammar's mid-rule switches to normal identifier
+     * lookup for the handler action.  Switch it here as well, otherwise the
+     * name after SET is still scanned as T_WORD instead of T_DATUM and the
+     * check below would not recognize it as a variable.
+     *
+     * Note that the core scanner does not hand back K_SET here: "set" is an
+     * unreserved PL/pgSQL keyword, so it comes back as IDENT and is only turned
+     * into K_SET by the unreserved-keyword mapping further down.  Match the raw
+     * identifier as well, otherwise this branch can never trigger.
+     */
+    if ((tok1 == K_SET ||
+         (tok1 == IDENT && aux1.lval.str != NULL && strcasecmp(aux1.lval.str, "set") == 0)) &&
+        plpgsql_is_declare_handler_body) {
+        u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+        if (plpgsql_is_token_match(T_RECORD) || plpgsql_is_token_match(T_VARRAY_VAR) ||
+            plpgsql_is_token_match(T_TABLE_VAR) || plpgsql_is_token_match(T_DATUM) ||
+            plpgsql_is_token_match(T_PACKAGE_VARIABLE)) {
+            /* discard the SET keyword, return the variable token in its place */
+            return plpgsql_yylex();
+        }
+    }
+
     if (tok1 == IDENT || tok1 == PARAM || tok1 == T_SQL_BULK_EXCEPTIONS) {
         int tok2;
         TokenAuxData aux2;
@@ -757,6 +797,7 @@ void plpgsql_scanner_init(const char* str)
     curr_compile->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
 
     curr_compile->num_pushbacks = 0;
+    plpgsql_is_declare_handler_body = false;
 
     location_lineno_init();
     /*
@@ -1091,6 +1132,12 @@ static int plpgsql_parse_declare(int* loc)
             plpgsql_yylval = aux1.lval;
         } else if (strcasecmp(aux3.lval.str, "handler") == 0) {
             u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+            /*
+             * Mark the handler scope here, not in the grammar's mid-rule: the
+             * SET of "SET var = value" is fetched as the lookahead that ends
+             * the condition list, which happens before that mid-rule runs.
+             */
+            plpgsql_is_declare_handler_body = true;
             token = T_DECLARE_HANDLER;
             push_back_token(tok3, &aux3);
             push_back_token(tok2, &aux2);
