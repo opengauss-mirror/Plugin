@@ -64,6 +64,8 @@ extern THR_LOCAL bool plpgsql_is_declare_handler_body;
 
 #define LENGTH_OF_BRACKETS_AND_DOT 4
 #define LENGTH_OF_QUOTATION_MARKS 2
+/* Label itemno is otherwise unused; mark BEGIN blocks for compile-time validation. */
+#define B_BLOCK_LABEL_MARKER 1
 #define IS_ANONYMOUS_BLOCK \
     (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile != NULL && \
         strcmp(u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_signature, "inline_code_block") ==0)
@@ -460,6 +462,7 @@ static void CheckParallelCursorOpr(PLpgSQL_stmt_fetch* fetch);
 %token <wdatum>		T_DATUM		/* a VAR, ROW, REC, or RECFIELD variable */
 %token <word>		T_PLACEHOLDER		/* place holder , for IN/OUT parameters */
 %token <word>		T_LABELLOOP T_LABELWHILE T_LABELREPEAT
+%token <str>        T_BLOCK_LABEL /* B-format label preceding BEGIN */
 %token <wdatum>		T_VARRAY T_ARRAY_FIRST  T_ARRAY_LAST  T_ARRAY_COUNT  T_ARRAY_EXISTS  T_ARRAY_PRIOR  T_ARRAY_NEXT  T_ARRAY_DELETE  T_ARRAY_EXTEND  T_ARRAY_TRIM  T_VARRAY_VAR  T_RECORD
 %token <wdatum>		T_TABLE T_TABLE_VAR T_PACKAGE_VARIABLE
 %token <wdatum>     T_PACKAGE_CURSOR_ISOPEN T_PACKAGE_CURSOR_FOUND T_PACKAGE_CURSOR_NOTFOUND T_PACKAGE_CURSOR_ROWCOUNT
@@ -4679,6 +4682,14 @@ stmt_exit		: exit_type opt_label opt_exitcond
                     {
                         PLpgSQL_stmt_exit *newp;
 
+                        /* ITERATE/CONTINUE may target loops, not ordinary BEGIN blocks. */
+                        PLpgSQL_nsitem *exit_label = $2 == NULL ? NULL :
+                            plpgsql_ns_lookup_label(plpgsql_ns_top(), $2);
+                        if (!$1 && exit_label != NULL && exit_label->itemno == B_BLOCK_LABEL_MARKER) {
+                            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                                errmsg("cannot iterate a BEGIN block label \"%s\"", $2)));
+                        }
+
                         newp = (PLpgSQL_stmt_exit *)palloc0(sizeof(PLpgSQL_stmt_exit));
                         newp->cmd_type = PLPGSQL_STMT_EXIT;
                         newp->is_exit  = $1;
@@ -6562,6 +6573,13 @@ opt_block_label	:
                     {
                         plpgsql_ns_push($2);
                         $$ = $2;
+                    }
+                | T_BLOCK_LABEL
+                    {
+                        /* Reuse native block semantics; a synthetic loop would intercept EXIT/CONTINUE. */
+                        plpgsql_ns_push($1);
+                        plpgsql_ns_top()->itemno = B_BLOCK_LABEL_MARKER;
+                        $$ = $1;
                     }
                 ;
 
