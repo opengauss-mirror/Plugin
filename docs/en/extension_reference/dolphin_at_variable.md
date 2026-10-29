@@ -10,7 +10,7 @@ In MySQL-compatible mode, openGauss supports the following two forms of using th
 
 - Supports assigning a value to the `@variable` variable using the SELECT command, as in `select @variable := value`.
 
-The `@variable` feature enables recursive queries in SQL. For details, see [Example 3](#example-3). A recursive query is a special query technique that traverses an entire dataset by repeatedly invoking a single query. Recursive queries are typically used to query tree-structured or graph-structured data, where parent-child relationships exist between nodes.
+The `@variable` feature enables recursive queries in SQL. For details, see [Example 3](#examples). A recursive query is a special query technique that traverses an entire dataset by repeatedly invoking a single query. Recursive queries are typically used to query tree-structured or graph-structured data, where parent-child relationships exist between nodes.
 
 ## Notes
 
