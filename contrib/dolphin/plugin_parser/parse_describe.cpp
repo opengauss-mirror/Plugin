@@ -5,6 +5,7 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "plugin_parser/parse_show.h"
+#include "plugin_parser/parse_relation.h"
 
 static Node* makeTypeColumn(bool smallcase = FALSE);
 static List* makeFromList();

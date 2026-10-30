@@ -1654,7 +1654,6 @@ Datum b_plpgsql_validator(PG_FUNCTION_ARGS)
                 PG_END_TRY();
             }
 #endif
-            saveCallFromFuncOid(saveRunningFuncOid);
             ReThrowError(edata);
         }
         PG_END_TRY();
