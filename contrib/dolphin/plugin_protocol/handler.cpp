@@ -115,7 +115,8 @@ void dolphin_send_message(ErrorData *edata)
         (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
     err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
     err_packet->errmsg = edata->message;
-    err_packet->sqlstate = "HY000";   // convert errcode to mysql SQLSTATE later
+    const char *mappedSqlState = get_dolphin_sqlstate(edata->sqlerrcode);
+    err_packet->sqlstate = mappedSqlState != NULL ? mappedSqlState : "HY000";
 
     StringInfo buf = makeStringInfo();
     send_network_err_packet(buf, err_packet);
