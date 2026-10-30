@@ -21,7 +21,7 @@ create table t1 (c1 int);
 --------+---------+-----------+---------+-------------
  c1     | integer |           | plain   | 
 View definition:
- SELECT  *
+ SELECT t1.c1
    FROM t1;
 
 select valid = true from pg_class join pg_object on oid = object_oid where relname = 'v1';
