@@ -175,4 +175,5 @@ END //
 
 DELIMITER ;
 -- call the parent procedure again, now expected success since child procedure exists
+set dolphin.sql_mode = 'block_return_multi_results';
 call sp_Parent();
