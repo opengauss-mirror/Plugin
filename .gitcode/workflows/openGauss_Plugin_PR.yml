@@ -109,7 +109,7 @@ jobs:
     name: openGauss_Plugin_Compile_Part2
     needs: prepare
     # 目标分支为 6.0.0 的 PR 不调度 docker_1 编译。
-    if: ${{ default() && env.PR_TARGET_BRANCH != '6.0.0' && env.PR_TARGET_BRANCH != 'refs/heads/6.0.0' }}
+    if: ${{ env.PR_TARGET_BRANCH != '6.0.0' && env.PR_TARGET_BRANCH != 'refs/heads/6.0.0' }}
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
     env:
