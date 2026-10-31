@@ -470,6 +470,22 @@ show create trigger aa;
 reset current_schema;
 drop schema test_get_def cascade;
 RESET ROLE;
+-- SHOW CREATE VIEW on an invalid user@host view.
+set current_schema = show_create;
+set enable_pbe_optimization = off;
+set b_compatibility_user_host_auth = on;
+create user 'test_showcreate_host'@'localhost' with sysadmin identified by 'Showcreate@Host1';
+create table t_invalid_view(id int, name varchar(20));
+insert into t_invalid_view values (10, 'tom'), (8, 'lili');
+create or replace algorithm = merge definer = 'test_showcreate_host'@'localhost' view v_invalid_view as
+select id, name from t_invalid_view where id < 10 with cascaded check option;
+drop table t_invalid_view;
+show create view v_invalid_view;
+drop view v_invalid_view;
+drop user 'test_showcreate_host'@'localhost';
+reset b_compatibility_user_host_auth;
+reset enable_pbe_optimization;
+reset current_schema;
 DROP USER test_showcreate;
 drop schema show_create cascade;
 reset current_schema;

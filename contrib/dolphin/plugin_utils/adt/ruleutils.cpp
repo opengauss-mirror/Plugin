@@ -99,6 +99,7 @@
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
 #include "utils/lsyscache.h"
+#include "utils/memutils.h"
 #include "utils/plpgsql.h"
 #include "utils/rel.h"
 #include "utils/rel_gs.h"
@@ -14067,6 +14068,41 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
     pfree_ext(viewdef);
 }
 
+/*
+ * SPI replanning can reset IudExprReuseContext while deparsing a view. Keep
+ * working data outside that context, then copy the result back to the caller.
+ */
+static void get_viewdefinfo_oid_safe(Oid viewOid, StringInfoData *buf)
+{
+    MemoryContext oldcontext = CurrentMemoryContext;
+    /* A child of the caller context could also be reset by nested SPI. */
+    MemoryContext viewcontext = AllocSetContextCreate(u_sess->top_transaction_mem_cxt,
+        "ShowCreateView", ALLOCSET_SMALL_MINSIZE, ALLOCSET_SMALL_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
+
+    PG_TRY();
+    {
+        MemoryContextSwitchTo(viewcontext);
+        /* Allocate buffer data here so it survives the caller context reset. */
+        initStringInfo(buf);
+        get_viewdefinfo_oid(viewOid, buf);
+
+        MemoryContextSwitchTo(oldcontext);
+        /* Copy out before deleting viewcontext; the copy has len + 1 bytes. */
+        buf->data = pstrdup(buf->data);
+        buf->maxlen = buf->len + 1;
+    }
+    PG_CATCH();
+    {
+        /* Leave the temporary context before deleting it on error. */
+        MemoryContextSwitchTo(oldcontext);
+        MemoryContextDelete(viewcontext);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    MemoryContextDelete(viewcontext);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(gs_get_viewdef_name);
 extern "C" DLL_PUBLIC Datum gs_get_viewdef_name(PG_FUNCTION_ARGS);
 
@@ -14079,7 +14115,6 @@ Datum gs_get_viewdef_name(PG_FUNCTION_ARGS)
     List *names = NIL;
     StringInfoData buf;
 
-    initStringInfo(&buf);
     /* Look up view name.  Can't lock it - we might not have privileges. */
     names = textToQualifiedNameList(viewname);
     viewrel = makeRangeVarFromNameList(names);
@@ -14087,8 +14122,9 @@ Datum gs_get_viewdef_name(PG_FUNCTION_ARGS)
     if (!has_schema_privileges_of_viewoid(viewoid)) {
         PG_RETURN_NULL();
     }
-    get_viewdefinfo_oid(viewoid, &buf);
+    /* Names are no longer needed and their context may be reset by nested SPI. */
     list_free_ext(names);
+    get_viewdefinfo_oid_safe(viewoid, &buf);
     PG_RETURN_TEXT_P(string_to_text(buf.data));
 }
 
@@ -14100,11 +14136,10 @@ Datum gs_get_viewdef_oid(PG_FUNCTION_ARGS)
     Oid viewOid = PG_GETARG_OID(0);
     StringInfoData buf;
 
-    initStringInfo(&buf);
     if (!has_schema_privileges_of_viewoid(viewOid)) {
         PG_RETURN_NULL();
     }
-    get_viewdefinfo_oid(viewOid, &buf);
+    get_viewdefinfo_oid_safe(viewOid, &buf);
     PG_RETURN_TEXT_P(string_to_text(buf.data));
 }
 
