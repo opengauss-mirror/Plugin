@@ -10603,6 +10603,79 @@ static void UpdateValueModifyFirstAfter(NewColumnValue *ex, Datum* values, bool*
     }
 }
 
+/*
+ * ADD column position records must be applied before MODIFY position records,
+ * but their attnum is the insertion position at that stage and must not be
+ * replaced with the column's final attnum.
+ */
+#ifdef DOLPHIN
+static List* OrderRewriteNewvals(AlteredTableInfo* tab)
+{
+    List* ordered = NIL;
+    ListCell* l = NULL;
+    foreach (l, tab->newvals) {
+        NewColumnValue* ex = (NewColumnValue*)lfirst(l);
+        if (ex->is_addloc) {
+            ordered = lappend(ordered, ex);
+        }
+    }
+    foreach (l, tab->newvals) {
+        NewColumnValue* ex = (NewColumnValue*)lfirst(l);
+        if (!ex->is_addloc) {
+            ordered = lappend(ordered, ex);
+        }
+    }
+    return ordered;
+}
+
+static AttrNumber FindAttrNumByName(TupleDesc tupDesc, const char* colName)
+{
+    if (colName == NULL) {
+        return InvalidAttrNumber;
+    }
+
+    for (int i = 0; i < tupDesc->natts; i++) {
+        Form_pg_attribute attr = &tupDesc->attrs[i];
+        if (!attr->attisdropped && strcmp(NameStr(attr->attname), colName) == 0) {
+            return attr->attnum;
+        }
+    }
+
+    return InvalidAttrNumber;
+}
+
+/*
+ * FIRST/AFTER changes pg_attribute numbers while ALTER TABLE subcommands are
+ * executed in different passes.  Consequently, the attnum saved in a
+ * NewColumnValue can describe an intermediate layout and must not be used to
+ * shuffle an array deformed with tab->oldDesc.  Build the working array in
+ * the final tuple layout by matching column names instead.
+ */
+static void RemapValuesForFirstAfter(TupleDesc oldTupDesc, TupleDesc newTupDesc,
+    Datum* oldValues, bool* oldIsnull, Datum* values, bool* isnull)
+{
+    errno_t rc = memset_s(values, newTupDesc->natts * sizeof(Datum), 0,
+        newTupDesc->natts * sizeof(Datum));
+    securec_check(rc, "\0", "\0");
+    rc = memset_s(isnull, newTupDesc->natts * sizeof(bool), true,
+        newTupDesc->natts * sizeof(bool));
+    securec_check(rc, "\0", "\0");
+
+    for (int i = 0; i < oldTupDesc->natts; i++) {
+        Form_pg_attribute oldAttr = &oldTupDesc->attrs[i];
+        if (oldAttr->attisdropped) {
+            continue;
+        }
+
+        AttrNumber newAttnum = FindAttrNumByName(newTupDesc, NameStr(oldAttr->attname));
+        if (AttributeNumberIsValid(newAttnum)) {
+            values[newAttnum - 1] = oldValues[i];
+            isnull[newAttnum - 1] = oldIsnull[i];
+        }
+    }
+}
+#endif
+
 static void UpdateGeneratedColumnIsnull(AlteredTableInfo* tab, bool* isnull, bool has_generated)
 {
     ListCell* l = NULL;
@@ -10921,6 +10994,10 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
         ExprContext* econtext = NULL;
         Datum* values = NULL;
         bool* isnull = NULL;
+#ifdef DOLPHIN
+        Datum* oldValues = NULL;
+        bool* oldIsnull = NULL;
+#endif
         bool isUstore = false;
         TupleTableSlot* oldslot = NULL;
         TupleTableSlot* newslot = NULL;
@@ -10971,6 +11048,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
         securec_check(rc, "\0", "\0");
         rc = memset_s(isnull, n * sizeof(bool), true, n * sizeof(bool));
         securec_check(rc, "\0", "\0");
+#ifdef DOLPHIN
+        if (tab->is_first_after) {
+            oldValues = (Datum*)palloc(oldTupDesc->natts * sizeof(Datum));
+            oldIsnull = (bool*)palloc(oldTupDesc->natts * sizeof(bool));
+        }
+#endif
 
         /*
          * Any attributes that are dropped according to the new tuple
@@ -11029,7 +11112,15 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                 {
                     int newvals_num = 0;
                     /* Extract data from old tuple */
-                    tableam_tops_deform_tuple(utuple, oldTupDesc, values, isnull);
+#ifdef DOLPHIN
+                    if (tab->is_first_after) {
+                        tableam_tops_deform_tuple(utuple, oldTupDesc, oldValues, oldIsnull);
+                        RemapValuesForFirstAfter(oldTupDesc, newTupDesc, oldValues, oldIsnull, values, isnull);
+                    } else
+#endif
+                    {
+                        tableam_tops_deform_tuple(utuple, oldTupDesc, values, isnull);
+                    }
 
                     /*
                      * Process supplied expressions to replace selected columns.
@@ -11039,11 +11130,27 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                      */
                     econtext->ecxt_scantuple = oldslot;
 
+#ifdef DOLPHIN
+                    List* rewrite_newvals = OrderRewriteNewvals(tab);
+                    foreach(l, rewrite_newvals)
+#else
                     foreach(l, tab->newvals)
+#endif
                     {
                         NewColumnValue *ex = (NewColumnValue*)lfirst(l);
 
-                        if (ex->is_addloc) {
+                        AttrNumber valueAttnum = ex->attnum;
+#ifdef DOLPHIN
+                        if (tab->is_first_after && ex->col_name != NULL) {
+                            valueAttnum = FindAttrNumByName(newTupDesc, ex->col_name);
+                            if (!AttributeNumberIsValid(valueAttnum)) {
+                                ereport(ERROR, (errcode(ERRCODE_UNDEFINED_COLUMN),
+                                    errmsg("column \"%s\" does not exist", ex->col_name)));
+                            }
+                        }
+#endif
+
+                        if (ex->is_addloc && !tab->is_first_after) {
                             for (i = oldTupDesc->natts + newvals_num - 1; i >= ex->attnum - 1; i--) {
                                 values[i + 1] = values[i];
                                 isnull[i + 1] = isnull[i];
@@ -11053,24 +11160,26 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
 
                         if (ex->is_generated) {
                             if (tab->is_first_after) {
-                                UpdateValueModifyFirstAfter(ex, values, isnull);
+                                isnull[valueAttnum - 1] = true;
                                 has_generated = true;
                             } else {
-                                isnull[ex->attnum - 1] = true;
+                                isnull[valueAttnum - 1] = true;
                             }
                             continue;
                         }
 
-                        values[ex->attnum - 1] = ExecEvalExpr(ex->exprstate, econtext, &isnull[ex->attnum - 1], NULL);
+                        values[valueAttnum - 1] =
+                            ExecEvalExpr(ex->exprstate, econtext, &isnull[valueAttnum - 1], NULL);
 
                         if (ex->is_autoinc) {
                             need_autoinc = (autoinc_attnum > 0);
                         }
 
-                        if (tab->is_first_after) {
-                            UpdateValueModifyFirstAfter(ex, values, isnull);
-                        }
                     }
+
+#ifdef DOLPHIN
+                    list_free_ext(rewrite_newvals);
+#endif
 
                     /* generated column */
                     UpdateGeneratedColumnIsnull(tab, isnull, has_generated);
@@ -11210,7 +11319,15 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                     int newvals_num = 0;
 
                     /* Extract data from old tuple */
-                    tableam_tops_deform_tuple(tuple, oldTupDesc, values, isnull);
+#ifdef DOLPHIN
+                    if (tab->is_first_after) {
+                        tableam_tops_deform_tuple(tuple, oldTupDesc, oldValues, oldIsnull);
+                        RemapValuesForFirstAfter(oldTupDesc, newTupDesc, oldValues, oldIsnull, values, isnull);
+                    } else
+#endif
+                    {
+                        tableam_tops_deform_tuple(tuple, oldTupDesc, values, isnull);
+                    }
                     if (oldTupDesc->tdhasoid)
                         tupOid = HeapTupleGetOid(tuple);
 
@@ -11223,10 +11340,27 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                     (void)ExecStoreTuple(tuple, oldslot, InvalidBuffer, false);
                     econtext->ecxt_scantuple = oldslot;
 
-                    foreach (l, tab->newvals) {
+#ifdef DOLPHIN
+                    List* rewrite_newvals = OrderRewriteNewvals(tab);
+                    foreach(l, rewrite_newvals)
+#else
+                    foreach(l, tab->newvals)
+#endif
+                    {
                         NewColumnValue* ex = (NewColumnValue*)lfirst(l);
 
-                        if (ex->is_addloc) {
+                        AttrNumber valueAttnum = ex->attnum;
+#ifdef DOLPHIN
+                        if (tab->is_first_after && ex->col_name != NULL) {
+                            valueAttnum = FindAttrNumByName(newTupDesc, ex->col_name);
+                            if (!AttributeNumberIsValid(valueAttnum)) {
+                                ereport(ERROR, (errcode(ERRCODE_UNDEFINED_COLUMN),
+                                    errmsg("column \"%s\" does not exist", ex->col_name)));
+                            }
+                        }
+#endif
+
+                        if (ex->is_addloc && !tab->is_first_after) {
                             for (i = oldTupDesc->natts + newvals_num - 1; i >= ex->attnum - 1; i--) {
                                 values[i + 1] = values[i];
                                 isnull[i + 1] = isnull[i];
@@ -11236,18 +11370,19 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
 
                         if (ex->is_generated) {
                             if (tab->is_first_after) {
-                                UpdateValueModifyFirstAfter(ex, values, isnull);
+                                isnull[valueAttnum - 1] = true;
                                 has_generated = true;
                             } else {
-                                isnull[ex->attnum - 1] = true;
+                                isnull[valueAttnum - 1] = true;
                             }
                             continue;
                         }
 
                         if (repl_modify && ex->make_dml_change) {
-                            isnull[ex->attnum - 1] = true;
+                            isnull[valueAttnum - 1] = true;
                         } else {
-                            values[ex->attnum - 1] = ExecEvalExpr(ex->exprstate, econtext, &isnull[ex->attnum - 1]);
+                            values[valueAttnum - 1] =
+                                ExecEvalExpr(ex->exprstate, econtext, &isnull[valueAttnum - 1]);
                         }
 
                         
@@ -11255,10 +11390,11 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                             need_autoinc = (autoinc_attnum > 0);
                         }
 
-                        if (tab->is_first_after) {
-                            UpdateValueModifyFirstAfter(ex, values, isnull);
-                        }
                     }
+
+#ifdef DOLPHIN
+                    list_free_ext(rewrite_newvals);
+#endif
 
                     /* generated column */
                     UpdateGeneratedColumnIsnull(tab, isnull, has_generated);
@@ -12961,6 +13097,35 @@ static void UpdatePgAttrdefFirstAfter(Relation rel, int startattnum, int endattn
 }
 
 /*
+ * Invalid views retain the old Var attnums in pg_rewrite so they can be
+ * rebuilt after missing columns are re-added.  FIRST/AFTER must not shift the
+ * matching pg_depend entries without also rewriting that saved query tree.
+ */
+static bool IsInvalidViewRewriteForFirstAfter(Oid rewriteOid)
+{
+    bool isInvalid = false;
+    ScanKeyData key;
+    ScanKeyInit(&key, ObjectIdAttributeNumber, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rewriteOid));
+
+    Relation rewriteRel = heap_open(RewriteRelationId, AccessShareLock);
+    SysScanDesc scan = systable_beginscan(rewriteRel, RewriteOidIndexId, true, NULL, 1, &key);
+    HeapTuple tuple = systable_getnext(scan);
+    if (HeapTupleIsValid(tuple)) {
+        Form_pg_rewrite rewriteForm = (Form_pg_rewrite)GETSTRUCT(tuple);
+        if (strcmp(NameStr(rewriteForm->rulename), ViewSelectRuleName) == 0) {
+            char relkind = get_rel_relkind(rewriteForm->ev_class);
+            if ((relkind == RELKIND_VIEW || relkind == RELKIND_MATVIEW) &&
+                !GetPgObjectValid(rewriteForm->ev_class, relkind)) {
+                isInvalid = true;
+            }
+        }
+    }
+    systable_endscan(scan);
+    heap_close(rewriteRel, AccessShareLock);
+    return isInvalid;
+}
+
+/*
  * update pg_depend.
  * 1. add column with first or after col_name.
  * 2. modify column to first or after column.
@@ -12991,6 +13156,11 @@ static void UpdatePgDependFirstAfter(Relation rel, int startattnum, int endattnu
         HeapTuple new_dep_tuple;
 
         dep_form  = (Form_pg_depend)GETSTRUCT(dep_tuple);
+
+        if (dep_form->classid == RewriteRelationId &&
+            IsInvalidViewRewriteForFirstAfter(dep_form->objid)) {
+            continue;
+        }
 
         if (dep_form->refobjsubid >= startattnum && dep_form->refobjsubid <= endattnum) {
             values[Anum_pg_depend_refobjsubid - 1] = is_increase ?
@@ -13978,7 +14148,18 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
         UpdateIndexFirstAfter(rel);
 
         /* create or replace view */
-        ReplaceViewQueryFirstAfter(query_str);
+        ListCell* viewinfo = NULL;
+        bool isViewValid = true;
+        foreach (viewinfo, query_str) {
+            ViewInfoForAdd *info = (ViewInfoForAdd *)lfirst(viewinfo);
+            isViewValid &= GetPgObjectValid(info->ev_class, get_rel_relkind(info->ev_class));
+            if (!isViewValid) {
+                break;
+            }
+        }
+        if (isViewValid) {
+            ReplaceViewQueryFirstAfter(query_str);
+        }
     } else if (rel->rd_rel->relkind == RELKIND_RELATION && query_str != NIL) {
         ListCell* viewinfo = NULL;
         bool isViewValid = true;
