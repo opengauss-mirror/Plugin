@@ -1238,6 +1238,30 @@ ERROR:  Trigger does not exist
 reset current_schema;
 drop schema test_get_def cascade;
 RESET ROLE;
+-- SHOW CREATE VIEW on an invalid user@host view.
+set current_schema = show_create;
+set enable_pbe_optimization = off;
+set b_compatibility_user_host_auth = on;
+create user 'test_showcreate_host'@'localhost' with sysadmin identified by 'Showcreate@Host1';
+create table t_invalid_view(id int, name varchar(20));
+insert into t_invalid_view values (10, 'tom'), (8, 'lili');
+create or replace algorithm = merge definer = 'test_showcreate_host'@'localhost' view v_invalid_view as
+select id, name from t_invalid_view where id < 10 with cascaded check option;
+drop table t_invalid_view;
+show create view v_invalid_view;
+WARNING:  View v_invalid_view references invalid table(s), view(s) or column(s).
+CONTEXT:  referenced column: Create View
+      View      |                                                         Create View                                                          | character_set_client | collation_connection 
+----------------+------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ v_invalid_view | CREATE OR REPLACE DEFINER = test_showcreate_host@localhost SQL SECURITY DEFINER VIEW show_create.v_invalid_view AS          +| UTF8                 | en_US.UTF-8
+                | SELECT t_invalid_view.id, t_invalid_view.name FROM t_invalid_view WHERE (t_invalid_view.id < 10) WITH CASCADED CHECK OPTION; |                      | 
+(1 row)
+
+drop view v_invalid_view;
+drop user 'test_showcreate_host'@'localhost';
+reset b_compatibility_user_host_auth;
+reset enable_pbe_optimization;
+reset current_schema;
 DROP USER test_showcreate;
 drop schema show_create cascade;
 reset current_schema;
