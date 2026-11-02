@@ -1997,17 +1997,17 @@ WARNING:  invalid input syntax for type numeric: "1.23a                         
 CONTEXT:  referenced column: round
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: round
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: round
@@ -2015,7 +2015,7 @@ WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: round
  round | round | round | round | round | round | round | round | round | round | round | round | round | round |    round     |   round    |   round    |       round        |       round        |       round        |       round        | round | round | round | round | round | round | round | round | round | round | round | round | round 
 -------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
-     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |     1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 |  2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |     1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 |  2023 | 1.230 | 1.230 |  1.23 |  1.23 |  1.23 |  1.23 |  1.23 |  1.23 | 1.230 | 1.000 | 5.000 | 0.000
 (1 row)
 
 select truncate(`int1`, 3), truncate(`uint1`, 3), truncate(`int2`, 3), truncate(`uint2`, 3), truncate(`int4`, 3), truncate(`uint4`, 3), truncate(`int8`, 3), truncate(`uint8`, 3), truncate(`float4`, 3), truncate(`float8`, 3), truncate(`numeric`, 3), truncate(`bit1`, 3), truncate(`bit64`, 3), truncate(`boolean`, 3), truncate(`date`, 3), truncate(`time`, 3), truncate(`time(4)`, 3), truncate(`datetime`, 3),truncate(`datetime(4)`, 3), truncate(`timestamp`, 3), truncate(`timestamp(4)`, 3), truncate(`year`, 3), truncate(`char`, 3), truncate(`varchar`, 3), truncate(`binary`, 3), truncate(`varbinary`, 3), truncate(`tinyblob`, 3), truncate(`blob`, 3), truncate(`mediumblob`, 3), truncate(`longblob`, 3), truncate(`text`, 3), truncate(`enum_t`, 3), truncate(`set_t`, 3), truncate(`json`, 3) from test_type_table;
@@ -2082,17 +2082,17 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r23
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r24
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r25
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r26
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r27
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r28
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r29
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r30
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r31
@@ -2123,7 +2123,7 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: truncate
 SQL function "truncate" statement 1
 referenced column: r29
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r30
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r31
@@ -2137,17 +2137,17 @@ WARNING:  invalid input syntax for type numeric: "1.23a                         
 CONTEXT:  referenced column: r23
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r24
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r25
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r26
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r27
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r28
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r29
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r30
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r31
@@ -2178,7 +2178,7 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: truncate
 SQL function "truncate" statement 1
 referenced column: r29
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: r30
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: r31
@@ -2187,12 +2187,12 @@ CONTEXT:  referenced column: truncate
 SQL function "truncate" statement 1
 referenced column: r34
 select * from test_round1 order by 1;
- r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 |  r9   |  r10  |  r11  |  r12  |  r13  | r14 |     r15      |    r16     |    r17     |        r18         |        r19         |        r20         |        r21         | r22  |  r23  |  r24  |  r25  |  r26  |  r27  |  r28  |  r29  |  r30  |  r31  |  r32  |  r33  |  r34  
-----+----+----+----+----+----+----+----+-------+-------+-------+-------+-------+-----+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
-  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
-  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
-  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
-  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+ r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 |  r9   |  r10  |  r11  |  r12  |  r13  | r14 |     r15      |    r16     |    r17     |        r18         |        r19         |        r20         |        r21         | r22  |  r23  |  r24  | r25  | r26  | r27  | r28  | r29  | r30  |  r31  |  r32  |  r33  |  r34  
+----+----+----+----+----+----+----+----+-------+-------+-------+-------+-------+-----+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+------+-------+-------+------+------+------+------+------+------+-------+-------+-------+-------
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23 | 1.230 | 1.000 | 5.000 | 0.000
 (4 rows)
 
 drop table if exists test_round1;
@@ -2208,6 +2208,91 @@ drop table if exists test_double_asin;
 drop table if exists test_double_atan;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
+-- cross-type round overloads: blob/binary family x integer/numeric types
+select round(2, cast('1' as longblob));
+ round 
+-------
+     2
+(1 row)
+
+select round(cast('2' as bigint), cast('1' as longblob));
+ round 
+-------
+     2
+(1 row)
+
+select round(cast('2' as smallint), cast('1' as blob));
+ round 
+-------
+     2
+(1 row)
+
+select round(cast('2' as uint4), cast('0' as blob));
+ round 
+-------
+     2
+(1 row)
+
+select round(cast('2.5' as number), cast('1' as blob));
+ round 
+-------
+   2.5
+(1 row)
+
+select round(cast('1.235' as longblob), 2);
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1.235' as blob), cast('2' as number));
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1.235' as binary), cast('2' as blob));
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1.235' as blob), cast('2' as binary));
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1.235' as longblob), cast('2' as tinyint));
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1.235' as varbinary(10)), cast('2' as smallint));
+ round 
+-------
+  1.24
+(1 row)
+
+select round(cast('1234567' as blob), cast('2' as uint4));
+  round  
+---------
+ 1234567
+(1 row)
+
+select round(cast('1.5' as integer), cast('0' as blob));
+ round 
+-------
+     2
+(1 row)
+
+select round(cast('2' as uint8), cast('0' as blob));
+ round 
+-------
+     2
+(1 row)
+
 drop table if exists test_type_table;
 drop table if exists test_floor_cts;
 drop table if exists test_ln_cts;

@@ -3531,3 +3531,48 @@ Datum to_binary_float_text_number(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT4(static_cast<float>(result));
 }
+
+#ifdef DOLPHIN
+
+static const int dolphin_round_max_dec = 309;
+static const double dolphin_round_base = 10.0;
+
+PG_FUNCTION_INFO_V1_PUBLIC(b_double_round);
+extern "C" DLL_PUBLIC Datum b_double_round(PG_FUNCTION_ARGS);
+Datum b_double_round(PG_FUNCTION_ARGS)
+{
+    float8 value = PG_GETARG_FLOAT8(0);
+    int64 dec = PG_GETARG_INT64(1);
+    uint64 absDec;
+    double tmp;
+    double result;
+
+    if (isnan(value)) {
+        PG_RETURN_FLOAT8(NAN);
+    }
+
+    if (isinf(value)) {
+        PG_RETURN_FLOAT8(value);
+    }
+
+    if (dec < 0 && dec <= -dolphin_round_max_dec) {
+        PG_RETURN_FLOAT8(0.0);
+    }
+
+    absDec = (dec < 0) ? (uint64)(-(dec + 1)) + 1 : (uint64)dec;
+    tmp = pow(dolphin_round_base, (double)absDec);
+
+    if (dec >= 0) {
+        double valueMulTmp = value * tmp;
+        if (isnan(valueMulTmp) || isinf(valueMulTmp)) {
+            PG_RETURN_FLOAT8(value);
+        }
+        result = rint(valueMulTmp) / tmp;
+    } else {
+        result = rint(value / tmp) * tmp;
+    }
+
+    PG_RETURN_FLOAT8(result);
+}
+
+#endif

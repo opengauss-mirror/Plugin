@@ -146,6 +146,24 @@ SELECT
     round(`text`, `text`)
 FROM t1 order by c1;
 
+SELECT round(`blob`, `tinyblob`) FROM t1;
+SELECT round(`tinyblob`, `blob`) FROM t1;
+SELECT round(`mediumblob`, `longblob`) FROM t1;
+SELECT round(`longblob`, `mediumblob`) FROM t1;
+
+SELECT pg_catalog.b_double_round(2.5, 0);
+SELECT pg_catalog.b_double_round(3.5, 0);
+SELECT pg_catalog.b_double_round(-2.5, 0);
+SELECT pg_catalog.b_double_round(-3.5, 0);
+SELECT pg_catalog.b_double_round(2.555, 2);
+SELECT pg_catalog.b_double_round(2.675, 2);
+SELECT pg_catalog.b_double_round(1234.56, -1);
+SELECT pg_catalog.b_double_round(15.0, -1);
+SELECT pg_catalog.b_double_round(123.456, -400);
+SELECT pg_catalog.b_double_round(1e308::float8, 10);
+SELECT pg_catalog.b_double_round('NaN'::float8, 2);
+SELECT pg_catalog.b_double_round('Infinity'::float8, 2);
+
 SELECT mod(`int1`, `int1`) FROM t1;
 SELECT mod(`uint1`, `uint1`) FROM t1;
 SELECT mod(`int2`, `int2`) FROM t1;
