@@ -517,13 +517,13 @@ show create table user;
 
 ALTER TABLE user MODIFY user_name VARCHAR(45);
 show create table user;
- Table |              Create Table               
--------+-----------------------------------------
- user  | SET search_path = public;              +
-       | CREATE TABLE user (                    +
-       |     id integer,                        +
-       |     user_name character varying(45)    +
-       | )                                      +
+ Table |                 Create Table                 
+-------+----------------------------------------------
+ user  | SET search_path = public;                   +
+       | CREATE TABLE user (                         +
+       |     id integer,                             +
+       |     user_name character varying(45) NOT NULL+
+       | )                                           +
        | WITH (orientation=row, compression=no);
 (1 row)
 

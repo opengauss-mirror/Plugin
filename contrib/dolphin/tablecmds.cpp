@@ -914,6 +914,7 @@ inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
         case AT_AddColumn:
         case AT_DropColumn:
         case AT_AlterColumnType:
+        case AT_ModifyColumn:
         case AT_ColumnDefault:
         case AT_SetStatistics:
         case AT_AddStatistics:
@@ -8376,6 +8377,18 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
 
             if (RelationIsSubPartitioned(rel) && cmd->subtype == AT_ClusterOn) {
                 ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot cluster a subpartition table")));
+            }
+
+            if ((cmd->subtype == AT_AlterColumnType || cmd->subtype == AT_ModifyColumn) &&
+                (cmd->is_first || cmd->after_name != NULL) &&
+                (RelationIsCUFormat(rel) ||
+                    (RELATION_IS_PARTITIONED(rel) &&
+                        pg_strcasecmp(RelationGetOrientation(rel), ORIENTATION_COLUMN) == 0))) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-supported feature"),
+                        errdetail("column orientated table is not supported for modify column "
+                            "first|after columnName")));
             }
 
             if (RelationIsCUFormat(rel) && !CStoreSupportATCmd(cmd->subtype)) {
@@ -18960,11 +18973,14 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     systable_endscan(scan);
 
     DelDependencONDataType(rel, depRel, attTup);
+    bool old_attnotnull = attTup->attnotnull;
+    bool is_primary_key = ModifiedColumnIsPrimaryKey(tab, attnum);
 
 #ifdef DOLPHIN
     /* Primary key column must be not null. */
-    def->is_not_null = def->is_not_null ? def->is_not_null : ModifiedColumnIsPrimaryKey(tab, attnum);
-    if (!attTup->attnotnull && def->is_not_null) {
+    bool new_attnotnull = old_attnotnull || is_primary_key;
+
+    if (!old_attnotnull && new_attnotnull) {
         tab->new_notnull = true;
     }
 #endif
@@ -18988,7 +19004,7 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     attTup->attalign = tform->typalign;
     attTup->attstorage = tform->typstorage;
 #ifdef DOLPHIN
-    attTup->attnotnull = def->is_not_null;
+    attTup->attnotnull = new_attnotnull;
 #endif
 
     ReleaseSysCache(typeTuple);
