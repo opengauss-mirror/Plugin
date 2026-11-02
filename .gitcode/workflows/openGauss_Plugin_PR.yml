@@ -46,6 +46,31 @@ jobs:
     name: Mark running
     runs-on: [self-hosted, plugin_1]
     steps:
+      - name: Decide whether to run compile_plugin_2
+        id: gate_compile_2
+        env:
+          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
+          PR_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
+        run: |
+          set -eu
+          branch="${PR_TARGET_BRANCH:-}"
+          branch="${branch#refs/heads/}"
+          event_file="${ATOMGIT_EVENT_PATH:-${GITCODE_EVENT_PATH:-}}"
+          if [ -z "${branch}" ] && [ -n "${event_file}" ] && [ -f "${event_file}" ]; then
+            branch="$(tr '\n' ' ' < "${event_file}" | sed -n \
+              -e 's/.*"target_branch"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+              -e 's/.*"base"[[:space:]]*:[[:space:]]*{[^}]*"ref"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+              | head -n 1 || true)"
+            branch="${branch#refs/heads/}"
+          fi
+          skip=false
+          if [ -n "${GITCODE_PR_IID:-}" ] && [ "${branch}" = "6.0.0" ]; then
+            skip=true
+          fi
+          echo "compile_plugin_2 gate: pr=${GITCODE_PR_IID:-} target=${branch} skip=${skip}"
+          if [ -n "${ATOMGIT_OUTPUT:-}" ]; then
+            echo "skip_compile_2=${skip}" >> "${ATOMGIT_OUTPUT}"
+          fi
       - name: Mark PR as running
         if: ${{ atomgit.event.pull_request.number != '' }}
         uses: openlibing/pr-label-action@v1.0.0
@@ -107,9 +132,7 @@ jobs:
   compile_plugin_2:
     name: openGauss_Plugin_Compile_Part2
     needs: prepare
-    # 作业 if 读不到 env。新提交看 atomgit.base_ref；/retest 看评论事件里的目标分支。
-    # 任一字段等于 6.0.0 就不调度。空字段不等于 6.0.0，不会误伤其他分支。
-    if: ${{ atomgit.base_ref != '6.0.0' && atomgit.base_ref != 'refs/heads/6.0.0' && atomgit.event.pull_request.base.ref != '6.0.0' && atomgit.event.pull_request.base.ref != 'refs/heads/6.0.0' && atomgit.event.pull_request.target_branch != '6.0.0' && atomgit.event.pull_request.target_branch != 'refs/heads/6.0.0' && atomgit.event.merge_request.target_branch != '6.0.0' && atomgit.event.merge_request.target_branch != 'refs/heads/6.0.0' }}
+    if: ${{ needs.prepare.outputs.skip_compile_2 != 'true' }}
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
     env:
