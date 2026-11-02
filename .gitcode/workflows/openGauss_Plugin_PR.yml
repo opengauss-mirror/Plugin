@@ -40,7 +40,6 @@ env:
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
-  PR_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
 
 jobs:
   prepare:
@@ -108,8 +107,9 @@ jobs:
   compile_plugin_2:
     name: openGauss_Plugin_Compile_Part2
     needs: prepare
-    # 目标分支为 6.0.0 的 PR 不调度 docker_1 编译。
-    if: ${{ env.PR_TARGET_BRANCH != '6.0.0' && env.PR_TARGET_BRANCH != 'refs/heads/6.0.0' }}
+    # 作业 if 读不到 env。新提交看 atomgit.base_ref；/retest 看评论事件里的目标分支。
+    # 任一字段等于 6.0.0 就不调度。空字段不等于 6.0.0，不会误伤其他分支。
+    if: ${{ atomgit.base_ref != '6.0.0' && atomgit.base_ref != 'refs/heads/6.0.0' && atomgit.event.pull_request.base.ref != '6.0.0' && atomgit.event.pull_request.base.ref != 'refs/heads/6.0.0' && atomgit.event.pull_request.target_branch != '6.0.0' && atomgit.event.pull_request.target_branch != 'refs/heads/6.0.0' && atomgit.event.merge_request.target_branch != '6.0.0' && atomgit.event.merge_request.target_branch != 'refs/heads/6.0.0' }}
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
     env:
