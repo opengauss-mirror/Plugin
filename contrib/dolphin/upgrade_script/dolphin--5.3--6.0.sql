@@ -41,3 +41,7 @@ FROM
   LEFT JOIN pg_am m ON m.oid = c.relam
 ORDER BY
   c.relname;
+
+-- Allow TEXT expressions to be assigned to BLOB columns.
+DROP CAST IF EXISTS (text AS blob);
+CREATE CAST (text AS blob) WITH FUNCTION pg_catalog.text_to_blob(text) AS ASSIGNMENT;

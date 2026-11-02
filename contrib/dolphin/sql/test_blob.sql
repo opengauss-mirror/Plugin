@@ -365,5 +365,11 @@ explain (costs off) select * from t_index_test where d='1';
 
 DROP TABLE t_index_test;
 
+-- allow a TEXT expression to be assigned to a BLOB column.
+create table t_trim_0020_01(c1 int, c2 text character set binary);
+insert into t_trim_0020_01 values(1, trim(1));
+select c1, hex(c2) as c2_hex from t_trim_0020_01;
+drop table t_trim_0020_01;
+
 drop schema test_blob cascade;
 reset current_schema;
