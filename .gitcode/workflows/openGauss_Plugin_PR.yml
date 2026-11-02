@@ -40,7 +40,6 @@ env:
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
-  PR_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
 
 jobs:
   prepare:
@@ -108,8 +107,8 @@ jobs:
   compile_plugin_2:
     name: openGauss_Plugin_Compile_Part2
     needs: prepare
-    # 目标分支为 6.0.0 的 PR 不调度 docker_1 编译。
-    if: ${{ env.PR_TARGET_BRANCH != '6.0.0' && env.PR_TARGET_BRANCH != 'refs/heads/6.0.0' }}
+    # 目标分支为 6.0.0 的 PR 不调度 docker_1 编译。直接读事件字段，不用 env，评论事件里 env 还是空的。
+    if: ${{ (atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch) != '6.0.0' && (atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch) != 'refs/heads/6.0.0' }}
     runs-on: [self-hosted, docker_1]
     timeout-minutes: 120
     env:
@@ -153,6 +152,12 @@ jobs:
             git show "FETCH_HEAD:.gitcode/scripts/plugin_compile.sh" > "${dest}/plugin_compile.sh"
           )
           source "${dest}/resolve_gitcode_env.sh"
+          case "${GITCODE_TARGET_BRANCH}" in
+            6.0.0|refs/heads/6.0.0)
+              echo "Skip compile_plugin_2: target branch is ${GITCODE_TARGET_BRANCH}"
+              exit 0
+              ;;
+          esac
           bash "${dest}/plugin_compile.sh"
         env:
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
