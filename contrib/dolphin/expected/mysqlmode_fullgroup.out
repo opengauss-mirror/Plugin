@@ -42,6 +42,22 @@ select a, max(b) from t1;
  1 |  10
 (1 row)
 
+--can't use min/max optimize for an ungrouped order by column in a subquery
+set enable_seqscan = off;
+select count(*) from (select max(b) from t1 order by a) as s;
+ count 
+-------
+     1
+(1 row)
+
+--can't use min/max optimize for an ungrouped output column in a subquery
+select count(a) from (select a, max(b) from t1) as s;
+ count 
+-------
+     1
+(1 row)
+
+reset enable_seqscan;
 --use index scan
 explain(costs off) select max(b) from t1;
                          QUERY PLAN                         
