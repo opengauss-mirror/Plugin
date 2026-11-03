@@ -104,6 +104,21 @@ select elt('1',1.2);
  1.2
 (1 row)
 
+-- A prior index overflow must not warn for a valid index.
+select elt('1', coalesce(elt('999999999999999999999999999999999999', 'x'), 'ok'));
+WARNING:  Truncated incorrect INTEGER value: '999999999999999999999999999999999999'
+CONTEXT:  referenced column: elt
+ elt 
+-----
+ ok
+(1 row)
+
+select elt('1',1.2);
+ elt 
+-----
+ 1.2
+(1 row)
+
 select elt(1,'a','b');
  elt 
 -----

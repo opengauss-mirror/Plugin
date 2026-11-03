@@ -838,7 +838,7 @@ static bool GreaterThanHour (List* int_type);
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
-				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
+				name_list role_name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
 				from_list_for_no_table_function
 				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list casesensitive_caseignore_any_name casesensitive_caseignore_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
@@ -2006,7 +2006,7 @@ AlterOptRoleElem:
 					$$ = makeDefElem("validUntil", (Node *)makeString($3));
 				}
 		/*	Supported but not documented for roles, for use by ALTER GROUP. */
-			| USER name_list
+			| USER role_name_list
 				{
 					$$ = makeDefElem("rolemembers", (Node *)$2);
 				}
@@ -2103,19 +2103,19 @@ CreateOptRoleElem:
 				{
 					$$ = makeDefElem("sysid", (Node *)makeInteger($2));
 				}
-			| ADMIN name_list
+			| ADMIN role_name_list
 				{
 					$$ = makeDefElem("adminmembers", (Node *)$2);
 				}
-			| ROLE name_list
+			| ROLE role_name_list
 				{
 					$$ = makeDefElem("rolemembers", (Node *)$2);
 				}
-			| IN_P ROLE name_list
+			| IN_P ROLE role_name_list
 				{
 					$$ = makeDefElem("addroleto", (Node *)$3);
 				}
-			| IN_P GROUP_P name_list
+			| IN_P GROUP_P role_name_list
 				{
 					$$ = makeDefElem("addroleto", (Node *)$3);
 				}
@@ -2341,14 +2341,14 @@ AlterUserSetStmt:
  *****************************************************************************/
 
 DropRoleStmt:
-			DROP ROLE name_list
+			DROP ROLE role_name_list
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = FALSE;
 					n->roles = $3;
 					$$ = (Node *)n;
 				}
-			| DROP ROLE IF_P EXISTS name_list
+			| DROP ROLE IF_P EXISTS role_name_list
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = TRUE;
@@ -2414,7 +2414,7 @@ CreateGroupStmt:
  *****************************************************************************/
 
 AlterGroupStmt:
-			ALTER GROUP_P RoleId add_drop USER name_list
+			ALTER GROUP_P RoleId add_drop USER role_name_list
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $3;
@@ -2541,14 +2541,14 @@ kill_opt: 	CONNECTION { $$ = 1; }
  *****************************************************************************/
 
 DropGroupStmt:
-			DROP GROUP_P name_list
+			DROP GROUP_P role_name_list
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = FALSE;
 					n->roles = $3;
 					$$ = (Node *)n;
 				}
-			| DROP GROUP_P IF_P EXISTS name_list
+			| DROP GROUP_P IF_P EXISTS role_name_list
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = TRUE;
@@ -14637,7 +14637,7 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 /* User mapping authorization identifier */
 auth_ident:
 			CURRENT_USER opt_bracket			{ $$ = "current_user"; }
-		|	DolphinRoleIdWithOutCurrentUser		{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
+		|	DolphinRoleIdWithOutCurrentUser		{ char* role_name = GetDolphinObjName($1->str, $1->is_quoted); $$ = DolphinObjNameCmp(role_name, "public", $1->is_quoted) ? NULL : role_name; }
 		;
 
 /*****************************************************************************
@@ -14930,7 +14930,7 @@ row_level_security_role_list: row_level_security_role
 					;
 
 row_level_security_role:
-			DolphinRoleIdWithOutCurrentUser		{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
+			DolphinRoleIdWithOutCurrentUser		{ char* role_name = GetDolphinObjName($1->str, $1->is_quoted); char* result = "public"; $$ = DolphinObjNameCmp(role_name, "public", $1->is_quoted) ? result : role_name; }
 		|	CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
 		|	SESSION_USER						{ $$ = pstrdup($1); }
 
@@ -16342,7 +16342,7 @@ DropOpFamilyStmt:
  *
  *****************************************************************************/
 DropOwnedStmt:
-			DROP OWNED BY name_list opt_drop_behavior
+			DROP OWNED BY role_name_list opt_drop_behavior
 				{
 					DropOwnedStmt *n = makeNode(DropOwnedStmt);
 					n->roles = $4;
@@ -16352,7 +16352,7 @@ DropOwnedStmt:
 		;
 
 ReassignOwnedStmt:
-			REASSIGN OWNED BY name_list TO name
+			REASSIGN OWNED BY role_name_list TO RoleId
 				{
 					ReassignOwnedStmt *n = makeNode(ReassignOwnedStmt);
 					n->roles = $4;
@@ -18020,7 +18020,7 @@ GrantRoleStmt:
 		;
 
 RevokeRoleStmt:
-			REVOKE privilege_list FROM name_list opt_granted_by opt_drop_behavior
+			REVOKE privilege_list FROM role_name_list opt_granted_by opt_drop_behavior
 				{
 					GrantRoleStmt *n = makeNode(GrantRoleStmt);
 					n->is_grant = false;
@@ -18030,7 +18030,7 @@ RevokeRoleStmt:
 					n->behavior = $6;
 					$$ = (Node*)n;
 				}
-			| REVOKE ADMIN OPTION FOR privilege_list FROM name_list opt_granted_by opt_drop_behavior
+			| REVOKE ADMIN OPTION FOR privilege_list FROM role_name_list opt_granted_by opt_drop_behavior
 				{
 					GrantRoleStmt *n = makeNode(GrantRoleStmt);
 					n->is_grant = false;
@@ -18327,11 +18327,11 @@ DefACLOption:
 				{
 					$$ = makeDefElem("schemas", (Node *)$3);
 				}
-			| FOR ROLE name_list
+			| FOR ROLE role_name_list
 				{
 					$$ = makeDefElem("roles", (Node *)$3);
 				}
-			| FOR USER name_list
+			| FOR USER role_name_list
 				{
 					$$ = makeDefElem("roles", (Node *)$3);
 				}
@@ -29283,7 +29283,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->returningList = $9;
 						$7->withClause = $1;
 						$7->upsertClause = (UpsertClause *)$8;
-						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						if ($7->upsertClause != NULL) {
+							$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
+						}
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
 						$7->hasIgnore = $4 || ($7->hintState != NULL && $7->hintState->sql_ignore_hint);
@@ -31249,6 +31251,7 @@ func_table_with_table:
 		$$ = MakeNoArgFunctionCall(list_make1(makeString(pstrdup($3))), @3);
 	}
 	| TABLE '(' DolphinColId dolphin_indirection ')'			{
+		check_dolphin_qualified_name($4, yyscanner);
 		int len = list_length($4);
 		if (len == 1) {
 			/* schema_name.func_name */
@@ -38901,6 +38904,12 @@ name_list:	name
 					{ $$ = lappend($1, makeString($3)); }
 		;
 
+role_name_list:	RoleId
+					{ $$ = list_make1(makeString($1)); }
+			| role_name_list ',' RoleId
+					{ $$ = lappend($1, makeString($3)); }
+		;
+
 dolphin_schema_name_list:	DolphinColId
 						{ $$ = list_make1(makeString(GetDolphinSchemaName($1->str, $1->is_quoted))); }
 					| dolphin_schema_name_list ',' DolphinColId
@@ -38950,6 +38959,7 @@ dolphin_func_name:	type_function_name
 						{ $$ = list_make1(makeString($1)); }
 					| DolphinColId dolphin_indirection
 						{
+							check_dolphin_qualified_name($2, yyscanner);
 							int len = list_length($2);
 							if (len == 1) {
 								/* schema_name.func_name */
@@ -39756,7 +39766,7 @@ DolphinUserId:		DolphinRoleId					{ $$ = $1; }
 							}
 		;
 
-DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
+DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = CreateDolphinIdent(GetDolphinObjName($1->str, $1->is_quoted), $1->is_quoted); }
 					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
 		;
 
@@ -41125,7 +41135,8 @@ static void check_dolphin_qualified_name(List *names, core_yyscan_t yyscanner)
 	foreach(i, names)
 	{
 		DolphinString* elem = (DolphinString*)lfirst(i);
-		if (!IsA(elem->node, String))
+		if (elem == NULL || elem->node == NULL ||
+			!IsA(elem->node, String) || elem->str == NULL)
 			parser_yyerror("syntax error");
 	}
 }
@@ -43758,6 +43769,12 @@ static List* GetNameListFromDolphinString(List* dolphinStringList)
 	ListCell* cell = NULL;
 	foreach (cell, dolphinStringList) {
 		DolphinString* element = (DolphinString*)lfirst(cell);
+		if (element == NULL || element->node == NULL ||
+			!IsA(element->node, String) || element->str == NULL) {
+			ereport(ERROR,
+				(errcode(ERRCODE_SYNTAX_ERROR),
+				 errmsg("invalid qualified name")));
+		}
 		element->str = downcase_str(element->str, element->is_quoted);
 		result = lappend(result, element->node);
 	}
@@ -43794,6 +43811,12 @@ static inline char* GetDolphinObjName(char* string, bool is_quoted)
 
 static inline char* GetDolphinSchemaName(char* string, bool is_quoted)
 {
+	if (string == NULL) {
+		ereport(ERROR,
+			(errcode(ERRCODE_SYNTAX_ERROR),
+			 errmsg("invalid schema name")));
+	}
+
 	/* public is a special schema, if it's not quoted, public is lowercase  */
 	for (const char* sys_schema : sys_schemas) {
 		if (DolphinObjNameCmp(string, sys_schema, false)) {
@@ -43879,6 +43902,9 @@ static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte)
 
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 {
+	if (s1 == NULL || s2 == NULL) {
+		return false;
+	}
 	if (strlen(s1) != strlen(s2)) {
 		return false;
 	}

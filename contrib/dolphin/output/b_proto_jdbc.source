@@ -319,7 +319,7 @@ Security_type:VARCHAR:INVOKER
 Comment:VARCHAR:I/O
 character_set_client:VARCHAR:null
 collation_connection:VARCHAR:null
-Database Collation:CHAR:en_US.UTF-8
+--?Database Collation:CHAR:[^\r\n]+
 Variable_name:VARCHAR:datname
 Value:VARCHAR:b_databaseproto
 oid:INT UNSIGNED:1510
