@@ -5836,9 +5836,10 @@ bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, boo
 bool time_to_tm_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, int *timeSign, unsigned int date_flag)
 {
 	TimeADT time;
-    bool ret = true;
-    int code;
-    const char *msg = NULL;
+    volatile bool ret = true;
+    volatile int code;
+    const char* volatile msg = NULL;
+    MemoryContext oldcontext = CurrentMemoryContext;
     PG_TRY();
     {
         time_in_with_flag_internal(str, tm, fsec, timeSign, date_flag);
@@ -5852,9 +5853,12 @@ bool time_to_tm_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, int *ti
         if (SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            code = geterrcode();
-            msg = pstrdup(Geterrmsg());
+            (void)MemoryContextSwitchTo(oldcontext);
+            ErrorData* edata = CopyErrorData();
+            code = edata->sqlerrcode;
             FlushErrorState();
+            msg = pstrdup(edata->message);
+            FreeErrorData(edata);
         }
     }
     PG_END_TRY();
@@ -6775,9 +6779,10 @@ Datum GetSecondFromTimestampTz(PG_FUNCTION_ARGS)
 
 bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time, bool can_ignore)
 {
-    bool ret = true;
-    int code;
-    const char *msg = NULL;
+    volatile bool ret = true;
+    volatile int code;
+    const char* volatile msg = NULL;
+    MemoryContext oldcontext = CurrentMemoryContext;
     PG_TRY();
     {
         ret = time_in_with_flag(str, date_flag, result, vertify_time, can_ignore);
@@ -6788,9 +6793,12 @@ bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, b
         if (SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            code = geterrcode();
-            msg = pstrdup(Geterrmsg());
+            (void)MemoryContextSwitchTo(oldcontext);
+            ErrorData* edata = CopyErrorData();
+            code = edata->sqlerrcode;
             FlushErrorState();
+            msg = pstrdup(edata->message);
+            FreeErrorData(edata);
         }
     }
     PG_END_TRY();

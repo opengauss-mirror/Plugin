@@ -454,7 +454,7 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
     char* dest_str;
     char* result_str;
     int rc;
-    text* result;
+    text* volatile result = NULL;
 
     if (dest_encoding < 0) {
         ereport(ERROR,
@@ -479,6 +479,7 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
     PG_CATCH();
     {
         u_sess->cmd_cxt.bulkload_compatible_illegal_chars = old_bulkload_compatible_illegal_chars;
+        FlushErrorState();
     }
     PG_END_TRY();
     u_sess->cmd_cxt.bulkload_compatible_illegal_chars = old_bulkload_compatible_illegal_chars;

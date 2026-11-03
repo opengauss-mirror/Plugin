@@ -312,6 +312,8 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
     }
     PG_CATCH();
     {
+        (void)MemoryContextSwitchTo(old_context);
+        FlushErrorState();
         ereport(WARNING, (errmsg("make_spq_remote_query failed.")));
         deinit_spq_optimizer_context(glob);
         result = nullptr;
@@ -1051,4 +1053,3 @@ static List *generate_alternate_vars(Var *invar, grouped_window_ctx *ctx)
     }
     return alternates;
 }
-

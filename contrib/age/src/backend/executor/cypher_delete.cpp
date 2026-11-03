@@ -277,11 +277,11 @@ static void delete_entity(EState *estate, ResultRelInfo *resultRelInfo,
     ResultRelInfo *saved_resultRelInfo;
     LockTupleMode lockmode;
     TM_FailureData hufd;
-    TM_Result lock_result;
+    volatile TM_Result lock_result;
     TM_Result delete_result;
     Buffer buffer;
 
-    bool errFlag = false;
+    volatile bool errFlag = false;
 
     // Find the physical tuple, this variable is coming from
     saved_resultRelInfo = estate->es_result_relation_info;
@@ -299,6 +299,7 @@ static void delete_entity(EState *estate, ResultRelInfo *resultRelInfo,
     {
         lock_result = TM_Invisible;
         errFlag = true;
+        FlushErrorState();
     }
     PG_END_TRY();
 
