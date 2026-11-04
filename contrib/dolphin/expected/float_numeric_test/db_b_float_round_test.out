@@ -387,6 +387,86 @@ show create table test_round1;
 (1 row)
 
 drop table test_round1;
+create table test_round2 as select
+    round(`binary`, 2) as round_binary_2,
+    round(`varbinary`, 2) as round_varbinary_2,
+    round(`tinyblob`, 2) as round_tinyblob_2,
+    round(`blob`, 2) as round_blob_2,
+    round(`mediumblob`, 2) as round_mediumblob_2,
+    round(`longblob`, 2) as round_longblob_2
+from test_type_table_round;
+WARNING:  Data truncated for input data: "2.5"
+CONTEXT:  referenced column: round_binary_2
+WARNING:  Data truncated for input data: "-2.5"
+CONTEXT:  referenced column: round_binary_2
+WARNING:  Data truncated for input data: "3.5"
+CONTEXT:  referenced column: round_binary_2
+WARNING:  Data truncated for input data: "-3.5"
+CONTEXT:  referenced column: round_binary_2
+select * from test_round2;
+ round_binary_2 | round_varbinary_2 | round_tinyblob_2 | round_blob_2 | round_mediumblob_2 | round_longblob_2 
+----------------+-------------------+------------------+--------------+--------------------+------------------
+            2.5 |               2.5 |              2.5 |          2.5 |                2.5 |              2.5
+           -2.5 |              -2.5 |             -2.5 |         -2.5 |               -2.5 |             -2.5
+            3.5 |               3.5 |              3.5 |          3.5 |                3.5 |              3.5
+           -3.5 |              -3.5 |             -3.5 |         -3.5 |               -3.5 |             -3.5
+(4 rows)
+
+show create table test_round2;
+    Table    |                     Create Table                      
+-------------+-------------------------------------------------------
+ test_round2 | SET search_path = test;                              +
+             | CREATE TABLE test_round2 (                           +
+             |     round_binary_2 double precision,                 +
+             |     round_varbinary_2 double precision,              +
+             |     round_tinyblob_2 double precision,               +
+             |     round_blob_2 double precision,                   +
+             |     round_mediumblob_2 double precision,             +
+             |     round_longblob_2 double precision                +
+             | )                                                    +
+             | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+             | WITH (orientation=row, compression=no);
+(1 row)
+
+drop table test_round2;
+select round('2.555'::blob, 2);
+ round 
+-------
+  2.56
+(1 row)
+
+select round('2.675'::blob, 2);
+ round 
+-------
+  2.68
+(1 row)
+
+select round('1234.56'::blob, -1);
+ round 
+-------
+  1230
+(1 row)
+
+select round('abc'::binary, 2);
+WARNING:  invalid input syntax for type double precision: "abc"
+CONTEXT:  referenced column: b_double_round
+SQL function "round" statement 1
+referenced column: round
+ round 
+-------
+     0
+(1 row)
+
+select round('12abc'::binary, 2);
+WARNING:  invalid input syntax for type double precision: "12abc"
+CONTEXT:  referenced column: b_double_round
+SQL function "round" statement 1
+referenced column: round
+ round 
+-------
+    12
+(1 row)
+
 drop table test_type_table_round;
 drop schema test cascade;
 reset current_schema;

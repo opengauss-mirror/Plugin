@@ -415,11 +415,340 @@ SELECT
     round(`longblob`, `longblob`),
     round(`text`, `text`)
 FROM t1 order by c1;
-ERROR:  function round(`binary`, `binary`) does not exist
-LINE 19:     round(`binary`, `binary`),
-             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
 CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "62.345*67-89"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "62.345*67-89"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  int out of range
+CONTEXT:  referenced column: round
+WARNING:  integer out of range
+CONTEXT:  referenced column: round
+WARNING:  int out of range
+CONTEXT:  referenced column: round
+WARNING:  bigint out of range
+CONTEXT:  referenced column: round
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: round
+WARNING:  int out of range
+CONTEXT:  referenced column: round
+WARNING:  bigint out of range
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day."
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "Today is a good day."
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  integer out of range
+CONTEXT:  referenced column: round
+WARNING:  integer out of range
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type integer: ""
+CONTEXT:  referenced column: round
+-[ RECORD 1 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 1
+round | 1
+round | 1
+round | 1
+round | 1
+round | 1
+round | 1
+round | 1
+round | 1
+round | 1.0
+round | 1.0
+round | 3.143
+round | 1
+round | 10101100
+round | 1
+round | 62.34500000000000000000000000000000000000000000000000000000000000
+round | 62.34500000000000000000000000000000000000000000000000000000000000
+round | 67890
+round | 67890
+round | 67890
+round | 67890
+round | 67890
+round | 67890
+round | 67890.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+-[ RECORD 2 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 2
+round | 127
+round | 255
+round | 32767
+round | 65535
+round | 2147483647
+round | 4294967295
+round | 9223372036854775807
+round | 9223372036854775807
+round | 3.403
+round | 1.80
+round | 3.142
+round | 1
+round | 9223372036854775807
+round | 1
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+-[ RECORD 3 ]---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 3
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 1
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+round | 0
+
+SELECT round(`blob`, `tinyblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+-[ RECORD 1 ]
+round | 67890
+-[ RECORD 2 ]
+round | 0
+-[ RECORD 3 ]
+round | 0
+
+SELECT round(`tinyblob`, `blob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+-[ RECORD 1 ]
+round | 67890
+-[ RECORD 2 ]
+round | 0
+-[ RECORD 3 ]
+round | 0
+
+SELECT round(`mediumblob`, `longblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+-[ RECORD 1 ]
+round | 67890
+-[ RECORD 2 ]
+round | 0
+-[ RECORD 3 ]
+round | 0
+
+SELECT round(`longblob`, `mediumblob`) FROM t1;
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: round
+-[ RECORD 1 ]
+round | 67890
+-[ RECORD 2 ]
+round | 0
+-[ RECORD 3 ]
+round | 0
+
+SELECT pg_catalog.b_double_round(2.5, 0);
+-[ RECORD 1 ]--+--
+b_double_round | 2
+
+SELECT pg_catalog.b_double_round(3.5, 0);
+-[ RECORD 1 ]--+--
+b_double_round | 4
+
+SELECT pg_catalog.b_double_round(-2.5, 0);
+-[ RECORD 1 ]--+---
+b_double_round | -2
+
+SELECT pg_catalog.b_double_round(-3.5, 0);
+-[ RECORD 1 ]--+---
+b_double_round | -4
+
+SELECT pg_catalog.b_double_round(2.555, 2);
+-[ RECORD 1 ]--+-----
+b_double_round | 2.56
+
+SELECT pg_catalog.b_double_round(2.675, 2);
+-[ RECORD 1 ]--+-----
+b_double_round | 2.68
+
+SELECT pg_catalog.b_double_round(1234.56, -1);
+-[ RECORD 1 ]--+-----
+b_double_round | 1230
+
+SELECT pg_catalog.b_double_round(15.0, -1);
+-[ RECORD 1 ]--+---
+b_double_round | 20
+
+SELECT pg_catalog.b_double_round(123.456, -400);
+-[ RECORD 1 ]--+--
+b_double_round | 0
+
+SELECT pg_catalog.b_double_round(1e308::float8, 10);
+-[ RECORD 1 ]--+-------
+b_double_round | 1e+308
+
+SELECT pg_catalog.b_double_round('NaN'::float8, 2);
+-[ RECORD 1 ]--+----
+b_double_round | NaN
+
+SELECT pg_catalog.b_double_round('Infinity'::float8, 2);
+WARNING:  value out of range: overflow
+LINE 1: SELECT pg_catalog.b_double_round('Infinity'::float8, 2);
+                                         ^
+CONTEXT:  referenced column: b_double_round
+-[ RECORD 1 ]--+-----------------------
+b_double_round | 1.797693134862316e+308
+
 SELECT mod(`int1`, `int1`) FROM t1;
 -[ RECORD 1 ]
 mod | 0

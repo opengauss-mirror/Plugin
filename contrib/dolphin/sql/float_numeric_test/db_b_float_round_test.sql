@@ -105,6 +105,22 @@ select * from test_round1;
 show create table test_round1;
 
 drop table test_round1;
+create table test_round2 as select
+    round(`binary`, 2) as round_binary_2,
+    round(`varbinary`, 2) as round_varbinary_2,
+    round(`tinyblob`, 2) as round_tinyblob_2,
+    round(`blob`, 2) as round_blob_2,
+    round(`mediumblob`, 2) as round_mediumblob_2,
+    round(`longblob`, 2) as round_longblob_2
+from test_type_table_round;
+select * from test_round2;
+show create table test_round2;
+drop table test_round2;
+select round('2.555'::blob, 2);
+select round('2.675'::blob, 2);
+select round('1234.56'::blob, -1);
+select round('abc'::binary, 2);
+select round('12abc'::binary, 2);
 drop table test_type_table_round;
 
 drop schema test cascade;
