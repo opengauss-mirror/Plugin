@@ -6177,14 +6177,11 @@ static void make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
 }
 
 /*
- * An invalid Dolphin view can outlive additional FIRST/AFTER column
- * reordering on its base table.  Its saved Vars still use the old attnums,
- * while the RTE column-name list may have been refreshed to the table's new
- * physical order.  Restore names for directly selected columns from the
- * TargetEntry names before deparsing, otherwise pg_get_viewdef can display
- * unrelated columns such as "f2 AS f1".
+ * Restore saved source-column names for invalid Dolphin views after column
+ * reordering, including nested CTEs and subqueries. Clear each affected query's
+ * star metadata so deparsing uses its saved target entries.
  */
-static void restore_invalid_view_column_names(Query* query)
+static void restore_invalid_view_column_names_one(Query* query)
 {
     ListCell* lc = NULL;
     foreach (lc, query->targetList) {
@@ -6211,17 +6208,35 @@ static void restore_invalid_view_column_names(Query* query)
         lfirst(colname) = makeString(pstrdup(tle->resname));
     }
 
-    /*
-     * The parser records target-entry ranges expanded from '*' so that a valid
-     * view can be deparsed with the original compact notation. For an invalid
-     * view, this notation does not identify the missing columns and may reflect
-     * the base table's current column layout. Clear only the top-level star
-     * metadata so get_target_list emits each saved TargetEntry explicitly.
-     * Nested queries retain their own star metadata.
-     */
     query->starStart = NIL;
     query->starEnd = NIL;
     query->starOnly = NIL;
+}
+
+/* Recursively restore nested CTE and subquery definitions as well. */
+static void restore_invalid_view_column_names_recursive(Query* query)
+{
+    ListCell* lc = NULL;
+    restore_invalid_view_column_names_one(query);
+
+    foreach (lc, query->cteList) {
+        CommonTableExpr* cte = (CommonTableExpr*)lfirst(lc);
+        if (cte->ctequery != NULL && IsA(cte->ctequery, Query)) {
+            restore_invalid_view_column_names_recursive((Query*)cte->ctequery);
+        }
+    }
+
+    foreach (lc, query->rtable) {
+        RangeTblEntry* rte = (RangeTblEntry*)lfirst(lc);
+        if (rte->rtekind == RTE_SUBQUERY && rte->subquery != NULL) {
+            restore_invalid_view_column_names_recursive(rte->subquery);
+        }
+    }
+}
+
+static void restore_invalid_view_column_names(Query* query)
+{
+    restore_invalid_view_column_names_recursive(query);
 }
 
 /* ----------
@@ -6290,10 +6305,10 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
             restore_invalid_view_column_names(query);
         } else {
             /*
-            * Validation updates pg_rewrite, not our output buffer. Re-read
-            * the rule before deparsing: the old query can still contain the
-            * attribute numbers of columns that were dropped and re-added.
-            */
+             * Validation updates pg_rewrite, not our output buffer. Re-read
+             * the rule before deparsing: the old query can still contain the
+             * attribute numbers of columns that were dropped and re-added.
+             */
             Relation rewriteRel = relation_open(RewriteRelationId, AccessShareLock);
             HeapTuple rewriteTuple = SearchSysCache2(RULERELNAME,
                 ObjectIdGetDatum(ev_class), PointerGetDatum(ViewSelectRuleName));
@@ -9292,14 +9307,15 @@ static char* get_variable(
         }
     }
 
-    if (attnum == InvalidAttrNumber)
+    if (attnum == InvalidAttrNumber) {
         attname = NULL;
-    else if (context->viewdef && context->skip_lock && rte->rtekind == RTE_RELATION && attnum > 0 &&
-             attnum <= list_length(rte->eref->colnames)) {
+    } else if (context->viewdef && context->skip_lock && rte->rtekind == RTE_RELATION && attnum > 0 &&
+                attnum <= list_length(rte->eref->colnames)) {
         Node* colname = (Node*)list_nth(rte->eref->colnames, attnum - 1);
         attname = (colname != NULL && IsA(colname, String)) ? pstrdup(strVal(colname)) : NULL;
-    } else
+    } else {
         attname = get_rte_attribute_name(rte, attnum, true);
+    }
 
     if (refname && (context->varprefix || attname == NULL)) {
         if (schemaname != NULL)
@@ -9530,19 +9546,23 @@ static const char* get_name_for_var_field(Var* var, int fieldno, int levelsup, d
                     /*
                      * We're deparsing a Plan tree so we don't have complete
                      * RTE entries (in particular, rte->subquery is NULL). But
-                     * the only place we'd see a Var directly referencing a
-                     * SUBQUERY RTE is in a SubqueryScan plan node, and we can
-                     * look into the child plan's tlist instead.
+                     * the only place we'd normally see a Var directly
+                     * referencing a SUBQUERY RTE is in a SubqueryScan plan
+                     * node, and we can look into the child plan's tlist
+                     * instead. An exception occurs if the subquery was proven
+                     * empty and optimized away: then we'd find such a Var in
+                     * a childless Result node, and there's nothing in the plan
+                     * tree that would let us figure out what it had originally
+                     * referenced. In that case, fall back on printing "fN",
+                     * analogously to the default column names for RowExprs.
                      */
                     TargetEntry* tle = NULL;
                     deparse_namespace save_dpns;
                     const char* result = NULL;
 
-                    if (dpns->inner_planstate == NULL)
-                        ereport(ERROR,
-                            (errmodule(MOD_OPT),
-                                (errcode(ERRCODE_UNEXPECTED_NODE_STATE),
-                                    errmsg("failed to find plan for subquery %s", rte->eref->aliasname))));
+                    if (dpns->inner_planstate == NULL) {
+                        return psprintf("f%d", fieldno);
+                    }
                     tle = get_tle_by_resno(dpns->inner_tlist, attnum);
                     if (tle == NULL)
                         ereport(ERROR,
@@ -9644,19 +9664,19 @@ static const char* get_name_for_var_field(Var* var, int fieldno, int levelsup, d
                 } else {
                     /*
                      * We're deparsing a Plan tree so we don't have a CTE
-                     * list.  But the only place we'd see a Var directly
-                     * referencing a CTE RTE is in a CteScan plan node, and we
-                     * can look into the subplan's tlist instead.
+                     * list. But the only place we'd normally see a Var
+                     * directly referencing a CTE RTE is in a CteScan plan
+                     * node, and we can look into the subplan's tlist instead.
+                     * As above, this can fail if the CTE has been proven
+                     * empty, in which case fall back to "fN".
                      */
                     TargetEntry* tle = NULL;
                     deparse_namespace save_dpns;
                     const char* result = NULL;
 
-                    if (dpns->inner_planstate == NULL)
-                        ereport(ERROR,
-                            (errmodule(MOD_OPT),
-                                (errcode(ERRCODE_UNEXPECTED_NODE_STATE),
-                                    errmsg("failed to find plan for CTE %s", rte->eref->aliasname))));
+                    if (dpns->inner_planstate == NULL) {
+                        return psprintf("f%d", fieldno);
+                    }
                     tle = get_tle_by_resno(dpns->inner_tlist, attnum);
                     if (tle == NULL)
                         ereport(ERROR,

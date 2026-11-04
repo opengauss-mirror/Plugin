@@ -204,9 +204,6 @@ void InsertGsSource(Oid objId, Oid nspid, const char* name, const char* type, bo
     appendStringInfo(&str,
         "delete from DBE_PLDEVELOPER.gs_source where nspid=%u and name=\'%s\' and type = \'%s\';\n",
         nspid, tmp, type);
-    appendStringInfo(&str,
-        "delete from DBE_PLDEVELOPER.gs_source where nspid=%u and name=\'%s\' and type = \'%s\';\n",
-        nspid, tmp, type);
     if (!u_sess->attr.attr_common.plsql_show_all_error || status)  {
         appendStringInfo(&str,
             "delete from DBE_PLDEVELOPER.gs_errors where " 
@@ -330,13 +327,13 @@ static void ProcInsertGsSource(Oid funcOid, bool status)
         if (OidIsValid(packageOid) || procStruct->prorettype == TRIGGEROID) {
             needInsert = false;
         }
-
         if (needInsert) {
             Datum prokindDatum = SysCacheGetAttr(PROCOID, procTup, Anum_pg_proc_prokind, &isnull);
             if (isnull) {
                 ereport(ERROR, (errmodule(MOD_PLSQL), errcode(ERRCODE_UNDEFINED_OBJECT),
-                    errmsg("The prokind of the function is null"),
-                    errhint("Check whether the definition of the function is complete in the pg_proc system table.")));
+                        errmsg("The prokind of the function is null"),
+                        errhint("Check whether the definition of the function is complete "
+                                "in the pg_proc system table.")));
             }
             prokind = CharGetDatum(prokindDatum);
             if (PROC_IS_AGG(prokind) || PROC_IS_WIN(prokind) ||
@@ -344,7 +341,6 @@ static void ProcInsertGsSource(Oid funcOid, bool status)
                 needInsert = false;
             }
         }
-
         if (needInsert) {
             char* name = NameStr(procStruct->proname);
             Oid nspid = procStruct->pronamespace;
@@ -352,7 +348,6 @@ static void ProcInsertGsSource(Oid funcOid, bool status)
             InsertGsSource(funcOid, nspid, name, type, status);
         }
     }
-
     PG_CATCH();
     {
         ReleaseSysCache(procTup);
