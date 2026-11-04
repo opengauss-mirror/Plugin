@@ -15728,6 +15728,17 @@ static ObjectAddress ATExecAddIndexConstraint(AlteredTableInfo* tab, Relation re
     Assert(OidIsValid(index_oid));
     Assert(stmt->isconstraint);
 
+    /* Ustore tables do not support deferrable constraints. */
+    if (rel->rd_tam_ops == TableAmUstore && stmt->deferrable == true) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmodule(MOD_COMMAND),
+                errmsg("Ustore table does not support to set deferrable."),
+                errdetail("N/A"),
+                errcause("feature not supported"),
+                erraction("check constraints of columns")));
+    }
+
     indexRel = index_open(index_oid, AccessShareLock);
 
     indexName = pstrdup(RelationGetRelationName(indexRel));
@@ -18496,7 +18507,18 @@ static void AlterColumnToFirstAfter(AlteredTableInfo* tab, Relation rel, AlterTa
     CommandCounterIncrement();
 
     /* create or replace view */
-    ReplaceViewQueryFirstAfter(query_str);
+    ListCell* viewinfo = NULL;
+    bool isViewValid = true;
+    foreach (viewinfo, query_str) {
+        ViewInfoForAdd *info = (ViewInfoForAdd *)lfirst(viewinfo);
+        isViewValid &= GetPgObjectValid(info->ev_class, get_rel_relkind(info->ev_class));
+        if (!isViewValid) {
+            break;
+        }
+    }
+    if (isViewValid) {
+        ReplaceViewQueryFirstAfter(query_str);
+    }
 }
 
 static bool CheckIndexIsConstraint(Relation dep_rel, Oid objid, Oid *refobjid)
@@ -19400,6 +19422,34 @@ static void setPrimaryNotnull(Oid relid, IndexStmt *stmt, AlteredTableInfo* tab)
 }
 
 /*
+ * Index rebuilding changes its OID even when the storage can be reused.
+ * Restore CLUSTER ON after the replacement indexes have been created.
+ */
+static void ATQueueClusteredIndexRestore(Oid indexOid, Relation rel, AlteredTableInfo* tab)
+{
+    /* Ustore does not support CLUSTER; do not restore legacy markers. */
+    if (rel->rd_tam_ops == TableAmUstore) {
+        return;
+    }
+
+    HeapTuple indexTuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(indexOid));
+    if (!HeapTupleIsValid(indexTuple)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for index %u", indexOid)));
+    }
+    bool isClustered = ((Form_pg_index)GETSTRUCT(indexTuple))->indisclustered;
+    ReleaseSysCache(indexTuple);
+    if (!isClustered) {
+        return;
+    }
+
+    AlterTableCmd* cmd = makeNode(AlterTableCmd);
+    cmd->subtype = AT_ClusterOn;
+    cmd->name = get_rel_name(indexOid);
+    tab->subcmds[AT_PASS_OLD_CONSTR] = lappend(tab->subcmds[AT_PASS_OLD_CONSTR], cmd);
+}
+
+/*
  * Attach each generated command to the proper place in the work queue.
  * Note this could result in creation of entirely new work-queue entries.
  *
@@ -19437,6 +19487,7 @@ static void AttachEachCommandInQueue(
                 newcmd->subtype = AT_ReAddIndex;
                 newcmd->def = (Node*)stmt;
                 tab->subcmds[AT_PASS_OLD_INDEX] = lappend(tab->subcmds[AT_PASS_OLD_INDEX], newcmd);
+                ATQueueClusteredIndexRestore(oldId, rel, tab);
                 break;
             }
             case T_AlterTableStmt: {
@@ -19467,6 +19518,7 @@ static void AttachEachCommandInQueue(
 
                             cmd->subtype = AT_ReAddIndex;
                             tab->subcmds[AT_PASS_OLD_INDEX] = lappend(tab->subcmds[AT_PASS_OLD_INDEX], cmd);
+                            ATQueueClusteredIndexRestore(oldIndexId, rel, tab);
 
                             if (tab->is_first_after) {
                                 setPrimaryNotnull(rel->rd_id, (IndexStmt*)cmd->def, tab);
@@ -20258,6 +20310,13 @@ static ObjectAddress ATExecClusterOn(Relation rel, const char* indexName, LOCKMO
     Oid indexOid;
     ObjectAddress address;
 
+    /* Ustore tables do not support CLUSTER. */
+    if (rel->rd_tam_ops == TableAmUstore) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("cluster not supported in ustore")));
+    }
+
     indexOid = get_relname_relid(indexName, rel->rd_rel->relnamespace);
 
     if (!OidIsValid(indexOid))
@@ -20568,9 +20627,10 @@ bool static transformTableCompressedOptions(Relation rel, bytea* relOption, List
                         errmsg("row-compression feature current not support algorithm is PGZSTD.")));
     }
 
-    if (newCompressOpt->compressType != COMPRESS_TYPE_ZSTD && newCompressOpt->compressLevel != 0) {
+    if ((newCompressOpt->compressType != COMPRESS_TYPE_ZSTD && newCompressOpt->compressType != COMPRESS_TYPE_ZLIB) &&
+        newCompressOpt->compressLevel != 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-            errmsg("compress_level should be used with ZSTD algorithm.")));
+            errmsg("compress_level should be used with ZSTD or ZLIB algorithm.")));
     }
 
     if (!newCompressOpt->compressByteConvert && newCompressOpt->compressDiffConvert) {
@@ -20582,8 +20642,9 @@ bool static transformTableCompressedOptions(Relation rel, bytea* relOption, List
     ConvertChunkSize(newCompressOpt->compressChunkSize, &success);
     if (!success) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-                        errmsg("invalid compress_chunk_size %u, must be one of %d, %d, %d or %d",
-                                newCompressOpt->compressChunkSize, BLCKSZ / 16, BLCKSZ / 8, BLCKSZ / 4, BLCKSZ / 2)));
+                        errmsg("invalid compress_chunk_size %u, must be a power-of-two page fraction between %u and %u",
+                               newCompressOpt->compressChunkSize, MIN_COMPRESS_CHUNK_SIZE,
+                               MAX_COMPRESS_CHUNK_SIZE)));
     }
     if (newCompressOpt->compressPreallocChunks >= BLCKSZ / newCompressOpt->compressChunkSize) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
@@ -20629,7 +20690,7 @@ void static transfromIndexCompressedOptions(Relation rel, bytea* relOoption, Lis
                 DefElem *def = (DefElem *)lfirst(opt);
                 if (pg_strcasecmp(def->defname, "compress_level") == 0) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_OPTION),
-                                    errmsg("compress_level should be used with ZSTD algorithm.")));
+                                    errmsg("compress_level should be used with ZSTD or ZLIB algorithm.")));
                 }
             }
         }
@@ -34592,10 +34653,11 @@ void CreateWeakPasswordDictionary(CreateWeakPasswordDictionaryStmt* stmt)
     foreach (pwd_obj, stmt->weak_password_string_list) {
         Datum values[Natts_gs_global_config] = {0};
         bool nulls[Natts_gs_global_config] = {false};
-        const char* pwd = (const char *)(((Value*)lfirst(pwd_obj))->val.str);
-        if (password_contain_space(pwd)) {
+        if (password_contain_space(((Value*)lfirst(pwd_obj))->val.str)) {
             continue;
         }
+        char* password = pstrdup(((Value*)lfirst(pwd_obj))->val.str);
+        size_t passwordBufferSize = strlen(password) + 1;
         const char* name = "weak_password";
         TableScanDesc scan = tableam_scan_begin(rel, SnapshotNow, 0, NULL);
         TupleDesc tupdesc = RelationGetDescr(rel);
@@ -34606,8 +34668,13 @@ void CreateWeakPasswordDictionary(CreateWeakPasswordDictionaryStmt* stmt)
             if (is_null) {
                 continue;
             }
-            char *ex_pwd = text_to_cstring(DatumGetTextP(ex_datum));
-            if (strcmp(ex_pwd, pwd) == 0) {
+            char* existingPassword = text_to_cstring(DatumGetTextP(ex_datum));
+            bool passwordExists = strcmp(existingPassword, password) == 0;
+            size_t existingPasswordBufferSize = strlen(existingPassword) + 1;
+            errno_t rc = memset_s(existingPassword, existingPasswordBufferSize, 0, existingPasswordBufferSize);
+            securec_check(rc, "\0", "\0");
+            pfree_ext(existingPassword);
+            if (passwordExists) {
                 flag = true;
                 break;
             }
@@ -34616,11 +34683,14 @@ void CreateWeakPasswordDictionary(CreateWeakPasswordDictionaryStmt* stmt)
         tableam_scan_end(scan);
         if (flag == false) {
             values[Anum_gs_global_config_name - 1] = DirectFunctionCall1(namein, CStringGetDatum(name));
-            values[Anum_gs_global_config_value - 1] = CStringGetTextDatum(pwd);
+            values[Anum_gs_global_config_value - 1] = CStringGetTextDatum(password);
             tup = (HeapTuple) heap_form_tuple(RelationGetDescr(rel), values, nulls);
             simple_heap_insert(rel, tup);
             heap_freetuple_ext(tup);
         }
+        errno_t rc = memset_s(password, passwordBufferSize, 0, passwordBufferSize);
+        securec_check(rc, "\0", "\0");
+        pfree_ext(password);
     }
     heap_close(rel, RowExclusiveLock);
 }

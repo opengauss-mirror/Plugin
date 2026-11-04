@@ -1512,6 +1512,8 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
     }
 
 #ifndef ENABLE_MULTIPLE_NODES
+    /* Materialize ROWNUM at the scan and carry it through ORDER BY / window. */
+    preprocess_rownum_carrythrough(root, parse);
     /* Change ROWNUM to LIMIT if possible */
     preprocess_rownum(root, parse);
     DEBUG_QRW("After preprocess rownum");
@@ -4460,8 +4462,34 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
              * node has a separately modifiable tlist.  (XXX wouldn't a
              * shallow list copy do for that?)
              */
-            if (window_tlist != NULL)
-                result_plan->targetlist = (List*)copyObject(window_tlist);
+            if (window_tlist != NULL) {
+                /*
+                 * A CteScan produced for START WITH / CONNECT BY already
+                 * contains internal array_col entries.  Replacing
+                 * its targetlist with the window input targetlist changes the
+                 * resno/name mapping used by the StartWith executor and can
+                 * make a valid CONNECT_BY_ROOT query fail at execution time.
+                 * Keep the existing entries and append only the additional
+                 * window inputs instead.
+                 */
+                if (IsA(result_plan, CteScan) &&
+                    IsCteScanProcessForStartWith((CteScan *)result_plan)) {
+                    int tlistLen = list_length(result_plan->targetlist);
+
+                    foreach (l, window_tlist) {
+                        TargetEntry *te = (TargetEntry *)lfirst(l);
+
+                        if (te->ressortgroupref != 0 ||
+                            tlist_member((Node *)te->expr, result_plan->targetlist) == NULL) {
+                            TargetEntry *new_te = (TargetEntry *)copyObject(te);
+                            new_te->resno = ++tlistLen;
+                            result_plan->targetlist = lappend(result_plan->targetlist, new_te);
+                        }
+                    }
+                } else {
+                    result_plan->targetlist = (List*)copyObject(window_tlist);
+                }
+            }
 
             if (IsA(result_plan, PartIterator)) {
                 /*
