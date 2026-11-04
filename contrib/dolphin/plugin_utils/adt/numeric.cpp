@@ -23976,4 +23976,48 @@ Datum numeric_cast_int8(PG_FUNCTION_ARGS)
     }
     PG_RETURN_INT64((int64)result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(b_numeric_mod);
+extern "C" DLL_PUBLIC Datum b_numeric_mod(PG_FUNCTION_ARGS);
+Datum b_numeric_mod(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1;
+    NumericVar arg2;
+    NumericVar result;
+    Numeric res;
+    uint16 num1Flags;
+    uint16 num2Flags;
+
+    Numeric num1 = PG_GETARG_NUMERIC(0);
+    Numeric num2 = PG_GETARG_NUMERIC(1);
+    num1Flags = NUMERIC_NB_FLAGBITS(num1);
+    num2Flags = NUMERIC_NB_FLAGBITS(num2);
+
+    if (NUMERIC_FLAG_IS_NANORBI(num1Flags) || NUMERIC_FLAG_IS_NANORBI(num2Flags)) {
+        if (NUMERIC_FLAG_IS_NAN(num1Flags) || NUMERIC_FLAG_IS_NAN(num2Flags)) {
+            PG_RETURN_NUMERIC(make_result(&const_nan));
+        }
+        if (NUMERIC_FLAG_IS_BI(num1Flags)) {
+            num1 = makeNumericNormal(num1);
+        }
+        if (NUMERIC_FLAG_IS_BI(num2Flags)) {
+            num2 = makeNumericNormal(num2);
+        }
+    }
+
+    init_var_from_num(num1, &arg1);
+    init_var_from_num(num2, &arg2);
+
+    if (unlikely(arg2.ndigits == 0 || arg2.digits[0] == 0)) {
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+    }
+
+    init_var(&result);
+    mod_var(&arg1, &arg2, &result, NULL);
+    res = make_result(&result);
+    free_var(&result);
+
+    PG_RETURN_NUMERIC(res);
+}
 #endif

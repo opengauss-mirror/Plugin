@@ -50,10 +50,39 @@ insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111
 create table test_mod as select  mod(`int1`, `int1`) as mod1, mod(`uint1`, `uint1`) as mod2, mod(`int2`, `int2`) as mod3,  mod(`uint2`, `uint2`) as mod4,  mod(`int4`, `int4`) as mod5, 
 mod(`uint4`, `uint4`) as mod6,  mod(`int8`, `int8`) as mod7,  mod(`uint8`, `uint8`) as mod8, mod(`float4`, `float4`) as mod9, mod(`float8`, `float8`) as mod10,  mod(`numeric`, `numeric`) as mod11, 
 mod(`bit1`, `bit1`) as mod12,  mod(`bit64`, `bit64`) as mod13,  mod(`boolean`, `boolean`) as mod14, mod(`char`, `char`) as mod15,  mod(`varchar`, `varchar`) as mod16, mod(`text`, `text`) as mod17, 
-mod(`binary`,`binary`) as mod18, mod(`varbinary`,`varbinary`) as mod19 from test_type_table;
+mod(`binary`,`binary`) as mod18, mod(`varbinary`,`varbinary`) as mod19,
+mod(`tinyblob`, `tinyblob`) as mod20, mod(`blob`, `blob`) as mod21, 
+mod(`mediumblob`, `mediumblob`) as mod22, mod(`longblob`,`longblob`) as mod23 from test_type_table;
 
 select * from test_mod;
 
+-- cross-type mod overloads: blob/binary family x integer/numeric types
+select mod(cast('1234567' as binary), 2);
+select mod(cast('1234567' as binary), 2.5);
+select mod(2, cast('1234567' as binary));
+select mod(2.5, cast('1234567' as binary));
+select mod(cast('1234567' as blob), 2);
+select mod(cast('1234567' as blob), 2.5);
+select mod(2, cast('1234567' as blob));
+select mod(2.5, cast('1234567' as blob));
+select mod(cast('1234567' as binary), cast('2' as blob));
+select mod(cast('1234567' as blob), cast('2' as binary));
+select mod(cast('7' as varbinary), cast('2' as mediumblob));
+select mod(cast('1234567' as longblob), cast('2' as varbinary));
+select mod(cast('1234567' as tinyblob), cast('2' as tinyint));
+select mod(cast('1234567' as blob), cast('2' as smallint));
+select mod(cast('1234567' as mediumblob), cast('2' as bigint));
+select mod(cast('1234567' as longblob), cast('2' as uint4));
+select mod(cast('1234567' as uint8), cast('2' as blob));
+select mod(cast('2' as tinyint), cast('1234567' as blob));
+select mod(cast('2' as smallint), cast('1234567' as blob));
+select mod(cast('2' as uint1), cast('1234567' as blob));
+select mod(cast('2' as uint2), cast('1234567' as blob));
+select mod(cast('2' as uint4), cast('1234567' as blob));
+select mod(cast('2' as uint8), cast('1234567' as blob));
+select mod(cast('2' as bigint), cast('1234567' as blob));
+select mod(cast('2' as number), cast('1234567' as blob));
+select mod(cast('1234567' as blob), 0.0);
 drop table test_mod;
 drop table test_type_table;
 
