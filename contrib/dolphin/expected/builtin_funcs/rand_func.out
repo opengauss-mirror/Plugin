@@ -876,29 +876,165 @@ CONTEXT:  referenced column: mod
 ERROR:  division by zero
 CONTEXT:  referenced column: mod
 SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
-ERROR:  function mod(tinyblob, tinyblob) is not unique
-LINE 1: SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
-               ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
 SELECT mod(`blob`, `blob`) FROM t1;
-ERROR:  function mod(blob, blob) is not unique
-LINE 1: SELECT mod(`blob`, `blob`) FROM t1;
-               ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
 SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
-ERROR:  function mod(mediumblob, mediumblob) is not unique
-LINE 1: SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
-               ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
 SELECT mod(`longblob`, `longblob`) FROM t1;
-ERROR:  function mod(longblob, longblob) is not unique
-LINE 1: SELECT mod(`longblob`, `longblob`) FROM t1;
-               ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`blob`, `tinyblob`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`tinyblob`, `blob`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`mediumblob`, `longblob`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
+SELECT mod(`longblob`, `mediumblob`) FROM t1;
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: mod
+-[ RECORD 1 ]
+mod | 0
+-[ RECORD 2 ]
+mod | 
+-[ RECORD 3 ]
+mod | 
+
 SELECT mod(`text`, `text`) FROM t1;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: mod
@@ -910,6 +1046,30 @@ WARNING:  invalid input syntax for type numeric: "Today is a good day.  "
 CONTEXT:  referenced column: mod
 ERROR:  division by zero
 CONTEXT:  referenced column: mod
+SELECT pg_catalog.b_numeric_mod(4.3, 2.1);
+-[ RECORD 1 ]-+----
+b_numeric_mod | 0.1
+
+SELECT pg_catalog.b_numeric_mod(10.0, 3.0);
+-[ RECORD 1 ]-+----
+b_numeric_mod | 1.0
+
+SELECT pg_catalog.b_numeric_mod(4.3, 2);
+-[ RECORD 1 ]-+----
+b_numeric_mod | 0.3
+
+SELECT pg_catalog.b_numeric_mod(100, 7);
+-[ RECORD 1 ]-+--
+b_numeric_mod | 2
+
+SELECT pg_catalog.b_numeric_mod(99999999999999999999, 7);
+-[ RECORD 1 ]-+--
+b_numeric_mod | 1
+
+SELECT pg_catalog.b_numeric_mod(4.3, 0);
+-[ RECORD 1 ]-+-
+b_numeric_mod | 
+
 SELECT pow(`int1`, `int1`) FROM t1;
 -[ RECORD 1 ]----------------
 pow | 1
@@ -1441,29 +1601,45 @@ CONTEXT:  referenced column: pg_typeof
 (1 row)
 
 SELECT pg_typeof(mod(`tinyblob`,`tinyblob`)) FROM t1 where c1 = 1;
-ERROR:  function mod(tinyblob, tinyblob) is not unique
-LINE 1: SELECT pg_typeof(mod(`tinyblob`,`tinyblob`)) FROM t1 where c...
-                         ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
 SELECT pg_typeof(mod(`blob`,`blob`)) FROM t1 where c1 = 1;
-ERROR:  function mod(blob, blob) is not unique
-LINE 1: SELECT pg_typeof(mod(`blob`,`blob`)) FROM t1 where c1 = 1;
-                         ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
 SELECT pg_typeof(mod(`mediumblob`,`mediumblob`)) FROM t1 where c1 = 1;
-ERROR:  function mod(mediumblob, mediumblob) is not unique
-LINE 1: SELECT pg_typeof(mod(`mediumblob`,`mediumblob`)) FROM t1 whe...
-                         ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
 SELECT pg_typeof(mod(`longblob`,`longblob`)) FROM t1 where c1 = 1;
-ERROR:  function mod(longblob, longblob) is not unique
-LINE 1: SELECT pg_typeof(mod(`longblob`,`longblob`)) FROM t1 where c...
-                         ^
-HINT:  Could not choose a best candidate function. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ number
+(1 row)
+
 SELECT pg_typeof(mod(`text`,`text`)) FROM t1 where c1 = 1;
 WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
 CONTEXT:  referenced column: pg_typeof

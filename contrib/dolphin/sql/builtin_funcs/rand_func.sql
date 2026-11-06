@@ -186,7 +186,18 @@ SELECT mod(`tinyblob`, `tinyblob`) FROM t1;
 SELECT mod(`blob`, `blob`) FROM t1;
 SELECT mod(`mediumblob`, `mediumblob`) FROM t1;
 SELECT mod(`longblob`, `longblob`) FROM t1;
+SELECT mod(`blob`, `tinyblob`) FROM t1;
+SELECT mod(`tinyblob`, `blob`) FROM t1;
+SELECT mod(`mediumblob`, `longblob`) FROM t1;
+SELECT mod(`longblob`, `mediumblob`) FROM t1;
 SELECT mod(`text`, `text`) FROM t1;
+
+SELECT pg_catalog.b_numeric_mod(4.3, 2.1);
+SELECT pg_catalog.b_numeric_mod(10.0, 3.0);
+SELECT pg_catalog.b_numeric_mod(4.3, 2);
+SELECT pg_catalog.b_numeric_mod(100, 7);
+SELECT pg_catalog.b_numeric_mod(99999999999999999999, 7);
+SELECT pg_catalog.b_numeric_mod(4.3, 0);
 
 SELECT pow(`int1`, `int1`) FROM t1;
 SELECT pow(`uint1`, `uint1`) FROM t1;
