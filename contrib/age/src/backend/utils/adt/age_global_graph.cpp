@@ -85,16 +85,6 @@ static inline void vea_append(VertexEdgeArray *vea, graphid edge_id)
     vea->array[vea->size++] = edge_id;
 }
 
-static inline void vea_free(VertexEdgeArray *vea)
-{
-    if (vea->array != NULL) {
-        pfree(vea->array);
-        vea->array = NULL;
-    }
-    vea->size = 0;
-    vea->capacity = 0;
-}
-
 /*
  * Fast hash function for graphid (int64) keys. Replaces dynahash's tag_hash
  * (Jenkins lookup3) with the MurmurHash3 fmix64 finalizer for better
@@ -154,6 +144,7 @@ typedef struct edge_entry
  */
 typedef struct GRAPH_global_context
 {
+    MemoryContext memory_context; /* owns the complete graph cache */
     char *graph_name;              /* graph name */
     Oid graph_oid;                 /* graph oid for searching */
     HTAB *vertex_hashtable;        /* hashtable to hold vertex edge lists */
@@ -175,12 +166,14 @@ typedef struct GRAPH_global_context
     bool all_edge_labels_loaded;
     int64 num_loaded_vertices;     /* number of loaded vertices in this graph */
     int64 num_loaded_edges;        /* number of loaded edges in this graph */
-    ListGraphId *vertices;         /* vertices for vertex hashtable cleanup */
+    ListGraphId *vertices;         /* vertices available to traversal */
     struct GRAPH_global_context *next; /* next graph */
 } GRAPH_global_context;
 
 /* global variable to hold the per process GRAPH global context */
 static THR_LOCAL GRAPH_global_context *global_graph_contexts = NULL;
+/* Invalidation callbacks must also see a cache that is not yet published. */
+static THR_LOCAL GRAPH_global_context *building_graph_context = NULL;
 static THR_LOCAL uint64 next_graph_context_generation = 1;
 static THR_LOCAL bool relcache_callback_registered = false;
 static THR_LOCAL Oid cached_ag_label_relid = InvalidOid;
@@ -240,6 +233,10 @@ void invalidate_GRAPH_global_contexts_by_relid(Oid relid)
         if (!OidIsValid(relid) || graph_context_loaded_relid(ggctx, relid))
             ggctx->dirty = true;
     }
+    if (building_graph_context != NULL &&
+        (!OidIsValid(relid) ||
+         graph_context_loaded_relid(building_graph_context, relid)))
+        building_graph_context->dirty = true;
 }
 
 void notify_GRAPH_global_contexts_relation_modified(Oid relid)
@@ -352,14 +349,14 @@ static void create_GRAPH_global_hashtables(GRAPH_global_context *ggctx)
     vertex_ctl.hcxt = CurrentMemoryContext;
     ggctx->vertex_hashtable = hash_create(vhn, VERTEX_HTAB_INITIAL_SIZE,
                                           &vertex_ctl,
-                                          HASH_ELEM | HASH_FUNCTION);
+                                          HASH_ELEM | HASH_FUNCTION |
+                                          HASH_CONTEXT);
     pfree(vhn);
     /*
      * Initialize the edge_table (agehash, INLINE mode). It owns a private
-     * MemoryContext as a child of CurrentMemoryContext (TopMemoryContext for
-     * the lifetime of the cached GRAPH_global_context). Cleanup is a single
-     * MemoryContextDelete in free_specific_GRAPH_global_context, so an elog
-     * during build cannot leak slots. The edge_id key is stored in the slot
+     * MemoryContext as a child of the graph's owning context. Deleting that
+     * context reclaims even a partially initialized table after a build error.
+     * The edge_id key is stored in the slot
      * header, so the payload is just edge_entry.
      */
     (void) edge_ctl;
@@ -964,79 +961,8 @@ static void freeze_GRAPH_global_hashtables(GRAPH_global_context *ggctx)
  */
 static void free_specific_GRAPH_global_context(GRAPH_global_context *ggctx)
 {
-    GraphIdNode *curr_vertex = NULL;
-
-    /* don't do anything if NULL */
-    if (ggctx == NULL)
-    {
-        return;
-    }
-
-    /* free the graph name */
-    pfree(ggctx->graph_name);
-    ggctx->graph_name = NULL;
-
-    list_free(ggctx->loaded_relids);
-    ggctx->loaded_relids = NIL;
-
-    list_free(ggctx->edge_label_relids);
-    ggctx->edge_label_relids = NIL;
-
-    ggctx->graph_oid = InvalidOid;
-    ggctx->next = NULL;
-
-    /* free the vertex edge lists, starting with the head */
-    curr_vertex = peek_stack_head(ggctx->vertices);
-    while (curr_vertex != NULL)
-    {
-        GraphIdNode *next_vertex = NULL;
-        vertex_entry *value = NULL;
-        bool found = false;
-        graphid vertex_id;
-
-        /* get the next vertex in the list, if any */
-        next_vertex = next_GraphIdNode(curr_vertex);
-
-        /* get the current vertex id */
-        vertex_id = get_graphid(curr_vertex);
-
-        /* retrieve the vertex entry */
-        value = (vertex_entry *)hash_search(ggctx->vertex_hashtable,
-                                            (void *)&vertex_id, HASH_FIND,
-                                            &found);
-        /* this is bad if it isn't found */
-        Assert(found);
-
-        /* free the edge arrays associated with this vertex */
-        vea_free(&value->edges_in);
-        vea_free(&value->edges_out);
-        vea_free(&value->edges_self);
-        /* move to the next vertex */
-        curr_vertex = next_vertex;
-    }
-
-    /* free the vertices list */
-    free_ListGraphId(ggctx->vertices);
-    ggctx->vertices = NULL;
-
-    /* free the vertex hashtable (dynahash) */
-    hash_destroy(ggctx->vertex_hashtable);
-    ggctx->vertex_hashtable = NULL;
-
-    /*
-     * Free the edge_table. All agehash slots live in edge_table_mcxt, so a
-     * single MemoryContextDelete reclaims the table and every slot.
-     */
-    if (ggctx->edge_table_mcxt != NULL)
-    {
-        MemoryContextDelete(ggctx->edge_table_mcxt);
-    }
-    ggctx->edge_table = NULL;
-    ggctx->edge_table_mcxt = NULL;
-
-    /* free the context */
-    pfree(ggctx);
-    ggctx = NULL;
+    if (ggctx != NULL)
+        MemoryContextDelete(ggctx->memory_context);
 }
 
 /*
@@ -1087,10 +1013,16 @@ GRAPH_global_context *manage_GRAPH_global_contexts_for_labels(
     GRAPH_global_context *new_ggctx = NULL;
     GRAPH_global_context *curr_ggctx = NULL;
     GRAPH_global_context *prev_ggctx = NULL;
-    MemoryContext oldctx = NULL;
+    MemoryContext oldctx = CurrentMemoryContext;
+    MemoryContext graph_mcxt;
+    List *wanted_edge_relids = edge_label_relids;
 
-    /* we need a higher context, or one that isn't destroyed by SRF exit */
-    oldctx = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+    if (!OidIsValid(graph_oid)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_SCHEMA),
+                 errmsg("graph \"%s\" does not exist", graph_name)));
+    }
+    Assert(building_graph_context == NULL);
 
     /*
      * We need to see if any GRAPH global contexts already exist and if any do
@@ -1160,7 +1092,7 @@ GRAPH_global_context *manage_GRAPH_global_contexts_for_labels(
              * of thrashing. A NIL request already means "all labels".
              */
             if (edge_label_relids != NIL) {
-                edge_label_relids =
+                wanted_edge_relids =
                     list_union_oid(curr_ggctx->edge_label_relids,
                                    edge_label_relids);
             }
@@ -1172,45 +1104,47 @@ GRAPH_global_context *manage_GRAPH_global_contexts_for_labels(
         curr_ggctx = curr_ggctx->next;
     }
 
-    /* otherwise, we need to create one and possibly attach it */
-    new_ggctx = (GRAPH_global_context *)palloc0(sizeof(GRAPH_global_context));
+    /* Keep failed builds out of the reusable list and reclaim every allocation. */
+    graph_mcxt = AllocSetContextCreate(u_sess->cache_mem_cxt,
+                                       "AGE global graph",
+                                       ALLOCSET_DEFAULT_SIZES);
+    PG_TRY();
+    {
+        MemoryContextSwitchTo(graph_mcxt);
+        new_ggctx = (GRAPH_global_context *)palloc0(sizeof(GRAPH_global_context));
+        new_ggctx->memory_context = graph_mcxt;
+        new_ggctx->graph_name = pstrdup(graph_name);
+        new_ggctx->graph_oid = graph_oid;
+        new_ggctx->edge_label_relids = list_copy(wanted_edge_relids);
+        new_ggctx->all_edge_labels_loaded = (wanted_edge_relids == NIL);
+        if (next_graph_context_generation == 0)
+            next_graph_context_generation = 1;
+        new_ggctx->generation = next_graph_context_generation++;
+        new_ggctx->xmin = GetActiveSnapshot()->xmin;
+        new_ggctx->xmax = GetActiveSnapshot()->xmax;
+        new_ggctx->curcid = GetActiveSnapshot()->curcid;
 
-    if (global_graph_contexts != NULL) {
-        new_ggctx->next = global_graph_contexts;
-    } else {
-        new_ggctx->next = NULL;
+        building_graph_context = new_ggctx;
+        create_GRAPH_global_hashtables(new_ggctx);
+        load_GRAPH_global_hashtables(new_ggctx);
+        freeze_GRAPH_global_hashtables(new_ggctx);
+        building_graph_context = NULL;
+        MemoryContextSwitchTo(oldctx);
     }
+    PG_CATCH();
+    {
+        building_graph_context = NULL;
+        MemoryContextSwitchTo(oldctx);
+        MemoryContextDelete(graph_mcxt);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
 
-    /* set the global context variable */
+    if (wanted_edge_relids != edge_label_relids)
+        list_free(wanted_edge_relids);
+
+    new_ggctx->next = global_graph_contexts;
     global_graph_contexts = new_ggctx;
-
-    /* set the graph name and oid */
-    new_ggctx->graph_name = pstrdup(graph_name);
-    new_ggctx->graph_oid = graph_oid;
-    new_ggctx->dirty = false;
-    new_ggctx->loaded_relids = NIL;
-    new_ggctx->edge_label_relids = list_copy(edge_label_relids);
-    new_ggctx->all_edge_labels_loaded = (edge_label_relids == NIL);
-    if (next_graph_context_generation == 0)
-        next_graph_context_generation = 1;
-    new_ggctx->generation = next_graph_context_generation++;
-
-    /* set the transaction ids */
-    new_ggctx->xmin = GetActiveSnapshot()->xmin;
-    new_ggctx->xmax = GetActiveSnapshot()->xmax;
-    new_ggctx->curcid = GetActiveSnapshot()->curcid;
-
-    /* initialize our vertices list */
-    new_ggctx->vertices = NULL;
-
-    /* build the hashtables for this graph */
-    create_GRAPH_global_hashtables(new_ggctx);
-    load_GRAPH_global_hashtables(new_ggctx);
-    freeze_GRAPH_global_hashtables(new_ggctx);
-
-    /* switch back to the previous memory context */
-    MemoryContextSwitchTo(oldctx);
-
     return new_ggctx;
 }
 
