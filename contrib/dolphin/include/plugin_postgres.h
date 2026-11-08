@@ -194,6 +194,7 @@ typedef struct BSqlPluginContext {
     int useless_lower_case_table_names;
     bool is_dolphin_call_stmt;
     bool is_binary_proto;
+    bool commit_on_aborted_txn;
     bool is_ast_stmt;
     bool group_by_error;
     bool is_create_alter_stmt;

@@ -18,6 +18,7 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.util.Properties;
@@ -94,6 +95,7 @@ public class MySQLJdbcAutoCommitTest {
             stmt.execute("insert into t_autocommit_0016 values(1, 105.5), (20, 655.45);");
 
             stmt.execute("set autocommit = 0;");
+            stmt.execute("insert into t_autocommit_0016 values(2, 2.0);");
             try {
                 stmt.execute("insert into t_autocommit_0016 values(1, 2, 3);");
             } catch (Exception e) {
@@ -106,12 +108,20 @@ public class MySQLJdbcAutoCommitTest {
                 stmt.execute("insert into t_autocommit_0016 values(1234, 1234.12);");
             } catch (Exception e) {
             }
-            System.out.println("before commit;");
-            stmt.execute("commit;");
+            try {
+                stmt.execute("commit;");
+                throw new AssertionError("COMMIT succeeded on an aborted transaction");
+            } catch (SQLException e) {
+                if (e.getErrorCode() != 322) {
+                    throw e;
+                }
+                System.out.println("commit error: " + e.getErrorCode());
+            }
 
-            ResultSet rs = stmt.executeQuery("select* from t_autocommit_0016 order by 1;");
-            while (rs.next()) {
-                System.out.println("result");
+            try (ResultSet rs = stmt.executeQuery("select c_int from t_autocommit_0016 order by c_int;")) {
+                while (rs.next()) {
+                    System.out.println("remaining key: " + rs.getInt(1));
+                }
             }
             stmt.execute("drop table if exists t_autocommit_0016 cascade;");
         }
