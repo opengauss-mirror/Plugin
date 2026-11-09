@@ -27,13 +27,12 @@ permissions:
 # 同一 PR 再次触发（新提交、reopen、/retest）时，立刻取消还在跑的上一次门禁。
 # mr_id 抢占只作用于同一个合并请求；不同 PR 仍可并行，最多 5 条。
 concurrency:
-  enable: true
   max: 100
   exceed-action: QUEUE
+  enable: true
   preemption:
     enable: true
-    events:
-      - mr_id
+    events: [mr_id]
 
 env:
   GITCODE_REPO: opengauss/Plugin
