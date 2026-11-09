@@ -204,10 +204,6 @@ WITH (orientation=row, compression=no);
 ALTER TABLE enlight_dim_model_point_detail ADD CONSTRAINT enlight_dim_model_point_detail_pkey PRIMARY KEY USING btree  (model_id, identifier);
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "enlight_dim_model_point_detail_pkey" for table "enlight_dim_model_point_detail"
 INSERT INTO enlight_dim_model_point_detail (model_id, model_name_i18n, model_name_en, ouid, root_model_id, root_model_name_en, hierachy_path, parent_model_id, parent_model_name, child_json_en, attr_json, identifier, description, name_value, tags, unit, dataType, hasQuality, signalType, update_time) VALUES('dd', '{"i18nValue": {}, "defaultValue": "aaaa"}', NULL, 'o16361044812021863', 'bbbb', NULL, '/bbbb/cc/dd', 'cc', NULL, NULL, NULL, 'HNHJGF.PRI.AI31', NULL, '{"i18nValue":{"en_US":"Vpv2 /PV2输\\n入电压","es_ES":"","zh_CN":"Vpv2 /PV2输\\n入电压","ja_JP":""},"defaultValue":"Vpv2 /PV2输\\n入电压"}', '{}', NULL, 'DOUBLE', false, 'AI', '2025-02-18 23:03:01.000');
-WARNING:  nonstandard use of \\ in a string literal
-LINE 1: ... 'cc', NULL, NULL, NULL, 'HNHJGF.PRI.AI31', NULL, '{"i18nVal...
-                                                             ^
-HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
  
 select model_id, point_id, case when isi18n_zh_flag=1 then il8_value->>'$.zh_CN' else name_value->>'$.defaultValue' end point_name_zh, 
 case when isi18n_en_flag=1 then il8_value->>'$.en_US' else name_value->>'$.defaultValue' end point_name_en, 
@@ -231,25 +227,9 @@ where  identifier  NOT REGEXP '_1m$|_5m$|_10m$'and json_contains(tags,'{"calcula
 
 create table tt1(il8_value text);
 insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "es_ES": "", "ja_JP": "", "zh_CN": {"aaa":"b\\nbb","kkk\":"jj\\nj"}}');
-WARNING:  nonstandard use of \\ in a string literal
-LINE 1: insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "...
-                                ^
-HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
 insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "es_ES": "", "ja_JP": "", "zh_CN": "b\\nbb"}');
-WARNING:  nonstandard use of \\ in a string literal
-LINE 1: insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "...
-                                ^
-HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
 insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "es_ES": "", "ja_JP": "", "zh_CN":    {"aaa":"b\\nbb","kkk":"jj\\nj"}}');
-WARNING:  nonstandard use of \\ in a string literal
-LINE 1: insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "...
-                                ^
-HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
 insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "es_ES": "", "ja_JP": "", "zh_CN": {"aaa":"b\\nbb"}}');
-WARNING:  nonstandard use of \\ in a string literal
-LINE 1: insert into tt1 values ('{"en_US": "Vpv2 /PV2输\\n入电压", "...
-                                ^
-HINT:  Use the escape string syntax for backslashes, e.g., E'\\'.
 select il8_value::json->>'$.zh_CN' from tt1;
              ?column?             
 ----------------------------------
