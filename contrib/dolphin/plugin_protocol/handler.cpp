@@ -321,9 +321,19 @@ int dolphin_process_command(StringInfo buf)
         }
         case COM_STMT_EXECUTE: {
             GetSessionContext()->is_binary_proto = true;
-            execute_binary_protocol_req_process_b(buf);
-            execute_binary_protocol_req_process_e();
-            exec_sync_message();
+            PG_TRY();
+            {
+                execute_binary_protocol_req_process_b(buf);
+                execute_binary_protocol_req_process_e();
+                exec_sync_message();
+            }
+            PG_CATCH();
+            {
+                GetSessionContext()->is_binary_proto = false;
+                u_sess->param_cxt.use_parame = false;
+                PG_RE_THROW();
+            }
+            PG_END_TRY();
             GetSessionContext()->is_binary_proto = false;
             break;
         }
