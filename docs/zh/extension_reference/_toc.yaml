@@ -278,11 +278,7 @@ sections:
       - label: 重设参数
         href: ./dolphin_resetting_parameters.md
       - label: 存储过程
-        sections:
-          - label: 基本语句
-            href: ./dolphin_basic_statements.md
-          - label: 赋值语句
-            href: ./dolphin_assignment_statements.md
+        href: ./dolphin_stored_procedures.md
       - label: 标识符说明
         sections:
           - label: 列名标识符
