@@ -2,7 +2,7 @@
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:23:17.334Z pushedAt=2026-09-12T04:44:11.479Z -->
 
-The PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT view is compatible with the corresponding MySQL view and is created only in database B. It displays information related to the current user's queries, with fields storing the information from the most recent execution.
+The PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT view is compatible with the corresponding MySQL view and is created only in database B. During statement execution, the view displays information about the statement currently being executed; when the session is idle, it retains information about the most recently executed statement.
 
 >[!NOTE] Note
 >
