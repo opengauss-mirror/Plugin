@@ -2,7 +2,7 @@
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:09.213Z pushedAt=2026-09-12T05:28:40.575Z -->
 
-The PG\_TYPE\_NONSTRICT\_BASIC\_VALUE view stores the basic values of types, which are used for insertion via INSERT VALUES(). By default, this system table can only be accessed with system administrator privileges. Ordinary users require authorization before access is granted.
+The PG\_TYPE\_NONSTRICT\_BASIC\_VALUE view stores the basic values of types, which are used for insertion via INSERT VALUES(). By default, SELECT and REFERENCES privileges on this view are publicly available.
 
 **Table 1**  PG\_TYPE\_NONSTRICT\_BASIC\_VALUE columns
 
