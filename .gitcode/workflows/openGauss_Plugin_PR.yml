@@ -1,11 +1,11 @@
 name: openGauss_Plugin_PR
 
 on:
-  push:
-    branches:
-      - master
-      - '**'
   pull_request_target:
+    types:
+      - open
+      - update
+      - reopen
     branches:
       - master
       - '**'
