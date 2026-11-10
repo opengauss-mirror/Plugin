@@ -5118,9 +5118,8 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     ExprState* exprstate = NULL;
     ExprContext* econtext = NULL;
     MemoryContext oldcontext;
+#ifdef DOLPHIN
     MemoryContext reuse_context = NULL;
-#ifndef DOLPHIN
-    MemoryContext eval_context = NULL;
 #endif
     Datum const_val;
     bool const_is_null = false;
@@ -5128,13 +5127,13 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     bool resultTypByVal = false;
 #ifdef DOLPHIN
     bool isFusion = false;
-#endif
     if (u_sess->iud_expr_reuse_ctx == NULL) {
         u_sess->iud_expr_reuse_ctx =
             AllocSetContextCreate(u_sess->top_transaction_mem_cxt, "IudExprReuseContext", ALLOCSET_DEFAULT_MINSIZE,
                                   ALLOCSET_DEFAULT_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
     }
     reuse_context = u_sess->iud_expr_reuse_ctx;
+#endif
 
     /*
      * To use the executor, we need an EState.
@@ -5147,8 +5146,11 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     /* We can use the estate's working context to avoid memory leaks. */
     oldcontext = MemoryContextSwitchTo(estate->es_query_cxt);
 #ifndef DOLPHIN
+    /*
+     * Keep evaluation memory private to this EState: nested SPI planning
+     * can re-enter evaluate_expr while the outer evaluation is still active.
+     */
     econtext = GetPerTupleExprContext(estate);
-    eval_context = econtext->ecxt_per_tuple_memory;
 #endif
 
     PG_TRY();
@@ -5168,15 +5170,6 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
             MakePerTupleExprContextForOpFusion(estate);
         }
         econtext = GetPerTupleExprContext(estate);
-#else
-        /*
-         * Borrow the shared reuse context only for the actual eval scratch
-         * memory; keep ExprContext itself privately owned by this EState so
-         * FreeExecutorState() can reclaim all per-call executor objects.
-         */
-        if (reuse_context != NULL) {
-            econtext->ecxt_per_tuple_memory = reuse_context;
-        }
 #endif
         econtext->can_ignore = can_ignore;
 
@@ -5185,9 +5178,6 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
          * ExecEvalExpr() code used in this situation will use tuple slots.
          */
         const_val = ExecEvalExprSwitchContext(exprstate, econtext, &const_is_null);
-#ifndef DOLPHIN
-        econtext->ecxt_per_tuple_memory = eval_context;
-#endif
 
         /* Get info needed about result datatype */
         get_typlenbyval(result_type, &resultTypLen, &resultTypByVal);
@@ -5211,20 +5201,13 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     }
     PG_CATCH();
     {
-#ifndef DOLPHIN
-        if (econtext != NULL) {
-            econtext->ecxt_per_tuple_memory = eval_context;
-        }
         (void)MemoryContextSwitchTo(oldcontext);
-        FreeExecutorState(estate);
-        if (reuse_context != NULL) {
-            MemoryContextReset(reuse_context);
-        }
-#else
-        (void)MemoryContextSwitchTo(oldcontext);
+#ifdef DOLPHIN
         if (!isFusion) {
             FreeExecutorState(estate);
         }
+#else
+        FreeExecutorState(estate);
 #endif
         PG_RE_THROW();
     }
@@ -5237,9 +5220,6 @@ Expr* evaluate_expr(Expr* expr, Oid result_type, int32 result_typmod, Oid result
     }
 #else
     FreeExecutorState(estate);
-    if (reuse_context != NULL) {
-        MemoryContextReset(reuse_context);
-    }
 #endif
 
     /*
