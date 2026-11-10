@@ -903,16 +903,28 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
         }
         case DOLPHIN_TYPE_TIME: {
             TimeADT val = DatumGetTimeADT(binval);
-            struct pg_tm tt, *tm = &tt;
-            fsec_t fsec;
-            time2tm(val, tm, &fsec);
+#ifdef HAVE_INT64_TIMESTAMP
+            int64 time_usecs = val;
+#else
+            /* Floating-point TimeADT stores seconds, not microseconds. */
+            int64 time_usecs = (int64)rint(val * USECS_PER_SEC);
+#endif
+            int64 abs_time = time_usecs < 0 ? -time_usecs : time_usecs;
+            uint32 days = (uint32)(abs_time / USECS_PER_DAY);
+            int64 rem = abs_time % USECS_PER_DAY;
+            uint8 hour = (uint8)(rem / USECS_PER_HOUR);
+            int64 rem2 = rem % USECS_PER_HOUR;
+            uint8 minute = (uint8)(rem2 / USECS_PER_MINUTE);
+            int64 rem3 = rem2 % USECS_PER_MINUTE;
+            uint8 second = (uint8)(rem3 / USECS_PER_SEC);
+            uint32 fsec = (uint32)(rem3 % USECS_PER_SEC);
 
             dq_append_int1(buf, 0x0c);
-            val > 0 ? dq_append_int1(buf, 0x00) : dq_append_int1(buf, 0x01);
-            dq_append_int4(buf, 0x00);
-            dq_append_int1(buf, tm->tm_hour);
-            dq_append_int1(buf, tm->tm_min);
-            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int1(buf, val < 0 ? 0x01 : 0x00);
+            dq_append_int4(buf, days);
+            dq_append_int1(buf, hour);
+            dq_append_int1(buf, minute);
+            dq_append_int1(buf, second);
             dq_append_int4(buf, fsec);
 
             break;
