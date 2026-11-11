@@ -38,6 +38,10 @@
 #include "plugin_protocol/handler.h"
 #include "plugin_protocol/auth.h"
 
+#include <pthread.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+
 extern int SSL_set_fd_ex_wrap(Port* port, int fd);
 
 static char fast_auth_success = '\3';
@@ -527,12 +531,13 @@ static bool deserialize(const char*serialized_string, char*salt, char*digest, un
     char *str_text = (char *)palloc(strlen(serialized_string) + 1);
     rc = strcpy_s(str_text, strlen(serialized_string) + 1, serialized_string);
     securec_check(rc, "\0", "\0");
-    char *token = strtok(str_text, "$");
+    char *saveptr = NULL;
+    char *token = strtok_r(str_text, "$", &saveptr);
     while (token != NULL && num_parts < PARAMNUM_3) {
         rc = strncpy_s(parts[num_parts], DOLPHIN_CRYPT_MAX_PASSWORD_SIZE, token, strlen(token));
         securec_check(rc, "\0", "\0");
         num_parts++;
-        token = strtok(NULL, "$");
+        token = strtok_r(NULL, "$", &saveptr);
     }  
     *iterations = atol(parts[PARAMNUM_1]) * DEFAULTMULTIPLE;
     rc = strncpy_s(salt, SHA1_HASH_SIZE + 1, parts[PARAMNUM_2], DOLPHIN_CRYPT_SALT_LENGTH);
@@ -549,19 +554,101 @@ static bool deserialize(const char*serialized_string, char*salt, char*digest, un
     return FALSE;
 }
 
-static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Port *port)
+static struct rsa_st *g_caching_sha2_server_key = NULL;
+static pthread_once_t g_caching_sha2_server_key_once = PTHREAD_ONCE_INIT;
+static const int CACHING_SHA2_SERVER_KEY_BITS = 2048;
+
+/*
+ * Lazily generate the server keypair used for caching_sha2_password full
+ * authentication over an unencrypted connection. MySQL behaves the same way:
+ * the keypair is generated once per server process and the public half is
+ * handed to clients that request it (0x02), so they can encrypt the password
+ * exchange with OAEP public-key encryption.
+ */
+static void init_caching_sha2_server_key()
 {
-    char        *fast_passwd = (char*)palloc(SHA2_HASH_SIZE * 2 + 1);
+    BIGNUM *e = BN_new();
+    if (e == NULL) {
+        return;
+    }
+    if (BN_set_word(e, RSA_F4) != 1) {
+        BN_free(e);
+        return;
+    }
+
+    struct rsa_st *key = RSA_new();
+    if (key == NULL) {
+        BN_free(e);
+        return;
+    }
+    if (RSA_generate_key_ex(key, CACHING_SHA2_SERVER_KEY_BITS, e, NULL) != 1) {
+        RSA_free(key);
+        BN_free(e);
+        return;
+    }
+    BN_free(e);
+
+    g_caching_sha2_server_key = key;
+}
+
+static struct rsa_st *get_caching_sha2_server_key()
+{
+    if (pthread_once(&g_caching_sha2_server_key_once, init_caching_sha2_server_key) != 0) {
+        return NULL;
+    }
+    return g_caching_sha2_server_key;
+}
+
+/* Kept outside the PG_TRY stack frame so ERROR cleanup sees every allocation. */
+struct CachingSha2AuthBuffers {
+    StringInfo buf;
+    char *fast_passwd;
+    char *full_passwd;
+    char *cleartext;
+    Size cleartext_size;
+    unsigned char *decrypted;
+    Size decrypted_size;
+};
+
+static void clear_auth_buffer(void *buffer, Size size)
+{
+    if (buffer != NULL) {
+        errno_t rc = memset_s(buffer, size, 0, size);
+        securec_check(rc, "", "");
+        pfree(buffer);
+    }
+}
+
+static void cleanup_caching_sha2_auth(CachingSha2AuthBuffers *buffers)
+{
+    clear_auth_buffer(buffers->decrypted, buffers->decrypted_size);
+    clear_auth_buffer(buffers->cleartext, buffers->cleartext_size);
+    clear_auth_buffer(buffers->fast_passwd, SHA2_HASH_SIZE * 2 + 1);
+    if (buffers->full_passwd != NULL) {
+        clear_auth_buffer(buffers->full_passwd, strlen(buffers->full_passwd) + 1);
+    }
+    if (buffers->buf != NULL) {
+        /* A secure transport's input message also contains the cleartext. */
+        errno_t rc = memset_s(buffers->buf->data, buffers->buf->maxlen, 0, buffers->buf->maxlen);
+        securec_check(rc, "", "");
+        DestroyStringInfo(buffers->buf);
+    }
+    pfree(buffers);
+}
+
+static bool full_authenticate_mysql_caching_sha2_impl(const char* stored_password, Port *port,
+    CachingSha2AuthBuffers *buffers)
+{
+    char        *fast_passwd = buffers->fast_passwd = (char*)palloc0(SHA2_HASH_SIZE * 2 + 1);
     char         salt[SHA1_HASH_SIZE + 1] = { 0 };
     char         digest[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
     char         store_digest[DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1] = { 0 };
     unsigned long iterations = 0;
-    char         *plaintext_passwd = NULL;
-    StringInfo buf = makeStringInfo();
+    char         *cleartext = NULL;
+    StringInfo buf = buffers->buf = makeStringInfo();
     errno_t rc;
 
     if (!deserialize(stored_password, salt, store_digest, &iterations)) {
-        DestroyStringInfo(buf);
         return FALSE;
     }
     dq_append_int1(buf, '\1');
@@ -570,20 +657,85 @@ static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Po
     pq_flush();
 
     if (dq_getmessage(buf, 0) != STATUS_OK) {
-        DestroyStringInfo(buf);
         return FALSE;
     }   
-    
-    plaintext_passwd = dq_get_string_null(buf);
-    char *full_passwd = TextDatumGetCString(DirectFunctionCall2(make_scrambled_full_password_sha2,
-        PointerGetDatum(plaintext_passwd), PointerGetDatum(salt)));
+
+    /* Only secure transports carry a cleartext full-authentication response. */
+    bool secure_transport = port->raddr.addr.ss_family == AF_UNIX;
+#ifdef USE_SSL
+    secure_transport = secure_transport || port->ssl != NULL;
+#endif
+    if (secure_transport) {
+        cleartext = buffers->cleartext = dq_get_string_null(buf);
+        buffers->cleartext_size = strlen(cleartext) + 1;
+    } else {
+        struct rsa_st *key = get_caching_sha2_server_key();
+        if (key == NULL) {
+            return FALSE;
+        }
+
+        /* A client with a cached public key sends ciphertext immediately. */
+        if (buf->len == 1 && (uint8)buf->data[0] == 0x02) {
+            BIO *bio = BIO_new(BIO_s_mem());
+            if (bio == NULL) {
+                return FALSE;
+            }
+            if (PEM_write_bio_RSA_PUBKEY(bio, key) != 1) {
+                BIO_free(bio);
+                return FALSE;
+            }
+
+            char *pem_data = NULL;
+            long pem_len = BIO_get_mem_data(bio, &pem_data);
+            StringInfo pubkey_buf = makeStringInfo();
+            dq_append_int1(pubkey_buf, '\1');    /* AuthMoreData */
+            dq_append_string_len(pubkey_buf, pem_data, (uint32)pem_len);
+            dq_putmessage(pubkey_buf->data, pubkey_buf->len);
+            pq_flush();
+            DestroyStringInfo(pubkey_buf);
+            BIO_free(bio);
+
+            if (dq_getmessage(buf, 0) != STATUS_OK) {
+                return FALSE;
+            }
+        }
+
+        int key_size = RSA_size(key);
+        if (buf->len != key_size) {
+            return FALSE;
+        }
+        unsigned char *encrypted = (unsigned char*)dq_get_string_len(buf, buf->len);
+        buffers->decrypted_size = (Size)key_size;
+        unsigned char *decrypted = buffers->decrypted = (unsigned char*)palloc0((Size)key_size);
+        int dec_len = RSA_private_decrypt(buf->len, encrypted, decrypted, key, RSA_PKCS1_OAEP_PADDING);
+        if (dec_len <= 0) {
+            pfree(encrypted);
+            return FALSE;
+        }
+
+        /* Undo the driver's XOR with the 20-byte challenge before verifying. */
+        buffers->cleartext_size = (Size)dec_len + 1;
+        char *decoded = buffers->cleartext = (char*)palloc0(buffers->cleartext_size);
+        const char *scramble = temp_Conn_Mysql_Info->conn_scramble;
+        for (int i = 0; i < dec_len; i++) {
+            decoded[i] = decrypted[i] ^ scramble[i % SCRAMBLE_LENGTH];
+        }
+        pfree(encrypted);
+        if (decoded[dec_len - 1] != '\0' || strlen(decoded) != (Size)dec_len - 1) {
+            return FALSE;
+        }
+        cleartext = decoded;
+    }
+
+    char *full_passwd = buffers->full_passwd = TextDatumGetCString(DirectFunctionCall2(make_scrambled_full_password_sha2,
+        PointerGetDatum(cleartext), PointerGetDatum(salt)));
     rc = strcpy_s(digest, DOLPHIN_CRYPT_MAX_PASSWORD_SIZE + 1,
                   full_passwd +
                   (DOLPHIN_CRYPT_MAGIC_LENGTH + DOLPHIN_CRYPT_MAGIC_LENGTH + 1 + DOLPHIN_CRYPT_SALT_LENGTH));
     securec_check(rc, "\0", "\0");
     if (memcmp(store_digest, (const uint8 *)digest, strlen(digest)) == 0) {
         //fast authentication
-        make_scrambled_fast_password_sha2(fast_passwd, plaintext_passwd, strlen(plaintext_passwd));
+        make_scrambled_fast_password_sha2(fast_passwd, cleartext, strlen(cleartext));
         AutoMutexLock UserCachedLinesHashLock(&gUserCachedLinesHashLock);
         UserCachedLinesHashLock.lock();
         UserCachedLinesHash* result = UserCachedLinesHashTableAccess(HASH_ENTER, port->user_name, fast_passwd);
@@ -592,14 +744,28 @@ static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Po
             return FALSE;
         }
         UserCachedLinesHashLock.unLock();
-        pfree(fast_passwd);
-        DestroyStringInfo(buf);
         return TRUE;
     } else {
-        pfree(fast_passwd);
-        DestroyStringInfo(buf);
         return FALSE;
     }
+}
+
+static bool full_authenticate_mysql_caching_sha2(const char* stored_password, Port *port)
+{
+    CachingSha2AuthBuffers *buffers = (CachingSha2AuthBuffers*)palloc0(sizeof(CachingSha2AuthBuffers));
+    bool result = false;
+    PG_TRY();
+    {
+        result = full_authenticate_mysql_caching_sha2_impl(stored_password, port, buffers);
+    }
+    PG_CATCH();
+    {
+        cleanup_caching_sha2_auth(buffers);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+    cleanup_caching_sha2_auth(buffers);
+    return result;
 }
 
 bool exec_mysql_password_auth(Port *port)
