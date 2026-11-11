@@ -44,6 +44,10 @@ public class MySQLJdbcPrepareTest {
                 for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
                     byte[] val = resultSet.getBytes(i);
                     String out = val != null ? new String(val) : null;
+                    // BIT values are binary bytes, not character data.
+                    if (val != null && "BIT".equals(resultSetMetaData.getColumnTypeName(i))) {
+                        out = java.util.Arrays.toString(val);
+                    }
                     System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
                 }
             }
@@ -324,6 +328,10 @@ public class MySQLJdbcPrepareTest {
                 for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
                     byte[] val = resultSet.getBytes(i);
                     String out = val != null ? new String(val) : null;
+                    // BIT values are binary bytes, not character data.
+                    if (val != null && "BIT".equals(resultSetMetaData.getColumnTypeName(i))) {
+                        out = java.util.Arrays.toString(val);
+                    }
                     System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
                 }
             }

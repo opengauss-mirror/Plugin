@@ -724,6 +724,28 @@ static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *
     }    
 }
 
+static void append_bit_binary_value(StringInfo buf, Datum binval)
+{
+    VarBit *original = (VarBit *)DatumGetPointer(binval);
+    VarBit *bits = DatumGetVarBitP(binval);
+    int bit_len = VARBITLEN(bits);
+    int nbytes = VARBITBYTES(bits);
+    const unsigned char *src = (const unsigned char *)VARBITS(bits);
+    char *data = (char *)palloc0(nbytes);
+    int shift = nbytes * BITS_PER_BYTE - bit_len;
+    unsigned char carry = 0;
+    for (int i = 0; i < nbytes; i++) {
+        unsigned char cur = src[i];
+        ((unsigned char *)data)[i] = (unsigned char)((cur >> shift) | carry);
+        carry = (unsigned char)((cur & ((1 << shift) - 1)) << (BITS_PER_BYTE - shift));
+    }
+    dq_append_string_lenenc(buf, data, nbytes);
+    pfree_ext(data);
+    if (bits != original) {
+        pfree_ext(bits);
+    }
+}
+
 void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf, PrinttupAttrInfo *thisState)
 {
     /* Binary columns: send raw bytes (detoast first), decided by BINARY_FLAG (OID-independent)
@@ -816,9 +838,7 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             break;
         }
         case DOLPHIN_TYPE_BIT: {
-            char *val = DatumGetCString(DirectFunctionCall1(bit_out, binval));
-            dq_append_string_lenenc(buf, val);
-            pfree_ext(val);
+            append_bit_binary_value(buf, binval);
             break;
         }
         case DOLPHIN_TYPE_GEOMETRY: {
