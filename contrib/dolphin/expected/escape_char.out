@@ -41,51 +41,32 @@ SELECT 'moon\Zlight';
 
 -- set standard_conforming_strings to off
 set standard_conforming_strings to off;
+set escape_string_warning to on;
 SELECT 'moon\tlight';
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: SELECT 'moon\tlight';
-               ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
    ?column?    
 ---------------
  moon    light
 (1 row)
 
 SELECT 'moon\flight';
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: SELECT 'moon\flight';
-               ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
   ?column?  
 ------------
  moonflight
 (1 row)
 
 SELECT 'moon\%light';
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: SELECT 'moon\%light';
-               ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
   ?column?   
 -------------
  moon\%light
 (1 row)
 
 SELECT 'moon\_light';
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: SELECT 'moon\_light';
-               ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
   ?column?   
 -------------
  moon\_light
 (1 row)
 
 SELECT 'moon\Zlight';
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: SELECT 'moon\Zlight';
-               ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
  ?column?  
 -----------
  moonlight
@@ -189,35 +170,11 @@ SELECT * FROM t1 ORDER BY id;
 set standard_conforming_strings to off;
 CREATE TABLE t2 (id int, c2 varchar(20));
 INSERT INTO t2 VALUES (1, 'moon\tlight');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (1, 'moon\tlight');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 INSERT INTO t2 VALUES (2, 'moon\nlight');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (2, 'moon\nlight');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 INSERT INTO t2 VALUES (3, 'moon\flight');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (3, 'moon\flight');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 INSERT INTO t2 VALUES (4, 'moon\%light');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (4, 'moon\%light');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 INSERT INTO t2 VALUES (5, 'moon\_light');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (5, 'moon\_light');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 INSERT INTO t2 VALUES (6, 'moon\Zlight');
-WARNING:  nonstandard use of escape in a string literal
-LINE 1: INSERT INTO t2 VALUES (6, 'moon\Zlight');
-                                  ^
-HINT:  Use the escape string syntax for escapes, e.g., E'\r\n'.
 SELECT * FROM t2 ORDER BY id;
  id |      c2       
 ----+---------------

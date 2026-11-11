@@ -628,7 +628,7 @@ other			.
 				}
 
 {xqstart}		{
-					yyextra->warn_on_first_escape = true;
+					yyextra->warn_on_first_escape = !DB_IS_CMPT(B_FORMAT);
 					yyextra->saw_non_ascii = false;
 					SET_YYLLOC();
 					if (u_sess->attr.attr_sql.standard_conforming_strings)

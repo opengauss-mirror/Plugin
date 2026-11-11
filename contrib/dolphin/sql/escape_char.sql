@@ -13,6 +13,7 @@ SELECT 'moon\Zlight';
 
 -- set standard_conforming_strings to off
 set standard_conforming_strings to off;
+set escape_string_warning to on;
 SELECT 'moon\tlight';
 SELECT 'moon\flight';
 SELECT 'moon\%light';
