@@ -232,7 +232,7 @@ W_ZIP CHAR(10) ,
 W_COUNTRY VARCHAR(20) ,
 W_GMT_OFFSET DECIMAL(5,2)
 );
-ERROR:  anoymous enum type does not support foreign key
+ERROR:  anonymous enum type does not support foreign key
 drop table if exists chameleon_case6;
 NOTICE:  table "chameleon_case6" does not exist, skipping
 create table chameleon_case6(c1 enum('男','女','无'));

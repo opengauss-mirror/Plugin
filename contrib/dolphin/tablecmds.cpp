@@ -17005,7 +17005,7 @@ static ObjectAddress ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation r
         /* anonymous enum type is not allowed as foreigh key */
         if (type_is_enum(fktype) && strstr(format_type_be(fktype), "anonymous_enum")) {
             ereport(ERROR,
-                (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("anoymous enum type does not support foreign key")));
+                (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("anonymous enum type does not support foreign key")));
         }
 #endif
         /* We need several fields out of the pg_opclass entry */
