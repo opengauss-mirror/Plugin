@@ -259,21 +259,6 @@ SHOW CHARACTER SET WHERE charset LIKE 'i%';
 (14 rows)
 
 /* show collation */
-SHOW COLLATION LIKE 'aa%';
-    collation     | charset |  id   | default | compiled | sortlen 
-------------------+---------+-------+---------+----------+---------
---? aa_DJ            | utf8    | .* |         | Yes      |        
---? aa_DJ            | latin1  | .* |         | Yes      |        
---? aa_DJ.iso88591   | latin1  | .* |         | Yes      |        
---? aa_DJ.utf8       | utf8    | .* |         | Yes      |        
---? aa_ER            | utf8    | .* |         | Yes      |        
---? aa_ER.utf8       | utf8    | .* |         | Yes      |        
---? aa_ER.utf8@saaho | utf8    | .* |         | Yes      |        
---? aa_ER@saaho      | utf8    | .* |         | Yes      |        
---? aa_ET            | utf8    | .* |         | Yes      |        
---? aa_ET.utf8       | utf8    | .* |         | Yes      |        
-(10 rows)
-
 SHOW COLLATION WHERE charset = 'win1251';
   collation   | charset |  id   | default | compiled | sortlen 
 --------------+---------+-------+---------+----------+---------

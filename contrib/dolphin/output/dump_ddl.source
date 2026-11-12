@@ -47,10 +47,10 @@ CREATE TYPE casttesttype (
                              alignment = int4
                          );
 CREATE CAST (TEXT AS casttesttype) WITHOUT FUNCTION AS IMPLICIT;
-\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ -n before_rename -f before_rename.sql >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ --restrict-key=DolphinDumpDDLRegressionKey -n before_rename -f before_rename.sql >/dev/null 2>&1; echo $?
 0
 alter schema before_rename rename to after_rename;
-\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ -n after_rename -f after_rename.sql >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gs_dump contrib_regression -p @portstring@ --restrict-key=DolphinDumpDDLRegressionKey -n after_rename -f after_rename.sql >/dev/null 2>&1; echo $?
 0
 \! cat after_rename.sql | grep -i before_rename
 \! sed -i 's/after_rename/before_rename/g' after_rename.sql
