@@ -138,7 +138,7 @@ download_binarylibs() {
     wget "https://opengauss.obs.cn-south-1.myhuaweicloud.com/6.0.0/binarylibs/gcc10.3/${binarylibs_file}.tar.gz" -O "${WORKSPACE}/openGauss-third_party_binarylibs.tar.gz" -q
   elif [[ "${gitcodeTargetBranch}" == "master" || "${gitcodeTargetBranch}" == "dev" ]]; then
     wget "https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/binarylibs/gcc10.3/${binarylibs_file}.tar.gz" -O "${WORKSPACE}/openGauss-third_party_binarylibs.tar.gz" -q
-  elif [[ "${gitcodeTargetBranch}" == "7.0.0-RC3" ]]; then
+  elif [[ "${gitcodeTargetBranch}" == "7.0.0" || "${gitcodeTargetBranch}" == "7.0.0-RC3" ]]; then
     wget "https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/binarylibs/gcc10.3/${binarylibs_file}.tar.gz" -O "${WORKSPACE}/openGauss-third_party_binarylibs.tar.gz" -q
   else
     echo "ERROR: ${gitcodeTargetBranch} branch not found"
