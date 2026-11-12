@@ -3815,6 +3815,11 @@ static Datum *sp_compute_paths(agtype *graph_name_agt, agtype *start_agt,
     graph_name = pnstrdup(agtv_temp->val.string.val,
                           agtv_temp->val.string.len);
     graph_oid = get_graph_oid(graph_name);
+    if (!OidIsValid(graph_oid)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_SCHEMA),
+                 errmsg("graph \"%s\" does not exist", graph_name)));
+    }
 
     /*
      * A NULL start or end vertex yields no rows, matching Cypher semantics

@@ -703,8 +703,34 @@ SELECT count(*) FROM age_shortest_path(
     (SELECT id FROM cypher('sp_edge', $$ MATCH (n {name:'C'}) RETURN id(n) $$) AS (id agtype)),
     '"KNOWS"'::agtype, '"out"'::agtype, 0::agtype);
 
--- a graph name that does not exist is an error
+-- Missing graphs must fail consistently, without caching InvalidOid across names.
 SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype);
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype);
+SELECT count(*) FROM age_all_shortest_paths('"another_missing_graph"'::agtype, '1'::agtype, '2'::agtype);
+SELECT count(*) FROM age_all_shortest_paths('"another_missing_graph"'::agtype, '1'::agtype, '2'::agtype);
+
+-- Graph validation precedes NULL endpoints and relationship-type lookup.
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, NULL::agtype, '2'::agtype);
+SELECT count(*) FROM age_all_shortest_paths('"no_such_graph"'::agtype, '1'::agtype, 'null'::agtype);
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype, '"NOSUCHLABEL"'::agtype);
+
+-- A schema alone is not an AGE graph.
+CREATE SCHEMA sp_schema_only;
+SELECT count(*) FROM age_shortest_path('"sp_schema_only"'::agtype, '1'::agtype, '2'::agtype);
+DROP SCHEMA sp_schema_only;
+
+-- Fail after vertices have loaded; neither function may reuse the partial cache.
+ALTER TABLE sp_edge._ag_label_edge RENAME COLUMN start_id TO invalid_start_id;
+SELECT count(*) FROM age_shortest_path('"sp_edge"'::agtype, '1'::agtype, '2'::agtype);
+SELECT count(*) FROM age_all_shortest_paths('"sp_edge"'::agtype, '1'::agtype, '2'::agtype);
+SELECT NOT age_delete_global_graphs('"sp_edge"'::agtype) AS failed_cache_absent;
+ALTER TABLE sp_edge._ag_label_edge RENAME COLUMN invalid_start_id TO start_id;
+SELECT count(*) AS paths_after_failed_build FROM age_all_shortest_paths(
+    '"sp_edge"'::agtype,
+    (SELECT id FROM cypher('sp_edge', $$ MATCH (n {name:'A'}) RETURN id(n) $$) AS (id agtype)),
+    (SELECT id FROM cypher('sp_edge', $$ MATCH (n {name:'C'}) RETURN id(n) $$) AS (id agtype)),
+    '"KNOWS"'::agtype, '"out"'::agtype);
+SELECT age_delete_global_graphs('"sp_edge"'::agtype) AS cache_cleared;
 
 -- a NULL graph name is an error (the graph name is required, unlike the
 -- endpoints which accept NULL as "no match")

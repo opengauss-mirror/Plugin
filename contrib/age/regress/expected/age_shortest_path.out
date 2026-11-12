@@ -1074,9 +1074,56 @@ SELECT count(*) FROM age_shortest_path(
      1
 (1 row)
 
--- a graph name that does not exist is an error
+-- Missing graphs must fail consistently, without caching InvalidOid across names.
 SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype);
-ERROR:  schema "no_such_graph" does not exist
+ERROR:  graph "no_such_graph" does not exist
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  graph "no_such_graph" does not exist
+SELECT count(*) FROM age_all_shortest_paths('"another_missing_graph"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  graph "another_missing_graph" does not exist
+SELECT count(*) FROM age_all_shortest_paths('"another_missing_graph"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  graph "another_missing_graph" does not exist
+-- Graph validation precedes NULL endpoints and relationship-type lookup.
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, NULL::agtype, '2'::agtype);
+ERROR:  graph "no_such_graph" does not exist
+SELECT count(*) FROM age_all_shortest_paths('"no_such_graph"'::agtype, '1'::agtype, 'null'::agtype);
+ERROR:  graph "no_such_graph" does not exist
+SELECT count(*) FROM age_shortest_path('"no_such_graph"'::agtype, '1'::agtype, '2'::agtype, '"NOSUCHLABEL"'::agtype);
+ERROR:  graph "no_such_graph" does not exist
+-- A schema alone is not an AGE graph.
+CREATE SCHEMA sp_schema_only;
+SELECT count(*) FROM age_shortest_path('"sp_schema_only"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  graph "sp_schema_only" does not exist
+DROP SCHEMA sp_schema_only;
+-- Fail after vertices have loaded; neither function may reuse the partial cache.
+ALTER TABLE sp_edge._ag_label_edge RENAME COLUMN start_id TO invalid_start_id;
+SELECT count(*) FROM age_shortest_path('"sp_edge"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  Invalid attribute name. Expected start_id, found invalid_start_id
+SELECT count(*) FROM age_all_shortest_paths('"sp_edge"'::agtype, '1'::agtype, '2'::agtype);
+ERROR:  Invalid attribute name. Expected start_id, found invalid_start_id
+SELECT NOT age_delete_global_graphs('"sp_edge"'::agtype) AS failed_cache_absent;
+ failed_cache_absent 
+---------------------
+ t
+(1 row)
+
+ALTER TABLE sp_edge._ag_label_edge RENAME COLUMN invalid_start_id TO start_id;
+SELECT count(*) AS paths_after_failed_build FROM age_all_shortest_paths(
+    '"sp_edge"'::agtype,
+    (SELECT id FROM cypher('sp_edge', $$ MATCH (n {name:'A'}) RETURN id(n) $$) AS (id agtype)),
+    (SELECT id FROM cypher('sp_edge', $$ MATCH (n {name:'C'}) RETURN id(n) $$) AS (id agtype)),
+    '"KNOWS"'::agtype, '"out"'::agtype);
+ paths_after_failed_build 
+--------------------------
+                        2
+(1 row)
+
+SELECT age_delete_global_graphs('"sp_edge"'::agtype) AS cache_cleared;
+ cache_cleared 
+---------------
+ t
+(1 row)
+
 -- a NULL graph name is an error (the graph name is required, unlike the
 -- endpoints which accept NULL as "no match")
 SELECT count(*) FROM age_shortest_path(
