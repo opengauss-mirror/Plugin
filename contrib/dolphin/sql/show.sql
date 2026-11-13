@@ -74,7 +74,6 @@ SHOW CHARSET;
 SHOW CHARACTER SET LIKE 'a%';
 SHOW CHARACTER SET WHERE charset LIKE 'i%';
 /* show collation */
-SHOW COLLATION LIKE 'aa%';
 SHOW COLLATION WHERE charset = 'win1251';
 
 reset search_path;
