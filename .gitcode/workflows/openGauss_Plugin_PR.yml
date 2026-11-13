@@ -24,8 +24,6 @@ permissions:
   pr: write
   note: write
 
-# 同一 PR 再次触发（新提交、reopen、/retest）时，立刻取消还在跑的上一次门禁。
-# mr_id 抢占只作用于同一个合并请求；不同 PR 仍可并行，最多 5 条。
 concurrency:
   max: 100
   exceed-action: QUEUE
@@ -35,142 +33,249 @@ concurrency:
     events: [mr_id]
 
 env:
+  pr_id: ${{ atomgit.event.pull_request.number || atomgit.event.issue.number || atomgit.event.note.merge_request.iid || atomgit.event.merge_request.iid }}
   GITCODE_REPO: opengauss/Plugin
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
   PRIVATE_BUILD_SCRIPT: /home/PrivateBuild_tools/Private_Main_Plugin.sh
+  GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
+  GITCODE_RUN_ID: ${{ atomgit.workflow_run_id }}
   PR_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
+  GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
 
-jobs:
-  prepare:
-    name: Mark running
-    runs-on: [self-hosted, plugin_1]
-    steps:
-      - name: Mark PR as running
-        if: ${{ atomgit.event.pull_request.number != '' }}
-        uses: openlibing/pr-label-action@v1.0.0
-        with:
-          add_labels: ci-pipeline-running
-          remove_labels: ci-pipeline-success,ci-pipeline-failed,ci-pipeline-passed
-          token: ${{secrets.PR_LABEL_TOKEN}}
+stages:
+  create_label:
+    name: create_label
+    select: selected_by_default
+    jobs:
+      prepare:
+        name: Mark running
+        runs-on: [self-hosted, plugin_1]
+        timeout-minutes: 10
+        continue-on-error: true
+        steps:
+          - name: notify_ci_started
+            id: notify_ci_started
+            if: ${{ env.pr_id != '' || env.GITCODE_PR_IID != '' }}
+            uses: cann/.gitcode/actions/pre-pipeline@master
+            with:
+              owner: openGauss
+              repo: Plugin
+              pr_number: ${{ env.pr_id || env.GITCODE_PR_IID }}
+              token: ${{ secrets.PR_LABEL_TOKEN }}
+              apply_label: 'true'
+              run_url: https://gitcode.com/${{ env.GITCODE_REPO }}/actions/runs/${{ atomgit.workflow_run_id }}
+              actor: ${{ atomgit.actor }}
+              pr_author: ${{ atomgit.event.pull_request.user.login }}
+          - name: create_label_and_comment_fallback
+            id: state
+            if: ${{ always() && (env.pr_id != '' || env.GITCODE_PR_IID != '') && steps.notify_ci_started.outcome != 'success' }}
+            env:
+              LABEL_JOB_TAG: prepare
+              PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+              GITCODE_PR_IID: ${{ env.pr_id || env.GITCODE_PR_IID }}
+              CI_RUN_URL: https://gitcode.com/${{ env.GITCODE_REPO }}/actions/runs/${{ atomgit.workflow_run_id }}
+            run: |
+              set -eu
+              umask 077
+              src="$(mktemp -d)"
+              trap 'rm -rf "${src}"' EXIT
+              timeout 300 git clone --depth=1 --branch master "https://gitcode.com/${GITCODE_REPO}.git" "${src}"
+              label_script="${src}/.gitcode/scripts/gitcode_pr_labels.sh"
+              notify_script="${src}/.gitcode/scripts/gitcode_ci_notify.sh"
+              bash "${label_script}" delete ci-pipeline-success || true
+              bash "${label_script}" delete ci-pipeline-failed || true
+              bash "${label_script}" add ci-pipeline-running
+              if [ ! -f "${notify_script}" ]; then
+                echo "missing ${notify_script}; ensure gitcode_ci_notify.sh is on master" >&2
+                exit 1
+              fi
+              bash "${notify_script}"
 
-  compile_plugin_1:
-    name: openGauss_Plugin_Compile
-    needs: prepare
-    runs-on: [self-hosted, plugin_1]
-    timeout-minutes: 120
-    env:
-      GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
-      GITCODE_REF: ${{ atomgit.ref }}
-      GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
-      GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
-    steps:
-      - name: Run openGauss plugin compile on plugin-1
-        run: |
-          set -eu
-          # CI scripts always come from opengauss/Plugin master, not the PR target branch.
-          repo="${GITCODE_REPO:-opengauss/Plugin}"
-          case "${repo}" in
-            */*) ;;
-            *) echo "Invalid repository: ${repo}" >&2; exit 1 ;;
-          esac
-          server="${ATOMGIT_SERVER_URL:-}"
-          if [ -z "${server}" ]; then
-            server="${GITCODE_SERVER_URL:-}"
-          fi
-          if [ -z "${server}" ]; then
-            server="https://gitcode.com"
-          fi
-          server="${server%/}"
-          dest="${PWD}/master-gitcode-scripts"
-          rm -rf "${dest}"
-          mkdir -p "${dest}"
-          dir="$(mktemp -d)"
-          cleanup() {
-            rm -rf "${dir}"
-          }
-          trap cleanup EXIT
-          echo "Fetch CI scripts from ${server}/${repo}.git refs/heads/master"
-          (
-            cd "${dir}"
-            git init -q
-            git remote add origin "${server}/${repo}.git"
-            timeout 300 git fetch --depth=1 --force origin refs/heads/master
-            git show "FETCH_HEAD:.gitcode/scripts/resolve_gitcode_env.sh" > "${dest}/resolve_gitcode_env.sh"
-            git show "FETCH_HEAD:.gitcode/scripts/plugin_compile.sh" > "${dest}/plugin_compile.sh"
-          )
-          source "${dest}/resolve_gitcode_env.sh"
-          bash "${dest}/plugin_compile.sh"
+  only_doc:
+    name: only_doc
+    select: selected_by_default
+    jobs:
+      Detect_file_changes:
+        name: Detect_file_changes
+        continue-on-error: true
+        runs-on: [self-hosted, plugin_1]
+        outputs:
+          need_compile: ${{ steps.set-skip.outputs.need_compile }}
+        steps:
+          - name: checkout
+            uses: checkout
+            with:
+              ref: refs/merge-requests/${{ env.pr_id }}/head
+              fetch-depth: 0
+              allow-unsafe-pr-checkout: true
+          - name: Only_doc_commit
+            id: filter
+            uses: paths-changes-filter
+            with:
+              event-name: 'pull_request'
+              base: ${{ atomgit.event.pull_request.base.ref }}
+              repo: ${{ atomgit.repository }}
+              number: ${{ env.pr_id }}
+              token: ${{ secrets.GIT_TOKEN }}
+              list-files: json
+              predicate-quantifier: every
+              filters: |
+                changed:
+                  - '**'
+                non-doc:
+                  - '**'
+                  - '!**/*.md'
+                  - '!**/*.rst'
+                  - '!**/*.log'
+                  - '!**/*.png'
+                  - '!**/*.jpg'
+                  - '!**/*.doc'
+                  - '!**/*.eddx'
+                  - '!**/*.svg'
+                  - '!.gitcode/**'
+                  - '!**/*.yml'
+                  - '!**/*.yaml'
+
+          - name: set build skip flag
+            id: set-skip
+            env:
+              CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+              NON_DOC: ${{ steps.filter.outputs.non-doc }}
+            run: |
+              echo "changed: $CHANGED_FILES"
+              echo "non-doc: $NON_DOC"
+              if [ "$NON_DOC" = "true" ]; then
+                echo "need_compile=yes" >> "$ATOMGIT_OUTPUT"
+              else
+                echo "need_compile=no" >> "$ATOMGIT_OUTPUT"
+              fi
+
+  compile:
+    name: openGauss_plugin_compile
+    select: selected_by_default
+    jobs:
+      plugin_compile:
+        name: plugin_compile
+        timeout-minutes: 60
+        if: ${{ jobs.Detect_file_changes.outputs.need_compile == 'yes' }}
+        continue-on-error: true
+        runs-on: [self-hosted, plugin_1]
         env:
+          GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
+          GITCODE_REF: ${{ atomgit.ref }}
+          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
+          GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
+        outputs:
+          result: ${{ steps.run_plugin_compile.outputs.result }}
+        steps:
+          - name: run_plugin_compile
+            id: run_plugin_compile
+            run: |
+              src="$(mktemp -d)"
+              trap 'rm -rf "${src}"' EXIT
+              timeout 300 git clone --depth=1 --branch master "https://gitcode.com/${GITCODE_REPO}.git" "${src}"
+              bash "${src}/.gitcode/scripts/plugin_compile.sh"
+              if [ "$?" == "0" ]; then
+                echo "result=0" >> "$ATOMGIT_OUTPUT"
+              else
+                echo "result=1" >> "$ATOMGIT_OUTPUT"
+                exit 1
+              fi
 
-  compile_plugin_2:
-    name: openGauss_Plugin_Compile_Part2
-    needs: prepare
-    # 提交 PR 时用目标分支跳过。/retest 时该变量为空，由下面的脚本退出。
-    if: ${{ env.PR_TARGET_BRANCH != '6.0.0' && env.PR_TARGET_BRANCH != 'refs/heads/6.0.0' }}
-    runs-on: [self-hosted, docker_1]
-    timeout-minutes: 120
-    env:
-      GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
-      GITCODE_REF: ${{ atomgit.ref }}
-      GITCODE_PR_IID: ${{ atomgit.event.pull_request.number }}
-      GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
-    steps:
-      - name: Run openGauss plugin compile on docker-1
-        run: |
-          set -eu
-          # CI scripts always come from opengauss/Plugin master, not the PR target branch.
-          repo="${GITCODE_REPO:-opengauss/Plugin}"
-          case "${repo}" in
-            */*) ;;
-            *) echo "Invalid repository: ${repo}" >&2; exit 1 ;;
-          esac
-          server="${ATOMGIT_SERVER_URL:-}"
-          if [ -z "${server}" ]; then
-            server="${GITCODE_SERVER_URL:-}"
-          fi
-          if [ -z "${server}" ]; then
-            server="https://gitcode.com"
-          fi
-          server="${server%/}"
-          dest="${PWD}/master-gitcode-scripts"
-          rm -rf "${dest}"
-          mkdir -p "${dest}"
-          dir="$(mktemp -d)"
-          cleanup() {
-            rm -rf "${dir}"
-          }
-          trap cleanup EXIT
-          echo "Fetch CI scripts from ${server}/${repo}.git refs/heads/master"
-          (
-            cd "${dir}"
-            git init -q
-            git remote add origin "${server}/${repo}.git"
-            timeout 300 git fetch --depth=1 --force origin refs/heads/master
-            git show "FETCH_HEAD:.gitcode/scripts/resolve_gitcode_env.sh" > "${dest}/resolve_gitcode_env.sh"
-            git show "FETCH_HEAD:.gitcode/scripts/plugin_compile.sh" > "${dest}/plugin_compile.sh"
-          )
-          source "${dest}/resolve_gitcode_env.sh"
-          case "${GITCODE_TARGET_BRANCH}" in
-            6.0.0|refs/heads/6.0.0)
-              echo "Skip compile_plugin_2: target branch is ${GITCODE_TARGET_BRANCH}"
-              exit 0
-              ;;
-          esac
-          bash "${dest}/plugin_compile.sh"
+      docker_compile:
+        name: docker_compile
+        timeout-minutes: 60
+        if: ${{ jobs.Detect_file_changes.outputs.need_compile == 'yes' }}
+        continue-on-error: true
+        runs-on: [self-hosted, docker_1]
         env:
+          GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
+          GITCODE_REF: ${{ atomgit.ref }}
+          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
+          GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
+        outputs:
+          result: ${{ steps.run_docker_compile.outputs.result }}
+        steps:
+          - name: run_docker_compile
+            id: run_docker_compile
+            run: |
+              case "${GITCODE_TARGET_BRANCH}" in
+                6.0.0|refs/heads/6.0.0)
+                  echo "Skip compile_plugin_2: target branch is ${GITCODE_TARGET_BRANCH}"
+                  echo "result=0" >> "$ATOMGIT_OUTPUT"
+                  exit 0
+                  ;;
+              esac
+              src="$(mktemp -d)"
+              trap 'rm -rf "${src}"' EXIT
+              timeout 300 git clone --depth=1 --branch master "https://gitcode.com/${GITCODE_REPO}.git" "${src}"
+              bash "${src}/.gitcode/scripts/plugin_compile.sh"
+              if [ "$?" == "0" ]; then
+                echo "result=0" >> "$ATOMGIT_OUTPUT"
+              else
+                echo "result=1" >> "$ATOMGIT_OUTPUT"
+                exit 1
+              fi
 
-post:
-  jobs:
-    report_result:
-      name: Report pipeline result
-      runs-on: [self-hosted, plugin_1]
-      steps:
-        - name: Set result label
-          uses: openlibing/pr-label-action@v1.0.0
-          with:
-            add_labels: ${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-success' || 'ci-pipeline-failed' }}
-            remove_labels: ci-pipeline-running,${{ pipeline.upstream_status == 'COMPLETED' && 'ci-pipeline-failed' || 'ci-pipeline-success' }}
-            token: ${{secrets.PR_LABEL_TOKEN}}
+  report_result:
+    name: Report pipeline result
+    select: selected_by_default
+    jobs: 
+      report_result:
+        name: report_result
+        runs-on: [self-hosted, plugin_1]
+        timeout-minutes: 10
+        continue-on-error: false
+        outputs:
+          labeled: ${{ steps.publish.outputs.labeled }}
+        steps:
+          - name: Show upstream status
+            run: echo "pipeline.upstream_status=${{ pipeline.upstream_status }}"
+          - name: Create label state
+            id: state
+            env:
+              LABEL_JOB_TAG: result
+              PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
+              NEED_COMPILE: ${{ jobs.Detect_file_changes.outputs.need_compile }}
+              PLUGIN_COMPILE: ${{ jobs.plugin_compile.outputs.result }}
+              DOCKER_COMPILE: ${{ jobs.docker_compile.outputs.result }}
+            run: |
+              set -eu
+              umask 077
+              echo "PLUGIN_COMPILE=${PLUGIN_COMPILE}"
+              echo "DOCKER_COMPILE=${DOCKER_COMPILE}"
+
+              pipeline_success=-1
+              if [ "$PLUGIN_COMPILE" = 0 ] && [ "$DOCKER_COMPILE" = 0 ]; then
+                echo "全部为 0"
+                pipeline_success=0
+              else
+                echo "有非 0"
+                pipeline_success=1
+              fi
+
+              if [ "${NEED_COMPILE}" = 'no' ]; then
+                echo "只有文档修改，跳过用例部分"
+                pipeline_success=0
+              fi
+
+              src="$(mktemp -d)"
+              trap 'rm -rf "${src}"' EXIT
+              timeout 300 git clone --depth=1 --branch master "https://gitcode.com/${GITCODE_REPO}.git" "${src}"
+              label_script="${src}/.gitcode/scripts/gitcode_pr_labels.sh"
+
+              if [ "${pipeline_success}" == 0 ]; then
+                echo "-------- 打 success 标签 --------"
+                bash "${label_script}" delete ci-pipeline-running
+                bash "${label_script}" delete ci-pipeline-failed
+                bash "${label_script}" add ci-pipeline-success
+              else
+                echo "-------- 打 failed 标签 ---------"
+                bash "${label_script}" delete ci-pipeline-running
+                bash "${label_script}" delete ci-pipeline-success
+                bash "${label_script}" add ci-pipeline-failed
+                exit 1
+              fi

@@ -2,10 +2,7 @@
 set -euo pipefail
 
 echo "gitcodePullRequestIid: ${GITCODE_PR_IID:-}"
-echo "gitcodeAfterCommitSha: ${GITCODE_AFTER_COMMIT_SHA:-}"
 echo "gitcodeRef: refs/merge-requests/${GITCODE_PR_IID:-}/merge"
-echo "gitcodeMergeRef: ${GITCODE_MERGE_REF:-}"
-
 git config --global core.compression 0
 
 gitcodeTargetBranch="${GITCODE_TARGET_BRANCH:-}"

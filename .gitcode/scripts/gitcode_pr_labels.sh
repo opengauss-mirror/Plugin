@@ -1,60 +1,32 @@
 #!/usr/bin/env bash
+
+###############################################################
+##  sh gitcode_pr_lables.sh add ci-pipeline-success         ###
+###############################################################
 set -euo pipefail
 
-repo="${GITCODE_REPO:-opengauss/Plugin}"
-token="${PR_LABEL_TOKEN:-${ATOMGIT_TOKEN:-}}"
+server_repo=Plugin
+
+unset ATOMGIT_TOKEN || true
+unset GITHUB_TOKEN || true
+token="${PR_LABEL_TOKEN:-}"
 pr_iid="${GITCODE_PR_IID:-}"
 action="${1:-}"
+pr_label="${2}"
 
 if [[ -z "${action}" ]]; then
-  echo "Usage: $0 <running|success|failed>"
+  echo "Usage: $0 <add|delete>"
+  exit 2
+fi
+if [[ -z "${pr_label}" ]]; then
+  echo "Usage: $0 <ci-pipeline-success|ci-pipeline-failed|ci-pipeline-running>"
   exit 2
 fi
 
-if [[ -z "${pr_iid}" ]]; then
-  echo "No pull request IID found; skip GitCode PR labels."
-  exit 0
+if [ "${action}" == "add" ]; then
+  curl -X POST "https://gitcode.com/api/v5/repos/opengauss/${server_repo}/pulls/${pr_iid}/labels" -H "Authorization: Bearer ${token}" -H "Content-Type: application/json;charset=UTF-8" -d '["'"${pr_label}"'"]'
 fi
 
-if [[ -z "${token}" ]]; then
-  echo "PR_LABEL_TOKEN is empty; skip GitCode PR labels."
-  exit 0
+if [ "${action}" == "delete" ]; then
+  curl -X DELETE "https://gitcode.com/api/v5/repos/opengauss/${server_repo}/pulls/${pr_iid}/labels/${pr_label}" -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json;charset=UTF-8'
 fi
-
-api_base="https://gitcode.com/api/v5/repos/${repo}/pulls/${pr_iid}/labels"
-
-delete_label() {
-  local label="$1"
-  curl -fsS -X DELETE "${api_base}/${label}" \
-    -H "Authorization: Bearer ${token}" \
-    -H "Content-Type: application/json;charset=UTF-8" >/dev/null || true
-}
-
-add_label() {
-  local label="$1"
-  curl -fsS -X POST "${api_base}" \
-    -H "Authorization: Bearer ${token}" \
-    -H "Content-Type: application/json;charset=UTF-8" \
-    -d "[\"${label}\"]" >/dev/null
-}
-
-case "${action}" in
-  running)
-    delete_label ci-pipeline-success
-    delete_label ci-pipeline-failed
-    add_label ci-pipeline-running
-    ;;
-  success)
-    delete_label ci-pipeline-running
-    delete_label ci-pipeline-failed
-    add_label ci-pipeline-success
-    ;;
-  failed)
-    delete_label ci-pipeline-running
-    add_label ci-pipeline-failed
-    ;;
-  *)
-    echo "Unknown label action: ${action}"
-    exit 2
-    ;;
-esac
