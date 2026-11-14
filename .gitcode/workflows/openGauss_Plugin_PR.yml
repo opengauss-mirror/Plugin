@@ -33,7 +33,6 @@ concurrency:
     events: [mr_id]
 
 env:
-  pr_id: ${{ atomgit.event.pull_request.number || atomgit.event.issue.number || atomgit.event.note.merge_request.iid || atomgit.event.merge_request.iid }}
   GITCODE_REPO: opengauss/Plugin
   PLUGIN_REPO: https://gitcode.com/opengauss/Plugin.git
   SERVER_REPO: https://gitcode.com/opengauss/openGauss-server.git
@@ -41,7 +40,7 @@ env:
   GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
   GITCODE_RUN_ID: ${{ atomgit.workflow_run_id }}
   PR_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
-  GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
+  GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.note.merge_request.iid || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
 
 stages:
   create_label:
@@ -56,12 +55,12 @@ stages:
         steps:
           - name: notify_ci_started
             id: notify_ci_started
-            if: ${{ env.pr_id != '' || env.GITCODE_PR_IID != '' }}
+            if: ${{ env.GITCODE_PR_IID != '' }}
             uses: cann/.gitcode/actions/pre-pipeline@master
             with:
-              owner: openGauss
+              owner: opengauss
               repo: Plugin
-              pr_number: ${{ env.pr_id || env.GITCODE_PR_IID }}
+              pr_number: ${{ env.GITCODE_PR_IID }}
               token: ${{ secrets.PR_LABEL_TOKEN }}
               apply_label: 'true'
               run_url: https://gitcode.com/${{ env.GITCODE_REPO }}/actions/runs/${{ atomgit.workflow_run_id }}
@@ -69,11 +68,10 @@ stages:
               pr_author: ${{ atomgit.event.pull_request.user.login }}
           - name: create_label_and_comment_fallback
             id: state
-            if: ${{ always() && (env.pr_id != '' || env.GITCODE_PR_IID != '') && steps.notify_ci_started.outcome != 'success' }}
+            if: ${{ always() && env.GITCODE_PR_IID != '' && steps.notify_ci_started.outcome != 'success' }}
             env:
               LABEL_JOB_TAG: prepare
               PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
-              GITCODE_PR_IID: ${{ env.pr_id || env.GITCODE_PR_IID }}
               CI_RUN_URL: https://gitcode.com/${{ env.GITCODE_REPO }}/actions/runs/${{ atomgit.workflow_run_id }}
             run: |
               set -eu
@@ -103,53 +101,17 @@ stages:
         outputs:
           need_compile: ${{ steps.set-skip.outputs.need_compile }}
         steps:
-          - name: checkout
-            uses: checkout
-            with:
-              ref: refs/merge-requests/${{ env.pr_id }}/head
-              fetch-depth: 0
-              allow-unsafe-pr-checkout: true
-          - name: Only_doc_commit
-            id: filter
-            uses: paths-changes-filter
-            with:
-              event-name: 'pull_request'
-              base: ${{ atomgit.event.pull_request.base.ref }}
-              repo: ${{ atomgit.repository }}
-              number: ${{ env.pr_id }}
-              token: ${{ secrets.GIT_TOKEN }}
-              list-files: json
-              predicate-quantifier: every
-              filters: |
-                changed:
-                  - '**'
-                non-doc:
-                  - '**'
-                  - '!**/*.md'
-                  - '!**/*.rst'
-                  - '!**/*.log'
-                  - '!**/*.png'
-                  - '!**/*.jpg'
-                  - '!**/*.doc'
-                  - '!**/*.eddx'
-                  - '!**/*.svg'
-                  - '!.gitcode/**'
-                  - '!**/*.yml'
-                  - '!**/*.yaml'
-
           - name: set build skip flag
             id: set-skip
             env:
-              CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
-              NON_DOC: ${{ steps.filter.outputs.non-doc }}
+              PR_LABEL_TOKEN: ${{ secrets.PR_LABEL_TOKEN }}
             run: |
-              echo "changed: $CHANGED_FILES"
-              echo "non-doc: $NON_DOC"
-              if [ "$NON_DOC" = "true" ]; then
-                echo "need_compile=yes" >> "$ATOMGIT_OUTPUT"
-              else
-                echo "need_compile=no" >> "$ATOMGIT_OUTPUT"
-              fi
+              set -eu
+              umask 077
+              src="$(mktemp -d)"
+              trap 'rm -rf "${src}"' EXIT
+              timeout 300 git clone --depth=1 --branch master "https://gitcode.com/${GITCODE_REPO}.git" "${src}"
+              bash "${src}/.gitcode/scripts/detect_need_compile.sh"
 
   compile:
     name: openGauss_plugin_compile
@@ -164,7 +126,6 @@ stages:
         env:
           GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
           GITCODE_REF: ${{ atomgit.ref }}
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
           GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace1/
         outputs:
@@ -193,7 +154,6 @@ stages:
         env:
           GITCODE_EVENT_NAME: ${{ atomgit.event_name }}
           GITCODE_REF: ${{ atomgit.ref }}
-          GITCODE_PR_IID: ${{ atomgit.event.pull_request.number || atomgit.event.pull_request.iid || atomgit.event.issue.number || atomgit.event.merge_request.iid || atomgit.event.merge_request.number || '' }}
           GITCODE_TARGET_BRANCH: ${{ atomgit.base_ref || atomgit.event.pull_request.base.ref || atomgit.event.pull_request.target_branch || atomgit.event.merge_request.target_branch }}
           WORKSPACE_ROOT: /usr1/gauss_jenkins/jenkins/workspace/
         outputs:
