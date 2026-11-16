@@ -8,7 +8,7 @@ The PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE view reflects data I/O performan
 >
 >- Many columns in openGauss do not have corresponding information in MySQL, or the output is not yet supported. To maintain maximum compatibility, these columns are filled with NULL.
 >- Only data file-related I/O is collected; I/O for log files, configuration files, and the like is not collected.
->- The underlying layer accesses DBE_PERF.FILE_IOSTAT, where the statistical information for miniotim, avgiotim, and maxiowtm does not distinguish between read and write operations. However, MySQL calculates min, max, and avg separately for reads, writes, waits, and misc. To present as much information as possible, the same information is used for display across all categories.
+>- The underlying data comes from DBE_PERF.FILE_IOSTAT. Its miniotim, avgiotim, and maxiowtm statistics do not distinguish reads from writes, so the minimum, average, and maximum duration columns for reads and writes reuse the respective statistics. The five misc columns are not supported and always contain SQL NULL.
 
 **Table 1** FILE_SUMMARY_BY_INSTANCE fields
 
@@ -99,5 +99,25 @@ The PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE view reflects data I/O performan
 <td class="cellrowborder" valign="top" width="64.27000000000001%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0059777917_a627c01fb6b6b46b69b4cfabca4c29d09"><a name="zh-cn_topic_0059777917_a627c01fb6b6b46b69b4cfabca4c29d09"></a><a name="zh-cn_topic_0059777917_a627c01fb6b6b46b69b4cfabca4c29d09"></a>Number of bytes physically written</p></td>
 </tr>
 
+<tr id="row_count_misc"><td class="cellrowborder" headers="mcps1.2.4.1.1"><p>COUNT_MISC</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.2"><p>text</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.3"><p>Not supported. Always SQL NULL.</p></td>
+</tr>
+<tr id="row_sum_timer_misc"><td class="cellrowborder" headers="mcps1.2.4.1.1"><p>SUM_TIMER_MISC</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.2"><p>text</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.3"><p>Not supported. Always SQL NULL.</p></td>
+</tr>
+<tr id="row_min_timer_misc"><td class="cellrowborder" headers="mcps1.2.4.1.1"><p>MIN_TIMER_MISC</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.2"><p>text</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.3"><p>Not supported. Always SQL NULL.</p></td>
+</tr>
+<tr id="row_avg_timer_misc"><td class="cellrowborder" headers="mcps1.2.4.1.1"><p>AVG_TIMER_MISC</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.2"><p>text</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.3"><p>Not supported. Always SQL NULL.</p></td>
+</tr>
+<tr id="row_max_timer_misc"><td class="cellrowborder" headers="mcps1.2.4.1.1"><p>MAX_TIMER_MISC</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.2"><p>text</p></td>
+<td class="cellrowborder" headers="mcps1.2.4.1.3"><p>Not supported. Always SQL NULL.</p></td>
+</tr>
 </tbody>
 </table>
