@@ -19,7 +19,7 @@ static Node* makeIndexColumn();
 static Node* makeConstantSelect();
 static Node* makeKeyColumn(bool smallcase = FALSE);
 static Node* makeSubLink(Node* stmt);
-static Node* makeDefaultSelect();
+static Node* makeDefaultSelect(bool autoIncrementOnly = false);
 static Node* makeDefaultColumn(bool smallcase = FALSE);
 static Node* makeExtraColumn(bool smallcase = FALSE);
 static Node* makePrivilegeColumn(bool smallcase = FALSE);
@@ -63,16 +63,25 @@ extern TypeName* SystemTypeName(char* name);
  *            AND pg_constraint.conrelid = c.oid
  *            AND a.attnum = any(pg_constraint.conkey) LIMIT 1)
  *    ) AS "Key",
- *    coalesce(
- *        (SELECT
- *            pg_attrdef.adsrc
- *        FROM
- *            pg_attrdef
- *        WHERE
- *            c.oid = pg_attrdef.adrelid
- *            AND a.attnum = pg_attrdef.adnum LIMIT 1),
- *    'NULL') AS "Default",
- *    '' AS "Extra"
+ *    CASE
+ *        WHEN (SELECT pg_attrdef.adsrc FROM pg_attrdef
+ *              WHERE c.oid = pg_attrdef.adrelid
+ *                AND a.attnum = pg_attrdef.adnum
+ *                AND pg_attrdef.adsrc = 'AUTO_INCREMENT' LIMIT 1) IS NOT NULL
+ *        THEN NULL
+ *        ELSE coalesce(
+ *            (SELECT pg_attrdef.adsrc FROM pg_attrdef
+ *             WHERE c.oid = pg_attrdef.adrelid
+ *               AND a.attnum = pg_attrdef.adnum LIMIT 1), 'NULL')
+ *    END AS "Default",
+ *    CASE
+ *        WHEN (SELECT pg_attrdef.adsrc FROM pg_attrdef
+ *              WHERE c.oid = pg_attrdef.adrelid
+ *                AND a.attnum = pg_attrdef.adnum
+ *                AND pg_attrdef.adsrc = 'AUTO_INCREMENT' LIMIT 1) IS NOT NULL
+ *        THEN 'auto_increment'
+ *        ELSE ''
+ *    END AS "Extra"
  * FROM pg_catalog.pg_namespace n,
  *    pg_catalog.pg_class c,
  *    pg_catalog.pg_attribute a,
@@ -207,7 +216,18 @@ static Node* makeExtraColumn(bool smallcase)
     }
 
     rt->indirection = NIL;
-    rt->val = plpsMakeStringConst("");
+    CaseWhen* identity = makeNode(CaseWhen);
+    identity->expr = (Expr*)makeNullTest(IS_NOT_NULL,
+        (Expr*)makeSubLink(makeDefaultSelect(true)));
+    identity->result = (Expr*)plpsMakeStringConst("auto_increment");
+    identity->location = -1;
+    CaseExpr* value = makeNode(CaseExpr);
+    value->casetype = InvalidOid;
+    value->arg = NULL;
+    value->args = list_make1((Node*)identity);
+    value->defresult = (Expr*)plpsMakeStringConst("");
+    value->location = -1;
+    rt->val = (Node*)value;
     rt->location = -1;
     return (Node*)rt;
 }
@@ -337,7 +357,7 @@ static Node* makeKeyColumn(bool smallcase)
     return (Node*)rt;
 }
 
-static Node* makeDefaultSelect()
+static Node* makeDefaultSelect(bool autoIncrementOnly)
 {
     ResTarget* rt = makeNode(ResTarget);
     rt->indirection = NIL;
@@ -354,6 +374,11 @@ static Node* makeDefaultSelect()
                                                          plpsMakeColumnRef("a", "attnum"),
                                                          plpsMakeColumnRef("pg_attrdef", "adnum"),
                                                          -1), -1);
+    if (autoIncrementOnly) {
+        wc = (Node*)makeA_Expr(AEXPR_AND, NIL, wc,
+            (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("pg_attrdef", "adsrc"),
+                plpsMakeStringConst("AUTO_INCREMENT"), -1), -1);
+    }
     Node* lc = plpsMakeIntConst(1);
 
     SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL, lc);
@@ -370,7 +395,18 @@ static Node* makeDefaultColumn(bool smallcase)
     }
     
     rt->indirection = NIL;
-    rt->val = makeCoalesce(makeSubLink(makeDefaultSelect()), plpsMakeStringConst("NULL"));
+    CaseWhen* identity = makeNode(CaseWhen);
+    identity->expr = (Expr*)makeNullTest(IS_NOT_NULL,
+        (Expr*)makeSubLink(makeDefaultSelect(true)));
+    identity->result = (Expr*)makeNullAConst(-1);
+    identity->location = -1;
+    CaseExpr* value = makeNode(CaseExpr);
+    value->casetype = InvalidOid;
+    value->arg = NULL;
+    value->args = list_make1((Node*)identity);
+    value->defresult = (Expr*)makeCoalesce(makeSubLink(makeDefaultSelect()), plpsMakeStringConst("NULL"));
+    value->location = -1;
+    rt->val = (Node*)value;
     rt->location = -1;
     return (Node*)rt;
 }
@@ -592,7 +628,11 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
  *          AND a.attnum = any(pg_constraint.conkey)
  *       )
  *     ) AS "key",
- *     coalesce(
+ *     CASE WHEN (SELECT pg_attrdef.adsrc FROM pg_attrdef
+ *                WHERE c.oid = pg_attrdef.adrelid
+ *                  AND a.attnum = pg_attrdef.adnum
+ *                  AND pg_attrdef.adsrc = 'AUTO_INCREMENT' LIMIT 1) IS NOT NULL
+ *       THEN NULL ELSE coalesce(
  *       (SELECT
  *          pg_attrdef.adsrc
  *        FROM
@@ -600,8 +640,12 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
  *        WHERE
  *          c.oid = pg_attrdef.adrelid
  *          AND a.attnum = pg_attrdef.adnum LIMIT 1),
- *     'NULL' ) AS "default",
- *     '' AS "extra",
+ *     'NULL' ) END AS "default",
+ *     CASE WHEN (SELECT pg_attrdef.adsrc FROM pg_attrdef
+ *                WHERE c.oid = pg_attrdef.adrelid
+ *                  AND a.attnum = pg_attrdef.adnum
+ *                  AND pg_attrdef.adsrc = 'AUTO_INCREMENT' LIMIT 1) IS NOT NULL
+ *       THEN 'auto_increment' ELSE '' END AS "extra",
  *     coalesce(
  *       (SELECT
  * 	    string_agg(privilege_type, ',')
