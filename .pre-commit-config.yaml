@@ -1,10 +1,8 @@
 # pre-commit Configuration (openGauss Plugin, C++ Core)
 #
-# Strategy: Adopt .clang-format and .clang-tidy, with line width aligned to team standards.
+# Basic hygiene runs on commit; Gitleaks is a manual check of staged changes.
 # First-time setup: Run bash setup-pre-commit.sh
-
-# Exclude third-party libraries, build directories, documentation, and non-source files
-exclude: '^(doc/|docs/|docs-lite/|build/|contrib/|docker/|third_party/|src/test/|.*\.min\.js$|.*\.o$|.*\.so$)'
+# After git add, run: pre-commit run gitleaks --hook-stage manual
 
 repos:
   # 1. Basic hygiene checks
@@ -15,12 +13,27 @@ repos:
       # it will make a lot of modification of removing all trailing whitespace, which make code hard to review
       # - id: trailing-whitespace 
       - id: end-of-file-fixer
+        # Preserve existing hygiene exclusions without excluding files from Gitleaks.
+        exclude: &hygiene_exclude '^(doc/|docs/|docs-lite/|build/|contrib/|docker/|third_party/|src/test/|.*\.min\.js$|.*\.o$|.*\.so$)'
       - id: check-yaml
+        exclude: *hygiene_exclude
         args: ["--allow-multiple-documents"]
       - id: check-json
+        exclude: *hygiene_exclude
       - id: check-merge-conflict
+        exclude: *hygiene_exclude
       - id: check-added-large-files
+        exclude: *hygiene_exclude
       - id: detect-private-key
+        exclude: *hygiene_exclude
+
+  # 2. Manual secret detection; includes contrib/ and does not run on git commit.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e  # v8.30.1
+    hooks:
+      - id: gitleaks
+        stages: [manual]
+        args: ["--ignore-gitleaks-allow"]
 
   # # 2. Spell-checking
   # - repo: https://gitcode.com/gh_mirrors/co/codespell
