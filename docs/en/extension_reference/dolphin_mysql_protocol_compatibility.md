@@ -38,17 +38,17 @@
     >[!TIP] Tip
     >The first parameter is the username, the second parameter is the MySQL connection password, and the third parameter is the original password. The original password can be empty or any value when setting for the first time. Subsequent password changes and authentication method changes require the original password for verification.
 
-2. Set the GUC parameter [enable_dolphin_proto](../database_reference/connection_settings.md#enable_dolphin_proto) to on.
-3. Set the MySQL protocol listening port number, [dolphin_server_port](../database_reference/connection_settings.md#dolphin_server_port). Note that the port number must be different from the port number that openGauss itself listens on.
+2. Set the GUC parameter [enable_dolphin_proto](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html#enable_dolphin_proto) to on.
+3. Set the MySQL protocol listening port number, [dolphin_server_port](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html#dolphin_server_port). Note that the port number must be different from the port number that openGauss itself listens on.
 4. Set the default database instance name for connection, [dolphin.default_database_name](./dolphin_guc_parameters.md#dolphindefault_database_name).
 5. After the configuration is complete, you can connect to openGauss through a MySQL client using the corresponding username and password.
 
 >[!TIP] Tip
 >
 >- enable_dolphin_proto and dolphin_server_port are POSTMASTER-type parameters, and modifications to them require a restart to take effect.
->- Before connecting to openGauss using a MySQL client, ensure that listen_addresses is correctly configured and that pg_hba allows connections from the IP address of the machine where the MySQL client resides. For details, see [Configuring Client Access Authentication](../database_administration_guide/ssl_certificate_management.md).
+>- Before connecting to openGauss using a MySQL client, ensure that listen_addresses is correctly configured and that pg_hba allows connections from the IP address of the machine where the MySQL client resides. For details, see [Configuring Client Access Authentication](https://docs.opengauss.org/en/docs/latest/database_administration_guide/ssl_certificate_management.html).
 >- When connecting through a MySQL client, you can use the following format: mysql -u [user_name] -p --port [dolphin_server_port] -h [opengauss_listen_address].
->- The connectability of the standby server is controlled by the [hot_standby](../database_reference/standby_server.md) and [dolphin_hot_standby](../database_reference/connection_settings.md) parameters.
+>- The connectability of the standby server is controlled by the [hot_standby](https://docs.opengauss.org/en/docs/latest/database_reference/standby_server.html) and [dolphin_hot_standby](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html) parameters.
 
 ### caching_sha2_password Authentication Method
 
@@ -63,8 +63,8 @@
 
     >[!TIP] Note (The first parameter is the username, the second parameter is the MySQL connection password, and the third parameter is the original password. The original password can be empty or any value when setting for the first time; subsequent password changes and authentication method changes require the original password for verification.)
 
-2. Set the GUC parameter [enable_dolphin_proto](../database_reference/connection_settings.md#enable_dolphin_proto) to on.
-3. Set the MySQL protocol listening port number, [dolphin_server_port](../database_reference/connection_settings.md#dolphin_server_port). Note that the port number must be different from the port number that openGauss itself listens on.
+2. Set the GUC parameter [enable_dolphin_proto](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html#enable_dolphin_proto) to on.
+3. Set the MySQL protocol listening port number, [dolphin_server_port](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html#dolphin_server_port). Note that the port number must be different from the port number that openGauss itself listens on.
 4. Set the default database instance name for connection, [dolphin.default_database_name](./dolphin_guc_parameters.md#dolphindefault_database_name).
 5. Set the MySQL SSL file information. The file path does not need to be set and is the data directory.
 6. After the configuration is complete, you can connect to openGauss through a MySQL client using the corresponding username and password.
@@ -72,9 +72,9 @@
 >[!TIP] Tip
 >
 >- enable_dolphin_proto and dolphin_server_port are POSTMASTER-type parameters, and modifications require a restart to take effect.
->- Before connecting to openGauss using a MySQL client, ensure that listen_addresses is correctly configured and that pg_hba allows connections from the IP address of the machine where the MySQL client resides. See [Configuring Client Access Authentication](../database_administration_guide/ssl_certificate_management.md).
+>- Before connecting to openGauss using a MySQL client, ensure that listen_addresses is correctly configured and that pg_hba allows connections from the IP address of the machine where the MySQL client resides. See [Configuring Client Access Authentication](https://docs.opengauss.org/en/docs/latest/database_administration_guide/ssl_certificate_management.html).
 >- When connecting through a MySQL client, you can use the following format: mysql -u [user_name] -p --port [dolphin_server_port] -h [opengauss_listen_address].
->- The connectability of the standby server is controlled by the parameters [hot_standby](../database_reference/standby_server.md) and [dolphin_hot_standby](../database_reference/connection_settings.md).
+>- The connectability of the standby server is controlled by the parameters [hot_standby](https://docs.opengauss.org/en/docs/latest/database_reference/standby_server.html) and [dolphin_hot_standby](https://docs.opengauss.org/en/docs/latest/database_reference/connection_settings.html).
 
 ## Compatibility of Common JDBC Connection Parameters
 

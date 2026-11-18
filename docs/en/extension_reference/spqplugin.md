@@ -9,7 +9,7 @@ SPQ is based on the SharedEverything distributed architecture, in which all node
 
 ## Limitations
 
-- Currently, the extension can be loaded only using [shared_preload_libraries](../database_reference/kernel_resource_usage.md). If the extension is loaded using [CREATE Extension](../sql_reference/create_extension.md), it cannot be deleted.
+- Currently, the extension can be loaded only using [shared_preload_libraries](https://docs.opengauss.org/en/docs/latest/database_reference/kernel_resource_usage.html). If the extension is loaded using [CREATE Extension](https://docs.opengauss.org/en/docs/latest/sql_reference/create_extension.html), it cannot be deleted.
 - The extension depends on xerces-c 3.0 or later.
 - If the reserved disk space is insufficient, statement execution fails.
 

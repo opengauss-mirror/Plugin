@@ -51,4 +51,4 @@ See the [Examples](dolphin-CREATE-DATABASE.md#zh-cn_topic_0283137050_zh-cn_topic
 
 ## Related Links<a name="zh-cn_topic_0283136981_zh-cn_topic_0237122055_zh-cn_topic_0059779247_saa1e5193215b4927989f304541d2ecbd"></a>
 
-[CREATE DATABASE](dolphin-CREATE-DATABASE.md), [DROP DATABASE](dolphin-DROP-DATABASE.md), [ALTER DATABASE](dolphin-ALTER-DATABASE.md)
+[CREATE DATABASE](dolphin-CREATE-DATABASE.md), [DROP DATABASE](dolphin-drop-database.md), [ALTER DATABASE](dolphin-ALTER-DATABASE.md)
