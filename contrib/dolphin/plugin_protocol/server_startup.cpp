@@ -107,10 +107,10 @@ TypeItem b_type_items[] = {
     {"timestamptz", DOLPHIN_TYPE_TIMESTAMP, TIMESTAMPTZOID, 0, 0x2d},             // timestamp, but not maxdb mode
     {"timestamp", DOLPHIN_TYPE_DATETIME, TIMESTAMPOID, 0, 0x2d},                  // datetime
     // blob type
-    {"tinyblob", DOLPHIN_TYPE_TINY_BLOB, 0, BLOB_FLAG | BINARY_FLAG, 0x2d},       // tinyblob
+    {"tinyblob", DOLPHIN_TYPE_TINY_BLOB, 0, BLOB_FLAG | BINARY_FLAG, COLLATE_BINARY}, // tinyblob
     {"blob", DOLPHIN_TYPE_BLOB, BLOBOID, BLOB_FLAG | BINARY_FLAG, COLLATE_BINARY},// blob
-    {"mediumblob", DOLPHIN_TYPE_MEDIUM_BLOB, 0, BLOB_FLAG | BINARY_FLAG, 0x2d},   // mediumblob
-    {"longblob", DOLPHIN_TYPE_LONG_BLOB, 0, BLOB_FLAG | BINARY_FLAG, 0x2d},       // longblob
+    {"mediumblob", DOLPHIN_TYPE_MEDIUM_BLOB, 0, BLOB_FLAG | BINARY_FLAG, COLLATE_BINARY}, // mediumblob
+    {"longblob", DOLPHIN_TYPE_LONG_BLOB, 0, BLOB_FLAG | BINARY_FLAG, COLLATE_BINARY}, // longblob
     // spatial type
     {"point", DOLPHIN_TYPE_GEOMETRY, POINTOID, 0, 0x2d},                          // point
     {"line", DOLPHIN_TYPE_GEOMETRY, LINEOID, 0, 0x2d},                            // line

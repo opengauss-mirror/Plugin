@@ -12057,14 +12057,18 @@ Datum Varlena2Bit(PG_FUNCTION_ARGS)
 Datum bit_blob(VarBit* input)
 {
     bytea* result = NULL;
-    int len = (VARBITLEN(input) - 1) / 8  + 1;
+    int len = VARBITBYTES(input);
     result = (bytea*)palloc0(len + VARHDRSZ);
+    SET_VARSIZE(result, len + VARHDRSZ);
+    /* An empty hexadecimal literal must remain empty when cast to BLOB. */
+    if (len == 0) {
+        PG_RETURN_BYTEA_P(result);
+    }
     Datum shift = DirectFunctionCall2(bit, VarBitPGetDatum(input), Int32GetDatum(len * 8));
 
     errno_t ss_rc = 0;
     ss_rc = memcpy_s(VARDATA(result), len, VARBITS((VarBit*)shift), len);
     securec_check(ss_rc, "\0", "\0");
-    SET_VARSIZE(result, len + VARHDRSZ);
 
     PG_RETURN_BYTEA_P(result);
 }

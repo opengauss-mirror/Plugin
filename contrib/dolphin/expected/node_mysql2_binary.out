@@ -1,0 +1,21 @@
+\pset format unaligned
+-- node-mysql2 query serializes an empty Buffer as the bare literal X''.
+SELECT octet_length(X''::blob) AS empty_blob,
+       octet_length(X''::tinyblob) AS empty_tinyblob,
+       octet_length(X''::mediumblob) AS empty_mediumblob,
+       octet_length(X''::longblob) AS empty_longblob;
+empty_blob|empty_tinyblob|empty_mediumblob|empty_longblob
+0|0|0|0
+(1 row)
+SELECT octet_length(X'00'::blob) AS nul_length, hex(X'00'::blob) AS nul_hex;
+nul_length|nul_hex
+1|00
+(1 row)
+SELECT octet_length(X'0011ff'::blob) AS bytes_length, hex(X'0011ff'::blob) AS bytes_hex;
+bytes_length|bytes_hex
+3|0011FF
+(1 row)
+SELECT X''::blob IS NULL AS empty_is_null, NULL::blob IS NULL AS null_is_null;
+empty_is_null|null_is_null
+f|t
+(1 row)
