@@ -20,7 +20,7 @@
 Format of spqplugin.cluster_map:
 pgxc_node_name|ip|port
 
-- `pgxc_node_name`: Name of the current compute node. It must be the same as the GUC parameter [pgxc_node_name](../database_reference/opengauss_transaction.md). The node names configured on different compute nodes must be different from each other.
+- `pgxc_node_name`: Name of the current compute node. It must be the same as the GUC parameter [pgxc_node_name](https://docs.opengauss.org/en/docs/latest/database_reference/opengauss_transaction.html). The node names configured on different compute nodes must be different from each other.
 - `ip`: IP address used by the current compute node for libcomm communication. Configure it in a network segment different from that of the cluster communication IP to avoid mutual network impact.
 - `port`: Current database port.
 

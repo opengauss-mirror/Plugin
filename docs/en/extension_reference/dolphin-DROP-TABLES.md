@@ -41,7 +41,7 @@ DROP TABLES [ IF EXISTS ]
 
     This parameter indicates that even if the recycle bin feature is enabled, the table will be physically deleted directly when dropped, rather than being placed in the recycle bin.
 
-> The parameter behavior involved is the same as that of [DROP TABLE](../sql_reference/drop_table.md).
+> The parameter behavior involved is the same as that of [DROP TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/drop_table.html).
 
 ## Examples<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_se4f9dc97861c410bb51554bb58bcd76d"></a>
 
@@ -55,4 +55,4 @@ openGauss=# DROP TABLES table_to_drop3;
 
 ## Related Links<a name="section156744489391"></a>
 
-[DROP TABLE](../sql_reference/drop_table.md)
+[DROP TABLE](https://docs.opengauss.org/en/docs/latest/sql_reference/drop_table.html)
