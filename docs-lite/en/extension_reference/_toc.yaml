@@ -288,27 +288,7 @@ sections:
       - label: Identifiers
         sections:
           - label: Column Name Identifiers
-            href: ./dolphin_column_name_identifiers.md
-  - label: spqplugin Extension
-    sections:
-      - label: spqplugin
-        href: ./spqplugin.md
-      - label: GUC Parameters
-        href: ./spqplugin_guc_parameters.md
-      - label: CREATE INDEX
-        href: ./spqplugin-CREATE-INDEX.md
-      - label: DELETE
-        href: ./spqplugin-DELETE.md
-      - label: DML
-        href: ./spqplugin-DML.md
-      - label: INSERT
-        href: ./spqplugin-INSERT.md
-      - label: SELECT
-        href: ./spqplugin-SELECT.md 
-      - label: SQL
-        href: ./spqplugin-SQL.md
-      - label: UPDATE
-        href: ./spqplugin-UPDATE.md                     
+            href: ./dolphin_column_name_identifiers.md                  
   - label: spqplugin_v2 Extension
     sections:
       - label: spqplugin_v2
