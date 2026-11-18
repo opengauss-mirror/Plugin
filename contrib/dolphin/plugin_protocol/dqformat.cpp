@@ -896,14 +896,24 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             const char* tzn = NULL;
             timestamp2tm(val, &tz, tm, &fsec, &tzn, NULL);
 
+#ifdef DOLPHIN
+            dq_append_int1(buf, fsec == 0 ? PROTO_DATETIME_LEN : PROTO_DATETIMESTAMP_LEN);
+#else
             dq_append_int1(buf, 0x0b);
+#endif
             dq_append_int2(buf, tm->tm_year);
             dq_append_int1(buf, tm->tm_mon);
             dq_append_int1(buf, tm->tm_mday);
             dq_append_int1(buf, tm->tm_hour);
             dq_append_int1(buf, tm->tm_min);
             dq_append_int1(buf, tm->tm_sec);
+#ifdef DOLPHIN
+            if (fsec != 0) {
+                dq_append_int4(buf, fsec);
+            }
+#else
             dq_append_int4(buf, fsec);
+#endif
             break;
         }
         case DOLPHIN_TYPE_DATETIME: {
@@ -911,14 +921,24 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             struct pg_tm tt, *tm = &tt;
             fsec_t fsec;
             timestamp2tm(val, NULL, tm, &fsec, NULL, NULL);
+#ifdef DOLPHIN
+            dq_append_int1(buf, fsec == 0 ? PROTO_DATETIME_LEN : PROTO_DATETIMESTAMP_LEN);
+#else
             dq_append_int1(buf, 0x0b);
+#endif
             dq_append_int2(buf, tm->tm_year);
             dq_append_int1(buf, tm->tm_mon);
             dq_append_int1(buf, tm->tm_mday);
             dq_append_int1(buf, tm->tm_hour);
             dq_append_int1(buf, tm->tm_min);
             dq_append_int1(buf, tm->tm_sec);
+#ifdef DOLPHIN
+            if (fsec != 0) {
+                dq_append_int4(buf, fsec);
+            }
+#else
             dq_append_int4(buf, fsec);
+#endif
             break;
         }
         case DOLPHIN_TYPE_TIME: {
