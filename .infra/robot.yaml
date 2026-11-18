@@ -1,0 +1,3 @@
+# https://gitcode.com/opengauss/infra/blob/master/docs/robot/bot_config_guide.md
+# Keep the review count aligned with .infra_self_service/rebot.yaml.
+lgtm_need_nums: 2
