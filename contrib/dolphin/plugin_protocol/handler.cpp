@@ -32,6 +32,7 @@
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
+#include "plugin_protocol/auth.h"
 
 #define CHAR_SET_RESULTS_LEN 25
 #define SELECT_TAG_LEN 6
@@ -53,6 +54,21 @@ static bool parse_query_bind_params(uint param_count,
                                     bool receive_named_params,
                                     bool receive_parameter_set_count);
 
+static bool get_explicit_mysql_errno(const ErrorData* edata, uint16* errorCode)
+{
+    if (edata->mysql_errno == NULL) {
+        return false;
+    }
+
+    char* end = NULL;
+    long value = strtol(edata->mysql_errno, &end, 10);
+    if (end == edata->mysql_errno || *end != '\0' || value < 0 || value > MYSQL_ERRNO_MAX) {
+        return false;
+    }
+    *errorCode = (uint16)value;
+    return true;
+}
+
 void dophin_send_ready_for_query(CommandDest dest)
 {
     switch (dest) {
@@ -63,6 +79,7 @@ void dophin_send_ready_for_query(CommandDest dest)
         case DestBatchBroadCast:
         case DestBatchLocalBroadCast:
         case DestBatchRedistribute:
+            dolphin_finish_authentication();
             /* Flush output at end of cycle in any case. */
             pq_flush();
 
@@ -113,10 +130,16 @@ void dolphin_send_message(ErrorData *edata)
 
     network_mysqld_err_packet_t *err_packet =
         (network_mysqld_err_packet_t *)palloc0(sizeof(network_mysqld_err_packet_t));
-    err_packet->errcode = get_dolphin_errcode(edata->sqlerrcode);
+    uint16 errorCode = 0;
+    err_packet->errcode = get_explicit_mysql_errno(edata, &errorCode) ?
+        errorCode : get_dolphin_errcode(edata->sqlerrcode);
     err_packet->errmsg = edata->message;
     const char *mappedSqlState = get_dolphin_sqlstate(edata->sqlerrcode);
-    err_packet->sqlstate = mappedSqlState != NULL ? mappedSqlState : "HY000";
+    if (edata->sqlstate != NULL) {
+        err_packet->sqlstate = edata->sqlstate;
+    } else {
+        err_packet->sqlstate = mappedSqlState != NULL ? mappedSqlState : "HY000";
+    }
 
     StringInfo buf = makeStringInfo();
     send_network_err_packet(buf, err_packet);
@@ -268,7 +291,12 @@ int dolphin_process_command(StringInfo buf)
 
 void dolphin_comm_reset(void)
 {
+    conn_mysql_infoP_t connection = GetMysqlConnectionInfo();
+    if (connection != NULL) {
+        connection->authentication_pending = false;
+    }
     if (temp_Conn_Mysql_Info) {
+        pfree_ext(temp_Conn_Mysql_Info->requested_schema);
         pfree(temp_Conn_Mysql_Info);
         temp_Conn_Mysql_Info = NULL;
     }
