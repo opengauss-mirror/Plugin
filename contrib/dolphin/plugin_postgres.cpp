@@ -298,11 +298,10 @@ void init_dolphin_proto(char* database_name)
         return;
     }
 
-    AutoMutexLock protoLock(&gInitPluginObjectLock);
-    protoLock.lock();
+    (void)pthread_mutex_lock(&gInitPluginObjectLock);
     /* double check and quick exit */
     if (protocol_inited) {
-        protoLock.unLock();
+        (void)pthread_mutex_unlock(&gInitPluginObjectLock);
         define_dolphin_server_guc();
         return;
     }
@@ -317,12 +316,12 @@ void init_dolphin_proto(char* database_name)
     }
     PG_CATCH();
     {
-        protoLock.unLock();
+        (void)pthread_mutex_unlock(&gInitPluginObjectLock);
         PG_RE_THROW();
     }
     PG_END_TRY();
 
-    protoLock.unLock();
+    (void)pthread_mutex_unlock(&gInitPluginObjectLock);
 }
 
 HeapTuple searchCat(Relation relation, Oid indexoid,
