@@ -301,7 +301,6 @@ vsint8_avg(PG_FUNCTION_ARGS)
 	int			nrows = pVector->m_rows;
 
 	/* left-hand and right-hand operand of addition  */
-        NullableDatum   args[2];
 	Datum		*leftdata = NULL;
 	Datum		*countdata = NULL;
 	uint8		leftflag;
@@ -313,7 +312,7 @@ vsint8_avg(PG_FUNCTION_ARGS)
 	int			ndatum;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -412,7 +411,7 @@ vector_abs(PG_FUNCTION_ARGS)
 	int i;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -688,7 +687,6 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 	ScalarValue*  pVal = pVector->m_vals;
 	uint8*		  flag = pVector->m_flag;
 	int			  nrows = pVector->m_rows;
-        NullableDatum     args[2];
 	Datum		  result[2];
 	Datum		  bi_result;
 	Datum		*datumarray = NULL;
@@ -696,7 +694,7 @@ vint_stddev_samp(PG_FUNCTION_ARGS)
 	Datum		newval;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -914,7 +912,7 @@ vnumeric_stddev_samp_final(PG_FUNCTION_ARGS)
 	Datum	  arg[3];
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }

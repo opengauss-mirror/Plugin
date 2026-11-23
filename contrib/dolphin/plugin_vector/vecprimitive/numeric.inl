@@ -50,7 +50,7 @@ vnumeric_avg_final(PG_FUNCTION_ARGS)
 	uint8  *m_flag = (uint8*)PG_GETARG_DATUM(3);
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -113,7 +113,7 @@ vnumeric_avg(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -242,7 +242,6 @@ vsnumeric_avg_final(PG_FUNCTION_ARGS)
 	int 			nrows = pVector->m_rows;
 	uint8*			pflag = &pVector->m_flag[nrows];
 	ScalarValue*	pvals = &pVector->m_vals[nrows];
-        NullableDatum           args[2];
 	Datum			*countdata = NULL;
 	Datum			*leftdata = NULL;
 	
@@ -250,7 +249,7 @@ vsnumeric_avg_final(PG_FUNCTION_ARGS)
 	int				arrIndx,atomIndx;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -324,14 +323,13 @@ vsnumeric_avg(PG_FUNCTION_ARGS)
 	ScalarValue*	pVal = pVector->m_vals;
 	uint8*			flag = pVector->m_flag;
 	int				nrows = pVector->m_rows;
-        NullableDatum           args[2];
 	Datum			result;
 	Datum			*leftdata = NULL;
 	Datum			*countdata = NULL;
 	uint8			leftflag;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -474,7 +472,7 @@ vnumeric_op(PG_FUNCTION_ARGS)
 	uint16		num1Flags, num2Flags;		// numeric flags of num1 and num2 
 	const int scalarNargs = 2;
 	LOCAL_FCINFO(finfo, scalarNargs);
-	InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+	InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
 	finfo->args[0].isnull = false;
 	finfo->args[1].isnull = false;
 
@@ -593,7 +591,7 @@ vnumeric_min_max(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -670,12 +668,11 @@ vsnumeric_min_max(PG_FUNCTION_ARGS)
 	ScalarValue*	pVal = pVector->m_vals;
 	uint8*			flag = pVector->m_flag;
 	int				nrows = pVector->m_rows;
-        NullableDatum           args[2];
 	Datum			result;
 	Datum			*leftdata = NULL;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }

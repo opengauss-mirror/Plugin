@@ -658,7 +658,8 @@ vbpchar(PG_FUNCTION_ARGS)
 	int				i;
         const int scalarNargs = 3;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        const int callNargs = bpcharFunc == bpchar ? scalarNargs : 1;
+        InitFunctionCallInfoData(*finfo, NULL, callNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -764,14 +765,12 @@ vtrim1(PG_FUNCTION_ARGS)
 	uint8			*ResultFlag = VecResult->m_flag;
 	Datum			result;
 	int				i;
-        const int scalarNargs = 2;
+        const int scalarNargs = 1;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, fcinfo->flinfo, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
-
-        finfo->flinfo = fcinfo->flinfo;
 
 	if (pselection != NULL)
 	{

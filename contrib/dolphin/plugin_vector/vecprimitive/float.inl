@@ -97,10 +97,9 @@ vfloat_avg_final(PG_FUNCTION_ARGS)
 	ArrayType  *transarray = NULL;
 	float8	   *transvalues = NULL;
 
-        NullableDatum arg;
         const int scalarNargs = 3;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -223,7 +222,7 @@ vfloat8_avg(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -327,7 +326,7 @@ vfloat4_avg(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -429,7 +428,7 @@ vfloat_min_max(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -474,7 +473,7 @@ vfloat_sum(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -519,7 +518,7 @@ vfloat4_mop(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
@@ -584,7 +583,7 @@ vfloat8_mop(PG_FUNCTION_ARGS)
 	Datum		  result;
         const int scalarNargs = 2;
         LOCAL_FCINFO(finfo, scalarNargs);
-        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, InvalidOid, NULL, NULL);
+        InitFunctionCallInfoData(*finfo, NULL, scalarNargs, fcinfo->fncollation, NULL, NULL);
         for (int argIndex = 0; argIndex < scalarNargs; argIndex++) {
             finfo->args[argIndex].isnull = false;
         }
