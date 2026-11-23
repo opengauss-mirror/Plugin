@@ -279,12 +279,6 @@ sections:
         href: ./dolphin_guc_parameters.md
       - label: Resetting Parameters
         href: ./dolphin_resetting_parameters.md
-      - label: Stored Procedures
-        sections:
-          - label: Basic Statements
-            href: ./dolphin_basic_statements.md
-          - label: Assignment Statements
-            href: ./dolphin_assignment_statements.md
       - label: Identifiers
         sections:
           - label: Column Name Identifiers
