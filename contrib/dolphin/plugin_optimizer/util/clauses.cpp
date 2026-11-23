@@ -4468,6 +4468,7 @@ static Oid pre_evaluate_func[] = {CURRENTSCHEMAFUNCOID,
     GETPGUSERNAMEFUNCOID,
     SESSIONUSERFUNCOID,
     CURRENTDATABASEFUNCOID,
+    CONVERTFUNCOID,
     PGCLIENTENCODINGFUNCOID};
 
 static bool is_safe_simplify_func(Oid funcid, List *args)
