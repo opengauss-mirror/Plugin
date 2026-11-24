@@ -179,4 +179,6 @@ extern Expr *transform_array_Const_to_ArrayExpr(Const *c);
 extern List* dolphin_add_function_defaults(List* args, HeapTuple func_tuple);
 #endif
 
+extern Param* BuildParamFromConst(Const* con, int paramid);
+
 #endif /* CLAUSES_H */
