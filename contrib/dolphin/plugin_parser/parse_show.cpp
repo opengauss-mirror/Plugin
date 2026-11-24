@@ -752,19 +752,19 @@ SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node* whereCla
     }
     (void)plps_check_schema_or_table_valid(schemaName, tableName, false);
 
-    List* tl = (List*)list_make1(plpsMakeNormalColumn(NULL, "table", "table"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "non_unique", "non_unique"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "key_name", "key_name"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "seq_in_index", "seq_in_index"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "column_name", "column_name"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "collation", "collation"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "cardinality", "cardinality"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "sub_part", "sub_part"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "packed", "packed"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "null", "null"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_type", "index_type"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "comment", "comment"));
-    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_comment", "index_comment"));
+    List* tl = (List*)list_make1(plpsMakeNormalColumn(NULL, "table", "Table"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "non_unique", "Non_unique"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "key_name", "Key_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "seq_in_index", "Seq_in_index"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "column_name", "Column_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "collation", "Collation"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "cardinality", "Cardinality"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "sub_part", "Sub_part"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "packed", "Packed"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "null", "Null"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_type", "Index_type"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "comment", "Comment"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_comment", "Index_comment"));
 
     RangeVar* rv = makeRangeVar("public", "index_statistic", -1);
     List* fl = (List*)list_make1(rv);

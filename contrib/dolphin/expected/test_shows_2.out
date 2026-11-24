@@ -8,19 +8,19 @@ create database db_show_2 dbcompatibility 'b';
 create table show_index_tbl (a int primary key, b int);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "show_index_tbl_pkey" for table "show_index_tbl"
 show keys from show_index_tbl;
-     table      | non_unique | key_name | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | f          | PRIMARY  |            1 | a           | A         |             |          |        |      | btree      |         | 
 (1 row)
 
 show indexes from show_index_tbl from public;
-     table      | non_unique | key_name | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | f          | PRIMARY  |            1 | a           | A         |             |          |        |      | btree      |         | 
 (1 row)
 
 show index from show_index_tbl from public where "table" = 'show_index_tbl';
-     table      | non_unique | key_name | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | f          | PRIMARY  |            1 | a           | A         |             |          |        |      | btree      |         | 
 (1 row)
@@ -37,7 +37,7 @@ insert into show_index_tbl values (generate_series(1,1000), generate_series(1,10
 insert into show_index_tbl values (generate_series(1001,2000), generate_series(1,1000));
 analyze show_index_tbl;
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           | A         |        2000 |          |        |      | btree      |         | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           | D         |        1000 |          |        | YES  | btree      |         | index a and b
@@ -51,7 +51,7 @@ create index show_index_tbl_c_gin on show_index_tbl using gin (c);
 alter table show_index_tbl add column d box;
 create index show_index_tbl_d_gist on show_index_tbl using gist (d);
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           | A         |        2000 |          |        |      | btree      |         | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           | D         |        1000 |          |        | YES  | btree      |         | index a and b
@@ -63,7 +63,7 @@ show index from show_index_tbl;
 
 alter index show_index_tbl_a_b_desc unusable;
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment  | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment  | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+----------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           | A         |        2000 |          |        |      | btree      | disabled | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           | D         |        1000 |          |        | YES  | btree      | disabled | index a and b
@@ -84,7 +84,7 @@ insert into show_index_tbl values (generate_series(1,1000), generate_series(1,10
 insert into show_index_tbl values (generate_series(1001,2000), generate_series(1,1000));
 analyze show_index_tbl;
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           |           |        2000 |          |        |      | psort      |         | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           |           |        1000 |          |        | YES  | psort      |         | index a and b
@@ -95,7 +95,7 @@ show index from show_index_tbl;
 create index show_index_tbl_a_psort on show_index_tbl using psort (a);
 create index show_index_tbl_b_gin on show_index_tbl using gin (to_tsvector('english', b));
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           |           |        2000 |          |        |      | psort      |         | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           |           |        1000 |          |        | YES  | psort      |         | index a and b
@@ -115,7 +115,7 @@ insert into show_index_tbl values (generate_series(1,1000), generate_series(1,10
 insert into show_index_tbl values (generate_series(1001,2000), generate_series(1,1000));
 analyze show_index_tbl;
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           | A         |        2000 |          |        |      | ubtree     |         | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           | D         |        1000 |          |        | YES  | ubtree     |         | index a and b
@@ -124,7 +124,7 @@ show index from show_index_tbl;
 
 alter index show_index_tbl_a_b_desc unusable;
 show index from show_index_tbl;
-     table      | non_unique |        key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment  | index_comment 
+     Table      | Non_unique |        Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment  | Index_comment 
 ----------------+------------+-------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+----------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc |            1 | a           | A         |        2000 |          |        |      | ubtree     | disabled | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc |            2 | b           | D         |        1000 |          |        | YES  | ubtree     | disabled | index a and b
@@ -134,7 +134,7 @@ show index from show_index_tbl;
 -- test index with including column
 create index show_index_tbl_a_inclu_b on show_index_tbl(a) include (b);
 show index from show_index_tbl;
-     table      | non_unique |         key_name         | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment  | index_comment 
+     Table      | Non_unique |         Key_name         | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment  | Index_comment 
 ----------------+------------+--------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+----------+---------------
  show_index_tbl | t          | show_index_tbl_a_b_desc  |            1 | a           | A         |        2000 |          |        |      | ubtree     | disabled | index a and b
  show_index_tbl | t          | show_index_tbl_a_b_desc  |            2 | b           | D         |        1000 |          |        | YES  | ubtree     | disabled | index a and b
@@ -147,7 +147,7 @@ create schema test_show_index;
 set current_schema = test_show_index;
 create table test_sch (a int);
 show index from test_sch;
- table | non_unique | key_name | seq_in_index | column_name | collation | cardinality | sub_part | packed | null | index_type | comment | index_comment 
+ Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment 
 -------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------
 (0 rows)
 
