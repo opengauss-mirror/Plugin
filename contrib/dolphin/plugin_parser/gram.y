@@ -20217,7 +20217,7 @@ CreateFunctionStmt:
 					int rc = 0;
 					rc = CompileWhich();
                                         if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
-                                            u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @10);
+                                            u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @10);
                                         }
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					FunctionSources *funSource = (FunctionSources *)$12;
@@ -20255,7 +20255,7 @@ CreateFunctionStmt:
 					int rc = 0;
 					rc = CompileWhich();
 					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
-					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @10);
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @10);
 					}
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					FunctionSources *funSource = (FunctionSources*)$13;
@@ -20297,7 +20297,7 @@ CreateFunctionStmt:
 					int rc = 0;
 					rc = CompileWhich();
 					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
-					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @10);
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @10);
 					}
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					FunctionSources *funSource = (FunctionSources*)$12;
@@ -21337,7 +21337,7 @@ CreateProcedureStmt:
 					int rc = 0;
                                         rc = CompileWhich();
                                         if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
-                                                u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+                                                u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @6);
                                         }
                                         rc = CompileWhich();
                                         CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21380,7 +21380,7 @@ CreateProcedureStmt:
                                         int rc = 0;
                                         rc = CompileWhich();
                                         if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
-                                            u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+                                            u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @8);
                                         }
 					rc = CompileWhich();
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21426,7 +21426,7 @@ CreateProcedureStmt:
 							int rc = 0;
 							rc = CompileWhich();
 							if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
-									u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @7);
+									u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @7);
 							}
 							rc = CompileWhich();
 							CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21472,7 +21472,7 @@ CreateProcedureStmt:
 						int rc = 0;
 						rc = CompileWhich();
 						if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
-								u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+								u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @8);
 						}
 						rc = CompileWhich();
 						CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21515,7 +21515,7 @@ CreateProcedureStmt:
 					int rc = 0;
 					rc = CompileWhich();
 					if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
-						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @8);
 					}
 					rc = CompileWhich();
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
@@ -21556,7 +21556,7 @@ CreatePackageStmt:
 				{
                     set_create_plsql_type_start();
 					u_sess->plsql_cxt.need_create_depend = true;
-					u_sess->plsql_cxt.package_as_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+					u_sess->plsql_cxt.package_as_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @6);
                     CreatePackageStmt *n = makeNode(CreatePackageStmt);
 					char *pkgNameBegin = NULL;
 					char *pkgNameEnd = NULL;
@@ -21591,7 +21591,7 @@ CreatePackageStmt:
                         yychar = YYEMPTY;
                     }
                     int proc_start_pos = n->pkgspec_location = yylloc;
-                    u_sess->plsql_cxt.package_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, yylloc);
+                    u_sess->plsql_cxt.package_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, yylloc);
 
                     // Scan whole stmt.        
                     List* toks = NULL;
@@ -21686,7 +21686,7 @@ CreatePackageStmt:
                      * processed.
                      */
 
-					u_sess->plsql_cxt.package_as_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+					u_sess->plsql_cxt.package_as_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @6);
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_common.plsql_show_all_error == true) {
 						if (pkgNameBegin != NULL && pkgNameEnd != NULL) {
@@ -21793,7 +21793,7 @@ pkg_body_subprogram: {
                     yychar = YYEMPTY;
                 }
                 proc_b = yylloc;
-				u_sess->plsql_cxt.package_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, yylloc);
+				u_sess->plsql_cxt.package_first_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, yylloc);
 
                 List* toks = NULL;
                 List* positions = NULL;
@@ -21982,7 +21982,7 @@ CreatePackageBodyStmt:
 					char *pkgNameEnd = NULL;
                     char *pkgName = NULL;
 					DefElem *def = NULL;
-					u_sess->plsql_cxt.package_as_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+					u_sess->plsql_cxt.package_as_line = GetLineNumber(pg_yyget_extra(yyscanner)->core_yy_extra.scanbuf, @6);
 					switch (list_length($5)) {
 						case 1:
 							pkgName = strVal(linitial($5));
