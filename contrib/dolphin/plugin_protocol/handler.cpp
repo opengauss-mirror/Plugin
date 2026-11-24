@@ -136,6 +136,13 @@ void dophin_send_ready_for_query(CommandDest dest)
 
 void dolphin_end_command(const char *completionTag)
 {
+    if (GetSessionContext()->commit_on_aborted_txn) {
+        GetSessionContext()->commit_on_aborted_txn = false;
+        ereport(ERROR,
+            (errcode(ERRCODE_IN_FAILED_SQL_TRANSACTION),
+                errmsg("current transaction is aborted, commands ignored until end of transaction block")));
+    }
+
     if ((completionTag[0] == 'S' || completionTag[0] == 'E') &&
         (strncasecmp(completionTag, "SELECT", SELECT_TAG_LEN) == 0 ||
         strncasecmp(completionTag, "SHOW", SHOW_TAG_LEN) == 0 ||
@@ -272,6 +279,7 @@ int dolphin_process_command(StringInfo buf)
 {
     GetSessionContext()->enableBCmptMode = true;
     u_sess->attr.attr_common.enable_set_variable_b_format = true;
+    GetSessionContext()->commit_on_aborted_txn = false;
 
     uint8 command = pq_getmsgbyte(buf);
 

@@ -2777,6 +2777,12 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
                 } break;
 
                 case TRANS_STMT_COMMIT:
+                    /* Record the state of this statement before COMMIT rolls it back. */
+                    if (u_sess->proc_cxt.MyProcPort != NULL &&
+                        u_sess->proc_cxt.MyProcPort->protocol_config != NULL &&
+                        u_sess->proc_cxt.MyProcPort->protocol_config->fn_process_command == dolphin_process_command) {
+                        GetSessionContext()->commit_on_aborted_txn = IsAbortedTransactionBlockState();
+                    }
                     /* Only generate one time when u_sess->debug_query_id = 0 in CN */
                     if ((IS_SINGLE_NODE || IS_PGXC_COORDINATOR) && u_sess->debug_query_id == 0) {
                         u_sess->debug_query_id = generate_unique_id64(&gt_queryId);
