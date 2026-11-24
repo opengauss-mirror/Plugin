@@ -1,9 +1,29 @@
 /*
+ * Portions Copyright (c) 2024 Huawei Technologies Co., Ltd.
+ * Plugin is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
+/*
+ *
+ * The preceding Mulan PSL v2 notice applies to the Huawei portions of this file.
  *	PostgreSQL type definitions for the INET and CIDR types.
  *
  *	src/backend/utils/adt/network.c
  *
  *	Jon Postel RIP 16 Oct 1998
+ *
+ * Portions Copyright (c) 1996-2013, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, The Regents of the University of California
+ *
+ * Adapted for Dolphin from openGauss-server.
+ * See Third_Party_Open_Source_Software_Notice for the upstream notices and terms.
  */
 
 #include "postgres.h"

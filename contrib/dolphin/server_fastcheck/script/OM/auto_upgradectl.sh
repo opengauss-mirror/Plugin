@@ -1,3 +1,6 @@
+# Derived from src/test/regress/script/OM/auto_upgradectl.sh in openGauss-server.
+# See Third_Party_Open_Source_Software_Notice for the upstream copyright and license.
+
 ﻿#pengass om 自动化升级测试脚本
 # username:omm  usergroup:dbgrp 工具脚本路径：/usr1/opengaussautomattest/script xml文件路径：/usr1/clusterconfig.xml
 

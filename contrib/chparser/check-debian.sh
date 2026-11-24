@@ -1,3 +1,9 @@
+# Portions Copyright (c) 2024 Jov (amutu@amutu.com)
+# SPDX-License-Identifier: PostgreSQL
+#
+# Adapted from check-debian.sh in zhparser.
+# See COPYRIGHT in this directory for the upstream copyright and license.
+
 read -s -p "Please enter password for container to start: " user_password
 echo
 

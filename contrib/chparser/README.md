@@ -191,3 +191,21 @@ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
 AND FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
 ON AN "AS IS" BASIS, AND THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO
 PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+## Copyright and file provenance
+
+The zhparser base was verified against revision `d68d018725679e5f351d14e1f3fa6bbe5fa428e2`.
+The openGauss-container reference for the Docker build patterns is revision `81e3bf1b4c5e4ddaed08b0c80104e883ff5bb3bd`.
+
+| Files | Origin and license |
+| --- | --- |
+| `COPYRIGHT` | Original PostgreSQL license notice from zhparser. |
+| `README.md`, `META.json` | Component documentation and package metadata from zhparser. The package declares the PostgreSQL license and credits Jov. |
+| `chparser.cpp`, `chparser.h`, `Makefile`, `chparser.control` | Adapted from zhparser. See [COPYRIGHT](COPYRIGHT) for the PostgreSQL license notice. |
+| `check-alpine.sh`, `check-debian.sh`, `chparser-backup-custom-dict.sh` | Adapted from zhparser scripts first published in 2024. See [COPYRIGHT](COPYRIGHT) for the PostgreSQL license. |
+| `sql/chparser--1.0.sql`, `sql/chparser--unpackaged--1.0.sql` | Extension scripts adapted from zhparser under the PostgreSQL license. |
+| `sql/chparser.sql`, `expected/chparser-alpine.out`, `expected/chparser-debian.out` | Regression fixtures adapted from zhparser under the PostgreSQL license. The test scripts compare echoed SQL and output with these fixtures. |
+| `dict.utf8.xdb`, `rules.utf8.ini` | SCWS dictionary and rules inherited via zhparser. The SCWS BSD license is reproduced in the [repository notice](../../Third_Party_Open_Source_Software_Notice). |
+| `dict_extra.txt` | Example dictionary from zhparser. See [COPYRIGHT](COPYRIGHT) for the distribution notice. |
+| `CMakeLists.txt` | Plugin build integration under [Mulan PSL v2](../../LICENSE). |
+| `docker/dockerfile_arm`, `docker/dockerfile_x86` | Plugin packaging recipes that share build patterns with openGauss-container. The recipes use [Mulan PSL v2](../../LICENSE). |

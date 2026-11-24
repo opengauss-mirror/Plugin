@@ -1,4 +1,7 @@
 /*
+ * Portions Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file includes modifications for openGauss Plugin.
+ *
  * For PostgreSQL Database Management System:
  * (formerly known as Postgres, then as Postgres95)
  *

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ *
  * For PostgreSQL Database Management System:
  * (formerly known as Postgres, then as Postgres95)
  *

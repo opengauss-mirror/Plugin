@@ -1,3 +1,9 @@
+# Portions Copyright (c) 2024 Jov (amutu@amutu.com)
+# SPDX-License-Identifier: PostgreSQL
+#
+# Adapted from zhparser-backup-custom-dict.sh in zhparser.
+# See COPYRIGHT in this directory for the upstream copyright and license.
+
 if [ $# -lt 2 ];then
 	echo "usage: $0 <backup|restore|delete> <pgdata_dir> [restore_from_dir]"
 	echo "warning: delete is a dangerous cmd, it will delete your custom from pgdata_dir."

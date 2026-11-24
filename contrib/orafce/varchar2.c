@@ -1,4 +1,11 @@
+/*
+ * Portions Copyright (C) 2008-2020 by Pavel Stehule <pavel.stehule@gmail.com>
+ * See COPYRIGHT.orafce for the license of the upstream portions.
+ */
+
 /*----------------------------------------------------------------------------
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ *
  *
  *     varchar2.c
  *     VARCHAR2 type for PostgreSQL.

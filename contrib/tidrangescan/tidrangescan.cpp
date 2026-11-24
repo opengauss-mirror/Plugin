@@ -7,6 +7,8 @@
  * Portions Copyright (c) 1994, Regents of the University of California
  * Portions Copyright (c) 2021, openGauss Contributors
  *
+ * See the LICENSE file in this directory for the PostgreSQL license.
+ *
  *
  * IDENTIFICATION
  *	  contrib/tidrangescan/tidrangescan.cpp

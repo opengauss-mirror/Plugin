@@ -1,3 +1,8 @@
+/*
+ * Adapted from orafce.h in orafce 3.17.
+ * See COPYRIGHT.orafce for the upstream copyright and license.
+ */
+
 #ifndef __ORAFCE__
 #define __ORAFCE__
 

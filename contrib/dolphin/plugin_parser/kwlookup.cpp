@@ -14,6 +14,9 @@
  *	  src/common/backend/parser/kwlookup.cpp
  *
  * -------------------------------------------------------------------------
+ *
+ * From openGauss-server, with length-limited keyword lookup for Dolphin.
+ * See Third_Party_Open_Source_Software_Notice for the upstream notices and terms.
  */
 
 /* use c.h so this can be built as either frontend or backend */

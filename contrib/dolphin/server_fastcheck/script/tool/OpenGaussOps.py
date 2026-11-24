@@ -1,5 +1,10 @@
 # coding=utf-8
 # !/usr/bin/python
+# Derived from src/test/regress/script/tool/OpenGaussOps.py in openGauss-server.
+# See Third_Party_Open_Source_Software_Notice for the upstream copyright and license.
+
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+#
 
 from jenkinsapi.jenkins import Jenkins
 import xlrd

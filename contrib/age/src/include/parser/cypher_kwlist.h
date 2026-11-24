@@ -1,3 +1,8 @@
+/*
+ * Adapted from src/include/parser/cypher_kwlist.h in Apache AGE.
+ * See contrib/age/LICENSE and contrib/age/NOTICE for the upstream terms and notices.
+ */
+
 PG_KEYWORD("all", ALL, RESERVED_KEYWORD)
 PG_KEYWORD("analyze", ANALYZE, RESERVED_KEYWORD)
 PG_KEYWORD("and", AND, RESERVED_KEYWORD)

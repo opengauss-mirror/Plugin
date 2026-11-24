@@ -1,3 +1,7 @@
+-- Portions Copyright (c) 2012-2013, Jov(amutu@amutu.com)
+-- SPDX-License-Identifier: PostgreSQL
+-- Adapted from zhparser--1.0.sql in zhparser. See ../COPYRIGHT for the original notice.
+
 CREATE FUNCTION chprs_start(internal, int4)
 RETURNS internal
 AS 'MODULE_PATHNAME'

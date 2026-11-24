@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// See the SPQ optimizer COPYRIGHT file for component attribution.
+
 #include "spqopt/operators/CPhysicalUnionAll.h"
 
 #include "spqos/error/CAutoTrace.h"

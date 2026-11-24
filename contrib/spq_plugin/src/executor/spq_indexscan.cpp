@@ -1,9 +1,29 @@
+/*
+ * Portions Copyright (c) 2023 Huawei Technologies Co., Ltd.
+ * Plugin is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 /* -------------------------------------------------------------------------
+ *
+ * The preceding Mulan PSL v2 notice applies to the Huawei portions of this file.
  *
  * spq_indexscan.cpp
  *	  Routines to support indexed scans of relations
  *
- * Portions Copyright (c) 2023 Huawei Technologies Co.,Ltd.
+ *
+ * This file also contains portions adapted from openGauss-server:
+ *   src/gausskernel/runtime/executor/nodeIndexscan.cpp
+ * Portions Copyright (c) 2020 Huawei Technologies Co.,Ltd.
+ * Portions Copyright (c) 1996-2012, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, Regents of the University of California
+ * See Third_Party_Open_Source_Software_Notice for the inherited license terms.
  *
  *
  * IDENTIFICATION

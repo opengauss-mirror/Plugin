@@ -1,3 +1,7 @@
+// Portions Copyright (c) 2010 Greenplum, Inc.
+// Derived from CDXLMemoryManager and Copyright (c) 2026 Huawei Technologies Co., Ltd.
+// See the SPQ optimizer COPYRIGHT file for the original Apache-2.0 terms.
+
 #include "knl/knl_session.h"
 #include "naucrates/dxl/xml/SPQCDXLMemoryManager.h"
 using namespace spqdxl;

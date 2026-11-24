@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+# The copyright notice covers the 2026 openGauss build and packaging adaptations.
+
 set(BACKENDDIR "src/backend")
 set(CATDIR "src/backend/catalog")
 set(COMMDIR "src/backend/commands")

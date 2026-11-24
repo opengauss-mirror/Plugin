@@ -1,3 +1,9 @@
+/*
+ * Portions Copyright (C) 2008-2020 by Pavel Stehule <pavel.stehule@gmail.com>
+ * Portions Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * See COPYRIGHT.orafce for the license of the upstream portions.
+ */
+
 #include "postgres.h"
 
 #include "access/htup.h"

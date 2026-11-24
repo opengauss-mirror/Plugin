@@ -1,5 +1,8 @@
 /* -------------------------------------------------------------------------
  *
+ * Adapted for AGE from openGauss-server.
+ * See Third_Party_Open_Source_Software_Notice for the inherited license terms.
+ *
  * readfuncs.cpp
  *	  Reader functions for openGauss tree nodes.
  *

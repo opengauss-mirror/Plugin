@@ -1,0 +1,64 @@
+# Third-party component licenses and attributions are recorded in the repository notice.
+# Upstream entries identify verified original imports elsewhere in the repository.
+project: opengauss/Plugin
+version: '1.0'
+directories:
+  - path: ./.clusterfuzzlite/
+    type: build
+  - path: ./.gitcode/scripts/
+    type: scripts
+  - path: ./contrib/age/.github/
+    type: upstream
+  - path: ./contrib/age/docker-entrypoint-initdb.d/
+    type: upstream
+  - path: ./contrib/age/drivers/golang/
+    type: third_party
+  - path: ./contrib/age/drivers/golang/samples/
+    type: examples
+  - path: ./contrib/age/drivers/jdbc/
+    type: third_party
+  - path: ./contrib/age/drivers/nodejs/
+    type: upstream
+  - path: ./contrib/age/drivers/python/
+    type: upstream
+  - path: ./contrib/age/regress/
+    type: test
+  - path: ./contrib/age/src/backend/
+    type: third_party
+  - path: ./contrib/age/tools/
+    type: upstream
+  - path: ./contrib/chparser/
+    type: third_party
+  - path: ./contrib/dolphin/proto_jdbc/
+    type: test
+  - path: ./contrib/dolphin/server_fastcheck/
+    type: test
+  - path: ./contrib/orafce/
+    type: third_party
+  - path: ./contrib/spq_plugin/build/
+    type: upstream
+  - path: ./contrib/spq_plugin/src/spq/
+    type: upstream
+  - path: ./contrib/spq_plugin/src/spq_optimizer/
+    type: third_party
+  - path: ./contrib/spq_plugin/src/spq_optimizer/libspqos/server/src/
+    type: test
+  - path: ./contrib/spq_plugin/src/spq_optimizer/libspqos/src/test/
+    type: test
+  - path: ./contrib/spq_plugin/src/spq_optimizer/server/
+    type: test
+  - path: ./contrib/spq_plugin/src/spq_optimizer_util/
+    type: third_party
+  - path: ./contrib/tidrangescan/
+    type: third_party
+  - path: ./docs-lite/
+    type: docs
+  - path: ./docs/
+    type: docs
+files:
+  - path: ./LICENSE
+    type: license
+  - path: ./.gitcode/copyright-template.txt
+    type: copyright-template
+  - path: ./Third_Party_Open_Source_Software_Notice
+    type: notice

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// See the SPQ optimizer COPYRIGHT file for component attribution.
+
 #include "unittest/spqopt/operators/CScalarIsDistinctFromTest.h"
 
 #include "spqos/common/CDynamicPtrArray.h"
