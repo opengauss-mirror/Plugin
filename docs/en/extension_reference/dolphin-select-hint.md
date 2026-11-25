@@ -1,3 +1,8 @@
+---
+description: SELECT HINT sets GUC parameters related to query optimization that take effect during the query execution. This section describes the enhanced SELECT HINT syntax of Dolphin. For details about the hint.
+keywords: [openGauss, SELECT]
+---
+
 # SELECT HINT<a name="EN-US_TOPIC_0000001096400532"></a>
 
 ## Function<a name="section290819468377"></a>

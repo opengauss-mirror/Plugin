@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 DROP TABLESPACE 语句的语法、参数说明与使用示例。
+keywords: [openGauss, DROP]
+---
+
 # DROP TABLESPACE
 
 ## 功能描述<a name="zh-cn_topic_0283137549_zh-cn_topic_0237122153_zh-cn_topic_0059779073_s73f8a05d2e0248f18e34a613fcde3fb6"></a>

@@ -1,3 +1,8 @@
+---
+description: INDEX\_STAITISTIC displays information about indexes in the current database.
+keywords: [openGauss, INDEX_STAITISTIC]
+---
+
 # INDEX\_STAITISTIC<a name="ZH-CN_TOPIC_0000001116241547"></a>
 
 INDEX\_STAITISTIC displays information about indexes in the current database.

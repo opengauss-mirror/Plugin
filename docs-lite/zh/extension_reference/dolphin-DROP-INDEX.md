@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 DROP INDEX 语句的语法、参数说明与使用示例。
+keywords: [openGauss, DROP]
+---
+
 # DROP INDEX
 
 ## 功能描述<a name="zh-cn_topic_0283136794_zh-cn_topic_0237122140_zh-cn_topic_0059779018_s6e7bed7d44604f749e4ea7043f81b07b"></a>

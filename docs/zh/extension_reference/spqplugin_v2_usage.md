@@ -1,3 +1,8 @@
+---
+description: 1. 一个CN以及若干DN节点服务器运行正常，openGauss能够正常启动。
+keywords: [openGauss, spqplugin_v2使用]
+---
+
 # spqplugin_v2使用
 
 ## 前提条件

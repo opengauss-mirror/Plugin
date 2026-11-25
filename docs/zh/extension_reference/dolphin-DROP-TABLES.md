@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 DROP TABLES 语句的语法、参数说明与使用示例。
+keywords: [openGauss, DROP]
+---
+
 # DROP TABLES
 
 ## 功能描述<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_s2baab5c876044795a12b5949f22d2144"></a>
