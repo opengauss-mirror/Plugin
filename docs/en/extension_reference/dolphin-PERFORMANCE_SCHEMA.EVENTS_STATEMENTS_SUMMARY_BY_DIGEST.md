@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_SUMMARY_BY_DIGEST in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_SUMMARY_BY_DIGEST]
+---
+
 # PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_SUMMARY_BY_DIGEST
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:23:39.122Z pushedAt=2026-09-12T04:50:49.781Z -->

@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 GUC参数说明 语句的语法、参数说明与使用示例。
+keywords: [openGauss, GUC参数说明]
+---
+
 # GUC参数说明
 
 ## sql\_mode

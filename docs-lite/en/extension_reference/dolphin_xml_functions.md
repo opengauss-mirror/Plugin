@@ -1,3 +1,8 @@
+---
+description: Introduces XML Functions in openGauss, covering New XML Functions, Notes, XML Input Parameter Standards — Following libxml2 Library Standards.
+keywords: [openGauss, XML Functions]
+---
+
 # XML Functions
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:21:37.112Z pushedAt=2026-09-24T10:48:18.127Z -->

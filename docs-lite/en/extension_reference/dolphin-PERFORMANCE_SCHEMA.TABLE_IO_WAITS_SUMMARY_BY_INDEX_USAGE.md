@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_INDEX_USAGE in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_INDEX_USAGE]
+---
+
 # PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_INDEX_USAGE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:22.475Z pushedAt=2026-09-12T05:24:38.393Z -->

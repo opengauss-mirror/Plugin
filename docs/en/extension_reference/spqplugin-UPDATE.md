@@ -1,3 +1,8 @@
+---
+description: Introduces UPDATE in openGauss, covering Function Description, Notes, Examples.
+keywords: [openGauss, UPDATE]
+---
+
 # UPDATE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-29T02:30:12.770Z pushedAt=2026-10-29T06:32:21.808Z nl=2 -->

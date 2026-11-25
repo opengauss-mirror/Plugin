@@ -1,3 +1,8 @@
+---
+description: To ensure database data consistency, you can execute the LOCK TABLES statement to prevent other users from modifying tables.
+keywords: [openGauss, B-Compatible]
+---
+
 # B-Compatible Database Lock<a name="EN-US_TOPIC_0000001225179937"></a>
 
 To ensure database data consistency, you can execute the LOCK TABLES statement to prevent other users from modifying tables.

@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE]
+---
+
 # PERFORMANCE_SCHEMA.FILE_SUMMARY_BY_INSTANCE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:01.142Z pushedAt=2026-09-12T04:57:33.219Z -->

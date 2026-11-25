@@ -1,3 +1,8 @@
+---
+description: Introduces dolphin-Operator Precedence in openGauss, covering .
+keywords: [openGauss, dolphin-Operator Precedence]
+---
+
 # dolphin-Operator Precedence
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:52.849Z pushedAt=2026-09-12T03:37:39.545Z -->

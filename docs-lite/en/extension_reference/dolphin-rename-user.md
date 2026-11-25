@@ -1,3 +1,8 @@
+---
+description: Change the user name in the database.
+keywords: [openGauss, RENAME]
+---
+
 # RENAME USER<a name="ZH-CN_TOPIC_0289900931"></a>
 
 ## Function <a name="en-us_topic_0283136462_en-us_topic_0237122152_en-us_topic_0059778107_s74e2e8764aa64af1b093f8f68069bce6"></a>

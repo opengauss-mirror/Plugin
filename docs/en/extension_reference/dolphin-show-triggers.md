@@ -1,3 +1,8 @@
+---
+description: Displays information about storage functions.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW TRIGGERS
 
 ## Function

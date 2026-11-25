@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_HISTORY in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_HISTORY]
+---
+
 # PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_HISTORY
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:23:20.258Z pushedAt=2026-09-12T04:45:16.093Z -->

@@ -1,3 +1,8 @@
+---
+description: Describes the SHOW PROCEDURE STATUS SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW PROCEDURE STATUS
 
 ## Precautions

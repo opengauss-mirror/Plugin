@@ -1,3 +1,8 @@
+---
+description: Displays the permission information list in the current database.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW PRIVILEGES<a name="EN-US_TOPIC_0289900333"></a>
 
 ## Function<a name="en-us_topic_0283137542_en-us_topic_0237122167_en-us_topic_0059778902_e8462b6390eb094e5f9b12ad5b6a5275a"></a>

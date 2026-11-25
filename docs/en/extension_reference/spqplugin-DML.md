@@ -1,3 +1,8 @@
+---
+description: Introduces DML in openGauss, covering Notes, Inserting Data, Modifying Data.
+keywords: [openGauss, DML]
+---
+
 # DML
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:10.519Z pushedAt=2026-10-27T11:16:46.327Z nl=2 -->

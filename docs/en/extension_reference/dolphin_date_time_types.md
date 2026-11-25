@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the date/time types as follows:.
+keywords: [openGauss, ]
+---
+
 ## M*-Compatible Time Types
 
 Compared with the original openGauss, Dolphin modifies the date/time types as follows:

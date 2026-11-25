@@ -1,3 +1,8 @@
+---
+description: Introduces spqplugin.enable_spq in openGauss, covering spqplugin.cluster_map, spqplugin.spq_optimizer_log, spqplugin.spq_optimizer_print_plan.
+keywords: [openGauss, spqplugin.enable_spq]
+---
+
 # spqplugin.enable_spq
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-09-13T02:59:26.716Z pushedAt=2026-09-29T02:34:56.707Z -->

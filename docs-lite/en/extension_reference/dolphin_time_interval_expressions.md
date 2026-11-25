@@ -1,3 +1,8 @@
+---
+description: Introduces Time Interval Expressions in openGauss, covering Examples.
+keywords: [openGauss, Time Interval Expressions]
+---
+
 # Time Interval Expressions
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:22:22.561Z pushedAt=2026-09-12T03:52:13.549Z -->

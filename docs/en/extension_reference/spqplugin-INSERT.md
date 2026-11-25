@@ -1,3 +1,8 @@
+---
+description: Introduces INSERT in openGauss, covering Function Description, Notes, Examples.
+keywords: [openGauss, INSERT]
+---
+
 # INSERT
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:34.841Z pushedAt=2026-10-27T11:17:55.993Z nl=2 -->

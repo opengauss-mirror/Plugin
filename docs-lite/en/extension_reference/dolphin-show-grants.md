@@ -1,3 +1,8 @@
+---
+description: Displays user permission information in the openGauss.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW GRANTS
 
 ## Function

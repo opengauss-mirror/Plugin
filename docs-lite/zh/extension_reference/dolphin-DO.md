@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 DO 语句的语法、参数说明与使用示例。
+keywords: [openGauss, DO]
+---
+
 # DO
 
 ## 功能描述<a name="zh-cn_topic_0283137438_zh-cn_topic_0237122132_zh-cn_topic_0059778658_s9b63cdf8ade346bb85b02b8dbdf97170"></a>

@@ -1,3 +1,8 @@
+---
+description: Introduces List of MySQL Features Not Compatible in openGauss, covering Index Invalidation Caused by Different Implicit Conversion Rules, Comparison Operators Between TIME Type and Strings.
+keywords: [openGauss, List of MySQL Features Not Compatible]
+---
+
 # List of MySQL Features Not Compatible
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:36.537Z pushedAt=2026-09-11T12:48:06.278Z -->

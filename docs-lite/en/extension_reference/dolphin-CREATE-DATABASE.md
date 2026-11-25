@@ -1,3 +1,8 @@
+---
+description: Describes the CREATE DATABASE SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, CREATE]
+---
+
 # CREATE DATABASE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:22:10.609Z pushedAt=2026-09-12T04:38:06.065Z -->

@@ -1,3 +1,8 @@
+---
+description: Introduces CREATE INDEX in openGauss, covering Function Description, Notes, Examples.
+keywords: [openGauss, CREATE INDEX]
+---
+
 # CREATE INDEX
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:15.126Z pushedAt=2026-10-27T11:14:26.418Z nl=2 -->

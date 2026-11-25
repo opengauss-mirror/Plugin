@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the assignment syntax as follows:.
+keywords: [openGauss, Assignment Statements]
+---
+
 # Assignment Statements<a name="EN-US_TOPIC_0289899984"></a>
 
 ## Notice
@@ -11,7 +16,7 @@ Compared with the original openGauss, Dolphin modifies the assignment syntax as 
 [Figure 1](#en-us_topic_0283137492_en-us_topic_0237122222_en-us_topic_0059778597_f1087f61f4ec24addbb3b79a2ccf21917)  shows the syntax diagram for assigning a value to a variable.
 
 **Figure  1**  assignment\_value::=<a name="en-us_topic_0283137492_en-us_topic_0237122222_en-us_topic_0059778597_f1087f61f4ec24addbb3b79a2ccf21917"></a>  
-![](figures/assignment_value.png "assignment_value")
+![Syntax](figures/assignment_value.png "assignment_value")
 
 The following is supported in B-compatible mode:
 

@@ -1,3 +1,8 @@
+---
+description: Introduces JSON Operator Compatibility in openGauss, covering Unary Left Operator, Binary Operators, Compatibility Details.
+keywords: [openGauss, JSON Operator Compatibility]
+---
+
 # JSON Operator Compatibility
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:21:08.881Z pushedAt=2026-09-11T13:12:29.755Z -->

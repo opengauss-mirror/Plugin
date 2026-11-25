@@ -1,3 +1,8 @@
+---
+description: EXPLAIN and DESCRIBE are synonyms of each other. They can be used to view the structure of a specified table or the execution plan of a specified SQL statement.
+keywords: [openGauss, EXPLAIN]
+---
+
 # EXPLAIN<a name="EN-US_TOPIC_0289900742"></a>
 
 ## Function<a name="en-us_topic_0283136728_en-us_topic_0237122163_en-us_topic_0059777774_sd22ce4e4c8c14244afb6492e84f92d80"></a>

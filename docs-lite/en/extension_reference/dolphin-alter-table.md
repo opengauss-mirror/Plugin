@@ -1,3 +1,8 @@
+---
+description: Modifies tables, including modifying table definitions, renaming tables, renaming specified columns in tables, renaming table constraints, setting table schemas, enabling or disabling row-level securi.
+keywords: [openGauss, ALTER]
+---
+
 # ALTER TABLE<a name="ZH-CN_TOPIC_0289899912"></a>
 
 ## Function<a name="en-us_topic_0283137126_en-us_topic_0237122076_en-us_topic_0059779051_s2baab5c876044795a12b5949f22d2144"></a>

@@ -1,3 +1,8 @@
+---
+description: Describes the ALTER DATABASE SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, ALTER]
+---
+
 # ALTER DATABASE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:21:37.627Z pushedAt=2026-09-12T04:33:21.132Z -->

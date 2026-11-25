@@ -1,3 +1,8 @@
+---
+description: openGauss provides network-related functions.
+keywords: [openGauss, Network Address Functions and Operators]
+---
+
 # Network Address Functions and Operators<a name="EN-US_TOPIC_0289900807"></a>
 
 openGauss provides network-related functions.

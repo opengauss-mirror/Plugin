@@ -1,3 +1,8 @@
+---
+description: Describes the DROP TABLES SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, DROP]
+---
+
 # DROP TABLES
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:22:10.151Z pushedAt=2026-09-12T04:38:52.190Z -->

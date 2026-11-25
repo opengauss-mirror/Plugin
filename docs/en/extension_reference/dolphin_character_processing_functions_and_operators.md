@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies character processing functions and operators as follows:.
+keywords: [openGauss, Character Processing Functions and Operators]
+---
+
 # Character Processing Functions and Operators<a name="EN-US_TOPIC_0289900656"></a>
 
 Compared with the original openGauss, Dolphin modifies character processing functions and operators as follows:

@@ -1,3 +1,8 @@
+---
+description: The ENUM type is a string object whose value is selected from a list of values specified when a column is defined during table creation. To use the MySQL-compatible enum type, ensure that CREATE DAT.
+keywords: [openGauss, ENUM Type]
+---
+
 # ENUM Type<a name="EN-US_TOPIC_0289900754"></a>
 
 The ENUM type is a string object whose value is selected from a list of values specified when a column is defined during table creation. To use the MySQL-compatible enum type, ensure that **CREATE DATABASE test_db with dbcompatibility** is set to **'B'**.

@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the bit string functions as follows:.
+keywords: [openGauss, Bit String Functions and Operators]
+---
+
 # Bit String Functions and Operators<a name="EN-US_TOPIC_0289900469"></a>
 
 Compared with the original openGauss, Dolphin modifies the bit string functions as follows:

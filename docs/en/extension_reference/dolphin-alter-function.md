@@ -1,3 +1,8 @@
+---
+description: Modifies the attributes of a user-defined function.
+keywords: [openGauss, ALTER]
+---
+
 # ALTER FUNCTION<a name="ZH-CN_TOPIC_0289900507"></a>
 
 ## Function Description<a name="en-us_topic_0283136989_en-us_topic_0237122061_en-us_topic_0059778614_sa364f8cdcfd24ba1a68426488e7852d4"></a>

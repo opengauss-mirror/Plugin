@@ -1,3 +1,8 @@
+---
+description: SHOW WARNINGS/ERRORS displays information about storage functions.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW WARNINGS/ERRORS
 
 ## Function

@@ -1,3 +1,8 @@
+---
+description: Introduces dolphin-Literal Values in openGauss, covering String Literals.
+keywords: [openGauss, dolphin-Literal Values]
+---
+
 # dolphin-Literal Values
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:11.256Z pushedAt=2026-10-27T11:07:21.450Z nl=2 -->

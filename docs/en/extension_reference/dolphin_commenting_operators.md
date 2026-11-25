@@ -1,3 +1,8 @@
+---
+description: Introduces Comment Operators in openGauss, covering .
+keywords: [openGauss, Comment Operators]
+---
+
 # Comment Operators
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:32.749Z pushedAt=2026-09-11T12:10:30.551Z -->

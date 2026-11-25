@@ -1,3 +1,8 @@
+---
+description: Introduces Unsupported Syntax in openGauss, covering ANALYSE, ANALYZE, VACUUM.
+keywords: [openGauss, Unsupported Syntax]
+---
+
 # Unsupported Syntax
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:21:31.190Z pushedAt=2026-09-22T11:49:37.242Z -->
