@@ -58,7 +58,5 @@ directories:
 files:
   - path: ./LICENSE
     type: license
-  - path: ./.gitcode/copyright-template.txt
-    type: copyright-template
   - path: ./Third_Party_Open_Source_Software_Notice
     type: notice
