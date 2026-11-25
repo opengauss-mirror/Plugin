@@ -12,6 +12,9 @@
  *	  src/common/backend/parser/keywords.cpp
  *
  * -------------------------------------------------------------------------
+ *
+ * From openGauss-server, with include paths adapted for Dolphin.
+ * See Third_Party_Open_Source_Software_Notice for the upstream notices and terms.
  */
 #include "c.h"
 #include "plugin_parser/keywords.h"

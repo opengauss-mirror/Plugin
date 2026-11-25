@@ -1,4 +1,9 @@
 /*-------------------------------------------------------------------------
+ * SPDX-License-Identifier: PostgreSQL
+ * Portions Copyright (c) 2012-2013, Jov(amutu@amutu.com)
+ * Portions Copyright (c) 2024 Huawei Technologies Co., Ltd.
+ * See COPYRIGHT for the chparser license and attribution terms.
+ *
  *
  * chparser.cpp
  *	  a text search parser for Chinese

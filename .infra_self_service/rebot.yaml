@@ -1,0 +1,2 @@
+# Keep the review count aligned with .infra/robot.yaml.
+lgtm_need_num: 2

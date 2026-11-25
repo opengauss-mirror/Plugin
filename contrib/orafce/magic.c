@@ -1,3 +1,5 @@
+/* See COPYRIGHT.orafce for the Orafce component notice. */
+
 #include "postgres.h"
 #include "fmgr.h"
 

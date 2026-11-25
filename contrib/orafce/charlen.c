@@ -4,6 +4,8 @@
  * provides a modified version of bpcharlen() that does not
  * ignore trailing spaces of CHAR arguments to provide an
  * Oracle compatible length() function
+ *
+ * See COPYRIGHT.orafce for the Orafce component notice.
  */
 
 #include "postgres.h"

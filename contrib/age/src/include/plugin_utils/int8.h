@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * AGE-internal 64-bit integer parsing.
  *
  * ag_scanint8 is AGE's own strict integer scanner (Apache AGE error

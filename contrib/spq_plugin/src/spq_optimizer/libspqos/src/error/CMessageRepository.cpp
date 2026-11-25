@@ -1,3 +1,6 @@
+// Portions Copyright (c) 2023 Huawei Technologies Co., Ltd.
+// This file includes modifications for openGauss Plugin.
+//
 //---------------------------------------------------------------------------
 //	Greenplum Database
 //	Copyright (C) 2008 - 2010 Greenplum, Inc.

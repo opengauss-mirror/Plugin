@@ -1,3 +1,8 @@
+/*
+ * Adapted from builtins.h in orafce 3.17.
+ * See COPYRIGHT.orafce for the upstream copyright and license.
+ */
+
 #ifndef ORAFCE_BUILTINS
 #define ORAFCE_BUILTINS
 

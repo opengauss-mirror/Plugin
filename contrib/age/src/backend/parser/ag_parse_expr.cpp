@@ -1,11 +1,15 @@
 /* -------------------------------------------------------------------------
  *
+ * Adapted for AGE from openGauss-server.
+ * See Third_Party_Open_Source_Software_Notice for the inherited license terms.
+ *
  * parse_expr.cpp
  *	  handle expressions in parser
  *
  * Portions Copyright (c) 1996-2012, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  * Portions Copyright (c) 2021, openGauss Contributors
+ * Portions Copyright (c) 2025 Huawei Technologies Co., Ltd.
  *
  *
  * IDENTIFICATION

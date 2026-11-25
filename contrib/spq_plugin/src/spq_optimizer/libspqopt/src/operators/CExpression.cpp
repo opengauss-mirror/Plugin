@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Huawei Technologies Co., Ltd.
+//
 //---------------------------------------------------------------------------
 //	Greenplum Database
 //	Copyright (C) 2009 Greenplum, Inc.

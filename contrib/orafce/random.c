@@ -1,4 +1,11 @@
 /*
+ * Portions Copyright (C) 2008-2020 by Pavel Stehule <pavel.stehule@gmail.com>
+ * See COPYRIGHT.orafce for the license of the upstream portions.
+ */
+
+/*
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ *
  * Note - I don't find any documentation about pseudo random
  * number generator used in Oracle. So the results of these
  * functions should be different then native Oracle functions!

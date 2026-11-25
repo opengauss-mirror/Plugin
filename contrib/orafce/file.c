@@ -1,4 +1,11 @@
 /*
+ * Portions Copyright (C) 2008-2020 by Pavel Stehule <pavel.stehule@gmail.com>
+ * See COPYRIGHT.orafce for the license of the upstream portions.
+ */
+
+/*
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ *
  * Attention - this functionality doesn't work when Orace is not linked with
  * correct runtime library. The combination "vcruntime140.dll" is working for
  * PostgreSQL 12 (vcruntime140d.dll doesn't work). Probably this runtime should

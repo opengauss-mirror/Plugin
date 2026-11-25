@@ -1,3 +1,8 @@
+/*
+ * Derived from src/test/regress/jdbc_test/bypass_pbe/BypassPbe.java in openGauss-server.
+ * See Third_Party_Open_Source_Software_Notice for the upstream copyright and license.
+ */
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.*;

@@ -11,6 +11,9 @@
  *	  src/backend/utils/adt/arrayutils.c
  *
  * -------------------------------------------------------------------------
+ *
+ * Retains ArrayGetIntegerTypmods from openGauss-server for Dolphin.
+ * See Third_Party_Open_Source_Software_Notice for the upstream notices and terms.
  */
 
 #include "postgres.h"

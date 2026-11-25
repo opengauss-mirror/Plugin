@@ -1,3 +1,8 @@
+/*
+ * Adapted from shmmc.h in orafce 3.17.
+ * See COPYRIGHT.orafce for the upstream copyright and license.
+ */
+
 #ifndef __SHMMC__
 #define __SHMMC__
 

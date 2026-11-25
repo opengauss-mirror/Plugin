@@ -1,3 +1,6 @@
+# Derived from src/test/regress/script/OM/automated-test.sh in openGauss-server.
+# See Third_Party_Open_Source_Software_Notice for the upstream copyright and license.
+
 ﻿#!/bin/bash
 
 # username:omm  usergroup:dbgrp 工具脚本路径：/home/om/ xml文件路径：/home/om/cluster_1m0s_config.xml

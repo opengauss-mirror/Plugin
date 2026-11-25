@@ -1,6 +1,7 @@
 //go:build go1.18
 // +build go1.18
 
+// Copyright (c) 2026 Huawei Technologies Co., Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 package parser

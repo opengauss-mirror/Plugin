@@ -1,3 +1,6 @@
+# Derived from src/test/regress/script/gs_basebackup/gs_basebackup.sh in openGauss-server.
+# See Third_Party_Open_Source_Software_Notice for the upstream copyright and license.
+
 abs_bindir=$1
 abs_srcdir=$2
 abs_port=$3

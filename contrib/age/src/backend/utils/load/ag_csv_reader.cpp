@@ -1,4 +1,8 @@
 /*
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ *
+ * Added by the openGauss Plugin port.
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information

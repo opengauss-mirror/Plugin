@@ -1,3 +1,7 @@
+# Portions Copyright (c) 2012-2013, Jov(amutu@amutu.com)
+# SPDX-License-Identifier: PostgreSQL
+# Adapted from Makefile in zhparser. See COPYRIGHT for the original notice.
+
 EXTENSION = chparser
 EXTVERSION = 1.0
 

@@ -1,3 +1,29 @@
+/* -------------------------------------------------------------------------
+ *
+ * Adapted for AGE from openGauss-server.
+ * See Third_Party_Open_Source_Software_Notice for the inherited license terms.
+ *
+ * outfuncs.cpp
+ *	  Output functions for openGauss tree nodes.
+ *
+ * Portions Copyright (c) 1996-2012, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, Regents of the University of California
+ * Portions Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ *
+ *
+ * IDENTIFICATION
+ *	  src/common/backend/nodes/outfuncs.cpp
+ *
+ * NOTES
+ *	  Every node type that can appear in stored rules' parsetrees *must*
+ *	  have an output function defined here (as well as an input function
+ *	  in readfuncs.c).	For use in debugging, we also provide output
+ *	  functions for nodes that appear in raw parsetrees, path, and plan trees.
+ *	  These nodes however need not have input functions.
+ *
+ * -------------------------------------------------------------------------
+ */
+
 #include "nodes/ag_extensible.h"
 /*
  * AGE fork of the kernel node serializer.
@@ -14,27 +40,6 @@
  *   - nodeToString / appendBitmapsetToString renamed to age_* so they cannot
  *     be confused with the kernel's, and the AGE registry / tokenizer / entry
  *     points appended at the end of the file.
- */
-/* -------------------------------------------------------------------------
- *
- * outfuncs.cpp
- *	  Output functions for openGauss tree nodes.
- *
- * Portions Copyright (c) 1996-2012, PostgreSQL Global Development Group
- * Portions Copyright (c) 1994, Regents of the University of California
- *
- *
- * IDENTIFICATION
- *	  src/common/backend/nodes/outfuncs.cpp
- *
- * NOTES
- *	  Every node type that can appear in stored rules' parsetrees *must*
- *	  have an output function defined here (as well as an input function
- *	  in readfuncs.c).	For use in debugging, we also provide output
- *	  functions for nodes that appear in raw parsetrees, path, and plan trees.
- *	  These nodes however need not have input functions.
- *
- * -------------------------------------------------------------------------
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
