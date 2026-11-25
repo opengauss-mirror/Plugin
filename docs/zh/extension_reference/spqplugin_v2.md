@@ -1,3 +1,8 @@
+---
+description: spqplugin_v2是基于openGauss的轻量级的分布式数据库扩展插件，自openGauss 7.0.0-RC2版本开始引入。基于1个CN节点和若干个DN节点构建成数据库集群，支持将大数据量表分片存储，实现并行查询与横向扩展。
+keywords: [openGauss, spqplugin_v2概述与安装]
+---
+
 # spqplugin_v2概述与安装
 
 ## 概述

@@ -1,3 +1,8 @@
+---
+description: PERFORMANCE_SCHEMA.THREADS视图，对数据库线程情况统计。兼容Mysql的同名视图，仅在B库创建。
+keywords: [openGauss, PERFORMANCE_SCHEMA.THREADS]
+---
+
 # PERFORMANCE_SCHEMA.THREADS
 
 PERFORMANCE_SCHEMA.THREADS视图，对数据库线程情况统计。兼容Mysql的同名视图，仅在B库创建。

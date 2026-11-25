@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 DROP DATABASE 语句的语法、参数说明与使用示例。
+keywords: [openGauss, DROP]
+---
+
 # DROP DATABASE
 
 ## 功能描述<a name="zh-cn_topic_0283137424_zh-cn_topic_0237122133_zh-cn_topic_0059778607_s8dcd69edcfca47eb88ddb451a360b362"></a>

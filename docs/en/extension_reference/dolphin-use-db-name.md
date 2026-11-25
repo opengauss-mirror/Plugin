@@ -1,3 +1,8 @@
+---
+description: The USE db\_name statement uses the db\_name database as the default (current) database for subsequent statements. The database remains the default database until the end of the paragraph, or until a.
+keywords: [openGauss, USE]
+---
+
 # USE db_name<a name="ZH-CN_TOPIC_0289900448"></a>
 
 ## Function<a name="en-us_topic_0283137542_en-us_topic_0237122167_en-us_topic_0059778902_s86b6c9741c7741d3976c5e358e8d5486"></a>

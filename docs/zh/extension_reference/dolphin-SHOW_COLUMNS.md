@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 SHOW COLUMNS 语句的语法、参数说明与使用示例。
+keywords: [openGauss, SHOW]
+---
+
 # SHOW COLUMNS
 
 ## 功能描述<a name="zh-cn_topic_0283137542_zh-cn_topic_0237122167_zh-cn_topic_0059778902_s86b6c9741c7741d3976c5e358e8d5486"></a>

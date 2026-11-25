@@ -1,3 +1,8 @@
+---
+description: - any_value\(expression\).
+keywords: [openGauss, Dolphin Aggregate Functions]
+---
+
 # Dolphin Aggregate Functions<a name="EN-US_TOPIC_0289900330"></a>
 
 - any_value\(expression\)

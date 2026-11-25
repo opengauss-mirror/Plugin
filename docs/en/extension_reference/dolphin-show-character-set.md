@@ -1,3 +1,8 @@
+---
+description: Describes the SHOW CHARACTER SET/SHOW CHARSET SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW CHARACTER SET/SHOW CHARSET
 
 ## Precautions

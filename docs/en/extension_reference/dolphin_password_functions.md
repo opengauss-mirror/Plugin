@@ -1,3 +1,8 @@
+---
+description: - set_native_password\(role text, new_password text, old_password text).
+keywords: [openGauss, Password Functions]
+---
+
 # Password Functions<a name="EN-US_TOPIC_0289908887"></a>
 
 - set_native_password\(role text, new_password text, old_password text)

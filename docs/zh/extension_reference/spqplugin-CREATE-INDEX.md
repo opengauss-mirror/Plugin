@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 CREATE INDEX 语句的语法、参数说明与使用示例。
+keywords: [openGauss, CREATE]
+---
+
 # CREATE INDEX
 
 ## 功能描述

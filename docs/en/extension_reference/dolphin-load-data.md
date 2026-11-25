@@ -1,3 +1,8 @@
+---
+description: LOAD DATA copies data from a file to a table.
+keywords: [openGauss, LOAD]
+---
+
 # LOAD DATA<a name="EN-US_TOPIC_0289899980"></a>
 
 ## Function<a name="en-us_topic_0283136676_en-us_topic_0237122096_en-us_topic_0059778766_s0d743b5d862d4cf1829449f474af6d7z"></a>

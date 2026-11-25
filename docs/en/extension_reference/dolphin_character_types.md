@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the character types as follows:.
+keywords: [openGauss, Character Types]
+---
+
 # Character Types<a name="EN-US_TOPIC_0289900587"></a>
 
 Compared with the original openGauss, Dolphin modifies the character types as follows:

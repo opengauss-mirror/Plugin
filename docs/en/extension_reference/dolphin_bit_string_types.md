@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the bit string types as follows:.
+keywords: [openGauss, Bit String Types]
+---
+
 # Bit String Types<a name="EN-US_TOPIC_0289900674"></a>
 
 Compared with the original openGauss, Dolphin modifies the bit string types as follows:

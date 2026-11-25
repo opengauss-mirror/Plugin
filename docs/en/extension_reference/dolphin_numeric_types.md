@@ -1,3 +1,8 @@
+---
+description: For details about arithmetic operators and related built-in functions, see Arithmetic Functions and Operators.
+keywords: [openGauss, Numeric Types]
+---
+
 # Numeric Types<a name="EN-US_TOPIC_0289900280"></a>
 
 For details about arithmetic operators and related built-in functions, see [Arithmetic Functions and Operators](dolphin_arithmetic_functions_and_operators.md).
