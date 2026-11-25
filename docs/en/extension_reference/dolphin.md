@@ -1,3 +1,8 @@
+---
+description: openGauss provides Dolphin extensions (version: Dolphin-1.0.0). Dolphin extensions of openGauss are compatible with MySQL databases (dbcompatibility='B') in terms of keywords, data types, constants an.
+keywords: [openGauss, Dolphin]
+---
+
 # Dolphin
 
 ## Dolphin Overview<a name="EN-US_TOPIC_0000001246077429"></a>

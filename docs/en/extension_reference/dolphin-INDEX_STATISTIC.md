@@ -1,3 +1,8 @@
+---
+description: Introduces INDEX\_STATISTIC in openGauss, covering .
+keywords: [openGauss, INDEX_STATISTIC]
+---
+
 # INDEX\_STATISTIC
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:22:37.254Z pushedAt=2026-09-12T04:40:07.769Z -->

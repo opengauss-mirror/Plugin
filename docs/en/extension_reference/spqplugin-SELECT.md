@@ -1,3 +1,8 @@
+---
+description: Introduces SELECT in openGauss, covering Function Description, Notes, Examples.
+keywords: [openGauss, SELECT]
+---
+
 # SELECT
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:31.892Z pushedAt=2026-10-27T11:19:18.051Z nl=2 -->

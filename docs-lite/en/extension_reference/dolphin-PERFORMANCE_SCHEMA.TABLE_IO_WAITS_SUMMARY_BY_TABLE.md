@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_TABLE in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_TABLE]
+---
+
 # PERFORMANCE_SCHEMA.TABLE_IO_WAITS_SUMMARY_BY_TABLE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:23.567Z pushedAt=2026-09-12T05:26:24.671Z -->

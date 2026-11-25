@@ -1,3 +1,8 @@
+---
+description: Describes the Alias SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, Alias]
+---
+
 # Alias
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:57.922Z pushedAt=2026-09-12T03:42:37.694Z -->

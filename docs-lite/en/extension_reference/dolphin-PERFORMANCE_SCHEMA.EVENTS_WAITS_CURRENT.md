@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.EVENTS_WAITS_CURRENT in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.EVENTS_WAITS_CURRENT]
+---
+
 # PERFORMANCE_SCHEMA.EVENTS_WAITS_CURRENT
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:23:23.196Z pushedAt=2026-09-12T04:50:33.512Z -->

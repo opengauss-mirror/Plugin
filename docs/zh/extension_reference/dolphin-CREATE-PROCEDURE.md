@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 CREATE PROCEDURE 语句的语法、参数说明与使用示例。
+keywords: [openGauss, CREATE]
+---
+
 # CREATE PROCEDURE
 
 ## 功能描述<a name="zh-cn_topic_0283136646_zh-cn_topic_0237122110_zh-cn_topic_0059778640_s824c141a39964bd39575295aebb98d67"></a>

@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 SHOW PRIVILEGES 语句的语法、参数说明与使用示例。
+keywords: [openGauss, SHOW]
+---
+
 # SHOW PRIVILEGES
 
 ## 功能描述<a name="zh-cn_topic_0283137542_zh-cn_topic_0237122167_zh-cn_topic_0059778902_e8462b6390eb094e5f9b12ad5b6a5275a"></a>

@@ -1,3 +1,8 @@
+---
+description: Introduces DELETE in openGauss, covering Function Description, Notes, Examples.
+keywords: [openGauss, DELETE]
+---
+
 # DELETE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-10-27T11:01:14.590Z pushedAt=2026-10-27T11:15:44.756Z nl=2 -->

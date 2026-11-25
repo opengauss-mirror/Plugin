@@ -1,3 +1,8 @@
+---
+description: Introduces @variable Variable in openGauss, covering Feature Description, Notes, Examples.
+keywords: [openGauss, variable Variable]
+---
+
 # @variable Variable
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:44.752Z pushedAt=2026-09-11T12:17:19.064Z -->

@@ -1,3 +1,8 @@
+---
+description: Describes the SHOW SLAVE STATUS SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW SLAVE STATUS
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:47.438Z pushedAt=2026-09-12T05:36:32.642Z -->

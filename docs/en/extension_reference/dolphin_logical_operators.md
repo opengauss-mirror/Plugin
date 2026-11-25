@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin has two new logical operators:.
+keywords: [openGauss, Logical Operators]
+---
+
 # Logical Operators<a name="EN-US_TOPIC_0289900469"></a>
 
 Compared with the original openGauss, Dolphin has two new logical operators:

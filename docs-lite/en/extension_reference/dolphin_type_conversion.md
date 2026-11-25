@@ -1,3 +1,8 @@
+---
+description: Introduces Type Conversion in openGauss, covering Conversion Rules.
+keywords: [openGauss, Type Conversion]
+---
+
 # Type Conversion
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:21:52.402Z pushedAt=2026-09-24T09:47:11.902Z -->

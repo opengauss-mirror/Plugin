@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 ALTER TABLESPACE 语句的语法、参数说明与使用示例。
+keywords: [openGauss, ALTER]
+---
+
 # ALTER TABLESPACE
 
 ## 功能描述<a name="zh-cn_topic_0283137270_zh-cn_topic_0237122078_zh-cn_topic_0059777507_s15c266ccb0b240ddaab9e5fadcfb4313"></a>

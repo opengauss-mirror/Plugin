@@ -1,3 +1,8 @@
+---
+description: Introduces Dolphin System Information Functions in openGauss, covering Dolphin Session Information Functions.
+keywords: [openGauss, Dolphin System Information Functions]
+---
+
 # Dolphin System Information Functions<a name="EN-US_TOPIC_0289899824"></a>
 
 ## Dolphin Session Information Functions<a name="en-us_topic_0283136950_en-us_topic_0237121987_en-us_topic_0059777618_seb0ac642d9594cfe9a06d3d304c6dc75"></a>

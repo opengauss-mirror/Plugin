@@ -1,3 +1,8 @@
+---
+description: Views the structure of a specified table.
+keywords: [openGauss, DESCRIBE]
+---
+
 # DESCRIBE<a name="ZH-CN_TOPIC_0289900448"></a>
 
 ## Function<a name="en-us_topic_0283137542_en-us_topic_0237122167_en-us_topic_0059778902_s86b6c9741c7741d3976c5e358e8d5486"></a>

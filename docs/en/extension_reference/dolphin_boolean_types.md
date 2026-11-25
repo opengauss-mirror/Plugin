@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the Boolean type as follows:.
+keywords: [openGauss, Boolean Types]
+---
+
 # Boolean Types<a name="EN-US_TOPIC_0289900487"></a>
 
 Compared with the original openGauss, Dolphin modifies the Boolean type as follows:

@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT]
+---
+
 # PERFORMANCE_SCHEMA.EVENTS_STATEMENTS_CURRENT
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:23:17.334Z pushedAt=2026-09-12T04:44:11.479Z -->

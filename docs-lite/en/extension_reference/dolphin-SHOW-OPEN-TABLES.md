@@ -1,3 +1,8 @@
+---
+description: Describes the SHOW OPEN TABLES SQL statement in openGauss, covering its syntax, parameters, and examples.
+keywords: [openGauss, SHOW]
+---
+
 # SHOW OPEN TABLES
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:25:06.750Z pushedAt=2026-09-12T05:33:28.392Z -->

@@ -1,3 +1,8 @@
+---
+description: 介绍 openGauss 中 SHOW FUNCTION STATUS 语句的语法、参数说明与使用示例。
+keywords: [openGauss, SHOW]
+---
+
 # SHOW FUNCTION STATUS
 
 ## 注意事项

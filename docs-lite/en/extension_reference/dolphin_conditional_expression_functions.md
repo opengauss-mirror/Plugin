@@ -1,3 +1,8 @@
+---
+description: - This section describes only the new conditional expression functions of Dolphin. For details about the conditional expression functions of the original openGauss, see [Conditional Expression Functio.
+keywords: [openGauss, Conditional Expression Functions]
+---
+
 # Conditional Expression Functions <a name="EN-US_TOPIC_0289900535"></a>
 
 ## Precautions <a name="en-us_topic_0283137529_en-us_topic_0237122159_en-us_topic_0059777895_s115556a9029e407ca47ff01fea8de0cb"></a>

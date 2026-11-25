@@ -1,3 +1,8 @@
+---
+description: Introduces MySQL Protocol Compatibility in openGauss, covering Architecture Diagram, Currently Supported MySQL Client Versions, Constraints.
+keywords: [openGauss, MySQL Protocol Compatibility]
+---
+
 # MySQL Protocol Compatibility
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:20:49.773Z pushedAt=2026-09-24T09:40:09.474Z -->

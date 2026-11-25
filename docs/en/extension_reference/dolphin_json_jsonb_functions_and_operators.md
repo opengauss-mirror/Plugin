@@ -1,3 +1,8 @@
+---
+description: New JSON Functions.
+keywords: [openGauss, JSON-JSONB Functions and Operators]
+---
+
 # JSON-JSONB Functions and Operators
 
 **New JSON Functions**

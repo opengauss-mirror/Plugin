@@ -1,3 +1,8 @@
+---
+description: Introduces spqplugin_v2 Usage in openGauss, covering Prerequisites, Deployment, Function Reference.
+keywords: [openGauss, spqplugin_v2 Usage]
+---
+
 # spqplugin_v2 Usage
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-09-13T03:20:58.119Z pushedAt=2026-09-29T02:34:56.710Z -->

@@ -1,3 +1,8 @@
+---
+description: Introduces spqplugin in openGauss, covering Overview, Limitations, Installation.
+keywords: [openGauss, spqplugin]
+---
+
 # spqplugin
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-09-13T03:30:51.405Z pushedAt=2026-09-29T02:34:56.715Z -->

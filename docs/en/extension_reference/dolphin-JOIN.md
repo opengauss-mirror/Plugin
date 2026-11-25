@@ -1,3 +1,8 @@
+---
+description: Introduces JOIN in openGauss, covering Cross Join, Inner Join, Left Outer Join.
+keywords: [openGauss, JOIN]
+---
+
 # JOIN
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:22:39.591Z pushedAt=2026-09-12T04:42:03.651Z -->

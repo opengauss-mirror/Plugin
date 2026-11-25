@@ -1,3 +1,8 @@
+---
+description: Introduces PG\_TYPE\_NONSTRICT\_BASIC\_VALUE in openGauss, covering .
+keywords: [openGauss, PG_TYPE_NONSTRICT_BASIC_VALUE]
+---
+
 # PG\_TYPE\_NONSTRICT\_BASIC\_VALUE
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:09.213Z pushedAt=2026-09-12T05:28:40.575Z -->

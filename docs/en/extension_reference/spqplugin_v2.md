@@ -1,3 +1,8 @@
+---
+description: Introduces spqplugin_v2 Overview and Installation in openGauss, covering Overview, Constraints, Installation.
+keywords: [openGauss, spqplugin_v2 Overview and Installation]
+---
+
 # spqplugin_v2 Overview and Installation
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-09-13T03:28:15.161Z pushedAt=2026-09-29T02:34:56.713Z -->

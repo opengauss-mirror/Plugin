@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the time/date function as follows:.
+keywords: [openGauss, Date and Time Processing Functions and Operators]
+---
+
 # Date and Time Processing Functions and Operators<a name="EN-US_TOPIC_0289900496"></a>
 
 ## Time/Date Functions<a name="en-us_topic_0283136846_en-us_topic_0237121972_en-us_topic_0059779084_sd0d47140cdd048c1964ed53f9858f436"></a>

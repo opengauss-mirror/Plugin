@@ -1,3 +1,8 @@
+---
+description: Introduces SHOW STORAGE ENGINES in openGauss, covering Description, Notes, Syntax.
+keywords: [openGauss, SHOW STORAGE ENGINES]
+---
+
 # SHOW STORAGE ENGINES
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:35.475Z pushedAt=2026-09-12T05:29:05.611Z -->

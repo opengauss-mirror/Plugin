@@ -1,3 +1,8 @@
+---
+description: PERFORMANCE_SCHEMA.STATEMENT_HISTORY is created only in B-compatible databases. It exposes 14 columns from dbe_perf.statement_history in the postgres database on the local node through pg_catalog.get_.
+keywords: [openGauss, PERFORMANCE_SCHEMA.STATEMENT_HISTORY]
+---
+
 # PERFORMANCE_SCHEMA.STATEMENT_HISTORY
 
 PERFORMANCE_SCHEMA.STATEMENT_HISTORY is created only in B-compatible databases. It exposes 14 columns from dbe_perf.statement_history in the postgres database on the local node through pg_catalog.get_statement_history().

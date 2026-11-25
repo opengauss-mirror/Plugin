@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the assignment operators as follows:.
+keywords: [openGauss, Assignment Operators]
+---
+
 # Assignment Operators<a name="EN-US_TOPIC_0289900280"></a>
 
 Compared with the original openGauss, Dolphin modifies the assignment operators as follows:

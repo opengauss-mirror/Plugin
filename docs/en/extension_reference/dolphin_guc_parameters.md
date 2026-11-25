@@ -1,3 +1,8 @@
+---
+description: Parameter description: The parameter value is a character string separated by commas (,). Only valid character strings are allowed. If the parameter value is invalid, a warning is reported after the s.
+keywords: [openGauss, GUC Parameters]
+---
+
 # GUC Parameters<a name="EN-US_TOPIC_0289899843"></a>
 
 ## sql\_mode<a name="section203671436821"></a>

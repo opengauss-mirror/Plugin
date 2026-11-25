@@ -1,3 +1,8 @@
+---
+description: Introduces PERFORMANCE_SCHEMA.THREADS in openGauss, covering .
+keywords: [openGauss, PERFORMANCE_SCHEMA.THREADS]
+---
+
 # PERFORMANCE_SCHEMA.THREADS
 
 <!-- md-trans-meta sourceCommit=unknown translatedAt=2026-07-30T06:24:13.552Z pushedAt=2026-09-12T05:26:33.441Z -->

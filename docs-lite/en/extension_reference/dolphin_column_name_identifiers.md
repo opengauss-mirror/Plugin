@@ -1,3 +1,8 @@
+---
+description: Compared with the original openGauss, Dolphin modifies the column name identifiers as follows:.
+keywords: [openGauss, Column Name Identifiers]
+---
+
 # Column Name Identifiers<a name="EN-US_TOPIC_0245374853"></a>
 
 ## Precautions
