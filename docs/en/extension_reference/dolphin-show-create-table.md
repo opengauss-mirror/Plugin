@@ -1,5 +1,5 @@
 ---
-description: Displays the created tbl\_name table.
+description: Displays the created tbl_name table.
 keywords: [openGauss, SHOW]
 ---
 

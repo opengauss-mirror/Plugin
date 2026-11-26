@@ -1,5 +1,5 @@
 ---
-description: Introduces INDEX\_STATISTIC in openGauss, covering .
+description: Introduces INDEX_STATISTIC in openGauss, covering .
 keywords: [openGauss, INDEX_STATISTIC]
 ---
 

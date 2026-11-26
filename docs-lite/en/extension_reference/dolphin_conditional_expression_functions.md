@@ -1,5 +1,5 @@
 ---
-description: - This section describes only the new conditional expression functions of Dolphin. For details about the conditional expression functions of the original openGauss, see [Conditional Expression Functio.
+description: This section describes only the new conditional expression functions of Dolphin. For details about the conditional expression functions of the original openGauss, see [Conditional Expression Functio.
 keywords: [openGauss, Conditional Expression Functions]
 ---
 

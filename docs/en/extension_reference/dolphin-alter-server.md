@@ -1,5 +1,5 @@
 ---
-description: Adds, modifies, or deletes parameters of an existing server. You can query existing servers from the pg\_foreign\_server system catalog.
+description: Adds, modifies, or deletes parameters of an existing server. You can query existing servers from the pg_foreign_server system catalog.
 keywords: [openGauss, ALTER]
 ---
 

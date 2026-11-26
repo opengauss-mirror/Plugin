@@ -1,5 +1,5 @@
 ---
-description: - Assignment Statements.
+description: Assignment Statements.
 keywords: [openGauss, Basic Statements]
 ---
 
