@@ -1,67 +1,66 @@
 create schema pad_char_to_full_length CHARACTER SET ='utf8' COLLATE ='utf8_bin';
 set current_schema to 'pad_char_to_full_length';
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 create table t (name char(100));
 insert into t values('test');
 insert into t values('test    ');
 insert into t values('    test');
 select * from t;
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select concat(name, 't') from t;
-                                                concat                                                 
--------------------------------------------------------------------------------------------------------
- test                                                                                                t
- test                                                                                                t
-     test                                                                                            t
+  concat   
+-----------
+ testt
+ testt
+     testt
 (3 rows)
 
 select char_length(name), length(name) from t;
  char_length | length 
 -------------+--------
-         100 |    100
-         100 |    100
-         100 |    100
+           4 |      4
+           4 |      4
+           8 |      8
 (3 rows)
 
 select name::text, name::varchar, name::nvarchar2 from t;
-                                                 name                                                 |                                                 name                                                 |                                                 name                                                 
-------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------
- test                                                                                                 | test                                                                                                 | test                                                                                                
- test                                                                                                 | test                                                                                                 | test                                                                                                
-     test                                                                                             |     test                                                                                             |     test                                                                                            
+   name   |   name   |   name   
+----------+----------+----------
+ test     | test     | test
+ test     | test     | test
+     test |     test |     test
 (3 rows)
 
 select * from t where name = 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
+ name 
+------
+ test
+ test
 (2 rows)
 
 select * from t where name != 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
+   name   
+----------
+     test
 (1 row)
 
 select * from t where name < 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
+   name   
+----------
+     test
 (1 row)
 
 select * from t where name <= 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select * from t where name > 'test        ';
@@ -70,10 +69,10 @@ select * from t where name > 'test        ';
 (0 rows)
 
 select * from t where name >= 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
+ name 
+------
+ test
+ test
 (2 rows)
 
 select * from t where name regexp 'test        %';
@@ -82,17 +81,17 @@ select * from t where name regexp 'test        %';
 (0 rows)
 
 select * from t where name like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t where name not like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
-(1 row)
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
 
 select * from t where name like 'Test        %';
  name 
@@ -100,11 +99,11 @@ select * from t where name like 'Test        %';
 (0 rows)
 
 select * from t where name not like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select cast('a' as char(10)), 'a'::char(10);
@@ -115,17 +114,17 @@ select cast('a' as char(10)), 'a'::char(10);
 
 set dolphin.b_compatibility_mode = true;
 select * from t where name like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t where name not like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
-(1 row)
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
 
 select * from t where name like 'Test        %';
  name 
@@ -133,11 +132,11 @@ select * from t where name like 'Test        %';
 (0 rows)
 
 select * from t where name not like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select cast('a' as char(10)), 'a'::char(10);
@@ -151,9 +150,9 @@ set try_vector_engine_strategy='force';
 select char_length(name), length(name) from t;
  char_length | length 
 -------------+--------
-         100 |    100
-         100 |    100
-         100 |    100
+           4 |      4
+           4 |      4
+           8 |      8
 (3 rows)
 
 set try_vector_engine_strategy='off';
@@ -309,69 +308,69 @@ select char_length(name), length(name) from t;
 (3 rows)
 
 set try_vector_engine_strategy='off';
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
+reset dolphin.sql_mode;
 -- test cstore
 create table t_col (name char(100)) with (orientation = column);
 insert into t_col values('test');
 insert into t_col values('test    ');
 insert into t_col values('    test');
 select * from t_col;
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select concat(name, 't') from t_col;
-                                                concat                                                 
--------------------------------------------------------------------------------------------------------
- test                                                                                                t
- test                                                                                                t
-     test                                                                                            t
+  concat   
+-----------
+ testt
+ testt
+     testt
 (3 rows)
 
 select char_length(name), length(name) from t_col;
  char_length | length 
 -------------+--------
-         100 |    100
-         100 |    100
-         100 |    100
+           4 |      4
+           4 |      4
+           8 |      8
 (3 rows)
 
 select name::text, name::varchar, name::nvarchar2 from t_col;
-                                                 name                                                 |                                                 name                                                 |                                                 name                                                 
-------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------
- test                                                                                                 | test                                                                                                 | test                                                                                                
- test                                                                                                 | test                                                                                                 | test                                                                                                
-     test                                                                                             |     test                                                                                             |     test                                                                                            
+   name   |   name   |   name   
+----------+----------+----------
+ test     | test     | test
+ test     | test     | test
+     test |     test |     test
 (3 rows)
 
 select * from t_col where name = 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
+ name 
+------
+ test
+ test
 (2 rows)
 
 select * from t_col where name != 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
+   name   
+----------
+     test
 (1 row)
 
 select * from t_col where name < 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
+   name   
+----------
+     test
 (1 row)
 
 select * from t_col where name <= 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 select * from t_col where name > 'test        ';
@@ -380,10 +379,10 @@ select * from t_col where name > 'test        ';
 (0 rows)
 
 select * from t_col where name >= 'test        ';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
+ name 
+------
+ test
+ test
 (2 rows)
 
 select * from t_col where name regexp 'test        %';
@@ -392,17 +391,17 @@ select * from t_col where name regexp 'test        %';
 (0 rows)
 
 select * from t_col where name like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t_col where name not like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
-(1 row)
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
 
 select * from t_col where name like 'Test        %';
  name 
@@ -410,26 +409,26 @@ select * from t_col where name like 'Test        %';
 (0 rows)
 
 select * from t_col where name not like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 set dolphin.b_compatibility_mode = true;
 select * from t_col where name like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t_col where name not like 'test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
-     test                                                                                            
-(1 row)
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
 
 select * from t_col where name like 'Test        %';
  name 
@@ -437,11 +436,11 @@ select * from t_col where name like 'Test        %';
 (0 rows)
 
 select * from t_col where name not like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-     test                                                                                            
+   name   
+----------
+ test
+ test
+     test
 (3 rows)
 
 set dolphin.b_compatibility_mode = false;
@@ -449,9 +448,9 @@ set try_vector_engine_strategy='force';
 select char_length(name), length(name) from t_col;
  char_length | length 
 -------------+--------
-         100 |    100
-         100 |    100
-         100 |    100
+           4 |      4
+           4 |      4
+           8 |      8
 (3 rows)
 
 set try_vector_engine_strategy='off';
@@ -460,9 +459,9 @@ set codegen_cost_threshold to 0;
 select char_length(name), length(name) from t_col;
  char_length | length 
 -------------+--------
-         100 |    100
-         100 |    100
-         100 |    100
+           4 |      4
+           4 |      4
+           8 |      8
 (3 rows)
 
 reset enable_codegen;

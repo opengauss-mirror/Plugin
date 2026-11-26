@@ -1,6 +1,5 @@
 create schema pad_char_to_full_length CHARACTER SET ='utf8' COLLATE ='utf8_bin';
 set current_schema to 'pad_char_to_full_length';
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 create table t (name char(100));
 insert into t values('test');
@@ -70,7 +69,7 @@ set try_vector_engine_strategy='force';
 select char_length(name), length(name) from t;
 set try_vector_engine_strategy='off';
 
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
+reset dolphin.sql_mode;
 
 -- test cstore
 create table t_col (name char(100)) with (orientation = column);

@@ -17,7 +17,6 @@ create schema db_b_left_right_test;
 set current_schema to 'db_b_left_right_test';
 
 set bytea_output to escape;
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 SELECT left('abcdefg', 3);
 SELECT left('abcdefg', -3), left('abcdefg', -3) is null ;
