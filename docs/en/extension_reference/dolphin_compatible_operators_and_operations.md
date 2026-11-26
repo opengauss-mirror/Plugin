@@ -1,5 +1,5 @@
 ---
-description: If dolphin.b\_compatibility\_mode is set to on, MySQL-compatible four arithmetic operations are enabled. Compared with the original openGauss, Dolphin modifies the four arithmetic operations a.
+description: If dolphin.b_compatibility_mode is set to on, MySQL-compatible four arithmetic operations are enabled. Compared with the original openGauss, Dolphin modifies the four arithmetic operations a.
 keywords: [openGauss, Compatible Operators and Operations]
 ---
 
