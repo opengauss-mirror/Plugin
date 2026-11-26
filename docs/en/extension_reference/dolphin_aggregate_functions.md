@@ -1,5 +1,5 @@
 ---
-description: - any_value\(expression\).
+description: '- any_value\(expression\).'
 keywords: [openGauss, Dolphin Aggregate Functions]
 ---
 
