@@ -1,6 +1,5 @@
 create schema test_interval_expr;
 set current_schema to 'test_interval_expr';
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 set dolphin.support_interval_to to off;
 select '1 2'::interval year to month;

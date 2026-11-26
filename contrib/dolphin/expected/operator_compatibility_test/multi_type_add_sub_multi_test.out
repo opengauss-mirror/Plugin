@@ -917,7 +917,7 @@ insert into t_res select 142, a.id, b.id, 'boolean+float8', a.`boolean` + b.`flo
 insert into t_res select 143, a.id, b.id, 'boolean+numeric', a.`boolean` + b.`numeric` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 144, a.id, b.id, 'boolean+boolean', a.`boolean` + b.`boolean` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 145, a.id, b.id, 'int1+char', a.`int1` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 146, a.id, b.id, 'int1+varchar', a.`int1` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 147, a.id, b.id, 'int1+binary', a.`int1` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -927,7 +927,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 149, a.id, b.id, 'int1+text', a.`int1` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 150, a.id, b.id, 'uint1+char', a.`uint1` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 151, a.id, b.id, 'uint1+varchar', a.`uint1` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 152, a.id, b.id, 'uint1+binary', a.`uint1` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -937,7 +937,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 154, a.id, b.id, 'uint1+text', a.`uint1` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 155, a.id, b.id, 'int2+char', a.`int2` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 156, a.id, b.id, 'int2+varchar', a.`int2` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 157, a.id, b.id, 'int2+binary', a.`int2` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -947,7 +947,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 159, a.id, b.id, 'int2+text', a.`int2` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 160, a.id, b.id, 'uint2+char', a.`uint2` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 161, a.id, b.id, 'uint2+varchar', a.`uint2` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 162, a.id, b.id, 'uint2+binary', a.`uint2` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -957,7 +957,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 164, a.id, b.id, 'uint2+text', a.`uint2` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 165, a.id, b.id, 'int4+char', a.`int4` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 166, a.id, b.id, 'int4+varchar', a.`int4` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 167, a.id, b.id, 'int4+binary', a.`int4` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -967,7 +967,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 169, a.id, b.id, 'int4+text', a.`int4` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 170, a.id, b.id, 'uint4+char', a.`uint4` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 171, a.id, b.id, 'uint4+varchar', a.`uint4` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 172, a.id, b.id, 'uint4+binary', a.`uint4` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -977,7 +977,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 174, a.id, b.id, 'uint4+text', a.`uint4` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 175, a.id, b.id, 'int8+char', a.`int8` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 176, a.id, b.id, 'int8+varchar', a.`int8` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 177, a.id, b.id, 'int8+binary', a.`int8` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -987,7 +987,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 179, a.id, b.id, 'int8+text', a.`int8` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 180, a.id, b.id, 'uint8+char', a.`uint8` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 181, a.id, b.id, 'uint8+varchar', a.`uint8` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 182, a.id, b.id, 'uint8+binary', a.`uint8` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -997,7 +997,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 184, a.id, b.id, 'uint8+text', a.`uint8` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 185, a.id, b.id, 'float4+char', a.`float4` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 186, a.id, b.id, 'float4+varchar', a.`float4` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 187, a.id, b.id, 'float4+binary', a.`float4` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -1007,7 +1007,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 189, a.id, b.id, 'float4+text', a.`float4` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 190, a.id, b.id, 'float8+char', a.`float8` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 191, a.id, b.id, 'float8+varchar', a.`float8` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 192, a.id, b.id, 'float8+binary', a.`float8` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -1017,7 +1017,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 194, a.id, b.id, 'float8+text', a.`float8` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 195, a.id, b.id, 'numeric+char', a.`numeric` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 196, a.id, b.id, 'numeric+varchar', a.`numeric` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 197, a.id, b.id, 'numeric+binary', a.`numeric` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -1027,7 +1027,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 199, a.id, b.id, 'numeric+text', a.`numeric` + b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 200, a.id, b.id, 'boolean+char', a.`boolean` + b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 201, a.id, b.id, 'boolean+varchar', a.`boolean` + b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 202, a.id, b.id, 'boolean+binary', a.`boolean` + b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -1108,15 +1108,15 @@ insert into t_res select 250, a.id, b.id, 'boolean+bit8', a.`boolean` + b.`bit8`
 insert into t_res select 251, a.id, b.id, 'boolean+bit15', a.`boolean` + b.`bit15` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 252, a.id, b.id, 'boolean+bit64', a.`boolean` + b.`bit64` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 253, a.id, b.id, 'char+char', a.`char` + b.`char` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 254, a.id, b.id, 'char+varchar', a.`char` + b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 255, a.id, b.id, 'char+binary', a.`char` + b.`binary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 256, a.id, b.id, 'char+varbinary', a.`char` + b.`varbinary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 257, a.id, b.id, 'char+text', a.`char` + b.`text` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 258, a.id, b.id, 'varchar+char', a.`varchar` + b.`char` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 259, a.id, b.id, 'varchar+varchar', a.`varchar` + b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
@@ -1158,13 +1158,13 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 277, a.id, b.id, 'text+text', a.`text` + b.`text` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 278, a.id, b.id, 'char+bit1', a.`char` + b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 279, a.id, b.id, 'char+bit8', a.`char` + b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 280, a.id, b.id, 'char+bit15', a.`char` + b.`bit15` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 281, a.id, b.id, 'char+bit64', a.`char` + b.`bit64` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 282, a.id, b.id, 'varchar+bit1', a.`varchar` + b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 283, a.id, b.id, 'varchar+bit8', a.`varchar` + b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;
@@ -3290,7 +3290,7 @@ insert into t_res select 142, a.id, b.id, 'boolean-float8', a.`boolean` - b.`flo
 insert into t_res select 143, a.id, b.id, 'boolean-numeric', a.`boolean` - b.`numeric` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 144, a.id, b.id, 'boolean-boolean', a.`boolean` - b.`boolean` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 145, a.id, b.id, 'int1-char', a.`int1` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 146, a.id, b.id, 'int1-varchar', a.`int1` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 147, a.id, b.id, 'int1-binary', a.`int1` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3300,7 +3300,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 149, a.id, b.id, 'int1-text', a.`int1` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 150, a.id, b.id, 'uint1-char', a.`uint1` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 151, a.id, b.id, 'uint1-varchar', a.`uint1` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 152, a.id, b.id, 'uint1-binary', a.`uint1` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3310,7 +3310,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 154, a.id, b.id, 'uint1-text', a.`uint1` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 155, a.id, b.id, 'int2-char', a.`int2` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 156, a.id, b.id, 'int2-varchar', a.`int2` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 157, a.id, b.id, 'int2-binary', a.`int2` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3320,7 +3320,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 159, a.id, b.id, 'int2-text', a.`int2` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 160, a.id, b.id, 'uint2-char', a.`uint2` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 161, a.id, b.id, 'uint2-varchar', a.`uint2` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 162, a.id, b.id, 'uint2-binary', a.`uint2` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3330,7 +3330,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 164, a.id, b.id, 'uint2-text', a.`uint2` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 165, a.id, b.id, 'int4-char', a.`int4` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 166, a.id, b.id, 'int4-varchar', a.`int4` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 167, a.id, b.id, 'int4-binary', a.`int4` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3340,7 +3340,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 169, a.id, b.id, 'int4-text', a.`int4` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 170, a.id, b.id, 'uint4-char', a.`uint4` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 171, a.id, b.id, 'uint4-varchar', a.`uint4` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 172, a.id, b.id, 'uint4-binary', a.`uint4` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3350,7 +3350,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 174, a.id, b.id, 'uint4-text', a.`uint4` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 175, a.id, b.id, 'int8-char', a.`int8` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 176, a.id, b.id, 'int8-varchar', a.`int8` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 177, a.id, b.id, 'int8-binary', a.`int8` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3360,7 +3360,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 179, a.id, b.id, 'int8-text', a.`int8` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 180, a.id, b.id, 'uint8-char', a.`uint8` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 181, a.id, b.id, 'uint8-varchar', a.`uint8` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 182, a.id, b.id, 'uint8-binary', a.`uint8` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3370,7 +3370,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 184, a.id, b.id, 'uint8-text', a.`uint8` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 185, a.id, b.id, 'float4-char', a.`float4` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 186, a.id, b.id, 'float4-varchar', a.`float4` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 187, a.id, b.id, 'float4-binary', a.`float4` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3380,7 +3380,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 189, a.id, b.id, 'float4-text', a.`float4` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 190, a.id, b.id, 'float8-char', a.`float8` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 191, a.id, b.id, 'float8-varchar', a.`float8` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 192, a.id, b.id, 'float8-binary', a.`float8` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3390,7 +3390,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 194, a.id, b.id, 'float8-text', a.`float8` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 195, a.id, b.id, 'numeric-char', a.`numeric` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 196, a.id, b.id, 'numeric-varchar', a.`numeric` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 197, a.id, b.id, 'numeric-binary', a.`numeric` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3400,7 +3400,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 199, a.id, b.id, 'numeric-text', a.`numeric` - b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 200, a.id, b.id, 'boolean-char', a.`boolean` - b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 201, a.id, b.id, 'boolean-varchar', a.`boolean` - b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 202, a.id, b.id, 'boolean-binary', a.`boolean` - b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -3496,15 +3496,15 @@ insert into t_res select 250, a.id, b.id, 'boolean-bit8', a.`boolean` - b.`bit8`
 insert into t_res select 251, a.id, b.id, 'boolean-bit15', a.`boolean` - b.`bit15` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 252, a.id, b.id, 'boolean-bit64', a.`boolean` - b.`bit64` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 253, a.id, b.id, 'char-char', a.`char` - b.`char` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 254, a.id, b.id, 'char-varchar', a.`char` - b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 255, a.id, b.id, 'char-binary', a.`char` - b.`binary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 256, a.id, b.id, 'char-varbinary', a.`char` - b.`varbinary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 257, a.id, b.id, 'char-text', a.`char` - b.`text` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 258, a.id, b.id, 'varchar-char', a.`varchar` - b.`char` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 259, a.id, b.id, 'varchar-varchar', a.`varchar` - b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
@@ -3546,13 +3546,13 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 277, a.id, b.id, 'text-text', a.`text` - b.`text` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 278, a.id, b.id, 'char-bit1', a.`char` - b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 279, a.id, b.id, 'char-bit8', a.`char` - b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 280, a.id, b.id, 'char-bit15', a.`char` - b.`bit15` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 281, a.id, b.id, 'char-bit64', a.`char` - b.`bit64` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 282, a.id, b.id, 'varchar-bit1', a.`varchar` - b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 283, a.id, b.id, 'varchar-bit8', a.`varchar` - b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;
@@ -5363,7 +5363,7 @@ insert into t_res select 142, a.id, b.id, 'boolean*float8', a.`boolean` * b.`flo
 insert into t_res select 143, a.id, b.id, 'boolean*numeric', a.`boolean` * b.`numeric` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 144, a.id, b.id, 'boolean*boolean', a.`boolean` * b.`boolean` from t_number as a, t_number as b order by a.id, b.id;
 insert into t_res select 145, a.id, b.id, 'int1*char', a.`int1` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 146, a.id, b.id, 'int1*varchar', a.`int1` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 147, a.id, b.id, 'int1*binary', a.`int1` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5373,7 +5373,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 149, a.id, b.id, 'int1*text', a.`int1` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 150, a.id, b.id, 'uint1*char', a.`uint1` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 151, a.id, b.id, 'uint1*varchar', a.`uint1` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 152, a.id, b.id, 'uint1*binary', a.`uint1` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5383,7 +5383,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 154, a.id, b.id, 'uint1*text', a.`uint1` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 155, a.id, b.id, 'int2*char', a.`int2` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 156, a.id, b.id, 'int2*varchar', a.`int2` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 157, a.id, b.id, 'int2*binary', a.`int2` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5393,7 +5393,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 159, a.id, b.id, 'int2*text', a.`int2` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 160, a.id, b.id, 'uint2*char', a.`uint2` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 161, a.id, b.id, 'uint2*varchar', a.`uint2` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 162, a.id, b.id, 'uint2*binary', a.`uint2` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5403,7 +5403,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 164, a.id, b.id, 'uint2*text', a.`uint2` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 165, a.id, b.id, 'int4*char', a.`int4` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 166, a.id, b.id, 'int4*varchar', a.`int4` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 167, a.id, b.id, 'int4*binary', a.`int4` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5413,7 +5413,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 169, a.id, b.id, 'int4*text', a.`int4` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 170, a.id, b.id, 'uint4*char', a.`uint4` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 171, a.id, b.id, 'uint4*varchar', a.`uint4` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 172, a.id, b.id, 'uint4*binary', a.`uint4` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5423,7 +5423,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 174, a.id, b.id, 'uint4*text', a.`uint4` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 175, a.id, b.id, 'int8*char', a.`int8` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 176, a.id, b.id, 'int8*varchar', a.`int8` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 177, a.id, b.id, 'int8*binary', a.`int8` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5433,7 +5433,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 179, a.id, b.id, 'int8*text', a.`int8` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 180, a.id, b.id, 'uint8*char', a.`uint8` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 181, a.id, b.id, 'uint8*varchar', a.`uint8` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 182, a.id, b.id, 'uint8*binary', a.`uint8` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5443,7 +5443,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 184, a.id, b.id, 'uint8*text', a.`uint8` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 185, a.id, b.id, 'float4*char', a.`float4` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 186, a.id, b.id, 'float4*varchar', a.`float4` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 187, a.id, b.id, 'float4*binary', a.`float4` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5453,7 +5453,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 189, a.id, b.id, 'float4*text', a.`float4` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 190, a.id, b.id, 'float8*char', a.`float8` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 191, a.id, b.id, 'float8*varchar', a.`float8` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 192, a.id, b.id, 'float8*binary', a.`float8` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5463,7 +5463,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 194, a.id, b.id, 'float8*text', a.`float8` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 195, a.id, b.id, 'numeric*char', a.`numeric` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 196, a.id, b.id, 'numeric*varchar', a.`numeric` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 197, a.id, b.id, 'numeric*binary', a.`numeric` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5473,7 +5473,7 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 199, a.id, b.id, 'numeric*text', a.`numeric` * b.`text` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 200, a.id, b.id, 'boolean*char', a.`boolean` * b.`char` from t_number as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 201, a.id, b.id, 'boolean*varchar', a.`boolean` * b.`varchar` from t_number as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type numeric: "62.345*67-89"
 insert into t_res select 202, a.id, b.id, 'boolean*binary', a.`boolean` * b.`binary` from t_number as a, t_str as b order by a.id, b.id;
@@ -5559,15 +5559,15 @@ insert into t_res select 250, a.id, b.id, 'boolean*bit8', a.`boolean` * b.`bit8`
 insert into t_res select 251, a.id, b.id, 'boolean*bit15', a.`boolean` * b.`bit15` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 252, a.id, b.id, 'boolean*bit64', a.`boolean` * b.`bit64` from t_number as a, t_bit as b order by a.id, b.id;
 insert into t_res select 253, a.id, b.id, 'char*char', a.`char` * b.`char` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 254, a.id, b.id, 'char*varchar', a.`char` * b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 255, a.id, b.id, 'char*binary', a.`char` * b.`binary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 256, a.id, b.id, 'char*varbinary', a.`char` * b.`varbinary` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 257, a.id, b.id, 'char*text', a.`char` * b.`text` from t_str as a, t_str as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 258, a.id, b.id, 'varchar*char', a.`varchar` * b.`char` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 259, a.id, b.id, 'varchar*varchar', a.`varchar` * b.`varchar` from t_str as a, t_str as b order by a.id, b.id;
@@ -5609,13 +5609,13 @@ ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 277, a.id, b.id, 'text*text', a.`text` * b.`text` from t_str as a, t_str as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 278, a.id, b.id, 'char*bit1', a.`char` * b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 279, a.id, b.id, 'char*bit8', a.`char` * b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 280, a.id, b.id, 'char*bit15', a.`char` * b.`bit15` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 281, a.id, b.id, 'char*bit64', a.`char` * b.`bit64` from t_str as a, t_bit as b order by a.id, b.id;
-ERROR:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 282, a.id, b.id, 'varchar*bit1', a.`varchar` * b.`bit1` from t_str as a, t_bit as b order by a.id, b.id;
 ERROR:  invalid input syntax for type double precision: "62.345*67-89"
 insert into t_res select 283, a.id, b.id, 'varchar*bit8', a.`varchar` * b.`bit8` from t_str as a, t_bit as b order by a.id, b.id;

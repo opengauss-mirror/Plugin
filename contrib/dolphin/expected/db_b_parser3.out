@@ -161,8 +161,8 @@ rand(`enum_t`)=rand(cast(`enum_t` as signed)),
 rand(`set_t`)=rand(cast(`set_t` as signed)),
 rand(`json`)=rand(cast(`json` as signed))
 from test_type_table;
-WARNING:  invalid input syntax for type int unsigned: "1.23a                                                                                               "
-WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int unsigned: "1.23a"
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 WARNING:  invalid input syntax for type int unsigned: "1.23a"
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -229,7 +229,7 @@ random_bytes(`text`),
 random_bytes(`enum_t`),
 random_bytes(`set_t`)
 from test_type_table;
-WARNING:  invalid input syntax for type integer: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: random_bytes
 WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: random_bytes
@@ -270,9 +270,9 @@ ucase(`varchar`),
 ucase(`text`),
 ucase(`null`)
 from test_str_table;
-                                                 ucase                                                  |        ucase         |      ucase      | ucase 
---------------------------------------------------------------------------------------------------------+----------------------+-----------------+-------
- TEST CHAR字符1;                                                                                        | TEST VARCHAR字符串2; | TEST TEXT文本3; | 
+      ucase      |        ucase         |      ucase      | ucase 
+-----------------+----------------------+-----------------+-------
+ TEST CHAR字符1; | TEST VARCHAR字符串2; | TEST TEXT文本3; | 
 (1 row)
 
 drop table test_str_table;

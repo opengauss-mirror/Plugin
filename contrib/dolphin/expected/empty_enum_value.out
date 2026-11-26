@@ -103,7 +103,7 @@ insert into t_null values('test'::bpchar);
 ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 CONTEXT:  referenced column: c1
 insert into t_null values('test'::bpchar(10));
-ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test      "
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 CONTEXT:  referenced column: c1
 insert into t_null values('test'::varchar);
 ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
@@ -129,7 +129,7 @@ insert ignore into t_null values('test'::bpchar);
 WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 CONTEXT:  referenced column: c1
 insert ignore into t_null values('test'::bpchar(10));
-WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test      "
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 CONTEXT:  referenced column: c1
 insert ignore into t_null values('test'::varchar);
 WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"

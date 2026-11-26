@@ -1,5 +1,6 @@
 create schema test_dml_func;
 set current_schema to 'test_dml_func';
+set dolphin.sql_mode = 'pad_char_to_full_length';
 
 create table test_type_table
 (

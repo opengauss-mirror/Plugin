@@ -3,6 +3,7 @@ drop database if exists b_char_blank_test_3;
 create database b_char_blank_test_3 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
 \c b_char_blank_test_3
 set b_format_behavior_compat_options = '';
+set dolphin.sql_mode = 'pad_char_to_full_length';
 
 ---------------------------
 ----- column table

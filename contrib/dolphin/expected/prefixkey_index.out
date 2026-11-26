@@ -1,6 +1,7 @@
 create database prefix_index_db WITH ENCODING 'UTF-8' LC_COLLATE='C' LC_CTYPE='C' dbcompatibility 'B';
 \c prefix_index_db
 set dolphin.b_compatibility_mode to off;
+set dolphin.sql_mode = 'pad_char_to_full_length,ansi_quotes';
 --
 -- CREATE_INDEX
 --

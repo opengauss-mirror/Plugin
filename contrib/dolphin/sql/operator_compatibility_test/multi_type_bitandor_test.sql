@@ -8,6 +8,7 @@
 create schema test_bitor;
 set search_path to test_bitor;
 set dolphin.b_compatibility_mode to on;
+set dolphin.sql_mode = 'pad_char_to_full_length,ansi_quotes';
 
 -- prepare data
 drop table if exists t_number;

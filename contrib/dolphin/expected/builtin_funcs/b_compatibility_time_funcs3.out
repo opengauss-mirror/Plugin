@@ -1639,7 +1639,7 @@ WARNING:  Incorrect date value: '1' for function str_to_date
 CONTEXT:  referenced column: str_to_date
 SQL function "str_to_date" statement 1
 referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a                                                                                               ' for function str_to_date
+WARNING:  Incorrect date value: '1.23a' for function str_to_date
 CONTEXT:  referenced column: str_to_date
 WARNING:  Incorrect date value: '1.23a' for function str_to_date
 CONTEXT:  referenced column: str_to_date
@@ -1733,7 +1733,7 @@ WARNING:  Incorrect date value: '1' for function str_to_date
 CONTEXT:  referenced column: str_to_date
 SQL function "str_to_date" statement 1
 referenced column: col22
-WARNING:  Incorrect date value: '1.23a                                                                                               ' for function str_to_date
+WARNING:  Incorrect date value: '1.23a' for function str_to_date
 CONTEXT:  referenced column: col23
 WARNING:  Incorrect date value: '1.23a' for function str_to_date
 CONTEXT:  referenced column: col24

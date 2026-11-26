@@ -499,9 +499,9 @@ select `char`, `json`,
        `char` < `json` as `char<json`, `char` <= `json` as `char<=json`,
        `char` != `json` as `char!=json`, `char` <> `json` as `char<>json`,
        `char` = `json` as `char=json`, `char` <=> `json` as `char<=>json` from test_json_table;
-                                                 char                                                 |       json       | char>json | char>=json | char<json | char<=json | char!=json | char<>json | char=json | char<=>json 
-------------------------------------------------------------------------------------------------------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
- 1.23a                                                                                                | {"a": 1, "b": 2} | f         | f          | t         | t          | t          | t          | f         | f
+ char  |       json       | char>json | char>=json | char<json | char<=json | char!=json | char<>json | char=json | char<=>json 
+-------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
+ 1.23a | {"a": 1, "b": 2} | f         | f          | t         | t          | t          | t          | f         | f
 (1 row)
 
 select `char`, `json`,
@@ -509,9 +509,9 @@ select `char`, `json`,
        `json` < `char` as `json<char`, `json` <= `char` as `json<=char`,
        `json` != `char` as `json!=char`, `json` <> `char` as `json<>char`,
        `json` = `char` as `json=char`, `json` <=> `char` as `json<=>char` from test_json_table;
-                                                 char                                                 |       json       | json>char | json>=char | json<char | json<=char | json!=char | json<>char | json=char | json<=>char 
-------------------------------------------------------------------------------------------------------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
- 1.23a                                                                                                | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
+ char  |       json       | json>char | json>=char | json<char | json<=char | json!=char | json<>char | json=char | json<=>char 
+-------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
+ 1.23a | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
 (1 row)
 
 select `varchar`, `json`,

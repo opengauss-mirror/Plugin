@@ -67,7 +67,7 @@ update test_type_table set `year` = `timestamp`;
 update test_type_table set `year` = `timestamp(4)`;
 update test_type_table set `year` = `year`;
 update test_type_table set `year` = `char`;
-ERROR:  invalid input syntax for type int16: "1.23a                                                                                               "
+ERROR:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: year
 SQL function "char_year" statement 1
@@ -154,7 +154,7 @@ update ignore test_type_table set `year` = `timestamp`;
 update ignore test_type_table set `year` = `timestamp(4)`;
 update ignore test_type_table set `year` = `year`;
 update ignore test_type_table set `year` = `char`;
-WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: year
 SQL function "char_year" statement 1
