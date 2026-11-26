@@ -34,7 +34,6 @@ set dolphin.b_compatibility_mode to on;
 create schema db_b_left_right_test;
 set current_schema to 'db_b_left_right_test';
 set bytea_output to escape;
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 SELECT left('abcdefg', 3);
  left 
 ------
@@ -441,7 +440,7 @@ right(`int1`,`enum_t`),
 right(`int1`,`set_t`),
 right(`int1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -536,7 +535,7 @@ right(`uint1`,`enum_t`),
 right(`uint1`,`set_t`),
 right(`uint1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -631,7 +630,7 @@ right(`int2`,`enum_t`),
 right(`int2`,`set_t`),
 right(`int2`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -726,7 +725,7 @@ right(`uint2`,`enum_t`),
 right(`uint2`,`set_t`),
 right(`uint2`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -821,7 +820,7 @@ right(`int4`,`enum_t`),
 right(`int4`,`set_t`),
 right(`int4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -916,7 +915,7 @@ right(`uint4`,`enum_t`),
 right(`uint4`,`set_t`),
 right(`uint4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1011,7 +1010,7 @@ right(`int8`,`enum_t`),
 right(`int8`,`set_t`),
 right(`int8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1106,7 +1105,7 @@ right(`uint8`,`enum_t`),
 right(`uint8`,`set_t`),
 right(`uint8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1201,7 +1200,7 @@ right(`float4`,`enum_t`),
 right(`float4`,`set_t`),
 right(`float4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1296,7 +1295,7 @@ right(`float8`,`enum_t`),
 right(`float8`,`set_t`),
 right(`float8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1391,7 +1390,7 @@ right(`numeric`,`enum_t`),
 right(`numeric`,`set_t`),
 right(`numeric`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1486,7 +1485,7 @@ right(`bit1`,`enum_t`),
 right(`bit1`,`set_t`),
 right(`bit1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1578,7 +1577,7 @@ right(`bit64`,`enum_t`),
 right(`bit64`,`set_t`),
 right(`bit64`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1670,7 +1669,7 @@ right(`boolean`,`enum_t`),
 right(`boolean`,`set_t`),
 right(`boolean`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -1762,7 +1761,7 @@ right(`date`,`enum_t`),
 right(`date`,`set_t`),
 right(`date`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1857,7 +1856,7 @@ right(`time`,`enum_t`),
 right(`time`,`set_t`),
 right(`time`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -1952,7 +1951,7 @@ right(`time(4)`,`enum_t`),
 right(`time(4)`,`set_t`),
 right(`time(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2047,7 +2046,7 @@ right(`datetime`,`enum_t`),
 right(`datetime`,`set_t`),
 right(`datetime`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2142,7 +2141,7 @@ right(`datetime(4)`,`enum_t`),
 right(`datetime(4)`,`set_t`),
 right(`datetime(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2237,7 +2236,7 @@ right(`timestamp`,`enum_t`),
 right(`timestamp`,`set_t`),
 right(`timestamp`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2332,7 +2331,7 @@ right(`timestamp(4)`,`enum_t`),
 right(`timestamp(4)`,`set_t`),
 right(`timestamp(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2427,7 +2426,7 @@ right(`year`,`enum_t`),
 right(`year`,`set_t`),
 right(`year`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 SQL function "right" statement 1
 referenced column: right
@@ -2539,7 +2538,7 @@ right(`char`,`enum_t`),
 right(`char`,`set_t`),
 right(`char`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2562,40 +2561,40 @@ DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: right
--[ RECORD 1 ]-----
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right | 3a     
-right |  
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right | 1.23a     
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |  
-right |      
+-[ RECORD 1 ]
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
+right | a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | 1.23a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | a
+right | 1.23a
 right | 
 
 select
@@ -2634,7 +2633,7 @@ right(`varchar`,`enum_t`),
 right(`varchar`,`set_t`),
 right(`varchar`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -2729,7 +2728,7 @@ right(`binary`,`enum_t`),
 right(`binary`,`set_t`),
 right(`binary`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -2821,7 +2820,7 @@ right(`varbinary`,`enum_t`),
 right(`varbinary`,`set_t`),
 right(`varbinary`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -2913,7 +2912,7 @@ right(`tinyblob`,`enum_t`),
 right(`tinyblob`,`set_t`),
 right(`tinyblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -3005,7 +3004,7 @@ right(`blob`,`enum_t`),
 right(`blob`,`set_t`),
 right(`blob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -3097,7 +3096,7 @@ right(`mediumblob`,`enum_t`),
 right(`mediumblob`,`set_t`),
 right(`mediumblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -3189,7 +3188,7 @@ right(`longblob`,`enum_t`),
 right(`longblob`,`set_t`),
 right(`longblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -3281,7 +3280,7 @@ right(`text`,`enum_t`),
 right(`text`,`set_t`),
 right(`text`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -3376,7 +3375,7 @@ right(`enum_t`,`enum_t`),
 right(`enum_t`,`set_t`),
 right(`enum_t`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 SQL function "right" statement 1
 referenced column: right
@@ -3488,7 +3487,7 @@ right(`set_t`,`enum_t`),
 right(`set_t`,`set_t`),
 right(`set_t`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -3583,7 +3582,7 @@ right(`json`,`enum_t`),
 right(`json`,`set_t`),
 right(`json`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: right
@@ -3675,7 +3674,7 @@ left(`int1`,`enum_t`),
 left(`int1`,`set_t`),
 left(`int1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -3770,7 +3769,7 @@ left(`uint1`,`enum_t`),
 left(`uint1`,`set_t`),
 left(`uint1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -3865,7 +3864,7 @@ left(`int2`,`enum_t`),
 left(`int2`,`set_t`),
 left(`int2`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -3960,7 +3959,7 @@ left(`uint2`,`enum_t`),
 left(`uint2`,`set_t`),
 left(`uint2`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4055,7 +4054,7 @@ left(`int4`,`enum_t`),
 left(`int4`,`set_t`),
 left(`int4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4150,7 +4149,7 @@ left(`uint4`,`enum_t`),
 left(`uint4`,`set_t`),
 left(`uint4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4245,7 +4244,7 @@ left(`int8`,`enum_t`),
 left(`int8`,`set_t`),
 left(`int8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4340,7 +4339,7 @@ left(`uint8`,`enum_t`),
 left(`uint8`,`set_t`),
 left(`uint8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4435,7 +4434,7 @@ left(`float4`,`enum_t`),
 left(`float4`,`set_t`),
 left(`float4`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4530,7 +4529,7 @@ left(`float8`,`enum_t`),
 left(`float8`,`set_t`),
 left(`float8`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4625,7 +4624,7 @@ left(`numeric`,`enum_t`),
 left(`numeric`,`set_t`),
 left(`numeric`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -4720,7 +4719,7 @@ left(`bit1`,`enum_t`),
 left(`bit1`,`set_t`),
 left(`bit1`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4812,7 +4811,7 @@ left(`bit64`,`enum_t`),
 left(`bit64`,`set_t`),
 left(`bit64`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4904,7 +4903,7 @@ left(`boolean`,`enum_t`),
 left(`boolean`,`set_t`),
 left(`boolean`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -4996,7 +4995,7 @@ left(`date`,`enum_t`),
 left(`date`,`set_t`),
 left(`date`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5091,7 +5090,7 @@ left(`time`,`enum_t`),
 left(`time`,`set_t`),
 left(`time`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5186,7 +5185,7 @@ left(`time(4)`,`enum_t`),
 left(`time(4)`,`set_t`),
 left(`time(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5281,7 +5280,7 @@ left(`datetime`,`enum_t`),
 left(`datetime`,`set_t`),
 left(`datetime`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5376,7 +5375,7 @@ left(`datetime(4)`,`enum_t`),
 left(`datetime(4)`,`set_t`),
 left(`datetime(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5471,7 +5470,7 @@ left(`timestamp`,`enum_t`),
 left(`timestamp`,`set_t`),
 left(`timestamp`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5566,7 +5565,7 @@ left(`timestamp(4)`,`enum_t`),
 left(`timestamp(4)`,`set_t`),
 left(`timestamp(4)`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5661,7 +5660,7 @@ left(`year`,`enum_t`),
 left(`year`,`set_t`),
 left(`year`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 SQL function "left" statement 1
 referenced column: left
@@ -5773,7 +5772,7 @@ left(`char`,`enum_t`),
 left(`char`,`set_t`),
 left(`char`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5796,7 +5795,7 @@ DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: left
--[ RECORD 1 ]----
+-[ RECORD 1 ]
 left | 1
 left | 1
 left | 1
@@ -5809,16 +5808,16 @@ left | 1
 left | 1
 left | 1
 left | 1
-left | 1.23a  
+left | 1.23a
 left | 1
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
-left | 1.23a     
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
+left | 1.23a
 left | 1
 left | 1
 left | 1
@@ -5868,7 +5867,7 @@ left(`varchar`,`enum_t`),
 left(`varchar`,`set_t`),
 left(`varchar`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -5963,7 +5962,7 @@ left(`binary`,`enum_t`),
 left(`binary`,`set_t`),
 left(`binary`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6055,7 +6054,7 @@ left(`varbinary`,`enum_t`),
 left(`varbinary`,`set_t`),
 left(`varbinary`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6147,7 +6146,7 @@ left(`tinyblob`,`enum_t`),
 left(`tinyblob`,`set_t`),
 left(`tinyblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6239,7 +6238,7 @@ left(`blob`,`enum_t`),
 left(`blob`,`set_t`),
 left(`blob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6331,7 +6330,7 @@ left(`mediumblob`,`enum_t`),
 left(`mediumblob`,`set_t`),
 left(`mediumblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6423,7 +6422,7 @@ left(`longblob`,`enum_t`),
 left(`longblob`,`set_t`),
 left(`longblob`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
@@ -6515,7 +6514,7 @@ left(`text`,`enum_t`),
 left(`text`,`set_t`),
 left(`text`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -6610,7 +6609,7 @@ left(`enum_t`,`enum_t`),
 left(`enum_t`,`set_t`),
 left(`enum_t`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 SQL function "left" statement 1
 referenced column: left
@@ -6722,7 +6721,7 @@ left(`set_t`,`enum_t`),
 left(`set_t`,`set_t`),
 left(`set_t`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a     "
+WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type int16: "1.23a"
@@ -6817,7 +6816,7 @@ left(`json`,`enum_t`),
 left(`json`,`set_t`),
 left(`json`,`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a     "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: left
