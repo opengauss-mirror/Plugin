@@ -1,5 +1,5 @@
 ---
-description: Parameter description: The parameter value is a character string separated by commas (,). Only valid character strings are allowed. If the parameter value is invalid, a warning is reported after the s.
+description: "Parameter description: The parameter value is a character string separated by commas (,). Only valid character strings are allowed. If the parameter value is invalid, a warning is reported after the s."
 keywords: [openGauss, GUC Parameters]
 ---
 
