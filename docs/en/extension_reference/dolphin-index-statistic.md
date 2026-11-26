@@ -1,5 +1,5 @@
 ---
-description: INDEX\_STAITISTIC displays information about indexes in the current database.
+description: INDEX_STAITISTIC displays information about indexes in the current database.
 keywords: [openGauss, INDEX_STAITISTIC]
 ---
 

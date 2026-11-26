@@ -1,5 +1,5 @@
 ---
-description: PG\_TYPE\_NONSTRICT\_BASIC\_VALUE displays the basic values of the storage type, which are used to insert values(). By default, SELECT and REFERENCES privileges on this view are publicly available.
+description: PG_TYPE_NONSTRICT_BASIC_VALUE displays the basic values of the storage type, which are used to insert values(). By default, SELECT and REFERENCES privileges on this view are publicly available.
 keywords: [openGauss, PG_TYPE_NONSTRICT_BASIC_VALUE]
 ---
 
