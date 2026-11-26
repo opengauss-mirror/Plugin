@@ -1,5 +1,5 @@
 ---
-description: The USE db\_name statement uses the db\_name database as the default (current) database for subsequent statements. The database remains the default database until the end of the paragraph, or until a.
+description: The USE db_name statement uses the db_name database as the default (current) database for subsequent statements. The database remains the default database until the end of the paragraph, or until a.
 keywords: [openGauss, USE]
 ---
 

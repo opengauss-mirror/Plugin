@@ -1,5 +1,5 @@
 ---
-description: Introduces PG\_TYPE\_NONSTRICT\_BASIC\_VALUE in openGauss, covering .
+description: Introduces PG_TYPE_NONSTRICT_BASIC_VALUE in openGauss, covering .
 keywords: [openGauss, PG_TYPE_NONSTRICT_BASIC_VALUE]
 ---
 
