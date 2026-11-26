@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set timezone to 'PRC';
 select 2 between 2 and 23;
  b_between_and 
@@ -494,19 +495,19 @@ insert into t_between_and_0023(c_title, c_fname, c_lname, c_addressline, c_town,
 ('mr','dave','jones','54 vale rise','bingham','bg3 8gd','342 8264'),
 ('mr','richard','neill','42 thatched way','winersby','wb3 6gq','505 6482');
 select * from t_between_and_0023;
- c_id | c_title |  c_fname  | c_lname |  c_addressline   |   c_town   | c_zipcode  | c_phone  
-------+---------+-----------+---------+------------------+------------+------------+----------
-    1 | miss    | jenny     | stones  | 27 rowan avenue  | highc_town | nt2 1aq    | 023 9876
-    2 | mr      | andrew    | stones  | 52 the willows   | lowc_town  | lt5 7ra    | 876 3527
-    3 | miss    | alex      | matthew | 4 the street     | nicec_town | nt2 2tx    | 010 4567
-    4 | mr      | adrian    | matthew | the barn         | yuleville  | yv67 2wr   | 487 3871
-    5 | mr      | simon     | cozens  | 7 shady lane     | oakenham   | oa3 6qw    | 514 5926
-    6 | mr      | neil      | matthew | 5 pasture lane   | nicec_town | nt3 7rt    | 267 1232
-    7 | mr      | richard   | stones  | 34 holly way     | bingham    | bg4 2we    | 342 5982
-    8 | mrs     | christine | hickman | 36 queen street  | histon     | ht3 5em    | 342 5432
-    9 | mr      | mike      | howard  | 86 dysart street | tibsville  | tb3 7fg    | 505 5482
-   10 | mr      | dave      | jones   | 54 vale rise     | bingham    | bg3 8gd    | 342 8264
-   11 | mr      | richard   | neill   | 42 thatched way  | winersby   | wb3 6gq    | 505 6482
+ c_id | c_title |  c_fname  | c_lname |  c_addressline   |   c_town   | c_zipcode | c_phone  
+------+---------+-----------+---------+------------------+------------+-----------+----------
+    1 | miss    | jenny     | stones  | 27 rowan avenue  | highc_town | nt2 1aq   | 023 9876
+    2 | mr      | andrew    | stones  | 52 the willows   | lowc_town  | lt5 7ra   | 876 3527
+    3 | miss    | alex      | matthew | 4 the street     | nicec_town | nt2 2tx   | 010 4567
+    4 | mr      | adrian    | matthew | the barn         | yuleville  | yv67 2wr  | 487 3871
+    5 | mr      | simon     | cozens  | 7 shady lane     | oakenham   | oa3 6qw   | 514 5926
+    6 | mr      | neil      | matthew | 5 pasture lane   | nicec_town | nt3 7rt   | 267 1232
+    7 | mr      | richard   | stones  | 34 holly way     | bingham    | bg4 2we   | 342 5982
+    8 | mrs     | christine | hickman | 36 queen street  | histon     | ht3 5em   | 342 5432
+    9 | mr      | mike      | howard  | 86 dysart street | tibsville  | tb3 7fg   | 505 5482
+   10 | mr      | dave      | jones   | 54 vale rise     | bingham    | bg3 8gd   | 342 8264
+   11 | mr      | richard   | neill   | 42 thatched way  | winersby   | wb3 6gq   | 505 6482
 (11 rows)
 
 select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n' order by c_town;

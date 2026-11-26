@@ -1,5 +1,6 @@
 create schema define_primary_key;
 set current_schema = define_primary_key;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 CREATE TABLE t1 (
 a2 int, b2 int, filler2 char(64) default ' ',
 PRIMARY KEY idx(a2,b2,filler2)

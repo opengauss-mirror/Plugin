@@ -1,5 +1,6 @@
 create schema b_datatype_test;
 set current_schema to 'b_datatype_test';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 -- bit(n), when insert into bit, support the length less than n, which must be equal to n in normal case
 create table bit_test(a bit);

@@ -1,5 +1,6 @@
 create schema db_do_stmt;
 set current_schema to 'db_do_stmt';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 create table t1 (a int);
 insert into t1 values(1),(4),(7);

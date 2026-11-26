@@ -1,5 +1,6 @@
 create schema test_interval_expr;
 set current_schema to 'test_interval_expr';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set dolphin.support_interval_to to off;
 select '1 2'::interval year to month;
 ERROR:  interval year to month is not supported
@@ -6153,63 +6154,63 @@ WARNING:  invalid interval parameter
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` year from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  1962-06-18 18:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` quarter from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2008-12-18 18:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` month from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2019-04-18 18:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` week from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2023-04-11 18:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` day from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2024-04-17 18:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` hour from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2024-06-16 04:30:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` minute from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
       ?column?       
 ---------------------
  2024-06-18 17:28:00
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` second from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
         ?column?         
 -------------------------
  2024-06-18 18:28:57.655
 (1 row)
 
 select '2024-06-18 18:30:00' - interval `char` microsecond from all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
           ?column?          
 ----------------------------
  2024-06-18 18:29:59.999938

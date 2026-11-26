@@ -1,5 +1,6 @@
 create schema test_enum_collation;
 set current_schema = 'test_enum_collation';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 -- test check duplicate enum scenes
 -- 1. column charset/collate
 drop table if exists test_enum_key1;
@@ -605,10 +606,10 @@ select a from test_collation2 where a = '高斯ss';
 (0 rows)
 
 select a from test_collation2 where a = '高斯sS' collate utf8_bin;
-      a       
---------------
- 高斯sS      
- 高斯sS      
+   a    
+--------
+ 高斯sS
+ 高斯sS
 (2 rows)
 
 alter table test_collation2 modify a enum('高斯sS', '汉字sS', 'aaa', 'bbb');
@@ -662,9 +663,9 @@ create table test_join2(
 insert into test_join1 values('a  ', 'a  ', 'a  ', 'a  ','a  ');
 insert into test_join2 values('A');
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_char;
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_char collate 'utf8_general_ci';
@@ -673,9 +674,9 @@ select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <
 (0 rows)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_char > t2.c_enum;
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_char > t2.c_enum collate 'utf8_general_ci';
@@ -689,15 +690,15 @@ select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >
 (0 rows)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_char collate 'utf8_general_ci';
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_char;
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_char collate 'utf8_general_ci';
@@ -706,15 +707,15 @@ select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <
 (0 rows)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_char;
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_char collate 'utf8_general_ci';
-   c_char   | c_enum 
-------------+--------
- a          | A
+ c_char | c_enum 
+--------+--------
+ a      | A
 (1 row)
 
 select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_varchar;

@@ -5,6 +5,7 @@ drop database if exists test_gbk;
 NOTICE:  database "test_gbk" does not exist, skipping
 create database test_gbk dbcompatibility='B' encoding='gbk' LC_CTYPE='zh_CN.gbk' LC_COLLATE='zh_CN.gbk';
 \c test_gbk
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 -- set client_encoding to 'utf8';
 --GBK_BIN
 --char
@@ -21,9 +22,9 @@ explain (costs off) select * from test_gbk_table_bin_char where c1 like 'sde%';
 (4 rows)
 
 select * from test_gbk_table_bin_char where c1 like 'sde%';
-     c1     
-------------
- sdeWf     
+  c1   
+-------
+ sdeWf
 (1 row)
 
 insert into test_gbk_table_bin_char values('Ğ»Ğ»ÄãÑ½'), ('ĞÂÄê¿ìÀÖ');
@@ -38,10 +39,10 @@ explain (costs off) select * from test_gbk_table_bin_char where c1 like 'Ğ»%';
 (4 rows)
 
 select * from test_gbk_table_bin_char where c1 like 'Ğ»%';
-       c1       
-----------------
- Ğ»Ğ»ÄãÑ½      
- Ğ»şş        
+    c1    
+----------
+ Ğ»Ğ»ÄãÑ½
+ Ğ»şş
 (2 rows)
 
 --varchar with length without prefix key
@@ -273,9 +274,9 @@ explain (costs off) select * from test_gbk_chinese_ci_char where c1 like 'sde%';
 (4 rows)
 
 select * from test_gbk_chinese_ci_char where c1 like 'sde%';
-     c1     
-------------
- sdeWf     
+  c1   
+-------
+ sdeWf
 (1 row)
 
 insert into test_gbk_chinese_ci_char values('Ğ»Ğ»ÄãÑ½'), ('ĞÂÄê¿ìÀÖ');
@@ -290,10 +291,10 @@ explain (costs off) select * from test_gbk_chinese_ci_char where c1 like 'Ğ»%';
 (4 rows)
 
 select * from test_gbk_chinese_ci_char where c1 like 'Ğ»%';
-       c1       
-----------------
- Ğ»Ğ»ÄãÑ½      
- Ğ»şş        
+    c1    
+----------
+ Ğ»Ğ»ÄãÑ½
+ Ğ»şş
 (2 rows)
 
 --varchar with length without prefix key

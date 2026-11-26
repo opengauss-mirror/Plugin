@@ -1,5 +1,6 @@
 create schema test_row_in;
 set current_schema to 'test_row_in';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set dolphin.b_compatibility_mode to on;
 create table all_types_table (
     `int1` tinyint,
@@ -211,7 +212,7 @@ select row(1, row((select `int1` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -420,7 +421,7 @@ select row(1, row((select `uint1` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -623,7 +624,7 @@ select row(1, row((select `int2` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -820,7 +821,7 @@ select row(1, row((select `uint2` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1011,7 +1012,7 @@ select row(1, row((select `int4` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1196,7 +1197,7 @@ select row(1, row((select `uint4` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1375,7 +1376,7 @@ select row(1, row((select `int8` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1548,7 +1549,7 @@ select row(1, row((select `uint8` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1715,7 +1716,7 @@ select row(1, row((select `float4` from all_types_table limit 1),(select `year` 
 (1 row)
 
 select row(1, row((select `float4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `float4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1876,7 +1877,7 @@ select row(1, row((select `float8` from all_types_table limit 1),(select `year` 
 (1 row)
 
 select row(1, row((select `float8` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `float8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2031,7 +2032,7 @@ select row(1, row((select `numeric` from all_types_table limit 1),(select `year`
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2180,7 +2181,7 @@ select row(1, row((select `bit1` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2323,7 +2324,7 @@ select row(1, row((select `bit64` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2602,7 +2603,7 @@ select row(1, row((select `date` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `date` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
-WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2959,7 +2960,7 @@ select row(1, row((select `datetime` from all_types_table limit 1),(select `year
 (1 row)
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
-WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89"
 CONTEXT:  SQL function "datetime_text_eq" statement 1
  ?column? 
 ----------
@@ -3083,7 +3084,7 @@ select row(1, row((select `datetime4` from all_types_table limit 1),(select `yea
 (1 row)
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
-WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89"
 CONTEXT:  SQL function "datetime_text_eq" statement 1
  ?column? 
 ----------
@@ -3201,7 +3202,7 @@ select row(1, row((select `timestamp` from all_types_table limit 1),(select `yea
 (1 row)
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
-WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89"
 CONTEXT:  SQL function "timestamp_text_eq" statement 1
  ?column? 
 ----------
@@ -3313,7 +3314,7 @@ select row(1, row((select `timestamp4` from all_types_table limit 1),(select `ye
 (1 row)
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
-WARNING:  time zone displacement out of range: "62.345*67-89                                                                                        "
+WARNING:  time zone displacement out of range: "62.345*67-89"
 CONTEXT:  SQL function "timestamp_text_eq" statement 1
  ?column? 
 ----------
@@ -3419,7 +3420,7 @@ select row(1, row((select `year` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `year` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `year` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type bigint: "62.345*67-89"
  ?column? 
 ----------
  f

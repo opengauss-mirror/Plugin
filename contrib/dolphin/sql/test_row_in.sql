@@ -1,5 +1,6 @@
 create schema test_row_in;
 set current_schema to 'test_row_in';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set dolphin.b_compatibility_mode to on;
 create table all_types_table (
     `int1` tinyint,
