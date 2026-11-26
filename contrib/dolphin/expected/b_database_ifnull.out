@@ -172,10 +172,10 @@ SELECT
     char2,
     NULLIF(char1, char2) AS nullif_result
 FROM test_nullif_char;
-   char1    |   char2    | nullif_result 
-------------+------------+---------------
- hello      | hello      | 
- world      | universe   | world     
+ char1 |  char2   | nullif_result 
+-------+----------+---------------
+ hello | hello    | 
+ world | universe | world
 (2 rows)
 
 -- Test Case 10: VARCHAR type

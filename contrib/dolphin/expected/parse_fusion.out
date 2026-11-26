@@ -86,12 +86,12 @@ LINE 1: replace into perf_pf_t(c1) values ('This string is way too l...
 CONTEXT:  referenced column: c1
 replace into perf_pf_t(c2) values (decode('deadbeef', 'hex')); -- should error
 select * from perf_pf_t;
-               c1               |     c2     |   c3    |               c4               |    c5     |    c6    
---------------------------------+------------+---------+--------------------------------+-----------+----------
- Hello                          | World      | open    | dfdsfds                        | openGauss | verygood
- ABC                            | Test       | Example | adfdfd                         | good      | gooood
-                                |            |         |                                |           | 
-                                | \xdeadbeef |         |                                |           | 
+  c1   |     c2     |   c3    |   c4    |    c5     |    c6    
+-------+------------+---------+---------+-----------+----------
+ Hello | World      | open    | dfdsfds | openGauss | verygood
+ ABC   | Test       | Example | adfdfd  | good      | gooood
+       |            |         |         |           | 
+       | \xdeadbeef |         |         |           | 
 (4 rows)
 
 -- test times

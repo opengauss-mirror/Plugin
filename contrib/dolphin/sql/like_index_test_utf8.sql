@@ -1,7 +1,6 @@
 --UTF8
 create database test_utf8 dbcompatibility='B' encoding='utf8';
 \c test_utf8
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 --utf8_bin
 --char

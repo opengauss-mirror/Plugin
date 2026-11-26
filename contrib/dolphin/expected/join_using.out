@@ -183,7 +183,7 @@ select * from t_v1 natural join t_v21;
 (0 rows)
 
 select * from t_v1 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -363,7 +363,7 @@ select * from t_v2 natural join t_v21;
 (0 rows)
 
 select * from t_v2 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -543,7 +543,7 @@ select * from t_v3 natural join t_v21;
 (0 rows)
 
 select * from t_v3 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -723,7 +723,7 @@ select * from t_v4 natural join t_v21;
 (0 rows)
 
 select * from t_v4 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -903,7 +903,7 @@ select * from t_v5 natural join t_v21;
 (0 rows)
 
 select * from t_v5 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1083,7 +1083,7 @@ select * from t_v6 natural join t_v21;
 (0 rows)
 
 select * from t_v6 natural join t_v22;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1263,7 +1263,7 @@ select * from t_v7 natural join t_v21;
 (0 rows)
 
 select * from t_v7 natural join t_v22;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1443,7 +1443,7 @@ select * from t_v8 natural join t_v21;
 (0 rows)
 
 select * from t_v8 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1623,7 +1623,7 @@ select * from t_v9 natural join t_v21;
 (0 rows)
 
 select * from t_v9 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1803,7 +1803,7 @@ select * from t_v10 natural join t_v21;
 (0 rows)
 
 select * from t_v10 natural join t_v22;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1983,7 +1983,7 @@ select * from t_v11 natural join t_v21;
 (0 rows)
 
 select * from t_v11 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2152,7 +2152,7 @@ select * from t_v12 natural join t_v21;
 (0 rows)
 
 select * from t_v12 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2333,7 +2333,7 @@ select * from t_v13 natural join t_v21;
 (0 rows)
 
 select * from t_v13 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2518,7 +2518,7 @@ select * from t_v14 natural join t_v21;
 (0 rows)
 
 select * from t_v14 natural join t_v22;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3042,7 +3042,7 @@ select * from t_v17 natural join t_v21;
 (0 rows)
 
 select * from t_v17 natural join t_v22;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3244,7 +3244,7 @@ select * from t_v18 natural join t_v21;
 (0 rows)
 
 select * from t_v18 natural join t_v22;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3446,7 +3446,7 @@ select * from t_v19 natural join t_v21;
 (0 rows)
 
 select * from t_v19 natural join t_v22;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3648,7 +3648,7 @@ select * from t_v20 natural join t_v21;
 (0 rows)
 
 select * from t_v20 natural join t_v22;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3823,7 +3823,7 @@ select * from t_v21 natural join t_v20;
 select * from t_v21 natural join t_v21;
 ERROR:  table name "t_v21" specified more than once
 select * from t_v21 natural join t_v22;
-WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type bigint: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3890,85 +3890,85 @@ select * from t_v21 natural join t_set;
 (0 rows)
 
 select * from t_v22 natural join t_v1;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v2;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v3;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v4;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v5;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v6;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v7;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v8;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v9;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v10;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v14;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3984,31 +3984,31 @@ select * from t_v22 natural join t_v16;
 (0 rows)
 
 select * from t_v22 natural join t_v17;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v18;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v19;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v20;
-WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v22 natural join t_v21;
-WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type bigint: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4016,9 +4016,9 @@ WARNING:  invalid input syntax for type bigint: "1.23a                          
 select * from t_v22 natural join t_v22;
 ERROR:  table name "t_v22" specified more than once
 select * from t_v22 natural join t_v23;
-                                                 col1                                                 
-------------------------------------------------------------------------------------------------------
- 1.23a                                                                                               
+ col1  
+-------
+ 1.23a
 (1 row)
 
 select * from t_v22 natural join t_v24;
@@ -4027,34 +4027,39 @@ select * from t_v22 natural join t_v24;
 (0 rows)
 
 select * from t_v22 natural join t_v25;
- col1 
-------
-(0 rows)
+ col1  
+-------
+ 1.23a
+(1 row)
 
 select * from t_v22 natural join t_v26;
- col1 
-------
-(0 rows)
+ col1  
+-------
+ 1.23a
+(1 row)
 
 select * from t_v22 natural join t_v27;
- col1 
-------
-(0 rows)
+ col1  
+-------
+ 1.23a
+(1 row)
 
 select * from t_v22 natural join t_v28;
- col1 
-------
-(0 rows)
+ col1  
+-------
+ 1.23a
+(1 row)
 
 select * from t_v22 natural join t_v29;
- col1 
-------
-(0 rows)
+ col1  
+-------
+ 1.23a
+(1 row)
 
 select * from t_v22 natural join t_v30;
-                                                 col1                                                 
-------------------------------------------------------------------------------------------------------
- 1.23a                                                                                               
+ col1  
+-------
+ 1.23a
 (1 row)
 
 select * from t_v22 natural join t_v31;
@@ -4566,9 +4571,10 @@ CONTEXT:  SQL function "binary_year_eq" statement 1
 (0 rows)
 
 select * from t_v25 natural join t_v22;
- col1 
-------
-(0 rows)
+     col1     
+--------------
+ \x312e323361
+(1 row)
 
 select * from t_v25 natural join t_v23;
      col1     
@@ -4741,9 +4747,10 @@ select * from t_v26 natural join t_v21;
 (0 rows)
 
 select * from t_v26 natural join t_v22;
- col1 
-------
-(0 rows)
+     col1     
+--------------
+ \x312e323361
+(1 row)
 
 select * from t_v26 natural join t_v23;
      col1     
@@ -4916,9 +4923,10 @@ select * from t_v27 natural join t_v21;
 (0 rows)
 
 select * from t_v27 natural join t_v22;
- col1 
-------
-(0 rows)
+     col1     
+--------------
+ \x312e323361
+(1 row)
 
 select * from t_v27 natural join t_v23;
      col1     
@@ -5091,9 +5099,10 @@ select * from t_v28 natural join t_v21;
 (0 rows)
 
 select * from t_v28 natural join t_v22;
- col1 
-------
-(0 rows)
+     col1     
+--------------
+ \x312e323361
+(1 row)
 
 select * from t_v28 natural join t_v23;
      col1     
@@ -5266,9 +5275,10 @@ select * from t_v29 natural join t_v21;
 (0 rows)
 
 select * from t_v29 natural join t_v22;
- col1 
-------
-(0 rows)
+     col1     
+--------------
+ \x312e323361
+(1 row)
 
 select * from t_v29 natural join t_v23;
      col1     
@@ -5768,9 +5778,9 @@ select * from t_enum natural join t_v16;
 (0 rows)
 
 select * from t_enum natural join t_v17;
- col1 
+--?ERROR:  failed to find conversion function from timestamp with time zone to .*
 ------
-(0 rows)
+--?ERROR:  failed to find conversion function from timestamp with time zone to .*
 
 select * from t_enum natural join t_v18;
  col1 
@@ -5937,9 +5947,9 @@ select * from t_set natural join t_v16;
 (0 rows)
 
 select * from t_set natural join t_v17;
- col1 
+--?ERROR:  failed to find conversion function from timestamp with time zone to .*
 ------
-(0 rows)
+--?ERROR:  failed to find conversion function from timestamp with time zone to .*
 
 select * from t_set natural join t_v18;
  col1 

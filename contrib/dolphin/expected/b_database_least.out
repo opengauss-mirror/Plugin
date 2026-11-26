@@ -190,10 +190,10 @@ SELECT
     val3,
     LEAST(val1, val2, val3) AS least_result
 FROM test_least_char;
-    val1    |    val2    |    val3    | least_result 
-------------+------------+------------+--------------
- apple      | banana     | cherry     | apple     
- dog        | cat        | elephant   | cat       
+ val1  |  val2  |   val3   | least_result 
+-------+--------+----------+--------------
+ apple | banana | cherry   | apple
+ dog   | cat    | elephant | cat
 (2 rows)
 
 -- Test Case 10: VARCHAR type

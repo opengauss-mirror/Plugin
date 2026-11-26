@@ -2648,7 +2648,7 @@ select
 ~(`json`),
 ~(`null`)
 from test_type_table;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2710,7 +2710,7 @@ drop table if exists test_doubles;
 NOTICE:  table "test_doubles" does not exist, skipping
 create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
 insert ignore into test_doubles  select ~(`int1`), ~(`uint1`), ~(`int2`), ~(`uint2`), ~(`int4`), ~(`uint4`), ~(`int8`), ~(`uint8`), ~(`float4`), ~(`float8`), ~(`numeric`),~(`bit1`), ~(`bit64`),~(`boolean`), ~(`date`), ~(`time`), ~(`time(4)`), ~(`datetime`),~(`datetime(4)`), ~(`timestamp`), ~(`timestamp(4)`), ~(`year`), ~(`char`), ~(`varchar`), ~(`binary`),~(`varbinary`), ~(`tinyblob`), ~(`blob`), ~(`mediumblob`), ~(`longblob`), ~(`text`), ~(`enum_t`), ~(`set_t`), ~(`json`) from test_type_table;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: d23
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: d24
@@ -2886,7 +2886,7 @@ select
 -(`set_t`),
 -(`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 WARNING:  invalid input syntax for type numeric: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2906,7 +2906,7 @@ drop table if exists test_doubles;
 NOTICE:  table "test_doubles" does not exist, skipping
 create table test_doubles(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
 insert ignore into test_doubles  select -(`int1`), -(`uint1`), -(`int2`), -(`uint2`), -(`int4`), -(`uint4`), -(`int8`), -(`uint8`), -(`float4`), -(`float8`), -(`numeric`),-(`bit1`), -(`bit64`),-(`boolean`), -(`date`), -(`time`), -(`time(4)`), -(`datetime`),-(`datetime(4)`), -(`timestamp`), -(`timestamp(4)`), -(`year`), -(`char`), -(`varchar`), -(`binary`),-(`varbinary`), -(`tinyblob`), -(`blob`), -(`mediumblob`), -(`longblob`), -(`text`), -(`enum_t`), -(`set_t`), -(`json`) from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type numeric: "1.23a"
 WARNING:  invalid input syntax for type numeric: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"

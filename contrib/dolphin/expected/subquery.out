@@ -73,14 +73,14 @@ extract(day from (select `datetime(4)` from test_type_table)) as 'extract(dateti
 (select `year` from test_type_table) + (select `year` from test_type_table) as 'year+year';
 \x
 select * from res_view;
--[ RECORD 1 ]--------+---------------------------------------------------------------------------------------------------------------
+-[ RECORD 1 ]--------+---------------------
 int1+numeric         | 222.000000
 uint1+float8         | 1111111111222.1
 int2+float4          | 11222
 uint2+uint8          | 11111111122222
 int4+int8            | 11112222222222
 uint4+uint4          | 2222222222
-concat(char,text)    | 2023-02-05                                                                                          2023-02-05
+concat(char,text)    | 2023-02-052023-02-05
 concat(varchar,text) | 2023-02-052023-02-05
 extract(date)        | 5
 extract(time)        | 19

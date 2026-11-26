@@ -67,6 +67,7 @@ set dolphin.b_compatibility_mode to on;
 create schema db_b_substr_test;
 set current_schema to 'db_b_substr_test';
 set bytea_output to escape;
+set dolphin.sql_mode = 'pad_char_to_full_length';
 DROP TABLE IF EXISTS template_string;
 NOTICE:  table "template_string" does not exist, skipping
 CREATE TABLE template_string(a TEXT, b BYTEA);

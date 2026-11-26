@@ -210,7 +210,7 @@ SELECT VARIANCE(`year`) OVER () AS `year` FROM all_types_table;
 (1 row)
 
 SELECT VARIANCE(`char`) OVER () AS `char` FROM all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
  char 
 ------
     0
@@ -490,8 +490,8 @@ SELECT VARIANCE(`year`) OVER () AS `year` FROM all_types_table;
 (2 rows)
 
 SELECT VARIANCE(`char`) OVER () AS `char` FROM all_types_table;
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
-WARNING:  invalid input syntax for type numeric: "61.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+WARNING:  invalid input syntax for type numeric: "61.345*67-89"
           char          
 ------------------------
  0.25000000000000000000

@@ -190,10 +190,10 @@ SELECT
     val3,
     GREATEST(val1, val2, val3) AS greatest_result
 FROM test_greatest_char;
-    val1    |    val2    |    val3    | greatest_result 
-------------+------------+------------+-----------------
- apple      | banana     | cherry     | cherry    
- dog        | cat        | elephant   | elephant  
+ val1  |  val2  |   val3   | greatest_result 
+-------+--------+----------+-----------------
+ apple | banana | cherry   | cherry
+ dog   | cat    | elephant | elephant
 (2 rows)
 
 -- Test Case 10: VARCHAR type

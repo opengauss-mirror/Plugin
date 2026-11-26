@@ -894,9 +894,9 @@ insert ignore into t_charn values (null);
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select * from t_charn;
-   c    
---------
-       
+ c 
+---
+ 
 (1 row)
 
 insert into t_charn values('abc');
@@ -906,10 +906,10 @@ DETAIL:  Failing row contains (null).
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select * from t_charn;
-   c    
---------
-       
-       
+ c 
+---
+ 
+ 
 (2 rows)
 
 -- varchar(n)
