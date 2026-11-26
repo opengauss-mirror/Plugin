@@ -1,5 +1,5 @@
 ---
-description: "- extractvalue(xml_frag, xpath_expr)。"
+description: extractvalue(xml_frag, xpath_expr)。
 keywords: [openGauss, XML函数]
 ---
 
