@@ -1,5 +1,6 @@
 create schema define_primary_key;
 set current_schema = define_primary_key;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 CREATE TABLE t1 (
 a2 int, b2 int, filler2 char(64) default ' ',
 PRIMARY KEY idx(a2,b2,filler2)
@@ -17,19 +18,19 @@ NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_a_key" for table "
 CREATE TABLE t5 (a INT UNIQUE KEY);
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t5_a_key" for table "t5"
 desc t1;
-  Field  |     Type      | Null | Key |   Default   | Extra 
----------+---------------+------+-----+-------------+-------
- a2      | integer       | NO   | PRI | NULL        | 
- b2      | integer       | NO   | PRI | NULL        | 
- filler2 | character(64) | NO   | PRI | ' '::bpchar | 
+  Field  |     Type      | Null | Key |  Default   | Extra 
+---------+---------------+------+-----+------------+-------
+ a2      | integer       | NO   | PRI | NULL       | 
+ b2      | integer       | NO   | PRI | NULL       | 
+ filler2 | character(64) | NO   | PRI | ''::bpchar | 
 (3 rows)
 
 desc t2;
-  Field  |     Type      | Null | Key |   Default   | Extra 
----------+---------------+------+-----+-------------+-------
- a2      | integer       | NO   | PRI | NULL        | 
- b2      | integer       | NO   | PRI | NULL        | 
- filler2 | character(64) | NO   | PRI | ' '::bpchar | 
+  Field  |     Type      | Null | Key |  Default   | Extra 
+---------+---------------+------+-----+------------+-------
+ a2      | integer       | NO   | PRI | NULL       | 
+ b2      | integer       | NO   | PRI | NULL       | 
+ filler2 | character(64) | NO   | PRI | ''::bpchar | 
 (3 rows)
 
 desc t3;

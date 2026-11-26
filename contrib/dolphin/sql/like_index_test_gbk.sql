@@ -4,6 +4,7 @@ set dolphin.b_compatibility_mode to off;
 drop database if exists test_gbk;
 create database test_gbk dbcompatibility='B' encoding='gbk' LC_CTYPE='zh_CN.gbk' LC_COLLATE='zh_CN.gbk';
 \c test_gbk
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 
 -- set client_encoding to 'utf8';
 --GBK_BIN

@@ -2,6 +2,7 @@
 -- test mysql compatibility trigger 
 create schema db_mysql;
 set current_schema to 'db_mysql';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 create table t (id int);
 create table t1 (id int);
 create table animals (id int, name char(30));
@@ -347,9 +348,9 @@ end;
 delimiter ;
 insert into animals (id, name) values(1,'lion');
 select * from animals;
- id |              name              
-----+--------------------------------
-  1 | lion                          
+ id | name 
+----+------
+  1 | lion
 (1 row)
 
 select id, foodtype  from food;
@@ -391,10 +392,10 @@ end;
 delimiter ;
 insert into animals (id, name) values(2,'cat');
 select * from animals;
- id |              name              
-----+--------------------------------
-  1 | lion                          
-  2 | cat                           
+ id | name 
+----+------
+  1 | lion
+  2 | cat
 (2 rows)
 
 select id, foodtype  from food;

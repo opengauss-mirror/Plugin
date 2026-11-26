@@ -1,4 +1,5 @@
 \c table_name_test_db;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set dolphin.lower_case_table_names TO 0;
 --
 -- RULES
@@ -412,13 +413,13 @@ update rtest_Emp set ename = 'wieck', salary = '6000.00' where ename = 'wiecx';
 update rtest_Emp set salary = '7000.00' where ename = 'wieck';
 delete from rtest_Emp where ename = 'gates';
 select ename, who = current_user as "matches user", action, newsal, oldsal from rtest_Emplog order by ename, action, newsal;
-        ename         | matches user |   action   |   newsal   |   oldsal   
-----------------------+--------------+------------+------------+------------
- gates                | t            | fired      |      $0.00 | $80,000.00
- gates                | t            | hired      | $80,000.00 |      $0.00
- wiecc                | t            | hired      |  $5,000.00 |      $0.00
- wieck                | t            | honored    |  $6,000.00 |  $5,000.00
- wieck                | t            | honored    |  $7,000.00 |  $6,000.00
+ ename | matches user | action  |   newsal   |   oldsal   
+-------+--------------+---------+------------+------------
+ gates | t            | fired   |      $0.00 | $80,000.00
+ gates | t            | hired   | $80,000.00 |      $0.00
+ wiecc | t            | hired   |  $5,000.00 |      $0.00
+ wieck | t            | honored |  $6,000.00 |  $5,000.00
+ wieck | t            | honored |  $7,000.00 |  $6,000.00
 (5 rows)
 
 insert into rtest_Empmass values ('meyer', '4000.00');
@@ -426,54 +427,54 @@ insert into rtest_Empmass values ('maier', '5000.00');
 insert into rtest_Empmass values ('mayr', '6000.00');
 insert into rtest_Emp select * from rtest_Empmass;
 select ename, who = current_user as "matches user", action, newsal, oldsal from rtest_Emplog order by ename, action, newsal;
-        ename         | matches user |   action   |   newsal   |   oldsal   
-----------------------+--------------+------------+------------+------------
- gates                | t            | fired      |      $0.00 | $80,000.00
- gates                | t            | hired      | $80,000.00 |      $0.00
- maier                | t            | hired      |  $5,000.00 |      $0.00
- mayr                 | t            | hired      |  $6,000.00 |      $0.00
- meyer                | t            | hired      |  $4,000.00 |      $0.00
- wiecc                | t            | hired      |  $5,000.00 |      $0.00
- wieck                | t            | honored    |  $6,000.00 |  $5,000.00
- wieck                | t            | honored    |  $7,000.00 |  $6,000.00
+ ename | matches user | action  |   newsal   |   oldsal   
+-------+--------------+---------+------------+------------
+ gates | t            | fired   |      $0.00 | $80,000.00
+ gates | t            | hired   | $80,000.00 |      $0.00
+ maier | t            | hired   |  $5,000.00 |      $0.00
+ mayr  | t            | hired   |  $6,000.00 |      $0.00
+ meyer | t            | hired   |  $4,000.00 |      $0.00
+ wiecc | t            | hired   |  $5,000.00 |      $0.00
+ wieck | t            | honored |  $6,000.00 |  $5,000.00
+ wieck | t            | honored |  $7,000.00 |  $6,000.00
 (8 rows)
 
 update rtest_Empmass set salary = salary + '1000.00';
 update rtest_Emp set salary = rtest_Empmass.salary from rtest_Empmass where rtest_Emp.ename = rtest_Empmass.ename;
 select ename, who = current_user as "matches user", action, newsal, oldsal from rtest_Emplog order by ename, action, newsal;
-        ename         | matches user |   action   |   newsal   |   oldsal   
-----------------------+--------------+------------+------------+------------
- gates                | t            | fired      |      $0.00 | $80,000.00
- gates                | t            | hired      | $80,000.00 |      $0.00
- maier                | t            | hired      |  $5,000.00 |      $0.00
- maier                | t            | honored    |  $6,000.00 |  $5,000.00
- mayr                 | t            | hired      |  $6,000.00 |      $0.00
- mayr                 | t            | honored    |  $7,000.00 |  $6,000.00
- meyer                | t            | hired      |  $4,000.00 |      $0.00
- meyer                | t            | honored    |  $5,000.00 |  $4,000.00
- wiecc                | t            | hired      |  $5,000.00 |      $0.00
- wieck                | t            | honored    |  $6,000.00 |  $5,000.00
- wieck                | t            | honored    |  $7,000.00 |  $6,000.00
+ ename | matches user | action  |   newsal   |   oldsal   
+-------+--------------+---------+------------+------------
+ gates | t            | fired   |      $0.00 | $80,000.00
+ gates | t            | hired   | $80,000.00 |      $0.00
+ maier | t            | hired   |  $5,000.00 |      $0.00
+ maier | t            | honored |  $6,000.00 |  $5,000.00
+ mayr  | t            | hired   |  $6,000.00 |      $0.00
+ mayr  | t            | honored |  $7,000.00 |  $6,000.00
+ meyer | t            | hired   |  $4,000.00 |      $0.00
+ meyer | t            | honored |  $5,000.00 |  $4,000.00
+ wiecc | t            | hired   |  $5,000.00 |      $0.00
+ wieck | t            | honored |  $6,000.00 |  $5,000.00
+ wieck | t            | honored |  $7,000.00 |  $6,000.00
 (11 rows)
 
 delete from rtest_Emp using rtest_Empmass where rtest_Emp.ename = rtest_Empmass.ename;
 select ename, who = current_user as "matches user", action, newsal, oldsal from rtest_Emplog order by ename, action, newsal;
-        ename         | matches user |   action   |   newsal   |   oldsal   
-----------------------+--------------+------------+------------+------------
- gates                | t            | fired      |      $0.00 | $80,000.00
- gates                | t            | hired      | $80,000.00 |      $0.00
- maier                | t            | fired      |      $0.00 |  $6,000.00
- maier                | t            | hired      |  $5,000.00 |      $0.00
- maier                | t            | honored    |  $6,000.00 |  $5,000.00
- mayr                 | t            | fired      |      $0.00 |  $7,000.00
- mayr                 | t            | hired      |  $6,000.00 |      $0.00
- mayr                 | t            | honored    |  $7,000.00 |  $6,000.00
- meyer                | t            | fired      |      $0.00 |  $5,000.00
- meyer                | t            | hired      |  $4,000.00 |      $0.00
- meyer                | t            | honored    |  $5,000.00 |  $4,000.00
- wiecc                | t            | hired      |  $5,000.00 |      $0.00
- wieck                | t            | honored    |  $6,000.00 |  $5,000.00
- wieck                | t            | honored    |  $7,000.00 |  $6,000.00
+ ename | matches user | action  |   newsal   |   oldsal   
+-------+--------------+---------+------------+------------
+ gates | t            | fired   |      $0.00 | $80,000.00
+ gates | t            | hired   | $80,000.00 |      $0.00
+ maier | t            | fired   |      $0.00 |  $6,000.00
+ maier | t            | hired   |  $5,000.00 |      $0.00
+ maier | t            | honored |  $6,000.00 |  $5,000.00
+ mayr  | t            | fired   |      $0.00 |  $7,000.00
+ mayr  | t            | hired   |  $6,000.00 |      $0.00
+ mayr  | t            | honored |  $7,000.00 |  $6,000.00
+ meyer | t            | fired   |      $0.00 |  $5,000.00
+ meyer | t            | hired   |  $4,000.00 |      $0.00
+ meyer | t            | honored |  $5,000.00 |  $4,000.00
+ wiecc | t            | hired   |  $5,000.00 |      $0.00
+ wieck | t            | honored |  $6,000.00 |  $5,000.00
+ wieck | t            | honored |  $7,000.00 |  $6,000.00
 (14 rows)
 
 --

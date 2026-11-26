@@ -1,5 +1,6 @@
 create schema db_do_stmt;
 set current_schema to 'db_do_stmt';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 create table t1 (a int);
 insert into t1 values(1),(4),(7);
 select a from t1;
@@ -82,15 +83,15 @@ END;
 /
 call pro2_do();
 select * from time_table4 order by id;
- id |    c1    |  c3   
-----+----------+-------
-  1 | xx       | xx
-  2 | yy       | yy
-  3 | zz       | zz
-  4 | ss       | ss
-  5 | dd       | ll1
-  6 | dd       | ll12
-  7 | dd       | ll123
+ id | c1 |  c3   
+----+----+-------
+  1 | xx | xx
+  2 | yy | yy
+  3 | zz | zz
+  4 | ss | ss
+  5 | dd | ll1
+  6 | dd | ll12
+  7 | dd | ll123
 (7 rows)
 
 CREATE function func_do()return void
@@ -103,15 +104,15 @@ END;
 call func_do();
 ERROR:  Only support procedure in muiti result call statement
 select * from time_table4 order by id;
- id |    c1    |  c3   
-----+----------+-------
-  1 | xx       | xx
-  2 | yy       | yy
-  3 | zz       | zz
-  4 | ss       | ss
-  5 | dd       | ll1
-  6 | dd       | ll12
-  7 | dd       | ll123
+ id | c1 |  c3   
+----+----+-------
+  1 | xx | xx
+  2 | yy | yy
+  3 | zz | zz
+  4 | ss | ss
+  5 | dd | ll1
+  6 | dd | ll12
+  7 | dd | ll123
 (7 rows)
 
 drop table time_table4;
@@ -135,12 +136,12 @@ END;
 /
  
 select * from time_table4 order by id;
- id |    c1    | c3 
-----+----------+----
-  1 | xx       | xx
-  2 | yy       | yy
-  3 | zz       | zz
-  4 | ss       | ss
+ id | c1 | c3 
+----+----+----
+  1 | xx | xx
+  2 | yy | yy
+  3 | zz | zz
+  4 | ss | ss
 (4 rows)
 
 --将表的模式改为call_schema
@@ -163,14 +164,14 @@ NOTICE:  oo
 NOTICE:  3
 NOTICE:  pp
 select * from call_schema.time_table4 order by id;
- id |    c1    |  c3  
-----+----------+------
-  1 | xx       | xx
-  2 | yy       | yy
-  3 | zz       | zz
-  4 | ss       | ss
-  5 | oo       | pp1
-  6 | oo       | pp12
+ id | c1 |  c3  
+----+----+------
+  1 | xx | xx
+  2 | yy | yy
+  3 | zz | zz
+  4 | ss | ss
+  5 | oo | pp1
+  6 | oo | pp12
 (6 rows)
 
 drop schema db_do_stmt cascade;

@@ -1,5 +1,6 @@
 create schema db_between;
 set current_schema to 'db_between';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 set timezone to 'PRC';
 select 2 between 2 and 23;
 select 2.1 between 2.1 and 12.3;

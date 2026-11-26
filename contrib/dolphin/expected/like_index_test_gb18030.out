@@ -5,6 +5,7 @@ drop database if exists test_gb18030;
 NOTICE:  database "test_gb18030" does not exist, skipping
 Create database test_gb18030 dbcompatibility='b' ENCODING=36 LC_COLLATE='zh_CN.gb18030' LC_CTYPE='zh_CN.gb18030';
 \c test_gb18030
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero,block_return_multi_results,escape_quotes,disable_escape_bytea';
 --GB18030_CHINESE_CI
 --char
 create table test_gb18030_chinese_ci_char(c1 char(10))charset gb18030 collate gb18030_chinese_ci;
@@ -20,9 +21,9 @@ explain (costs off) select * from test_gb18030_chinese_ci_char where c1 like 'sd
 (4 rows)
 
 select * from test_gb18030_chinese_ci_char where c1 like 'sde%';
-     c1     
-------------
- sdeWf     
+  c1   
+-------
+ sdeWf
 (1 row)
 
 insert into test_gb18030_chinese_ci_char values('Ð»Ð»ÄãÑ½'), ('ÐÂÄê¿ìÀÖ');
@@ -37,10 +38,10 @@ explain (costs off) select * from test_gb18030_chinese_ci_char where c1 like 'Ð»
 (4 rows)
 
 select * from test_gb18030_chinese_ci_char where c1 like 'Ð»%';
-       c1       
-----------------
- Ð»Ð»ÄãÑ½      
- Ð»þ@þ@       
+    c1    
+----------
+ Ð»Ð»ÄãÑ½
+ Ð»þ@þ@
 (2 rows)
 
 --varchar with length without prefix key
@@ -272,9 +273,9 @@ explain (costs off) select * from test_gb18030_bin_char where c1 like 'sde%';
 (4 rows)
 
 select * from test_gb18030_bin_char where c1 like 'sde%';
-     c1     
-------------
- sdeWf     
+  c1   
+-------
+ sdeWf
 (1 row)
 
 insert into test_gb18030_bin_char values('Ð»Ð»ÄãÑ½'), ('ÐÂÄê¿ìÀÖ');
@@ -289,10 +290,10 @@ explain (costs off) select * from test_gb18030_bin_char where c1 like 'Ð»%';
 (4 rows)
 
 select * from test_gb18030_bin_char where c1 like 'Ð»%';
-       c1       
-----------------
- Ð»Ð»ÄãÑ½      
- Ð»þþþþ       
+    c1    
+----------
+ Ð»Ð»ÄãÑ½
+ Ð»þþþþ
 (2 rows)
 
 --varchar with length without prefix key
