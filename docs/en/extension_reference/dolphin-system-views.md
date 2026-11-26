@@ -1,5 +1,5 @@
 ---
-description: '- PG\_TYPE\_NONSTRICT\_BASIC\_VALUE.'
+description: 'PG\_TYPE\_NONSTRICT\_BASIC\_VALUE.'
 keywords: [openGauss, System Views]
 ---
 
