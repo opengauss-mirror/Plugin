@@ -9,6 +9,10 @@ select * from auto_inc1;
 alter table auto_inc1 modify id INT AUTO_INCREMENT PRIMARY KEY;
 set dolphin.sql_mode='no_auto_value_on_zero';
 alter table auto_inc1 modify id INT AUTO_INCREMENT PRIMARY KEY;
+\pset null '<NULL>'
+desc auto_inc1;
+show full columns from auto_inc1;
+\pset null ''
 select * from auto_inc1;
 
 set dolphin.sql_mode='';

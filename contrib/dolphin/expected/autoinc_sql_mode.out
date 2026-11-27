@@ -20,6 +20,20 @@ set dolphin.sql_mode='no_auto_value_on_zero';
 alter table auto_inc1 modify id INT AUTO_INCREMENT PRIMARY KEY;
 NOTICE:  ALTER TABLE will create implicit sequence "auto_inc1_id_seq" for serial column "auto_inc1.id"
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "auto_inc1_pkey" for table "auto_inc1"
+\pset null '<NULL>'
+desc auto_inc1;
+ Field |  Type   | Null | Key | Default |     Extra      
+-------+---------+------+-----+---------+----------------
+ id    | integer | NO   | PRI | <NULL>  | auto_increment
+(1 row)
+
+show full columns from auto_inc1;
+ Field |  Type   | Collation | Null | Key | Default |     Extra      |               Privileges                | Comment 
+-------+---------+-----------+------+-----+---------+----------------+-----------------------------------------+---------
+ id    | integer | NULL      | NO   | PRI | <NULL>  | auto_increment | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | <NULL>
+(1 row)
+
+\pset null ''
 select * from auto_inc1;
  id 
 ----
